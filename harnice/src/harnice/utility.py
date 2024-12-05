@@ -1,0 +1,200 @@
+import os
+import time
+import subprocess
+import shutil
+from os.path import basename
+from inspect import currentframe
+from harnice_paths import harnice_library_path
+
+def pn_from_dir():
+    # Get the current working directory where the script is invoked
+    current_dir = os.getcwd()
+    pn = os.path.basename(current_dir)
+    return pn
+
+#used to be svg_add_groups
+def add_entire_svg_file_contents_to_group(filepath, new_group_name):
+    """Modify the SVG file by wrapping existing contents in a group and adding a new empty group."""
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r") as file:
+                svg_content = file.read()
+
+            # Wrap existing content and add new group
+            updated_svg_content = (
+                '<svg xmlns="http://www.w3.org/2000/svg">\n'
+                + f'<g id="{new_group_name}-contents-start">\n'
+                + f'{svg_content}\n</g>\n'
+                + f'<g id="{new_group_name}-contents-end"></g>\n'
+                + '</svg>\n'
+            )
+            
+            with open(filepath, "w", encoding="utf-8") as file:
+                file.write(updated_svg_content)
+            
+            
+            
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Modified SVG file: {filepath}")
+        except Exception as e:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error modifying SVG file {filepath}: {e}")
+    else:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: SVG file {filepath} does not exist.")
+
+
+def rename_file(old_name, new_name, print_report):
+    """Rename a file from old_name to new_name."""
+    if os.path.exists(old_name):
+        try:
+            os.rename(old_name, new_name)
+            if print_report:
+                print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Renamed {old_name} to {new_name}")
+        except OSError as e:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error renaming file {old_name} to {new_name}: {e}")
+    else:
+        if print_report:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {old_name} does not exist, cannot rename.")
+
+import shutil
+import os
+
+def move_file(source_file, destination_directory):
+    copy_file_to_directory(source_file, destination_directory)
+    delete_file(source_file)
+
+def copy_file_to_directory(source_file, destination_directory):
+    """
+    Copies a file from its source location to a specified destination directory.
+
+    :param source_file: Path to the source file to be copied.
+    :param destination_directory: Path to the destination directory where the file will be copied.
+    :raises FileNotFoundError: If the source file does not exist.
+    :raises NotADirectoryError: If the destination directory does not exist or is not a directory.
+    """
+    if not os.path.isfile(source_file):
+        raise FileNotFoundError(f"The source file does not exist: {source_file}")
+    
+    if not os.path.isdir(destination_directory):
+        raise NotADirectoryError(f"The destination is not a valid directory: {destination_directory}")
+    
+    # Copy the file to the destination directory
+    shutil.copy(source_file, destination_directory)
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File copied successfully: {source_file} -> {destination_directory}")
+
+
+
+def file_exists_in_directory(search_for_filename, directory="."):
+    """
+    Checks if a file exists in the specified directory.
+    """
+    return os.path.isfile(os.path.join(directory, search_for_filename))
+
+import os
+import shutil
+
+def import_file_from_harnice_library(domain, library_subpath, lib_file):
+    """
+    Copies a file from Harnice library to a local 'library_used' directory with the same subpath structure.
+    """
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Importing library {lib_file}:")
+    # Step 1: Check if lib_file exists in Harnice library
+    harnice_path = harnice_library_path(domain)
+    source_file_path = os.path.join(harnice_path, library_subpath)
+    
+    if not os.path.isfile(os.path.join(source_file_path,lib_file)):
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Failed to import library: file '{lib_file}' not found in {source_file_path}")
+        return False
+
+    # Step 2: Check if the file already exists in the local library
+    current_directory = os.getcwd()
+    target_directory = os.path.join(current_directory, "library_used", library_subpath)
+    target_file_path = os.path.join(target_directory, lib_file)
+    
+    if os.path.isfile(target_file_path):
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Library instance '{lib_file}' already exists in this part number's library_used. If you wish to replace it, remove the instance and rerun this command.")
+        return True
+
+    # Step 3: Ensure the target directory structure exists
+    if not os.path.exists(target_directory):
+        os.makedirs(target_directory)
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added directory '{library_subpath}' to '{pn_from_dir()}/library_used/'.")
+
+    # Step 4: Copy the file from Harnice library to the target directory
+    shutil.copy(os.path.join(source_file_path,lib_file), target_file_path)
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{lib_file}' added to '{pn_from_dir()}/library_used/{library_subpath}'.")
+
+    return True
+    #returns True if import was successful or if already exists 
+    #returns False if library not found (try and import this again?)
+
+
+def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_id):
+    import os
+
+    def get_filename(filepath):
+        return os.path.basename(filepath)
+
+    try:
+        # Read the source SVG content
+        with open(source_svg_filepath, 'r') as source_file:
+            source_svg_content = source_file.read()
+
+        # Read the target SVG content
+        with open(target_svg_filepath, 'r') as target_file:
+            target_svg_content = target_file.read()
+
+        # Define the start and end tags (the key string that signifies the start and end of the group)
+        start_tag = f'id="{group_id}-contents-start"'
+        end_tag = f'id="{group_id}-contents-end"'
+
+        # Find the start and end indices of the group in the source SVG.
+        source_start_index = source_svg_content.find(start_tag)
+        if source_start_index == -1:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source start tag <{start_tag}> not found in file <{get_filename(source_svg_filepath)}>.")
+            return
+        source_end_index = source_svg_content.find(end_tag)
+        if source_end_index == -1:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source end tag <{end_tag}> not found in file <{get_filename(source_svg_filepath)}>.")
+            return
+
+        # Find the start and end indices of the group in the target SVG.
+        target_start_index = target_svg_content.find(start_tag)
+        if target_start_index == -1:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target start tag <{start_tag}> not found in file <{get_filename(target_svg_filepath)}>.")
+            return
+        target_end_index = target_svg_content.find(end_tag)
+        if target_end_index == -1:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target end tag <{end_tag}> not found in file <{get_filename(target_svg_filepath)}>.")
+            return
+
+        # Grab the group and save it to replace
+        replacement_group_content = source_svg_content[source_start_index:source_end_index]
+
+        # Replace the target group content with the source group content
+        updated_svg_content = (
+            target_svg_content[:target_start_index]
+            + replacement_group_content
+            + target_svg_content[target_end_index:]
+        )
+
+        # Overwrite the target file with the updated content
+        try:
+            with open(target_svg_filepath, 'w') as updated_file:
+                updated_file.write(updated_svg_content)
+        except Exception as e:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error writing to file <{get_filename(target_svg_filepath)}>: {e}")
+
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Copied group <{group_id}> from <{get_filename(source_svg_filepath)}> and pasted it into <{get_filename(target_svg_filepath)}>.")
+    
+    except Exception as e:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error processing files <{get_filename(source_svg_filepath)}> and <{get_filename(target_svg_filepath)}>: {e}")
+
+
+def delete_file(filename):
+    if os.path.exists(filename):
+        try:
+            os.remove(filename)
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted file: {filename}")
+        except OSError as e:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting file {filename}: {e}")
+    else:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {filename} does not exist.")
