@@ -2,12 +2,15 @@ import os
 from os.path import basename
 import json
 import xml.etree.ElementTree as ET
+from os.path import basename
+from inspect import currentframe
 import yaml  # PyYAML for parsing YAML files
-from utility import import_file_from_harnice_library, find_and_replace_svg_group, pn_from_dir, add_entire_svg_file_contents_to_group, find_and_replace_svg_group
+from utility import import_file_from_harnice_library, find_and_replace_svg_group, pn_from_dir, add_entire_svg_file_contents_to_group, find_and_replace_svg_group, rotate_svg_group
 
 def pn_from_dir():
     """Extract the project name from the current directory name."""
     return os.path.basename(os.getcwd())
+
 
 def update_connector_instances():
     # Get current working directory and paths
@@ -41,8 +44,10 @@ def update_connector_instances():
                 # Match current MPN with the connectors in YAML
                 for connector_name, connector_data in yaml_data.get("connectors", {}).items():
                     if connector_data.get("mpn") == current_mpn:
-                        mpn_path = os.path.join(library_used_path, current_mpn)
-                        connector_svg_path = os.path.join(drawing_instances_by_connector_name_path, f"{pn_from_dir()}-{connector_name}.svg")
+                        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Updating connector drawing instance {connector_name}:")
+                        connector_svg_path = os.path.join(drawing_instances_by_connector_name_path, connector_name)
+                        os.makedirs(connector_svg_path, exist_ok=True)
+                        connector_svg_path = os.path.join(connector_svg_path, f"{pn_from_dir()}-{connector_name}.svg")
 
                         # Ensure directory for MPN exists and import files if necessary
                         import_file_from_harnice_library(
@@ -53,28 +58,43 @@ def update_connector_instances():
 
                         # Generate blank SVG if it doesn't exist
                         if not os.path.exists(connector_svg_path):
-                            print(f"Generating connector instance svg {pn_from_dir()}-{connector_name}.svg")
+                            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating connector instance svg {pn_from_dir()}-{connector_name}.svg")
                             os.makedirs(drawing_instances_by_connector_name_path, exist_ok=True)
+
+                            # Write SVG declaration
+                            svg_content = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
                             with open(connector_svg_path, 'w') as blank_svg:
-                                blank_svg.write('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
-                            add_entire_svg_file_contents_to_group(
-                                connector_svg_path,
-                                "connector-drawing"
-                            )
+                                blank_svg.write(svg_content)
+                                print(f"Debug: Written SVG content to {connector_svg_path}.")
 
-                        # Replace SVG group
-                        find_and_replace_svg_group(
-                            connector_svg_path,
-                            os.path.join(library_used_path,"connector_definitions",current_mpn,f"{current_mpn}-drawing.svg"),
-                            "connector-drawing"
-                        )
+                            # Verify the file content
+                            with open(connector_svg_path, 'r') as verify_svg:
+                                content = verify_svg.read()
+                                print(f"Debug: Verified content of {connector_svg_path}: {content}")
 
-                        add_entire_svg_file_contents_to_group(connector_svg_path,f"unique-connector-instance-{connector_name}")
+                            add_entire_svg_file_contents_to_group(connector_svg_path,"connector-drawing")
 
-                        print(f"Processed connector: {connector_name} with MPN: {current_mpn}")
+                            find_and_replace_svg_group(connector_svg_path, os.path.join(library_used_path, "connector_definitions", current_mpn, f"{current_mpn}-drawing.svg"), "connector-drawing")
+
+                            add_entire_svg_file_contents_to_group(connector_svg_path, "connector-instance-rotatables")
+
+                            add_entire_svg_file_contents_to_group(connector_svg_path, f"unique-connector-instance-{connector_name}")
+
+                            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created new connector instance SVG {connector_name} with MPN: {current_mpn}")
+                            print()
+                        
+                        else: 
+                            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Connector instance SVG {connector_name} with MPN: {current_mpn} already exists. ")
+
+                        
+                        # Rotate SVG group "connector-drawing" to match the average segment angle
+                        connector_angle = -1* retrieve_angle_of_connector(connector_name)
+                        rotate_svg_group(connector_svg_path, "connector-instance-rotatables", connector_angle)
+                        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Updated rotation on {connector_name}. ")
 
     except Exception as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error processing BOM file: {e}")
+
 
 def update_formboard_master_svg():
     current_dir = os.getcwd()
@@ -122,7 +142,7 @@ def update_formboard_master_svg():
 
     add_entire_svg_file_contents_to_group(output_svg_path,"formboard-master")
     
-    print(f"SVG file {'overwritten' if os.path.exists(output_svg_path) else 'created'} at: {output_svg_path}")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: SVG file {'overwritten' if os.path.exists(output_svg_path) else 'created'} at: {output_svg_path}")
 
 def replace_all_connector_groups():
     """Replace all connector groups in the target SVG with their corresponding source SVG groups."""
@@ -139,10 +159,45 @@ def replace_all_connector_groups():
     for connector_name in connectors:
         # Define the target and source SVG paths
         target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{pn_from_dir()}-formboard-master.svg")
-        source_svg_filepath = os.path.join(current_dir, "drawing-instances-by-connector-name", f"{pn_from_dir()}-{connector_name}.svg")
+        source_svg_filepath = os.path.join(current_dir, "drawing-instances-by-connector-name", connector_name, f"{pn_from_dir()}-{connector_name}.svg")
         
         # Call the function to replace the group
         find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-connector-instance-{connector_name}")
+
+def retrieve_angle_of_connector(connectorname):
+    """
+    Retrieve the angle of the specified connector from the JSON file.
+
+    Args:
+        connectorname (str): The name of the connector (e.g., "X1").
+
+    Returns:
+        float: The angle of the specified connector.
+
+    Raises:
+        FileNotFoundError: If the JSON file does not exist.
+        KeyError: If the connector name does not exist in the JSON data.
+    """
+    # Construct the path to the JSON file
+    current_dir = os.getcwd()
+    file_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", 
+                             f"{pn_from_dir()}-formboard-node-locations-inches.json")
+    
+    # Check if the file exists
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    
+    # Load the JSON data
+    with open(file_path, "r") as file:
+        data = json.load(file)
+    
+    # Retrieve the angle for the specified connector
+    try:
+        angle = data[connectorname]["angle"]
+    except KeyError:
+        raise KeyError(f"Connector '{connectorname}' not found in the JSON data.")
+    
+    return angle
 
 def regen_formboard():
     update_connector_instances()

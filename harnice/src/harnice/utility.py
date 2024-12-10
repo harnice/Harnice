@@ -5,6 +5,8 @@ import shutil
 from os.path import basename
 from inspect import currentframe
 from harnice_paths import harnice_library_path
+import xml.etree.ElementTree as ET
+import re
 
 def pn_from_dir():
     # Get the current working directory where the script is invoked
@@ -14,32 +16,55 @@ def pn_from_dir():
 
 #used to be svg_add_groups
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
-    """Modify the SVG file by wrapping existing contents in a group and adding a new empty group."""
+    """
+    Modify the SVG file by wrapping its inner contents (excluding the <svg> tag and attributes)
+    in a group and adding a new empty group.
+    
+    Args:
+        filepath (str): Path to the SVG file.
+        new_group_name (str): The name of the new group to wrap the contents and add a placeholder.
+    """
     if os.path.exists(filepath):
         try:
-            with open(filepath, "r") as file:
+            # Read the original SVG content
+            with open(filepath, "r", encoding="utf-8") as file:
                 svg_content = file.read()
-
-            # Wrap existing content and add new group
-            updated_svg_content = (
-                '<svg xmlns="http://www.w3.org/2000/svg">\n'
-                + f'<g id="{new_group_name}-contents-start">\n'
-                + f'{svg_content}\n</g>\n'
-                + f'<g id="{new_group_name}-contents-end"></g>\n'
-                + '</svg>\n'
-            )
             
+            # Extract contents inside the <svg>...</svg>, excluding the <svg> tag and its attributes
+            match = re.search(r'<svg[^>]*>(.*?)</svg>', svg_content, re.DOTALL)
+            if not match:
+                raise ValueError("File does not appear to be a valid SVG or has no inner contents.")
+            
+            inner_content = match.group(1).strip()
+
+            # Create the updated SVG content
+            updated_svg_content = (
+                f'<svg xmlns="http://www.w3.org/2000/svg">\n'
+                f'  <g id="{new_group_name}-contents-start">\n'
+                f'    {inner_content}\n'
+                f'  </g>\n'
+                f'  <g id="{new_group_name}-contents-end"></g>\n'
+                f'</svg>\n'
+            )
+
+            # Write the updated content back to the file
             with open(filepath, "w", encoding="utf-8") as file:
                 file.write(updated_svg_content)
-            
-            
-            
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Modified SVG file: {filepath}")
-        except Exception as e:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error modifying SVG file {filepath}: {e}")
-    else:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: SVG file {filepath} does not exist.")
 
+            print(
+                f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
+                f"Added entire contents of {os.path.basename(filepath)} to a new group {new_group_name}-contents-start"
+            )
+        except Exception as e:
+            print(
+                f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
+                f"Error adding contents of {os.path.basename(filepath)} to a new group {new_group_name}: {e}"
+            )
+    else:
+        print(
+            f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
+            f"Trying to add contents of {os.path.basename(filepath)} to a new group but file does not exist."
+        )
 
 def rename_file(old_name, new_name, print_report):
     """Rename a file from old_name to new_name."""
@@ -53,9 +78,6 @@ def rename_file(old_name, new_name, print_report):
     else:
         if print_report:
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {old_name} does not exist, cannot rename.")
-
-import shutil
-import os
 
 def move_file(source_file, destination_directory):
     copy_file_to_directory(source_file, destination_directory)
@@ -88,8 +110,6 @@ def file_exists_in_directory(search_for_filename, directory="."):
     """
     return os.path.isfile(os.path.join(directory, search_for_filename))
 
-import os
-import shutil
 
 def import_file_from_harnice_library(domain, library_subpath, lib_file):
     """
@@ -198,3 +218,56 @@ def delete_file(filename):
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting file {filename}: {e}")
     else:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {filename} does not exist.")
+
+
+def rotate_svg_group(svg_path, group_name, angle):
+    """
+    Modify the rotation of a specific group in an SVG file by directly searching and replacing text.
+    
+    Args:
+        svg_path (str): Path to the SVG file.
+        angle (float): The new rotation angle to apply.
+    """
+    id_string = "id=" + '"' + group_name + "-contents-start" + '"'
+    print(f"!!!!!!!!!!!rotating group {id_string} within file {os.path.basename(svg_path)}")
+    try:
+        # Read the file content
+        with open(svg_path, 'r', encoding='utf-8') as svg_file:
+            lines = svg_file.readlines()
+
+        # Search for the group by ID and modify the rotation
+        group_found = False
+        for i, line in enumerate(lines):
+            if id_string in line:
+                if 'transform="rotate(' in line:
+                    # Group already has a rotation, update it
+                    lines[i] = re.sub(r'rotate\(([^)]+)\)', f'rotate({angle})', line)
+                    group_found = True
+                    break
+                else:
+                    # Group exists but does not have a rotation, add it
+                    lines[i] = line.strip().replace('>', f' transform="rotate({angle})">') + '\n'
+                    group_found = True
+                    break
+
+        # If the group is not found, raise an error
+        if not group_found:
+            raise ValueError(f"{group_name} group not initialized correctly.")
+
+        # Write the modified content back to the file
+        with open(svg_path, 'w', encoding='utf-8') as svg_file:
+            svg_file.writelines(lines)
+
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Successfully updated the rotation to {angle} degrees in {svg_path}.")
+
+    except FileNotFoundError:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found - {svg_path}")
+    except ValueError as e:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {e}")
+    except Exception as e:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An unexpected error occurred: {e}")
+
+
+
+
+

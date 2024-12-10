@@ -138,7 +138,6 @@ def generate_segments():
 
     return True
 
-
 def add_random_lengths_angles():
     json_file_name = f"{pn_from_dir()}-formboard-graph-definition.json"
     json_file_path = os.path.join(os.getcwd(), json_file_name)
@@ -196,6 +195,10 @@ def generate_node_coordinates():
 
     # To/from segment data
     segment_to_from_data = []
+    
+    # Track angles connected to each node
+    node_angles = {node: [] for node in node_coordinates.keys()}
+
 
     # Calculate coordinates for each node
     for segment in segment_data.values():
@@ -222,6 +225,14 @@ def generate_node_coordinates():
         center_x = (start_x + end_x) / 2
         center_y = (start_y + end_y) / 2
         center_coordinates = (round(center_x, 2), round(center_y, 2))
+                
+        # Track angles for the start and end nodes
+        if start_node not in node_angles:
+            node_angles[start_node] = []
+        if end_node not in node_angles:
+            node_angles[end_node] = []
+        node_angles[start_node].append(angle)
+        node_angles[end_node].append(angle)
 
         # Add "to", "from", and "center" data for the segment
         segment_to_from_data.append({
@@ -230,9 +241,34 @@ def generate_node_coordinates():
             "center": {"coordinates": center_coordinates}
         })
 
-    # Write the node coordinates as-is to the inches file
+    """CHATGPT TURN THIS INTO REAL CODE:
+    for each node in node_file_name_inches:
+        average_angle = 0
+        connected_segments = 0
+        for each segment that connects to current node:
+            average_angle += angle of current segment
+            connected_segments += 0
+        average_angle = average_angle / connected_segments
+        add average_angle as a value of field "node_angle" in json file node_file_name_inches
+    """
+
+    # Calculate average angles for each node
+    node_coordinates_with_angles = {}
+    for node, (x, y) in node_coordinates.items():
+        connected_angles = node_angles.get(node, [])
+        avg_angle = round(sum(connected_angles) / len(connected_angles), 2) if connected_angles else None
+        node_coordinates_with_angles[node] = {
+            "coords": (x, y),
+            "angle": avg_angle
+        }
+
+    # Write the node coordinates (with average angles) as-is to the inches file
     with open(node_file_path_inches, "w") as file:
-        json.dump(node_coordinates, file, indent=4)
+        json.dump(node_coordinates_with_angles, file, indent=4)
+
+    # Write the node coordinates as-is to the inches file
+    #with open(node_file_path_inches, "w") as file:
+        #json.dump(node_coordinates, file, indent=4)
 
     # Create the pixel coordinates by multiplying each value by 96
     node_coordinates_px = {
@@ -251,7 +287,6 @@ def generate_node_coordinates():
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {node_file_path_inches}")
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {node_file_path_px}")
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment to/from/center data written to {to_from_file_path}")
-
 
 def visualize_formboard_graph():
     segment_file_name = f"{pn_from_dir()}-formboard-graph-definition.json"

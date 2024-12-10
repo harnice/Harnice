@@ -10,6 +10,7 @@ from formboard_functions import formboard_processor
 from harnice_prechecker import harnice_prechecker
 from utility import file_exists_in_directory, pn_from_dir
 from formboard_illustration_functions import regen_formboard
+import os
 
 def harnice():
     #check if revision history is set up correctly
