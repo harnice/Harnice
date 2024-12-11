@@ -229,7 +229,7 @@ def rotate_svg_group(svg_path, group_name, angle):
         angle (float): The new rotation angle to apply.
     """
     id_string = "id=" + '"' + group_name + "-contents-start" + '"'
-    print(f"!!!!!!!!!!!rotating group {id_string} within file {os.path.basename(svg_path)}")
+    print(f"Rotating group {id_string} within file {os.path.basename(svg_path)}")
     try:
         # Read the file content
         with open(svg_path, 'r', encoding='utf-8') as svg_file:

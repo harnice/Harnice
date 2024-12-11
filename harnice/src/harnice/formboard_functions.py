@@ -201,7 +201,8 @@ def generate_node_coordinates():
 
 
     # Calculate coordinates for each node
-    for segment in segment_data.values():
+    for segment_name, segment in segment_data.items():
+        segment_diameter = segment["diameter"]
         start_node = segment["segment_end_a"]
         end_node = segment["segment_end_b"]
         length = segment.get("length")
@@ -236,21 +237,13 @@ def generate_node_coordinates():
 
         # Add "to", "from", and "center" data for the segment
         segment_to_from_data.append({
+            "segment name": segment_name,
+            "diameter": segment_diameter,
             "from": {"node": start_node, "coordinates": (round(start_x, 2), round(start_y, 2))},
             "to": {"node": end_node, "coordinates": (round(end_x, 2), round(end_y, 2))},
             "center": {"coordinates": center_coordinates}
         })
 
-    """CHATGPT TURN THIS INTO REAL CODE:
-    for each node in node_file_name_inches:
-        average_angle = 0
-        connected_segments = 0
-        for each segment that connects to current node:
-            average_angle += angle of current segment
-            connected_segments += 0
-        average_angle = average_angle / connected_segments
-        add average_angle as a value of field "node_angle" in json file node_file_name_inches
-    """
 
     # Calculate average angles for each node
     node_coordinates_with_angles = {}
