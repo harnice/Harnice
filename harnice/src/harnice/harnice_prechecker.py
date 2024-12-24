@@ -22,7 +22,7 @@ def generate_revision_history_tsv(filename):
     file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
 
     # Define the columns for the TSV file
-    columns = ["pn", "desc", "rev", "status", "releaseticket", "datestarted", "datemodified", "datereleased", "drawnby", "checkedby", "revisionupdates"]
+    columns = ["pn", "desc", "rev", "status", "releaseticket", "datestarted", "datemodified", "datereleased", "drawnby", "checkedby", "revisionupdates", "affectedinstances"]
 
     # Write the TSV file
     with open(file_path, 'w') as file:
@@ -88,7 +88,7 @@ def check_subdirectory_format():
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: If you're currently in a PN directory, create a rev directory inside here. Read documentation on harnice file structure!")
         else:
             #subdirectories found, at least one matches
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Please navigate to a valid rev folder inside this one!")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Please navigate to a valid rev folder (I see there is a valid one inside this one!)")
 
 def check_existence_of_rev_history_file_in_parent(pn):
     """

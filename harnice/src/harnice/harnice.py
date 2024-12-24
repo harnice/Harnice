@@ -7,6 +7,7 @@ from generate_blank_svg import generate_blank_svg
 from bom_svg_prepper import prep_bom_svg_master
 from tblock_svg_prepper import prep_tblock_svg_master
 from formboard_functions import formboard_processor
+from flagnote_functions import look_for_buildnotes_file
 from harnice_prechecker import harnice_prechecker
 from utility import file_exists_in_directory, pn_from_dir
 from formboard_illustration_functions import regen_formboard
@@ -33,6 +34,10 @@ def harnice():
     print()
     print("############ GENERATING A CONNECTORS LIST #############")
     generate_connector_list()
+
+    print()
+    print("############ LOOKING FOR BUILDNOTES FILE #############")
+    look_for_buildnotes_file()
 
     #rerun formboard processor
     print()

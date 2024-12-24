@@ -1,16 +1,63 @@
 import os
-from os.path import basename
+from os.path import basename, dirname
 import json
+import shutil
 import xml.etree.ElementTree as ET
-from os.path import basename
+from os.path import basename, dirname
 from inspect import currentframe
 import yaml  # PyYAML for parsing YAML files
+from flagnote_functions import update_flagnotes_of_connector_instance
 from utility import import_file_from_harnice_library, find_and_replace_svg_group, pn_from_dir, add_entire_svg_file_contents_to_group, find_and_replace_svg_group, rotate_svg_group
+
+#used to keep track of all the valid instances. those that are not named in this array will be deleted
+drawing_instance_filenames = [None]
+
+def add_filename_to_drawing_instance(filename):
+    global drawing_instance_filenames  # Declare the global variable
+    if drawing_instance_filenames == [None]:  # Replace initial None with the first item
+        drawing_instance_filenames = [filename]
+    else:
+        drawing_instance_filenames.append(filename)  # Append new filename
+
+def delete_unmatched_files(directory):
+    """
+    Deletes all files and subdirectories in the given directory that are not in the global list `drawing_instance_filenames`.
+
+    Args:
+        directory (str): The path to the directory to clean.
+    """
+    global drawing_instance_filenames  # Access the global variable
+
+    # Ensure the directory exists
+    if not os.path.exists(directory):
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory '{directory}' does not exist.")
+        return
+
+    # List all files and directories in the directory
+    for item in os.listdir(directory):
+        item_path = os.path.join(directory, item)
+
+        # Check if the item is not in the allowed list
+        if item not in drawing_instance_filenames:
+            # Check if it's a file
+            if os.path.isfile(item_path):
+                try:
+                    os.remove(item_path)  # Delete the file
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching file: {basename(item_path)} in 'drawing-instances'")
+                except Exception as e:
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching file: {basename(item_path)} in 'drawing-instances': {e}")
+
+            # Check if it's a directory
+            elif os.path.isdir(item_path):
+                try:
+                    shutil.rmtree(item_path)  # Delete the directory and its contents
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching directory: {basename(item_path)} in 'drawing-instances'")
+                except Exception as e:
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing-instances': {e}")
 
 def pn_from_dir():
     """Extract the project name from the current directory name."""
     return os.path.basename(os.getcwd())
-
 
 def update_connector_instances():
     # Get current working directory and paths
@@ -57,6 +104,9 @@ def update_connector_instances():
                         )
 
                         # Generate blank SVG if it doesn't exist
+
+                        add_filename_to_drawing_instance(basename(dirname(connector_svg_path)))
+                        
                         if not os.path.exists(connector_svg_path):
                             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating connector instance svg {pn_from_dir()}-{connector_name}.svg")
                             os.makedirs(drawing_instances_by_connector_name_path, exist_ok=True)
@@ -86,10 +136,12 @@ def update_connector_instances():
                         else: 
                             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Connector instance SVG {connector_name} with MPN: {current_mpn} already exists. ")
 
+                    
                         
                         # Rotate SVG group "connector-drawing" to match the average segment angle
                         connector_angle = -1* retrieve_angle_of_connector(connector_name)
                         rotate_svg_group(connector_svg_path, "connector-instance-rotatables", connector_angle)
+                        update_flagnotes_of_connector_instance(connector_svg_path, connector_name, connector_angle)
                         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Updated rotation on {connector_name}. ")
 
     except Exception as e:
@@ -145,6 +197,7 @@ def update_segment_instances():
             with open(output_filename, 'w') as svg_file:
                 svg_file.write(svg_content)
 
+            add_filename_to_drawing_instance(basename(dirname(output_filename)))
 
             add_entire_svg_file_contents_to_group(output_filename, "segment_contents_rotatables")
 
@@ -188,7 +241,6 @@ def update_formboard_master_svg():
         center_coordinates = segment["center"]["coordinates"]
         
         center_x, center_y = center_coordinates
-        #center_y = -center_y  # Flip the y-coordinate
 
         translation = [96* center_x, 96*center_y]
         translation[1] = -translation[1]
@@ -360,14 +412,13 @@ def retrieve_angle_of_segment(segmentname):
     
     return angle
 
-
 def regen_formboard():
     update_connector_instances()
     update_segment_instances()
+    delete_unmatched_files(os.path.join(os.getcwd(),"drawing-instances"))
     update_formboard_master_svg()
     replace_all_connector_groups()
     replace_all_segment_groups()
-
 
 if __name__ == "__main__":
     regen_formboard()
