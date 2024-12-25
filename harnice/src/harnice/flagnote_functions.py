@@ -6,20 +6,25 @@ from utility import pn_from_dir, rotate_svg_group, find_and_replace_svg_group
 from os.path import basename
 from inspect import currentframe
 
-
 buildnotes_filename = f"{pn_from_dir()}-buildnotes.tsv"
 buildnotes_filepath = os.path.join(os.getcwd(), buildnotes_filename)
 
-#update_flagnotes_of_connector_instance(connector_svg_path, connector_name, connector_angle)
-def update_flagnotes_of_connector_instance(target_filepath, instance_name, rotation_angle):
-    print("!!!!!!!!!!!!!!!!!!!!TEST BEGIN!!!!!!!!!!!!!!")
-    generate_instance_flagnotes(instance_name,rotation_angle)
-    add_bubble_transforms_to_flagnote_group(os.path.join(target_filepath),)
-    buildnotes = find_buildnotes_of_instance(instance_name)
-    instance_flagnotes_filepath = (os.path.join(os.path.dirname(target_filepath), f"{instance_name}-instance-flagnotes.svg"))
-    for i in range(0, 10):
-        find_and_replace_svg_group(target_filepath, instance_flagnotes_filepath, f"as-printed-bubble-note{i}")
-    print("!!!!!!!!!!!!!!!!!!!!TEST END!!!!!!!!!!!!!!")
+def update_flagnotes_of_instance(target_filepath, instance_name, rotation_angle, bomid):
+    instance_drawing_filename = f"{pn_from_dir()}-{instance_name}.svg"
+    instance_drawing_filepath = os.path.join(target_filepath, instance_drawing_filename)
+    instance_flagnotes_filename = f"{instance_name}-instance-flagnotes.svg"
+    instance_flagnotes_filepath = os.path.join(target_filepath, instance_flagnotes_filename)
+    generate_instance_flagnotes(instance_name,instance_flagnotes_filename,instance_flagnotes_filepath,rotation_angle,bomid)
+    for i in range(0, 11):
+        note_exists_for_instance = find_and_replace_svg_group(instance_drawing_filepath, instance_flagnotes_filepath, f"as-printed-flagnote-{i}")
+        
+        if note_exists_for_instance == 1:
+            #make leader visible
+            update_note_opacity(instance_drawing_filepath, f"path-{i}", 1)
+        else: 
+            #make leader transparent
+            update_note_opacity(instance_drawing_filepath, f"path-{i}", 0)
+
 
 def look_for_buildnotes_file():
     # Check if the file exists
@@ -65,52 +70,48 @@ def find_buildnotes_of_instance(instance):
                             break
 
     except FileNotFoundError:
-        print(f"Error: The file {buildnotes_filepath} was not found.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: The file {buildnotes_filepath} was not found.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An error occurred: {e}")
 
     return instance_buildnotes
     
 
-def generate_instance_flagnotes(instance,rotation_angle):
-    # Fetch build notes for the instance
-    buildnotes = find_buildnotes_of_instance(instance)
-    connector_flagnotes_filename = f"{instance}-instance-flagnotes.svg"
-    connector_flagnotes_filepath = os.path.join(os.getcwd(), "drawing-instances", instance, connector_flagnotes_filename)
+def generate_instance_flagnotes(instance, instance_flagnotes_filename, instance_flagnotes_filepath,rotation_angle,bomid):
 
     # Ensure the directory exists
-    os.makedirs(os.path.dirname(connector_flagnotes_filepath), exist_ok=True)
+    os.makedirs(os.path.dirname(instance_flagnotes_filepath), exist_ok=True)
 
     # Create a new SVG file and write a basic SVG structure
-    with open(connector_flagnotes_filepath, 'w') as f:
+    with open(instance_flagnotes_filepath, 'w') as f:
         f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="500" height="500">')
 
     #find all relevant pieces of info and add them to note svg as note-indices
-    note_index = 0
+    bubble_location_index = 0
 
     #to-do: add refdes as note index
-    #note_index =+ 1
+    #bubble_location_index += 1
 
-    #to-do: add bom item as note index
-    #note_index =+ 1
+    #add bom item as note index
+    generate_note_svg(instance_flagnotes_filepath, "circle", bomid, bubble_location_index, rotation_angle)
+    bubble_location_index += 1
 
     #to-do: add revs as note index
-    #note_index =+ 1
+    #bubble_location_index += 1
 
     # Iterate through each build note and update the SVG
+    buildnotes = find_buildnotes_of_instance(instance)
     for buildnote in buildnotes:
-        # Example circle or position could be calculated here
-        generate_note_svg(connector_flagnotes_filepath, "circle", buildnote, note_index)
-        rotate_svg_group(connector_flagnotes_filepath, f"flagnote-circle-{buildnote}-rotatables", -1 * rotation_angle)
-        note_index =+ 1
+        generate_note_svg(instance_flagnotes_filepath, "triangle-up", buildnote, bubble_location_index, rotation_angle)
+        bubble_location_index += 1
 
 
-    with open(connector_flagnotes_filepath, 'a') as f:
+    with open(instance_flagnotes_filepath, 'a') as f:
         f.write('</svg>')
 
 
 
-def generate_note_svg(target_file, shape, reference_number, note_index):
+def generate_note_svg(target_file, shape, text_in_bubble, bubble_location_index, note_angle):
     """
     Generates SVG code for a specified shape and appends it to the target_file.
     Ensures proper indentation and newlines between elements for readability.
@@ -122,10 +123,10 @@ def generate_note_svg(target_file, shape, reference_number, note_index):
     # Open the file in append mode
     with open(target_file, "a") as file:
         # Start the groups
-        group_start = f'\n<g id="as-printed-bubble-note{note_index}-contents-start">\n'
+        group_start = f'\n<g id="as-printed-flagnote-{bubble_location_index}-contents-start">\n'
         file.write(group_start)
 
-        group_start = f'\n<g id="flagnote-{shape}-{reference_number}-rotatables-contents-start">\n'
+        group_start = f'\n<g id="flagnote-{shape}-{text_in_bubble}-rotatables-contents-start">\n'
         file.write(group_start)
 
         # Add shape-specific elements
@@ -138,27 +139,27 @@ def generate_note_svg(target_file, shape, reference_number, note_index):
     fill="#ffffff"
     stroke="#000000"
     stroke-width="0.177271"
-    id="flagnote-{shape}-{reference_number}-bubble"/>\n"""
+    id="flagnote-{shape}-{text_in_bubble}-bubble"/>\n"""
             file.write(circle_element)
 
         elif shape == "triangle-up":
             triangle_up_element = f"""  
     <polygon
-    points="23.73,42.93 42.93,42.93 33.33,23.73 "
+    points="-9.60,6.40 9.60,6.40 0.00,-12.80"
     fill="#ffffff"
     stroke="#000000"
     stroke-width="0.67"
-    id="flagnote-{shape}-{reference_number}-bubble"/>\n"""
+    id="flagnote-{shape}-{text_in_bubble}-bubble"/>\n"""
             file.write(triangle_up_element)
 
         elif shape == "triangle-down":
             triangle_down_element = f"""
     <polygon
-    points="33.33,42.93 23.73,23.73 42.93,23.73 "
+    points="0.00,12.80 -9.60,-6.40 9.60,-6.40"
     fill="#ffffff"
     stroke="#000000"
     stroke-width="0.67"
-    id="flagnote-{shape}-{reference_number}-bubble"/>\n"""
+    id="flagnote-{shape}-{text_in_bubble}-bubble"/>\n"""
             file.write(triangle_down_element)
 
         # Add the text element
@@ -167,52 +168,58 @@ def generate_note_svg(target_file, shape, reference_number, note_index):
     x="0"
     y="3.5"
     style="font-size:9px;font-family:Arial;text-align:center;text-anchor:middle;fill:#000000;stroke-width:0.576;stroke-dasharray:none"
-    id="flagnote-{shape}-{reference_number}-text">{reference_number}</text>\n"""
+    id="flagnote-{shape}-{text_in_bubble}-text">{text_in_bubble}</text>\n"""
         file.write(text_element)
 
         # End the groups
-        group_end = f'</g>\n<g id="flagnote-{shape}-{reference_number}-rotatables-contents-end">\n</g>\n'
+        group_end = f'</g>\n<g id="flagnote-{shape}-{text_in_bubble}-rotatables-contents-end">\n</g>\n'
         file.write(group_end)
-        group_end = f'</g>\n<g id="as-printed-bubble-note{note_index}-contents-end">\n</g>\n'
+        group_end = f'</g>\n<g id="as-printed-flagnote-{bubble_location_index}-contents-end">\n</g>\n'
         file.write(group_end)
 
+    rotate_svg_group(target_file, f"flagnote-{shape}-{text_in_bubble}-rotatables", -1 * note_angle)
 
-def add_bubble_transforms_to_flagnote_group(file_path):
-    for i in range (0, 10):
+
+def apply_bubble_transforms_to_flagnote_group(file_path):
+    for i in range(0, 11):
         note_location = extract_note_location(file_path, i)
         translate_note_group(file_path, i, note_location)
-        #search svg file for string
-        #replace
 
-def translate_note_group(file_path, reference_number, note_coords):
-    import re
-
+def translate_note_group(file_path, bubble_location_index, note_coords):
     # Construct the search string and replacement string
-    search_string = f'<g id="as-printed-bubble-note{reference_number}-translatables"/>'
+    search_string = fr'<g id="as-printed-flagnote-{bubble_location_index}-translatables">'
     replacement_string = (
-        f'<g id="as-printed-bubble-note{reference_number}-translatables" '
-        f'transform="translate({note_coords[0]}, {note_coords[1]})"/>'
+        f'<g id="as-printed-flagnote-{bubble_location_index}-translatables" '
+        f'transform="translate({note_coords[0]}, {note_coords[1]})">'
     )
+
 
     try:
         # Read the file content
         with open(file_path, 'r', encoding='utf-8') as file:
             content = file.read()
 
-        # Replace the string
-        updated_content = re.sub(re.escape(search_string), replacement_string, content)
+        # Check if the search string exists in the file
+        if not search_string in content:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Search string {search_string} not found in file {os.path.basename(file_path)}.")
 
-        # Write the updated content back to the file
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(updated_content)
+        else:
+            # Replace the string
+            updated_content = re.sub(re.escape(search_string), replacement_string, content)
 
-        print(f"Translated note group {reference_number} in {os.path.basename(file_path)}.")
+            # Write the updated content back to the file
+            with open(file_path, 'w', encoding='utf-8') as file:
+                file.write(updated_content)
+                print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Note location index {bubble_location_index} contents group translated per location defintion in file {os.path.basename(file_path)}.")
+
     except FileNotFoundError:
-        print(f"Error: The file '{file_path}' was not found.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: The file '{file_name}' was not found.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An error occurred: {e}")
 
-def extract_note_location(file_path, reference_number):
+    update_note_opacity(file_path, f"note-{bubble_location_index}-location", 0)
+
+def extract_note_location(file_path, bubble_location_index):
     """
     Extracts the 'cx' and 'cy' attributes for a given note number from an SVG file.
 
@@ -224,8 +231,7 @@ def extract_note_location(file_path, reference_number):
         str: The extracted 'cx' and 'cy' attributes as a string, e.g., 'cx="192.0" cy="0.0"',
              or None if the note is not found.
     """
-    start_key = f'id="note{reference_number}-location"'
-
+    start_key = f'id="bubble-location-index-{bubble_location_index}-location"'
     try:
         with open(file_path, 'r') as file:
             content = file.read()
@@ -260,13 +266,49 @@ def extract_note_location(file_path, reference_number):
         return note_coords
 
     except FileNotFoundError:
-        print(f"Error: File '{file_path}' not found.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File '{file_path}' not found.")
         return None
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An error occurred: {e}")
         return None
 
+def update_note_opacity(file_path, key, opacity):
+    """
+    Updates the opacity attribute of an SVG <g> tag with the specified key.
 
-if __name__ == "__main__":
-    generate_instance_flagnotes("X1")
+    Parameters:
+    file_path (str): Path to the SVG file.
+    key (str): The key to search for in the <g> tag id.
+    opacity (str): The new opacity value to replace with.
+
+    Returns:
+    None: The function updates the file in place.
+    """
+    # Define the regex pattern to find the specific <g> tag
+    pattern = fr'<g id="{key}-opacity".*>'
+
+    # Define the replacement string
+    replacement = f'<g id="{key}-opacity" opacity="{opacity}">'
+
+    try:
+        # Read the SVG file content
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+
+        # Check if the pattern exists in the content
+        if re.search(pattern, content):
+            # Replace the matching pattern with the new string
+            updated_content = re.sub(pattern, replacement, content)
+
+            # Write the updated content back to the SVG file
+            with open(file_path, 'w', encoding='utf-8') as file:
+                file.write(updated_content)
+
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Updated opacity for key '{key}' to {opacity} in {os.path.basename(file_path)}.")
+        else:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: No matching string {pattern} found in {os.path.basename(file_path)}. No changes made.")
+    except FileNotFoundError:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: The file {file_path} was not found.")
+    except Exception as e:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An error occurred: {e}")
 

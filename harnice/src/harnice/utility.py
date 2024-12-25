@@ -165,26 +165,31 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_i
         # Define the start and end tags (the key string that signifies the start and end of the group)
         start_tag = f'id="{group_id}-contents-start"'
         end_tag = f'id="{group_id}-contents-end"'
+        success = 0 #value that is returned: 1 for success, 0 for failure
 
         # Find the start and end indices of the group in the source SVG.
         source_start_index = source_svg_content.find(start_tag)
         if source_start_index == -1:
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source start tag <{start_tag}> not found in file <{get_filename(source_svg_filepath)}>.")
-            return
+            success = 0
+            return success
         source_end_index = source_svg_content.find(end_tag)
         if source_end_index == -1:
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source end tag <{end_tag}> not found in file <{get_filename(source_svg_filepath)}>.")
-            return
+            success = 0
+            return success
 
         # Find the start and end indices of the group in the target SVG.
         target_start_index = target_svg_content.find(start_tag)
         if target_start_index == -1:
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target start tag <{start_tag}> not found in file <{get_filename(target_svg_filepath)}>.")
-            return
+            success = 0
+            return success
         target_end_index = target_svg_content.find(end_tag)
         if target_end_index == -1:
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target end tag <{end_tag}> not found in file <{get_filename(target_svg_filepath)}>.")
-            return
+            success = 0
+            return success
 
         # Grab the group and save it to replace
         replacement_group_content = source_svg_content[source_start_index:source_end_index]
@@ -202,12 +207,16 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_i
                 updated_file.write(updated_svg_content)
         except Exception as e:
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error writing to file <{get_filename(target_svg_filepath)}>: {e}")
+            success = 0
 
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Copied group <{group_id}> from <{get_filename(source_svg_filepath)}> and pasted it into <{get_filename(target_svg_filepath)}>.")
+        success = 1
     
     except Exception as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error processing files <{get_filename(source_svg_filepath)}> and <{get_filename(target_svg_filepath)}>: {e}")
+        success = 0
 
+    return success
 
 def delete_file(filename):
     if os.path.exists(filename):
@@ -229,7 +238,6 @@ def rotate_svg_group(svg_path, group_name, angle):
         angle (float): The new rotation angle to apply.
     """
     id_string = "id=" + '"' + group_name + "-contents-start" + '"'
-    print(f"Rotating group {id_string} within file {os.path.basename(svg_path)}")
     try:
         # Read the file content
         with open(svg_path, 'r', encoding='utf-8') as svg_file:
@@ -258,7 +266,7 @@ def rotate_svg_group(svg_path, group_name, angle):
         with open(svg_path, 'w', encoding='utf-8') as svg_file:
             svg_file.writelines(lines)
 
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Successfully updated the rotation to {angle} degrees in {svg_path}.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Rotated {group_name} to {angle} deg in {os.path.basename(svg_path)}.")
 
     except FileNotFoundError:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found - {svg_path}")

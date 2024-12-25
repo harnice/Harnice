@@ -5,17 +5,17 @@ import os
 from os.path import basename
 
 default_bubble_locs_polar = [
-    {"label": "note0", "location": [2, 0], "leader": [1.3, 0]},
-    {"label": "note1", "location": [2, 20], "leader": [1.3, 20]},
-    {"label": "note2", "location": [2, -20], "leader": [1.3, -20]},
-    {"label": "note3", "location": [2, 40], "leader": [1.3, 40]},
-    {"label": "note4", "location": [2, -40], "leader": [1.3, -40]},
-    {"label": "note5", "location": [2, 60], "leader": [1.3, 60]},
-    {"label": "note6", "location": [2, -60], "leader": [1.3, -60]},
-    {"label": "note7", "location": [2, 80], "leader": [1.3, 80]},
-    {"label": "note8", "location": [2, -80], "leader": [1.3, -80]},
-    {"label": "note9", "location": [2, 100], "leader": [1.3, 100]},
-    {"label": "note10", "location": [2, -100], "leader": [1.3, -100]}
+    {"bubble_location_index": "0", "location": [2, 0], "leader": [1.3, 0]},
+    {"bubble_location_index": "1", "location": [2, 20], "leader": [1.3, 20]},
+    {"bubble_location_index": "2", "location": [2, -20], "leader": [1.3, -20]},
+    {"bubble_location_index": "3", "location": [2, 40], "leader": [1.3, 40]},
+    {"bubble_location_index": "4", "location": [2, -40], "leader": [1.3, -40]},
+    {"bubble_location_index": "5", "location": [2, 60], "leader": [1.3, 60]},
+    {"bubble_location_index": "6", "location": [2, -60], "leader": [1.3, -60]},
+    {"bubble_location_index": "7", "location": [2, 80], "leader": [1.3, 80]},
+    {"bubble_location_index": "8", "location": [2, -80], "leader": [1.3, -80]},
+    {"bubble_location_index": "9", "location": [2, 100], "leader": [1.3, 100]},
+    {"bubble_location_index": "10", "location": [2, -100], "leader": [1.3, -100]}
 ]
 
 default_bubble_locs = [None]
@@ -43,7 +43,7 @@ def default_bubble_locs_polar_to_cartesian():
 
         # Create updated dictionary
         updated_item = {
-            "label": item["label"],
+            "bubble_location_index": item["bubble_location_index"],
             "location": cartesian_location,
             "leader": cartesian_leader
         }
@@ -119,38 +119,40 @@ def add_content(svg, default_bubble_locs):
         "cx": "0",
         "cy": "0",
         "r": "10",
-        "inkscape:label": "placeholder"
+        "inkscape:label": "placeholder-deleteme"
     })
 
     for i, note in enumerate(default_bubble_locs):
-        buildnote_group = ET.SubElement(contents, "g", {"id": note['label']})
+        buildnote_group = ET.SubElement(contents, "g", {"id": f"bubble-location-{note['bubble_location_index']}"})
         
         bubble_location_x = note['location'][0]
         bubble_location_y = note['location'][1]
         leader_arrow_x = note['leader'][0] - bubble_location_x
         leader_arrow_y = note['leader'][1] - bubble_location_y
 
-
-        ET.SubElement(buildnote_group, "circle", {
+        circle_group = ET.SubElement(buildnote_group, "g", {"id": f"note-{note['bubble_location_index']}-location-opacity", "opacity": "1"})
+        ET.SubElement(circle_group, "circle", {
             "style": "fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426",
-            "id": f"{note['label']}-location",
+            "id": f"bubble-location-index-{note['bubble_location_index']}-location",
             "cx": str(bubble_location_x),
             "cy": str(bubble_location_y),
             "r": "10"
         })
 
-        ET.SubElement(buildnote_group, "path", {
+        # Create the group for the path
+        path_group = ET.SubElement(buildnote_group, "g", {"id": f"path-{note['bubble_location_index']}-opacity", "opacity": "1"})
+        ET.SubElement(path_group, "path", {
             "style": "display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)",
             "d": f"m {bubble_location_x},{bubble_location_y} {leader_arrow_x},{leader_arrow_y}",
-            "id": f"path-{note['label']}"
+            "id": f"path-location-index-{note['bubble_location_index']}"
         })
 
         # Add translatables group
-        translatables_group = ET.SubElement(buildnote_group, "g", id=f"as-printed-bubble-{note['label']}-translatables")
+        translatables_group = ET.SubElement(buildnote_group, "g", id=f"as-printed-flagnote-{note['bubble_location_index']}-translatables")
         
         # Add contents start and end groups inside translatables group
-        ET.SubElement(translatables_group, "g", id=f"as-printed-bubble-{note['label']}-contents-start")
-        ET.SubElement(translatables_group, "g", id=f"as-printed-bubble-{note['label']}-contents-end")
+        ET.SubElement(translatables_group, "g", id=f"as-printed-flagnote-{note['bubble_location_index']}-contents-start")
+        ET.SubElement(translatables_group, "g", id=f"as-printed-flagnote-{note['bubble_location_index']}-contents-end")
     
     contents = ET.SubElement(svg, "g", {"id": "connector-drawing-contents-end"})
 
