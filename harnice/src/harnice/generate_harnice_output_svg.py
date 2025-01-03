@@ -1,8 +1,30 @@
 from xml.etree.ElementTree import Element, SubElement, ElementTree, tostring
+import xml.etree.ElementTree as ET
 import os
-from utility import delete_file, pn_from_dir, find_and_replace_svg_group, import_file_from_harnice_library
+import re
+from utility import partnumber, import_file_from_harnice_library
 from os.path import basename
 from inspect import currentframe
+
+
+harnice_output_svg_filename = f"{partnumber("pn-rev")}-harnice-output.svg"
+
+harnice_output_svg_filepath = os.path.join(os.getcwd(),harnice_output_svg_filename)
+
+
+# List of group definitions with their transformation parameters
+group_definitions = [
+    {'name': 'formboard', 'x': 0, 'y': 20*96, 'scale': 1},
+    {'name': 'esch', 'x': 11*96, 'y': -20*96, 'scale': 0.4},
+    {'name': 'bom', 'x': 22*96, 'y': -20*96, 'scale': 1.33},
+    {'name': 'revision-history', 'x': -26*96, 'y': 20*96, 'scale': 1},
+    {'name': 'buildnotes', 'x': 30*96, 'y': -20*96, 'scale': 1},
+    {'name': 'tblock', 'x': 0, 'y': -30*96, 'scale': 3.8}
+]
+
+# SVG namespace
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+ET.register_namespace("", SVG_NAMESPACE)
 
 def create_group(svg_root, group_name, x=0, y=0, scale=1):
     """
@@ -73,9 +95,9 @@ def append_clone_use_to_svg(file_path, input_group_master_id, use_instance_name,
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An error occurred: {e}")
 
 
-def generate_blank_svg():
+def generate_blank_harnice_output_svg():
     # delete old harnice output
-    harnice_output_svg_filename = f"{pn_from_dir()}-harnice-output.svg"
+    
 
     # Custom preamble text to be added at the beginning of the SVG file
     preamble = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -89,7 +111,8 @@ def generate_blank_svg():
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:v="http://schemas.microsoft.com/visio/2003/core">
   <defs
      id="defs1" />
   <sodipodi:namedview
@@ -147,17 +170,6 @@ def generate_blank_svg():
     # Add newline to the root for cleaner output
     svg.text = "\n"
 
-    # List of group definitions with their transformation parameters
-    group_definitions = [
-        {'name': 'formboard', 'x': 0, 'y': 20*96, 'scale': 1},
-        {'name': 'esch', 'x': 11*96, 'y': -20*96, 'scale': 0.4},
-        {'name': 'bom', 'x': 22*96, 'y': -20*96, 'scale': 1.33},
-        {'name': 'revision-history', 'x': -26*96, 'y': 20*96, 'scale': 1},
-        {'name': 'tblock', 'x': 28*96, 'y': -20*96, 'scale': 3.78},
-        {'name': 'buildnotes', 'x': 30*96, 'y': -20*96, 'scale': 1},
-        {'name': 'tblock-11x8.5-border', 'x': 0, 'y': -30*96, 'scale': 3.8}
-    ]
-
     # Add each group to the SVG with specified transformations
     for group_def in group_definitions:
         create_group(svg, group_def['name'], x=group_def['x'], y=group_def['y'], scale=group_def['scale'])
@@ -172,25 +184,50 @@ def generate_blank_svg():
         # Write the SVG content (excluding the redundant root `<svg>` tag created by ElementTree)
         file.write(tostring(svg, encoding='utf-8')[22:])  # Remove redundant root `<svg>` from the ElementTree output
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Adding default titleblock:")
-    import_file_from_harnice_library("public", "page_defaults", "library-tblock-11x8.5-border.svg")
-    #find_and_replace_svg_group(target_svg_filename, source_svg_filename, group_id)
-    find_and_replace_svg_group(os.path.join(os.getcwd(),harnice_output_svg_filename), os.path.join(os.getcwd(), "library_used/page_defaults/library-tblock-11x8.5-border.svg"), "tblock-11x8.5-border-master")
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Appending default clone uses of imported groups:")
     #append_clone_use_to_svg(file_path, input_group_master_id, use_instance_name, translate_x, translate_y)
-    append_clone_use_to_svg(svg_file_path, "tblock-11x8.5-border-master", "tblock-11x8.5-border-sheet1", 0,2877.2786)
-    append_clone_use_to_svg(svg_file_path, "tblock-11x8.5-border-master", "tblock-11x8.5-border-sheet2", 11*96,2877.2786)
+    append_clone_use_to_svg(svg_file_path, "tblock-master", "tblock-sheet1", 0,2877.2786)
+    append_clone_use_to_svg(svg_file_path, "tblock-master", "tblock-sheet2", 11*96,2877.2786)
     append_clone_use_to_svg(svg_file_path, "esch-master", "esch-sheet2", 197.89578, 2156.7381)
-    append_clone_use_to_svg(svg_file_path, "bom-master", "bom-sheet1", -1495.2774,2511.3277)
-    append_clone_use_to_svg(svg_file_path, "bom-master", "bom-sheet2", -439.27736,2511.3277)
-    append_clone_use_to_svg(svg_file_path, "tblock-master", "tblock-sheet1", -2298.3838,2215.8197)
-    append_clone_use_to_svg(svg_file_path, "tblock-master", "tblock-sheet2", -1242.3838,2215.8197)
+    append_clone_use_to_svg(svg_file_path, "bom-master", "bom-sheet1", -1495.2774,2654.942)
+    append_clone_use_to_svg(svg_file_path, "bom-master", "bom-sheet2", -439.27736,2654.942)
     
-
-
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: New blank SVG file has been generated at: {svg_file_path}")
+
+def ensure_groups_exist_in_harnice_output():
+    try:
+        with open(harnice_output_svg_filepath, mode='r', encoding='utf-8') as file:
+            svg_content = file.read()
+            print(f"opening file {harnice_output_svg_filepath}")
+    except FileNotFoundError:
+        print(f"File not found: {harnice_output_svg_filepath}")
+        exit()
+    
+    for group_def in group_definitions:
+        group_name = group_def['name']
+        x = group_def['x']
+        y = group_def['y']
+        scale = group_def['scale']
+
+        # Check if the group already exists by searching for the specific text
+        search_pattern = f"id=\"{group_name}-master-contents-start"
+        if not re.search(search_pattern, svg_content):
+            # Parse the SVG and create the group if it doesn't exist
+            tree = ET.ElementTree(ET.fromstring(svg_content))
+            root = tree.getroot()
+            create_group(root, group_name, x=x, y=y, scale=scale)
+
+            # Update the SVG content
+            svg_content = ET.tostring(root, encoding='unicode')
+            print(f"Master group {group_name} was previously removed. Adding it back. ")
+
+    # Write the modified SVG back to the file
+    with open(harnice_output_svg_filepath, mode='w', encoding='utf-8') as file:
+        file.write(svg_content)
+
+
 
 
 if __name__ == "__main__": 
-    generate_blank_svg()
+    ensure_groups_exist_in_harnice_output()

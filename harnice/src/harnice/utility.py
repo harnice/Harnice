@@ -8,11 +8,40 @@ from harnice_paths import harnice_library_path
 import xml.etree.ElementTree as ET
 import re
 
-def pn_from_dir():
-    # Get the current working directory where the script is invoked
-    current_dir = os.getcwd()
-    pn = os.path.basename(current_dir)
-    return pn
+def partnumber(format):
+    #Returns part numbers in various formats based on the current working directory
+
+    #given a part number "pppppp-revR"
+
+    #format options:
+        #pn-rev:    returns "pppppp-revR"
+        #pn:        returns "pppppp"
+        #rev:       returns "revR"
+        #R:         returns "R"
+
+    pn_rev = os.path.basename(os.getcwd())
+
+    if format == "pn-rev":
+        return pn_rev
+
+    elif format == "pn":
+        match = re.search(r"-rev", pn_rev)
+        if match:
+            return pn_rev[:match.start()]
+
+    elif format == "rev":
+        match = re.search(r"-rev", pn_rev)
+        if match:
+            return pn_rev[match.start() + 1:]
+
+    elif format == "R":
+        match = re.search(r"-rev", pn_rev)
+        if match:
+            return pn_rev[match.start() + 4:]
+
+    else:
+        raise ValueError("Function 'partnumber' not presented with a valid format")
+
 
 #used to be svg_add_groups
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
@@ -79,28 +108,6 @@ def rename_file(old_name, new_name, print_report):
         if print_report:
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {old_name} does not exist, cannot rename.")
 
-def move_file(source_file, destination_directory):
-    copy_file_to_directory(source_file, destination_directory)
-    delete_file(source_file)
-
-def copy_file_to_directory(source_file, destination_directory):
-    """
-    Copies a file from its source location to a specified destination directory.
-
-    :param source_file: Path to the source file to be copied.
-    :param destination_directory: Path to the destination directory where the file will be copied.
-    :raises FileNotFoundError: If the source file does not exist.
-    :raises NotADirectoryError: If the destination directory does not exist or is not a directory.
-    """
-    if not os.path.isfile(source_file):
-        raise FileNotFoundError(f"The source file does not exist: {source_file}")
-    
-    if not os.path.isdir(destination_directory):
-        raise NotADirectoryError(f"The destination is not a valid directory: {destination_directory}")
-    
-    # Copy the file to the destination directory
-    shutil.copy(source_file, destination_directory)
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File copied successfully: {source_file} -> {destination_directory}")
 
 
 
@@ -113,7 +120,7 @@ def file_exists_in_directory(search_for_filename, directory="."):
 
 def import_file_from_harnice_library(domain, library_subpath, lib_file):
     """
-    Copies a file from Harnice library to a local 'library_used' directory with the same subpath structure.
+    Copies a file from a Harnice library to a local 'library_used' directory with the same subpath structure.
     """
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Importing library {lib_file}:")
     # Step 1: Check if lib_file exists in Harnice library
@@ -125,22 +132,21 @@ def import_file_from_harnice_library(domain, library_subpath, lib_file):
         return False
 
     # Step 2: Check if the file already exists in the local library
-    current_directory = os.getcwd()
-    target_directory = os.path.join(current_directory, "library_used", library_subpath)
-    target_file_path = os.path.join(target_directory, lib_file)
+    target_directory = os.path.join(os.getcwd(), "library_used", library_subpath)
+    target_filename = os.path.join(target_directory, lib_file)
     
-    if os.path.isfile(target_file_path):
+    if os.path.isfile(target_filename):
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Library instance '{lib_file}' already exists in this part number's library_used. If you wish to replace it, remove the instance and rerun this command.")
         return True
 
     # Step 3: Ensure the target directory structure exists
     if not os.path.exists(target_directory):
         os.makedirs(target_directory)
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added directory '{library_subpath}' to '{pn_from_dir()}/library_used/'.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added directory '{library_subpath}' to '{partnumber("pn-rev")}/library_used/'.")
 
     # Step 4: Copy the file from Harnice library to the target directory
-    shutil.copy(os.path.join(source_file_path,lib_file), target_file_path)
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{lib_file}' added to '{pn_from_dir()}/library_used/{library_subpath}'.")
+    shutil.copy(os.path.join(source_file_path,lib_file), target_filename)
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{lib_file}' added to '{partnumber("pn-rev")}/library_used/{library_subpath}'.")
 
     return True
     #returns True if import was successful or if already exists 
@@ -218,16 +224,6 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_i
 
     return success
 
-def delete_file(filename):
-    if os.path.exists(filename):
-        try:
-            os.remove(filename)
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted file: {filename}")
-        except OSError as e:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting file {filename}: {e}")
-    else:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {filename} does not exist.")
-
 
 def rotate_svg_group(svg_path, group_name, angle):
     """
@@ -274,8 +270,3 @@ def rotate_svg_group(svg_path, group_name, angle):
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {e}")
     except Exception as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An unexpected error occurred: {e}")
-
-
-
-
-

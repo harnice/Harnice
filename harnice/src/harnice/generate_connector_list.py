@@ -1,14 +1,14 @@
 import yaml
 import csv
 import os
-from utility import pn_from_dir
+from utility import partnumber
 from os.path import basename, join
 from inspect import currentframe
 
 def generate_connector_list():
 
     # Define the YAML filename
-    filename = f"{pn_from_dir()}.yaml"
+    filename = f"{partnumber("pn-rev")}.yaml"
 
     # Load YAML file
     try:
@@ -35,7 +35,7 @@ def generate_connector_list():
     os.makedirs(output_directory, exist_ok=True)
 
     # Create a TSV file in the output directory
-    tsv_filename = join(output_directory, f"{pn_from_dir()}-connector-list.tsv")
+    tsv_filename = join(output_directory, f"{partnumber("pn-rev")}-connector-list.tsv")
     try:
         with open(tsv_filename, mode='w', newline='') as tsv_file:
             writer = csv.DictWriter(tsv_file, fieldnames=["connector"] + list(all_keys), delimiter='\t')

@@ -7,7 +7,7 @@ from os.path import basename, dirname
 from inspect import currentframe
 import yaml  # PyYAML for parsing YAML files
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
-from utility import import_file_from_harnice_library, find_and_replace_svg_group, pn_from_dir, add_entire_svg_file_contents_to_group, find_and_replace_svg_group, rotate_svg_group
+from utility import import_file_from_harnice_library, find_and_replace_svg_group, partnumber, add_entire_svg_file_contents_to_group, rotate_svg_group
 
 #used to keep track of all the valid instances. those that are not named in this array will be deleted
 drawing_instance_filenames = [None]
@@ -55,16 +55,12 @@ def delete_unmatched_files(directory):
                 except Exception as e:
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing-instances': {e}")
 
-def pn_from_dir():
-    """Extract the project name from the current directory name."""
-    return os.path.basename(os.getcwd())
-
 def update_connector_instances():
     # Get current working directory and paths
     current_dir = os.getcwd()
     library_used_path = os.path.join(current_dir, "library_used")
-    yaml_path = os.path.join(current_dir, f"{pn_from_dir()}.yaml")
-    esch_electrical_bom_path = os.path.join(current_dir, "support-do-not-edit", "boms", f"{pn_from_dir()}-esch-electrical-bom.tsv")
+    yaml_path = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
+    esch_electrical_bom_path = os.path.join(current_dir, "support-do-not-edit", "boms", f"{partnumber("pn-rev")}-esch-electrical-bom.tsv")
     drawing_instances_by_connector_name_path = os.path.join(current_dir, "drawing-instances")
 
     # Load YAML file
@@ -99,7 +95,7 @@ def update_connector_instances():
                         print(f"#    #    #    ############ WORKING ON CONNECTOR {connector_name} ############")
                         connector_svg_dir = os.path.join(drawing_instances_by_connector_name_path, connector_name)
                         os.makedirs(connector_svg_dir, exist_ok=True)
-                        connector_svg_path = os.path.join(connector_svg_dir, f"{pn_from_dir()}-{connector_name}.svg")
+                        connector_svg_path = os.path.join(connector_svg_dir, f"{partnumber("pn-rev")}-{connector_name}.svg")
 
                         # Ensure directory for MPN exists and import files if necessary
                         import_file_from_harnice_library(
@@ -112,7 +108,7 @@ def update_connector_instances():
                         add_filename_to_drawing_instance(basename(dirname(connector_svg_path)))
                         
                         if not os.path.exists(connector_svg_path):
-                            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating connector instance svg {pn_from_dir()}-{connector_name}.svg")
+                            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating connector instance svg {partnumber("pn-rev")}-{connector_name}.svg")
                             os.makedirs(drawing_instances_by_connector_name_path, exist_ok=True)
 
                             # Write SVG declaration
@@ -151,7 +147,7 @@ def update_connector_instances():
 def update_segment_instances():
     # Get current working directory and paths
     current_dir = os.getcwd()
-    formboard_graph_definition_path = os.path.join(current_dir, f"{pn_from_dir()}-formboard-graph-definition.json")
+    formboard_graph_definition_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
     
     # Load JSON data
     try:
@@ -186,13 +182,13 @@ def update_segment_instances():
     <svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="{-half_length} {-half_diameter} {length} {diameter}">
     <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" stroke-width="{diameter}" />
     <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="white" stroke-width="{diameter-outline_line_thickness}" />
-    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" /&gt;" style="stroke-width:{centerline_line_thickness};stroke-dasharray:18,18;stroke-dashoffset:0"/>
+    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" style="stroke-width:{centerline_line_thickness};stroke-dasharray:18,18;stroke-dashoffset:0"/>
     </svg>'''
 
             # Define output filename
             os.makedirs(os.path.join(current_dir, "drawing-instances", segment_name), exist_ok=True)
 
-            output_filename = os.path.join(current_dir, "drawing-instances", segment_name, f"{pn_from_dir()}-{segment_name}.svg")
+            output_filename = os.path.join(current_dir, "drawing-instances", segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
             
             # Write SVG file
             with open(output_filename, 'w') as svg_file:
@@ -213,10 +209,10 @@ def update_segment_instances():
 
 def update_formboard_master_svg():
     current_dir = os.getcwd()
-    yaml_path = os.path.join(current_dir, f"{pn_from_dir()}.yaml")
-    node_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{pn_from_dir()}-formboard-node-locations-px.json")
-    output_svg_path = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{pn_from_dir()}-formboard-master.svg")
-    segment_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{pn_from_dir()}-formboard-segment-to-from-center.json")
+    yaml_path = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
+    node_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-node-locations-px.json")
+    output_svg_path = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
+    segment_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
 
     # Read the YAML file
     with open(yaml_path, 'r') as yaml_file:
@@ -284,8 +280,8 @@ def update_formboard_master_svg():
 def replace_all_connector_groups():
     """Replace all connector groups in the target SVG with their corresponding source SVG groups."""
     current_dir = os.getcwd()
-    yaml_path = os.path.join(current_dir, f"{pn_from_dir()}.yaml")
-    formboard_graph_definition_path = os.path.join(current_dir, f"{pn_from_dir()}-formboard-graph-definition.json")
+    yaml_path = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
+    formboard_graph_definition_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
 
     # Load the YAML file
     with open(yaml_path, 'r') as yaml_file:
@@ -308,8 +304,8 @@ def replace_all_connector_groups():
 
     for connector_name in connectors:
         # Define the target and source SVG paths
-        target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{pn_from_dir()}-formboard-master.svg")
-        source_svg_filepath = os.path.join(current_dir, "drawing-instances", connector_name, f"{pn_from_dir()}-{connector_name}.svg")
+        target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
+        source_svg_filepath = os.path.join(current_dir, "drawing-instances", connector_name, f"{partnumber("pn-rev")}-{connector_name}.svg")
         
         # Call the function to replace the group
         find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-connector-instance-{connector_name}")
@@ -317,7 +313,7 @@ def replace_all_connector_groups():
 def replace_all_segment_groups():
     """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
     current_dir = os.getcwd()
-    segment_data_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{pn_from_dir()}-formboard-segment-to-from-center.json")
+    segment_data_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
 
     # Load the segment data JSON
     try:
@@ -339,8 +335,8 @@ def replace_all_segment_groups():
 
         try:
             # Define the target and source SVG paths
-            target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{pn_from_dir()}-formboard-master.svg")
-            source_svg_filepath = os.path.join(current_dir, "drawing-instances", segment_name, f"{pn_from_dir()}-{segment_name}.svg")
+            target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
+            source_svg_filepath = os.path.join(current_dir, "drawing-instances", segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
 
             if not os.path.exists(target_svg_filepath):
                 print(f"Error: Target SVG file {target_svg_filepath} not found.")
@@ -374,11 +370,12 @@ def retrieve_angle_of_connector(connectorname):
     # Construct the path to the JSON file
     current_dir = os.getcwd()
     file_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", 
-                             f"{pn_from_dir()}-formboard-node-locations-inches.json")
+                             f"{partnumber("pn-rev")}-formboard-node-locations-inches.json")
     
     # Check if the file exists
-    if not os.path.isfile(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    #this used to work but something got fucked up and now i cant tell what it used to do
+    #if not os.path.isfile(file_path):
+        #partnumber("pn-rev") FileNotFoundError(f"File not found: {file_path}")
     
     # Load the JSON data
     with open(file_path, "r") as file:
@@ -395,7 +392,7 @@ def retrieve_angle_of_connector(connectorname):
 def retrieve_angle_of_segment(segmentname):
     # Construct the path to the JSON file
     current_dir = os.getcwd()
-    file_path = os.path.join(current_dir, f"{pn_from_dir()}-formboard-graph-definition.json")
+    file_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
     
     # Check if the file exists
     if not os.path.isfile(file_path):

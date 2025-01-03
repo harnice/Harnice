@@ -3,13 +3,13 @@ from bom_concatenator import combine_tsv_boms
 from esch_to_wirelist import esch_to_wirelist
 from generate_connector_list import generate_connector_list
 from svg_section_replacer import regen_harnice_output_svg
-from generate_blank_svg import generate_blank_svg
+from generate_harnice_output_svg import generate_blank_harnice_output_svg, ensure_groups_exist_in_harnice_output
 from bom_svg_prepper import prep_bom_svg_master
 from tblock_svg_prepper import prep_tblock_svg_master
 from formboard_functions import formboard_processor
 from flagnote_functions import look_for_buildnotes_file
 from harnice_prechecker import harnice_prechecker
-from utility import file_exists_in_directory, pn_from_dir
+from utility import file_exists_in_directory, partnumber
 from formboard_illustration_functions import regen_formboard
 import os
 
@@ -49,24 +49,27 @@ def harnice():
     print("############ COMBINING BOMS #############")
     combine_tsv_boms()
 
-    #generate blank harnice output svg
-    print()
-    print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
-    if not file_exists_in_directory(f"{pn_from_dir()}-harnice-output.svg"):
-        print()
-        generate_blank_svg()
-    else :
-        print(f"{pn_from_dir()}-harnice-output.svg already exists. To rebuild, delete this file and rerun. Moving on...")
-
     #prep all the different master SVG's
     print()
     print("############ PREPPING MASTER SVG's #############")
+    print("#    ############ WORKING ON BOM SVG MASTER ############")
     prep_bom_svg_master()
+    print("#    ############ WORKING ON TBLOCK SVG MASTER ############")
     prep_tblock_svg_master()
 
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
     regen_formboard()
+
+    #generate blank harnice output svg
+    print()
+    print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
+    if not file_exists_in_directory(f"{partnumber("pn-rev")}-harnice-output.svg"):
+        print()
+        generate_blank_harnice_output_svg()
+    else :
+        print(f"{partnumber("pn-rev")}-harnice-output.svg already exists")
+        ensure_groups_exist_in_harnice_output()
 
     #combine all master SVG groups into PN-harnice-output.svg
     print()

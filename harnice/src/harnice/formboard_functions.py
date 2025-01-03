@@ -5,7 +5,7 @@ import random
 import math
 from os.path import basename
 from inspect import currentframe
-from utility import pn_from_dir
+from utility import partnumber
 from collections import defaultdict
 
 formboard_folder = "support-do-not-edit/formboard_data"
@@ -44,7 +44,7 @@ def generate_segments_precheck():
         os.makedirs(formboard_folder)
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created folder: {formboard_folder}")
 
-    json_file_name = f"{pn_from_dir()}-formboard-graph-definition.json"
+    json_file_name = f"{partnumber("pn-rev")}-formboard-graph-definition.json"
     json_file_path = os.path.join(os.getcwd(), json_file_name)
 
     # Step 2: Check if the file exists
@@ -97,13 +97,13 @@ def generate_segments_precheck():
     return 1
 
 def generate_segments():
-    json_file_name = f"{pn_from_dir()}-formboard-graph-definition.json"
+    json_file_name = f"{partnumber("pn-rev")}-formboard-graph-definition.json"
     json_file_path = os.path.join(os.getcwd(), json_file_name)
 
     # Create a new JSON file defining the graph of the harness
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Creating new formboard graph definition file: {json_file_path}")
 
-    tsv_filename = f"{pn_from_dir()}-connector-list.tsv"
+    tsv_filename = f"{partnumber("pn-rev")}-connector-list.tsv"
     if not os.path.exists(os.path.join(os.getcwd(),"support-do-not-edit",tsv_filename)):
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: TSV file '{tsv_filename}' does not exist. Please create it and try again.")
         return False
@@ -139,7 +139,7 @@ def generate_segments():
     return True
 
 def add_random_lengths_angles():
-    json_file_name = f"{pn_from_dir()}-formboard-graph-definition.json"
+    json_file_name = f"{partnumber("pn-rev")}-formboard-graph-definition.json"
     json_file_path = os.path.join(os.getcwd(), json_file_name)
 
     # Read the existing JSON data
@@ -165,10 +165,10 @@ def add_random_lengths_angles():
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {json_file_name}")
 
 def generate_node_coordinates():
-    segment_file_name = f"{pn_from_dir()}-formboard-graph-definition.json"
+    segment_file_name = f"{partnumber("pn-rev")}-formboard-graph-definition.json"
     segment_file_path = os.path.join(os.getcwd(), segment_file_name)
-    node_file_name_inches = f"{pn_from_dir()}-formboard-node-locations-inches.json"
-    node_file_name_px = f"{pn_from_dir()}-formboard-node-locations-px.json"
+    node_file_name_inches = f"{partnumber("pn-rev")}-formboard-node-locations-inches.json"
+    node_file_name_px = f"{partnumber("pn-rev")}-formboard-node-locations-px.json"
     node_file_path_inches = os.path.join(formboard_folder, node_file_name_inches)
     node_file_path_px = os.path.join(formboard_folder, node_file_name_px)
     
@@ -176,7 +176,7 @@ def generate_node_coordinates():
     support_dir = os.path.join(os.getcwd(), "support-do-not-edit", "formboard_data")
     os.makedirs(support_dir, exist_ok=True)
     
-    to_from_file_name = f"{pn_from_dir()}-formboard-segment-to-from-center.json"
+    to_from_file_name = f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json"
     to_from_file_path = os.path.join(support_dir, to_from_file_name)
 
     # Read the segment data
@@ -282,11 +282,11 @@ def generate_node_coordinates():
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment to/from/center data written to {to_from_file_path}")
 
 def visualize_formboard_graph():
-    segment_file_name = f"{pn_from_dir()}-formboard-graph-definition.json"
+    segment_file_name = f"{partnumber("pn-rev")}-formboard-graph-definition.json"
     segment_file_path = os.path.join(os.getcwd(), segment_file_name)
-    node_file_name = f"{pn_from_dir()}-formboard-node-locations-px.json"
+    node_file_name = f"{partnumber("pn-rev")}-formboard-node-locations-px.json"
     node_file_path = os.path.join(formboard_folder, node_file_name)
-    output_file_name = f"{pn_from_dir()}-formboard-graph-definition.svg"
+    output_file_name = f"{partnumber("pn-rev")}-formboard-graph-definition.svg"
     output_file_path = os.path.join(os.getcwd(), formboard_folder, output_file_name)
 
     # Read the segment and node data
@@ -369,9 +369,9 @@ def map_connections_to_graph():
     """Maps connections from a wirelist to a formboard graph, calculates total lengths, and outputs the result as a JSON file."""
     # File paths
     current_dir = os.getcwd()
-    wirelist_path = os.path.join(current_dir, "support-do-not-edit","wirelists",f"{pn_from_dir()}-wirelist-nolengths.tsv")
-    graph_definition_path = os.path.join(os.getcwd(), f"{pn_from_dir()}-formboard-graph-definition.json")
-    output_path = os.path.join(os.getcwd(), formboard_folder, f"{pn_from_dir()}-connections-to-graph.json")
+    wirelist_path = os.path.join(current_dir, "support-do-not-edit","wirelists",f"{partnumber("pn-rev")}-wirelist-nolengths.tsv")
+    graph_definition_path = os.path.join(os.getcwd(), f"{partnumber("pn-rev")}-formboard-graph-definition.json")
+    output_path = os.path.join(os.getcwd(), formboard_folder, f"{partnumber("pn-rev")}-connections-to-graph.json")
 
     # Read the wirelist TSV file
     try:
@@ -453,7 +453,7 @@ def map_connections_to_graph():
     with open(output_path, 'w') as f:
         json.dump(connections_to_graph, f, indent=4)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {pn_from_dir()}-connections-to-graph.json")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {partnumber("pn-rev")}-connections-to-graph.json")
 
 def formboard_processor():
     next_step = generate_segments_precheck()

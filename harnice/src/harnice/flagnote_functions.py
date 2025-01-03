@@ -2,15 +2,18 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import csv
-from utility import pn_from_dir, rotate_svg_group, find_and_replace_svg_group
+from utility import partnumber, rotate_svg_group, find_and_replace_svg_group
 from os.path import basename
 from inspect import currentframe
 
-buildnotes_filename = f"{pn_from_dir()}-buildnotes.tsv"
+buildnotes_filename = f"{partnumber("pn-rev")}-buildnotes.tsv"
 buildnotes_filepath = os.path.join(os.getcwd(), buildnotes_filename)
+revnotes_filename = f"{partnumber("pn")}-revision-history.tsv"
+revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), revnotes_filename)
+
 
 def update_flagnotes_of_instance(target_filepath, instance_name, rotation_angle, bomid):
-    instance_drawing_filename = f"{pn_from_dir()}-{instance_name}.svg"
+    instance_drawing_filename = f"{partnumber("pn-rev")}-{instance_name}.svg"
     instance_drawing_filepath = os.path.join(target_filepath, instance_drawing_filename)
     instance_flagnotes_filename = f"{instance_name}-instance-flagnotes.svg"
     instance_flagnotes_filepath = os.path.join(target_filepath, instance_flagnotes_filename)
@@ -42,13 +45,13 @@ def look_for_buildnotes_file():
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{buildnotes_filename}' not found. Generating a blank file.")
 
 
-def find_buildnotes_of_instance(instance):
+def find_buildnotes_of_instance(instance, note_list_filepath):
     #change this so function name is find_flagnotes and arguments are "filepath" and "instance"
     #this way you can search buildnotes, rev flagnotes, and other in the same function
     instance_buildnotes = []
 
     try:
-        with open(buildnotes_filepath, 'r') as file:
+        with open(note_list_filepath, 'r') as file:
             header = file.readline().strip().split('\t')
             affectedinstances_index = header.index("affectedinstances")
             notenumber_index = header.index("notenumber")
@@ -90,21 +93,32 @@ def generate_instance_flagnotes(instance, instance_flagnotes_filename, instance_
     bubble_location_index = 0
 
     #to-do: add refdes as note index
-    #bubble_location_index += 1
+    generate_note_svg(instance_flagnotes_filepath, "rectangle-long", instance, bubble_location_index, rotation_angle)
+    bubble_location_index += 1
 
     #add bom item as note index
     generate_note_svg(instance_flagnotes_filepath, "circle", bomid, bubble_location_index, rotation_angle)
     bubble_location_index += 1
 
     #to-do: add revs as note index
-    #bubble_location_index += 1
+    revnotes = find_buildnotes_of_instance(instance, revnotes_filepath)
+    for revnote in revnotes:
+        generate_note_svg(instance_flagnotes_filepath, "triangle-down", revnote, bubble_location_index, rotation_angle)
+        bubble_location_index += 1
 
     # Iterate through each build note and update the SVG
-    buildnotes = find_buildnotes_of_instance(instance)
+    buildnotes = find_buildnotes_of_instance(instance, buildnotes_filepath)
     for buildnote in buildnotes:
         generate_note_svg(instance_flagnotes_filepath, "triangle-up", buildnote, bubble_location_index, rotation_angle)
         bubble_location_index += 1
 
+    """
+    if bubble_location_index <= 10:
+        for i in range(bubble_location_index, 11):
+            generate_note_svg(instance_flagnotes_filepath, "blank", "", bubble_location_index, 0)
+            i += 1
+            bubble_location_index += 1
+    """
 
     with open(instance_flagnotes_filepath, 'a') as f:
         f.write('</svg>')
@@ -161,6 +175,16 @@ def generate_note_svg(target_file, shape, text_in_bubble, bubble_location_index,
     stroke-width="0.67"
     id="flagnote-{shape}-{text_in_bubble}-bubble"/>\n"""
             file.write(triangle_down_element)
+
+        elif shape == "rectangle-long":
+            square_element = f"""
+    <polygon
+    points="-50,7.5 50,7.5 50,-7.5 -50,-7.5"
+    fill="#ffffff"
+    stroke="#000000"
+    stroke-width="0.67"
+    id="flagnote-{shape}-{text_in_bubble}-bubble"/>\n"""
+            file.write(square_element)
 
         # Add the text element
         text_element = f"""

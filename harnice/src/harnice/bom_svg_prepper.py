@@ -2,7 +2,7 @@ import os
 import csv
 from os.path import basename
 from inspect import currentframe
-from utility import pn_from_dir
+from utility import partnumber
 
 def read_tsv(file_path, columns):
     """
@@ -51,50 +51,16 @@ def generate_svg_table(data, output_file):
         '<g id="bom-master-contents-start">'  # Begin the "bom-master-contents-start" group
     ]
 
-    # Draw table cells
-    for row_index, row in enumerate(data[:-1]):  # Exclude the header row for now
-        for col_index, cell in enumerate(row):
-            x = sum(column_widths[:col_index])  # X position based on column widths
-            y = row_index * row_height         # Y position based on row height
-            cell_width = column_widths[col_index]
-
-            # Draw cell rectangle
-            svg_content.append(
-                f'<rect x="{x}" y="{y}" width="{cell_width}" height="{row_height}" fill="white" stroke="black" stroke-width="{line_width}"/>'
-            )
-
-            # Format text alignment
-            if col_index == 0 or col_index == 1:  # Center justify "ITEM" and "QTY"
-                text_align = "text-align:center;text-anchor:middle;"
-                text_x = x + cell_width / 2
-            else:  # Left justify "DB PART NAME"
-                text_align = "text-align:start;text-anchor:start;"
-                text_x = x + 5  # Add padding for left justification
-            
-            text_y = y + row_height / 2 + 3  # Center text vertically with slight adjustment
-            svg_content.append(
-                f'<text x="{text_x}" y="{text_y}" fill="black" style="font-size:{font_size}px;font-family:{font_family};{text_align}" alignment-baseline="middle">{cell}</text>'
-            )
-
-            # Add a circle around values in the "ITEM" column (col_index == 0), excluding the header
-            if col_index == 0:  # ITEM column
-                circle_cx = x + cell_width / 2
-                circle_cy = y + row_height / 2
-                radius = min(cell_width, row_height) / 2 - 2  # Radius slightly smaller than cell
-                svg_content.append(
-                    f'<circle cx="{circle_cx}" cy="{circle_cy}" r="{radius}" fill="none" stroke="black" stroke-width="{line_width}"/>'
-                )
-
-    # Add the header row at the bottom
+    # Add the header row
     header_row = data[-1]
     for col_index, cell in enumerate(header_row):
         x = sum(column_widths[:col_index])  # X position based on column widths
-        y = num_data_rows * row_height      # Fixed Y position for the header
+        y = 0 # Fixed Y position for the header
         cell_width = column_widths[col_index]
 
         # Draw cell rectangle
         svg_content.append(
-            f'<rect x="{x}" y="{y}" width="{cell_width}" height="{row_height}" fill="white" stroke="black" stroke-width="{line_width}"/>'
+            f'<rect x="{x}" y="{y - row_height}" width="{cell_width}" height="{row_height}" fill="white" stroke="black" stroke-width="{line_width}"/>'
         )
 
         # Format text alignment
@@ -107,8 +73,43 @@ def generate_svg_table(data, output_file):
 
         text_y = y + row_height / 2 + 3  # Center text vertically with slight adjustment
         svg_content.append(
-            f'<text x="{text_x}" y="{text_y}" fill="black" style="font-size:{font_size}px;font-family:{font_family};{text_align}" alignment-baseline="middle">{cell}</text>'
+            f'<text x="{text_x}" y="{text_y - row_height}" fill="black" style="font-size:{font_size}px;font-family:{font_family};{text_align}" alignment-baseline="middle">{cell}</text>'
         )
+
+    # Draw table cells
+    for row_index, row in enumerate(data[:-1]):  # Exclude the header row for now
+        for col_index, cell in enumerate(row):
+            x = sum(column_widths[:col_index])  # X position based on column widths
+            y = -1 * (1 + row_index) * row_height         # Y position based on row height
+            cell_width = column_widths[col_index]
+
+            # Draw cell rectangle
+            svg_content.append(
+                f'<rect x="{x}" y="{y - row_height}" width="{cell_width}" height="{row_height}" fill="white" stroke="black" stroke-width="{line_width}"/>'
+            )
+
+            # Format text alignment
+            if col_index == 0 or col_index == 1:  # Center justify "ITEM" and "QTY"
+                text_align = "text-align:center;text-anchor:middle;"
+                text_x = x + cell_width / 2
+            else:  # Left justify "DB PART NAME"
+                text_align = "text-align:start;text-anchor:start;"
+                text_x = x + 5  # Add padding for left justification
+            
+            text_y = y + row_height / 2 + 3  # Center text vertically with slight adjustment
+            svg_content.append(
+                f'<text x="{text_x}" y="{text_y - row_height}" fill="black" style="font-size:{font_size}px;font-family:{font_family};{text_align}" alignment-baseline="middle">{cell}</text>'
+            )
+
+            # Add a circle around values in the "ITEM" column (col_index == 0), excluding the header
+            if col_index == 0:  # ITEM column
+                circle_cx = x + cell_width / 2
+                circle_cy = y + row_height / 2
+                radius = min(cell_width, row_height) / 2 - 2  # Radius slightly smaller than cell
+                svg_content.append(
+                    f'<circle cx="{circle_cx}" cy="{circle_cy - row_height}" r="{radius}" fill="none" stroke="black" stroke-width="{line_width}"/>'
+                )
+
 
     # Close the "bom-master-contents-start" group
     svg_content.append('</g>')
@@ -126,7 +127,7 @@ def generate_svg_table(data, output_file):
 
 def prep_bom_svg_master():
     # Get part name from the current directory
-    part_name = pn_from_dir()
+    part_name = partnumber("pn-rev")
 
     # Get the current directory where the script is being run
     current_dir = os.getcwd()

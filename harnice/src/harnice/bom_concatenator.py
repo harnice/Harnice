@@ -3,7 +3,7 @@ import csv
 from os.path import basename, join
 from inspect import currentframe
 
-from utility import pn_from_dir
+from utility import partnumber
 
 def combine_tsv_boms():
     """
@@ -11,7 +11,7 @@ def combine_tsv_boms():
     and adding new columns for unmatched headers, without using pandas.
     """
     # Get the project name from the current directory
-    pn = pn_from_dir()
+    pn = partnumber("pn-rev")
 
     # Define the directory for input and output files
     base_directory = os.path.join(os.getcwd(), "support-do-not-edit", "boms")
