@@ -73,3 +73,8 @@ def esch_to_wirelist():
     os.makedirs(os.path.join(os.getcwd(), "support-do-not-edit", "wirelists"), exist_ok=True)
     write_tsv(os.path.join(os.getcwd(), "support-do-not-edit", "wirelists", tsv_filename), wirelist)
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wirelist has been written to {tsv_filename}")
+
+def wirelist_add_lengths():
+    wirelist_nolengths_filename = f"{partnumber("pn-rev")}-wirelist-nolengths.tsv"
+    wirelist_nolengths_filepath = os.path.join(os.getcwd(),"support-do-not-edit","wirelists",wirelist_nolengths_filename)
+    #to-do: complete this function

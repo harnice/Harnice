@@ -1,3 +1,6 @@
+import os
+import os.path
+
 def harnice_library_path(domain) :
     if domain == "public":
         return "/Users/kenyonshutt/github/harnice-library-public"

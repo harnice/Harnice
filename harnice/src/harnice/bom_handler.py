@@ -5,26 +5,30 @@ from inspect import currentframe
 
 from utility import partnumber
 
+def process_boms():
+    combine_tsv_boms()
+    add_lengths_to_harness_bom()
+    #generate_printable_bom()
+    #generate_printable_wirelist()
+
 def combine_tsv_boms():
     """
     Combines specific TSV files, merging columns with the same header
     and adding new columns for unmatched headers, without using pandas.
     """
-    # Get the project name from the current directory
-    pn = partnumber("pn-rev")
 
     # Define the directory for input and output files
     base_directory = os.path.join(os.getcwd(), "support-do-not-edit", "boms")
 
     # Define the input file paths
     input_files = [
-        join(base_directory, f"{pn}-esch-electrical-bom.tsv"),
-        join(base_directory, f"{pn}-cad-mechanical-bom.tsv"),
-        join(base_directory, f"{pn}-wirelist-lengths.tsv")
+        join(base_directory, f"{partnumber("pn-rev")}-esch-electrical-bom.tsv"),
+        join(base_directory, f"{partnumber("pn-rev")}-cad-mechanical-bom.tsv"),
+        join(base_directory, f"{partnumber("pn-rev")}-wirelist-lengths.tsv")
     ]
 
     # Define the output file path
-    output_file = join(base_directory, f"{pn}-harness-bom.tsv")
+    output_file = join(base_directory, f"{partnumber("pn-rev")}-harness-bom.tsv")
 
     # Initialize data structures
     combined_data = []
@@ -63,6 +67,9 @@ def combine_tsv_boms():
             writer.writerow(complete_row)
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Combined TSV file saved to {output_file}")
+
+def add_lengths_to_harness_bom():
+    
 
 # Run the function
 if __name__ == "__main__":

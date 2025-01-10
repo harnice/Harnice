@@ -1,4 +1,6 @@
 import os
+import os.path
+import json
 import time
 import subprocess
 import shutil
@@ -270,3 +272,149 @@ def rotate_svg_group(svg_path, group_name, angle):
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {e}")
     except Exception as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An unexpected error occurred: {e}")
+
+
+#here's the ultimate definition of all Harnice project files:
+
+#syntax:
+#"filename": "filekey"
+
+#filename is the actual file name with a suffix
+#filekey is the shorthand reference for it with no suffix
+def harnice_file_structure():
+    return {
+            "drawing-instances":{},
+            "library_used":{},
+            "support-do-not-edit": {
+                "boms":{
+                    f"{partnumber("pn-rev")}-esch-electrical-bom.tsv":"electrical bom",
+                    f"{partnumber("pn-rev")}-harness-bom.tsv":"harness bom"
+                },
+                "formboard_data": {
+                    f"{partnumber("pn-rev")}-connections-to-graph.json":"connections to graph",
+                    f"{partnumber("pn-rev")}-formboard-node-locations-inches.json":"formboard node locations inches",
+                    f"{partnumber("pn-rev")}-formboard-node-locations-px.json":"formboard node locations px",
+                    f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json":"formboard segment to from center",
+                    f"{partnumber("pn-rev")}-formboard-graph-definition.svg":"formboard graph definition svg"
+                },
+                "master-svgs": {
+                    f"{partnumber("pn-rev")}-bom-table-master.svg":"bom table master svg",
+                    f"{partnumber("pn-rev")}-esch-master.svg":"esch master svg",
+                    f"{partnumber("pn-rev")}-formboard-master.svg":"formboard master svg",
+                    f"{partnumber("pn-rev")}-tblock-master.svg":"tblock master svg"
+                },
+                "wirelists": {
+                    f"{partnumber("pn-rev")}-wirelist-nolengths.tsv":"wirelist nolengths"
+                },
+                f"{partnumber("pn-rev")}-tblock-master-text.json":"tblock master text",
+                f"{partnumber("pn-rev")}-connector-list.tsv":"connector list",
+                f"{partnumber("pn-rev")}-flagnote-instance-matrix.tsv":"flagnote instance matrix"
+            },
+            f"{partnumber("pn-rev")}-formboard-graph-definition.json":"formboard graph definition",
+            f"{partnumber("pn-rev")}.png":"wireviz png",
+            f"{partnumber("pn-rev")}-harnice-output.svg":"harnice output",
+            f"{partnumber("pn-rev")}-buildnotes.tsv":"buildnotes tsv",
+            f"{partnumber("pn-rev")}.yaml":"wireviz yaml"
+        }
+
+
+def filepath(target_value):
+    #returns the filepath of a filekey. 
+    """
+    Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
+
+    Args:
+        target_value (str): The value to search for.
+
+    Returns:
+        list: A list of container names leading to the element containing the target value, or None if not found.
+    """
+
+    def recursive_search(data, path):
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if value == target_value:
+                    return path + [key]
+                result = recursive_search(value, path + [key])
+                if result:
+                    return result
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                if item == target_value:
+                    return path + [f"[{index}]"]
+                result = recursive_search(item, path + [f"[{index}]"])
+                if result:
+                    return result
+        return None
+
+    path_value = recursive_search(harnice_file_structure(), [])
+    if not path_value:
+        raise TypeError(f"Could not find filepath of {target_value}.")
+    return os.path.join(os.getcwd(),*path_value)
+
+def dirpath(target_key):
+    #returns the path of a directory you know the name of. use that directory name as the argument. 
+
+    def recursive_search(data, path):
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key == target_key:
+                    return path + [key]
+                result = recursive_search(value, path + [key])
+                if result:
+                    return result
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                result = recursive_search(item, path + [f"[{index}]"])
+                if result:
+                    return result
+        return None
+
+    path_key = recursive_search(harnice_file_structure(), [])
+    if not path_key:
+        raise TypeError(f"Could not find directory {target_value}.")
+    return os.path.join(os.getcwd(),*path_key)
+
+def filename(target_value):
+    #returns the filename of a filekey. 
+    """
+    Recursively searches for a value in a nested JSON structure and returns the key containing that value.
+
+    Args:
+        target_value (str): The value to search for.
+
+    Returns:
+        str: The key containing the target value, or None if not found.
+    """
+
+    def recursive_search(data):
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if value == target_value:
+                    return key
+                result = recursive_search(value)
+                if result:
+                    return result
+        elif isinstance(data, list):
+            for item in data:
+                result = recursive_search(item)
+                if result:
+                    return result
+        return None
+
+    if not recursive_search(harnice_file_structure()):
+        raise TypeError(f"Could not find filename of key {target_value}.")
+
+    return recursive_search(harnice_file_structure())
+
+#example:
+if __name__ == "__main__":
+
+    #returns the filepath of a filekey. 
+    #print(filepath("esch master svg"))
+
+    #returns the path of a directory you know the name of. use that directory name as the argument. 
+    #print(dirpath("formboard data"))
+
+    #returns the filename of a filekey. 
+    print(filename("formboard graph definition svg"))
