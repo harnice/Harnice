@@ -7,7 +7,7 @@ from utility import partnumber
 
 def process_boms():
     combine_tsv_boms()
-    add_lengths_to_harness_bom()
+    #add_lengths_to_harness_bom()
     #generate_printable_bom()
     #generate_printable_wirelist()
 
@@ -68,8 +68,8 @@ def combine_tsv_boms():
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Combined TSV file saved to {output_file}")
 
-def add_lengths_to_harness_bom():
-    
+#def add_lengths_to_harness_bom():
+
 
 # Run the function
 if __name__ == "__main__":

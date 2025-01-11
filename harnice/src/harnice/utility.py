@@ -6,9 +6,9 @@ import subprocess
 import shutil
 from os.path import basename
 from inspect import currentframe
-from harnice_paths import harnice_library_path
 import xml.etree.ElementTree as ET
 import re
+from dotenv import load_dotenv, dotenv_values
 
 def partnumber(format):
     #Returns part numbers in various formats based on the current working directory
@@ -124,9 +124,10 @@ def import_file_from_harnice_library(domain, library_subpath, lib_file):
     """
     Copies a file from a Harnice library to a local 'library_used' directory with the same subpath structure.
     """
+    load_dotenv()
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Importing library {lib_file}:")
     # Step 1: Check if lib_file exists in Harnice library
-    harnice_path = harnice_library_path(domain)
+    harnice_path = os.getenv(domain)
     source_file_path = os.path.join(harnice_path, library_subpath)
     
     if not os.path.isfile(os.path.join(source_file_path,lib_file)):

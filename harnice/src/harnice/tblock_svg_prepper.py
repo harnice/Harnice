@@ -5,7 +5,6 @@ import shutil
 from os.path import basename
 from inspect import currentframe
 from utility import partnumber, import_file_from_harnice_library, rename_file
-from harnice_paths import harnice_library_path
 
 wanted_tblock_libdomain = None
 wanted_tblock_libsubpath = None
