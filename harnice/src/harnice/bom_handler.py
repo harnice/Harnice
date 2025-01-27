@@ -2,8 +2,7 @@ import os
 import csv
 from os.path import basename, join
 from inspect import currentframe
-
-from utility import partnumber
+from utility import *
 
 def process_boms():
     combine_tsv_boms()
@@ -17,19 +16,13 @@ def combine_tsv_boms():
     and adding new columns for unmatched headers, without using pandas.
     """
 
-    # Define the directory for input and output files
-    base_directory = os.path.join(os.getcwd(), "support-do-not-edit", "boms")
-
     # Define the input file paths
     input_files = [
-        join(base_directory, f"{partnumber("pn-rev")}-esch-electrical-bom.tsv"),
-        join(base_directory, f"{partnumber("pn-rev")}-cad-mechanical-bom.tsv"),
-        join(base_directory, f"{partnumber("pn-rev")}-wirelist-lengths.tsv")
+        filepath("electrical bom"),
+        filepath("mechanical bom"),
+        filepath("wirelist lengths"),
     ]
-
-    # Define the output file path
-    output_file = join(base_directory, f"{partnumber("pn-rev")}-harness-bom.tsv")
-
+    
     # Initialize data structures
     combined_data = []
     all_columns = []
@@ -57,8 +50,8 @@ def combine_tsv_boms():
         return
 
     # Write the combined data to the output file
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Writing combined data to {output_file}...")
-    with open(output_file, mode='w', newline='', encoding='utf-8') as tsvfile:
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Writing combined data to {filepath("harness bom")}...")
+    with open(filepath("harness bom"), mode='w', newline='', encoding='utf-8') as tsvfile:
         writer = csv.DictWriter(tsvfile, fieldnames=all_columns, delimiter='\t')
         writer.writeheader()
         for row in combined_data:
@@ -66,7 +59,7 @@ def combine_tsv_boms():
             complete_row = {col: row.get(col, '') for col in all_columns}
             writer.writerow(complete_row)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Combined TSV file saved to {output_file}")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Combined TSV file saved to {filepath("harness bom")}")
 
 #def add_lengths_to_harness_bom():
 

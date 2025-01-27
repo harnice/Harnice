@@ -3,7 +3,7 @@ import csv
 import os
 from os.path import basename
 from inspect import currentframe
-from utility import partnumber
+from utility import *
 
 # Function to read the YAML file
 def read_yaml(file_path):
@@ -55,8 +55,8 @@ def write_tsv(file_path, wirelist):
 
 def esch_to_wirelist():
         # Generate filenames based on the current directory
-    yaml_file = f"{partnumber("pn-rev")}.yaml"
-    tsv_filename = f"{partnumber("pn-rev")}-wirelist-nolengths.tsv"
+    yaml_file = filepath("wireviz yaml")
+    tsv_filename = filepath("wirelist nolengths")
     
     # Read the YAML file
     try:
@@ -75,6 +75,5 @@ def esch_to_wirelist():
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wirelist has been written to {tsv_filename}")
 
 def wirelist_add_lengths():
-    wirelist_nolengths_filename = f"{partnumber("pn-rev")}-wirelist-nolengths.tsv"
-    wirelist_nolengths_filepath = os.path.join(os.getcwd(),"support-do-not-edit","wirelists",wirelist_nolengths_filename)
+    return
     #to-do: complete this function

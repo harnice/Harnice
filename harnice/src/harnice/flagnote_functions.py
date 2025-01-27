@@ -2,14 +2,12 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import csv
-from utility import partnumber, rotate_svg_group, find_and_replace_svg_group
+from utility import *
 from os.path import basename
 from inspect import currentframe
 
-buildnotes_filename = f"{partnumber("pn-rev")}-buildnotes.tsv"
-buildnotes_filepath = os.path.join(os.getcwd(), buildnotes_filename)
-revnotes_filename = f"{partnumber("pn")}-revision-history.tsv"
-revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), revnotes_filename)
+buildnotes_filepath = filepath("buildnotes tsv")
+revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{partnumber("pn")}-revision-history.tsv")
 
 
 def update_flagnotes_of_instance(target_filepath, instance_name, rotation_angle, bomid):
@@ -42,7 +40,7 @@ def look_for_buildnotes_file():
         with open(buildnotes_filepath, 'w') as file:
             file.write('\t'.join(columns) + '\n')
     
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{buildnotes_filename}' not found. Generating a blank file.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{filename("buildnotes tsv")}' not found. Generating a blank file.")
 
 
 def find_buildnotes_of_instance(instance, note_list_filepath):

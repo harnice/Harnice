@@ -289,7 +289,8 @@ def harnice_file_structure():
             "support-do-not-edit": {
                 "boms":{
                     f"{partnumber("pn-rev")}-esch-electrical-bom.tsv":"electrical bom",
-                    f"{partnumber("pn-rev")}-harness-bom.tsv":"harness bom"
+                    f"{partnumber("pn-rev")}-harness-bom.tsv":"harness bom",
+                    f"{partnumber("pn-rev")}-mechanical-bom.tsv":"mechanical bom"
                 },
                 "formboard_data": {
                     f"{partnumber("pn-rev")}-connections-to-graph.json":"connections to graph",
@@ -305,7 +306,8 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}-tblock-master.svg":"tblock master svg"
                 },
                 "wirelists": {
-                    f"{partnumber("pn-rev")}-wirelist-nolengths.tsv":"wirelist nolengths"
+                    f"{partnumber("pn-rev")}-wirelist-nolengths.tsv":"wirelist nolengths",
+                    f"{partnumber("pn-rev")}-wirelist-lengths.tsv":"wirelist lengths"
                 },
                 f"{partnumber("pn-rev")}-tblock-master-text.json":"tblock master text",
                 f"{partnumber("pn-rev")}-connector-list.tsv":"connector list",
@@ -320,7 +322,7 @@ def harnice_file_structure():
 
 
 def filepath(target_value):
-    #returns the filepath of a filekey. 
+    #returns the filepath/filename of a filekey. 
     """
     Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
 

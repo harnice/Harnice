@@ -7,7 +7,7 @@ from os.path import basename, dirname
 from inspect import currentframe
 import yaml  # PyYAML for parsing YAML files
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
-from utility import import_file_from_harnice_library, find_and_replace_svg_group, partnumber, add_entire_svg_file_contents_to_group, rotate_svg_group
+from utility import *
 
 #used to keep track of all the valid instances. those that are not named in this array will be deleted
 drawing_instance_filenames = [None]
@@ -57,11 +57,10 @@ def delete_unmatched_files(directory):
 
 def update_connector_instances():
     # Get current working directory and paths
-    current_dir = os.getcwd()
-    library_used_path = os.path.join(current_dir, "library_used")
-    yaml_path = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
-    esch_electrical_bom_path = os.path.join(current_dir, "support-do-not-edit", "boms", f"{partnumber("pn-rev")}-esch-electrical-bom.tsv")
-    drawing_instances_by_connector_name_path = os.path.join(current_dir, "drawing-instances")
+    library_used_path = dirpath("library_used")
+    yaml_path = filepath("wireviz yaml")
+    esch_electrical_bom_path = filepath("electrical bom")
+    drawing_instances_by_connector_name_path = dirpath("drawing-instances")
 
     # Load YAML file
     with open(yaml_path, 'r') as yaml_file:

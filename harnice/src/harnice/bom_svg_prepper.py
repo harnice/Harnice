@@ -2,7 +2,7 @@ import os
 import csv
 from os.path import basename
 from inspect import currentframe
-from utility import partnumber
+from utility import *
 
 def read_tsv(file_path, columns):
     """
@@ -126,15 +126,9 @@ def generate_svg_table(data, output_file):
 
 
 def prep_bom_svg_master():
-    # Get part name from the current directory
-    part_name = partnumber("pn-rev")
-
-    # Get the current directory where the script is being run
-    current_dir = os.getcwd()
-
     # Construct input and output file paths using the current directory
-    tsv_file_path = os.path.join(current_dir, "support-do-not-edit", "boms", f"{part_name}-harness-bom.tsv")
-    svg_output_path = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{part_name}-bom-table-master.svg")
+    tsv_file_path = filepath("harness bom")
+    svg_output_path = filepath("bom table master svg")
 
     # Columns to include in the SVG table
     selected_columns = ["Id", "Qty", "MPN"]
