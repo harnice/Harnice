@@ -55,10 +55,25 @@ def delete_unmatched_files(directory):
                 except Exception as e:
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing-instances': {e}")
 
+def update_bom_instances():
+    #first open the bom file 
+    with open(filepath("harness bom"), 'r') as bom_file:
+        # Read the header to identify the index of "MPN"
+        header = bom_file.readline().strip().split("\t")
+        if "MPN" not in header:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: 'MPN' column not found in the BOM file.")
+            return
+        mpn_index = header.index("MPN")
+        if "Id" not in header:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: 'MPN' column not found in the BOM file.")
+            return
+        id_index = header.index("Id")
+
+    
+
 def update_connector_instances():
     # Get current working directory and paths
     library_used_path = dirpath("library_used")
-    filepath("wireviz yaml") = filepath("wireviz yaml")
     drawing_instances_by_connector_name_path = dirpath("drawing-instances")
 
     # Load YAML file
@@ -208,7 +223,6 @@ def update_segment_instances():
 
 def update_formboard_master_svg():
     current_dir = os.getcwd()
-    filepath("wireviz yaml") = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
     node_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-node-locations-px.json")
     output_svg_path = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
     segment_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
@@ -279,7 +293,6 @@ def update_formboard_master_svg():
 def replace_all_connector_groups():
     """Replace all connector groups in the target SVG with their corresponding source SVG groups."""
     current_dir = os.getcwd()
-    filepath("wireviz yaml") = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
     formboard_graph_definition_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
 
     # Load the YAML file

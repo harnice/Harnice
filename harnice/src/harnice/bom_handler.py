@@ -6,6 +6,7 @@ from utility import *
 
 def process_boms():
     combine_tsv_boms()
+    add_description_simple_to_harness_bom()
     #add_lengths_to_harness_bom()
     #generate_printable_bom()
     #generate_printable_wirelist()
@@ -62,6 +63,40 @@ def combine_tsv_boms():
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Combined TSV file saved to {filepath("harness bom")}")
 
 #def add_lengths_to_harness_bom():
+
+def add_description_simple_to_harness_bom():
+    """
+    Opens, reads, processes, and writes back a TSV file by adding a "Description Simple" column next to the "Description" column.
+    The new column is populated based on a dictionary of substitutions that can be expanded as needed.
+    
+    :param filepath: Path to the TSV file to be processed.
+    """
+    substitutions = {
+        "Cable": "Cable",
+        "Connector": "Connector",
+        "Backshell": "Backshell",
+    }
+    
+    with open(filepath("harness bom"), mode='r', encoding='utf-8') as tsvfile:
+        lines = [line.strip().split('\t') for line in tsvfile.readlines()]
+    
+    header = lines[0]
+    if "Description" in header:
+        desc_index = header.index("Description")
+        header.insert(desc_index + 1, "Description Simple")
+    
+        for row in lines[1:]:
+            description = row[desc_index] if desc_index < len(row) else ""
+            simple_desc = ""
+            for key, value in substitutions.items():
+                if key in description:
+                    simple_desc = value
+                    break
+            row.insert(desc_index + 1, simple_desc)
+    
+    with open(filepath("harness bom"), mode='w', newline='', encoding='utf-8') as tsvfile:
+        for row in lines:
+            tsvfile.write('\t'.join(row) + '\n')
 
 
 # Run the function
