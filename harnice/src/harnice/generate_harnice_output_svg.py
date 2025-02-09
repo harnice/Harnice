@@ -2,7 +2,7 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree, tostring
 import xml.etree.ElementTree as ET
 import os
 import re
-from utility import partnumber, import_file_from_harnice_library
+from utility import partnumber
 from os.path import basename
 from inspect import currentframe
 

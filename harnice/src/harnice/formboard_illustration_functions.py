@@ -58,16 +58,15 @@ def delete_unmatched_files(directory):
 def update_connector_instances():
     # Get current working directory and paths
     library_used_path = dirpath("library_used")
-    yaml_path = filepath("wireviz yaml")
-    esch_electrical_bom_path = filepath("electrical bom")
+    filepath("wireviz yaml") = filepath("wireviz yaml")
     drawing_instances_by_connector_name_path = dirpath("drawing-instances")
 
     # Load YAML file
-    with open(yaml_path, 'r') as yaml_file:
+    with open(filepath("wireviz yaml"), 'r') as yaml_file:
         yaml_data = yaml.safe_load(yaml_file)
 
     # Process the BOM file
-    with open(esch_electrical_bom_path, 'r') as bom_file:
+    with open(filepath("electrical bom"), 'r') as bom_file:
         # Read the header to identify the index of "MPN"
         header = bom_file.readline().strip().split("\t")
         if "MPN" not in header:
@@ -95,6 +94,7 @@ def update_connector_instances():
                         connector_svg_dir = os.path.join(drawing_instances_by_connector_name_path, connector_name)
                         os.makedirs(connector_svg_dir, exist_ok=True)
                         connector_svg_path = os.path.join(connector_svg_dir, f"{partnumber("pn-rev")}-{connector_name}.svg")
+                        
 
                         # Ensure directory for MPN exists and import files if necessary
                         import_file_from_harnice_library(
@@ -208,13 +208,13 @@ def update_segment_instances():
 
 def update_formboard_master_svg():
     current_dir = os.getcwd()
-    yaml_path = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
+    filepath("wireviz yaml") = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
     node_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-node-locations-px.json")
     output_svg_path = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
     segment_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
 
     # Read the YAML file
-    with open(yaml_path, 'r') as yaml_file:
+    with open(filepath("wireviz yaml"), 'r') as yaml_file:
         yaml_data = yaml.safe_load(yaml_file)
     
     # Read the node locations JSON file
@@ -279,11 +279,11 @@ def update_formboard_master_svg():
 def replace_all_connector_groups():
     """Replace all connector groups in the target SVG with their corresponding source SVG groups."""
     current_dir = os.getcwd()
-    yaml_path = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
+    filepath("wireviz yaml") = os.path.join(current_dir, f"{partnumber("pn-rev")}.yaml")
     formboard_graph_definition_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
 
     # Load the YAML file
-    with open(yaml_path, 'r') as yaml_file:
+    with open(filepath("wireviz yaml"), 'r') as yaml_file:
         yaml_data = yaml.safe_load(yaml_file)
 
     # Load the formboard graph definition JSON
