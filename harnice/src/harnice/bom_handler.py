@@ -4,6 +4,18 @@ from os.path import basename, join
 from inspect import currentframe
 from utility import *
 
+
+
+"""consider adding this:
+        if "MPN" not in header:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: 'MPN' column not found in the BOM file.")
+            return
+        mpn_index = header.index("MPN")
+        if "Id" not in header:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: 'MPN' column not found in the BOM file.")
+            return
+"""
+
 def process_boms():
     combine_tsv_boms()
     add_description_simple_to_harness_bom()

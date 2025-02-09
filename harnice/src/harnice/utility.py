@@ -375,7 +375,7 @@ def dirpath(target_key):
 
     path_key = recursive_search(harnice_file_structure(), [])
     if not path_key:
-        raise TypeError(f"Could not find directory {target_value}.")
+        raise TypeError(f"Could not find directory {target_key}.")
     return os.path.join(os.getcwd(),*path_key)
 
 def filename(target_value):
@@ -419,5 +419,5 @@ if __name__ == "__main__":
     #returns the path of a directory you know the name of. use that directory name as the argument. 
     #print(dirpath("formboard data"))
 
-    #returns the filename of a filekey. 
-    print(filename("formboard graph definition svg"))
+    #returns the filename of a filekey
+    print(dirpath("drawing-instances"))

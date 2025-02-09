@@ -12,7 +12,7 @@ from utility import *
 #used to keep track of all the valid instances. those that are not named in this array will be deleted
 drawing_instance_filenames = [None]
 
-def add_filename_to_drawing_instance(filename):
+def add_filename_to_drawing_instance_list(filename):
     global drawing_instance_filenames  # Declare the global variable
     if drawing_instance_filenames == [None]:  # Replace initial None with the first item
         drawing_instance_filenames = [filename]
@@ -55,21 +55,96 @@ def delete_unmatched_files(directory):
                 except Exception as e:
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing-instances': {e}")
 
-def update_bom_instances():
-    #first open the bom file 
+def update_all_bom_instances():
+    # Process the BOM file
     with open(filepath("harness bom"), 'r') as bom_file:
         # Read the header to identify the index of "MPN"
         header = bom_file.readline().strip().split("\t")
-        if "MPN" not in header:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: 'MPN' column not found in the BOM file.")
-            return
-        mpn_index = header.index("MPN")
-        if "Id" not in header:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: 'MPN' column not found in the BOM file.")
-            return
         id_index = header.index("Id")
+        mpn_index = header.index("MPN")
+        desc_simple_index = header.index("Description Simple")
+        supplier_index = header.index("Supplier")
 
+    # Load YAML file
+    with open(filepath("wireviz yaml"), 'r') as yaml_file:
+        yaml_data = yaml.safe_load(yaml_file)
+
+
+    #for each line in harness bom:
+    for line in bom_file:
+        
+        column = line.strip().split("\t")
+        current_mpn = column[mpn_index]
+        current_mpn_simple = column[desc_simple_index]
+
+        #if "Description Simple" == "Backshell" in harness bom (do this first because it informs rotation of others)
+        if current_mpn_simple == "Backshell":
+
+            #for each connector in yaml
+            for connector_name, connector_data in yaml_data.get("connectors", {}).items():
+                
+                #if connector has harness bom line as an additional part backshell
+                    #update_bom_instance(backshell)
+
+        #if "Description Simple" == "Connector" 
+            #for each connector in yaml
+                #if "mpn" in yaml == "MPN" in harness bom
+                    #if connector has any backshell as an additional part
+                        #backshelldrivenrotation = lookup backshell driven location
+                        #backshelldrivenoffset = lookup backshell driven offset
+                    #update_bom_instance(connector + backshell driven stuff)
+
+                
+            
+
+def update_bom_instance(instancename, mpn, supplier, rotation, offset):
+    #make sure the main directory is there
+    os.makedirs(dirpath("drawing-instances"), exist_ok=True)
+
+    #make sure the directory in question is there
+    os.makedirs(os.path.join(dirpath("drawing-instances"),instance_name), exist_ok=True)
+
+    #import from library
+    import_file_from_harnice_library(supplier,mpn,f"{mpn}-drawing.svg")
+    import_file_from_harnice_library(supplier,mpn,f"{mpn}-attributes.json")
     
+    #remember which files are supposed to exist so we can later delete the old ones
+    add_filename_to_drawing_instance_list(instancename)
+
+    #reference the drawing filepath, not included in filepath() because each project file structure is different
+    connector_svg_path = os.path.join(dirpath("drawing-instances"), instance_name, f"{partnumber("pn-rev")}-{connector_name}.svg")
+
+    #create a new instance file if it doesn't exist yet
+    if not os.path.exists(connector_svg_path):
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating connector instance svg {partnumber("pn-rev")}-{connector_name}.svg")
+        os.makedirs(drawing_instances_by_connector_name_path, exist_ok=True)
+
+        # Write SVG declaration
+        svg_content = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+
+        with open(connector_svg_path, 'w') as blank_svg:
+            blank_svg.write(svg_content)
+
+        # Verify the file content
+        with open(connector_svg_path, 'r') as verify_svg:
+            content = verify_svg.read()
+
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created new connector instance SVG {connector_name} with MPN: {current_mpn}")
+
+        add_entire_svg_file_contents_to_group(connector_svg_path,"connector-drawing")
+        find_and_replace_svg_group(connector_svg_path, os.path.join(library_used_path, "connector_definitions", current_mpn, f"{current_mpn}-drawing.svg"), "connector-drawing")
+        add_entire_svg_file_contents_to_group(connector_svg_path, "connector-instance-rotatables")
+        add_entire_svg_file_contents_to_group(connector_svg_path, f"unique-connector-instance-{connector_name}")
+        apply_bubble_transforms_to_flagnote_group(connector_svg_path)
+                        
+    else: 
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Preserving existing contents of {connector_name} instance file. ")
+      
+    # Rotate SVG group "connector-drawing" to match the average segment angle
+    connector_angle = -1* retrieve_angle_of_connector(connector_name)
+    rotate_svg_group(connector_svg_path, "connector-instance-rotatables", connector_angle)
+    update_flagnotes_of_instance(connector_svg_dir, connector_name, connector_angle, columns[id_index])
+
 
 def update_connector_instances():
     # Get current working directory and paths
@@ -119,7 +194,7 @@ def update_connector_instances():
                         )
 
                         # Generate blank SVG only if it doesn't exist
-                        add_filename_to_drawing_instance(basename(dirname(connector_svg_path)))
+                        add_filename_to_drawing_instance_list(basename(dirname(connector_svg_path)))
                         
                         if not os.path.exists(connector_svg_path):
                             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating connector instance svg {partnumber("pn-rev")}-{connector_name}.svg")
@@ -208,7 +283,7 @@ def update_segment_instances():
             with open(output_filename, 'w') as svg_file:
                 svg_file.write(svg_content)
 
-            add_filename_to_drawing_instance(basename(dirname(output_filename)))
+            add_filename_to_drawing_instance_list(basename(dirname(output_filename)))
 
             add_entire_svg_file_contents_to_group(output_filename, "segment_contents_rotatables")
 
