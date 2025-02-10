@@ -71,7 +71,7 @@ def prep_tblock_svg_master():
         key = match.group(1)  # Extract the field name
         old_text = match.group(0)  # The full placeholder text
         new_text = str(json_tblock_data.get(key, old_text))  # Get replacement text or keep original
-        print(f"!!!!!!!!!!Replacing: '{old_text}' with: '{new_text}'")  # Print the replacement info
+        print(f"Replacing: '{old_text}' with: '{new_text}'")  # Print the replacement info
         return new_text
 
     updated_content = re.sub(pattern, replacer, content)
