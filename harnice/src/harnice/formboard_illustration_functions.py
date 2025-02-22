@@ -67,7 +67,7 @@ def update_all_bom_instances():
         mpn_index = header.index("MPN")
         desc_simple_index = header.index("Description Simple")
         supplier_index = header.index("Supplier")
-        
+
         # Read the remaining data (if needed)
         bom_data = bom_file.read()
         bom_lines = bom_data.splitlines()
@@ -93,7 +93,10 @@ def update_all_bom_instances():
                     component.get("type") == "Backshell" and component.get("mpn") == current_mpn
                     for component in connector.get("additional_components", [])
                 ):
-                    update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[desc_simple_index], columns[id_index], 0, 0)
+                    backshelldrivenrotation = 0
+                    backshelldrivenoffset = 0
+                    update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[id_index], current_desc_simple, backshelldrivenrotation, backshelldrivenoffset)
+                    
 
         if current_desc_simple == "Connector":
             current_mpn = columns[mpn_index]  
@@ -108,43 +111,45 @@ def update_all_bom_instances():
                         component.get("type") == "Backshell" for 
                         component in connector.get("additional_components", [])
                     ):
+                        #TODO look up the rotations from that backshell's json definition
                         backshelldrivenrotation = 0
                         backshelldrivenoffset = 0
+                    
+                update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[id_index], current_desc_simple, backshelldrivenrotation, backshelldrivenoffset)
                 
-                update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[desc_simple_index], columns[id_index], backshelldrivenrotation, backshelldrivenoffset)
-                
+              
 
 
 def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rotation, offset):
-    #make sure the main directory is there
 
-    print(f"#    #    ########## working on bom item {mpn}, instance name {instance_name}, which is a {instance_type}")
+    #update the instance name
+    instance_name_w_suffix = instance_name
+    if(instance_type == "Backshell"):
+        instance_name_w_suffix = f"{instance_name}.bs"
+
+    print(f"#    #    ########## working on bom item {mpn}, instance name {instance_name_w_suffix}, which is type {instance_type}")
+    
+    #make sure the main directory of all drawing instances is there
     os.makedirs(dirpath("drawing-instances"), exist_ok=True)
 
-    #make sure the directory in question is there
-    if(instance_type == "Backshell"):
-        x = f"{instance_name}-bs"
-    else:
-        x = instance_name
-    os.makedirs(os.path.join(dirpath("drawing-instances"),x), exist_ok=True)
-    
-    instance_dirpath = os.path.join(dirpath("drawing-instances"),x)
+    #make sure this particular instance directory is there
+    os.makedirs(os.path.join(dirpath("drawing-instances"),instance_name_w_suffix), exist_ok=True)
+    instance_dirpath = os.path.join(dirpath("drawing-instances"),instance_name_w_suffix)
 
     #import from library
     svgexists = import_file_from_harnice_library(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
     jsonsuccessfulimport = import_file_from_harnice_library(supplier,os.path.join("component_definitions",mpn),f"{mpn}-attributes.json")
     
     #remember which files are supposed to exist so we can later delete the old ones
-    add_filename_to_drawing_instance_list(instance_name)
+    add_filename_to_drawing_instance_list(instance_name_w_suffix)
 
     if svgexists:
-        print("!!!svg exists")
         #reference the drawing filepath, not included in filepath() because each project file structure is different
-        instance_svg_path = os.path.join(instance_dirpath, f"{partnumber("pn-rev")}-{instance_name}.svg")
+        instance_svg_path = os.path.join(instance_dirpath, f"{partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
 
         #create a new instance file if it doesn't exist yet
         if not os.path.exists(instance_svg_path):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating  instance svg {partnumber("pn-rev")}-{instance_name}.svg")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating  instance svg {partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
             os.makedirs(instance_dirpath, exist_ok=True)
 
             # Write SVG declaration
@@ -157,24 +162,22 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
             with open(instance_svg_path, 'r') as verify_svg:
                 content = verify_svg.read()
 
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created new connector instance SVG {instance_name} with MPN: {mpn}")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created new connector instance SVG {instance_name_w_suffix} with MPN: {mpn}")
 
             add_entire_svg_file_contents_to_group(instance_svg_path,"connector-drawing")
-            find_and_replace_svg_group(instance_svg_path, os.path.join(dirpath("library_used"), mpn, f"{current_mpn}-drawing.svg"), "connector-drawing")
+            find_and_replace_svg_group(instance_svg_path, os.path.join(dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
             add_entire_svg_file_contents_to_group(instance_svg_path, "connector-instance-rotatables")
-            add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-connector-instance-{instance_name}")
+            add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-connector-instance-{instance_name_w_suffix}")
             apply_bubble_transforms_to_flagnote_group(instance_svg_path)
                         
         else: 
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Preserving existing contents of {instance_name} instance file. ")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Preserving existing contents of {instance_name_w_suffix} instance file. ")
       
         # Rotate SVG group "connector-drawing" to match the average segment angle
         connector_angle = -1* retrieve_angle_of_connector(instance_name)
         rotate_svg_group(instance_svg_path, "connector-instance-rotatables", connector_angle)
-        update_flagnotes_of_instance(instance_svg_path, instance_name, connector_angle, bomid)
-    else: 
-
-        print("!!!svg does not exist")
+        #TODO: offset and rotate per rotation and offset arguents of this function
+        update_flagnotes_of_instance(os.path.dirname(instance_svg_path), instance_name_w_suffix, connector_angle, bomid)
 
 
 def update_segment_instances():
