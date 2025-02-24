@@ -283,6 +283,7 @@ def update_formboard_master_svg():
         ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-end")
     
     
+    #TODO: CHANGE THIS TO REFERENCE HARNESS BOM, NOT YAML
     # Add groups for each connector with transformations
     for connector_id in connectors:
         group = ET.SubElement(svg, "g", id=connector_id)
@@ -336,6 +337,7 @@ def replace_all_connector_groups():
     # Extract connectors from the YAML
     connectors = yaml_data.get("connectors", {})
 
+    #TODO: CHANGE THIS TO REFERENCE HARNESS BOM, NOT YAML
     for connector_name in connectors:
         # Define the target and source SVG paths
         target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
@@ -453,6 +455,7 @@ def regen_formboard():
     delete_unmatched_files(os.path.join(os.getcwd(),"drawing-instances"))
     print("#    ############ ADDING EVERYTHING TO FORMBOARD MASTER SVG ############")
     update_formboard_master_svg()
+    #consider mergimng above and below functions into one, there's a lot of redundant calls in here
     print("#    ############ REPLACING ALL CONNECTOR GROUPS IN FORMBOARD MASTER ############")
     replace_all_connector_groups()
     print("#    ############ REPLACING ALL INSTANCE GROUPS IN FORMBOARD MASTER ############")
