@@ -181,16 +181,12 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
 
 
 def update_segment_instances():
-    # Get current working directory and paths
-    current_dir = os.getcwd()
-    formboard_graph_definition_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
-    
     # Load JSON data
     try:
-        with open(formboard_graph_definition_path, 'r') as json_file:
+        with open(filepath("formboard graph definition"), 'r') as json_file:
             graph_data = json.load(json_file)
     except FileNotFoundError:
-        print(f"Error: File {formboard_graph_definition_path} not found.")
+        print(f"Error: File {filename("formboard graph definition")} not found.")
         return
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -222,9 +218,9 @@ def update_segment_instances():
     </svg>'''
 
             # Define output filename
-            os.makedirs(os.path.join(current_dir, "drawing-instances", segment_name), exist_ok=True)
+            os.makedirs(os.path.join(dirpath("drawing-instances"), segment_name), exist_ok=True)
 
-            output_filename = os.path.join(current_dir, "drawing-instances", segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
+            output_filename = os.path.join(dirpath("drawing-instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
             
             # Write SVG file
             with open(output_filename, 'w') as svg_file:
@@ -244,20 +240,15 @@ def update_segment_instances():
             print(f"Error processing segment {segment_name}: {e}")
 
 def update_formboard_master_svg():
-    current_dir = os.getcwd()
-    node_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-node-locations-px.json")
-    output_svg_path = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
-    segment_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
-
     # Read the YAML file
-    with open(filepath("wireviz yaml"), 'r') as yaml_file:
+    with open(filepath("wireviz yaml"), 'r') as yaml_file: #CLEANUP: move this until later when it's needed
         yaml_data = yaml.safe_load(yaml_file)
     
     # Read the node locations JSON file
-    with open(node_locations_path, 'r') as json_file:
+    with open(filepath("formboard node locations px"), 'r') as json_file:
         node_locations = json.load(json_file)
 
-    with open(segment_locations_path, 'r') as json_file:
+    with open(filepath("formboard segment to from center"), 'r') as json_file:
         segment_locations = json.load(json_file)
     
     # Extract connectors
@@ -299,23 +290,19 @@ def update_formboard_master_svg():
 
 
     # Ensure the directory exists for the output file
-    os.makedirs(os.path.dirname(output_svg_path), exist_ok=True)
+    os.makedirs(dirpath("master-svgs"), exist_ok=True)
 
     # Write the SVG to file with proper formatting and newlines
-    with open(output_svg_path, 'w', encoding='utf-8') as svg_file:
+    with open(filepath("formboard master svg"), 'w', encoding='utf-8') as svg_file:
         svg_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         svg_file.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1">\n')
         for group in svg:
             svg_file.write(f'  {ET.tostring(group, encoding="unicode").strip()}\n\n')
         svg_file.write('</svg>\n')
 
-    add_entire_svg_file_contents_to_group(output_svg_path,"formboard-master")
-    
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: SVG file {'overwritten' if os.path.exists(output_svg_path) else 'created'} at: {output_svg_path}")
+    add_entire_svg_file_contents_to_group(filepath("formboard master svg"),"formboard-master")
 
     """Replace all connector groups in the target SVG with their corresponding source SVG groups."""
-    current_dir = os.getcwd()
-    formboard_graph_definition_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
 
     # Load the YAML file
     with open(filepath("wireviz yaml"), 'r') as yaml_file:
@@ -323,10 +310,10 @@ def update_formboard_master_svg():
 
     # Load the formboard graph definition JSON
     try:
-        with open(formboard_graph_definition_path, 'r') as json_file:
+        with open(filepath("formboard graph definition"), 'r') as json_file:
             graph_data = json.load(json_file)
     except FileNotFoundError:
-        print(f"Error: File {formboard_graph_definition_path} not found.")
+        print(f"Error: File {filename("formboard graph definition")} not found.")
         return
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -339,22 +326,19 @@ def update_formboard_master_svg():
     #TODO: CHANGE THIS TO REFERENCE HARNESS BOM, NOT YAML
     for connector_name in connectors:
         # Define the target and source SVG paths
-        target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
-        source_svg_filepath = os.path.join(current_dir, "drawing-instances", connector_name, f"{partnumber("pn-rev")}-{connector_name}.svg")
+        source_svg_filepath = os.path.join(dirpath("drawing-instances"), connector_name, f"{partnumber("pn-rev")}-{connector_name}.svg")
         
         # Call the function to replace the group
-        find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-connector-instance-{connector_name}")
+        find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-connector-instance-{connector_name}")
 
     """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
-    current_dir = os.getcwd()
-    segment_data_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
 
     # Load the segment data JSON
     try:
-        with open(segment_data_path, 'r') as json_file:
+        with open(filepath("formboard segment to from center"), 'r') as json_file:
             segment_data = json.load(json_file)
     except FileNotFoundError:
-        print(f"Error: Segment data JSON file {segment_data_path} not found.")
+        print(f"Error: Segment data JSON file {filename("formboard segment to from center")} not found.")
         return
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -369,11 +353,10 @@ def update_formboard_master_svg():
 
         try:
             # Define the target and source SVG paths
-            target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
-            source_svg_filepath = os.path.join(current_dir, "drawing-instances", segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
+            source_svg_filepath = os.path.join(dirpath("drawing-instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
 
-            if not os.path.exists(target_svg_filepath):
-                print(f"Error: Target SVG file {target_svg_filepath} not found.")
+            if not os.path.exists(filepath("formboard master svg")):
+                print(f"Error: Target SVG file {filename("formboard master svg")} not found.")
                 continue
 
             if not os.path.exists(source_svg_filepath):
@@ -381,38 +364,16 @@ def update_formboard_master_svg():
                 continue
 
             # Call the function to replace the group
-            find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-segment-instance-{segment_name}")
+            find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-segment-instance-{segment_name}")
 
             print(f"Successfully replaced group for segment {segment_name}.")
         except Exception as e:
             print(f"Error processing segment {segment_name}: {e}")
 
 def retrieve_angle_of_connector(connectorname):
-    """
-    Retrieve the angle of the specified connector from the JSON file.
-
-    Args:
-        connectorname (str): The name of the connector (e.g., "X1").
-
-    Returns:
-        float: The angle of the specified connector.
-
-    Raises:
-        FileNotFoundError: If the JSON file does not exist.
-        KeyError: If the connector name does not exist in the JSON data.
-    """
-    # Construct the path to the JSON file
-    current_dir = os.getcwd()
-    file_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", 
-                             f"{partnumber("pn-rev")}-formboard-node-locations-inches.json")
+    #Retrieve the angle of the specified connector from the JSON file.
     
-    # Check if the file exists
-    #this used to work but something got fucked up and now i cant tell what it used to do
-    #if not os.path.isfile(file_path):
-        #partnumber("pn-rev") FileNotFoundError(f"File not found: {file_path}")
-    
-    # Load the JSON data
-    with open(file_path, "r") as file:
+    with open(filepath("formboard node locations inches"), "r") as file:
         data = json.load(file)
     
     # Retrieve the angle for the specified connector
@@ -424,16 +385,12 @@ def retrieve_angle_of_connector(connectorname):
     return angle
 
 def retrieve_angle_of_segment(segmentname):
-    # Construct the path to the JSON file
-    current_dir = os.getcwd()
-    file_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
-    
     # Check if the file exists
-    if not os.path.isfile(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    if not os.path.isfile(filepath("formboard graph definition")):
+        raise FileNotFoundError(f"File not found: {filename("formboard graph definition")}")
     
     # Load the JSON data
-    with open(file_path, "r") as file:
+    with open(filepath("formboard graph definition"), "r") as file:
         data = json.load(file)
     
     # Retrieve the angle for the specified connector
