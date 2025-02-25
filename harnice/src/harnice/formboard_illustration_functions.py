@@ -313,7 +313,6 @@ def update_formboard_master_svg():
     
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: SVG file {'overwritten' if os.path.exists(output_svg_path) else 'created'} at: {output_svg_path}")
 
-def replace_all_connector_groups():
     """Replace all connector groups in the target SVG with their corresponding source SVG groups."""
     current_dir = os.getcwd()
     formboard_graph_definition_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
@@ -346,7 +345,6 @@ def replace_all_connector_groups():
         # Call the function to replace the group
         find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-connector-instance-{connector_name}")
 
-def replace_all_segment_groups():
     """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
     current_dir = os.getcwd()
     segment_data_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
@@ -455,11 +453,6 @@ def regen_formboard():
     delete_unmatched_files(os.path.join(os.getcwd(),"drawing-instances"))
     print("#    ############ ADDING EVERYTHING TO FORMBOARD MASTER SVG ############")
     update_formboard_master_svg()
-    #consider mergimng above and below functions into one, there's a lot of redundant calls in here
-    print("#    ############ REPLACING ALL CONNECTOR GROUPS IN FORMBOARD MASTER ############")
-    replace_all_connector_groups()
-    print("#    ############ REPLACING ALL INSTANCE GROUPS IN FORMBOARD MASTER ############")
-    replace_all_segment_groups()
 
 if __name__ == "__main__":
     regen_formboard()
