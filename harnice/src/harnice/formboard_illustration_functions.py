@@ -115,7 +115,6 @@ def update_all_bom_instances():
                     
                 update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[id_index], current_desc_simple, backshelldrivenrotation, backshelldrivenoffset)
                 
-
 def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rotation, offset):
     #create an svg for that instance
 
@@ -175,7 +174,6 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
         rotate_svg_group(instance_svg_path, "connector-instance-rotatables", connector_angle)
         #TODO: offset and rotate per rotation and offset arguents of this function
         update_flagnotes_of_instance(os.path.dirname(instance_svg_path), instance_name_w_suffix, connector_angle, bomid)
-
 
 def update_segment_instances():
     #create SVGs for segments (instances that are not in the bom)
@@ -245,9 +243,6 @@ def update_formboard_master_svg():
     # Read the node locations JSON file
     with open(filepath("formboard node locations px"), 'r') as json_file:
         node_locations = json.load(json_file)
-
-    with open(filepath("formboard segment to from center"), 'r') as json_file:
-        segment_locations = json.load(json_file)
     
     # Extract connectors
     connectors = yaml_data.get("connectors", {})
@@ -257,6 +252,18 @@ def update_formboard_master_svg():
 
     ######## SEGMENTS #############
     #create groups for each segment instance, then import it
+
+    # Load the segment data JSON
+    try:
+        with open(filepath("formboard segment to from center"), 'r') as json_file:
+            segment_locations = json.load(json_file)
+    except FileNotFoundError:
+        print(f"Error: Segment data JSON file {filename("formboard segment to from center")} not found.")
+        return
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        return
+
     for segment in segment_locations:
 
         segment_name = segment["segment name"]
@@ -273,22 +280,7 @@ def update_formboard_master_svg():
         ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-start")
         ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-end")
     
-        """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
-
-    # Load the segment data JSON
-    try:
-        with open(filepath("formboard segment to from center"), 'r') as json_file:
-            segment_data = json.load(json_file)
-    except FileNotFoundError:
-        print(f"Error: Segment data JSON file {filename("formboard segment to from center")} not found.")
-        return
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
-        return
-
-    # Loop through each segment and replace the corresponding group
-    for segment in segment_data:
-        segment_name = segment.get("segment name")
+        #replace the contents of the instance drawing into the new groups in the master that were just created
         if not segment_name:
             print("Skipping segment with missing 'segment name'.")
             continue
@@ -312,7 +304,7 @@ def update_formboard_master_svg():
         except Exception as e:
             print(f"Error processing segment {segment_name}: {e}")
 
-    
+    """
     ######## BOM INSTANCES #############
     #create groups for each segment instance, then import it
 
@@ -357,7 +349,7 @@ def update_formboard_master_svg():
         # Call the function to replace the group
         find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-connector-instance-{connector_name}")
 
-
+    """
     ########## SAVE THE OUTPUT TO AN ACTUAL FILE ############
     # Ensure the directory exists for the output file
     os.makedirs(dirpath("master-svgs"), exist_ok=True)
@@ -369,7 +361,7 @@ def update_formboard_master_svg():
         for group in svg:
             svg_file.write(f'  {ET.tostring(group, encoding="unicode").strip()}\n\n')
         svg_file.write('</svg>\n')
-
+    
     add_entire_svg_file_contents_to_group(filepath("formboard master svg"),"formboard-master")
 
 def retrieve_angle_of_connector(connectorname):
