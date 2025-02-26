@@ -7,6 +7,7 @@ from inspect import currentframe
 
 def generate_connector_list():
 
+
     # Define the YAML filename
     filename = f"{partnumber("pn-rev")}.yaml"
 
