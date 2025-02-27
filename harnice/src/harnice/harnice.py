@@ -1,7 +1,7 @@
 from run_wireviz import generate_esch
 from bom_handler import process_boms
 from esch_to_wirelist import esch_to_wirelist, wirelist_add_lengths
-from generate_connector_list import generate_connector_list
+from generate_instances_list import generate_instances_list
 from svg_section_replacer import regen_harnice_output_svg
 from generate_harnice_output_svg import generate_blank_harnice_output_svg, ensure_groups_exist_in_harnice_output
 from bom_svg_prepper import prep_bom_svg_master
@@ -32,8 +32,8 @@ def harnice():
 
     #generating a connector list
     print()
-    print("############ GENERATING A CONNECTORS LIST #############")
-    generate_connector_list()
+    print("############ GENERATING AN INSTANCES LIST #############")
+    generate_instances_list()
 
     print()
     print("############ LOOKING FOR BUILDNOTES FILE #############")

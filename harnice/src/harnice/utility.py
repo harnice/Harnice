@@ -290,7 +290,8 @@ def harnice_file_structure():
                 "boms":{
                     f"{partnumber("pn-rev")}-esch-electrical-bom.tsv":"electrical bom",
                     f"{partnumber("pn-rev")}-harness-bom.tsv":"harness bom",
-                    f"{partnumber("pn-rev")}-mechanical-bom.tsv":"mechanical bom"
+                    f"{partnumber("pn-rev")}-mechanical-bom.tsv":"mechanical bom",
+                    f"{partnumber("pn-rev")}-instances-list.tsv":"instances list"
                 },
                 "formboard_data": {
                     f"{partnumber("pn-rev")}-connections-to-graph.json":"connections to graph",
@@ -310,7 +311,6 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}-wirelist-lengths.tsv":"wirelist lengths"
                 },
                 f"{partnumber("pn-rev")}-tblock-master-text.json":"tblock master text",
-                f"{partnumber("pn-rev")}-connector-list.tsv":"connector list",
                 f"{partnumber("pn-rev")}-flagnote-instance-matrix.tsv":"flagnote instance matrix"
             },
             f"{partnumber("pn-rev")}-formboard-graph-definition.json":"formboard graph definition",
