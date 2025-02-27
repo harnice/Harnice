@@ -5,7 +5,8 @@ import shutil
 import xml.etree.ElementTree as ET
 from os.path import basename, dirname
 from inspect import currentframe
-import yaml  # PyYAML for parsing YAML files
+import yaml
+import csv
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
 from utility import *
 
@@ -52,6 +53,7 @@ def delete_unmatched_files():
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing-instances': {e}")
 
 def update_all_bom_instances():
+    #TODO: rebuild this approach by adding instances using filepath("instances list")
     #Go through the harness bom and call update_bom_instance slightly differently depending on small details
     #bom instances account for every item except segments
 
@@ -239,24 +241,12 @@ def update_formboard_master_svg():
     node_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-node-locations-px.json")
     output_svg_path = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
     segment_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
-
-    #TODO: this should rely on harness bom, not yaml
-    # Read the YAML file
-    with open(filepath("wireviz yaml"), 'r') as yaml_file:
-        yaml_data = yaml.safe_load(yaml_file)
-    
-    # Read the node locations JSON file
-    with open(node_locations_path, 'r') as json_file:
-        node_locations = json.load(json_file)
-
-    with open(segment_locations_path, 'r') as json_file:
-        segment_locations = json.load(json_file)
-    
-    # Extract connectors
-    connectors = yaml_data.get("connectors", {})
     
     # Create the root SVG element
     svg = ET.Element("svg", xmlns="http://www.w3.org/2000/svg", version="1.1")
+
+    with open(segment_locations_path, 'r') as json_file:
+        segment_locations = json.load(json_file)
 
     for segment in segment_locations:
 
@@ -274,19 +264,32 @@ def update_formboard_master_svg():
         ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-start")
         ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-end")
     
-    #TODO: make groups for each harness bom item
+    #Store the list of instances getting groups into instances[]
+    instances = []
+    with open(filepath("instances list"), mode="r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file, delimiter="\t")  # Read TSV with tab delimiter
+        for row in reader:
+            instances.append(row["instance name"])
+    
+    # Read the node locations JSON file
+    with open(node_locations_path, 'r') as json_file:
+        node_locations = json.load(json_file)
+
     # Add groups for each connector with transformations
-    for connector_id in connectors:
-        group = ET.SubElement(svg, "g", id=connector_id)
+    instance_counter = 0
+    for each in instances:
+        instance_name = instances[instance_counter]
+        instance_counter += 1
+        group = ET.SubElement(svg, "g", id=instance_name)
         
         # Apply translation and scale
-        translation = node_locations.get(connector_id, [0, 0])
+        translation = node_locations.get(instance_name, [0, 0])
         translation[1] = -translation[1]
         group.set("transform", f"translate({translation[0]}, {translation[1]}) scale(1)")
         
         # Add contents start and end groups
-        ET.SubElement(group, "g", id=f"unique-connector-instance-{connector_id}-contents-start")
-        ET.SubElement(group, "g", id=f"unique-connector-instance-{connector_id}-contents-end")
+        ET.SubElement(group, "g", id=f"unique-connector-instance-{instance_name}-contents-start")
+        ET.SubElement(group, "g", id=f"unique-connector-instance-{instance_name}-contents-end")
 
 
     # Ensure the directory exists for the output file
@@ -302,41 +305,16 @@ def update_formboard_master_svg():
 
     add_entire_svg_file_contents_to_group(output_svg_path,"formboard-master")
     
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: SVG file {'overwritten' if os.path.exists(output_svg_path) else 'created'} at: {output_svg_path}")
-
-#TODO: udpate to all instance groups
-def replace_all_connector_groups():
-    """Replace all connector groups in the target SVG with their corresponding source SVG groups."""
-    current_dir = os.getcwd()
-    formboard_graph_definition_path = os.path.join(current_dir, f"{partnumber("pn-rev")}-formboard-graph-definition.json")
-
-    #TODO: reference the harness bom, not the yaml
-    # Load the YAML file
-    with open(filepath("wireviz yaml"), 'r') as yaml_file:
-        yaml_data = yaml.safe_load(yaml_file)
-
-    # Load the formboard graph definition JSON
-    try:
-        with open(formboard_graph_definition_path, 'r') as json_file:
-            graph_data = json.load(json_file)
-    except FileNotFoundError:
-        print(f"Error: File {formboard_graph_definition_path} not found.")
-        return
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
-        return
-
-
-    # Extract connectors from the YAML
-    connectors = yaml_data.get("connectors", {})
-
-    for connector_name in connectors:
-        # Define the target and source SVG paths
-        target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
-        source_svg_filepath = os.path.join(current_dir, "drawing-instances", connector_name, f"{partnumber("pn-rev")}-{connector_name}.svg")
+    #Replace all connector groups in the target SVG with their corresponding source SVG groups
+    instance_counter = 0
+    for each in instances:
+        instance_name = instances[instance_counter]
+        instance_counter += 1
+        # find the path of the source instance
+        source_svg_filepath = os.path.join(dirpath("drawing-instances"), instance_name, f"{partnumber("pn-rev")}-{instance_name}.svg")
         
         # Call the function to replace the group
-        find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-connector-instance-{connector_name}")
+        find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-connector-instance-{instance_name}")
 
 def replace_all_segment_groups():
     """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
@@ -424,13 +402,11 @@ def regen_formboard():
 
     print("#    ############ CREATING NEW FORMBOARD MASTER SVG WITH GROUP STRUCTURE ############")
     #creates an svg file with the groups in the right places
-    #does not add any content because that's all done via group replacement, but nothing is created until this is done
+    #after that file is saved, content is imported.
     update_formboard_master_svg()
 
-    print("#    ############ REPLACING ALL CONNECTOR GROUPS INTO FORMBOARD MASTER ############")
-    replace_all_connector_groups()
-
     print("#    ############ REPLACING ALL INSTANCE GROUPS INTO FORMBOARD MASTER ############")
+    #TODO: combine into the above function after segments are included in the instance list
     replace_all_segment_groups()
 
 if __name__ == "__main__":
