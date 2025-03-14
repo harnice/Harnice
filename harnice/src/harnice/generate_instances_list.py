@@ -84,5 +84,16 @@ def generate_instances_list():
                         }
                         writer.writerow(new_row)
 
+    with open(filepath("formboard segment to from center"), 'r') as json_file:
+        segment_locations = json.load(json_file)
+
+        for segment in segment_locations:
+            new_row = {
+                "instance name": segment["segment name"],
+                "bom line": "",
+                "backshell": backshell
+            }
+            writer.writerow(new_row)
+
 if __name__ == "__main__":
     generate_instances_list()

@@ -241,7 +241,7 @@ def update_formboard_master_svg():
 
     with open(filepath("formboard segment to from center"), 'r') as json_file:
         segment_locations = json.load(json_file)
-
+    '''
     for segment in segment_locations:
 
         segment_name = segment["segment name"]
@@ -256,7 +256,7 @@ def update_formboard_master_svg():
         
         # Add contents start and end groups
         ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-start")
-        ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-end")
+        ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-end")'''
     
     #Store the list of instances getting groups into instances[]
     instances = []
@@ -264,6 +264,7 @@ def update_formboard_master_svg():
         reader = csv.DictReader(file, delimiter="\t")  # Read TSV with tab delimiter
         for row in reader:
             instances.append(row["instance name"])
+            print(f"!!!!!!!!!!!!{row["instance name"]}")
     
     # Read the node locations JSON file
     with open(filepath("formboard node locations px"), 'r') as json_file:
