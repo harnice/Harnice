@@ -28,9 +28,13 @@ def generate_instances_list():
     with open(filepath("wireviz yaml"), 'r') as yaml_file:
         yaml_data = yaml.safe_load(yaml_file)
 
+    # load segments file
+    with open(filepath("formboard segment to from center"), 'r') as json_file:
+        segment_locations = json.load(json_file)
+
     #try:
     with open(filepath("instances list"), mode='w', newline='', encoding="utf-8") as tsv_file:
-        columns = ["instance name", "bom line", "backshell"]
+        columns = ["instance name", "bom line", "item type", "child instance"]
         writer = csv.DictWriter(tsv_file, fieldnames=columns, delimiter='\t')
         writer.writeheader()
 
@@ -51,11 +55,11 @@ def generate_instances_list():
                         component.get("type") == "Backshell" and component.get("mpn") == current_mpn
                         for component in connector.get("additional_components", [])
                     ):
-                        #TODO: add a line in connector list representing that backshell
                         new_row = {
                             "instance name": f"{connector_name}.bs",
                             "bom line": columns[id_index],
-                            "backshell": ""
+                            "item type": "backshell",
+                            "child instance": ""
                         }
                         writer.writerow(new_row)
 
@@ -67,22 +71,32 @@ def generate_instances_list():
                     #if "mpn" in yaml == "MPN" in harness bom
                     if connector.get("mpn") == current_mpn:
 
-                        backshell = ""
+                        backshell_name = ""
                         #if connector has any backshell as an additional part
                         if any(
                             component.get("type") == "Backshell" for 
                             component in connector.get("additional_components", [])
                         ):
                             #TODO: this field should look up backshell part number
-                            backshell = ""
+                            backshell_name = f"{connector_name}.bs"
 
                         #TODO: add a line in connector list
                         new_row = {
                             "instance name": connector_name,
                             "bom line": columns[id_index],
-                            "backshell": backshell
+                            "item type": "connector",
+                            "child instance": backshell_name
                         }
                         writer.writerow(new_row)
+
+        for segment in segment_locations:
+            new_row = {
+                "instance name": segment["segment name"],
+                "bom line": "",
+                "item type": "segment",
+                "child instance": ""
+            }
+            writer.writerow(new_row)
 
 if __name__ == "__main__":
     generate_instances_list()

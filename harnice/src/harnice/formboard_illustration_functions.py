@@ -236,18 +236,12 @@ def update_segment_instances():
             print(f"Error processing segment {segment_name}: {e}")
 
 def update_formboard_master_svg():
-    #TODO: clean up directory pointers
-    current_dir = os.getcwd()
-    node_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-node-locations-px.json")
-    output_svg_path = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
-    segment_locations_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
-    
     # Create the root SVG element
     svg = ET.Element("svg", xmlns="http://www.w3.org/2000/svg", version="1.1")
 
-    with open(segment_locations_path, 'r') as json_file:
+    with open(filepath("formboard segment to from center"), 'r') as json_file:
         segment_locations = json.load(json_file)
-
+    '''
     for segment in segment_locations:
 
         segment_name = segment["segment name"]
@@ -262,7 +256,7 @@ def update_formboard_master_svg():
         
         # Add contents start and end groups
         ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-start")
-        ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-end")
+        ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-end")'''
     
     #Store the list of instances getting groups into instances[]
     instances = []
@@ -272,7 +266,7 @@ def update_formboard_master_svg():
             instances.append(row["instance name"])
     
     # Read the node locations JSON file
-    with open(node_locations_path, 'r') as json_file:
+    with open(filepath("formboard node locations px"), 'r') as json_file:
         node_locations = json.load(json_file)
 
     # Add groups for each connector with transformations
@@ -293,17 +287,17 @@ def update_formboard_master_svg():
 
 
     # Ensure the directory exists for the output file
-    os.makedirs(os.path.dirname(output_svg_path), exist_ok=True)
+    os.makedirs(os.path.dirname(filepath("formboard master svg")), exist_ok=True)
 
     # Write the SVG to file with proper formatting and newlines
-    with open(output_svg_path, 'w', encoding='utf-8') as svg_file:
+    with open(filepath("formboard master svg"), 'w', encoding='utf-8') as svg_file:
         svg_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         svg_file.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1">\n')
         for group in svg:
             svg_file.write(f'  {ET.tostring(group, encoding="unicode").strip()}\n\n')
         svg_file.write('</svg>\n')
 
-    add_entire_svg_file_contents_to_group(output_svg_path,"formboard-master")
+    add_entire_svg_file_contents_to_group(filepath("formboard master svg"),"formboard-master")
     
     #Replace all connector groups in the target SVG with their corresponding source SVG groups
     instance_counter = 0
