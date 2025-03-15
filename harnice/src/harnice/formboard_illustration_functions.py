@@ -264,7 +264,6 @@ def update_formboard_master_svg():
         reader = csv.DictReader(file, delimiter="\t")  # Read TSV with tab delimiter
         for row in reader:
             instances.append(row["instance name"])
-            print(f"!!!!!!!!!!!!{row["instance name"]}")
     
     # Read the node locations JSON file
     with open(filepath("formboard node locations px"), 'r') as json_file:
