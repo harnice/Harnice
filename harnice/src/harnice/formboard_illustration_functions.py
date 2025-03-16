@@ -165,7 +165,7 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
             add_entire_svg_file_contents_to_group(instance_svg_path,"connector-drawing")
             find_and_replace_svg_group(instance_svg_path, os.path.join(dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
             add_entire_svg_file_contents_to_group(instance_svg_path, "connector-instance-rotatables")
-            add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-connector-instance-{instance_name_w_suffix}")
+            add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-instance-{instance_name_w_suffix}")
             apply_bubble_transforms_to_flagnote_group(instance_svg_path)
                         
         else: 
@@ -228,7 +228,7 @@ def update_segment_instances():
 
             rotate_svg_group(output_filename, "segment_contents_rotatables", -1*retrieve_angle_of_segment(segment_name))
 
-            add_entire_svg_file_contents_to_group(output_filename, f"unique-segment-instance-{segment_name}")
+            add_entire_svg_file_contents_to_group(output_filename, f"unique-instance-{segment_name}")
             
             print(f"Generated SVG for {segment_name}: {output_filename}")
         
@@ -255,8 +255,8 @@ def update_formboard_master_svg():
         group.set("transform", f"translate({translation[0]}, {translation[1]}) scale(1)")
         
         # Add contents start and end groups
-        ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-start")
-        ET.SubElement(group, "g", id=f"unique-segment-instance-{segment_name}-contents-end")'''
+        ET.SubElement(group, "g", id=f"unique-instance-{segment_name}-contents-start")
+        ET.SubElement(group, "g", id=f"unique-instance-{segment_name}-contents-end")'''
     
     #Store the list of instances getting groups into instances[]
     instances = []
@@ -282,8 +282,8 @@ def update_formboard_master_svg():
         group.set("transform", f"translate({translation[0]}, {translation[1]}) scale(1)")
         
         # Add contents start and end groups
-        ET.SubElement(group, "g", id=f"unique-connector-instance-{instance_name}-contents-start")
-        ET.SubElement(group, "g", id=f"unique-connector-instance-{instance_name}-contents-end")
+        ET.SubElement(group, "g", id=f"unique-instance-{instance_name}-contents-start")
+        ET.SubElement(group, "g", id=f"unique-instance-{instance_name}-contents-end")
 
 
     # Ensure the directory exists for the output file
@@ -308,7 +308,7 @@ def update_formboard_master_svg():
         source_svg_filepath = os.path.join(dirpath("drawing-instances"), instance_name, f"{partnumber("pn-rev")}-{instance_name}.svg")
         
         # Call the function to replace the group
-        find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-connector-instance-{instance_name}")
+        find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
 
 def replace_all_segment_groups():
     """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
@@ -347,7 +347,7 @@ def replace_all_segment_groups():
                 continue
 
             # Call the function to replace the group
-            find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-segment-instance-{segment_name}")
+            find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-instance-{segment_name}")
 
             print(f"Successfully replaced group for segment {segment_name}.")
         except Exception as e:
