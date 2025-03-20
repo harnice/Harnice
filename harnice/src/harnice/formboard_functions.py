@@ -162,18 +162,12 @@ def add_random_lengths_angles():
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {filename("formboard graph definition")}")
 
 def generate_node_coordinates():
-    segment_file_path = filepath("formboard graph definition")
-    node_file_path_inches = filepath("formboard node locations inches")
-    node_file_path_px = filepath("formboard node locations px")
-    
     # Create the target directory for the output file
-    support_dir = dirpath("formboard_data")
-    os.makedirs(support_dir, exist_ok=True)
-    to_from_file_path = filepath("formboard segment to from center")
+    os.makedirs(dirpath("formboard_data"), exist_ok=True)
 
     # Read the segment data
     try:
-        with open(segment_file_path, "r") as file:
+        with open(filepath("formboard graph definition"), "r") as file:
             segment_data = json.load(file)
     except FileNotFoundError:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {filename("formboard graph definition")}")
@@ -248,11 +242,11 @@ def generate_node_coordinates():
         }
 
     # Write the node coordinates (with average angles) as-is to the inches file
-    with open(node_file_path_inches, "w") as file:
+    with open(filepath("formboard node locations inches"), "w") as file:
         json.dump(node_coordinates_with_angles, file, indent=4)
 
     # Write the node coordinates as-is to the inches file
-    #with open(node_file_path_inches, "w") as file:
+    #with open(filepath("formboard node locations inches"), "w") as file:
         #json.dump(node_coordinates, file, indent=4)
 
     # Create the pixel coordinates by multiplying each value by 96
@@ -262,25 +256,27 @@ def generate_node_coordinates():
     }
 
     # Write the pixel coordinates to the px file
-    with open(node_file_path_px, "w") as file:
+    with open(filepath("formboard node locations px"), "w") as file:
         json.dump(node_coordinates_px, file, indent=4)
 
     # Write the segment "to", "from", and "center" data to the file
-    with open(to_from_file_path, "w") as file:
+    with open(filepath("formboard segment to from center"), "w") as file:
         json.dump(segment_to_from_data, file, indent=4)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {node_file_path_inches}")
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {node_file_path_px}")
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment to/from/center data written to {to_from_file_path}")
+    with open(filepath(""))
+
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {filepath("formboard node locations inches")}")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {filepath("formboard node locations px")}")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment to/from/center data written to {filepath("formboard segment to from center")}")
 
 def visualize_formboard_graph():
-    segment_file_path = filepath("formboard graph definition")
+    filepath("formboard graph definition") = filepath("formboard graph definition")
     node_file_path = filepath("formboard node locations px")
     output_file_path = filepath("formboard graph definition svg")
 
     # Read the segment and node data
     try:
-        with open(segment_file_path, "r") as segment_file:
+        with open(filepath("formboard graph definition"), "r") as segment_file:
             segment_data = json.load(segment_file)
         with open(node_file_path, "r") as node_file:
             node_coordinates = json.load(node_file)
