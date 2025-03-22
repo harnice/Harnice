@@ -263,14 +263,11 @@ def generate_node_coordinates():
     with open(filepath("formboard segment to from center"), "w") as file:
         json.dump(segment_to_from_data, file, indent=4)
 
-    with open(filepath(""))
-
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {filepath("formboard node locations inches")}")
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {filepath("formboard node locations px")}")
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment to/from/center data written to {filepath("formboard segment to from center")}")
 
 def visualize_formboard_graph():
-    filepath("formboard graph definition") = filepath("formboard graph definition")
     node_file_path = filepath("formboard node locations px")
     output_file_path = filepath("formboard graph definition svg")
 
