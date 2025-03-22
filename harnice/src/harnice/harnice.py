@@ -21,19 +21,23 @@ def harnice():
         return
 
     #run wireviz
-    print()
-    print("############ RUNNING WIREVIZ #############")
-    generate_esch()
+    #temporarily turning these off in issue-13 to decouple them from instance list
+    #print()
+    #print("############ RUNNING WIREVIZ #############")
+    #generate_esch()
 
     #generating a wirelist
-    print()
-    print("############ GENERATING A NO-LENGTHS WIRELIST #############")
-    esch_to_wirelist()
+    #temporarily turning these off in issue-13 to decouple them from instance list
+    #print()
+    #print("############ GENERATING A NO-LENGTHS WIRELIST #############")
+    #esch_to_wirelist()
 
     #generating a connector list
     print()
     print("############ GENERATING AN INSTANCES LIST #############")
     generate_instances_list()
+
+    exit()
 
     print()
     print("############ LOOKING FOR BUILDNOTES FILE #############")
