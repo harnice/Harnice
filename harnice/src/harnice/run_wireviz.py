@@ -4,7 +4,7 @@ import subprocess
 import shutil
 from os.path import basename
 from inspect import currentframe
-from utility import partnumber, add_entire_svg_file_contents_to_group, rename_file
+from utility import *
 
 def generate_esch():
     # Construct the YAML, SVG, and HTML file names
@@ -29,10 +29,9 @@ def generate_esch():
     add_entire_svg_file_contents_to_group(os.path.join(os.getcwd(), "support-do-not-edit", "master-svgs", harnice_svg_filename), "esch-master")
 
     # Rename, create directory if not existent, and move the bom file
-    new_bom_filename = f"{partnumber("pn-rev")}-esch-electrical-bom.tsv"
-    rename_file(f"{partnumber("pn-rev")}.bom.tsv", new_bom_filename, True)
-    os.makedirs(os.path.join(os.getcwd(), "support-do-not-edit", "boms"), exist_ok=True)
-    shutil.move(os.path.join(os.getcwd(), new_bom_filename), os.path.join(os.path.join(os.getcwd(), "support-do-not-edit", "boms"), new_bom_filename))
+    rename_file(f"{partnumber("pn-rev")}.bom.tsv", filename("electrical bom"), True)
+    os.makedirs(dirpath("boms"), exist_ok=True)
+    shutil.move(os.path.join(os.getcwd(), filename("electrical bom")), filepath("electrical bom"))
 
     # Delete the HTML file
     if os.path.exists(html_filename):

@@ -33,6 +33,7 @@ def harnice():
     #generating a connector list
     print()
     print("############ GENERATING AN INSTANCES LIST #############")
+    process_boms()
     generate_instances_list()
 
     print()
