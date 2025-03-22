@@ -274,6 +274,10 @@ def rotate_svg_group(svg_path, group_name, angle):
     except Exception as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An unexpected error occurred: {e}")
 
+#standard punctuation:
+    #  .  separates between name hierarchy levels
+    #  _  means nothing, basically a space character
+    #  -  if multiple instances are found at the same hierarchy level with the same name, this separates name from unique instance identifier
 
 #here's the ultimate definition of all Harnice project files:
 
@@ -284,39 +288,39 @@ def rotate_svg_group(svg_path, group_name, angle):
 #filekey is the shorthand reference for it with no suffix
 def harnice_file_structure():
     return {
-            "drawing-instances":{},
+            "drawing_instances":{},
             "library_used":{},
-            "support-do-not-edit": {
+            "support_do_not_edit": {
                 "boms":{
-                    f"{partnumber("pn-rev")}-esch-electrical-bom.tsv":"electrical bom",
-                    f"{partnumber("pn-rev")}-harness-bom.tsv":"harness bom",
-                    f"{partnumber("pn-rev")}-mechanical-bom.tsv":"mechanical bom",
-                    f"{partnumber("pn-rev")}-instances-list.tsv":"instances list"
+                    f"{partnumber("pn-rev")}.esch_electrical_bom.tsv":"electrical bom",
+                    f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
+                    f"{partnumber("pn-rev")}.mechanical_bom.tsv":"mechanical bom",
+                    f"{partnumber("pn-rev")}.instances_list.tsv":"instances list"
                 },
                 "formboard_data": {
-                    f"{partnumber("pn-rev")}-connections-to-graph.json":"connections to graph",
-                    f"{partnumber("pn-rev")}-formboard-node-locations-inches.json":"formboard node locations inches",
-                    f"{partnumber("pn-rev")}-formboard-node-locations-px.json":"formboard node locations px",
-                    f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json":"formboard segment to from center",
-                    f"{partnumber("pn-rev")}-formboard-graph-definition.svg":"formboard graph definition svg"
+                    f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
+                    f"{partnumber("pn-rev")}.formboard_node_locations_inches.json":"formboard node locations inches",
+                    f"{partnumber("pn-rev")}.formboard_node_locations_px.json":"formboard node locations px",
+                    f"{partnumber("pn-rev")}.formboard_segment_to_from_center.json":"formboard segment to from center",
+                    f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
-                "master-svgs": {
-                    f"{partnumber("pn-rev")}-bom-table-master.svg":"bom table master svg",
-                    f"{partnumber("pn-rev")}-esch-master.svg":"esch master svg",
-                    f"{partnumber("pn-rev")}-formboard-master.svg":"formboard master svg",
-                    f"{partnumber("pn-rev")}-tblock-master.svg":"tblock master svg"
+                "master_svgs": {
+                    f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
+                    f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
+                    f"{partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
+                    f"{partnumber("pn-rev")}.tblock_master.svg":"tblock master svg"
                 },
                 "wirelists": {
-                    f"{partnumber("pn-rev")}-wirelist-nolengths.tsv":"wirelist nolengths",
-                    f"{partnumber("pn-rev")}-wirelist-lengths.tsv":"wirelist lengths"
+                    f"{partnumber("pn-rev")}.wirelist_nolengths.tsv":"wirelist nolengths",
+                    f"{partnumber("pn-rev")}.wirelist_lengths.tsv":"wirelist lengths"
                 },
-                f"{partnumber("pn-rev")}-tblock-master-text.json":"tblock master text",
-                f"{partnumber("pn-rev")}-flagnote-instance-matrix.tsv":"flagnote instance matrix"
+                f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
+                f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
-            f"{partnumber("pn-rev")}-formboard-graph-definition.json":"formboard graph definition",
+            f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
             f"{partnumber("pn-rev")}.png":"wireviz png",
-            f"{partnumber("pn-rev")}-harnice-output.svg":"harnice output",
-            f"{partnumber("pn-rev")}-buildnotes.tsv":"buildnotes tsv",
+            f"{partnumber("pn-rev")}.harnice_output.svg":"harnice output",
+            f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
             f"{partnumber("pn-rev")}.yaml":"wireviz yaml"
         }
 
