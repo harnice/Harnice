@@ -54,15 +54,11 @@ def write_tsv(file_path, wirelist):
         writer.writerows(wirelist)
 
 def esch_to_wirelist():
-        # Generate filenames based on the current directory
-    yaml_file = filepath("wireviz yaml")
-    tsv_filename = filepath("wirelist nolengths")
-    
     # Read the YAML file
     try:
-        data = read_yaml(yaml_file)
+        data = read_yaml(filepath("wireviz yaml"))
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {yaml_file} not found in the current directory.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {filename("wireviz yaml")} not found in the current directory.")
         exit(1)
     
     # Generate the wirelist
@@ -70,9 +66,9 @@ def esch_to_wirelist():
     wirelist = generate_wirelist(connections)
     
     # Write the wirelist to a TSV file
-    os.makedirs(os.path.join(os.getcwd(), "support-do-not-edit", "wirelists"), exist_ok=True)
-    write_tsv(os.path.join(os.getcwd(), "support-do-not-edit", "wirelists", tsv_filename), wirelist)
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wirelist has been written to {tsv_filename}")
+    os.makedirs(dirpath("wirelists"), exist_ok=True)
+    write_tsv(filepath("wirelist nolengths"), wirelist)
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wirelist has been written to {filename("wirelist nolengths")}")
 
 def wirelist_add_lengths():
     return
