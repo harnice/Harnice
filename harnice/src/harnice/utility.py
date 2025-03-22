@@ -424,4 +424,4 @@ if __name__ == "__main__":
     #print(dirpath("formboard data"))
 
     #returns the filename of a filekey
-    print(dirpath("drawing-instances"))
+    print(dirpath("drawing_instances"))
