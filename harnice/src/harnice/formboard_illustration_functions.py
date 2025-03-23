@@ -335,7 +335,7 @@ def replace_all_segment_groups():
             source_svg_filepath = os.path.join(dirpath("drawing_instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
 
             if not os.path.exists(filepath("formboard master svg")):
-                print(f"Error: Target SVG file {filepath(""formboard master svg"")} not found.")
+                print(f"Error: Target SVG file {filepath("formboard master svg")} not found.")
                 continue
 
             if not os.path.exists(source_svg_filepath):
