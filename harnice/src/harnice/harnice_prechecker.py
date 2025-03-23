@@ -230,9 +230,7 @@ def export_rev_row_from_tsv_to_project_rev_json():
     tsv_file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
 
     # Directory and file path for JSON
-    json_dir = os.path.join(os.getcwd(), "support-do-not-edit")
-    os.makedirs(json_dir, exist_ok=True)
-    json_file_path = os.path.join(json_dir, f"{pn}-rev{rev}-tblock-master-text.json")
+    os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
 
     if not os.path.isfile(tsv_file_path):
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {pn}-revision-history.tsv not found.")
@@ -250,7 +248,7 @@ def export_rev_row_from_tsv_to_project_rev_json():
                     json_data = {header[i]: eval(row[i]) if row[i].isdigit() else row[i] for i in range(len(header))}
 
                     # Overwrite JSON file
-                    with open(json_file_path, 'w') as json_file:
+                    with open(filepath("tblock master text"), 'w') as json_file:
                         json.dump(json_data, json_file, indent=4, separators=(',', ': '), ensure_ascii=False)
 
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Revision data updated from {pn}-revision-history.tsv into {pn}-rev{rev}-tblock-master-text.json")

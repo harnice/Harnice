@@ -11,21 +11,12 @@ wanted_tblock_libsubpath = None
 wanted_tblock_libfilename = None
 
 library_used_tblock_filepath = None
-
-master_svg_dir_filepath = os.path.join(os.getcwd(), "support-do-not-edit", "master-svgs")
-tblock_master_svg_filename = f"{partnumber("pn-rev")}-tblock-master.svg"
-tblock_master_svg_filepath = os.path.join(master_svg_dir_filepath, tblock_master_svg_filename)
-
 json_tblock_data = None
 
 def pull_tblock_info_from_json():
-    # Locate JSON file in `currentdirectory/support-do-not-edit`
-    json_file = os.path.join(
-        os.getcwd(), "support-do-not-edit", f"{partnumber("pn-rev")}-tblock-master-text.json"
-    )
     # Load JSON json_tblock_data
     global json_tblock_data
-    with open(json_file, 'r') as jf:
+    with open(filepath("tblock master text"), 'r') as jf:
         json_tblock_data = json.load(jf)
 
     #to-do: pull these from JSON as well
@@ -40,8 +31,8 @@ def prep_tblock_svg_master():
 
     pull_tblock_info_from_json()
 
-    # Ensure the master_svg_dir_filepath exists
-    os.makedirs(master_svg_dir_filepath, exist_ok=True)
+    # Ensure the dirpath("master_svgs") exists
+    os.makedirs(dirpath("master_svgs"), exist_ok=True)
 
     global library_used_tblock_filepath
     library_used_tblock_filepath = os.path.join(os.getcwd(), "library_used", wanted_tblock_libsubpath, wanted_tblock_libfilename)
@@ -50,19 +41,19 @@ def prep_tblock_svg_master():
     import_file_from_harnice_library(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
 
     #delete existing master svg to refresh it from library-used
-    if os.path.exists(tblock_master_svg_filepath):
-        os.remove(tblock_master_svg_filepath)
+    if os.path.exists(filepath("tblock master svg")):
+        os.remove(filepath("tblock master svg"))
         
     #move it to the svg master folder
-    shutil.copy(library_used_tblock_filepath, master_svg_dir_filepath)
+    shutil.copy(library_used_tblock_filepath, dirpath("master_svgs"))
 
     #rename it to match the convention
-    os.rename(os.path.join(master_svg_dir_filepath, wanted_tblock_libfilename), tblock_master_svg_filepath)
+    os.rename(os.path.join(dirpath("master_svgs"), wanted_tblock_libfilename), filepath("tblock master svg"))
     
     # Find info to populate into title block from the json file...
 
     # Read input file content
-    with open(tblock_master_svg_filepath, 'r') as inf:
+    with open(filepath("tblock master svg"), 'r') as inf:
         content = inf.read()
 
     # Replace each occurrence of "unique-id-<jsonfilefield>"
@@ -77,7 +68,7 @@ def prep_tblock_svg_master():
     updated_content = re.sub(pattern, replacer, content)
 
     # Overwrite the input file with the updated content
-    with open(tblock_master_svg_filepath, 'w') as inf:
+    with open(filepath("tblock master svg"), 'w') as inf:
         inf.write(updated_content)
         print("Updated tblock info.")
 
