@@ -26,13 +26,13 @@ def delete_unmatched_files():
     global drawing_instance_filenames  # Access the global variable
 
     # Ensure the directory exists
-    if not os.path.exists(dirpath("drawing-instances")):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory {dirpath("drawing-instances")} does not exist.")
+    if not os.path.exists(dirpath("drawing_instances")):
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory {dirpath("drawing_instances")} does not exist.")
         return
 
     # List all files and directories in the directory
-    for item in os.listdir(dirpath("drawing-instances")):
-        item_path = os.path.join(dirpath("drawing-instances"), item)
+    for item in os.listdir(dirpath("drawing_instances")):
+        item_path = os.path.join(dirpath("drawing_instances"), item)
 
         # Check if the item is not in the allowed list
         if item not in drawing_instance_filenames:
@@ -128,11 +128,11 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
     print(f"#    #    ########## working on bom item {mpn}, instance name {instance_name_w_suffix}, which is type {instance_type}")
     
     #make sure the main directory of all drawing instances is there
-    os.makedirs(dirpath("drawing-instances"), exist_ok=True)
+    os.makedirs(dirpath("drawing_instances"), exist_ok=True)
 
     #make sure this particular instance directory is there
-    os.makedirs(os.path.join(dirpath("drawing-instances"),instance_name_w_suffix), exist_ok=True)
-    instance_dirpath = os.path.join(dirpath("drawing-instances"),instance_name_w_suffix)
+    os.makedirs(os.path.join(dirpath("drawing_instances"),instance_name_w_suffix), exist_ok=True)
+    instance_dirpath = os.path.join(dirpath("drawing_instances"),instance_name_w_suffix)
 
     #import from library
     svgexists = import_file_from_harnice_library(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
@@ -214,9 +214,9 @@ def update_segment_instances():
     </svg>'''
 
             # Define output filename
-            os.makedirs(os.path.join(dirpath("drawing-instances"), segment_name), exist_ok=True)
+            os.makedirs(os.path.join(dirpath("drawing_instances"), segment_name), exist_ok=True)
 
-            output_filename = os.path.join(dirpath("drawing-instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
+            output_filename = os.path.join(dirpath("drawing_instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
             
             # Write SVG file
             with open(output_filename, 'w') as svg_file:
@@ -305,22 +305,19 @@ def update_formboard_master_svg():
         instance_name = instances[instance_counter]
         instance_counter += 1
         # find the path of the source instance
-        source_svg_filepath = os.path.join(dirpath("drawing-instances"), instance_name, f"{partnumber("pn-rev")}-{instance_name}.svg")
+        source_svg_filepath = os.path.join(dirpath("drawing_instances"), instance_name, f"{partnumber("pn-rev")}-{instance_name}.svg")
         
         # Call the function to replace the group
         find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
 
 def replace_all_segment_groups():
     """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
-    current_dir = os.getcwd()
-    segment_data_path = os.path.join(current_dir, "support-do-not-edit", "formboard_data", f"{partnumber("pn-rev")}-formboard-segment-to-from-center.json")
-
     # Load the segment data JSON
     try:
-        with open(segment_data_path, 'r') as json_file:
+        with open(filepath("formboard segment to from center"), 'r') as json_file:
             segment_data = json.load(json_file)
     except FileNotFoundError:
-        print(f"Error: Segment data JSON file {segment_data_path} not found.")
+        print(f"Error: Segment data JSON file {filename("formboard segment to from center")} not found.")
         return
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -335,11 +332,10 @@ def replace_all_segment_groups():
 
         try:
             # Define the target and source SVG paths
-            target_svg_filepath = os.path.join(current_dir, "support-do-not-edit", "master-svgs", f"{partnumber("pn-rev")}-formboard-master.svg")
-            source_svg_filepath = os.path.join(current_dir, "drawing-instances", segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
+            source_svg_filepath = os.path.join(dirpath("drawing_instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
 
-            if not os.path.exists(target_svg_filepath):
-                print(f"Error: Target SVG file {target_svg_filepath} not found.")
+            if not os.path.exists(filepath("formboard master svg")):
+                print(f"Error: Target SVG file {filepath("formboard master svg")} not found.")
                 continue
 
             if not os.path.exists(source_svg_filepath):
@@ -347,7 +343,7 @@ def replace_all_segment_groups():
                 continue
 
             # Call the function to replace the group
-            find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, f"unique-instance-{segment_name}")
+            find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{segment_name}")
 
             print(f"Successfully replaced group for segment {segment_name}.")
         except Exception as e:

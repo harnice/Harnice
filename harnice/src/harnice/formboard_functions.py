@@ -8,8 +8,6 @@ from inspect import currentframe
 from utility import *
 from collections import defaultdict
 
-formboard_folder = "support-do-not-edit/formboard_data"
-
 def field_contains_null(file_path, field):
     """Checks if the specified field contains any null values in the JSON file."""
     try:

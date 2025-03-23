@@ -63,7 +63,6 @@ def combine_tsv_boms():
         return
 
     # Write the combined data to the output file
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Writing combined data to {filepath("harness bom")}...")
     with open(filepath("harness bom"), mode='w', newline='', encoding='utf-8') as tsvfile:
         writer = csv.DictWriter(tsvfile, fieldnames=all_columns, delimiter='\t')
         writer.writeheader()
@@ -71,8 +70,6 @@ def combine_tsv_boms():
             # Fill in missing columns with empty strings
             complete_row = {col: row.get(col, '') for col in all_columns}
             writer.writerow(complete_row)
-
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Combined TSV file saved to {filepath("harness bom")}")
 
 #def add_lengths_to_harness_bom():
 
@@ -109,8 +106,3 @@ def add_description_simple_to_harness_bom():
     with open(filepath("harness bom"), mode='w', newline='', encoding='utf-8') as tsvfile:
         for row in lines:
             tsvfile.write('\t'.join(row) + '\n')
-
-
-# Run the function
-if __name__ == "__main__":
-    combine_tsv_boms()
