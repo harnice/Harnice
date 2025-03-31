@@ -83,3 +83,21 @@ def generate_instances_list():
                 "",
                 "", "", "", ""
             ])
+
+        # Process formboard segments
+        with open(filepath("formboard graph definition"), "r") as f:
+            formboard_data = yaml.safe_load(f)  # works for JSON too
+
+        for segment_name, segment in formboard_data.items():
+            writer.writerow([
+                segment_name,              # instance_name
+                "",                        # bom_line
+                "",                        # mpn
+                "Segment",                 # item_type
+                "",                        # child_instance
+                "",                        # parent_instance
+                "",                        # supplier
+                segment.get("length", ""), # length
+                segment.get("diameter", ""), # diameter
+                "", ""                     # translate_formboard, translate_bs
+            ])
