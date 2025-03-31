@@ -1,102 +1,36 @@
 import yaml
 import csv
-import os
-from utility import *
-from os.path import basename, join
-from inspect import currentframe
+from pathlib import Path
+from utility import *  # Assuming filepath() is defined here
 
-def generate_instances_list():
-    # Create output directory if it doesn't exist
-    os.makedirs(dirpath("boms"), exist_ok=True)
+# Load YAML data
+with open(Path(filepath("wireviz yaml")), "r") as file:
+    parsed = yaml.safe_load(file)
 
-    with open(filepath("harness bom"), 'r') as bom_file:
-        # Read the header line first
-        header_line = bom_file.readline()
-        header = header_line.strip().split("\t")
+# Get the connectors section
+connectors = parsed.get("connectors", {})
+
+# Write to TSV
+with open(Path(filepath("instances list")), "w", newline="") as tsvfile:
+    writer = csv.writer(tsvfile, delimiter="\t")
+    
+    # Write header
+    writer.writerow(["Connector Name", "MPN", "Supplier", "Type"])
+    
+    for name, connector in connectors.items():
+        # Main connector
+        writer.writerow([
+            name,
+            connector.get("mpn", ""),
+            connector.get("supplier", ""),
+            ""
+        ])
         
-        # Identify indices from the header
-        id_index = header.index("Id")
-        mpn_index = header.index("MPN")
-        desc_simple_index = header.index("Description Simple")
-        supplier_index = header.index("Supplier")
-
-        # Read the remaining data (if needed)
-        bom_data = bom_file.read()
-        bom_lines = bom_data.splitlines()
-
-    # Load YAML file
-    with open(filepath("wireviz yaml"), 'r') as yaml_file:
-        yaml_data = yaml.safe_load(yaml_file)
-
-    # load segments file
-    with open(filepath("formboard segment to from center"), 'r') as json_file:
-        segment_locations = json.load(json_file)
-
-    #try:
-    with open(filepath("instances list"), mode='w', newline='', encoding="utf-8") as tsv_file:
-        columns = ["instance name", "bom line", "item type", "child instance"]
-        writer = csv.DictWriter(tsv_file, fieldnames=columns, delimiter='\t')
-        writer.writeheader()
-
-        #for each line in harness bom:
-        for line in bom_lines:
-
-            columns = line.strip().split("\t")
-            current_desc_simple = columns[desc_simple_index]
-
-            #if "Description Simple" == "Backshell" in harness bom (do this first because it informs rotation of others)
-            if current_desc_simple == "Backshell":
-                current_mpn = columns[mpn_index]
-                
-                #for each connector in yaml
-                for connector_name, connector in yaml_data.get("connectors", {}).items():
-                    # Check if any additional component is a Backshell with mpn equal to current_mpn
-                    if any(
-                        component.get("type") == "Backshell" and component.get("mpn") == current_mpn
-                        for component in connector.get("additional_components", [])
-                    ):
-                        new_row = {
-                            "instance name": f"{connector_name}.bs",
-                            "bom line": columns[id_index],
-                            "item type": "backshell",
-                            "child instance": ""
-                        }
-                        writer.writerow(new_row)
-
-            if current_desc_simple == "Connector":
-                current_mpn = columns[mpn_index]  
-
-                #for each connector in yaml
-                for connector_name, connector in yaml_data.get("connectors", {}).items():
-                    #if "mpn" in yaml == "MPN" in harness bom
-                    if connector.get("mpn") == current_mpn:
-
-                        backshell_name = ""
-                        #if connector has any backshell as an additional part
-                        if any(
-                            component.get("type") == "Backshell" for 
-                            component in connector.get("additional_components", [])
-                        ):
-                            #TODO: this field should look up backshell part number
-                            backshell_name = f"{connector_name}.bs"
-
-                        #TODO: add a line in connector list
-                        new_row = {
-                            "instance name": connector_name,
-                            "bom line": columns[id_index],
-                            "item type": "connector",
-                            "child instance": backshell_name
-                        }
-                        writer.writerow(new_row)
-
-        for segment in segment_locations:
-            new_row = {
-                "instance name": segment["segment name"],
-                "bom line": "",
-                "item type": "segment",
-                "child instance": ""
-            }
-            writer.writerow(new_row)
-
-if __name__ == "__main__":
-    generate_instances_list()
+        # Additional components
+        for component in connector.get("additional_components", []):
+            writer.writerow([
+                name,
+                component.get("mpn", ""),
+                component.get("supplier", ""),
+                component.get("type", "")
+            ])
