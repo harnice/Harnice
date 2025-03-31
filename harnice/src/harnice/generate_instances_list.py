@@ -1,19 +1,15 @@
 import yaml
 import csv
-from pathlib import Path
-from utility import *  # Assumes filepath() is defined here
+from utility import *
 
 def generate_instances_list():
-    tsv_full_path = Path(filepath("instances list"))
-    tsv_full_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(filepath("wireviz yaml"), "r") as file:
+        yaml_data_parsed = yaml.safe_load(file)
 
-    with open(Path(filepath("wireviz yaml")), "r") as file:
-        parsed = yaml.safe_load(file)
+    connectors = yaml_data_parsed.get("connectors", {})
+    cables = yaml_data_parsed.get("cables", {})
 
-    connectors = parsed.get("connectors", {})
-    cables = parsed.get("cables", {})
-
-    with open(tsv_full_path, "w", newline="") as tsvfile:
+    with open(filepath("instances list"), "w", newline="") as tsvfile:
         writer = csv.writer(tsvfile, delimiter="\t")
 
         # Write header
@@ -51,13 +47,13 @@ def generate_instances_list():
                 component_instance_name = f"{instance_name}.{suffix}"
                 component_instances.append(component_instance_name)
 
-                # Write row for the component
+                # Write row for the additional component
                 writer.writerow([
-                    component_instance_name,       # instance_name like X1.bs
+                    component_instance_name,       # instance_name
                     "",                            # bom_line
                     component_mpn,                 # mpn
                     component_type,                # item_type
-                    component_mpn,                 # child_instance
+                    "",                            # child_instance
                     instance_name,                 # parent_instance
                     component_supplier,            # supplier
                     "", "", "", ""                 # length, diameter, translate_formboard, translate_bs
@@ -65,14 +61,14 @@ def generate_instances_list():
 
             # Write connector row
             writer.writerow([
-                instance_name,
-                "",
-                mpn,
-                "Connector",
-                ", ".join(component_instances) if component_instances else "",
-                "",
-                supplier,
-                "", "", "", ""
+                instance_name,                     # instance_name
+                "",                                # bom_line
+                mpn,                               # mpn
+                "Connector",                       # item_type
+                ", ".join(component_instances) if component_instances else "",      # child_instance
+                "",                                # parent_instance
+                supplier,                          # supplier
+                "", "", "", ""                     # length, diameter, translate_formboard, translate_bs
             ])
 
         # Process cables
