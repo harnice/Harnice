@@ -9,7 +9,7 @@ from tblock_svg_prepper import prep_tblock_svg_master
 from formboard_functions import formboard_processor
 from flagnote_functions import look_for_buildnotes_file
 from harnice_prechecker import harnice_prechecker
-from utility import file_exists_in_directory, partnumber
+from utility import *
 from formboard_illustration_functions import regen_formboard
 import os
 
