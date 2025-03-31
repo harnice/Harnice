@@ -37,11 +37,11 @@ def harnice():
     print("############ GENERATING AN INSTANCES LIST #############")
     generate_instances_list()
 
-    exit()
-
     print()
     print("############ LOOKING FOR BUILDNOTES FILE #############")
     look_for_buildnotes_file()
+
+    exit()
 
     #rerun formboard processor
     print()
