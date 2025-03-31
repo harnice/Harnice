@@ -14,6 +14,16 @@ from formboard_illustration_functions import regen_formboard
 import os
 
 def harnice():
+    #build file structure
+    os.makedirs(dirpath("drawing_instances"), exist_ok=True)
+    os.makedirs(dirpath("library_used"), exist_ok=True)
+    os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
+    os.makedirs(dirpath("boms"), exist_ok=True)
+    os.makedirs(dirpath("formboard_data"), exist_ok=True)
+    os.makedirs(dirpath("master_svgs"), exist_ok=True)
+    os.makedirs(dirpath("wirelists"), exist_ok=True)
+
+
     #check if revision history is set up correctly
     print()
     print("############ CHECKING REV HISTORY #############")
