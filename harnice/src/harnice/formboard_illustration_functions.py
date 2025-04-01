@@ -40,17 +40,17 @@ def delete_unmatched_files():
             if os.path.isfile(item_path):
                 try:
                     os.remove(item_path)  # Delete the file
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching file: {basename(item_path)} in 'drawing-instances'")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching file: {basename(item_path)} in 'drawing instances'")
                 except Exception as e:
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching file: {basename(item_path)} in 'drawing-instances': {e}")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching file: {basename(item_path)} in 'drawing instances': {e}")
 
             # Check if it's a directory
             elif os.path.isdir(item_path):
                 try:
                     shutil.rmtree(item_path)  # Delete the directory and its contents
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching directory: {basename(item_path)} in 'drawing-instances'")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching directory: {basename(item_path)} in 'drawing instances'")
                 except Exception as e:
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing-instances': {e}")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing instances': {e}")
 
 def update_all_bom_instances():
     #TODO: rebuild this approach by adding instances using filepath("instances list")
@@ -126,12 +126,7 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
         instance_name_w_suffix = f"{instance_name}.bs"
 
     print(f"#    #    ########## working on bom item {mpn}, instance name {instance_name_w_suffix}, which is type {instance_type}")
-    
-    #make sure the main directory of all drawing instances is there
-    os.makedirs(dirpath("drawing_instances"), exist_ok=True)
 
-    #make sure this particular instance directory is there
-    os.makedirs(os.path.join(dirpath("drawing_instances"),instance_name_w_suffix), exist_ok=True)
     instance_dirpath = os.path.join(dirpath("drawing_instances"),instance_name_w_suffix)
 
     #import from library
@@ -188,8 +183,6 @@ def update_segment_instances():
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
         return
-
-    os.makedirs(os.path.dirname(os.path.join(os.getcwd(),"drawing-instances")), exist_ok=True)
 
     # Iterate through each segment in the JSON
     for segment_name, segment_data in graph_data.items():
@@ -284,10 +277,6 @@ def update_formboard_master_svg():
         # Add contents start and end groups
         ET.SubElement(group, "g", id=f"unique-instance-{instance_name}-contents-start")
         ET.SubElement(group, "g", id=f"unique-instance-{instance_name}-contents-end")
-
-
-    # Ensure the directory exists for the output file
-    os.makedirs(os.path.dirname(filepath("formboard master svg")), exist_ok=True)
 
     # Write the SVG to file with proper formatting and newlines
     with open(filepath("formboard master svg"), 'w', encoding='utf-8') as svg_file:

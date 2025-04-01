@@ -66,7 +66,6 @@ def esch_to_wirelist():
     wirelist = generate_wirelist(connections)
     
     # Write the wirelist to a TSV file
-    os.makedirs(dirpath("wirelists"), exist_ok=True)
     write_tsv(filepath("wirelist nolengths"), wirelist)
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wirelist has been written to {filename("wirelist nolengths")}")
 

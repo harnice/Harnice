@@ -79,10 +79,6 @@ def find_buildnotes_of_instance(instance, note_list_filepath):
     
 
 def generate_instance_flagnotes(instance, instance_flagnotes_filename, instance_flagnotes_filepath,rotation_angle,bomid):
-
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(instance_flagnotes_filepath), exist_ok=True)
-
     # Create a new SVG file and write a basic SVG structure
     with open(instance_flagnotes_filepath, 'w') as f:
         f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="500" height="500">')
@@ -129,9 +125,6 @@ def generate_note_svg(target_file, shape, text_in_bubble, bubble_location_index,
     Ensures proper indentation and newlines between elements for readability.
     The target_file is expected to be a valid file path string.
     """
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(target_file), exist_ok=True)
-
     # Open the file in append mode
     with open(target_file, "a") as file:
         # Start the groups

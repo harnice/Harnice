@@ -326,6 +326,14 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}.yaml":"wireviz yaml"
         }
 
+def generate_file_structure():
+    os.makedirs(dirpath("drawing_instances"), exist_ok=True)
+    os.makedirs(dirpath("library_used"), exist_ok=True)
+    os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
+    os.makedirs(dirpath("boms"), exist_ok=True)
+    os.makedirs(dirpath("formboard_data"), exist_ok=True)
+    os.makedirs(dirpath("master_svgs"), exist_ok=True)
+    os.makedirs(dirpath("wirelists"), exist_ok=True)
 
 def filepath(target_value):
     #returns the filepath/filename of a filekey. 
