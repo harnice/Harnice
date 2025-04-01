@@ -29,6 +29,8 @@ def harnice():
     print("############ RUNNING WIREVIZ #############")
     generate_esch()
 
+    exit()
+
     #generating a wirelist
     #temporarily turning these off in issue-13 to decouple them from instance list
     #print()

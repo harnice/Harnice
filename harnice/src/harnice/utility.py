@@ -319,7 +319,7 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
-            "wireviz":{
+            "wireviz_outputs":{
                 f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
                 f"{partnumber("pn-rev")}.html":"wireviz html",
                 f"{partnumber("pn-rev")}.png":"wireviz png",
@@ -339,7 +339,7 @@ def generate_file_structure():
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
     os.makedirs(dirpath("master_svgs"), exist_ok=True)
     os.makedirs(dirpath("wirelists"), exist_ok=True)
-    os.makedirs(dirpath("wireviz"), exist_ok=True)
+    os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
 
 def filepath(target_value):
     #returns the filepath/filename of a filekey. 
