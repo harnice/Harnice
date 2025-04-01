@@ -3,7 +3,7 @@ import csv
 from utility import *
 
 def generate_instances_list():
-    with open(filepath("wireviz yaml"), "r") as file:
+    with open(filepath("harness yaml"), "r") as file:
         yaml_data_parsed = yaml.safe_load(file)
 
     connectors = yaml_data_parsed.get("connectors", {})

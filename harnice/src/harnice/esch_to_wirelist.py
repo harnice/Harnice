@@ -56,9 +56,9 @@ def write_tsv(file_path, wirelist):
 def esch_to_wirelist():
     # Read the YAML file
     try:
-        data = read_yaml(filepath("wireviz yaml"))
+        data = read_yaml(filepath("harness yaml"))
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {filename("wireviz yaml")} not found in the current directory.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {filename("harness yaml")} not found in the current directory.")
         exit(1)
     
     # Generate the wirelist

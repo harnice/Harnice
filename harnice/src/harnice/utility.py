@@ -319,11 +319,14 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
+            "wireviz":{
+                f"{partnumber("pn-rev")}.yaml":"wireviz yaml",
+                f"{partnumber("pn-rev")}.png":"wireviz png",
+            },
             f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
-            f"{partnumber("pn-rev")}.png":"wireviz png",
             f"{partnumber("pn-rev")}.harnice_output.svg":"harnice output",
             f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
-            f"{partnumber("pn-rev")}.yaml":"wireviz yaml"
+            f"{partnumber("pn-rev")}.yaml":"harness yaml"
         }
 
 def generate_file_structure():
@@ -334,6 +337,7 @@ def generate_file_structure():
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
     os.makedirs(dirpath("master_svgs"), exist_ok=True)
     os.makedirs(dirpath("wirelists"), exist_ok=True)
+    os.makedirs(dirpath("wireviz"), exist_ok=True)
 
 def filepath(target_value):
     #returns the filepath/filename of a filekey. 
