@@ -40,17 +40,17 @@ def delete_unmatched_files():
             if os.path.isfile(item_path):
                 try:
                     os.remove(item_path)  # Delete the file
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching file: {basename(item_path)} in 'drawing-instances'")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching file: {basename(item_path)} in 'drawing instances'")
                 except Exception as e:
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching file: {basename(item_path)} in 'drawing-instances': {e}")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching file: {basename(item_path)} in 'drawing instances': {e}")
 
             # Check if it's a directory
             elif os.path.isdir(item_path):
                 try:
                     shutil.rmtree(item_path)  # Delete the directory and its contents
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching directory: {basename(item_path)} in 'drawing-instances'")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching directory: {basename(item_path)} in 'drawing instances'")
                 except Exception as e:
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing-instances': {e}")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing instances': {e}")
 
 def update_all_bom_instances():
     #TODO: rebuild this approach by adding instances using filepath("instances list")
@@ -188,8 +188,6 @@ def update_segment_instances():
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
         return
-
-    os.makedirs(os.path.dirname(os.path.join(os.getcwd(),"drawing-instances")), exist_ok=True)
 
     # Iterate through each segment in the JSON
     for segment_name, segment_data in graph_data.items():
