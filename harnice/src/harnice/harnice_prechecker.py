@@ -230,9 +230,6 @@ def export_rev_row_from_tsv_to_project_rev_json():
     parent_dir = os.path.dirname(os.getcwd())
     tsv_file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
 
-    # Directory and file path for JSON
-    os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
-
     if not os.path.isfile(tsv_file_path):
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {pn}-revision-history.tsv not found.")
         return

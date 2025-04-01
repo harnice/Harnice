@@ -38,16 +38,10 @@ def field_contains_numbers(file_path, field):
 
 def generate_segments_precheck():
     """Generates the graph definition with lengths and angles set to null."""
-    if not os.path.exists(dirpath("formboard_data")):
-        os.makedirs(dirpath("formboard_data"))
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created folder: {dirpath("formboard_data")}")
-
-    json_file_path = filepath("formboard graph definition")
-
     # Step 2: Check if the file exists
-    if os.path.exists(json_file_path):
+    if os.path.exists(filepath("formboard graph definition")):
         # Load the existing file
-        with open(json_file_path, "r") as json_file:
+        with open(filepath("formboard graph definition"), "r") as json_file:
             try:
                 data = json.load(json_file)
             except json.JSONDecodeError:
@@ -55,10 +49,10 @@ def generate_segments_precheck():
                 data = {}
 
         # Check "length" and "angle" values
-        length_has_null = field_contains_null(json_file_path, "length")
-        length_has_numbers = field_contains_numbers(json_file_path, "length")
-        angle_has_null = field_contains_null(json_file_path, "angle")
-        angle_has_numbers = field_contains_numbers(json_file_path, "angle")
+        length_has_null = field_contains_null(filepath("formboard graph definition"), "length")
+        length_has_numbers = field_contains_numbers(filepath("formboard graph definition"), "length")
+        angle_has_null = field_contains_null(filepath("formboard graph definition"), "angle")
+        angle_has_numbers = field_contains_numbers(filepath("formboard graph definition"), "angle")
 
         all_has_null = (
             not length_has_numbers
@@ -94,10 +88,8 @@ def generate_segments_precheck():
     return 1
 
 def generate_segments():
-    json_file_path = filepath("formboard graph definition")
-
     # Create a new JSON file defining the graph of the harness
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Creating new formboard graph definition file: {json_file_path}")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Creating new formboard graph definition file: {filepath("formboard graph definition")}")
 
     tsv_filename = filename("connector list")
     if not os.path.exists(filepath("connector list")):
@@ -128,18 +120,16 @@ def generate_segments():
         segment_counter += 1
 
     # Save the graph definition to JSON
-    with open(json_file_path, "w") as json_file:
+    with open(filepath("formboard graph definition"), "w") as json_file:
         json.dump(data, json_file, indent=4)
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Graph definition saved to {json_file_path}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Graph definition saved to {filepath("formboard graph definition")}")
 
     return True
 
 def add_random_lengths_angles():
-    json_file_path = filepath("formboard graph definition")
-
     # Read the existing JSON data
     try:
-        with open(json_file_path, "r") as file:
+        with open(filepath("formboard graph definition"), "r") as file:
             data = json.load(file)
     except FileNotFoundError:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {filename("formboard graph definition")}")
@@ -154,15 +144,12 @@ def add_random_lengths_angles():
         segment["angle"] = random.randint(0, 359)
 
     # Write the updated data back to the JSON file
-    with open(json_file_path, "w") as file:
+    with open(filepath("formboard graph definition"), "w") as file:
         json.dump(data, file, indent=4)
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {filename("formboard graph definition")}")
 
 def generate_node_coordinates():
-    # Create the target directory for the output file
-    os.makedirs(dirpath("formboard_data"), exist_ok=True)
-
     # Read the segment data
     try:
         with open(filepath("formboard graph definition"), "r") as file:

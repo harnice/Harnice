@@ -17,7 +17,6 @@ def generate_esch():
     # Rename, create directory if not existent, and move the SVG file
     wireviz_svg_filename = f"{partnumber("pn-rev")}.svg"
     rename_file(wireviz_svg_filename, filename("esch master svg"), True)
-    os.makedirs(dirpath("master_svgs"), exist_ok=True)
     shutil.move(os.path.join(os.getcwd(), filename("esch master svg")), filepath("esch master svg"))
     
     # Modify the SVG file
@@ -25,7 +24,6 @@ def generate_esch():
 
     # Rename, create directory if not existent, and move the bom file
     rename_file(f"{partnumber("pn-rev")}.bom.tsv", filename("electrical bom"), True)
-    os.makedirs(dirpath("boms"), exist_ok=True)
     shutil.move(os.path.join(os.getcwd(), filename("electrical bom")), filepath("electrical bom"))
 
     # Delete the HTML file

@@ -28,11 +28,7 @@ def pull_tblock_info_from_json():
     wanted_tblock_libfilename = "rs-tblock-default.svg" 
 
 def prep_tblock_svg_master():
-
     pull_tblock_info_from_json()
-
-    # Ensure the dirpath("master_svgs") exists
-    os.makedirs(dirpath("master_svgs"), exist_ok=True)
 
     global library_used_tblock_filepath
     library_used_tblock_filepath = os.path.join(os.getcwd(), "library_used", wanted_tblock_libsubpath, wanted_tblock_libfilename)
