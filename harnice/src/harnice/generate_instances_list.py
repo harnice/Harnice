@@ -1,102 +1,103 @@
 import yaml
 import csv
-import os
 from utility import *
-from os.path import basename, join
-from inspect import currentframe
 
 def generate_instances_list():
-    # Create output directory if it doesn't exist
-    os.makedirs(dirpath("boms"), exist_ok=True)
+    with open(filepath("wireviz yaml"), "r") as file:
+        yaml_data_parsed = yaml.safe_load(file)
 
-    with open(filepath("harness bom"), 'r') as bom_file:
-        # Read the header line first
-        header_line = bom_file.readline()
-        header = header_line.strip().split("\t")
-        
-        # Identify indices from the header
-        id_index = header.index("Id")
-        mpn_index = header.index("MPN")
-        desc_simple_index = header.index("Description Simple")
-        supplier_index = header.index("Supplier")
+    connectors = yaml_data_parsed.get("connectors", {})
+    cables = yaml_data_parsed.get("cables", {})
 
-        # Read the remaining data (if needed)
-        bom_data = bom_file.read()
-        bom_lines = bom_data.splitlines()
+    with open(filepath("instances list"), "w", newline="") as tsvfile:
+        writer = csv.writer(tsvfile, delimiter="\t")
 
-    # Load YAML file
-    with open(filepath("wireviz yaml"), 'r') as yaml_file:
-        yaml_data = yaml.safe_load(yaml_file)
+        # Write header
+        writer.writerow([
+            "instance_name",
+            "bom_line",
+            "mpn",
+            "item_type",
+            "child_instance",
+            "parent_instance",
+            "supplier",
+            "length",
+            "diameter",
+            "translate_formboard",
+            "translate_bs"
+        ])
 
-    # load segments file
-    with open(filepath("formboard segment to from center"), 'r') as json_file:
-        segment_locations = json.load(json_file)
+        # Process connectors
+        for instance_name, connector in connectors.items():
+            mpn = connector.get("mpn", "")
+            supplier = connector.get("supplier", "")
+            component_instances = []
 
-    #try:
-    with open(filepath("instances list"), mode='w', newline='', encoding="utf-8") as tsv_file:
-        columns = ["instance name", "bom line", "item type", "child instance"]
-        writer = csv.DictWriter(tsv_file, fieldnames=columns, delimiter='\t')
-        writer.writeheader()
+            for component in connector.get("additional_components", []):
+                component_mpn = component.get("mpn", "")
+                component_type = component.get("type", "")
+                component_supplier = component.get("supplier", "")
 
-        #for each line in harness bom:
-        for line in bom_lines:
+                # Use .bs suffix for Backshell, otherwise use .{type.lower()}
+                if component_type.lower() == "backshell":
+                    suffix = "bs"
+                else:
+                    suffix = component_type.lower()
 
-            columns = line.strip().split("\t")
-            current_desc_simple = columns[desc_simple_index]
+                component_instance_name = f"{instance_name}.{suffix}"
+                component_instances.append(component_instance_name)
 
-            #if "Description Simple" == "Backshell" in harness bom (do this first because it informs rotation of others)
-            if current_desc_simple == "Backshell":
-                current_mpn = columns[mpn_index]
-                
-                #for each connector in yaml
-                for connector_name, connector in yaml_data.get("connectors", {}).items():
-                    # Check if any additional component is a Backshell with mpn equal to current_mpn
-                    if any(
-                        component.get("type") == "Backshell" and component.get("mpn") == current_mpn
-                        for component in connector.get("additional_components", [])
-                    ):
-                        new_row = {
-                            "instance name": f"{connector_name}.bs",
-                            "bom line": columns[id_index],
-                            "item type": "backshell",
-                            "child instance": ""
-                        }
-                        writer.writerow(new_row)
+                # Write row for the additional component
+                writer.writerow([
+                    component_instance_name,       # instance_name
+                    "",                            # bom_line
+                    component_mpn,                 # mpn
+                    component_type,                # item_type
+                    "",                            # child_instance
+                    instance_name,                 # parent_instance
+                    component_supplier,            # supplier
+                    "", "", "", ""                 # length, diameter, translate_formboard, translate_bs
+                ])
 
-            if current_desc_simple == "Connector":
-                current_mpn = columns[mpn_index]  
+            # Write connector row
+            writer.writerow([
+                instance_name,                     # instance_name
+                "",                                # bom_line
+                mpn,                               # mpn
+                "Connector",                       # item_type
+                ", ".join(component_instances) if component_instances else "",      # child_instance
+                "",                                # parent_instance
+                supplier,                          # supplier
+                "", "", "", ""                     # length, diameter, translate_formboard, translate_bs
+            ])
 
-                #for each connector in yaml
-                for connector_name, connector in yaml_data.get("connectors", {}).items():
-                    #if "mpn" in yaml == "MPN" in harness bom
-                    if connector.get("mpn") == current_mpn:
+        # Process cables
+        for cable_name, cable in cables.items():
+            writer.writerow([
+                cable_name,
+                "",
+                "",
+                "Cable",
+                "",
+                "",
+                "",
+                "", "", "", ""
+            ])
 
-                        backshell_name = ""
-                        #if connector has any backshell as an additional part
-                        if any(
-                            component.get("type") == "Backshell" for 
-                            component in connector.get("additional_components", [])
-                        ):
-                            #TODO: this field should look up backshell part number
-                            backshell_name = f"{connector_name}.bs"
+        # Process formboard segments
+        with open(filepath("formboard graph definition"), "r") as f:
+            formboard_data = yaml.safe_load(f)  # works for JSON too
 
-                        #TODO: add a line in connector list
-                        new_row = {
-                            "instance name": connector_name,
-                            "bom line": columns[id_index],
-                            "item type": "connector",
-                            "child instance": backshell_name
-                        }
-                        writer.writerow(new_row)
-
-        for segment in segment_locations:
-            new_row = {
-                "instance name": segment["segment name"],
-                "bom line": "",
-                "item type": "segment",
-                "child instance": ""
-            }
-            writer.writerow(new_row)
-
-if __name__ == "__main__":
-    generate_instances_list()
+        for segment_name, segment in formboard_data.items():
+            writer.writerow([
+                segment_name,              # instance_name
+                "",                        # bom_line
+                "",                        # mpn
+                "Segment",                 # item_type
+                "",                        # child_instance
+                "",                        # parent_instance
+                "",                        # supplier
+                segment.get("length", ""), # length
+                segment.get("diameter", ""), # diameter
+                "", ""                     # translate_formboard, translate_bs
+            ])

@@ -9,11 +9,21 @@ from tblock_svg_prepper import prep_tblock_svg_master
 from formboard_functions import formboard_processor
 from flagnote_functions import look_for_buildnotes_file
 from harnice_prechecker import harnice_prechecker
-from utility import file_exists_in_directory, partnumber
+from utility import *
 from formboard_illustration_functions import regen_formboard
 import os
 
 def harnice():
+    #build file structure
+    os.makedirs(dirpath("drawing_instances"), exist_ok=True)
+    os.makedirs(dirpath("library_used"), exist_ok=True)
+    os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
+    os.makedirs(dirpath("boms"), exist_ok=True)
+    os.makedirs(dirpath("formboard_data"), exist_ok=True)
+    os.makedirs(dirpath("master_svgs"), exist_ok=True)
+    os.makedirs(dirpath("wirelists"), exist_ok=True)
+
+
     #check if revision history is set up correctly
     print()
     print("############ CHECKING REV HISTORY #############")
@@ -21,14 +31,16 @@ def harnice():
         return
 
     #run wireviz
-    print()
-    print("############ RUNNING WIREVIZ #############")
-    generate_esch()
+    #temporarily turning these off in issue-13 to decouple them from instance list
+    #print()
+    #print("############ RUNNING WIREVIZ #############")
+    #generate_esch()
 
     #generating a wirelist
-    print()
-    print("############ GENERATING A NO-LENGTHS WIRELIST #############")
-    esch_to_wirelist()
+    #temporarily turning these off in issue-13 to decouple them from instance list
+    #print()
+    #print("############ GENERATING A NO-LENGTHS WIRELIST #############")
+    #esch_to_wirelist()
 
     #generating a connector list
     print()
@@ -38,6 +50,8 @@ def harnice():
     print()
     print("############ LOOKING FOR BUILDNOTES FILE #############")
     look_for_buildnotes_file()
+
+    exit()
 
     #rerun formboard processor
     print()
