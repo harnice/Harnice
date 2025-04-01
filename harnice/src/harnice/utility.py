@@ -320,8 +320,10 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
             "wireviz":{
-                f"{partnumber("pn-rev")}.yaml":"wireviz yaml",
+                f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
+                f"{partnumber("pn-rev")}.html":"wireviz html",
                 f"{partnumber("pn-rev")}.png":"wireviz png",
+                f"{partnumber("pn-rev")}.svg":"wireviz svg"
             },
             f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
             f"{partnumber("pn-rev")}.harnice_output.svg":"harnice output",

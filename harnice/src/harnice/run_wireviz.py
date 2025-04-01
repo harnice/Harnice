@@ -7,18 +7,24 @@ from inspect import currentframe
 from utility import *
 
 def generate_esch():
-    #duplicate yaml and move to wireviz folder
-    shutil.copy(filepath("harness yaml"), dirpath("wireviz"))
-    original_working_directory = os.getcwd()
-    os.chdir(dirpath("wireviz"))
-
     # Run the 'wireviz pn.yaml' command
     try:
         subprocess.run(["wireviz", filename("harness yaml")], check=True)
     except subprocess.CalledProcessError as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error while running wireviz: {e}")
         return
+
+    os.remove(filepath("wireviz bom"))
+    os.remove(filepath("wireviz html"))
+    os.remove(filepath("wireviz png"))
+    os.remove(filepath("wireviz svg"))
+
+    shutil.move(os.path.join(os.getcwd(),filename("wireviz bom")),dirpath("wireviz"))
+    shutil.move(os.path.join(os.getcwd(),filename("wireviz html")),dirpath("wireviz"))
+    shutil.move(os.path.join(os.getcwd(),filename("wireviz png")),dirpath("wireviz"))
+    shutil.move(os.path.join(os.getcwd(),filename("wireviz svg")),dirpath("wireviz"))
     
+    """
     # Rename, create directory if not existent, and move the SVG file
     wireviz_svg_filename = f"{partnumber("pn-rev")}.svg"
     rename_file(wireviz_svg_filename, filename("esch master svg"), True)
@@ -27,7 +33,21 @@ def generate_esch():
     # Modify the SVG file
     add_entire_svg_file_contents_to_group(filepath("esch master svg"), "esch-master")
 
-    os.chdir(original_working_directory)
+    # Rename, create directory if not existent, and move the bom file
+    rename_file(f"{partnumber("pn-rev")}.bom.tsv", filename("electrical bom"), True)
+    shutil.move(os.path.join(os.getcwd(), filename("electrical bom")), filepath("electrical bom"))
+
+    # Delete the HTML file
+    html_filename = f"{partnumber("pn-rev")}.html"
+    if os.path.exists(html_filename):
+        try:
+            os.remove(html_filename)
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted file: {html_filename}")
+        except OSError as e:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting file {html_filename}: {e}")
+    else:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {html_filename} does not exist.")
+    """
 
 # Run the process
 if __name__ == "__main__":
