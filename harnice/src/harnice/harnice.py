@@ -1,7 +1,7 @@
 import run_wireviz
 import bom_handler
 import esch_to_wirelist
-import generate_instances_list
+import instances_list
 import svg_section_replacer
 import generate_harnice_output_svg
 import bom_svg_prepper
@@ -26,16 +26,16 @@ def harnice():
     #generating a connector list
     print()
     print("############ GENERATING AN INSTANCES LIST #############")
-    generate_instances_list.make_new_list()
-    generate_instances_list.add_connectors()
-    generate_instances_list.add_cables()
+    instances_list.make_new_list()
+    instances_list.add_connectors()
+    instances_list.add_cables()
 
     #run formboard processor
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     #update this function to account for new instances list formatting:
     formboard_functions.formboard_processor()
-    generate_instances_list.add_formboard_segments()
+    instances_list.add_formboard_segments()
     #esch_to_wirelist.wirelist_add_lengths()
 
     #run wireviz
