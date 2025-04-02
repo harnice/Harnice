@@ -14,15 +14,19 @@ def generate_esch():
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error while running wireviz: {e}")
         return
 
-    os.remove(filepath("wireviz bom"))
-    os.remove(filepath("wireviz html"))
-    os.remove(filepath("wireviz png"))
-    os.remove(filepath("wireviz svg"))
+    def silentremove(filepath):
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
-    shutil.move(os.path.join(os.getcwd(),filename("wireviz bom")),dirpath("wireviz"))
-    shutil.move(os.path.join(os.getcwd(),filename("wireviz html")),dirpath("wireviz"))
-    shutil.move(os.path.join(os.getcwd(),filename("wireviz png")),dirpath("wireviz"))
-    shutil.move(os.path.join(os.getcwd(),filename("wireviz svg")),dirpath("wireviz"))
+    silentremove(filepath("wireviz bom"))
+    silentremove(filepath("wireviz html"))
+    silentremove(filepath("wireviz png"))
+    silentremove(filepath("wireviz svg"))
+
+    shutil.move(os.path.join(os.getcwd(),filename("wireviz bom")),dirpath("wireviz_outputs"))
+    shutil.move(os.path.join(os.getcwd(),filename("wireviz html")),dirpath("wireviz_outputs"))
+    shutil.move(os.path.join(os.getcwd(),filename("wireviz png")),dirpath("wireviz_outputs"))
+    shutil.move(os.path.join(os.getcwd(),filename("wireviz svg")),dirpath("wireviz_outputs"))
     
     # Copy and format svg output as needed for later use
     shutil.copy(filepath("wireviz svg"), dirpath("master_svgs"))
