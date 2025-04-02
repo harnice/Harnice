@@ -73,7 +73,7 @@ def update_all_bom_instances():
         bom_lines = bom_data.splitlines()
 
     # Load YAML file
-    with open(filepath("wireviz yaml"), 'r') as yaml_file:
+    with open(filepath("harness yaml"), 'r') as yaml_file:
         yaml_data = yaml.safe_load(yaml_file)
 
     #for each line in harness bom:

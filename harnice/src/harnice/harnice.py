@@ -25,9 +25,9 @@ def harnice():
 
     #run wireviz
     #temporarily turning these off in issue-13 to decouple them from instance list
-    #print()
-    #print("############ RUNNING WIREVIZ #############")
-    #generate_esch()
+    print()
+    print("############ RUNNING WIREVIZ #############")
+    generate_esch()
 
     #generating a wirelist
     #temporarily turning these off in issue-13 to decouple them from instance list
@@ -43,8 +43,6 @@ def harnice():
     print()
     print("############ LOOKING FOR BUILDNOTES FILE #############")
     look_for_buildnotes_file()
-
-    exit()
 
     #rerun formboard processor
     print()
