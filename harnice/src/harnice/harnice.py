@@ -23,16 +23,16 @@ def harnice():
     if(harnice_prechecker() == False):
         return
 
+    #generating a connector list
+    print()
+    print("############ GENERATING AN INSTANCES LIST #############")
+    generate_instances_list()
+
     #run formboard processor
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     formboard_processor()
     #wirelist_add_lengths()
-
-    #generating a connector list
-    #print()
-    #print("############ GENERATING AN INSTANCES LIST #############")
-    #generate_instances_list()
 
     #run wireviz
     #print()
