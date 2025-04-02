@@ -9,13 +9,13 @@ from tblock_svg_prepper import prep_tblock_svg_master
 from formboard_functions import formboard_processor
 from flagnote_functions import look_for_buildnotes_file
 from harnice_prechecker import harnice_prechecker
-from utility import *
+import utility
 from formboard_illustration_functions import regen_formboard
 import os
 
 def harnice():
     #build file structure
-    generate_file_structure()
+    utility.generate_file_structure()
 
     #check if revision history is set up correctly
     print()
@@ -68,11 +68,11 @@ def harnice():
     #generate blank harnice output svg
     #print()
     #print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
-    #if not file_exists_in_directory(f"{partnumber("pn-rev")}-harnice-output.svg"):
+    #if not utility.file_exists_in_directory(f"{utility.partnumber("pn-rev")}-harnice-output.svg"):
         #print()
         #generate_blank_harnice_output_svg()
     #else :
-        #print(f"{partnumber("pn-rev")}-harnice-output.svg already exists")
+        #print(f"{utility.partnumber("pn-rev")}-harnice-output.svg already exists")
         #ensure_groups_exist_in_harnice_output()
 
     #combine all master SVG groups into PN-harnice-output.svg
