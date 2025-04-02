@@ -1,16 +1,16 @@
-from run_wireviz import generate_esch
-from bom_handler import process_boms
-from esch_to_wirelist import esch_to_wirelist, wirelist_add_lengths
-from generate_instances_list import generate_instances_list
-from svg_section_replacer import regen_harnice_output_svg
-from generate_harnice_output_svg import generate_blank_harnice_output_svg, ensure_groups_exist_in_harnice_output
-from bom_svg_prepper import prep_bom_svg_master
-from tblock_svg_prepper import prep_tblock_svg_master
-from formboard_functions import formboard_processor
-from flagnote_functions import look_for_buildnotes_file
-from harnice_prechecker import harnice_prechecker
+import run_wireviz
+import bom_handler
+import esch_to_wirelist
+import generate_instances_list
+import svg_section_replacer
+import generate_harnice_output_svg
+import bom_svg_prepper
+import tblock_svg_prepper
+import formboard_functions
+import flagnote_functions
+import harnice_prechecker
 import utility
-from formboard_illustration_functions import regen_formboard
+import formboard_illustration_functions
 import os
 
 def harnice():
@@ -20,65 +20,65 @@ def harnice():
     #check if revision history is set up correctly
     print()
     print("############ CHECKING REV HISTORY #############")
-    if(harnice_prechecker() == False):
+    if(harnice_prechecker.harnice_prechecker() == False):
         return
 
     #generating a connector list
     print()
     print("############ GENERATING AN INSTANCES LIST #############")
-    generate_instances_list()
+    generate_instances_list.generate_instances_list()
 
     #run formboard processor
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
-    formboard_processor()
-    #wirelist_add_lengths()
+    formboard_functions.formboard_processor()
+    #esch_to_wirelist.wirelist_add_lengths()
 
     #run wireviz
     #print()
     #print("############ RUNNING WIREVIZ #############")
-    #generate_esch()
+    #run_wireviz.generate_esch()
 
     #generating a wirelist
     #print()
     #print("############ GENERATING A NO-LENGTHS WIRELIST #############")
-    #esch_to_wirelist()
+    #esch_to_wirelist.esch_to_wirelist()
 
     #print()
     #print("############ LOOKING FOR BUILDNOTES FILE #############")
-    #look_for_buildnotes_file()
+    #flagnote_functions.look_for_buildnotes_file()
 
     #combine elec, mech, wire boms into pn-harness-bom
     #print()
     #print("############ COMBINING BOMS #############")
-    #process_boms()
+    #bom_handler.process_boms()
 
     #prep all the different master SVG's
     #print()
     #print("############ PREPPING MASTER SVG's #############")
     #print("#    ############ WORKING ON BOM SVG MASTER ############")
-    #prep_bom_svg_master()
+    #bom_svg_prepper.prep_bom_svg_master()
     #print("#    ############ WORKING ON TBLOCK SVG MASTER ############")
-    #prep_tblock_svg_master()
+    #tblock_svg_prepper.prep_tblock_svg_master()
 
     #print()
     #print("############ REBUILDING FORMBOARD DRAWING #############")
-    #regen_formboard()
+    #formboard_illustration_functions.regen_formboard()
 
     #generate blank harnice output svg
     #print()
     #print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
     #if not utility.file_exists_in_directory(f"{utility.partnumber("pn-rev")}-harnice-output.svg"):
         #print()
-        #generate_blank_harnice_output_svg()
+        #generate_harnice_output_svg.generate_blank_harnice_output_svg()
     #else :
         #print(f"{utility.partnumber("pn-rev")}-harnice-output.svg already exists")
-        #ensure_groups_exist_in_harnice_output()
+        #generate_harnice_output_svg.ensure_groups_exist_in_harnice_output()
 
     #combine all master SVG groups into PN-harnice-output.svg
     #print()
     #print("############ REGENERATE PN-HARNICE-OUTPUT.SVG #############")
-    #regen_harnice_output_svg()
+    #rsvg_section_replacer.egen_harnice_output_svg()
 
     return
 
