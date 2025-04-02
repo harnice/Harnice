@@ -1,15 +1,9 @@
 import yaml
 import csv
-from utility import *
+import utility
 
-def generate_instances_list():
-    with open(filepath("harness yaml"), "r") as file:
-        yaml_data_parsed = yaml.safe_load(file)
-
-    connectors = yaml_data_parsed.get("connectors", {})
-    cables = yaml_data_parsed.get("cables", {})
-
-    with open(filepath("instances list"), "w", newline="") as tsvfile:
+def make_new_list():
+    with open(utility.filepath("instances list"), "w", newline="") as tsvfile:
         writer = csv.writer(tsvfile, delimiter="\t")
 
         # Write header
@@ -27,51 +21,64 @@ def generate_instances_list():
             "translate_bs"
         ])
 
-        # Process connectors
-        for instance_name, connector in connectors.items():
-            mpn = connector.get("mpn", "")
-            supplier = connector.get("supplier", "")
-            component_instances = []
+def add_connectors():
+    with open(utility.filepath("harness yaml"), "r") as file:
+        yaml_data_parsed = yaml.safe_load(file)
+
+    connectors = yaml_data_parsed.get("connectors", {})
+
+    for instance_name, connector in connectors.items():
+        mpn = connector.get("mpn", "")
+        supplier = connector.get("supplier", "")
+        component_instances = []
+
+        with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
+            writer = csv.writer(tsvfile, delimiter="\t")
 
             for component in connector.get("additional_components", []):
                 component_mpn = component.get("mpn", "")
                 component_type = component.get("type", "")
                 component_supplier = component.get("supplier", "")
 
-                # Use .bs suffix for Backshell, otherwise use .{type.lower()}
-                if component_type.lower() == "backshell":
-                    suffix = "bs"
-                else:
-                    suffix = component_type.lower()
-
+                suffix = "bs" if component_type.lower() == "backshell" else component_type.lower()
                 component_instance_name = f"{instance_name}.{suffix}"
                 component_instances.append(component_instance_name)
 
                 # Write row for the additional component
                 writer.writerow([
-                    component_instance_name,       # instance_name
-                    "",                            # bom_line
-                    component_mpn,                 # mpn
-                    component_type,                # item_type
-                    "",                            # child_instance
-                    instance_name,                 # parent_instance
-                    component_supplier,            # supplier
-                    "", "", "", ""                 # length, diameter, translate_formboard, translate_bs
+                    component_instance_name,
+                    "",
+                    component_mpn,
+                    component_type,
+                    "",
+                    instance_name,
+                    component_supplier,
+                    "", "", "", ""
                 ])
 
-            # Write connector row
+        # Write connector row
+        with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
+            writer = csv.writer(tsvfile, delimiter="\t")
             writer.writerow([
-                instance_name,                     # instance_name
-                "",                                # bom_line
-                mpn,                               # mpn
-                "Connector",                       # item_type
-                ", ".join(component_instances) if component_instances else "",      # child_instance
-                "",                                # parent_instance
-                supplier,                          # supplier
-                "", "", "", ""                     # length, diameter, translate_formboard, translate_bs
+                instance_name,
+                "",
+                mpn,
+                "Connector",
+                ", ".join(component_instances) if component_instances else "",
+                "",
+                supplier,
+                "", "", "", ""
             ])
 
-        # Process cables
+def add_cables():
+    with open(utility.filepath("harness yaml"), "r") as file:
+        yaml_data_parsed = yaml.safe_load(file)
+
+    cables = yaml_data_parsed.get("cables", {})
+
+    with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
+        writer = csv.writer(tsvfile, delimiter="\t")
+
         for cable_name, cable in cables.items():
             writer.writerow([
                 cable_name,
@@ -84,20 +91,23 @@ def generate_instances_list():
                 "", "", "", ""
             ])
 
-        # Process formboard segments
-        with open(filepath("formboard graph definition"), "r") as f:
-            formboard_data = yaml.safe_load(f)  # works for JSON too
+def add_formboard_segments():
+    with open(utility.filepath("formboard graph definition"), "r") as f:
+        formboard_data = yaml.safe_load(f)
+
+    with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
+        writer = csv.writer(tsvfile, delimiter="\t")
 
         for segment_name, segment in formboard_data.items():
             writer.writerow([
-                segment_name,              # instance_name
-                "",                        # bom_line
-                "",                        # mpn
-                "Segment",                 # item_type
-                "",                        # child_instance
-                "",                        # parent_instance
-                "",                        # supplier
-                segment.get("length", ""), # length
-                segment.get("diameter", ""), # diameter
-                "", ""                     # translate_formboard, translate_bs
+                segment_name,
+                "",
+                "",
+                "Segment",
+                "",
+                "",
+                "",
+                segment.get("length", ""),
+                segment.get("diameter", ""),
+                "", ""
             ])

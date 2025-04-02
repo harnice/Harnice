@@ -26,12 +26,16 @@ def harnice():
     #generating a connector list
     print()
     print("############ GENERATING AN INSTANCES LIST #############")
-    generate_instances_list.generate_instances_list()
+    generate_instances_list.make_new_list()
+    generate_instances_list.add_connectors()
+    generate_instances_list.add_cables()
 
     #run formboard processor
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
+    #update this function to account for new instances list formatting:
     formboard_functions.formboard_processor()
+    generate_instances_list.add_formboard_segments()
     #esch_to_wirelist.wirelist_add_lengths()
 
     #run wireviz
