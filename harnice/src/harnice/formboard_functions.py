@@ -88,20 +88,13 @@ def generate_segments_precheck():
     return 1
 
 def generate_segments():
-    # Create a new JSON file defining the graph of the harness
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Creating new formboard graph definition file: {filepath("formboard graph definition")}")
-
-    tsv_filename = filename("connector list")
-    if not os.path.exists(filepath("connector list")):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: TSV file '{filename("connector list")}' does not exist. Please create it and try again.")
-        return False
-
-    # Read connectors from the TSV file
+    # Read connectors from the instances list
     connectors = []
-    with open(filepath("connector list"), mode='r') as tsv_file:
+    with open(filepath("instances list"), mode='r') as tsv_file:
         reader = csv.DictReader(tsv_file, delimiter='\t')
         for row in reader:
-            connectors.append(row["connector"])
+            if row["item_type"] == "Connector":
+                connectors.append(row["instance_name"])
 
     base_segment_name = "segment"
     segment_counter = 1
