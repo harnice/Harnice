@@ -3,7 +3,7 @@ import csv
 import os
 from os.path import basename
 from inspect import currentframe
-from utility import *
+import utility
 
 # Function to read the YAML file
 def read_yaml(file_path):
@@ -56,9 +56,9 @@ def write_tsv(file_path, wirelist):
 def esch_to_wirelist():
     # Read the YAML file
     try:
-        data = read_yaml(filepath("harness yaml"))
+        data = read_yaml(utility.filepath("harness yaml"))
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {filename("harness yaml")} not found in the current directory.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {utility.filename("harness yaml")} not found in the current directory.")
         exit(1)
     
     # Generate the wirelist
@@ -66,8 +66,8 @@ def esch_to_wirelist():
     wirelist = generate_wirelist(connections)
     
     # Write the wirelist to a TSV file
-    write_tsv(filepath("wirelist nolengths"), wirelist)
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wirelist has been written to {filename("wirelist nolengths")}")
+    write_tsv(utility.filepath("wirelist nolengths"), wirelist)
+    print(f"Wirelist has been written to {utility.filename("wirelist nolengths")}")
 
 def wirelist_add_lengths():
     return
