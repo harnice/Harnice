@@ -29,24 +29,20 @@ def harnice():
     instances_list.make_new_list()
     instances_list.add_connectors()
     instances_list.add_cables()
+    esch_to_wirelist.esch_to_wirelist()
 
     #run formboard processor
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     #update this function to account for new instances list formatting:
-    formboard_functions.formboard_processor()
-    instances_list.add_formboard_segments()
+    #uncheck before merge! formboard_functions.formboard_processor()
+    #uncheck before merge! instances_list.add_formboard_segments()
     #esch_to_wirelist.wirelist_add_lengths()
 
     #run wireviz
     #print()
     #print("############ RUNNING WIREVIZ #############")
     #run_wireviz.generate_esch()
-
-    #generating a wirelist
-    #print()
-    #print("############ GENERATING A NO-LENGTHS WIRELIST #############")
-    #esch_to_wirelist.esch_to_wirelist()
 
     #print()
     #print("############ LOOKING FOR BUILDNOTES FILE #############")
