@@ -35,8 +35,8 @@ def harnice():
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     #update this function to account for new instances list formatting:
-    #uncheck before merge! formboard_functions.formboard_processor()
-    #uncheck before merge! instances_list.add_formboard_segments()
+    formboard_functions.formboard_processor()
+    instances_list.add_formboard_segments()
     #esch_to_wirelist.wirelist_add_lengths()
 
     #run wireviz
