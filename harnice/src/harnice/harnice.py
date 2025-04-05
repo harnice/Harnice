@@ -29,7 +29,7 @@ def harnice():
     instances_list.make_new_list()
     instances_list.add_connectors()
     instances_list.add_cables()
-    wirelist.esch_to_wirelist()
+    wirelist.newlist()
 
     #run formboard processor
     print()
