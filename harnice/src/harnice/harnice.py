@@ -1,6 +1,6 @@
 import run_wireviz
 import bom_handler
-import esch_to_wirelist
+import wirelist
 import instances_list
 import svg_section_replacer
 import generate_harnice_output_svg
@@ -29,7 +29,7 @@ def harnice():
     instances_list.make_new_list()
     instances_list.add_connectors()
     instances_list.add_cables()
-    esch_to_wirelist.esch_to_wirelist()
+    wirelist.esch_to_wirelist()
 
     #run formboard processor
     print()
@@ -37,7 +37,7 @@ def harnice():
     #update this function to account for new instances list formatting:
     formboard_functions.formboard_processor()
     instances_list.add_formboard_segments()
-    #TODO: complete esch_to_wirelist.wirelist_add_lengths()
+    #TODO: complete wirelist.wirelist_add_lengths()
     #TODO: add lengths to instances list
 
     #run wireviz
