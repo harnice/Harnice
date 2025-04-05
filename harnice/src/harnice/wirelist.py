@@ -55,6 +55,29 @@ def newlist():
 
     print(f"Wirelist has been written to {fileio.name('wirelist nolengths')}")
 
-def wirelist_add_lengths():
-    return
-    #to-do: complete this function
+def add_lengths():
+    # Load the TSV files
+    instances_df = pd.read_csv(filepath("instances list"), sep='\t')
+    wirelist_df = pd.read_csv(filepath("wirelist lengths"), sep='\t')
+
+    # Filter instances to only include rows where "item type" is "Cable"
+    instances_df = instances_df[instances_df["item type"] == "Cable"]
+
+    # Make sure the 'length' column exists in the wirelist, or create it
+    if 'length' not in wirelist_df.columns:
+        wirelist_df['length'] = None
+
+    # Loop through each row in instances_df
+    for _, instance_row in instances_df.iterrows():
+        instance_name = instance_row.get("instance name")
+        length_value = instance_row.get("length")
+
+        # Apply the length to matching wirelist rows
+        matching_rows = wirelist_df["wire"] == instance_name
+        wirelist_df.loc[matching_rows, "length"] = length_value
+
+    # Save the updated wirelist
+    wirelist_df.to_csv(filepath("wirelist lengths"), sep='\t', index=False)
+
+    # Return the path
+    return filepath("wirelist lengths")
