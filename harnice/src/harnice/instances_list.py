@@ -1,4 +1,5 @@
 import yaml
+import json
 import csv
 import utility
 
@@ -91,23 +92,37 @@ def add_cables():
                 "", "", "", ""
             ])
 
-def add_formboard_segments():
-    with open(utility.filepath("formboard graph definition"), "r") as f:
-        formboard_data = yaml.safe_load(f)
+def add_cable_lengths():
+    # Load JSON graph data
+    with open(utility.filepath("connections to graph"), "r") as json_file:
+        graph_data = json.load(json_file)
 
-    with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
-        writer = csv.writer(tsvfile, delimiter="\t")
+    tsv_path = utility.filepath("instances list")
 
-        for segment_name, segment in formboard_data.items():
-            writer.writerow([
-                segment_name,
-                "",
-                "",
-                "Segment",
-                "",
-                "",
-                "",
-                segment.get("length", ""),
-                segment.get("diameter", ""),
-                "", ""
-            ])
+    # Read the TSV into memory
+    with open(tsv_path, newline='') as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames or []
+
+    # Ensure the 'length' column is present
+    if "length" not in fieldnames:
+        fieldnames.append("length")
+
+    # Modify rows in memory
+    for row in rows:
+        if row.get("item_type") == "Cable":
+            instance = row.get("instance_name")
+            if instance in graph_data:
+                row["length"] = graph_data[instance].get("wirelength", "")
+            else:
+                row["length"] = ""
+        else:
+            # Preserve existing value or blank
+            row["length"] = row.get("length", "")
+
+    # Write all rows back to the same TSV
+    with open(tsv_path, "w", newline='') as tsv_file:
+        writer = csv.DictWriter(tsv_file, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
