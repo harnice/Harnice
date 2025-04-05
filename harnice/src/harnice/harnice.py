@@ -36,17 +36,18 @@ def harnice():
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     #update this function to account for new instances list formatting:
     formboard_functions.formboard_processor()
-    #instances_list.add_formboard_segments()
-    #esch_to_wirelist.wirelist_add_lengths()
+    instances_list.add_formboard_segments()
+    #TODO: complete esch_to_wirelist.wirelist_add_lengths()
+    #TODO: add lengths to instances list
 
     #run wireviz
-    #print()
-    #print("############ RUNNING WIREVIZ #############")
-    #run_wireviz.generate_esch()
+    print()
+    print("############ RUNNING WIREVIZ #############")
+    run_wireviz.generate_esch()
 
     #print()
-    #print("############ LOOKING FOR BUILDNOTES FILE #############")
-    #flagnote_functions.look_for_buildnotes_file()
+    print("############ LOOKING FOR BUILDNOTES FILE #############")
+    flagnote_functions.look_for_buildnotes_file()
 
     #combine elec, mech, wire boms into pn-harness-bom
     #print()
