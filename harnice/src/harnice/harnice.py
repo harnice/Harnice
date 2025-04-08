@@ -16,7 +16,7 @@ import os
 
 def harnice():
     #build file structure
-    utility.generate_file_structure()
+    utility.file.generate_structure()
 
     #check if revision history is set up correctly
     print()
