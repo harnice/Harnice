@@ -58,10 +58,6 @@ def partnumber(format):
     else:
         raise ValueError("Function 'file.partnumber' not presented with a valid format")
 
-#TODO: rename_file(old_name, new_name, print_report) should be changed to os.rename(old_name, new_name)
-
-#TODO: file_exists_in_directory(search_for_filename, directory=".") should be changed to os.path.isfile(os.path.join(directory, search_for_filename))
-
 def harnice_file_structure():
     return {
             "drawing_instances":{},

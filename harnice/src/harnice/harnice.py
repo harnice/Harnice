@@ -71,6 +71,7 @@ def harnice():
     #print()
     #print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
     #if not utility.file_exists_in_directory(f"{utility.file.partnumber("pn-rev")}-harnice-output.svg"):
+    #TODO: file_exists_in_directory(search_for_filename, directory=".") should be changed to os.path.isfile(os.path.join(directory, search_for_filename))
         #print()
         #generate_harnice_output_svg.generate_blank_harnice_output_svg()
     #else :
