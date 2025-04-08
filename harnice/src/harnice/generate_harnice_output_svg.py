@@ -3,12 +3,12 @@ import xml.etree.ElementTree as ET
 import os
 import re
 
-import file
+import fileio
 from os.path import basename
 from inspect import currentframe
 
 
-harnice_output_svg_filename = f"{file.partnumber("pn-rev")}-harnice-output.svg"
+harnice_output_svg_filename = f"{fileio.partnumber("pn-rev")}-harnice-output.svg"
 
 harnice_output_svg_filepath = os.path.join(os.getcwd(),harnice_output_svg_filename)
 

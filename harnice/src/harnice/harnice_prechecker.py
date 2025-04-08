@@ -6,7 +6,7 @@ import json
 from os.path import basename
 from inspect import currentframe
 
-import file
+import fileio
 
 pn = None
 rev = None
@@ -247,7 +247,7 @@ def export_rev_row_from_tsv_to_project_rev_json():
                     json_data = {header[i]: eval(row[i]) if row[i].isdigit() else row[i] for i in range(len(header))}
 
                     # Overwrite JSON file
-                    with open(file.path("tblock master text"), 'w') as json_file:
+                    with open(fileio.path("tblock master text"), 'w') as json_file:
                         json.dump(json_data, json_file, indent=4, separators=(',', ': '), ensure_ascii=False)
 
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Revision data updated from {pn}-revision-history.tsv into {pn}-rev{rev}-tblock-master-text.json")

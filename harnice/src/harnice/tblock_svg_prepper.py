@@ -5,7 +5,7 @@ import shutil
 from os.path import basename
 from inspect import currentframe
 
-import file
+import fileio
 
 wanted_tblock_libdomain = None
 wanted_tblock_libsubpath = None
@@ -17,7 +17,7 @@ json_tblock_data = None
 def pull_tblock_info_from_json():
     # Load JSON json_tblock_data
     global json_tblock_data
-    with open(file.path("tblock master text"), 'r') as jf:
+    with open(fileio.path("tblock master text"), 'r') as jf:
         json_tblock_data = json.load(jf)
 
     #to-do: pull these from JSON as well
@@ -38,19 +38,19 @@ def prep_tblock_svg_master():
     import_file_from_harnice_library(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
 
     #delete existing master svg to refresh it from library-used
-    if os.path.exists(file.path("tblock master svg")):
-        os.remove(file.path("tblock master svg"))
+    if os.path.exists(fileio.path("tblock master svg")):
+        os.remove(fileio.path("tblock master svg"))
         
     #move it to the svg master folder
-    shutil.copy(library_used_tblock_filepath, file.dirpath("master_svgs"))
+    shutil.copy(library_used_tblock_filepath, fileio.dirpath("master_svgs"))
 
     #rename it to match the convention
-    os.rename(os.path.join(file.dirpath("master_svgs"), wanted_tblock_libfilename), file.path("tblock master svg"))
+    os.rename(os.path.join(fileio.dirpath("master_svgs"), wanted_tblock_libfilename), fileio.path("tblock master svg"))
     
     # Find info to populate into title block from the json file...
 
     # Read input file content
-    with open(file.path("tblock master svg"), 'r') as inf:
+    with open(fileio.path("tblock master svg"), 'r') as inf:
         content = inf.read()
 
     # Replace each occurrence of "unique-id-<jsonfilefield>"
@@ -65,7 +65,7 @@ def prep_tblock_svg_master():
     updated_content = re.sub(pattern, replacer, content)
 
     # Overwrite the input file with the updated content
-    with open(file.path("tblock master svg"), 'w') as inf:
+    with open(fileio.path("tblock master svg"), 'w') as inf:
         inf.write(updated_content)
         print("Updated tblock info.")
 

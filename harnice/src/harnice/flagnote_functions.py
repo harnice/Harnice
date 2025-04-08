@@ -2,16 +2,16 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import csv
-import file
+import fileio
 from os.path import basename
 from inspect import currentframe
 
-buildnotes_filepath = file.path("buildnotes tsv")
-revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{file.partnumber("pn")}-revision-history.tsv")
+buildnotes_filepath = fileio.path("buildnotes tsv")
+revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{fileio.partnumber("pn")}-revision-history.tsv")
 
 
 def update_flagnotes_of_instance(target_filepath, instance_name, rotation_angle, bomid):
-    instance_drawing_filename = f"{file.partnumber("pn-rev")}-{instance_name}.svg"
+    instance_drawing_filename = f"{fileio.partnumber("pn-rev")}-{instance_name}.svg"
     instance_drawing_filepath = os.path.join(target_filepath, instance_drawing_filename)
     instance_flagnotes_filename = f"{instance_name}-instance-flagnotes.svg"
     instance_flagnotes_filepath = os.path.join(target_filepath, instance_flagnotes_filename)
@@ -40,7 +40,7 @@ def look_for_buildnotes_file():
         with open(buildnotes_filepath, 'w') as file:
             file.write('\t'.join(columns) + '\n')
     
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{file.name("buildnotes tsv")}' not found. Generating a blank file.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{fileio.name("buildnotes tsv")}' not found. Generating a blank file.")
 
 
 def find_buildnotes_of_instance(instance, note_list_filepath):

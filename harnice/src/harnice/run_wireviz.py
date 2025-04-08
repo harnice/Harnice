@@ -5,12 +5,12 @@ import shutil
 from os.path import basename
 from inspect import currentframe
 
-import file
+import fileio
 
 def generate_esch():
     # Run the 'wireviz pn.yaml' command
     try:
-        subprocess.run(["wireviz", file.name("harness yaml")], check=True)
+        subprocess.run(["wireviz", fileio.name("harness yaml")], check=True)
     except subprocess.CalledProcessError as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error while running wireviz: {e}")
         return
@@ -19,20 +19,20 @@ def generate_esch():
         if os.path.exists(filepath):
             os.remove(filepath)
 
-    silentremove(file.path("wireviz bom"))
-    silentremove(file.path("wireviz html"))
-    silentremove(file.path("wireviz png"))
-    silentremove(file.path("wireviz svg"))
+    silentremove(fileio.path("wireviz bom"))
+    silentremove(fileio.path("wireviz html"))
+    silentremove(fileio.path("wireviz png"))
+    silentremove(fileio.path("wireviz svg"))
 
-    shutil.move(os.path.join(os.getcwd(),file.name("wireviz bom")),file.dirpath("wireviz_outputs"))
-    shutil.move(os.path.join(os.getcwd(),file.name("wireviz html")),file.dirpath("wireviz_outputs"))
-    shutil.move(os.path.join(os.getcwd(),file.name("wireviz png")),file.dirpath("wireviz_outputs"))
-    shutil.move(os.path.join(os.getcwd(),file.name("wireviz svg")),file.dirpath("wireviz_outputs"))
+    shutil.move(os.path.join(os.getcwd(),fileio.name("wireviz bom")),fileio.dirpath("wireviz_outputs"))
+    shutil.move(os.path.join(os.getcwd(),fileio.name("wireviz html")),fileio.dirpath("wireviz_outputs"))
+    shutil.move(os.path.join(os.getcwd(),fileio.name("wireviz png")),fileio.dirpath("wireviz_outputs"))
+    shutil.move(os.path.join(os.getcwd(),fileio.name("wireviz svg")),fileio.dirpath("wireviz_outputs"))
     
     # Copy and format svg output as needed for later use
-    shutil.copy(file.path("wireviz svg"), file.dirpath("master_svgs"))
-    os.rename(os.path.join(file.dirpath("master_svgs"),file.name("wireviz svg")), file.path("esch master svg"))
-    svg_utils.add_entire_svg_file_contents_to_group(file.path("esch master svg"), "esch-master")
+    shutil.copy(fileio.path("wireviz svg"), fileio.dirpath("master_svgs"))
+    os.rename(os.path.join(fileio.dirpath("master_svgs"),fileio.name("wireviz svg")), fileio.path("esch master svg"))
+    svg_utils.add_entire_svg_file_contents_to_group(fileio.path("esch master svg"), "esch-master")
 
 # Run the process
 if __name__ == "__main__":
