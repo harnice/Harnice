@@ -2,12 +2,12 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree, tostring
 import xml.etree.ElementTree as ET
 import os
 import re
-from utility import partnumber
+from utility import file.partnumber
 from os.path import basename
 from inspect import currentframe
 
 
-harnice_output_svg_filename = f"{partnumber("pn-rev")}-harnice-output.svg"
+harnice_output_svg_filename = f"{file.partnumber("pn-rev")}-harnice-output.svg"
 
 harnice_output_svg_filepath = os.path.join(os.getcwd(),harnice_output_svg_filename)
 

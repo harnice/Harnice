@@ -7,11 +7,11 @@ from os.path import basename
 from inspect import currentframe
 
 buildnotes_filepath = filepath("buildnotes tsv")
-revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{partnumber("pn")}-revision-history.tsv")
+revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{file.partnumber("pn")}-revision-history.tsv")
 
 
 def update_flagnotes_of_instance(target_filepath, instance_name, rotation_angle, bomid):
-    instance_drawing_filename = f"{partnumber("pn-rev")}-{instance_name}.svg"
+    instance_drawing_filename = f"{file.partnumber("pn-rev")}-{instance_name}.svg"
     instance_drawing_filepath = os.path.join(target_filepath, instance_drawing_filename)
     instance_flagnotes_filename = f"{instance_name}-instance-flagnotes.svg"
     instance_flagnotes_filepath = os.path.join(target_filepath, instance_flagnotes_filename)

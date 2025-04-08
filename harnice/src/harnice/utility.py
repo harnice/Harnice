@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 import re
 from dotenv import load_dotenv, dotenv_values
 
-def partnumber(format):
+def file.partnumber(format):
     #Returns part numbers in various formats based on the current working directory
 
     #given a part number "pppppp-revR"
@@ -42,7 +42,7 @@ def partnumber(format):
             return pn_rev[match.start() + 4:]
 
     else:
-        raise ValueError("Function 'partnumber' not presented with a valid format")
+        raise ValueError("Function 'file.partnumber' not presented with a valid format")
 
 
 #used to be svg_add_groups
@@ -145,11 +145,11 @@ def import_file_from_harnice_library(domain, library_subpath, lib_file):
     # Step 3: Ensure the target directory structure exists
     if not os.path.exists(target_directory):
         os.makedirs(target_directory)
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added directory '{library_subpath}' to '{partnumber("pn-rev")}/library_used/'.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added directory '{library_subpath}' to '{file.partnumber("pn-rev")}/library_used/'.")
 
     # Step 4: Copy the file from Harnice library to the target directory
     shutil.copy(os.path.join(source_file_path,lib_file), target_filename)
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{lib_file}' added to '{partnumber("pn-rev")}/library_used/{library_subpath}'.")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{lib_file}' added to '{file.partnumber("pn-rev")}/library_used/{library_subpath}'.")
 
     return True
     #returns True if import was successful or if already exists 
@@ -292,43 +292,43 @@ def harnice_file_structure():
             "library_used":{},
             "support_do_not_edit": {
                 "boms":{
-                    f"{partnumber("pn-rev")}.esch_electrical_bom.tsv":"electrical bom",
-                    f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
-                    f"{partnumber("pn-rev")}.mechanical_bom.tsv":"mechanical bom",
-                    f"{partnumber("pn-rev")}.instances_list.tsv":"instances list"
+                    f"{file.partnumber("pn-rev")}.esch_electrical_bom.tsv":"electrical bom",
+                    f"{file.partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
+                    f"{file.partnumber("pn-rev")}.mechanical_bom.tsv":"mechanical bom",
+                    f"{file.partnumber("pn-rev")}.instances_list.tsv":"instances list"
                 },
                 "formboard_data": {
-                    f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
-                    f"{partnumber("pn-rev")}.formboard_node_locations_inches.json":"formboard node locations inches",
-                    f"{partnumber("pn-rev")}.formboard_node_locations_px.json":"formboard node locations px",
-                    f"{partnumber("pn-rev")}.formboard_segment_to_from_center.json":"formboard segment to from center",
-                    f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
+                    f"{file.partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
+                    f"{file.partnumber("pn-rev")}.formboard_node_locations_inches.json":"formboard node locations inches",
+                    f"{file.partnumber("pn-rev")}.formboard_node_locations_px.json":"formboard node locations px",
+                    f"{file.partnumber("pn-rev")}.formboard_segment_to_from_center.json":"formboard segment to from center",
+                    f"{file.partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
                 "master_svgs": {
-                    f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                    f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                    f"{partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
-                    f"{partnumber("pn-rev")}.tblock_master.svg":"tblock master svg",
-                    f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                    f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
+                    f"{file.partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
+                    f"{file.partnumber("pn-rev")}.esch_master.svg":"esch master svg",
+                    f"{file.partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
+                    f"{file.partnumber("pn-rev")}.tblock_master.svg":"tblock master svg",
+                    f"{file.partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
+                    f"{file.partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
                 },
                 "wirelists": {
-                    f"{partnumber("pn-rev")}.wirelist_nolengths.tsv":"wirelist nolengths",
-                    f"{partnumber("pn-rev")}.wirelist_lengths.tsv":"wirelist lengths"
+                    f"{file.partnumber("pn-rev")}.wirelist_nolengths.tsv":"wirelist nolengths",
+                    f"{file.partnumber("pn-rev")}.wirelist_lengths.tsv":"wirelist lengths"
                 },
-                f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
-                f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
+                f"{file.partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
+                f"{file.partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
             "wireviz_outputs":{
-                f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
-                f"{partnumber("pn-rev")}.html":"wireviz html",
-                f"{partnumber("pn-rev")}.png":"wireviz png",
-                f"{partnumber("pn-rev")}.svg":"wireviz svg"
+                f"{file.partnumber("pn-rev")}.bom.tsv":"wireviz bom",
+                f"{file.partnumber("pn-rev")}.html":"wireviz html",
+                f"{file.partnumber("pn-rev")}.png":"wireviz png",
+                f"{file.partnumber("pn-rev")}.svg":"wireviz svg"
             },
-            f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
-            f"{partnumber("pn-rev")}.harnice_output.svg":"harnice output",
-            f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
-            f"{partnumber("pn-rev")}.yaml":"harness yaml"
+            f"{file.partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
+            f"{file.partnumber("pn-rev")}.harnice_output.svg":"harnice output",
+            f"{file.partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
+            f"{file.partnumber("pn-rev")}.yaml":"harness yaml"
         }
 
 def generate_file_structure():
