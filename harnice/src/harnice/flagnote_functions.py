@@ -7,7 +7,7 @@ import file
 from os.path import basename
 from inspect import currentframe
 
-buildnotes_filepath = filepath("buildnotes tsv")
+buildnotes_filepath = file.path("buildnotes tsv")
 revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{file.partnumber("pn")}-revision-history.tsv")
 
 

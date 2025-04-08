@@ -131,7 +131,7 @@ def prep_bom_svg_master():
     selected_columns = ["Id", "Qty", "MPN"]
 
     # Read data from the TSV file
-    table_data = read_tsv(filepath("harness bom"), selected_columns)
+    table_data = read_tsv(file.path("harness bom"), selected_columns)
 
     # Replace header row with custom labels
     header_row = ["ITEM", "QTY", "MPN"]
@@ -141,7 +141,7 @@ def prep_bom_svg_master():
     table_data.append(header_row)  # Append header row at the very end
 
     # Generate the SVG table
-    generate_svg_table(table_data, filepath("bom table master svg"))
+    generate_svg_table(table_data, file.path("bom table master svg"))
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: BOM SVG table saved to {filename("bom table master svg")}")
 

@@ -117,7 +117,7 @@ def generate_structure():
     os.makedirs(dirpath("wirelists"), exist_ok=True)
     os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
 
-def filepath(target_value):
+def path(target_value):
     #returns the filepath/filename of a filekey. 
     """
     Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.

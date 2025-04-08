@@ -19,10 +19,10 @@ def generate_esch():
         if os.path.exists(filepath):
             os.remove(filepath)
 
-    silentremove(filepath("wireviz bom"))
-    silentremove(filepath("wireviz html"))
-    silentremove(filepath("wireviz png"))
-    silentremove(filepath("wireviz svg"))
+    silentremove(file.path("wireviz bom"))
+    silentremove(file.path("wireviz html"))
+    silentremove(file.path("wireviz png"))
+    silentremove(file.path("wireviz svg"))
 
     shutil.move(os.path.join(os.getcwd(),filename("wireviz bom")),dirpath("wireviz_outputs"))
     shutil.move(os.path.join(os.getcwd(),filename("wireviz html")),dirpath("wireviz_outputs"))
@@ -30,9 +30,9 @@ def generate_esch():
     shutil.move(os.path.join(os.getcwd(),filename("wireviz svg")),dirpath("wireviz_outputs"))
     
     # Copy and format svg output as needed for later use
-    shutil.copy(filepath("wireviz svg"), dirpath("master_svgs"))
-    os.rename(os.path.join(dirpath("master_svgs"),filename("wireviz svg")), filepath("esch master svg"))
-    svg_utils.add_entire_svg_file_contents_to_group(filepath("esch master svg"), "esch-master")
+    shutil.copy(file.path("wireviz svg"), dirpath("master_svgs"))
+    os.rename(os.path.join(dirpath("master_svgs"),filename("wireviz svg")), file.path("esch master svg"))
+    svg_utils.add_entire_svg_file_contents_to_group(file.path("esch master svg"), "esch-master")
 
 # Run the process
 if __name__ == "__main__":

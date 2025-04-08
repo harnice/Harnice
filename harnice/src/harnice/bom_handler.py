@@ -32,9 +32,9 @@ def combine_tsv_boms():
 
     # Define the input file paths
     input_files = [
-        filepath("electrical bom"),
-        filepath("mechanical bom"),
-        filepath("wirelist lengths"),
+        file.path("electrical bom"),
+        file.path("mechanical bom"),
+        file.path("wirelist lengths"),
     ]
     
     # Initialize data structures
@@ -64,7 +64,7 @@ def combine_tsv_boms():
         return
 
     # Write the combined data to the output file
-    with open(filepath("harness bom"), mode='w', newline='', encoding='utf-8') as tsvfile:
+    with open(file.path("harness bom"), mode='w', newline='', encoding='utf-8') as tsvfile:
         writer = csv.DictWriter(tsvfile, fieldnames=all_columns, delimiter='\t')
         writer.writeheader()
         for row in combined_data:
@@ -87,7 +87,7 @@ def add_description_simple_to_harness_bom():
         "Backshell": "Backshell",
     }
     
-    with open(filepath("harness bom"), mode='r', encoding='utf-8') as tsvfile:
+    with open(file.path("harness bom"), mode='r', encoding='utf-8') as tsvfile:
         lines = [line.strip().split('\t') for line in tsvfile.readlines()]
     
     header = lines[0]
@@ -104,6 +104,6 @@ def add_description_simple_to_harness_bom():
                     break
             row.insert(desc_index + 1, simple_desc)
     
-    with open(filepath("harness bom"), mode='w', newline='', encoding='utf-8') as tsvfile:
+    with open(file.path("harness bom"), mode='w', newline='', encoding='utf-8') as tsvfile:
         for row in lines:
             tsvfile.write('\t'.join(row) + '\n')
