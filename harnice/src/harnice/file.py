@@ -56,7 +56,7 @@ def partnumber(format):
             return pn_rev[match.start() + 4:]
 
     else:
-        raise ValueError("Function 'file.partnumber' not presented with a valid format")
+        raise ValueError("Function 'partnumber' not presented with a valid format")
 
 def harnice_file_structure():
     return {
@@ -64,54 +64,54 @@ def harnice_file_structure():
             "library_used":{},
             "support_do_not_edit": {
                 "boms":{
-                    f"{file.partnumber("pn-rev")}.esch_electrical_bom.tsv":"electrical bom",
-                    f"{file.partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
-                    f"{file.partnumber("pn-rev")}.mechanical_bom.tsv":"mechanical bom",
-                    f"{file.partnumber("pn-rev")}.instances_list.tsv":"instances list"
+                    f"{partnumber("pn-rev")}.esch_electrical_bom.tsv":"electrical bom",
+                    f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
+                    f"{partnumber("pn-rev")}.mechanical_bom.tsv":"mechanical bom",
+                    f"{partnumber("pn-rev")}.instances_list.tsv":"instances list"
                 },
                 "formboard_data": {
-                    f"{file.partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
-                    f"{file.partnumber("pn-rev")}.formboard_node_locations_inches.json":"formboard node locations inches",
-                    f"{file.partnumber("pn-rev")}.formboard_node_locations_px.json":"formboard node locations px",
-                    f"{file.partnumber("pn-rev")}.formboard_segment_to_from_center.json":"formboard segment to from center",
-                    f"{file.partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
+                    f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
+                    f"{partnumber("pn-rev")}.formboard_node_locations_inches.json":"formboard node locations inches",
+                    f"{partnumber("pn-rev")}.formboard_node_locations_px.json":"formboard node locations px",
+                    f"{partnumber("pn-rev")}.formboard_segment_to_from_center.json":"formboard segment to from center",
+                    f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
                 "master_svgs": {
-                    f"{file.partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                    f"{file.partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                    f"{file.partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
-                    f"{file.partnumber("pn-rev")}.tblock_master.svg":"tblock master svg",
-                    f"{file.partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                    f"{file.partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
+                    f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
+                    f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
+                    f"{partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
+                    f"{partnumber("pn-rev")}.tblock_master.svg":"tblock master svg",
+                    f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
+                    f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
                 },
                 "wirelists": {
-                    f"{file.partnumber("pn-rev")}.wirelist_nolengths.tsv":"wirelist nolengths",
-                    f"{file.partnumber("pn-rev")}.wirelist_lengths.tsv":"wirelist lengths"
+                    f"{partnumber("pn-rev")}.wirelist_nolengths.tsv":"wirelist nolengths",
+                    f"{partnumber("pn-rev")}.wirelist_lengths.tsv":"wirelist lengths"
                 },
-                f"{file.partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
-                f"{file.partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
+                f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
+                f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
             "wireviz_outputs":{
-                f"{file.partnumber("pn-rev")}.bom.tsv":"wireviz bom",
-                f"{file.partnumber("pn-rev")}.html":"wireviz html",
-                f"{file.partnumber("pn-rev")}.png":"wireviz png",
-                f"{file.partnumber("pn-rev")}.svg":"wireviz svg"
+                f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
+                f"{partnumber("pn-rev")}.html":"wireviz html",
+                f"{partnumber("pn-rev")}.png":"wireviz png",
+                f"{partnumber("pn-rev")}.svg":"wireviz svg"
             },
-            f"{file.partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
-            f"{file.partnumber("pn-rev")}.harnice_output.svg":"harnice output",
-            f"{file.partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
-            f"{file.partnumber("pn-rev")}.yaml":"harness yaml"
+            f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
+            f"{partnumber("pn-rev")}.harnice_output.svg":"harnice output",
+            f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
+            f"{partnumber("pn-rev")}.yaml":"harness yaml"
         }
 
 def generate_structure():
-    os.makedirs(file.dirpath("drawing_instances"), exist_ok=True)
-    os.makedirs(file.dirpath("library_used"), exist_ok=True)
-    os.makedirs(file.dirpath("support_do_not_edit"), exist_ok=True)
-    os.makedirs(file.dirpath("boms"), exist_ok=True)
-    os.makedirs(file.dirpath("formboard_data"), exist_ok=True)
-    os.makedirs(file.dirpath("master_svgs"), exist_ok=True)
-    os.makedirs(file.dirpath("wirelists"), exist_ok=True)
-    os.makedirs(file.dirpath("wireviz_outputs"), exist_ok=True)
+    os.makedirs(dirpath("drawing_instances"), exist_ok=True)
+    os.makedirs(dirpath("library_used"), exist_ok=True)
+    os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
+    os.makedirs(dirpath("boms"), exist_ok=True)
+    os.makedirs(dirpath("formboard_data"), exist_ok=True)
+    os.makedirs(dirpath("master_svgs"), exist_ok=True)
+    os.makedirs(dirpath("wirelists"), exist_ok=True)
+    os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
 
 def path(target_value):
     #returns the filepath/filename of a filekey. 
