@@ -41,7 +41,7 @@ def look_for_buildnotes_file():
         with open(buildnotes_filepath, 'w') as file:
             file.write('\t'.join(columns) + '\n')
     
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{filename("buildnotes tsv")}' not found. Generating a blank file.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{file.name("buildnotes tsv")}' not found. Generating a blank file.")
 
 
 def find_buildnotes_of_instance(instance, note_list_filepath):

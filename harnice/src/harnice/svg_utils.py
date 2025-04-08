@@ -66,7 +66,7 @@ def add_entire_svg_file_contents_to_group(filepath, new_group_name):
 def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_id):
     import os
 
-    def get_filename(filepath):
+    def get_file.name(filepath):
         return os.path.basename(filepath)
 
     try:
@@ -86,24 +86,24 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_i
         # Find the start and end indices of the group in the source SVG.
         source_start_index = source_svg_content.find(start_tag)
         if source_start_index == -1:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source start tag <{start_tag}> not found in file <{get_filename(source_svg_filepath)}>.")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source start tag <{start_tag}> not found in file <{get_file.name(source_svg_filepath)}>.")
             success = 0
             return success
         source_end_index = source_svg_content.find(end_tag)
         if source_end_index == -1:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source end tag <{end_tag}> not found in file <{get_filename(source_svg_filepath)}>.")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source end tag <{end_tag}> not found in file <{get_file.name(source_svg_filepath)}>.")
             success = 0
             return success
 
         # Find the start and end indices of the group in the target SVG.
         target_start_index = target_svg_content.find(start_tag)
         if target_start_index == -1:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target start tag <{start_tag}> not found in file <{get_filename(target_svg_filepath)}>.")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target start tag <{start_tag}> not found in file <{get_file.name(target_svg_filepath)}>.")
             success = 0
             return success
         target_end_index = target_svg_content.find(end_tag)
         if target_end_index == -1:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target end tag <{end_tag}> not found in file <{get_filename(target_svg_filepath)}>.")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target end tag <{end_tag}> not found in file <{get_file.name(target_svg_filepath)}>.")
             success = 0
             return success
 
@@ -122,14 +122,14 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_i
             with open(target_svg_filepath, 'w') as updated_file:
                 updated_file.write(updated_svg_content)
         except Exception as e:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error writing to file <{get_filename(target_svg_filepath)}>: {e}")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error writing to file <{get_file.name(target_svg_filepath)}>: {e}")
             success = 0
 
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Copied group <{group_id}> from <{get_filename(source_svg_filepath)}> and pasted it into <{get_filename(target_svg_filepath)}>.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Copied group <{group_id}> from <{get_file.name(source_svg_filepath)}> and pasted it into <{get_file.name(target_svg_filepath)}>.")
         success = 1
     
     except Exception as e:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error processing files <{get_filename(source_svg_filepath)}> and <{get_filename(target_svg_filepath)}>: {e}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error processing files <{get_file.name(source_svg_filepath)}> and <{get_file.name(target_svg_filepath)}>: {e}")
         success = 0
 
     return success
