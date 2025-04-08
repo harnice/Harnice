@@ -42,10 +42,10 @@ def prep_tblock_svg_master():
         os.remove(file.path("tblock master svg"))
         
     #move it to the svg master folder
-    shutil.copy(library_used_tblock_filepath, dirpath("master_svgs"))
+    shutil.copy(library_used_tblock_filepath, file.dirpath("master_svgs"))
 
     #rename it to match the convention
-    os.rename(os.path.join(dirpath("master_svgs"), wanted_tblock_libfilename), file.path("tblock master svg"))
+    os.rename(os.path.join(file.dirpath("master_svgs"), wanted_tblock_libfilename), file.path("tblock master svg"))
     
     # Find info to populate into title block from the json file...
 

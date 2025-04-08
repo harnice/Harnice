@@ -108,14 +108,14 @@ def harnice_file_structure():
         }
 
 def generate_structure():
-    os.makedirs(dirpath("drawing_instances"), exist_ok=True)
-    os.makedirs(dirpath("library_used"), exist_ok=True)
-    os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
-    os.makedirs(dirpath("boms"), exist_ok=True)
-    os.makedirs(dirpath("formboard_data"), exist_ok=True)
-    os.makedirs(dirpath("master_svgs"), exist_ok=True)
-    os.makedirs(dirpath("wirelists"), exist_ok=True)
-    os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
+    os.makedirs(file.dirpath("drawing_instances"), exist_ok=True)
+    os.makedirs(file.dirpath("library_used"), exist_ok=True)
+    os.makedirs(file.dirpath("support_do_not_edit"), exist_ok=True)
+    os.makedirs(file.dirpath("boms"), exist_ok=True)
+    os.makedirs(file.dirpath("formboard_data"), exist_ok=True)
+    os.makedirs(file.dirpath("master_svgs"), exist_ok=True)
+    os.makedirs(file.dirpath("wirelists"), exist_ok=True)
+    os.makedirs(file.dirpath("wireviz_outputs"), exist_ok=True)
 
 def path(target_value):
     #returns the filepath/filename of a filekey. 
