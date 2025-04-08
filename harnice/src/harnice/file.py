@@ -107,7 +107,7 @@ def harnice_file_structure():
             f"{file.partnumber("pn-rev")}.yaml":"harness yaml"
         }
 
-def generate_file_structure():
+def generate_structure():
     os.makedirs(dirpath("drawing_instances"), exist_ok=True)
     os.makedirs(dirpath("library_used"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
