@@ -9,41 +9,7 @@ from inspect import currentframe
 import xml.etree.ElementTree as ET
 import re
 from dotenv import load_dotenv, dotenv_values
-
-def file.partnumber(format):
-    #Returns part numbers in various formats based on the current working directory
-
-    #given a part number "pppppp-revR"
-
-    #format options:
-        #pn-rev:    returns "pppppp-revR"
-        #pn:        returns "pppppp"
-        #rev:       returns "revR"
-        #R:         returns "R"
-
-    pn_rev = os.path.basename(os.getcwd())
-
-    if format == "pn-rev":
-        return pn_rev
-
-    elif format == "pn":
-        match = re.search(r"-rev", pn_rev)
-        if match:
-            return pn_rev[:match.start()]
-
-    elif format == "rev":
-        match = re.search(r"-rev", pn_rev)
-        if match:
-            return pn_rev[match.start() + 1:]
-
-    elif format == "R":
-        match = re.search(r"-rev", pn_rev)
-        if match:
-            return pn_rev[match.start() + 4:]
-
-    else:
-        raise ValueError("Function 'file.partnumber' not presented with a valid format")
-
+import file
 
 #used to be svg_add_groups
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):

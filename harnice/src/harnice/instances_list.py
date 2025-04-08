@@ -1,6 +1,7 @@
 import yaml
 import csv
-import utility
+import utils
+import file
 
 def make_new_list():
     with open(utility.filepath("instances list"), "w", newline="") as tsvfile:

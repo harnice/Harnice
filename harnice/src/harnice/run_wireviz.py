@@ -4,7 +4,8 @@ import subprocess
 import shutil
 from os.path import basename
 from inspect import currentframe
-from utility import *
+import utils
+import file
 
 def generate_esch():
     # Run the 'wireviz pn.yaml' command
