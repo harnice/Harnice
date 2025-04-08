@@ -1,0 +1,100 @@
+******************
+Stuff to .gitignore:
+
+# ===================================
+# Python
+# ===================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.pyo
+
+# ===================================
+# Virtual Environments
+# ===================================
+venv/
+env/
+.venv/
+ENV/
+.ENV/
+
+# ===================================
+# Distribution / Packaging
+# ===================================
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# ===================================
+# Testing / Coverage
+# ===================================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+
+# ===================================
+# Jupyter Notebooks
+# ===================================
+.ipynb_checkpoints/
+
+# ===================================
+# Environment Variables / Secrets
+# ===================================
+.env
+.env.*
+*.env
+secrets.*
+
+# ===================================
+# IDEs / Editors
+# ===================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ===================================
+# macOS
+# ===================================
+.DS_Store
+
+# ===================================
+# Windows
+# ===================================
+Thumbs.db
+desktop.ini
+
+# ===================================
+# Logs and misc
+# ===================================
+*.log
+*.bak
+*.tmp
+*.swp
+*~
+
+
+
+
+******************
+packages to install:
+
+
+
+*****************
+.env:
+public=/Users/kenyonshutt/github/harnice-library-public
+rs=/Users/kenyonshutt/The Dropbox/Kenyon Shutt/Projects/2024-11-26-harnice/harnice-library-rs
+user=/Users/kenyonshutt/The Dropbox/Kenyon Shutt/Projects/2024-11-26-harnice/harnice-library-user
