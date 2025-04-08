@@ -8,7 +8,7 @@ from inspect import currentframe
 import yaml
 import csv
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
-from utility import *
+import fileio
 
 #this list is used to keep track of all the valid instances:
 drawing_instance_filenames = [None]
@@ -26,13 +26,13 @@ def delete_unmatched_files():
     global drawing_instance_filenames  # Access the global variable
 
     # Ensure the directory exists
-    if not os.path.exists(dirpath("drawing_instances")):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory {dirpath("drawing_instances")} does not exist.")
+    if not os.path.exists(fileio.dirpath("drawing_instances")):
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory {fileio.dirpath("drawing_instances")} does not exist.")
         return
 
     # List all files and directories in the directory
-    for item in os.listdir(dirpath("drawing_instances")):
-        item_path = os.path.join(dirpath("drawing_instances"), item)
+    for item in os.listdir(fileio.dirpath("drawing_instances")):
+        item_path = os.path.join(fileio.dirpath("drawing_instances"), item)
 
         # Check if the item is not in the allowed list
         if item not in drawing_instance_filenames:
@@ -53,11 +53,11 @@ def delete_unmatched_files():
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing instances': {e}")
 
 def update_all_bom_instances():
-    #TODO: rebuild this approach by adding instances using filepath("instances list")
+    #TODO: rebuild this approach by adding instances using fileio.path("instances list")
     #Go through the harness bom and call update_bom_instance slightly differently depending on small details
     #bom instances account for every item except segments
 
-    with open(filepath("harness bom"), 'r') as bom_file:
+    with open(fileio.path("harness bom"), 'r') as bom_file:
         # Read the header line first
         header_line = bom_file.readline()
         header = header_line.strip().split("\t")
@@ -73,7 +73,7 @@ def update_all_bom_instances():
         bom_lines = bom_data.splitlines()
 
     # Load YAML file
-    with open(filepath("harness yaml"), 'r') as yaml_file:
+    with open(fileio.path("harness yaml"), 'r') as yaml_file:
         yaml_data = yaml.safe_load(yaml_file)
 
     #for each line in harness bom:
@@ -127,7 +127,7 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
 
     print(f"#    #    ########## working on bom item {mpn}, instance name {instance_name_w_suffix}, which is type {instance_type}")
 
-    instance_dirpath = os.path.join(dirpath("drawing_instances"),instance_name_w_suffix)
+    instance_fileio.dirpath = os.path.join(fileio.dirpath("drawing_instances"),instance_name_w_suffix)
 
     #import from library
     svgexists = import_file_from_harnice_library(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
@@ -137,13 +137,13 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
     add_filename_to_drawing_instance_list(instance_name_w_suffix)
 
     if svgexists:
-        #reference the drawing filepath, not included in filepath() because each project file structure is different
-        instance_svg_path = os.path.join(instance_dirpath, f"{partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
+        #reference the drawing filepath, not included in fileio.path() because each project file structure is different
+        instance_svg_path = os.path.join(instance_fileio.dirpath, f"{fileio.partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
 
         #create a new instance file if it doesn't exist yet
         if not os.path.exists(instance_svg_path):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating  instance svg {partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
-            os.makedirs(instance_dirpath, exist_ok=True)
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating  instance svg {fileio.partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
+            os.makedirs(instance_fileio.dirpath, exist_ok=True)
 
             # Write SVG declaration
             svg_content = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
@@ -157,10 +157,10 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
 
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created new connector instance SVG {instance_name_w_suffix} with MPN: {mpn}")
 
-            add_entire_svg_file_contents_to_group(instance_svg_path,"connector-drawing")
-            find_and_replace_svg_group(instance_svg_path, os.path.join(dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
-            add_entire_svg_file_contents_to_group(instance_svg_path, "connector-instance-rotatables")
-            add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-instance-{instance_name_w_suffix}")
+            svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path,"connector-drawing")
+            svg_utils.find_and_replace_svg_group(instance_svg_path, os.path.join(fileio.dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
+            svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path, "connector-instance-rotatables")
+            svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-instance-{instance_name_w_suffix}")
             apply_bubble_transforms_to_flagnote_group(instance_svg_path)
                         
         else: 
@@ -168,17 +168,17 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
       
         # Rotate SVG group "connector-drawing" to match the average segment angle
         connector_angle = -1* retrieve_angle_of_connector(instance_name)
-        rotate_svg_group(instance_svg_path, "connector-instance-rotatables", connector_angle)
+        svg_utils.rotate_svg_group(instance_svg_path, "connector-instance-rotatables", connector_angle)
         #TODO: offset and rotate per rotation and offset arguents of this function
         update_flagnotes_of_instance(os.path.dirname(instance_svg_path), instance_name_w_suffix, connector_angle, bomid)
 
 def update_segment_instances():
     #create SVGs for segments (instances that are not in the bom)
     try:
-        with open(filepath("formboard graph definition"), 'r') as json_file:
+        with open(fileio.path("formboard graph definition"), 'r') as json_file:
             graph_data = json.load(json_file)
     except FileNotFoundError:
-        print(f"Error: File {filename("formboard graph definition")} not found.")
+        print(f"Error: File {fileio.name("formboard graph definition")} not found.")
         return
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -207,9 +207,9 @@ def update_segment_instances():
     </svg>'''
 
             # Define output filename
-            os.makedirs(os.path.join(dirpath("drawing_instances"), segment_name), exist_ok=True)
+            os.makedirs(os.path.join(fileio.dirpath("drawing_instances"), segment_name), exist_ok=True)
 
-            output_filename = os.path.join(dirpath("drawing_instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
+            output_filename = os.path.join(fileio.dirpath("drawing_instances"), segment_name, f"{fileio.partnumber("pn-rev")}-{segment_name}.svg")
             
             # Write SVG file
             with open(output_filename, 'w') as svg_file:
@@ -217,11 +217,11 @@ def update_segment_instances():
 
             add_filename_to_drawing_instance_list(basename(dirname(output_filename)))
 
-            add_entire_svg_file_contents_to_group(output_filename, "segment_contents_rotatables")
+            svg_utils.add_entire_svg_file_contents_to_group(output_filename, "segment_contents_rotatables")
 
-            rotate_svg_group(output_filename, "segment_contents_rotatables", -1*retrieve_angle_of_segment(segment_name))
+            svg_utils.rotate_svg_group(output_filename, "segment_contents_rotatables", -1*retrieve_angle_of_segment(segment_name))
 
-            add_entire_svg_file_contents_to_group(output_filename, f"unique-instance-{segment_name}")
+            svg_utils.add_entire_svg_file_contents_to_group(output_filename, f"unique-instance-{segment_name}")
             
             print(f"Generated SVG for {segment_name}: {output_filename}")
         
@@ -232,7 +232,7 @@ def update_formboard_master_svg():
     # Create the root SVG element
     svg = ET.Element("svg", xmlns="http://www.w3.org/2000/svg", version="1.1")
 
-    with open(filepath("formboard segment to from center"), 'r') as json_file:
+    with open(fileio.path("formboard segment to from center"), 'r') as json_file:
         segment_locations = json.load(json_file)
     '''
     for segment in segment_locations:
@@ -253,13 +253,13 @@ def update_formboard_master_svg():
     
     #Store the list of instances getting groups into instances[]
     instances = []
-    with open(filepath("instances list"), mode="r", newline="", encoding="utf-8") as file:
+    with open(fileio.path("instances list"), mode="r", newline="", encoding="utf-8") as file:
         reader = csv.DictReader(file, delimiter="\t")  # Read TSV with tab delimiter
         for row in reader:
             instances.append(row["instance name"])
     
     # Read the node locations JSON file
-    with open(filepath("formboard node locations px"), 'r') as json_file:
+    with open(fileio.path("formboard node locations px"), 'r') as json_file:
         node_locations = json.load(json_file)
 
     # Add groups for each connector with transformations
@@ -279,14 +279,14 @@ def update_formboard_master_svg():
         ET.SubElement(group, "g", id=f"unique-instance-{instance_name}-contents-end")
 
     # Write the SVG to file with proper formatting and newlines
-    with open(filepath("formboard master svg"), 'w', encoding='utf-8') as svg_file:
+    with open(fileio.path("formboard master svg"), 'w', encoding='utf-8') as svg_file:
         svg_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         svg_file.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1">\n')
         for group in svg:
             svg_file.write(f'  {ET.tostring(group, encoding="unicode").strip()}\n\n')
         svg_file.write('</svg>\n')
 
-    add_entire_svg_file_contents_to_group(filepath("formboard master svg"),"formboard-master")
+    svg_utils.add_entire_svg_file_contents_to_group(fileio.path("formboard master svg"),"formboard-master")
     
     #Replace all connector groups in the target SVG with their corresponding source SVG groups
     instance_counter = 0
@@ -294,19 +294,19 @@ def update_formboard_master_svg():
         instance_name = instances[instance_counter]
         instance_counter += 1
         # find the path of the source instance
-        source_svg_filepath = os.path.join(dirpath("drawing_instances"), instance_name, f"{partnumber("pn-rev")}-{instance_name}.svg")
+        source_svg_filepath = os.path.join(fileio.dirpath("drawing_instances"), instance_name, f"{fileio.partnumber("pn-rev")}-{instance_name}.svg")
         
         # Call the function to replace the group
-        find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
+        svg_utils.find_and_replace_svg_group(fileio.path("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
 
 def replace_all_segment_groups():
     """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
     # Load the segment data JSON
     try:
-        with open(filepath("formboard segment to from center"), 'r') as json_file:
+        with open(fileio.path("formboard segment to from center"), 'r') as json_file:
             segment_data = json.load(json_file)
     except FileNotFoundError:
-        print(f"Error: Segment data JSON file {filename("formboard segment to from center")} not found.")
+        print(f"Error: Segment data JSON file {fileio.name("formboard segment to from center")} not found.")
         return
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -321,10 +321,10 @@ def replace_all_segment_groups():
 
         try:
             # Define the target and source SVG paths
-            source_svg_filepath = os.path.join(dirpath("drawing_instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
+            source_svg_filepath = os.path.join(fileio.dirpath("drawing_instances"), segment_name, f"{fileio.partnumber("pn-rev")}-{segment_name}.svg")
 
-            if not os.path.exists(filepath("formboard master svg")):
-                print(f"Error: Target SVG file {filepath("formboard master svg")} not found.")
+            if not os.path.exists(fileio.path("formboard master svg")):
+                print(f"Error: Target SVG file {fileio.path("formboard master svg")} not found.")
                 continue
 
             if not os.path.exists(source_svg_filepath):
@@ -332,7 +332,7 @@ def replace_all_segment_groups():
                 continue
 
             # Call the function to replace the group
-            find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{segment_name}")
+            svg_utils.find_and_replace_svg_group(fileio.path("formboard master svg"), source_svg_filepath, f"unique-instance-{segment_name}")
 
             print(f"Successfully replaced group for segment {segment_name}.")
         except Exception as e:
@@ -341,7 +341,7 @@ def replace_all_segment_groups():
 def retrieve_angle_of_connector(connectorname):
     #Retrieve the angle of the specified connector from the JSON file.
     
-    with open(filepath("formboard node locations inches"), "r") as file:
+    with open(fileio.path("formboard node locations inches"), "r") as file:
         data = json.load(file)
     
     # Retrieve the angle for the specified connector
@@ -354,11 +354,11 @@ def retrieve_angle_of_connector(connectorname):
 
 def retrieve_angle_of_segment(segmentname):
     # Check if the file exists
-    if not os.path.isfile(filepath("formboard graph definition")):
-        raise FileNotFoundError(f"File not found: {filename("formboard graph definition")}")
+    if not os.path.isfile(fileio.path("formboard graph definition")):
+        raise FileNotFoundError(f"File not found: {fileio.name("formboard graph definition")}")
     
     # Load the JSON data
-    with open(filepath("formboard graph definition"), "r") as file:
+    with open(fileio.path("formboard graph definition"), "r") as file:
         data = json.load(file)
     
     # Retrieve the angle for the specified connector

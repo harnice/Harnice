@@ -3,8 +3,7 @@ import csv
 import os
 from os.path import basename
 from inspect import currentframe
-import utility
-
+import fileio
 import yaml
 import csv
 from os.path import basename
@@ -12,10 +11,10 @@ from inspect import currentframe
 
 def newlist():
     try:
-        with open(utility.filepath("harness yaml"), 'r') as file:
+        with open(fileio.path("harness yaml"), 'r') as file:
             yaml_data = yaml.safe_load(file)
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {utility.filename('harness yaml')} not found in the current directory.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {fileio.name('harness yaml')} not found in the current directory.")
         exit(1)
 
     # Extract connections and build wirelist
@@ -49,12 +48,12 @@ def newlist():
                     dst_component, dst_pin
                 ])
 
-    with open(utility.filepath("wirelist nolengths"), 'w', newline='') as file:
+    with open(fileio.path("wirelist nolengths"), 'w', newline='') as file:
         writer = csv.writer(file, delimiter='\t')
         writer.writerow(["Wire", "Subwire", "Source", "SourcePin", "Destination", "DestinationPin"])
         writer.writerows(wirelist)
 
-    print(f"Wirelist has been written to {utility.filename('wirelist nolengths')}")
+    print(f"Wirelist has been written to {fileio.name('wirelist nolengths')}")
 
 def wirelist_add_lengths():
     return

@@ -9,13 +9,13 @@ import tblock_svg_prepper
 import formboard_functions
 import flagnote_functions
 import harnice_prechecker
-import utility
+import fileio
 import formboard_illustration_functions
 import os
 
 def harnice():
     #build file structure
-    utility.generate_file_structure()
+    fileio.generate_structure()
 
     #check if revision history is set up correctly
     print()
@@ -69,11 +69,12 @@ def harnice():
     #generate blank harnice output svg
     #print()
     #print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
-    #if not utility.file_exists_in_directory(f"{utility.partnumber("pn-rev")}-harnice-output.svg"):
+    #if not utility.file_exists_in_directory(f"{fileio.partnumber("pn-rev")}-harnice-output.svg"):
+    #TODO: file_exists_in_directory(search_for_filename, directory=".") should be changed to os.path.isfile(os.path.join(directory, search_for_filename))
         #print()
         #generate_harnice_output_svg.generate_blank_harnice_output_svg()
     #else :
-        #print(f"{utility.partnumber("pn-rev")}-harnice-output.svg already exists")
+        #print(f"{fileio.partnumber("pn-rev")}-harnice-output.svg already exists")
         #generate_harnice_output_svg.ensure_groups_exist_in_harnice_output()
 
     #combine all master SVG groups into PN-harnice-output.svg

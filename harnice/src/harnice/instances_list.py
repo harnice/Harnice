@@ -1,9 +1,9 @@
 import yaml
 import csv
-import utility
+import fileio
 
 def make_new_list():
-    with open(utility.filepath("instances list"), "w", newline="") as tsvfile:
+    with open(fileio.path("instances list"), "w", newline="") as tsvfile:
         writer = csv.writer(tsvfile, delimiter="\t")
 
         # Write header
@@ -22,7 +22,7 @@ def make_new_list():
         ])
 
 def add_connectors():
-    with open(utility.filepath("harness yaml"), "r") as file:
+    with open(fileio.path("harness yaml"), "r") as file:
         yaml_data_parsed = yaml.safe_load(file)
 
     connectors = yaml_data_parsed.get("connectors", {})
@@ -32,7 +32,7 @@ def add_connectors():
         supplier = connector.get("supplier", "")
         component_instances = []
 
-        with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
+        with open(fileio.path("instances list"), "a", newline="") as tsvfile:
             writer = csv.writer(tsvfile, delimiter="\t")
 
             for component in connector.get("additional_components", []):
@@ -57,7 +57,7 @@ def add_connectors():
                 ])
 
         # Write connector row
-        with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
+        with open(fileio.path("instances list"), "a", newline="") as tsvfile:
             writer = csv.writer(tsvfile, delimiter="\t")
             writer.writerow([
                 instance_name,
@@ -71,12 +71,12 @@ def add_connectors():
             ])
 
 def add_cables():
-    with open(utility.filepath("harness yaml"), "r") as file:
+    with open(fileio.path("harness yaml"), "r") as file:
         yaml_data_parsed = yaml.safe_load(file)
 
     cables = yaml_data_parsed.get("cables", {})
 
-    with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
+    with open(fileio.path("instances list"), "a", newline="") as tsvfile:
         writer = csv.writer(tsvfile, delimiter="\t")
 
         for cable_name, cable in cables.items():
@@ -92,10 +92,10 @@ def add_cables():
             ])
 
 def add_formboard_segments():
-    with open(utility.filepath("formboard graph definition"), "r") as f:
+    with open(fileio.path("formboard graph definition"), "r") as f:
         formboard_data = yaml.safe_load(f)
 
-    with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
+    with open(fileio.path("instances list"), "a", newline="") as tsvfile:
         writer = csv.writer(tsvfile, delimiter="\t")
 
         for segment_name, segment in formboard_data.items():

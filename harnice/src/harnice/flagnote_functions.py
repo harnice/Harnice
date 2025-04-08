@@ -2,22 +2,22 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import csv
-from utility import *
+import fileio
 from os.path import basename
 from inspect import currentframe
 
-buildnotes_filepath = filepath("buildnotes tsv")
-revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{partnumber("pn")}-revision-history.tsv")
+buildnotes_filepath = fileio.path("buildnotes tsv")
+revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{fileio.partnumber("pn")}-revision-history.tsv")
 
 
 def update_flagnotes_of_instance(target_filepath, instance_name, rotation_angle, bomid):
-    instance_drawing_filename = f"{partnumber("pn-rev")}-{instance_name}.svg"
+    instance_drawing_filename = f"{fileio.partnumber("pn-rev")}-{instance_name}.svg"
     instance_drawing_filepath = os.path.join(target_filepath, instance_drawing_filename)
     instance_flagnotes_filename = f"{instance_name}-instance-flagnotes.svg"
     instance_flagnotes_filepath = os.path.join(target_filepath, instance_flagnotes_filename)
     generate_instance_flagnotes(instance_name,instance_flagnotes_filename,instance_flagnotes_filepath,rotation_angle,bomid)
     for i in range(0, 11):
-        note_exists_for_instance = find_and_replace_svg_group(instance_drawing_filepath, instance_flagnotes_filepath, f"as-printed-flagnote-{i}")
+        note_exists_for_instance = svg_utils.find_and_replace_svg_group(instance_drawing_filepath, instance_flagnotes_filepath, f"as-printed-flagnote-{i}")
         
         if note_exists_for_instance == 1:
             #make leader visible
@@ -40,7 +40,7 @@ def look_for_buildnotes_file():
         with open(buildnotes_filepath, 'w') as file:
             file.write('\t'.join(columns) + '\n')
     
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{filename("buildnotes tsv")}' not found. Generating a blank file.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{fileio.name("buildnotes tsv")}' not found. Generating a blank file.")
 
 
 def find_buildnotes_of_instance(instance, note_list_filepath):
@@ -192,7 +192,7 @@ def generate_note_svg(target_file, shape, text_in_bubble, bubble_location_index,
         group_end = f'</g>\n<g id="as-printed-flagnote-{bubble_location_index}-contents-end">\n</g>\n'
         file.write(group_end)
 
-    rotate_svg_group(target_file, f"flagnote-{shape}-{text_in_bubble}-rotatables", -1 * note_angle)
+    svg_utils.rotate_svg_group(target_file, f"flagnote-{shape}-{text_in_bubble}-rotatables", -1 * note_angle)
 
 
 def apply_bubble_transforms_to_flagnote_group(file_path):
