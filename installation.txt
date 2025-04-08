@@ -1,100 +1,22 @@
-******************
-Stuff to .gitignore:
+***********
+    0: running git: 
 
-# ===================================
-# Python
-# ===================================
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.pyd
-*.pyo
+    1. install homebrew: https://brew.sh/
+    2. install git: https://git-scm.com/downloads
+    3. git clone: https://github.com/kenyonshutt/harnice
 
-# ===================================
-# Virtual Environments
-# ===================================
-venv/
-env/
-.venv/
-ENV/
-.ENV/
+***********
+1. update your environment variables to point Harnice towards your libararies. here's an example:
+    :
+        public=~/github/harnice-library-public
+        user=~/Projects/harnice-library-user
+    :
+    add whatever other library you need here. pull components from that library by referencing them by "supplier" in your yaml. 
+    you can use git or dropbox or whatever to control your libraries in a repo separate from harnice. 
 
-# ===================================
-# Distribution / Packaging
-# ===================================
-build/
-dist/
-*.egg-info/
-.eggs/
-pip-wheel-metadata/
-*.manifest
-*.spec
-
-# ===================================
-# Testing / Coverage
-# ===================================
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-.pytest_cache/
-nosetests.xml
-coverage.xml
-
-# ===================================
-# Jupyter Notebooks
-# ===================================
-.ipynb_checkpoints/
-
-# ===================================
-# Environment Variables / Secrets
-# ===================================
-.env
-.env.*
-*.env
-secrets.*
-
-# ===================================
-# IDEs / Editors
-# ===================================
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# ===================================
-# macOS
-# ===================================
-.DS_Store
-
-# ===================================
-# Windows
-# ===================================
-Thumbs.db
-desktop.ini
-
-# ===================================
-# Logs and misc
-# ===================================
-*.log
-*.bak
-*.tmp
-*.swp
-*~
+*************
+2. install python however you want
 
 
-
-
-******************
-packages to install:
-
-
-
-*****************
-.env:
-public=/Users/kenyonshutt/github/harnice-library-public
-rs=/Users/kenyonshutt/The Dropbox/Kenyon Shutt/Projects/2024-11-26-harnice/harnice-library-rs
-user=/Users/kenyonshutt/The Dropbox/Kenyon Shutt/Projects/2024-11-26-harnice/harnice-library-user
+*************
+3. install the following packages. indents loosely convey dependencies:
