@@ -69,11 +69,11 @@ def harnice():
     #generate blank harnice output svg
     #print()
     #print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
-    #if not utility.file_exists_in_directory(f"{utility.partnumber("pn-rev")}-harnice-output.svg"):
+    #if not utility.file_exists_in_directory(f"{utility.file.partnumber("pn-rev")}-harnice-output.svg"):
         #print()
         #generate_harnice_output_svg.generate_blank_harnice_output_svg()
     #else :
-        #print(f"{utility.partnumber("pn-rev")}-harnice-output.svg already exists")
+        #print(f"{utility.file.partnumber("pn-rev")}-harnice-output.svg already exists")
         #generate_harnice_output_svg.ensure_groups_exist_in_harnice_output()
 
     #combine all master SVG groups into PN-harnice-output.svg

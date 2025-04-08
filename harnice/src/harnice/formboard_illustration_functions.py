@@ -138,11 +138,11 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
 
     if svgexists:
         #reference the drawing filepath, not included in filepath() because each project file structure is different
-        instance_svg_path = os.path.join(instance_dirpath, f"{partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
+        instance_svg_path = os.path.join(instance_dirpath, f"{file.partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
 
         #create a new instance file if it doesn't exist yet
         if not os.path.exists(instance_svg_path):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating  instance svg {partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating  instance svg {file.partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
             os.makedirs(instance_dirpath, exist_ok=True)
 
             # Write SVG declaration
@@ -209,7 +209,7 @@ def update_segment_instances():
             # Define output filename
             os.makedirs(os.path.join(dirpath("drawing_instances"), segment_name), exist_ok=True)
 
-            output_filename = os.path.join(dirpath("drawing_instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
+            output_filename = os.path.join(dirpath("drawing_instances"), segment_name, f"{file.partnumber("pn-rev")}-{segment_name}.svg")
             
             # Write SVG file
             with open(output_filename, 'w') as svg_file:
@@ -294,7 +294,7 @@ def update_formboard_master_svg():
         instance_name = instances[instance_counter]
         instance_counter += 1
         # find the path of the source instance
-        source_svg_filepath = os.path.join(dirpath("drawing_instances"), instance_name, f"{partnumber("pn-rev")}-{instance_name}.svg")
+        source_svg_filepath = os.path.join(dirpath("drawing_instances"), instance_name, f"{file.partnumber("pn-rev")}-{instance_name}.svg")
         
         # Call the function to replace the group
         find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
@@ -321,7 +321,7 @@ def replace_all_segment_groups():
 
         try:
             # Define the target and source SVG paths
-            source_svg_filepath = os.path.join(dirpath("drawing_instances"), segment_name, f"{partnumber("pn-rev")}-{segment_name}.svg")
+            source_svg_filepath = os.path.join(dirpath("drawing_instances"), segment_name, f"{file.partnumber("pn-rev")}-{segment_name}.svg")
 
             if not os.path.exists(filepath("formboard master svg")):
                 print(f"Error: Target SVG file {filepath("formboard master svg")} not found.")
