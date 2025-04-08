@@ -5,7 +5,8 @@ import random
 import math
 from os.path import basename
 from inspect import currentframe
-import utility
+import utils
+import file
 from collections import defaultdict
 
 def field_contains_null(file_path, field):

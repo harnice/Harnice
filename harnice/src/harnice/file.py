@@ -9,8 +9,9 @@ from inspect import currentframe
 import xml.etree.ElementTree as ET
 import re
 from dotenv import load_dotenv, dotenv_values
+import utils
 
-def file.partnumber(format):
+def partnumber(format):
     #Returns part numbers in various formats based on the current working directory
 
     #given a part number "pppppp-revR"
@@ -43,7 +44,6 @@ def file.partnumber(format):
 
     else:
         raise ValueError("Function 'file.partnumber' not presented with a valid format")
-
 
 #used to be svg_add_groups
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):

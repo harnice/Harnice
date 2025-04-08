@@ -2,7 +2,8 @@ import os
 import csv
 from os.path import basename
 from inspect import currentframe
-from utility import *
+import utils
+import file
 
 def read_tsv(file_path, columns):
     """

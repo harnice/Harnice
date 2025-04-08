@@ -8,6 +8,8 @@ from os.path import basename
 from inspect import currentframe
 import xml.etree.ElementTree as ET
 import re
+import utils
+import file
 from dotenv import load_dotenv, dotenv_values
 
 def file.partnumber(format):

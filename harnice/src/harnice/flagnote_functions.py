@@ -2,7 +2,8 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import csv
-from utility import *
+import utils
+import file
 from os.path import basename
 from inspect import currentframe
 

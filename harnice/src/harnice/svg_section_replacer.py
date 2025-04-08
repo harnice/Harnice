@@ -1,7 +1,8 @@
 import os
 from os.path import basename
 from inspect import currentframe
-from utility import file.partnumber, find_and_replace_svg_group
+import utils
+import file
 
 
 def regen_harnice_output_svg():

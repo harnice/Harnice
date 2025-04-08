@@ -8,7 +8,8 @@ from inspect import currentframe
 import yaml
 import csv
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
-from utility import *
+import utils
+import file
 
 #this list is used to keep track of all the valid instances:
 drawing_instance_filenames = [None]
