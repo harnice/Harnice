@@ -2,6 +2,7 @@ import os
 import time
 import subprocess
 import shutil
+import svg_utils
 from os.path import basename
 from inspect import currentframe
 

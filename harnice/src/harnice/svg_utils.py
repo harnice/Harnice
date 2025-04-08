@@ -66,9 +66,6 @@ def add_entire_svg_file_contents_to_group(filepath, new_group_name):
 def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_id):
     import os
 
-    def get_fileio.name(filepath):
-        return os.path.basename(filepath)
-
     try:
         # Read the source SVG content
         with open(source_svg_filepath, 'r') as source_file:
