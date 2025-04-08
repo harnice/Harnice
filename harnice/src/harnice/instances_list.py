@@ -1,6 +1,5 @@
 import yaml
 import csv
-
 import fileio
 
 def make_new_list():

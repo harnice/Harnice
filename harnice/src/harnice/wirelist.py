@@ -3,7 +3,6 @@ import csv
 import os
 from os.path import basename
 from inspect import currentframe
-
 import fileio
 import yaml
 import csv

@@ -1,9 +1,8 @@
 import os
 from os.path import basename
 from inspect import currentframe
-
 import fileio
-
+import svg_utils
 
 def regen_harnice_output_svg():
 

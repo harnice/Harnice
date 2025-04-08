@@ -9,7 +9,6 @@ import tblock_svg_prepper
 import formboard_functions
 import flagnote_functions
 import harnice_prechecker
-
 import fileio
 import formboard_illustration_functions
 import os

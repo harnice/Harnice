@@ -2,7 +2,6 @@ import os
 import csv
 from os.path import basename
 from inspect import currentframe
-
 import fileio
 
 def read_tsv(file_path, columns):

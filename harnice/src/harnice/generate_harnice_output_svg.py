@@ -2,7 +2,6 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree, tostring
 import xml.etree.ElementTree as ET
 import os
 import re
-
 import fileio
 from os.path import basename
 from inspect import currentframe

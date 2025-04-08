@@ -8,7 +8,6 @@ from inspect import currentframe
 import yaml
 import csv
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
-
 import fileio
 
 #this list is used to keep track of all the valid instances:
