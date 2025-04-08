@@ -2,7 +2,7 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import csv
-import utils
+
 import file
 from os.path import basename
 from inspect import currentframe
@@ -18,7 +18,7 @@ def update_flagnotes_of_instance(target_filepath, instance_name, rotation_angle,
     instance_flagnotes_filepath = os.path.join(target_filepath, instance_flagnotes_filename)
     generate_instance_flagnotes(instance_name,instance_flagnotes_filename,instance_flagnotes_filepath,rotation_angle,bomid)
     for i in range(0, 11):
-        note_exists_for_instance = find_and_replace_svg_group(instance_drawing_filepath, instance_flagnotes_filepath, f"as-printed-flagnote-{i}")
+        note_exists_for_instance = svg_utils.find_and_replace_svg_group(instance_drawing_filepath, instance_flagnotes_filepath, f"as-printed-flagnote-{i}")
         
         if note_exists_for_instance == 1:
             #make leader visible
@@ -193,7 +193,7 @@ def generate_note_svg(target_file, shape, text_in_bubble, bubble_location_index,
         group_end = f'</g>\n<g id="as-printed-flagnote-{bubble_location_index}-contents-end">\n</g>\n'
         file.write(group_end)
 
-    rotate_svg_group(target_file, f"flagnote-{shape}-{text_in_bubble}-rotatables", -1 * note_angle)
+    svg_utils.rotate_svg_group(target_file, f"flagnote-{shape}-{text_in_bubble}-rotatables", -1 * note_angle)
 
 
 def apply_bubble_transforms_to_flagnote_group(file_path):

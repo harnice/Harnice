@@ -9,7 +9,7 @@ from inspect import currentframe
 import xml.etree.ElementTree as ET
 import re
 from dotenv import load_dotenv, dotenv_values
-import utils
+
 
 #standard punctuation:
     #  .  separates between name hierarchy levels

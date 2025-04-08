@@ -1,6 +1,6 @@
 import yaml
 import csv
-import utils
+
 import file
 
 def make_new_list():

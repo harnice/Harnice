@@ -4,7 +4,7 @@ import subprocess
 import shutil
 from os.path import basename
 from inspect import currentframe
-import utils
+
 import file
 
 def generate_esch():
@@ -32,7 +32,7 @@ def generate_esch():
     # Copy and format svg output as needed for later use
     shutil.copy(filepath("wireviz svg"), dirpath("master_svgs"))
     os.rename(os.path.join(dirpath("master_svgs"),filename("wireviz svg")), filepath("esch master svg"))
-    add_entire_svg_file_contents_to_group(filepath("esch master svg"), "esch-master")
+    svg_utils.add_entire_svg_file_contents_to_group(filepath("esch master svg"), "esch-master")
 
 # Run the process
 if __name__ == "__main__":
