@@ -27,13 +27,13 @@ def delete_unmatched_files():
     global drawing_instance_filenames  # Access the global variable
 
     # Ensure the directory exists
-    if not os.path.exists(dirpath("drawing_instances")):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory {dirpath("drawing_instances")} does not exist.")
+    if not os.path.exists(file.dirpath("drawing_instances")):
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory {file.dirpath("drawing_instances")} does not exist.")
         return
 
     # List all files and directories in the directory
-    for item in os.listdir(dirpath("drawing_instances")):
-        item_path = os.path.join(dirpath("drawing_instances"), item)
+    for item in os.listdir(file.dirpath("drawing_instances")):
+        item_path = os.path.join(file.dirpath("drawing_instances"), item)
 
         # Check if the item is not in the allowed list
         if item not in drawing_instance_filenames:
@@ -128,7 +128,7 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
 
     print(f"#    #    ########## working on bom item {mpn}, instance name {instance_name_w_suffix}, which is type {instance_type}")
 
-    instance_dirpath = os.path.join(dirpath("drawing_instances"),instance_name_w_suffix)
+    instance_file.dirpath = os.path.join(file.dirpath("drawing_instances"),instance_name_w_suffix)
 
     #import from library
     svgexists = import_file_from_harnice_library(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
@@ -139,12 +139,12 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
 
     if svgexists:
         #reference the drawing filepath, not included in file.path() because each project file structure is different
-        instance_svg_path = os.path.join(instance_dirpath, f"{file.partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
+        instance_svg_path = os.path.join(instance_file.dirpath, f"{file.partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
 
         #create a new instance file if it doesn't exist yet
         if not os.path.exists(instance_svg_path):
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Generating  instance svg {file.partnumber("pn-rev")}-{instance_name_w_suffix}.svg")
-            os.makedirs(instance_dirpath, exist_ok=True)
+            os.makedirs(instance_file.dirpath, exist_ok=True)
 
             # Write SVG declaration
             svg_content = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
@@ -159,7 +159,7 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created new connector instance SVG {instance_name_w_suffix} with MPN: {mpn}")
 
             svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path,"connector-drawing")
-            svg_utils.find_and_replace_svg_group(instance_svg_path, os.path.join(dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
+            svg_utils.find_and_replace_svg_group(instance_svg_path, os.path.join(file.dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
             svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path, "connector-instance-rotatables")
             svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-instance-{instance_name_w_suffix}")
             apply_bubble_transforms_to_flagnote_group(instance_svg_path)
@@ -208,9 +208,9 @@ def update_segment_instances():
     </svg>'''
 
             # Define output filename
-            os.makedirs(os.path.join(dirpath("drawing_instances"), segment_name), exist_ok=True)
+            os.makedirs(os.path.join(file.dirpath("drawing_instances"), segment_name), exist_ok=True)
 
-            output_filename = os.path.join(dirpath("drawing_instances"), segment_name, f"{file.partnumber("pn-rev")}-{segment_name}.svg")
+            output_filename = os.path.join(file.dirpath("drawing_instances"), segment_name, f"{file.partnumber("pn-rev")}-{segment_name}.svg")
             
             # Write SVG file
             with open(output_filename, 'w') as svg_file:
@@ -295,7 +295,7 @@ def update_formboard_master_svg():
         instance_name = instances[instance_counter]
         instance_counter += 1
         # find the path of the source instance
-        source_svg_filepath = os.path.join(dirpath("drawing_instances"), instance_name, f"{file.partnumber("pn-rev")}-{instance_name}.svg")
+        source_svg_filepath = os.path.join(file.dirpath("drawing_instances"), instance_name, f"{file.partnumber("pn-rev")}-{instance_name}.svg")
         
         # Call the function to replace the group
         svg_utils.find_and_replace_svg_group(file.path("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
@@ -322,7 +322,7 @@ def replace_all_segment_groups():
 
         try:
             # Define the target and source SVG paths
-            source_svg_filepath = os.path.join(dirpath("drawing_instances"), segment_name, f"{file.partnumber("pn-rev")}-{segment_name}.svg")
+            source_svg_filepath = os.path.join(file.dirpath("drawing_instances"), segment_name, f"{file.partnumber("pn-rev")}-{segment_name}.svg")
 
             if not os.path.exists(file.path("formboard master svg")):
                 print(f"Error: Target SVG file {file.path("formboard master svg")} not found.")
