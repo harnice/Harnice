@@ -4,7 +4,7 @@ import os
 import shutil
 from os.path import basename
 from inspect import currentframe
-import utils
+
 import file
 
 wanted_tblock_libdomain = None

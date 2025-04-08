@@ -8,7 +8,7 @@ from inspect import currentframe
 import yaml
 import csv
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
-import utils
+
 import file
 
 #this list is used to keep track of all the valid instances:
@@ -158,10 +158,10 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
 
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created new connector instance SVG {instance_name_w_suffix} with MPN: {mpn}")
 
-            add_entire_svg_file_contents_to_group(instance_svg_path,"connector-drawing")
-            find_and_replace_svg_group(instance_svg_path, os.path.join(dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
-            add_entire_svg_file_contents_to_group(instance_svg_path, "connector-instance-rotatables")
-            add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-instance-{instance_name_w_suffix}")
+            svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path,"connector-drawing")
+            svg_utils.find_and_replace_svg_group(instance_svg_path, os.path.join(dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
+            svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path, "connector-instance-rotatables")
+            svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-instance-{instance_name_w_suffix}")
             apply_bubble_transforms_to_flagnote_group(instance_svg_path)
                         
         else: 
@@ -169,7 +169,7 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
       
         # Rotate SVG group "connector-drawing" to match the average segment angle
         connector_angle = -1* retrieve_angle_of_connector(instance_name)
-        rotate_svg_group(instance_svg_path, "connector-instance-rotatables", connector_angle)
+        svg_utils.rotate_svg_group(instance_svg_path, "connector-instance-rotatables", connector_angle)
         #TODO: offset and rotate per rotation and offset arguents of this function
         update_flagnotes_of_instance(os.path.dirname(instance_svg_path), instance_name_w_suffix, connector_angle, bomid)
 
@@ -218,11 +218,11 @@ def update_segment_instances():
 
             add_filename_to_drawing_instance_list(basename(dirname(output_filename)))
 
-            add_entire_svg_file_contents_to_group(output_filename, "segment_contents_rotatables")
+            svg_utils.add_entire_svg_file_contents_to_group(output_filename, "segment_contents_rotatables")
 
-            rotate_svg_group(output_filename, "segment_contents_rotatables", -1*retrieve_angle_of_segment(segment_name))
+            svg_utils.rotate_svg_group(output_filename, "segment_contents_rotatables", -1*retrieve_angle_of_segment(segment_name))
 
-            add_entire_svg_file_contents_to_group(output_filename, f"unique-instance-{segment_name}")
+            svg_utils.add_entire_svg_file_contents_to_group(output_filename, f"unique-instance-{segment_name}")
             
             print(f"Generated SVG for {segment_name}: {output_filename}")
         
@@ -287,7 +287,7 @@ def update_formboard_master_svg():
             svg_file.write(f'  {ET.tostring(group, encoding="unicode").strip()}\n\n')
         svg_file.write('</svg>\n')
 
-    add_entire_svg_file_contents_to_group(filepath("formboard master svg"),"formboard-master")
+    svg_utils.add_entire_svg_file_contents_to_group(filepath("formboard master svg"),"formboard-master")
     
     #Replace all connector groups in the target SVG with their corresponding source SVG groups
     instance_counter = 0
@@ -298,7 +298,7 @@ def update_formboard_master_svg():
         source_svg_filepath = os.path.join(dirpath("drawing_instances"), instance_name, f"{file.partnumber("pn-rev")}-{instance_name}.svg")
         
         # Call the function to replace the group
-        find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
+        svg_utils.find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
 
 def replace_all_segment_groups():
     """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
@@ -333,7 +333,7 @@ def replace_all_segment_groups():
                 continue
 
             # Call the function to replace the group
-            find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{segment_name}")
+            svg_utils.find_and_replace_svg_group(filepath("formboard master svg"), source_svg_filepath, f"unique-instance-{segment_name}")
 
             print(f"Successfully replaced group for segment {segment_name}.")
         except Exception as e:
