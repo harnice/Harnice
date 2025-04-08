@@ -179,7 +179,7 @@ def update_segment_instances():
         with open(file.path("formboard graph definition"), 'r') as json_file:
             graph_data = json.load(json_file)
     except FileNotFoundError:
-        print(f"Error: File {filename("formboard graph definition")} not found.")
+        print(f"Error: File {file.name("formboard graph definition")} not found.")
         return
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -307,7 +307,7 @@ def replace_all_segment_groups():
         with open(file.path("formboard segment to from center"), 'r') as json_file:
             segment_data = json.load(json_file)
     except FileNotFoundError:
-        print(f"Error: Segment data JSON file {filename("formboard segment to from center")} not found.")
+        print(f"Error: Segment data JSON file {file.name("formboard segment to from center")} not found.")
         return
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -356,7 +356,7 @@ def retrieve_angle_of_connector(connectorname):
 def retrieve_angle_of_segment(segmentname):
     # Check if the file exists
     if not os.path.isfile(file.path("formboard graph definition")):
-        raise FileNotFoundError(f"File not found: {filename("formboard graph definition")}")
+        raise FileNotFoundError(f"File not found: {file.name("formboard graph definition")}")
     
     # Load the JSON data
     with open(file.path("formboard graph definition"), "r") as file:

@@ -174,7 +174,7 @@ def dirpath(target_key):
         raise TypeError(f"Could not find directory {target_key}.")
     return os.path.join(os.getcwd(),*path_key)
 
-def filename(target_value):
+def name(target_value):
     #returns the filename of a filekey. 
     """
     Recursively searches for a value in a nested JSON structure and returns the key containing that value.

@@ -143,7 +143,7 @@ def prep_bom_svg_master():
     # Generate the SVG table
     generate_svg_table(table_data, file.path("bom table master svg"))
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: BOM SVG table saved to {filename("bom table master svg")}")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: BOM SVG table saved to {file.name("bom table master svg")}")
 
 if __name__ == "__main__":
     prep_bom_svg_master()

@@ -15,7 +15,7 @@ def newlist():
         with open(file.path("harness yaml"), 'r') as file:
             yaml_data = yaml.safe_load(file)
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {utility.filename('harness yaml')} not found in the current directory.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {file.name('harness yaml')} not found in the current directory.")
         exit(1)
 
     # Extract connections and build wirelist
@@ -54,7 +54,7 @@ def newlist():
         writer.writerow(["Wire", "Subwire", "Source", "SourcePin", "Destination", "DestinationPin"])
         writer.writerows(wirelist)
 
-    print(f"Wirelist has been written to {utility.filename('wirelist nolengths')}")
+    print(f"Wirelist has been written to {file.name('wirelist nolengths')}")
 
 def wirelist_add_lengths():
     return

@@ -83,7 +83,7 @@ def generate_segments_precheck():
             return -1
 
     else:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {utility.filename("formboard graph definition")} as needed.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {file.name("formboard graph definition")} as needed.")
         generate_segments()
     
     return 1
@@ -126,10 +126,10 @@ def add_random_lengths_angles():
         with open(file.path("formboard graph definition"), "r") as file:
             data = json.load(file)
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {utility.filename("formboard graph definition")}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {file.name("formboard graph definition")}")
         return
     except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {utility.filename("formboard graph definition")}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {file.name("formboard graph definition")}")
         return
 
     # Update the "length" and "angle" fields
@@ -141,7 +141,7 @@ def add_random_lengths_angles():
     with open(file.path("formboard graph definition"), "w") as file:
         json.dump(data, file, indent=4)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {utility.filename("formboard graph definition")}")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {file.name("formboard graph definition")}")
 
 def generate_node_coordinates():
     # Read the segment data
@@ -149,10 +149,10 @@ def generate_node_coordinates():
         with open(file.path("formboard graph definition"), "r") as file:
             segment_data = json.load(file)
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {utility.filename("formboard graph definition")}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {file.name("formboard graph definition")}")
         return
     except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {utility.filename("formboard graph definition")}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {file.name("formboard graph definition")}")
         return
 
     # Initialize node coordinates
@@ -336,14 +336,14 @@ def map_connections_to_graph():
             reader = csv.DictReader(file, delimiter='\t')
             wirelist = [row for row in reader]
     except FileNotFoundError:
-        raise FileNotFoundError(f"Wirelist file not found: {utility.filename("wirelist nolengths")}")
+        raise FileNotFoundError(f"Wirelist file not found: {file.name("wirelist nolengths")}")
 
     # Load the graph definition JSON
     try:
         with open(file.path("formboard graph definition"), 'r') as f:
             graph_definition = json.load(f)
     except FileNotFoundError:
-        raise FileNotFoundError(f"Graph definition file not found: {utility.filename("formboard graph definition")}")
+        raise FileNotFoundError(f"Graph definition file not found: {file.name("formboard graph definition")}")
 
     # Parse the graph into adjacency lists and track segments
     graph = defaultdict(set)
@@ -410,7 +410,7 @@ def map_connections_to_graph():
     with open(file.path("connections to graph"), 'w') as f:
         json.dump(connections_to_graph, f, indent=4)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {utility.filename("connections to graph")}")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {file.name("connections to graph")}")
 
 def formboard_processor():
     next_step = generate_segments_precheck()
