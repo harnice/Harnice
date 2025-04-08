@@ -1,14 +1,83 @@
-# Ignore Python bytecode
+# ===================================
+# Python
+# ===================================
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+*.pyd
+*.pyo
 
-# Ignore virtual environments
+# ===================================
+# Virtual Environments
+# ===================================
 venv/
-.env/
+env/
+.venv/
+ENV/
+.ENV/
 
-# Ignore Jupyter Notebook checkpoints
+# ===================================
+# Distribution / Packaging
+# ===================================
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# ===================================
+# Testing / Coverage
+# ===================================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+
+# ===================================
+# Jupyter Notebooks
+# ===================================
 .ipynb_checkpoints/
 
-# Ignore logs and temporary files
+# ===================================
+# Environment Variables / Secrets
+# ===================================
+.env
+.env.*
+*.env
+secrets.*
+
+# ===================================
+# IDEs / Editors
+# ===================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ===================================
+# macOS
+# ===================================
+.DS_Store
+
+# ===================================
+# Windows
+# ===================================
+Thumbs.db
+desktop.ini
+
+# ===================================
+# Logs and misc
+# ===================================
 *.log
+*.bak
 *.tmp
+*.swp
+*~
