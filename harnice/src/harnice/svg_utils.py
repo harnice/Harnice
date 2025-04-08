@@ -134,7 +134,7 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, group_i
 
     return success
 
-def svg_utils.rotate_svg_group(svg_path, group_name, angle):
+def rotate_svg_group(svg_path, group_name, angle):
     """
     Modify the rotation of a specific group in an SVG file by directly searching and replacing text.
     
