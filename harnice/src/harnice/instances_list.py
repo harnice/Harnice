@@ -93,10 +93,10 @@ def add_cables():
             ])
 
 def add_formboard_segments():
-    with open(fileio.path("formboard graph definition"), "r") as f:
+    with open(utility.filepath("formboard graph definition"), "r") as f:
         formboard_data = yaml.safe_load(f)
 
-    with open(fileio.path("instances list"), "a", newline="") as tsvfile:
+    with open(utility.filepath("instances list"), "a", newline="") as tsvfile:
         writer = csv.writer(tsvfile, delimiter="\t")
 
         for segment_name, segment in formboard_data.items():
