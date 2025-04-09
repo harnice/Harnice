@@ -56,28 +56,41 @@ def newlist():
     print(f"Wirelist has been written to {fileio.name('wirelist nolengths')}")
 
 def add_lengths():
-    # Load the TSV files
-    instances_df = pd.read_csv(filepath("instances list"), sep='\t')
-    wirelist_df = pd.read_csv(filepath("wirelist lengths"), sep='\t')
+    broken!
+    #TODO: fix this function!
+    # Read instances list
+    with open(fileio.path("instances list"), newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        # Filter to only rows where item type is Cable
+        cable_instances = {
+            row["instance name"]: row["length"]
+            for row in reader
+            if row.get("item type") == "Cable"
+        }
 
-    # Filter instances to only include rows where "item type" is "Cable"
-    instances_df = instances_df[instances_df["item type"] == "Cable"]
+    # Read the wirelist
+    with open(fileio.path("wirelist lengths"), newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        wirelist_rows = list(reader)
+        fieldnames = reader.fieldnames or []
 
-    # Make sure the 'length' column exists in the wirelist, or create it
-    if 'length' not in wirelist_df.columns:
-        wirelist_df['length'] = None
+    # Ensure 'length' column exists
+    if "length" not in fieldnames:
+        fieldnames.append("length")
 
-    # Loop through each row in instances_df
-    for _, instance_row in instances_df.iterrows():
-        instance_name = instance_row.get("instance name")
-        length_value = instance_row.get("length")
+    # Update wirelist rows with length values
+    for row in wirelist_rows:
+        instance_name = row.get("wire")
+        if instance_name in cable_instances:
+            row["length"] = cable_instances[instance_name]
 
-        # Apply the length to matching wirelist rows
-        matching_rows = wirelist_df["wire"] == instance_name
-        wirelist_df.loc[matching_rows, "length"] = length_value
+    # Write the updated wirelist back
+    with open(fileio.path("wirelist lengths"), 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(wirelist_rows)
 
-    # Save the updated wirelist
-    wirelist_df.to_csv(filepath("wirelist lengths"), sep='\t', index=False)
+    # Return the updated path
+    return fileio.path("wirelist lengths")
 
-    # Return the path
-    return filepath("wirelist lengths")
+
