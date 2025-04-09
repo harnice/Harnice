@@ -112,3 +112,38 @@ def add_formboard_segments():
                 segment.get("diameter", ""),
                 "", ""
             ])
+
+def add_cable_lengths():
+    # Load JSON graph data
+    with open(fileio.path("connections to graph"), "r") as json_file:
+        graph_data = json.load(json_file)
+
+    tsv_path = fileio.path("instances list")
+
+    # Read the TSV into memory
+    with open(tsv_path, newline='') as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames or []
+
+    # Ensure the 'length' column is present
+    if "length" not in fieldnames:
+        fieldnames.append("length")
+
+    # Modify rows in memory
+    for row in rows:
+        if row.get("item_type") == "Cable":
+            instance = row.get("instance_name")
+            if instance in graph_data:
+                row["length"] = graph_data[instance].get("wirelength", "")
+            else:
+                row["length"] = ""
+        else:
+            # Preserve existing value or blank
+            row["length"] = row.get("length", "")
+
+    # Write all rows back to the same TSV
+    with open(tsv_path, "w", newline='') as tsv_file:
+        writer = csv.DictWriter(tsv_file, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
