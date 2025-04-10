@@ -53,8 +53,6 @@ def newlist():
         writer.writerow(["Wire", "Subwire", "Source", "SourcePin", "Destination", "DestinationPin"])
         writer.writerows(wirelist)
 
-    print(f"Wirelist has been written to {fileio.name('wirelist nolengths')}")
-
 def add_lengths():
     # Read instances list
     with open(fileio.path("instances list"), newline='', encoding='utf-8') as f:
