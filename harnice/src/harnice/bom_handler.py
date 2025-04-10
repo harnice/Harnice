@@ -33,7 +33,7 @@ def combine_tsv_boms():
     input_files = [
         fileio.path("electrical bom"),
         fileio.path("mechanical bom"),
-        fileio.path("wirelist lengths"),
+        fileio.path("wirelist no formats"),
     ]
     
     # Initialize data structures

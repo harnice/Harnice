@@ -48,7 +48,7 @@ def newlist():
                     dst_component, dst_pin
                 ])
 
-    with open(fileio.path("wirelist nolengths"), 'w', newline='') as file:
+    with open(fileio.path("wirelist no formats"), 'w', newline='') as file:
         writer = csv.writer(file, delimiter='\t')
         writer.writerow(["Wire", "Subwire", "Source", "SourcePin", "Destination", "DestinationPin"])
         writer.writerows(wirelist)
@@ -56,8 +56,6 @@ def newlist():
     print(f"Wirelist has been written to {fileio.name('wirelist nolengths')}")
 
 def add_lengths():
-    broken!
-    #TODO: fix this function!
     # Read instances list
     with open(fileio.path("instances list"), newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter='\t')
@@ -69,7 +67,7 @@ def add_lengths():
         }
 
     # Read the wirelist
-    with open(fileio.path("wirelist lengths"), newline='', encoding='utf-8') as f:
+    with open(fileio.path("wirelist no formats"), newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter='\t')
         wirelist_rows = list(reader)
         fieldnames = reader.fieldnames or []
@@ -85,12 +83,12 @@ def add_lengths():
             row["length"] = cable_instances[instance_name]
 
     # Write the updated wirelist back
-    with open(fileio.path("wirelist lengths"), 'w', newline='', encoding='utf-8') as f:
+    with open(fileio.path("wirelist no formats"), 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
         writer.writerows(wirelist_rows)
 
     # Return the updated path
-    return fileio.path("wirelist lengths")
+    return fileio.path("wirelist no formats")
 
 
