@@ -85,8 +85,7 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
                 },
                 "wirelists": {
-                    f"{partnumber("pn-rev")}.wirelist_nolengths.tsv":"wirelist nolengths",
-                    f"{partnumber("pn-rev")}.wirelist_lengths.tsv":"wirelist lengths"
+                    f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
                 },
                 f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"

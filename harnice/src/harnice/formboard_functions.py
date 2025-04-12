@@ -332,11 +332,11 @@ def map_connections_to_graph():
 
     # Read the wirelist TSV file
     try:
-        with open(fileio.path("wirelist nolengths"), 'r') as file:
+        with open(fileio.path("wirelist no formats"), 'r') as file:
             reader = csv.DictReader(file, delimiter='\t')
             wirelist = [row for row in reader]
     except FileNotFoundError:
-        raise FileNotFoundError(f"Wirelist file not found: {fileio.name("wirelist nolengths")}")
+        raise FileNotFoundError(f"Wirelist file not found: {fileio.name("wirelist no formats")}")
 
     # Load the graph definition JSON
     try:

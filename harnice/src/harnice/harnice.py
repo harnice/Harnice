@@ -37,8 +37,8 @@ def harnice():
     #update this function to account for new instances list formatting:
     formboard_functions.formboard_processor()
     instances_list.add_formboard_segments()
-    #TODO: complete wirelist.wirelist_add_lengths()
-    #TODO: add lengths to instances list
+    instances_list.add_cable_lengths()
+    wirelist.add_lengths()
 
     #run wireviz
     print()

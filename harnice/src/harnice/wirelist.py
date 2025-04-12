@@ -48,13 +48,40 @@ def newlist():
                     dst_component, dst_pin
                 ])
 
-    with open(fileio.path("wirelist nolengths"), 'w', newline='') as file:
+    with open(fileio.path("wirelist no formats"), 'w', newline='') as file:
         writer = csv.writer(file, delimiter='\t')
         writer.writerow(["Wire", "Subwire", "Source", "SourcePin", "Destination", "DestinationPin"])
         writer.writerows(wirelist)
 
-    print(f"Wirelist has been written to {fileio.name('wirelist nolengths')}")
+def add_lengths():
+    # Read instances list
+    with open(fileio.path("instances list"), newline='', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        cable_instances = {
+            row["instance_name"].strip(): row["length"]
+            for row in reader
+            if row.get("item_type", "").strip().lower() == "cable"
+        }
 
-def wirelist_add_lengths():
-    return
-    #to-do: complete this function
+    # Read wirelist
+    with open(fileio.path("wirelist no formats"), newline='', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        wirelist_rows = list(reader)
+        fieldnames = reader.fieldnames or []
+
+    if "length" not in fieldnames:
+        fieldnames.append("length")
+
+    for row in wirelist_rows:
+        wire_name = row.get("Wire", "").strip()
+        if wire_name in cable_instances:
+            row["length"] = cable_instances[wire_name]
+
+    # Write updated wirelist
+    with open(fileio.path("wirelist no formats"), 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(wirelist_rows)
+
+    return fileio.path("wirelist no formats")
+
