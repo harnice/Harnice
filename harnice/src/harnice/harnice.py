@@ -1,5 +1,4 @@
 import run_wireviz
-import bom_handler
 import wirelist
 import instances_list
 import svg_section_replacer
@@ -42,7 +41,7 @@ def harnice():
     #condense instance list into a bom
     print()
     print("############ GENERATING A BOM #############")
-    bom_handler.process_boms()
+    instances_list.convert_to_bom()
 
     exit()
 

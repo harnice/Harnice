@@ -147,3 +147,44 @@ def add_cable_lengths():
         writer = csv.DictWriter(tsv_file, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
         writer.writerows(rows)
+
+from collections import defaultdict
+def convert_to_bom():
+    # Track MPN groups
+    mpn_groups = defaultdict(lambda: {"qty": 0, "item_type": "", "supplier": ""})
+
+    # Read the instances list
+    with open(fileio.path("instances list"), newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        for row in reader:
+            mpn = row.get("mpn", "").strip()
+            if not mpn:
+                continue  # Skip rows without MPN
+
+            mpn_data = mpn_groups[mpn]
+            mpn_data["qty"] += 1
+            mpn_data["item_type"] = row.get("item_type", "")
+            mpn_data["supplier"] = row.get("supplier", "")
+
+    # Prepare output
+    bom_rows = []
+    for i, (mpn, data) in enumerate(mpn_groups.items(), start=1):
+        bom_rows.append({
+            "bom_line_number": i,
+            "qty": data["qty"],
+            "mpn": mpn,
+            "item_type": data["item_type"],
+            "supplier": data["supplier"],
+        })
+
+    # Define column order
+    fieldnames = ["bom_line_number", "mpn", "item_type", "qty", "supplier"]
+
+    # Write to harness bom TSV
+    with open(fileio.path("harness bom"), 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(bom_rows)
+
+    return fileio.path("harness bom")
+    
