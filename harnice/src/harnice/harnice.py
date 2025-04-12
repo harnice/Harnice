@@ -42,6 +42,7 @@ def harnice():
     print()
     print("############ GENERATING A BOM #############")
     instances_list.convert_to_bom()
+    instances_list.add_bom_line_numbers()
 
     #run wireviz
     print()

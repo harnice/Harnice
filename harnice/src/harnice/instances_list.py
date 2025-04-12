@@ -10,7 +10,7 @@ def make_new_list():
         # Write header
         writer.writerow([
             "instance_name",
-            "bom_line",
+            "bom_line_number",
             "mpn",
             "item_type",
             "child_instance",
@@ -210,3 +210,33 @@ def convert_to_bom():
     return fileio.path("harness bom")
 
 
+def add_bom_line_numbers():
+    # Step 1: Load MPN to bom_line_number mapping from harness bom
+    mpn_to_bom_line = {}
+    with open(fileio.path("harness bom"), newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        for row in reader:
+            mpn = row.get("mpn", "").strip()
+            bom_line = row.get("bom_line_number", "").strip()
+            if mpn and bom_line:
+                mpn_to_bom_line[mpn] = bom_line
+
+    # Step 2: Read and update instances list rows
+    with open(fileio.path("instances list"), newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames or []
+        if "bom_line_number" not in fieldnames:
+            fieldnames.append("bom_line_number")
+
+    for row in rows:
+        mpn = row.get("mpn", "").strip()
+        row["bom_line_number"] = mpn_to_bom_line.get(mpn, "")
+
+    # Step 3: Write the updated instances list
+    with open(fileio.path("instances list"), 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return fileio.path("instances list")
