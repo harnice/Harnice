@@ -93,7 +93,7 @@ def add_cables():
                 "", "", "",   # length, diameter, translate_formboard
                 ""            # translate_bs
             ])
-            
+
 def add_formboard_segments():
     with open(fileio.path("formboard graph definition"), "r") as f:
         formboard_data = yaml.safe_load(f)
@@ -153,7 +153,12 @@ def add_cable_lengths():
 from collections import defaultdict
 def convert_to_bom():
     # Track MPN groups
-    mpn_groups = defaultdict(lambda: {"qty": 0, "item_type": "", "supplier": ""})
+    mpn_groups = defaultdict(lambda: {
+        "qty": 0,
+        "item_type": "",
+        "supplier": "",
+        "total_length": 0.0  # used only for Cables
+    })
 
     # Read the instances list
     with open(fileio.path("instances list"), newline='', encoding='utf-8') as f:
@@ -163,29 +168,45 @@ def convert_to_bom():
             if not mpn:
                 continue  # Skip rows without MPN
 
+            item_type = row.get("item_type", "").strip()
+            supplier = row.get("supplier", "").strip()
+            length_str = row.get("length", "").strip()
+
             mpn_data = mpn_groups[mpn]
             mpn_data["qty"] += 1
-            mpn_data["item_type"] = row.get("item_type", "")
-            mpn_data["supplier"] = row.get("supplier", "")
+            mpn_data["item_type"] = item_type
+            mpn_data["supplier"] = supplier
+
+            # If this is a cable, add its length
+            if item_type.lower() == "cable" and length_str:
+                try:
+                    mpn_data["total_length"] += float(length_str)
+                except ValueError:
+                    pass  # silently skip if length isn't a valid number
 
     # Prepare output
     bom_rows = []
     for i, (mpn, data) in enumerate(mpn_groups.items(), start=1):
-        bom_rows.append({
+        row = {
             "bom_line_number": i,
-            "qty": data["qty"],
             "mpn": mpn,
             "item_type": data["item_type"],
-            "supplier": data["supplier"],
-        })
+            "qty": data["qty"],
+            "supplier": data["supplier"]
+        }
+        if data["item_type"].lower() == "cable":
+            row["total_length_exact"] = f"{data['total_length']:.2f}"
+        bom_rows.append(row)
 
     # Define column order
-    fieldnames = ["bom_line_number", "mpn", "item_type", "qty", "supplier"]
+    fieldnames = ["bom_line_number", "mpn", "item_type", "qty", "supplier", "total_length_exact"]
 
     # Write to harness bom TSV
     with open(fileio.path("harness bom"), 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t', extrasaction='ignore')
         writer.writeheader()
         writer.writerows(bom_rows)
 
     return fileio.path("harness bom")
+
+
