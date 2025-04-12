@@ -66,7 +66,8 @@ def harnice_file_structure():
                 "lists":{
                     f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
                     f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
-                    f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats"
+                    f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
+                    f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted"
                 },
                 "formboard_data": {
                     f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
