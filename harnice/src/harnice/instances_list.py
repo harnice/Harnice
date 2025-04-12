@@ -81,17 +81,19 @@ def add_cables():
         writer = csv.writer(tsvfile, delimiter="\t")
 
         for cable_name, cable in cables.items():
+            mpn = cable.get("mpn", "")
+            supplier = cable.get("supplier", "")
             writer.writerow([
-                cable_name,
-                "",
-                "",
+                cable_name,   # instance_name
+                "",           # bom_line
+                mpn,
                 "Cable",
-                "",
-                "",
-                "",
-                "", "", "", ""
+                "", "",       # child_instance, parent_instance
+                supplier,
+                "", "", "",   # length, diameter, translate_formboard
+                ""            # translate_bs
             ])
-
+            
 def add_formboard_segments():
     with open(fileio.path("formboard graph definition"), "r") as f:
         formboard_data = yaml.safe_load(f)
@@ -187,4 +189,3 @@ def convert_to_bom():
         writer.writerows(bom_rows)
 
     return fileio.path("harness bom")
-    
