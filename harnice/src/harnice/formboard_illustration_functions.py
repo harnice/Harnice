@@ -130,8 +130,8 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
     instance_fileio.dirpath = os.path.join(fileio.dirpath("drawing_instances"),instance_name_w_suffix)
 
     #import from library
-    svgexists = import_file_from_harnice_library(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
-    jsonsuccessfulimport = import_file_from_harnice_library(supplier,os.path.join("component_definitions",mpn),f"{mpn}-attributes.json")
+    svgexists = fileio.import_library_record(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
+    jsonsuccessfulimport = fileio.import_library_record(supplier,os.path.join("component_definitions",mpn),f"{mpn}-attributes.json")
     
     #remember which files are supposed to exist so we can later delete invalid stuff
     add_filename_to_drawing_instance_list(instance_name_w_suffix)
