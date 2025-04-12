@@ -67,15 +67,25 @@ def add_lengths():
     with open(fileio.path("wirelist no formats"), newline='', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f, delimiter='\t')
         wirelist_rows = list(reader)
-        fieldnames = reader.fieldnames or []
+        original_fieldnames = reader.fieldnames or []
 
-    if "length" not in fieldnames:
-        fieldnames.append("length")
+    # Insert "length" between "Wire" and "Subwire"
+    if "length" not in original_fieldnames:
+        fieldnames = []
+        for name in original_fieldnames:
+            fieldnames.append(name)
+            if name == "Wire":
+                fieldnames.append("length")
+    else:
+        fieldnames = original_fieldnames
 
+    # Update rows with lengths
     for row in wirelist_rows:
         wire_name = row.get("Wire", "").strip()
         if wire_name in cable_instances:
             row["length"] = cable_instances[wire_name]
+        else:
+            row["length"] = row.get("length", "")
 
     # Write updated wirelist
     with open(fileio.path("wirelist no formats"), 'w', newline='', encoding='utf-8') as f:
