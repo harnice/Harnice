@@ -37,7 +37,8 @@ def harnice():
     instances_list.add_formboard_segments()
     instances_list.add_cable_lengths()
     wirelist.add_lengths()
-
+    wirelist.tsv_to_xls()
+    
     #condense instance list into a bom
     print()
     print("############ GENERATING A BOM #############")
