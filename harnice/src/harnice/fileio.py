@@ -63,11 +63,10 @@ def harnice_file_structure():
             "drawing_instances":{},
             "library_used":{},
             "support_do_not_edit": {
-                "boms":{
-                    f"{partnumber("pn-rev")}.esch_electrical_bom.tsv":"electrical bom",
+                "lists":{
                     f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
-                    f"{partnumber("pn-rev")}.mechanical_bom.tsv":"mechanical bom",
-                    f"{partnumber("pn-rev")}.instances_list.tsv":"instances list"
+                    f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
+                    f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats"
                 },
                 "formboard_data": {
                     f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
@@ -83,9 +82,6 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.tblock_master.svg":"tblock master svg",
                     f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
                     f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
-                },
-                "wirelists": {
-                    f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
                 },
                 f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
@@ -106,10 +102,9 @@ def generate_structure():
     os.makedirs(dirpath("drawing_instances"), exist_ok=True)
     os.makedirs(dirpath("library_used"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
-    os.makedirs(dirpath("boms"), exist_ok=True)
+    os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
     os.makedirs(dirpath("master_svgs"), exist_ok=True)
-    os.makedirs(dirpath("wirelists"), exist_ok=True)
     os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
 
 def path(target_value):
