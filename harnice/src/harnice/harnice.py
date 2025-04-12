@@ -1,10 +1,7 @@
 import run_wireviz
 import wirelist
 import instances_list
-import svg_section_replacer
-import generate_harnice_output_svg
-import bom_svg_prepper
-import tblock_svg_prepper
+import svg_utils
 import formboard_functions
 import flagnote_functions
 import harnice_prechecker
