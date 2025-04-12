@@ -23,7 +23,7 @@ def harnice():
     if(harnice_prechecker.harnice_prechecker() == False):
         return
 
-    #generating a connector list
+    #make a list of every single instance in the project
     print()
     print("############ GENERATING AN INSTANCES LIST #############")
     instances_list.make_new_list()
@@ -31,14 +31,20 @@ def harnice():
     instances_list.add_cables()
     wirelist.newlist()
 
-    #run formboard processor
+    #process the formboard definition to get the list of segments and their locations
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
-    #update this function to account for new instances list formatting:
     formboard_functions.formboard_processor()
     instances_list.add_formboard_segments()
     instances_list.add_cable_lengths()
     wirelist.add_lengths()
+
+    #condense instance list into a bom
+    print()
+    print("############ GENERATING A BOM #############")
+    bom_handler.process_boms()
+
+    exit()
 
     #run wireviz
     print()
@@ -46,13 +52,9 @@ def harnice():
     run_wireviz.generate_esch()
 
     #print()
+    print()
     print("############ LOOKING FOR BUILDNOTES FILE #############")
     flagnote_functions.look_for_buildnotes_file()
-
-    #combine elec, mech, wire boms into pn-harness-bom
-    #print()
-    #print("############ COMBINING BOMS #############")
-    #bom_handler.process_boms()
 
     #prep all the different master SVG's
     #print()
