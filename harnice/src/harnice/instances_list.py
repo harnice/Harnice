@@ -22,6 +22,7 @@ def make_new_list():
             'mpn',
             'item_type',
             'parent_instance',
+            'parent_csys',
             'supplier',
             'length',
             'diameter',
@@ -53,6 +54,7 @@ def add_connectors():
                 component_mpn,
                 component_type,
                 instance_name,
+                '',  # parent_csys
                 component_supplier,
                 '', '', '', ''
             ])
@@ -63,6 +65,7 @@ def add_connectors():
             mpn,
             'Connector',
             '',
+            '',  # parent_csys
             supplier,
             '', '', '', ''
         ])
@@ -81,6 +84,7 @@ def add_cables():
             mpn,
             'Cable',
             '',
+            '',  # parent_csys
             supplier,
             '', '', '', ''
         ])
@@ -96,6 +100,7 @@ def add_formboard_segments():
             '',
             'Segment',
             '',
+            '',  # parent_csys
             '',
             segment.get('length', ''),
             segment.get('diameter', ''),
@@ -114,6 +119,8 @@ def add_cable_lengths():
 
     if 'length' not in fieldnames:
         fieldnames.append('length')
+    if 'parent_csys' not in fieldnames:
+        fieldnames.insert(fieldnames.index('parent_instance') + 1, 'parent_csys')
 
     for row in rows:
         if row.get('item_type') == 'Cable':
@@ -192,8 +199,11 @@ def add_bom_line_numbers():
         reader = csv.DictReader(f, delimiter='\t')
         rows = list(reader)
         fieldnames = reader.fieldnames or []
+
         if 'bom_line_number' not in fieldnames:
             fieldnames.append('bom_line_number')
+        if 'parent_csys' not in fieldnames:
+            fieldnames.insert(fieldnames.index('parent_instance') + 1, 'parent_csys')
 
     for row in rows:
         mpn = row.get('mpn', '').strip()
