@@ -26,8 +26,9 @@ def make_new_list():
             'supplier',
             'length',
             'diameter',
-            'translate_formboard',
-            'translate_bs'
+            'translate_x',
+            'translate_y',
+            'rotate_csys'
         ])
 
 def add_connectors():
@@ -56,7 +57,7 @@ def add_connectors():
                 instance_name,
                 '',  # parent_csys
                 component_supplier,
-                '', '', '', ''
+                '', '', '', '', ''
             ])
 
         append_instance_row([
@@ -67,7 +68,7 @@ def add_connectors():
             '',
             '',  # parent_csys
             supplier,
-            '', '', '', ''
+            '', '', '', '', ''
         ])
 
 def add_cables():
@@ -86,7 +87,7 @@ def add_cables():
             '',
             '',  # parent_csys
             supplier,
-            '', '', '', ''
+            '', '', '', '', ''
         ])
 
 def add_formboard_segments():
@@ -104,7 +105,7 @@ def add_formboard_segments():
             '',
             segment.get('length', ''),
             segment.get('diameter', ''),
-            '', ''
+            '', '', ''
         ])
 
 def add_cable_lengths():
@@ -121,6 +122,9 @@ def add_cable_lengths():
         fieldnames.append('length')
     if 'parent_csys' not in fieldnames:
         fieldnames.insert(fieldnames.index('parent_instance') + 1, 'parent_csys')
+    for field in ['translate_x', 'translate_y', 'rotate_csys']:
+        if field not in fieldnames:
+            fieldnames.append(field)
 
     for row in rows:
         if row.get('item_type') == 'Cable':
@@ -204,6 +208,9 @@ def add_bom_line_numbers():
             fieldnames.append('bom_line_number')
         if 'parent_csys' not in fieldnames:
             fieldnames.insert(fieldnames.index('parent_instance') + 1, 'parent_csys')
+        for field in ['translate_x', 'translate_y', 'rotate_csys']:
+            if field not in fieldnames:
+                fieldnames.append(field)
 
     for row in rows:
         mpn = row.get('mpn', '').strip()
