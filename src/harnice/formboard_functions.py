@@ -9,33 +9,38 @@ from inspect import currentframe
 import fileio
 from collections import defaultdict
 
-def field_contains_null(file_path, field):
-    """Checks if the specified field contains any null values in the JSON file."""
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
-        return False
+def formboard_processor():
+    num_connectors = get_num_connectors()
+    precheck_result = generate_segments_precheck()
+    """
+                segment file       length and angle data
+            2:   false              false
+            1:   TRUE               false
+            -1:  TRUE               partial
+            0:   TRUE               TRUE
+    """
+        #2: Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.
+        #1: Segments already exist, but no length or angle data exists yet
+        #-1: Only some length and angle data exits. Complete this file before rerunning. Aborting formboard generation process.
+        #0: Length and angle data already exist for each segment. Preserving this data and exiting.
+    
+    if(precheck_result) == 2:
+        if num_connectors < 2:
+            raise ValueError("At least two connectors are required to generate segments.")
 
-    for item in data.values():
-        if item.get(field) is None:
-            return True  # Found at least one null value
-    return False
+        if num_connectors == 2:
+            generate_segments(False)
+            add_random_lengths_angles()
 
-def field_contains_numbers(file_path, field):
-    """Checks if the specified field contains any numerical values in the JSON file."""
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
-        return False
+        if num_connectors > 2:
+            generate_segments(True)
+            add_random_lengths_angles()
 
-    for item in data.values():
-        if isinstance(item.get(field), (int, float)):
-            return True  # Found at least one numerical value
-    return False
+    if(precheck_result) == 1:
+        add_random_lengths_angles()
+
+    if(precheck_result) == -1:
+        raise ValueError(f"Only some length and angle data exits in file {fileio.name("formboard graph definition")}. Complete this file before rerunning.")
 
 def generate_segments_precheck():
     """Generates the graph definition with lengths and angles set to null."""
@@ -71,33 +76,22 @@ def generate_segments_precheck():
         )
 
         if(all_has_null == True):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segments already exist, but no length or angle data exists yet.")
+            #Segments already exist, but no length or angle data exists yet.
             return 1
 
         if(all_has_numbers == True):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Length and angle data already exist for each segment. Preserving this data.")
+            #Length and angle data already exist for each segment. Preserving this data.
             return 0
 
         if(mixed_null_and_numbers == True):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Only some length and angle data exits. Complete this file before rerunning. Aborting formboard generation process.")
+            #Only some length and angle data exits. Complete this file before rerunning. Aborting formboard generation process.
             return -1
 
-    else:
-        #count how many connectors are in the instances list
-        connectors = []
-        with open(fileio.path("instances list"), mode='r') as tsv_file:
-            reader = csv.DictReader(tsv_file, delimiter='\t')
-            for row in reader:
-                if row["item_type"] == "Connector":
-                    connectors.append(row["instance_name"])
-        num_connectors = len(connectors)
-        
-        if num_connectors < 2:
-            raise ValueError("At least two connectors are required to generate segments.")
+    #else: (all other options have returned before this point)
+    #Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.
+    return 2
 
-    return num_connectors
-
-def generate_segments(center_node_needed = True):
+def generate_segments(more_than_two_connectors):
     # Read connectors from the instances list
     connectors = []
     with open(fileio.path("instances list"), mode='r') as tsv_file:
@@ -111,9 +105,12 @@ def generate_segments(center_node_needed = True):
     data = {}
 
     # Create segments with specified fields
+
+    
+    """TODO: fix this
     for connector in connectors:
         segment_name = f"{base_segment_name}{segment_counter}"
-        if center_node_needed == True:
+        if more_than_two_connectors == True:
             data[segment_name] = {
                 "segment_end_a": "node1",
                 "segment_end_b": connector,
@@ -130,6 +127,7 @@ def generate_segments(center_node_needed = True):
                 "diameter": 0.5
             }
         segment_counter += 1
+        """
 
     # Save the graph definition to JSON
     with open(fileio.path("formboard graph definition"), "w") as json_file:
@@ -151,32 +149,17 @@ def add_random_lengths_angles():
         return
 
     # Update the "length" and "angle" fields
+    segment_counter = 0
     for segment in data.values():
+        if segment_counter == 0:
+            #the first segment is horizontal
+            segment["angle"] = 0
+        else:
+            #all other segments are random
+            segment["angle"] = random.randint(0, 359)
+
         segment["length"] = random.randint(6, 18)
-        segment["angle"] = random.randint(0, 359)
-
-    # Write the updated data back to the JSON file
-    with open(fileio.path("formboard graph definition"), "w") as file:
-        json.dump(data, file, indent=4)
-
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {fileio.name("formboard graph definition")}")
-
-def add_horizontal_length():
-    # Read the existing JSON data
-    try:
-        with open(fileio.path("formboard graph definition"), "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {fileio.name("formboard graph definition")}")
-        return
-    except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {fileio.name("formboard graph definition")}")
-        return
-
-    # Update the "length" and "angle" fields
-    for segment in data.values():
-        segment["length"] = random.randint(6, 18)
-        segment["angle"] = 0
+        segment_counter += 1
 
     # Write the updated data back to the JSON file
     with open(fileio.path("formboard graph definition"), "w") as file:
@@ -453,25 +436,46 @@ def map_connections_to_graph():
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {fileio.name("connections to graph")}")
 
-def formboard_processor():
-    num_connectors = generate_segments_precheck()
-    if num_connectors > 2:
-        print(f"Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.")
-        generate_segments()
-        add_random_lengths_angles()
-
-    elif num_connectors == 2:
-        print(f"Segment file does not exist yet. Generating a horizontal net. Modify {fileio.name("formboard graph definition")} for length.")
-        generate_segments(False)
-        add_horizontal_length()
-
-    else:
-        if num_connectors == -1:
-            return
-
     generate_node_coordinates()
     visualize_formboard_graph()
     map_connections_to_graph()
+
+def get_num_connectors():
+    connectors = []
+    with open(fileio.path("instances list"), mode='r') as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter='\t')
+        for row in reader:
+            if row["item_type"] == "Connector":
+                connectors.append(row["instance_name"])
+    return len(connectors)
+
+def field_contains_null(file_path, field):
+    """Checks if the specified field contains any null values in the JSON file."""
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
+        return False
+
+    for item in data.values():
+        if item.get(field) is None:
+            return True  # Found at least one null value
+    return False
+
+def field_contains_numbers(file_path, field):
+    """Checks if the specified field contains any numerical values in the JSON file."""
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
+        return False
+
+    for item in data.values():
+        if isinstance(item.get(field), (int, float)):
+            return True  # Found at least one numerical value
+    return False
 
 if __name__ == "__main__":
     formboard_processor()
