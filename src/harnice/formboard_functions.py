@@ -83,12 +83,21 @@ def generate_segments_precheck():
             return -1
 
     else:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.")
-        generate_segments()
-    
-    return 1
+        #count how many connectors are in the instances list
+        connectors = []
+        with open(fileio.path("instances list"), mode='r') as tsv_file:
+            reader = csv.DictReader(tsv_file, delimiter='\t')
+            for row in reader:
+                if row["item_type"] == "Connector":
+                    connectors.append(row["instance_name"])
+        num_connectors = len(connectors)
+        
+        if num_connectors < 2:
+            raise ValueError("At least two connectors are required to generate segments.")
 
-def generate_segments():
+    return num_connectors
+
+def generate_segments(center_node_needed = True):
     # Read connectors from the instances list
     connectors = []
     with open(fileio.path("instances list"), mode='r') as tsv_file:
@@ -104,13 +113,22 @@ def generate_segments():
     # Create segments with specified fields
     for connector in connectors:
         segment_name = f"{base_segment_name}{segment_counter}"
-        data[segment_name] = {
-            "segment_end_a": "node1",
-            "segment_end_b": connector,
-            "length": None,
-            "angle": None,
-            "diameter": 0.5
-        }
+        if center_node_needed == True:
+            data[segment_name] = {
+                "segment_end_a": "node1",
+                "segment_end_b": connector,
+                "length": None,
+                "angle": None,
+                "diameter": 0.5
+            }
+        else:
+            data[segment_name] = {
+                "segment_end_a": connector[1],
+                "segment_end_b": connector[2],
+                "length": None,
+                "angle": None,
+                "diameter": 0.5
+            }
         segment_counter += 1
 
     # Save the graph definition to JSON
@@ -136,6 +154,29 @@ def add_random_lengths_angles():
     for segment in data.values():
         segment["length"] = random.randint(6, 18)
         segment["angle"] = random.randint(0, 359)
+
+    # Write the updated data back to the JSON file
+    with open(fileio.path("formboard graph definition"), "w") as file:
+        json.dump(data, file, indent=4)
+
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {fileio.name("formboard graph definition")}")
+
+def add_horizontal_length():
+    # Read the existing JSON data
+    try:
+        with open(fileio.path("formboard graph definition"), "r") as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {fileio.name("formboard graph definition")}")
+        return
+    except json.JSONDecodeError:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {fileio.name("formboard graph definition")}")
+        return
+
+    # Update the "length" and "angle" fields
+    for segment in data.values():
+        segment["length"] = random.randint(6, 18)
+        segment["angle"] = 0
 
     # Write the updated data back to the JSON file
     with open(fileio.path("formboard graph definition"), "w") as file:
@@ -413,12 +454,19 @@ def map_connections_to_graph():
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {fileio.name("connections to graph")}")
 
 def formboard_processor():
-    next_step = generate_segments_precheck()
-    if next_step == 1:
+    num_connectors = generate_segments_precheck()
+    if num_connectors > 2:
+        print(f"Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.")
+        generate_segments()
         add_random_lengths_angles()
-    
+
+    elif num_connectors == 2:
+        print(f"Segment file does not exist yet. Generating a horizontal net. Modify {fileio.name("formboard graph definition")} for length.")
+        generate_segments(False)
+        add_horizontal_length()
+
     else:
-        if next_step == -1:
+        if num_connectors == -1:
             return
 
     generate_node_coordinates()
