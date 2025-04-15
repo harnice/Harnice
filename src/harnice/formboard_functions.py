@@ -42,6 +42,10 @@ def formboard_processor():
     if(precheck_result) == -1:
         raise ValueError(f"Only some length and angle data exits in file {fileio.name("formboard graph definition")}. Complete this file before rerunning.")
 
+    generate_node_coordinates()
+    visualize_formboard_graph()
+    map_connections_to_graph()
+
 def generate_segments_precheck():
     """Generates the graph definition with lengths and angles set to null."""
     # Step 2: Check if the file exists
@@ -106,11 +110,19 @@ def generate_segments(more_than_two_connectors):
 
     # Create segments with specified fields
 
-    
-    """TODO: fix this
-    for connector in connectors:
+    if more_than_two_connectors == False:
         segment_name = f"{base_segment_name}{segment_counter}"
-        if more_than_two_connectors == True:
+        data[segment_name] = {
+                "segment_end_a": connectors[0],
+                "segment_end_b": connectors[1],
+                "length": None,
+                "angle": None,
+                "diameter": 0.5
+            }
+    
+    if more_than_two_connectors == True:
+        for connector in connectors:
+            segment_name = f"{base_segment_name}{segment_counter}"
             data[segment_name] = {
                 "segment_end_a": "node1",
                 "segment_end_b": connector,
@@ -118,16 +130,7 @@ def generate_segments(more_than_two_connectors):
                 "angle": None,
                 "diameter": 0.5
             }
-        else:
-            data[segment_name] = {
-                "segment_end_a": connector[1],
-                "segment_end_b": connector[2],
-                "length": None,
-                "angle": None,
-                "diameter": 0.5
-            }
-        segment_counter += 1
-        """
+            segment_counter += 1
 
     # Save the graph definition to JSON
     with open(fileio.path("formboard graph definition"), "w") as json_file:
@@ -435,10 +438,6 @@ def map_connections_to_graph():
         json.dump(connections_to_graph, f, indent=4)
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {fileio.name("connections to graph")}")
-
-    generate_node_coordinates()
-    visualize_formboard_graph()
-    map_connections_to_graph()
 
 def get_num_connectors():
     connectors = []
