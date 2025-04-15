@@ -45,7 +45,7 @@ def formboard_processor():
         raise ValueError(f"Only some length and angle data exits in file {fileio.name("formboard graph definition")}. Complete this file before rerunning.")
 
     instances_list.add_nodes()
-    #generate_node_coordinates()
+    #TODO: move to later in program:
     #visualize_formboard_graph()
     #map_connections_to_graph()
 
@@ -173,108 +173,114 @@ def add_random_lengths_angles():
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {fileio.name("formboard graph definition")}")
 
+
+import json
+import csv
+import math
+from os.path import basename
+from inspect import currentframe
+import fileio
+
 def generate_node_coordinates():
     # Read the segment data
     try:
         with open(fileio.path("formboard graph definition"), "r") as file:
             segment_data = json.load(file)
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {fileio.name("formboard graph definition")}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {fileio.name('formboard graph definition')}")
         return
     except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {fileio.name("formboard graph definition")}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {fileio.name('formboard graph definition')}")
         return
 
-    # Initialize node coordinates
-    node_coordinates = {"node1": (0, 0)}  # Assuming "node1" is the origin (0, 0)
+    # Read the instances list
+    with open(fileio.path("instances list"), newline='') as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames or []
 
-    # To/from segment data
-    segment_to_from_data = []
-    
-    # Track angles connected to each node
-    node_angles = {node: [] for node in node_coordinates.keys()}
+    for i, row in enumerate(rows):
+        if None in row:
+            print(f"Row {i} has extra columns: {row[None]}")
+            del row[None]
 
+    for field in ['translate_x', 'translate_y', 'instance_name']:
+        if field not in fieldnames:
+            fieldnames.append(field)
 
-    # Calculate coordinates for each node
-    for segment_name, segment in segment_data.items():
-        segment_diameter = segment["diameter"]
-        start_node = segment["segment_end_a"]
-        end_node = segment["segment_end_b"]
-        length = segment.get("length")
-        angle = segment.get("angle")
+    row_lookup = {row['instance_name']: row for row in rows if 'instance_name' in row}
 
-        if start_node not in node_coordinates:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Start node {start_node} is missing coordinates. Skipping segment.")
-            continue
+    # Set origin as first connector
+    origin_node = None
+    for row in rows:
+        if row.get("item_type") == "Connector":
+            origin_node = row.get("instance_name")
+            break
 
-        if length is None or angle is None:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment missing length or angle. Skipping segment.")
-            continue
+    if origin_node is None:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: No connector found to initialize coordinates.")
+        return
 
-        # Calculate the coordinates of the end node
-        start_x, start_y = node_coordinates[start_node]
-        end_x = start_x + length * math.cos(math.radians(angle))
-        end_y = start_y + length * math.sin(math.radians(angle))
-        node_coordinates[end_node] = (round(end_x, 2), round(end_y, 2))
+    # Build graph structure to traverse
+    graph = {}
+    for name, segment in segment_data.items():
+        a = segment["segment_end_a"]
+        b = segment["segment_end_b"]
+        graph.setdefault(a, []).append((b, segment))
+        graph.setdefault(b, []).append((a, segment))  # bidirectional for traversal
 
-        # Calculate center coordinates
-        center_x = (start_x + end_x) / 2
-        center_y = (start_y + end_y) / 2
-        center_coordinates = (round(center_x, 2), round(center_y, 2))
-                
-        # Track angles for the start and end nodes
-        if start_node not in node_angles:
-            node_angles[start_node] = []
-        if end_node not in node_angles:
-            node_angles[end_node] = []
-        node_angles[start_node].append(angle)
-        node_angles[end_node].append(angle)
+    # Coordinate assignment (propagation from origin)
+    visited = set()
+    node_coordinates = {origin_node: (0, 0)}
+    queue = [origin_node]
 
-        # Add "to", "from", and "center" data for the segment
-        segment_to_from_data.append({
-            "segment name": segment_name,
-            "diameter": segment_diameter,
-            "from": {"node": start_node, "coordinates": (round(start_x, 2), round(start_y, 2))},
-            "to": {"node": end_node, "coordinates": (round(end_x, 2), round(end_y, 2))},
-            "center": {"coordinates": center_coordinates}
-        })
+    while queue:
+        current = queue.pop(0)
+        visited.add(current)
+        current_x, current_y = node_coordinates[current]
 
+        for neighbor, segment in graph.get(current, []):
+            if neighbor in node_coordinates:
+                continue  # already assigned
 
-    # Calculate average angles for each node
-    node_coordinates_with_angles = {}
+            if segment["segment_end_a"] == current:
+                direction = 1
+                angle = segment["angle"]
+            elif segment["segment_end_b"] == current:
+                direction = -1
+                angle = (segment["angle"] + 180) % 360
+            else:
+                continue  # shouldn't happen
+
+            length = segment["length"]
+            dx = length * math.cos(math.radians(angle)) * direction
+            dy = length * math.sin(math.radians(angle)) * direction
+
+            new_x = round(current_x + dx, 2)
+            new_y = round(current_y + dy, 2)
+            node_coordinates[neighbor] = (new_x, new_y)
+            queue.append(neighbor)
+
+    # Write all node coordinates back to rows
     for node, (x, y) in node_coordinates.items():
-        connected_angles = node_angles.get(node, [])
-        avg_angle = round(sum(connected_angles) / len(connected_angles), 2) if connected_angles else None
-        node_coordinates_with_angles[node] = {
-            "coords": (x, y),
-            "angle": avg_angle
-        }
+        if node in row_lookup:
+            row_lookup[node]['translate_x'] = f"{x}"
+            row_lookup[node]['translate_y'] = f"{y}"
+        else:
+            rows.append({
+                'instance_name': node,
+                'translate_x': f"{x}",
+                'translate_y': f"{y}"
+            })
 
-    # Write the node coordinates (with average angles) as-is to the inches file
-    with open(fileio.path("formboard node locations inches"), "w") as file:
-        json.dump(node_coordinates_with_angles, file, indent=4)
+    # Write to file
+    with open(fileio.path("instances list"), mode='w', newline='') as tsv_file:
+        writer = csv.DictWriter(tsv_file, fieldnames=fieldnames, delimiter='\t', extrasaction='ignore')
+        writer.writeheader()
+        writer.writerows(rows)
 
-    # Write the node coordinates as-is to the inches file
-    #with open(fileio.path("formboard node locations inches"), "w") as file:
-        #json.dump(node_coordinates, file, indent=4)
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: All node coordinates written to instances list.")
 
-    # Create the pixel coordinates by multiplying each value by 96
-    node_coordinates_px = {
-        node: (round(x * 96, 2), round(y * 96, 2)) 
-        for node, (x, y) in node_coordinates.items()
-    }
-
-    # Write the pixel coordinates to the px file
-    with open(fileio.path("formboard node locations px"), "w") as file:
-        json.dump(node_coordinates_px, file, indent=4)
-
-    # Write the segment "to", "from", and "center" data to the file
-    with open(fileio.path("formboard segment to from center"), "w") as file:
-        json.dump(segment_to_from_data, file, indent=4)
-
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {fileio.path("formboard node locations inches")}")
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {fileio.path("formboard node locations px")}")
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment to/from/center data written to {fileio.path("formboard segment to from center")}")
 
 def visualize_formboard_graph():
     node_file_path = fileio.path("formboard node locations px")

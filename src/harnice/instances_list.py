@@ -229,24 +229,29 @@ def add_bom_line_numbers():
     return fileio.path('instances list')
 
 def add_nodes():
-    # Load the formboard graph definition
     with open(fileio.path('formboard graph definition'), 'r') as f:
         formboard_data = yaml.safe_load(f)
 
-    # Extract unique nodes from all segment endpoints
-    nodes = set()
+    all_nodes = set()
     for segment in formboard_data.values():
         a = segment.get("segment_end_a")
         b = segment.get("segment_end_b")
         if a:
-            nodes.add(a)
+            all_nodes.add(a)
         if b:
-            nodes.add(b)
+            all_nodes.add(b)
 
-    # Append each node once to the instances list
-    with open(fileio.path('instances list'), 'a', newline='') as tsvfile:
+    existing_instances = set()
+    with open(fileio.path("instances list"), newline='') as tsvfile:
+        reader = csv.DictReader(tsvfile, delimiter='\t')
+        for row in reader:
+            existing_instances.add(row.get("instance_name"))
+
+    new_nodes = sorted(all_nodes - existing_instances)
+
+    with open(fileio.path("instances list"), 'a', newline='') as tsvfile:
         writer = csv.writer(tsvfile, delimiter='\t')
-        for node in sorted(nodes):  # sorted for consistency
+        for node in new_nodes:
             writer.writerow([
                 node,          # instance_name
                 "",            # bom_line_number
