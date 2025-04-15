@@ -108,6 +108,7 @@ def add_formboard_segments():
             '', '', ''
         ])
 
+
 def add_cable_lengths():
     with open(fileio.path('connections to graph'), 'r') as json_file:
         graph_data = json.load(json_file)
@@ -132,6 +133,10 @@ def add_cable_lengths():
             row['length'] = graph_data.get(instance, {}).get('wirelength', '')
         else:
             row['length'] = row.get('length', '')
+
+    for row in rows:
+        if None in row:
+            del row[None]
 
     with open(tsv_path, 'w', newline='') as tsv_file:
         writer = csv.DictWriter(tsv_file, fieldnames=fieldnames, delimiter='\t')
@@ -222,3 +227,38 @@ def add_bom_line_numbers():
         writer.writerows(rows)
 
     return fileio.path('instances list')
+
+def add_nodes():
+    # Load the formboard graph definition
+    with open(fileio.path('formboard graph definition'), 'r') as f:
+        formboard_data = yaml.safe_load(f)
+
+    # Extract unique nodes from all segment endpoints
+    nodes = set()
+    for segment in formboard_data.values():
+        a = segment.get("segment_end_a")
+        b = segment.get("segment_end_b")
+        if a:
+            nodes.add(a)
+        if b:
+            nodes.add(b)
+
+    # Append each node once to the instances list
+    with open(fileio.path('instances list'), 'a', newline='') as tsvfile:
+        writer = csv.writer(tsvfile, delimiter='\t')
+        for node in sorted(nodes):  # sorted for consistency
+            writer.writerow([
+                node,          # instance_name
+                "",            # bom_line_number
+                "",            # mpn
+                "Node",        # item_type
+                "",            # child_instance
+                "",            # parent_instance
+                "",            # parent_csys
+                "",            # supplier
+                "",            # length
+                "",            # diameter
+                "",            # translate_x
+                "",            # translate_y
+                "",            # rotate_csys
+            ])

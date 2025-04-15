@@ -3,6 +3,8 @@ import json
 import csv
 import random
 import math
+import instances_list
+import yaml
 from os.path import basename
 from inspect import currentframe
 
@@ -42,9 +44,10 @@ def formboard_processor():
     if(precheck_result) == -1:
         raise ValueError(f"Only some length and angle data exits in file {fileio.name("formboard graph definition")}. Complete this file before rerunning.")
 
-    generate_node_coordinates()
-    visualize_formboard_graph()
-    map_connections_to_graph()
+    instances_list.add_nodes()
+    #generate_node_coordinates()
+    #visualize_formboard_graph()
+    #map_connections_to_graph()
 
 def generate_segments_precheck():
     """Generates the graph definition with lengths and angles set to null."""
