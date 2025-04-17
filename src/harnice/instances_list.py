@@ -241,29 +241,21 @@ def add_nodes():
         if b:
             all_nodes.add(b)
 
-    existing_instances = set()
-    with open(fileio.path("instances list"), newline='') as tsvfile:
-        reader = csv.DictReader(tsvfile, delimiter='\t')
-        for row in reader:
-            existing_instances.add(row.get("instance_name"))
-
-    new_nodes = sorted(all_nodes - existing_instances)
-
     with open(fileio.path("instances list"), 'a', newline='') as tsvfile:
         writer = csv.writer(tsvfile, delimiter='\t')
-        for node in new_nodes:
+        for node in sorted(all_nodes):
             writer.writerow([
-                node,          # instance_name
-                "",            # bom_line_number
-                "",            # mpn
-                "Node",        # item_type
-                "",            # child_instance
-                "",            # parent_instance
-                "",            # parent_csys
-                "",            # supplier
-                "",            # length
-                "",            # diameter
-                "",            # translate_x
-                "",            # translate_y
-                "",            # rotate_csys
+                f"{node}.node",  # instance_name
+                "",              # bom_line_number
+                "",              # mpn
+                "Node",          # item_type
+                "",              # child_instance
+                node,            # parent_instance
+                "",              # parent_csys
+                "",              # supplier
+                "",              # length
+                "",              # diameter
+                "",              # translate_x
+                "",              # translate_y
+                "",              # rotate_csys
             ])

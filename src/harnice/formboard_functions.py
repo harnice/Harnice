@@ -173,14 +173,6 @@ def add_random_lengths_angles():
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {fileio.name("formboard graph definition")}")
 
-
-import json
-import csv
-import math
-from os.path import basename
-from inspect import currentframe
-import fileio
-
 def generate_node_coordinates():
     # Read the segment data
     try:
@@ -261,17 +253,12 @@ def generate_node_coordinates():
             node_coordinates[neighbor] = (new_x, new_y)
             queue.append(neighbor)
 
-    # Write all node coordinates back to rows
+    # Write all node coordinates back to *.node rows only
     for node, (x, y) in node_coordinates.items():
-        if node in row_lookup:
-            row_lookup[node]['translate_x'] = f"{x}"
-            row_lookup[node]['translate_y'] = f"{y}"
-        else:
-            rows.append({
-                'instance_name': node,
-                'translate_x': f"{x}",
-                'translate_y': f"{y}"
-            })
+        target_name = f"{node}.node"
+        if target_name in row_lookup:
+            row_lookup[target_name]['translate_x'] = f"{x}"
+            row_lookup[target_name]['translate_y'] = f"{y}"
 
     # Write to file
     with open(fileio.path("instances list"), mode='w', newline='') as tsv_file:
