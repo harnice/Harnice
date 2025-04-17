@@ -44,7 +44,6 @@ def formboard_processor():
     if(precheck_result) == -1:
         raise ValueError(f"Only some length and angle data exits in file {fileio.name("formboard graph definition")}. Complete this file before rerunning.")
 
-    instances_list.add_nodes()
     #TODO: move to later in program:
     #visualize_formboard_graph()
     #map_connections_to_graph()
@@ -253,7 +252,7 @@ def generate_node_coordinates():
             node_coordinates[neighbor] = (new_x, new_y)
             queue.append(neighbor)
 
-    # Write all node coordinates back to *.node rows only
+    # Write all node coordinates back to *.node rows
     for node, (x, y) in node_coordinates.items():
         target_name = f"{node}.node"
         if target_name in row_lookup:

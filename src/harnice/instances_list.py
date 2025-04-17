@@ -55,7 +55,7 @@ def add_connectors():
                 component_mpn,
                 component_type,
                 instance_name,
-                '',  # parent_csys
+                'PULL FROM CONNECTOR LIBRARY',  # parent_csys
                 component_supplier,
                 '', '', '', '', ''
             ])
@@ -66,7 +66,7 @@ def add_connectors():
             mpn,
             'Connector',
             '',
-            '',  # parent_csys
+            'PULL FROM CONNECTOR LIBRARY',  # parent_csys
             supplier,
             '', '', '', '', ''
         ])
@@ -249,7 +249,6 @@ def add_nodes():
                 "",              # bom_line_number
                 "",              # mpn
                 "Node",          # item_type
-                "",              # child_instance
                 node,            # parent_instance
                 "",              # parent_csys
                 "",              # supplier
