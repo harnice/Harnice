@@ -3,39 +3,50 @@ import json
 import csv
 import random
 import math
+import instances_list
+import yaml
 from os.path import basename
 from inspect import currentframe
 
 import fileio
 from collections import defaultdict
 
-def field_contains_null(file_path, field):
-    """Checks if the specified field contains any null values in the JSON file."""
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
-        return False
+def formboard_processor():
+    num_connectors = get_num_connectors()
+    precheck_result = generate_segments_precheck()
+    """
+                segment file       length and angle data
+            2:   false              false
+            1:   TRUE               false
+            -1:  TRUE               partial
+            0:   TRUE               TRUE
+    """
+        #2: Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.
+        #1: Segments already exist, but no length or angle data exists yet
+        #-1: Only some length and angle data exits. Complete this file before rerunning. Aborting formboard generation process.
+        #0: Length and angle data already exist for each segment. Preserving this data and exiting.
+    
+    if(precheck_result) == 2:
+        if num_connectors < 2:
+            raise ValueError("At least two connectors are required to generate segments.")
 
-    for item in data.values():
-        if item.get(field) is None:
-            return True  # Found at least one null value
-    return False
+        if num_connectors == 2:
+            generate_segments(False)
+            add_random_lengths_angles()
 
-def field_contains_numbers(file_path, field):
-    """Checks if the specified field contains any numerical values in the JSON file."""
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
-        return False
+        if num_connectors > 2:
+            generate_segments(True)
+            add_random_lengths_angles()
 
-    for item in data.values():
-        if isinstance(item.get(field), (int, float)):
-            return True  # Found at least one numerical value
-    return False
+    if(precheck_result) == 1:
+        add_random_lengths_angles()
+
+    if(precheck_result) == -1:
+        raise ValueError(f"Only some length and angle data exits in file {fileio.name("formboard graph definition")}. Complete this file before rerunning.")
+
+    #TODO: move to later in program:
+    #visualize_formboard_graph()
+    #map_connections_to_graph()
 
 def generate_segments_precheck():
     """Generates the graph definition with lengths and angles set to null."""
@@ -71,24 +82,22 @@ def generate_segments_precheck():
         )
 
         if(all_has_null == True):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segments already exist, but no length or angle data exists yet.")
+            #Segments already exist, but no length or angle data exists yet.
             return 1
 
         if(all_has_numbers == True):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Length and angle data already exist for each segment. Preserving this data.")
+            #Length and angle data already exist for each segment. Preserving this data.
             return 0
 
         if(mixed_null_and_numbers == True):
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Only some length and angle data exits. Complete this file before rerunning. Aborting formboard generation process.")
+            #Only some length and angle data exits. Complete this file before rerunning. Aborting formboard generation process.
             return -1
 
-    else:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.")
-        generate_segments()
-    
-    return 1
+    #else: (all other options have returned before this point)
+    #Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.
+    return 2
 
-def generate_segments():
+def generate_segments(more_than_two_connectors):
     # Read connectors from the instances list
     connectors = []
     with open(fileio.path("instances list"), mode='r') as tsv_file:
@@ -102,16 +111,28 @@ def generate_segments():
     data = {}
 
     # Create segments with specified fields
-    for connector in connectors:
+
+    if more_than_two_connectors == False:
         segment_name = f"{base_segment_name}{segment_counter}"
         data[segment_name] = {
-            "segment_end_a": "node1",
-            "segment_end_b": connector,
-            "length": None,
-            "angle": None,
-            "diameter": 0.5
-        }
-        segment_counter += 1
+                "segment_end_a": connectors[0],
+                "segment_end_b": connectors[1],
+                "length": None,
+                "angle": None,
+                "diameter": 0.5
+            }
+    
+    if more_than_two_connectors == True:
+        for connector in connectors:
+            segment_name = f"{base_segment_name}{segment_counter}"
+            data[segment_name] = {
+                "segment_end_a": "node1",
+                "segment_end_b": connector,
+                "length": None,
+                "angle": None,
+                "diameter": 0.5
+            }
+            segment_counter += 1
 
     # Save the graph definition to JSON
     with open(fileio.path("formboard graph definition"), "w") as json_file:
@@ -133,9 +154,17 @@ def add_random_lengths_angles():
         return
 
     # Update the "length" and "angle" fields
+    segment_counter = 0
     for segment in data.values():
+        if segment_counter == 0:
+            #the first segment is horizontal
+            segment["angle"] = 0
+        else:
+            #all other segments are random
+            segment["angle"] = random.randint(0, 359)
+
         segment["length"] = random.randint(6, 18)
-        segment["angle"] = random.randint(0, 359)
+        segment_counter += 1
 
     # Write the updated data back to the JSON file
     with open(fileio.path("formboard graph definition"), "w") as file:
@@ -149,102 +178,95 @@ def generate_node_coordinates():
         with open(fileio.path("formboard graph definition"), "r") as file:
             segment_data = json.load(file)
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {fileio.name("formboard graph definition")}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {fileio.name('formboard graph definition')}")
         return
     except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {fileio.name("formboard graph definition")}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {fileio.name('formboard graph definition')}")
         return
 
-    # Initialize node coordinates
-    node_coordinates = {"node1": (0, 0)}  # Assuming "node1" is the origin (0, 0)
+    # Read the instances list
+    with open(fileio.path("instances list"), newline='') as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames or []
 
-    # To/from segment data
-    segment_to_from_data = []
-    
-    # Track angles connected to each node
-    node_angles = {node: [] for node in node_coordinates.keys()}
+    for i, row in enumerate(rows):
+        if None in row:
+            print(f"Row {i} has extra columns: {row[None]}")
+            del row[None]
 
+    for field in ['translate_x', 'translate_y', 'instance_name']:
+        if field not in fieldnames:
+            fieldnames.append(field)
 
-    # Calculate coordinates for each node
-    for segment_name, segment in segment_data.items():
-        segment_diameter = segment["diameter"]
-        start_node = segment["segment_end_a"]
-        end_node = segment["segment_end_b"]
-        length = segment.get("length")
-        angle = segment.get("angle")
+    row_lookup = {row['instance_name']: row for row in rows if 'instance_name' in row}
 
-        if start_node not in node_coordinates:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Start node {start_node} is missing coordinates. Skipping segment.")
-            continue
+    # Set origin as first connector
+    origin_node = None
+    for row in rows:
+        if row.get("item_type") == "Connector":
+            origin_node = row.get("instance_name")
+            break
 
-        if length is None or angle is None:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment missing length or angle. Skipping segment.")
-            continue
+    if origin_node is None:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: No connector found to initialize coordinates.")
+        return
 
-        # Calculate the coordinates of the end node
-        start_x, start_y = node_coordinates[start_node]
-        end_x = start_x + length * math.cos(math.radians(angle))
-        end_y = start_y + length * math.sin(math.radians(angle))
-        node_coordinates[end_node] = (round(end_x, 2), round(end_y, 2))
+    # Build graph structure to traverse
+    graph = {}
+    for name, segment in segment_data.items():
+        a = segment["segment_end_a"]
+        b = segment["segment_end_b"]
+        graph.setdefault(a, []).append((b, segment))
+        graph.setdefault(b, []).append((a, segment))  # bidirectional for traversal
 
-        # Calculate center coordinates
-        center_x = (start_x + end_x) / 2
-        center_y = (start_y + end_y) / 2
-        center_coordinates = (round(center_x, 2), round(center_y, 2))
-                
-        # Track angles for the start and end nodes
-        if start_node not in node_angles:
-            node_angles[start_node] = []
-        if end_node not in node_angles:
-            node_angles[end_node] = []
-        node_angles[start_node].append(angle)
-        node_angles[end_node].append(angle)
+    # Coordinate assignment (propagation from origin)
+    visited = set()
+    node_coordinates = {origin_node: (0, 0)}
+    queue = [origin_node]
 
-        # Add "to", "from", and "center" data for the segment
-        segment_to_from_data.append({
-            "segment name": segment_name,
-            "diameter": segment_diameter,
-            "from": {"node": start_node, "coordinates": (round(start_x, 2), round(start_y, 2))},
-            "to": {"node": end_node, "coordinates": (round(end_x, 2), round(end_y, 2))},
-            "center": {"coordinates": center_coordinates}
-        })
+    while queue:
+        current = queue.pop(0)
+        visited.add(current)
+        current_x, current_y = node_coordinates[current]
 
+        for neighbor, segment in graph.get(current, []):
+            if neighbor in node_coordinates:
+                continue  # already assigned
 
-    # Calculate average angles for each node
-    node_coordinates_with_angles = {}
+            if segment["segment_end_a"] == current:
+                direction = 1
+                angle = segment["angle"]
+            elif segment["segment_end_b"] == current:
+                direction = -1
+                angle = (segment["angle"] + 180) % 360
+            else:
+                continue  # shouldn't happen
+
+            length = segment["length"]
+            dx = length * math.cos(math.radians(angle)) * direction
+            dy = length * math.sin(math.radians(angle)) * direction
+
+            new_x = round(current_x + dx, 2)
+            new_y = round(current_y + dy, 2)
+            node_coordinates[neighbor] = (new_x, new_y)
+            queue.append(neighbor)
+
+    # Write all node coordinates back to *.node rows
     for node, (x, y) in node_coordinates.items():
-        connected_angles = node_angles.get(node, [])
-        avg_angle = round(sum(connected_angles) / len(connected_angles), 2) if connected_angles else None
-        node_coordinates_with_angles[node] = {
-            "coords": (x, y),
-            "angle": avg_angle
-        }
+        target_name = f"{node}.node"
+        if target_name in row_lookup:
+            row_lookup[target_name]['translate_x'] = f"{x}"
+            row_lookup[target_name]['translate_y'] = f"{y}"
 
-    # Write the node coordinates (with average angles) as-is to the inches file
-    with open(fileio.path("formboard node locations inches"), "w") as file:
-        json.dump(node_coordinates_with_angles, file, indent=4)
+    # Write to file
+    with open(fileio.path("instances list"), mode='w', newline='') as tsv_file:
+        writer = csv.DictWriter(tsv_file, fieldnames=fieldnames, delimiter='\t', extrasaction='ignore')
+        writer.writeheader()
+        writer.writerows(rows)
 
-    # Write the node coordinates as-is to the inches file
-    #with open(fileio.path("formboard node locations inches"), "w") as file:
-        #json.dump(node_coordinates, file, indent=4)
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: All node coordinates written to instances list.")
 
-    # Create the pixel coordinates by multiplying each value by 96
-    node_coordinates_px = {
-        node: (round(x * 96, 2), round(y * 96, 2)) 
-        for node, (x, y) in node_coordinates.items()
-    }
-
-    # Write the pixel coordinates to the px file
-    with open(fileio.path("formboard node locations px"), "w") as file:
-        json.dump(node_coordinates_px, file, indent=4)
-
-    # Write the segment "to", "from", and "center" data to the file
-    with open(fileio.path("formboard segment to from center"), "w") as file:
-        json.dump(segment_to_from_data, file, indent=4)
-
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {fileio.path("formboard node locations inches")}")
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Node coordinates written to {fileio.path("formboard node locations px")}")
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Segment to/from/center data written to {fileio.path("formboard segment to from center")}")
 
 def visualize_formboard_graph():
     node_file_path = fileio.path("formboard node locations px")
@@ -412,18 +434,42 @@ def map_connections_to_graph():
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {fileio.name("connections to graph")}")
 
-def formboard_processor():
-    next_step = generate_segments_precheck()
-    if next_step == 1:
-        add_random_lengths_angles()
-    
-    else:
-        if next_step == -1:
-            return
+def get_num_connectors():
+    connectors = []
+    with open(fileio.path("instances list"), mode='r') as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter='\t')
+        for row in reader:
+            if row["item_type"] == "Connector":
+                connectors.append(row["instance_name"])
+    return len(connectors)
 
-    generate_node_coordinates()
-    visualize_formboard_graph()
-    map_connections_to_graph()
+def field_contains_null(file_path, field):
+    """Checks if the specified field contains any null values in the JSON file."""
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
+        return False
+
+    for item in data.values():
+        if item.get(field) is None:
+            return True  # Found at least one null value
+    return False
+
+def field_contains_numbers(file_path, field):
+    """Checks if the specified field contains any numerical values in the JSON file."""
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
+        return False
+
+    for item in data.values():
+        if isinstance(item.get(field), (int, float)):
+            return True  # Found at least one numerical value
+    return False
 
 if __name__ == "__main__":
     formboard_processor()

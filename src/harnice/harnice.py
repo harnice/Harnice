@@ -31,10 +31,12 @@ def harnice():
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     formboard_functions.formboard_processor()
+    instances_list.add_nodes()
     instances_list.add_formboard_segments()
     instances_list.add_cable_lengths()
     wirelist.add_lengths()
     wirelist.tsv_to_xls()
+    formboard_functions.generate_node_coordinates()
     
     #condense instance list into a bom
     print()
