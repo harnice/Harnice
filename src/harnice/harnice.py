@@ -37,7 +37,9 @@ def harnice():
     wirelist.add_lengths()
     wirelist.tsv_to_xls()
     formboard_functions.generate_node_coordinates()
-    
+    formboard_functions.visualize_formboard_graph()
+    #TODO: update formboard_functions.map_connections_to_graph()
+
     #condense instance list into a bom
     print()
     print("############ GENERATING A BOM #############")

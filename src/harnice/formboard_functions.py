@@ -44,10 +44,6 @@ def formboard_processor():
     if(precheck_result) == -1:
         raise ValueError(f"Only some length and angle data exits in file {fileio.name("formboard graph definition")}. Complete this file before rerunning.")
 
-    #TODO: move to later in program:
-    #visualize_formboard_graph()
-    #map_connections_to_graph()
-
 def generate_segments_precheck():
     """Generates the graph definition with lengths and angles set to null."""
     # Step 2: Check if the file exists
@@ -267,60 +263,76 @@ def generate_node_coordinates():
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: All node coordinates written to instances list.")
 
-
 def visualize_formboard_graph():
-    node_file_path = fileio.path("formboard node locations px")
     output_file_path = fileio.path("formboard graph definition svg")
 
-    # Read the segment and node data
+    # Read the segment data
     try:
         with open(fileio.path("formboard graph definition"), "r") as segment_file:
             segment_data = json.load(segment_file)
-        with open(node_file_path, "r") as node_file:
-            node_coordinates = json.load(node_file)
     except FileNotFoundError as e:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {e.utility.filename}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {e.filename}")
         return
     except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in one of the input files.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in formboard graph definition.")
+        return
+
+    # Read node coordinates from instances list (.node entries only)
+    node_coordinates = {}
+    try:
+        with open(fileio.path("instances list"), newline='') as tsv_file:
+            reader = csv.DictReader(tsv_file, delimiter='\t')
+            for row in reader:
+                name = row.get("instance_name", "")
+                if not name.endswith(".node"):
+                    continue
+                try:
+                    x = float(row.get("translate_x", ""))
+                    y = float(row.get("translate_y", ""))
+                    node_coordinates[name] = (x, y)
+                except (ValueError, TypeError):
+                    continue
+    except FileNotFoundError as e:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {e.filename}")
+        return
+
+    if not node_coordinates:
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: No valid .node coordinates found.")
         return
 
     # SVG setup
     svg_elements = []
-    padding = 50  # Add padding to the SVG canvas
-    radius = 5  # Radius for the nodes
-    font_size = 12  # Font size for labels
+    padding = 50  # padding in pixels
+    radius = 5
+    font_size = 12
+    scale = 96  # scale from inches to pixels
 
-    # Determine SVG canvas size
-    all_x = [coord[0] for coord in node_coordinates.values()]
-    all_y = [coord[1] for coord in node_coordinates.values()]
+    all_x = [coord[0] * scale for coord in node_coordinates.values()]
+    all_y = [coord[1] * scale for coord in node_coordinates.values()]
     min_x, max_x = min(all_x), max(all_x)
     min_y, max_y = min(all_y), max(all_y)
     width = max_x - min_x + 2 * padding
     height = max_y - min_y + 2 * padding
 
-    # Map coordinates to SVG canvas
     def map_coordinates(x, y):
-        return x - min_x + padding, height - (y - min_y + padding)
+        return x * scale - min_x + padding, height - (y * scale - min_y + padding)
 
     # Draw segments
     for segment_id, segment in segment_data.items():
-        start_node = segment["segment_end_a"]
-        end_node = segment["segment_end_b"]
-        if start_node in node_coordinates and end_node in node_coordinates:
-            start_x, start_y = map_coordinates(*node_coordinates[start_node])
-            end_x, end_y = map_coordinates(*node_coordinates[end_node])
+        start_node_key = f"{segment['segment_end_a']}.node"
+        end_node_key = f"{segment['segment_end_b']}.node"
+        if start_node_key in node_coordinates and end_node_key in node_coordinates:
+            start_x, start_y = map_coordinates(*node_coordinates[start_node_key])
+            end_x, end_y = map_coordinates(*node_coordinates[end_node_key])
             svg_elements.append(
                 f'<line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}" '
                 f'stroke="black" stroke-width="2" />'
             )
-            # Add label for the segment using the segment ID
             mid_x, mid_y = (start_x + end_x) / 2, (start_y + end_y) / 2
             svg_elements.append(
                 f'<text x="{mid_x}" y="{mid_y}" font-size="{font_size}" '
                 f'text-anchor="middle" fill="blue">{segment_id}</text>'
-        )
-
+            )
 
     # Draw nodes
     for node, coord in node_coordinates.items():
@@ -328,13 +340,11 @@ def visualize_formboard_graph():
         svg_elements.append(
             f'<circle cx="{x}" cy="{y}" r="{radius}" fill="red" />'
         )
-        # Add label for the node
         svg_elements.append(
             f'<text x="{x}" y="{y - 10}" font-size="{font_size}" '
             f'text-anchor="middle" fill="black">{node}</text>'
         )
 
-    # Assemble the SVG
     svg_content = (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}">'
@@ -342,7 +352,6 @@ def visualize_formboard_graph():
         + "</svg>"
     )
 
-    # Write to file
     with open(output_file_path, "w") as output_file:
         output_file.write(svg_content)
 
