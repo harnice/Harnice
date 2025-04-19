@@ -319,11 +319,11 @@ def visualize_formboard_graph():
 
     # Draw segments
     for segment_id, segment in segment_data.items():
-        start_node = segment["segment_end_a"]
-        end_node = segment["segment_end_b"]
-        if start_node in node_coordinates and end_node in node_coordinates:
-            start_x, start_y = map_coordinates(*node_coordinates[start_node])
-            end_x, end_y = map_coordinates(*node_coordinates[end_node])
+        start_node_key = f"{segment['segment_end_a']}.node"
+        end_node_key = f"{segment['segment_end_b']}.node"
+        if start_node_key in node_coordinates and end_node_key in node_coordinates:
+            start_x, start_y = map_coordinates(*node_coordinates[start_node_key])
+            end_x, end_y = map_coordinates(*node_coordinates[end_node_key])
             svg_elements.append(
                 f'<line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}" '
                 f'stroke="black" stroke-width="2" />'
