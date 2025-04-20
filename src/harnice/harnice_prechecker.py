@@ -9,26 +9,17 @@ import fileio
 pn = None
 rev = None
 
-def generate_revision_history_tsv(filename):
-    """
-    Creates and saves a TSV file named {pn}-revision-history.tsv in the parent directory.
-
-    :param pn: The prefix to use in the file name.
-    """
-    # Get the parent directory path
-    parent_dir = os.path.dirname(os.getcwd())
-
-    # Construct the file path
-    file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
-
-    # Define the columns for the TSV file
-    columns = ["pn", "desc", "rev", "status", "releaseticket", "datestarted", "datemodified", "datereleased", "drawnby", "checkedby", "revisionupdates", "affectedinstances"]
-
-    # Write the TSV file
-    with open(file_path, 'w') as file:
-        file.write('\t'.join(columns) + '\n')
-    
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: New {pn}-revision-history document added to parent PN directory.")
+def harnice_prechecker():
+    if check_directory_format() == False:
+        return False
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: You're in a valid directory.")
+    check_existence_of_rev_history_file_in_parent(pn)
+    find_pn_and_rev_entry_in_tsv()
+    if check_revision_status() == False:
+        return False
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Status for this rev is clear; moving forward.")
+    export_rev_row_from_tsv_to_project_rev_json()
+    return True
 
 def check_directory_format():
     """
@@ -57,6 +48,28 @@ def check_directory_format():
     else:
         check_subdirectory_format()
         return False
+
+
+def generate_revision_history_tsv(filename):
+    """
+    Creates and saves a TSV file named {pn}-revision-history.tsv in the parent directory.
+
+    :param pn: The prefix to use in the file name.
+    """
+    # Get the parent directory path
+    parent_dir = os.path.dirname(os.getcwd())
+
+    # Construct the file path
+    file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
+
+    # Define the columns for the TSV file
+    columns = ["pn", "desc", "rev", "status", "releaseticket", "datestarted", "datemodified", "datereleased", "drawnby", "checkedby", "revisionupdates", "affectedinstances"]
+
+    # Write the TSV file
+    with open(file_path, 'w') as file:
+        file.write('\t'.join(columns) + '\n')
+    
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: New {pn}-revision-history document added to parent PN directory.")
 
 def check_subdirectory_format():
     """
@@ -255,19 +268,3 @@ def export_rev_row_from_tsv_to_project_rev_json():
 
     except Exception as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An error occurred: {e}")
-
-def harnice_prechecker():
-    if check_directory_format() == False:
-        return False
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: You're in a valid directory.")
-    check_existence_of_rev_history_file_in_parent(pn)
-    find_pn_and_rev_entry_in_tsv()
-    if check_revision_status() == False:
-        return False
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Status for this rev is clear; moving forward.")
-    export_rev_row_from_tsv_to_project_rev_json()
-    return True
-    
-
-if __name__ == "__main__":
-    harnice_prechecker()
