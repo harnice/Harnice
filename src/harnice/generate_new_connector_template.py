@@ -2,25 +2,70 @@ import xml.etree.ElementTree as ET
 import math
 import xml.dom.minidom
 import os
+import json
 from os.path import basename
+import harnice_prechecker
 
-# Main execution
-if __name__ == "__main__":
-    #future work: make sure you're in the right directory
-        #"right directory" is undefined. maybe any directory works?
-    
-    parent_dir_name = f"{os.path.basename(os.getcwd())}-drawing.svg"
-    
-    #print(parent_dir_name)
-    #svg = create_svg()
-    #add_defs(svg)
-    #add_named_view(svg)
-    #add_content(svg, default_bubble_locs)
-    #save_svg(svg, output_filename)
+pn = None
+rev = None
 
-default_bubble_locs = [None]
+def generate_new_connector_template():
+    global pn, rev
+    pn = harnice_prechecker.pn_from_cwd()
+    rev = harnice_prechecker.rev_from_cwd()
+
+    if(harnice_prechecker.harnice_prechecker() == False):
+        return
+
+    #make_new_part_svg()
+    make_new_part_json()
+
+def make_new_part_json():
+    attributes_blank_json = {
+        "plotting_info": {
+            "csys_parent_prefs": [
+                ".node"
+            ],
+            "component_translate_inches": {
+                "translate_x": 0,
+                "translate_y": 0,
+                "rotate_csys": 0
+            }
+        },
+        "tooling_info": {
+            "tools": []
+        },
+        "build_notes": [],
+        "flagnote_locations": [
+            {"angle": 0, "distance": 2},
+            {"angle": 15, "distance": 2},
+            {"angle": -15, "distance": 2},
+            {"angle": 30, "distance": 2},
+            {"angle": -30, "distance": 2},
+            {"angle": 45, "distance": 2},
+            {"angle": -45, "distance": 2},
+            {"angle": 60, "distance": 2},
+            {"angle": -60, "distance": 2}
+        ]
+    }
+
+    attributes_blank_json_path = os.path.join(os.getcwd(), f"{pn}-attributes.json")
+
+    if os.path.exists(attributes_blank_json_path):
+        os.remove(attributes_blank_json_path)
+
+    # Write new file
+    with open(attributes_blank_json_path, "w") as json_file:
+        json.dump(attributes_blank_json, json_file, indent=4)
 
 # Function to create the root SVG element
+#def make_new_part_svg():
+    #create_svg()
+    #add_defs()
+    #add_named_view()
+    #add_content()
+    #save_svg()
+
 def create_svg(width=500, height=500):
     svg = ET.Element("svg", {
         "version": "1.1",
@@ -106,3 +151,6 @@ def save_svg(svg, filename):
     # Write the formatted SVG to a file
     with open(filename, "w", encoding="UTF-8") as file:
         file.write(pretty_svg)
+
+if __name__ == "__main__":
+    generate_new_connector_template()

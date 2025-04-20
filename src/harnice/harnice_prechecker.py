@@ -21,6 +21,13 @@ def harnice_prechecker():
     export_rev_row_from_tsv_to_project_rev_json()
     return True
 
+def pn_from_cwd():
+    check_directory_format()
+    return pn
+def rev_from_cwd():
+    check_directory_format()
+    return rev
+
 def check_directory_format():
     """
     Checks if the current directory has the format {wildcard}-rev{number}.
