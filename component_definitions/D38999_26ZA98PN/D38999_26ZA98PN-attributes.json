@@ -1,7 +1,8 @@
 {
     "plotting_info":{
         "csys_parent_prefs":[
-            ".bs"
+            ".bs",
+            ".node"
         ],
         "component_translate_inches":{
             "translate_x": 1,
