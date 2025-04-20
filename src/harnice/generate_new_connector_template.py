@@ -2,55 +2,70 @@ import xml.etree.ElementTree as ET
 import math
 import xml.dom.minidom
 import os
+import json
 from os.path import basename
+import harnice_prechecker
 
-default_bubble_locs_polar = [
-    {"bubble_location_index": "0", "location": [2, 0], "leader": [1.3, 0]},
-    {"bubble_location_index": "1", "location": [2, 20], "leader": [1.3, 20]},
-    {"bubble_location_index": "2", "location": [2, -20], "leader": [1.3, -20]},
-    {"bubble_location_index": "3", "location": [2, 40], "leader": [1.3, 40]},
-    {"bubble_location_index": "4", "location": [2, -40], "leader": [1.3, -40]},
-    {"bubble_location_index": "5", "location": [2, 60], "leader": [1.3, 60]},
-    {"bubble_location_index": "6", "location": [2, -60], "leader": [1.3, -60]},
-    {"bubble_location_index": "7", "location": [2, 80], "leader": [1.3, 80]},
-    {"bubble_location_index": "8", "location": [2, -80], "leader": [1.3, -80]},
-    {"bubble_location_index": "9", "location": [2, 100], "leader": [1.3, 100]},
-    {"bubble_location_index": "10", "location": [2, -100], "leader": [1.3, -100]}
-]
+pn = None
+rev = None
 
-default_bubble_locs = [None]
+def generate_new_connector_template():
+    global pn, rev
+    pn = harnice_prechecker.pn_from_cwd()
+    rev = harnice_prechecker.rev_from_cwd()
 
+    if(harnice_prechecker.harnice_prechecker() == False):
+        return
 
-def polar_to_cartesian(radius, angle_deg):
-    angle_rad = math.radians(angle_deg)
-    x = 96* radius * math.cos(angle_rad)
-    y = 96* radius * math.sin(angle_rad)
-    return x, y
+    #make_new_part_svg()
+    make_new_part_json()
 
+def make_new_part_json():
+    attributes_blank_json = {
+        "plotting_info": {
+            "csys_parent_prefs": [
+                ".node"
+            ],
+            "component_translate_inches": {
+                "translate_x": 0,
+                "translate_y": 0,
+                "rotate_csys": 0
+            }
+        },
+        "tooling_info": {
+            "tools": []
+        },
+        "build_notes": [],
+        "flagnote_locations": [
+            {"angle": 0, "distance": 2},
+            {"angle": 15, "distance": 2},
+            {"angle": -15, "distance": 2},
+            {"angle": 30, "distance": 2},
+            {"angle": -30, "distance": 2},
+            {"angle": 45, "distance": 2},
+            {"angle": -45, "distance": 2},
+            {"angle": 60, "distance": 2},
+            {"angle": -60, "distance": 2}
+        ]
+    }
 
-def default_bubble_locs_polar_to_cartesian():
-    global default_bubble_locs
-    default_bubble_locs = []
+    attributes_blank_json_path = os.path.join(os.getcwd(), f"{pn}-attributes.json")
 
-    for item in default_bubble_locs_polar:
-        # Convert location
-        polar_location = item["location"]
-        cartesian_location = polar_to_cartesian(polar_location[0], polar_location[1])
+    if os.path.exists(attributes_blank_json_path):
+        os.remove(attributes_blank_json_path)
 
-        # Convert leader
-        polar_leader = item["leader"]
-        cartesian_leader = polar_to_cartesian(polar_leader[0], polar_leader[1])
-
-        # Create updated dictionary
-        updated_item = {
-            "bubble_location_index": item["bubble_location_index"],
-            "location": cartesian_location,
-            "leader": cartesian_leader
-        }
-
-        default_bubble_locs.append(updated_item)
+    # Write new file
+    with open(attributes_blank_json_path, "w") as json_file:
+        json.dump(attributes_blank_json, json_file, indent=4)
 
 # Function to create the root SVG element
+#def make_new_part_svg():
+    #create_svg()
+    #add_defs()
+    #add_named_view()
+    #add_content()
+    #save_svg()
+
 def create_svg(width=500, height=500):
     svg = ET.Element("svg", {
         "version": "1.1",
@@ -122,38 +137,6 @@ def add_content(svg, default_bubble_locs):
         "inkscape:label": "placeholder-deleteme"
     })
 
-    for i, note in enumerate(default_bubble_locs):
-        buildnote_group = ET.SubElement(contents, "g", {"id": f"bubble-location-{note['bubble_location_index']}"})
-        
-        bubble_location_x = note['location'][0]
-        bubble_location_y = note['location'][1]
-        leader_arrow_x = note['leader'][0] - bubble_location_x
-        leader_arrow_y = note['leader'][1] - bubble_location_y
-
-        circle_group = ET.SubElement(buildnote_group, "g", {"id": f"note-{note['bubble_location_index']}-location-opacity", "opacity": "1"})
-        ET.SubElement(circle_group, "circle", {
-            "style": "fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426",
-            "id": f"bubble-location-index-{note['bubble_location_index']}-location",
-            "cx": str(bubble_location_x),
-            "cy": str(bubble_location_y),
-            "r": "10"
-        })
-
-        # Create the group for the path
-        path_group = ET.SubElement(buildnote_group, "g", {"id": f"path-{note['bubble_location_index']}-opacity", "opacity": "1"})
-        ET.SubElement(path_group, "path", {
-            "style": "display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)",
-            "d": f"m {bubble_location_x},{bubble_location_y} {leader_arrow_x},{leader_arrow_y}",
-            "id": f"path-location-index-{note['bubble_location_index']}"
-        })
-
-        # Add translatables group
-        translatables_group = ET.SubElement(buildnote_group, "g", id=f"as-printed-flagnote-{note['bubble_location_index']}-translatables")
-        
-        # Add contents start and end groups inside translatables group
-        ET.SubElement(translatables_group, "g", id=f"as-printed-flagnote-{note['bubble_location_index']}-contents-start")
-        ET.SubElement(translatables_group, "g", id=f"as-printed-flagnote-{note['bubble_location_index']}-contents-end")
-    
     contents = ET.SubElement(svg, "g", {"id": "connector-drawing-contents-end"})
 
 # Function to save the SVG to a file
@@ -169,20 +152,5 @@ def save_svg(svg, filename):
     with open(filename, "w", encoding="UTF-8") as file:
         file.write(pretty_svg)
 
-def generate_connector_start_file(output_filename):
-    default_bubble_locs_polar_to_cartesian()
-    svg = create_svg()
-    add_defs(svg)
-    add_named_view(svg)
-    add_content(svg, default_bubble_locs)
-    save_svg(svg, output_filename)
-
-# Main execution
 if __name__ == "__main__":
-    #future work: make sure you're in the right directory
-        #"right directory" is undefined. maybe any directory works?
-    
-    parent_dir_name = f"{os.path.basename(os.getcwd())}-drawing.svg"
-    print(parent_dir_name)
-
-    generate_connector_start_file(parent_dir_name)
+    generate_new_connector_template()
