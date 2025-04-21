@@ -9,6 +9,7 @@ import yaml
 import csv
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
 import fileio
+import component_library
 
 #this list is used to keep track of all the valid instances:
 drawing_instance_filenames = [None]
@@ -130,8 +131,8 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
     instance_fileio.dirpath = os.path.join(fileio.dirpath("drawing_instances"),instance_name_w_suffix)
 
     #import from library
-    svgexists = fileio.import_library_record(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
-    jsonsuccessfulimport = fileio.import_library_record(supplier,os.path.join("component_definitions",mpn),f"{mpn}-attributes.json")
+    svgexists = component_library.import_library_record(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
+    jsonsuccessfulimport = component_library.import_library_record(supplier,os.path.join("component_definitions",mpn),f"{mpn}-attributes.json")
     
     #remember which files are supposed to exist so we can later delete invalid stuff
     add_filename_to_drawing_instance_list(instance_name_w_suffix)
