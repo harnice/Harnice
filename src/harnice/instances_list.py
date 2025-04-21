@@ -12,7 +12,10 @@ INSTANCES_LIST_COLUMNS = [
     'parent_instance',
     'parent_csys',
     'supplier',
-    'library_rev',
+    'lib_latest_rev',
+    'lib_rev_used_here',
+    'lib_modified',
+    'lib_status'
     'length',
     'diameter',
     'translate_x',
