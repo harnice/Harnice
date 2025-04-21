@@ -152,25 +152,28 @@ def save_svg(svg, filename):
     with open(filename, "w", encoding="UTF-8") as file:
         file.write(pretty_svg)
 
-#TODO: split into three functions
-def compare_library_version(domain, library_subpath, lib_file):
+def latest_version_in_lib(domain, library_subpath, lib_name):
     """
-    latest_rev_in_lib = 
         find the rev history tsv in the component lib
         open it
         find the row with the highest rev number
+    return latest_rev_in_lib
+    """
 
-    rev_in_lib_used = 
+def rev_in_lib_used(domain, library_subpath, lib_name):
+    """
+        rev_in_lib_used = 
         is there a fileio function that returns the rev number of a directory?
         find the rev number of the directory in the library_used directory
+    """
 
+def detect_modified_files(domain, library_subpath, lib_name):
+    """
     is_a_match = 
         compare all files in the library_used directory to the files in the component lib
         if all files match, return True
         if any file does not match, return False
-
     """
-    return [latest_rev_in_lib, rev_in_lib_used, is_a_match]
 
 def import_library_file(domain, library_subpath, lib_file):
     """
