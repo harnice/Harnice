@@ -152,7 +152,7 @@ def save_svg(svg, filename):
     with open(filename, "w", encoding="UTF-8") as file:
         file.write(pretty_svg)
 
-def import_library_record(domain, library_subpath, lib_file):
+def import_library_file(domain, library_subpath, lib_file):
     """
     Copies a file from a Harnice library to a local 'library_used' directory with the same subpath structure.
     """
@@ -186,7 +186,6 @@ def import_library_record(domain, library_subpath, lib_file):
     return True
     #returns True if import was successful or if already exists 
     #returns False if library not found (try and import this again?)
-
 
 if __name__ == "__main__":
     generate_new_connector_template()

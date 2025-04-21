@@ -142,7 +142,7 @@ def prep_tblock_svg_master():
     wanted_tblock_libfilename = "rs-tblock-default.svg"
     library_used_tblock_filepath = os.path.join(os.getcwd(), "library_used", wanted_tblock_libsubpath, wanted_tblock_libfilename)
 
-    component_library.import_library_record(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
+    component_library.import_library_file(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
 
     if os.path.exists(fileio.path("tblock master svg")):
         os.remove(fileio.path("tblock master svg"))
