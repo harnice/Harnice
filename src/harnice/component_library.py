@@ -152,6 +152,26 @@ def save_svg(svg, filename):
     with open(filename, "w", encoding="UTF-8") as file:
         file.write(pretty_svg)
 
+#TODO: split into three functions
+def compare_library_version(domain, library_subpath, lib_file):
+    """
+    latest_rev_in_lib = 
+        find the rev history tsv in the component lib
+        open it
+        find the row with the highest rev number
+
+    rev_in_lib_used = 
+        is there a fileio function that returns the rev number of a directory?
+        find the rev number of the directory in the library_used directory
+
+    is_a_match = 
+        compare all files in the library_used directory to the files in the component lib
+        if all files match, return True
+        if any file does not match, return False
+
+    """
+    return [latest_rev_in_lib, rev_in_lib_used, is_a_match]
+
 def import_library_file(domain, library_subpath, lib_file):
     """
     Copies a file from a Harnice library to a local 'library_used' directory with the same subpath structure.
