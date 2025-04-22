@@ -2,9 +2,71 @@ import xml.etree.ElementTree as ET
 import math
 import xml.dom.minidom
 import os
+import csv
 import json
-from os.path import basename
+from dotenv import load_dotenv, dotenv_values
+import instances_list
 import harnice_prechecker
+from os.path import basename
+from inspect import currentframe
+
+def pull():
+    load_dotenv()
+    rows = instances_list.read_instance_rows()
+    for row in rows:
+        if row.get('item_type', '').lower() in ('connector', 'backshell', 'cable'):
+            #first check to see what the newest library version is
+            with open(
+                os.path.join(
+                    os.getenv(row.get('supplier')),
+                    "component_definitions",
+                    row.get('mpn', ''),
+                    f"{row.get('mpn', '')}-revision_history.tsv"),
+                newline='', encoding='utf-8') as f:
+                
+                reader = csv.DictReader(f, delimiter='\t')
+                highest_rev = -1
+
+                for rev_entry in reader:
+                    rev_str = rev_entry.get('rev', '').strip()
+                    if rev_str.isdigit():
+                        rev_num = int(rev_str)
+                        print(f"!!!!!!{row.get('instance_name')}!!!!!!!{rev_num}")
+                        if rev_num > highest_rev:
+                            highest_rev = rev_num
+
+            #next make sure any library is pulled into the project file at all
+            #this function will do nothing if there's anything that exists in the project file.
+"""
+            import_library_file(
+                row.get('supplier', ''), #supplier aka which library
+                os.path.join("component_definitions", #subdirectory
+                row.get('mpn', '')), #unique identifier
+                f"{row.get('mpn', '')}-drawing.svg") #which file are we after
+            import_library_file(
+                row.get('supplier', ''), #supplier aka which library
+                os.path.join("component_definitions", #subdirectory
+                row.get('mpn', '')), #unique identifier
+                f"{row.get('mpn', '')}-attributes.json") #which file are we after
+"""
+"""
+    for instances in instances_list:
+        if file does not exist in library_used:
+            import the library
+        lvil = latest_version_in_lib(domain, library_subpath, lib_name):
+        rivu = rev_in_lib_used(domain, library_subpath, lib_name):
+
+        if detect_modified_files(domain, library_subpath, lib_name) == True:
+            print("Library {library} either modified by user or corrupted. Delete file to re-import from library if you want to clear your changes.")
+        else:
+            if lvil == rivu:
+                print("Library {library} is up to date.")
+            elif lvil < rivu:
+                print("Library {library} version reports newer in this project than in the library (wtf, you did something crazy)")
+            else:
+                print("There is a newer version of {library} available.")
+
+    """
 
 pn = None
 rev = None

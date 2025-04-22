@@ -5,6 +5,7 @@ import svg_utils
 import formboard_functions
 import flagnote_functions
 import harnice_prechecker
+import component_library
 import fileio
 import formboard_illustration_functions
 import os
@@ -26,6 +27,11 @@ def harnice():
     instances_list.add_connectors()
     instances_list.add_cables()
     wirelist.newlist()
+
+    print()
+    print("############ PULLING COMPONENTS FROM LIBRARY #############")
+    component_library.pull()
+    exit()
 
     #process the formboard definition to get the list of segments and their locations
     print()
