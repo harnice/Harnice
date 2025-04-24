@@ -12,29 +12,33 @@ from inspect import currentframe
 
 def pull():
     load_dotenv()
-    supported_library_components = ['connector', 'backshell'] #TODO: future work: support cable definitions here too
-    rows = instances_list.read_instance_rows()
-    for row in rows:
-        if row.get('item_type', '').lower() in supported_library_components:
-            #first check to see what the newest library version is
-            with open(
-                os.path.join(
-                    os.getenv(row.get('supplier')),
-                    "component_definitions",
-                    row.get('mpn', ''),
-                    f"{row.get('mpn', '')}-revision_history.tsv"),
-                newline='', encoding='utf-8') as f:
-                
-                reader = csv.DictReader(f, delimiter='\t')
-                highest_rev = -1
+    supported_library_components = ['connector', 'backshell']
+    instances = instances_list.read_instance_rows()
 
-                for rev_entry in reader:
-                    rev_str = rev_entry.get('rev', '').strip()
-                    if rev_str.isdigit():
-                        rev_num = int(rev_str)
-                        print(f"!!!!!!{row.get('instance_name')}!!!!!!!{rev_num}")
-                        if rev_num > highest_rev:
-                            highest_rev = rev_num
+    for instance in instances:
+        if instance.get('item_type', '').lower() in supported_library_components:
+            highest_rev = ""  # default
+            try:
+                with open(
+                    os.path.join(
+                        os.getenv(instance.get('supplier')),
+                        "component_definitions",
+                        instance.get('mpn', ''),
+                        f"{instance.get('mpn', '')}-revision_history.tsv"
+                    ),
+                    newline='', encoding='utf-8'
+                ) as f:
+                    reader = csv.DictReader(f, delimiter='\t')
+                    for rev_entry in reader:
+                        rev_str = rev_entry.get('rev', '').strip()
+                        if rev_str.isdigit():
+                            rev_num = int(rev_str)
+                            if highest_rev == "" or rev_num > int(highest_rev):
+                                highest_rev = str(rev_num)
+            except FileNotFoundError:
+                print(f"Missing revision history for {instance.get('mpn')}. Update your library and rerun.")
+
+            instances_list.add_lib_latest_rev(instance.get('instance_name'), highest_rev)
 
             #next make sure any library is pulled into the project file at all
             #this function will do nothing if there's anything that exists in the project file.
