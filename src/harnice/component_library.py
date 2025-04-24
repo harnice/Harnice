@@ -4,6 +4,8 @@ import xml.dom.minidom
 import os
 import csv
 import json
+import fileio
+import re
 from dotenv import load_dotenv, dotenv_values
 import instances_list
 import harnice_prechecker
@@ -37,23 +39,29 @@ def pull():
                                 highest_rev = str(rev_num)
             except FileNotFoundError:
                 print(f"Missing revision history for {instance.get('mpn')}. Update your library and rerun.")
-
+            
             instances_list.add_lib_latest_rev(instance.get('instance_name'), highest_rev)
 
-            #next make sure any library is pulled into the project file at all
-            #this function will do nothing if there's anything that exists in the project file.
-"""
+            exists_in_lib_used_bool, exists_in_lib_used_rev = exists_in_lib_used(instance.get('mpn'))
+            instances_list.add_lib_used_earliest_rev(instance.get('instance_name'), exists_in_lib_used_rev)
+
+            print(f"!!!!!!!!!{instance.get('instance_name')} : {instance.get('mpn')} : {exists_in_lib_used_bool} : {exists_in_lib_used_rev}")
+
+            #TODO: next make sure any library is pulled into the project file at all
+            """
+            if exists_in_lib_used_bool == False: 
+                either import_library_file or delete import_library_file to just use os.copy
             import_library_file(
-                row.get('supplier', ''), #supplier aka which library
+                instance.get('supplier', ''), #supplier aka which library
                 os.path.join("component_definitions", #subdirectory
-                row.get('mpn', '')), #unique identifier
-                f"{row.get('mpn', '')}-drawing.svg") #which file are we after
+                instance.get('mpn', '')), #unique identifier
+                f"{instance.get('mpn', '')}-drawing.svg") #which file are we after
             import_library_file(
-                row.get('supplier', ''), #supplier aka which library
+                instance.get('supplier', ''), #supplier aka which library
                 os.path.join("component_definitions", #subdirectory
-                row.get('mpn', '')), #unique identifier
-                f"{row.get('mpn', '')}-attributes.json") #which file are we after
-"""
+                instance.get('mpn', '')), #unique identifier
+                f"{instance.get('mpn', '')}-attributes.json") #which file are we after
+                """
 """
     for instances in instances_list:
         if file does not exist in library_used:
@@ -72,6 +80,25 @@ def pull():
                 print("There is a newer version of {library} available.")
 
     """
+
+def exists_in_lib_used(mpn):
+    #function returns two values. 
+    #   first is whether a folder exists within dirpath("library_used") with filename mpn<wildcard>
+    #   second is, if first is true, if a string exists revX within that filename, what X is, representative of what rev we're looking at. 
+
+    #TODO: this doesn't actually return the earliest rev, even though it's supposed to. it just returns any rev. it starts to break if there are multiple different revs imported into same project.
+
+    try:
+        for name in os.listdir(fileio.dirpath("library_used")):
+            full_path = os.path.join(fileio.dirpath("library_used"), name)
+            if os.path.isdir(full_path) and name.startswith(mpn):
+                match = re.search(r'rev(\d+)', name, re.IGNORECASE)
+                if match:
+                    return True, match.group(1)  # return the number X as string
+    except FileNotFoundError:
+        return False, ""
+
+    return False, ""
 
 pn = None
 rev = None
