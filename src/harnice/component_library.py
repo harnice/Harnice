@@ -11,6 +11,7 @@ import instances_list
 import harnice_prechecker
 from os.path import basename
 from inspect import currentframe
+import shutil
 
 def pull():
     load_dotenv()
@@ -18,6 +19,9 @@ def pull():
     instances = instances_list.read_instance_rows()
 
     for instance in instances:
+        print()
+        print(f"Working {instance.get('instance_name')}")
+
         if instance.get('item_type', '').lower() in supported_library_components:
             highest_rev = ""  # default
             try:
@@ -38,14 +42,29 @@ def pull():
                             if highest_rev == "" or rev_num > int(highest_rev):
                                 highest_rev = str(rev_num)
             except FileNotFoundError:
-                print(f"Missing revision history for {instance.get('mpn')}. Update your library and rerun.")
+                print(f"Missing revision history document. Update your library and rerun.")
             
+            print(f"Highest rev in library is {highest_rev}")
             instances_list.add_lib_latest_rev(instance.get('instance_name'), highest_rev)
 
             exists_in_lib_used_bool, exists_in_lib_used_rev = exists_in_lib_used(instance.get('mpn'))
+            print(f"This library has been imported yet: {exists_in_lib_used_bool}. If True, it has revision {exists_in_lib_used_rev}")
             instances_list.add_lib_used_earliest_rev(instance.get('instance_name'), exists_in_lib_used_rev)
+            
+            if exists_in_lib_used_bool == False:
+                #build the filepath to the latest rev of the entry we're trying to add
+                mpn = instance.get('mpn')
+                mpn_rev = f"{mpn}-rev{highest_rev}"
+                library_subpath = "component_definitions"
+                library_domain = instance.get('supplier')
+                source_lib_path = os.path.join(os.getenv(library_domain), library_subpath, mpn, mpn_rev)
 
-            print(f"!!!!!!!!!{instance.get('instance_name')} : {instance.get('mpn')} : {exists_in_lib_used_bool} : {exists_in_lib_used_rev}")
+                target_directory = os.path.join(fileio.dirpath("library_used"), mpn_rev)
+
+                # Step 4: Copy the file from Harnice library to the target directory
+                print(f"Fetching {mpn_rev} from {source_lib_path}")
+                shutil.copytree(source_lib_path, target_directory)
+                print(f"File {mpn_rev} added to {target_directory}")
 
             #TODO: next make sure any library is pulled into the project file at all
             """
@@ -62,6 +81,8 @@ def pull():
                 instance.get('mpn', '')), #unique identifier
                 f"{instance.get('mpn', '')}-attributes.json") #which file are we after
                 """
+        else:
+            print(f"Libraries for component type '{instance.get('item_type')}' either not needed or not supported")
 """
     for instances in instances_list:
         if file does not exist in library_used:
