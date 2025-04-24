@@ -12,9 +12,10 @@ from inspect import currentframe
 
 def pull():
     load_dotenv()
+    supported_library_components = ['connector', 'backshell'] #TODO: future work: support cable definitions here too
     rows = instances_list.read_instance_rows()
     for row in rows:
-        if row.get('item_type', '').lower() in ('connector', 'backshell', 'cable'):
+        if row.get('item_type', '').lower() in supported_library_components:
             #first check to see what the newest library version is
             with open(
                 os.path.join(
