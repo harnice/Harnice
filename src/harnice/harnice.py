@@ -61,6 +61,10 @@ def harnice():
     print("############ LOOKING FOR BUILDNOTES FILE #############")
     flagnote_functions.look_for_buildnotes_file()
 
+    print()
+    print("############ REBUILDING FORMBOARD DRAWING #############")
+    formboard_illustration_functions.regen_formboard()
+
     #prep all the different master SVG's
     #print()
     #print("############ PREPPING MASTER SVG's #############")
@@ -68,10 +72,6 @@ def harnice():
     #bom_svg_prepper.prep_bom_svg_master()
     #print("#    ############ WORKING ON TBLOCK SVG MASTER ############")
     #tblock_svg_prepper.prep_tblock_svg_master()
-
-    #print()
-    #print("############ REBUILDING FORMBOARD DRAWING #############")
-    #formboard_illustration_functions.regen_formboard()
 
     #generate blank harnice output svg
     #print()
