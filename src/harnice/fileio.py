@@ -70,9 +70,6 @@ def harnice_file_structure():
                 },
                 "formboard_data": {
                     f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
-                    f"{partnumber("pn-rev")}.formboard_node_locations_inches.json":"formboard node locations inches",
-                    f"{partnumber("pn-rev")}.formboard_node_locations_px.json":"formboard node locations px",
-                    f"{partnumber("pn-rev")}.formboard_segment_to_from_center.json":"formboard segment to from center",
                     f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
                 "master_svgs": {
