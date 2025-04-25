@@ -162,7 +162,7 @@ def copy_in_editable_file(instance_name):
                     })
                     print(f"Editable file {os.path.basename(dst_file)} copied to instance folder.")
                 else:
-                    print(f"Editable file {os.path.basename(dst_file)} left unchanged within instance folder")
+                    print(f"Editable file {os.path.basename(dst_file)} left unchanged within its instance folder")
                 break
     return copied_files
 

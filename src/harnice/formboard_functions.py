@@ -7,7 +7,6 @@ import instances_list
 import yaml
 from os.path import basename
 from inspect import currentframe
-
 import fileio
 from collections import defaultdict
 
