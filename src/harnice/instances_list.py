@@ -14,8 +14,6 @@ INSTANCES_LIST_COLUMNS = [
     'supplier',
     'lib_latest_rev',
     'lib_rev_used_here',
-    'lib_modified',
-    'lib_status'
     'length',
     'diameter',
     'translate_x',
@@ -165,3 +163,35 @@ def add_nodes():
             'item_type': 'Node',
             'parent_instance': node
         })
+
+def add_lib_latest_rev(instance_name, rev):
+    with open(fileio.path("instances list"), newline='') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames
+
+    for row in rows:
+        if row.get("instance_name") == instance_name:
+            row["lib_latest_rev"] = str(rev)
+            break  # assume instance_name is unique
+
+    with open(fileio.path("instances list"), "w", newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
+
+def add_lib_used_earliest_rev(instance_name, rev):
+    with open(fileio.path("instances list"), newline='') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames
+
+    for row in rows:
+        if row.get("instance_name") == instance_name:
+            row["lib_rev_used_here"] = str(rev)
+            break  # assume instance_name is unique
+
+    with open(fileio.path("instances list"), "w", newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
