@@ -12,15 +12,18 @@ import harnice_prechecker
 from os.path import basename
 from inspect import currentframe
 import shutil
+import filecmp
 
 def pull():
     load_dotenv()
     supported_library_components = ['connector', 'backshell']
     instances = instances_list.read_instance_rows()
 
+    updated_instances = []
+
     for instance in instances:
-        print()
         print(f"Working {instance.get('instance_name')}")
+        print(f"MPN: {instance.get('mpn')}")
 
         if instance.get('item_type', '').lower() in supported_library_components:
             highest_rev = ""  # default
@@ -43,46 +46,56 @@ def pull():
                                 highest_rev = str(rev_num)
             except FileNotFoundError:
                 print(f"Missing revision history document. Update your library and rerun.")
-            
-            print(f"Highest rev in library is {highest_rev}")
-            instances_list.add_lib_latest_rev(instance.get('instance_name'), highest_rev)
 
-            exists_in_lib_used_bool, exists_in_lib_used_rev = exists_in_lib_used(instance.get('mpn'))
-            print(f"This library has been imported yet: {exists_in_lib_used_bool}. If True, it has revision {exists_in_lib_used_rev}")
-            instances_list.add_lib_used_earliest_rev(instance.get('instance_name'), exists_in_lib_used_rev)
-            
-            if exists_in_lib_used_bool == False:
-                #build the filepath to the latest rev of the entry we're trying to add
-                mpn = instance.get('mpn')
-                mpn_rev = f"{mpn}-rev{highest_rev}"
-                library_subpath = "component_definitions"
-                library_domain = instance.get('supplier')
-                source_lib_path = os.path.join(os.getenv(library_domain), library_subpath, mpn, mpn_rev)
+            exists_bool, exists_rev = exists_in_lib_used(instance.get('mpn'))
+            print(f"Library for component is used in the project: {exists_bool}")
+            if exists_bool:
+                print(f"Library used for component has revision {exists_rev}")
+            instance['lib_rev_used_here'] = exists_rev
 
-                target_directory = os.path.join(fileio.dirpath("library_used"), mpn_rev)
+            print(f"Highest available rev in library is {highest_rev}")
+            instance['lib_latest_rev'] = highest_rev
 
-                # Step 4: Copy the file from Harnice library to the target directory
+            # build paths
+            mpn = instance.get('mpn')
+            mpn_rev = f"{mpn}-rev{highest_rev}"
+            source_lib_path = os.path.join(os.getenv(instance.get('supplier')), "component_definitions", mpn, mpn_rev)
+            target_directory = os.path.join(fileio.dirpath("library_used"), mpn_rev)
+
+            # Check for outdated or modified libs
+            latest = instance.get('lib_latest_rev')
+            used = instance.get('lib_rev_used_here')
+
+            if not exists_bool:
                 print(f"Fetching {mpn_rev} from {source_lib_path}")
                 shutil.copytree(source_lib_path, target_directory)
+                used = latest
                 print(f"File {mpn_rev} added to {target_directory}")
 
-            #TODO: next make sure any library is pulled into the project file at all
-            """
-            if exists_in_lib_used_bool == False: 
-                either import_library_file or delete import_library_file to just use os.copy
-            import_library_file(
-                instance.get('supplier', ''), #supplier aka which library
-                os.path.join("component_definitions", #subdirectory
-                instance.get('mpn', '')), #unique identifier
-                f"{instance.get('mpn', '')}-drawing.svg") #which file are we after
-            import_library_file(
-                instance.get('supplier', ''), #supplier aka which library
-                os.path.join("component_definitions", #subdirectory
-                instance.get('mpn', '')), #unique identifier
-                f"{instance.get('mpn', '')}-attributes.json") #which file are we after
-                """
+            if int(latest) > int(used):
+                print(f"There's a newer revision available. If you want to update, delete {mpn_rev} from library_used.")
+            elif int(latest) < int(used):
+                print("Somehow you've imported a revision that's newer than what's in the library. You goin crazy!")
+                exit()
+            else:
+                if find_modifications(source_lib_path, target_directory) == False:
+                    print("Library is up to date.")
+                else:
+                    print(f"Either this library has been modified or corrupted. That's totally fine unless errors appear later. If you want to clear your changes, delete {mpn_rev} from library_used.")
         else:
             print(f"Libraries for component type '{instance.get('item_type')}' either not needed or not supported")
+
+        updated_instances.append(instance)
+        print()
+
+    # Write all modified rows back at once
+    fieldnames = updated_instances[0].keys()
+    with open(fileio.path("instances list"), "w", newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(updated_instances)
+           
+            
 """
     for instances in instances_list:
         if file does not exist in library_used:
@@ -324,6 +337,29 @@ def import_library_file(domain, library_subpath, lib_file):
     return True
     #returns True if import was successful or if already exists 
     #returns False if library not found (try and import this again?)
+
+def find_modifications(dir1, dir2):
+    # Perform a recursive comparison
+    dir_comparison = filecmp.dircmp(dir1, dir2)
+
+    # Check for any differences in files or subdirectories
+    if dir_comparison.left_only or dir_comparison.right_only or dir_comparison.funny_files:
+        return True
+
+    (match, mismatch, errors) = filecmp.cmpfiles(
+        dir1, dir2, dir_comparison.common_files, shallow=False
+    )
+    if mismatch or errors:
+        return True
+
+    # Recursively check subdirectories
+    for subdir in dir_comparison.common_dirs:
+        subdir1 = os.path.join(dir1, subdir)
+        subdir2 = os.path.join(dir2, subdir)
+        if detect_modified_files(subdir1, subdir2):
+            return True
+
+    return False
 
 if __name__ == "__main__":
     generate_new_connector_template()
