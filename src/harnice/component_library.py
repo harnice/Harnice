@@ -65,7 +65,7 @@ def pull():
             mpn = instance.get('mpn')
             mpn_rev = f"{mpn}-rev{highest_rev}"
             source_lib_path = os.path.join(os.getenv(instance.get('supplier')), "component_definitions", mpn, mpn_rev)
-            target_directory = os.path.join(fileio.dirpath("library_used"), instance.get('instance_name'), mpn_rev)
+            target_directory = os.path.join(fileio.dirpath("drawing_instances"), instance.get('instance_name'), mpn_rev)
 
             # Check for outdated or modified libs
             latest = instance.get('lib_latest_rev')
@@ -122,7 +122,7 @@ def pull():
 
 def exists_in_lib_used(instance_name, mpn):
     # Look for revision folders inside library_used/<instance_name>/
-    base_path = os.path.join(fileio.dirpath("library_used"), instance_name)
+    base_path = os.path.join(fileio.dirpath("drawing_instances"), instance_name)
 
     try:
         for name in os.listdir(base_path):
@@ -135,7 +135,7 @@ def exists_in_lib_used(instance_name, mpn):
         return False, ""
 
     return False, ""
-    
+
 pn = None
 rev = None
 
@@ -320,7 +320,7 @@ def import_library_file(domain, library_subpath, lib_file):
         return False
 
     # Step 2: Check if the file already exists in the local library
-    target_directory = os.path.join(os.getcwd(), "library_used", library_subpath)
+    target_directory = os.path.join(os.getcwd(), "drawing_instances", library_subpath)
     target_filename = os.path.join(target_directory, lib_file)
     
     if os.path.isfile(target_filename):

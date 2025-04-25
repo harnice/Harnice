@@ -61,7 +61,6 @@ def partnumber(format):
 def harnice_file_structure():
     return {
             "drawing_instances":{},
-            "library_used":{},
             "support_do_not_edit": {
                 "lists":{
                     f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
@@ -101,7 +100,6 @@ def harnice_file_structure():
 
 def generate_structure():
     os.makedirs(dirpath("drawing_instances"), exist_ok=True)
-    os.makedirs(dirpath("library_used"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
     os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)

@@ -159,7 +159,7 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Created new connector instance SVG {instance_name_w_suffix} with MPN: {mpn}")
 
             svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path,"connector-drawing")
-            svg_utils.find_and_replace_svg_group(instance_svg_path, os.path.join(fileio.dirpath("library_used"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
+            svg_utils.find_and_replace_svg_group(instance_svg_path, os.path.join(fileio.dirpath("drawing_instances"), "component_definitions", mpn, f"{mpn}-drawing.svg"), "connector-drawing")
             svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path, "connector-instance-rotatables")
             svg_utils.add_entire_svg_file_contents_to_group(instance_svg_path, f"unique-instance-{instance_name_w_suffix}")
             apply_bubble_transforms_to_flagnote_group(instance_svg_path)
