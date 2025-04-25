@@ -63,7 +63,11 @@ def harnice():
 
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
-    formboard_illustration_functions.regen_formboard()
+    formboard_illustration_functions.update_all_instances()
+    formboard_illustration_functions.update_segment_instances()
+    formboard_illustration_functions.delete_unmatched_files()
+    formboard_illustration_functions.update_formboard_master_svg()
+    formboard_illustration_functions.replace_all_segment_groups()
 
     #prep all the different master SVG's
     #print()

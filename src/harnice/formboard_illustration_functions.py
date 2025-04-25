@@ -53,7 +53,7 @@ def delete_unmatched_files():
                 except Exception as e:
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing instances': {e}")
 
-def update_all_bom_instances():
+def update_all_instances():
     #TODO: rebuild this approach by adding instances using fileio.path("instances list")
     #Go through the harness bom and call update_bom_instance slightly differently depending on small details
     #bom instances account for every item except segments
@@ -369,25 +369,3 @@ def retrieve_angle_of_segment(segmentname):
         raise KeyError(f"Segment '{segmentname}' not found in the JSON data.")
     
     return angle
-
-def regen_formboard():
-    print("#    ############ UPDATING CONNECTOR INSTANCES ############")
-    update_all_bom_instances()
-
-    print("#    ############ UPDATING SEGMENT INSTANCES ############")
-    update_segment_instances()
-
-    print("#    ############ DELETING UNMATCHED FILES ############")
-    delete_unmatched_files()
-
-    print("#    ############ CREATING NEW FORMBOARD MASTER SVG WITH GROUP STRUCTURE ############")
-    #creates an svg file with the groups in the right places
-    #after that file is saved, content is imported.
-    update_formboard_master_svg()
-
-    print("#    ############ REPLACING ALL INSTANCE GROUPS INTO FORMBOARD MASTER ############")
-    #TODO: combine into the above function after segments are included in the instance list
-    replace_all_segment_groups()
-
-if __name__ == "__main__":
-    regen_formboard()
