@@ -65,7 +65,7 @@ def pull():
             mpn = instance.get('mpn')
             mpn_rev = f"{mpn}-rev{highest_rev}"
             source_lib_path = os.path.join(os.getenv(instance.get('supplier')), "component_definitions", mpn, mpn_rev)
-            target_directory = os.path.join(fileio.dirpath("drawing_instances"), instance.get('instance_name'), "library_used_do_not_edit", mpn_rev)
+            target_directory = os.path.join(fileio.dirpath("editable_component_data"), instance.get('instance_name'), "library_used_do_not_edit", mpn_rev)
 
             # Check for outdated or modified libs
             latest = instance.get('lib_latest_rev')
@@ -128,7 +128,7 @@ def copy_in_editable_file(instance_name):
     """
     copied_files = []
 
-    base_dir = fileio.dirpath("drawing_instances")
+    base_dir = fileio.dirpath("editable_component_data")
     src_root = os.path.join(base_dir, instance_name, "library_used_do_not_edit")
     dst_dir = os.path.join(base_dir, instance_name)
 
@@ -166,7 +166,7 @@ def copy_in_editable_file(instance_name):
 
 def exists_in_lib_used(instance_name, mpn):
     # Look for revision folders inside library_used/<instance_name>/
-    base_path = os.path.join(fileio.dirpath("drawing_instances"), instance_name, "library_used_do_not_edit")
+    base_path = os.path.join(fileio.dirpath("editable_component_data"), instance_name, "library_used_do_not_edit")
 
     try:
         for name in os.listdir(base_path):
@@ -364,7 +364,7 @@ def import_library_file(domain, library_subpath, lib_file):
         return False
 
     # Step 2: Check if the file already exists in the local library
-    target_directory = os.path.join(os.getcwd(), "drawing_instances", library_subpath)
+    target_directory = os.path.join(os.getcwd(), "editable_component_data", library_subpath)
     target_filename = os.path.join(target_directory, lib_file)
     
     if os.path.isfile(target_filename):
