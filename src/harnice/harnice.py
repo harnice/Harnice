@@ -29,9 +29,8 @@ def harnice():
     wirelist.newlist()
 
     print()
-    print("############ PULLING COMPONENTS FROM LIBRARY #############")
+    print("############ CHECKING COMPONENTS AGAINST LIBRARY #############")
     component_library.pull()
-    exit()
 
     #process the formboard definition to get the list of segments and their locations
     print()
