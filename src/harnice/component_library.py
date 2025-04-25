@@ -65,7 +65,7 @@ def pull():
             mpn = instance.get('mpn')
             mpn_rev = f"{mpn}-rev{highest_rev}"
             source_lib_path = os.path.join(os.getenv(instance.get('supplier')), "component_definitions", mpn, mpn_rev)
-            target_directory = os.path.join(fileio.dirpath("drawing_instances"), instance.get('instance_name'), mpn_rev)
+            target_directory = os.path.join(fileio.dirpath("drawing_instances"), instance.get('instance_name'), "library_used_do_not_edit", mpn_rev)
 
             # Check for outdated or modified libs
             latest = instance.get('lib_latest_rev')
@@ -86,7 +86,8 @@ def pull():
                 if find_modifications(source_lib_path, target_directory) == False:
                     print("Library is up to date.")
                 else:
-                    print(f"Either this library has been modified or corrupted. That's totally fine unless errors appear later. If you want to clear your changes, delete {mpn_rev} from library_used.")
+                    print(f"You've modified the libary as-imported. In order to maintain traceability, you're not really supposed to do that")
+                    exit()
         else:
             print(f"Libraries for component type '{instance.get('item_type')}' either not needed or not supported")
 
@@ -122,7 +123,7 @@ def pull():
 
 def exists_in_lib_used(instance_name, mpn):
     # Look for revision folders inside library_used/<instance_name>/
-    base_path = os.path.join(fileio.dirpath("drawing_instances"), instance_name)
+    base_path = os.path.join(fileio.dirpath("drawing_instances"), instance_name, "library_used_do_not_edit")
 
     try:
         for name in os.listdir(base_path):
