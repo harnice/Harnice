@@ -25,7 +25,10 @@ def pull():
         print(f"Working {instance.get('instance_name')}")
         print(f"MPN: {instance.get('mpn')}")
 
+        #if the type of instance is supported by harnice library
         if instance.get('item_type', '').lower() in supported_library_components:
+            
+            #find the highest rev in the library
             highest_rev = ""  # default
             try:
                 with open(
@@ -47,12 +50,14 @@ def pull():
             except FileNotFoundError:
                 print(f"Missing revision history document. Update your library and rerun.")
 
-            exists_bool, exists_rev = exists_in_lib_used(instance.get('mpn'))
+            #see if that library instance has already been imported
+            exists_bool, exists_rev = exists_in_lib_used(instance.get('instance_name'), instance.get('mpn'))
             print(f"Library for component is used in the project: {exists_bool}")
             if exists_bool:
                 print(f"Library used for component has revision {exists_rev}")
             instance['lib_rev_used_here'] = exists_rev
 
+            #find latest release in library
             print(f"Highest available rev in library is {highest_rev}")
             instance['lib_latest_rev'] = highest_rev
 
@@ -60,7 +65,7 @@ def pull():
             mpn = instance.get('mpn')
             mpn_rev = f"{mpn}-rev{highest_rev}"
             source_lib_path = os.path.join(os.getenv(instance.get('supplier')), "component_definitions", mpn, mpn_rev)
-            target_directory = os.path.join(fileio.dirpath("library_used"), mpn_rev)
+            target_directory = os.path.join(fileio.dirpath("library_used"), instance.get('instance_name'), mpn_rev)
 
             # Check for outdated or modified libs
             latest = instance.get('lib_latest_rev')
@@ -115,25 +120,22 @@ def pull():
 
     """
 
-def exists_in_lib_used(mpn):
-    #function returns two values. 
-    #   first is whether a folder exists within dirpath("library_used") with filename mpn<wildcard>
-    #   second is, if first is true, if a string exists revX within that filename, what X is, representative of what rev we're looking at. 
-
-    #TODO: this doesn't actually return the earliest rev, even though it's supposed to. it just returns any rev. it starts to break if there are multiple different revs imported into same project.
+def exists_in_lib_used(instance_name, mpn):
+    # Look for revision folders inside library_used/<instance_name>/
+    base_path = os.path.join(fileio.dirpath("library_used"), instance_name)
 
     try:
-        for name in os.listdir(fileio.dirpath("library_used")):
-            full_path = os.path.join(fileio.dirpath("library_used"), name)
+        for name in os.listdir(base_path):
+            full_path = os.path.join(base_path, name)
             if os.path.isdir(full_path) and name.startswith(mpn):
                 match = re.search(r'rev(\d+)', name, re.IGNORECASE)
                 if match:
-                    return True, match.group(1)  # return the number X as string
+                    return True, match.group(1)
     except FileNotFoundError:
         return False, ""
 
     return False, ""
-
+    
 pn = None
 rev = None
 
