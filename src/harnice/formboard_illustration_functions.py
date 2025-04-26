@@ -88,119 +88,7 @@ def calculate_formboard_location(instance_name):
         #print(f"After {name}: {x_pos}, {y_pos}, {angle}")
 
     return x_pos, y_pos, angle
-
-
-
-"""def update_all_instances():
-    #TODO: rebuild this approach by adding instances using fileio.path("instances list")
-    #Go through the harness bom and call update_bom_instance slightly differently depending on small details
-    #bom instances account for every item except segments
-
-    with open(fileio.path("harness bom"), 'r') as bom_file:
-        # Read the header line first
-        header_line = bom_file.readline()
-        header = header_line.strip().split("\t")
-        
-        # Identify indices from the header
-        id_index = header.index("Id")
-        mpn_index = header.index("MPN")
-        desc_simple_index = header.index("Description Simple")
-        supplier_index = header.index("Supplier")
-
-        # Read the remaining data (if needed)
-        bom_data = bom_file.read()
-        bom_lines = bom_data.splitlines()
-
-    # Load YAML file
-    with open(fileio.path("harness yaml"), 'r') as yaml_file:
-        yaml_data = yaml.safe_load(yaml_file)
-
-    #for each line in harness bom:
-    for line in bom_lines:
-
-        columns = line.strip().split("\t")
-        current_desc_simple = columns[desc_simple_index]
-
-        #if "Description Simple" == "Backshell" in harness bom (do this first because it informs rotation of others)
-        if current_desc_simple == "Backshell":
-            current_mpn = columns[mpn_index]
-
-            #for each connector in yaml
-            for connector_name, connector in yaml_data.get("connectors", {}).items():
-                # Check if any additional component is a Backshell with mpn equal to current_mpn
-                if any(
-                    component.get("type") == "Backshell" and component.get("mpn") == current_mpn
-                    for component in connector.get("additional_components", [])
-                ):
-                    backshelldrivenrotation = 0
-                    backshelldrivenoffset = 0
-                    update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[id_index], current_desc_simple, backshelldrivenrotation, backshelldrivenoffset)
-                    
-
-        if current_desc_simple == "Connector":
-            current_mpn = columns[mpn_index]  
-
-            #for each connector in yaml
-            for connector_name, connector in yaml_data.get("connectors", {}).items():
-                #if "mpn" in yaml == "MPN" in harness bom
-                if connector.get("mpn") == current_mpn:
-
-                    #if connector has any backshell as an additional part
-                    if any(
-                        component.get("type") == "Backshell" for 
-                        component in connector.get("additional_components", [])
-                    ):
-                        #TODO look up the rotations from that backshell's json definition
-                        backshelldrivenrotation = 0
-                        backshelldrivenoffset = 0
-                    
-                update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[id_index], current_desc_simple, backshelldrivenrotation, backshelldrivenoffset)
- """
-
-
-
-#this list is used to keep track of all the valid instances:
-drawing_instance_filenames = [None]
-#when creating new instances, add to this list by add_filename_to_drawing_instance_list().
-#directories in drawing-instances that are not named in this list will be deleted by delete_unmatched_files().
-
-def add_filename_to_drawing_instance_list(filename):
-    global drawing_instance_filenames  # Declare the global variable
-    if drawing_instance_filenames == [None]:  # Replace initial None with the first item
-        drawing_instance_filenames = [filename]
-    else:
-        drawing_instance_filenames.append(filename)  # Append new filename
-
-def delete_unmatched_files():
-    global drawing_instance_filenames  # Access the global variable
-
-    # Ensure the directory exists
-    if not os.path.exists(fileio.dirpath("editable_component_data")):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory {fileio.dirpath("editable_component_data")} does not exist.")
-        return
-
-    # List all files and directories in the directory
-    for item in os.listdir(fileio.dirpath("editable_component_data")):
-        item_path = os.path.join(fileio.dirpath("editable_component_data"), item)
-
-        # Check if the item is not in the allowed list
-        if item not in drawing_instance_filenames:
-            # Check if it's a file
-            if os.path.isfile(item_path):
-                try:
-                    os.remove(item_path)  # Delete the file
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching file: {basename(item_path)} in 'drawing instances'")
-                except Exception as e:
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching file: {basename(item_path)} in 'drawing instances': {e}")
-
-            # Check if it's a directory
-            elif os.path.isdir(item_path):
-                try:
-                    shutil.rmtree(item_path)  # Delete the directory and its contents
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching directory: {basename(item_path)} in 'drawing instances'")
-                except Exception as e:
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing instances': {e}")
-               
+         
 def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rotation, offset):
     #create an svg for that instance
 
@@ -216,9 +104,6 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
     #import from library
     svgexists = component_library.import_library_file(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
     jsonsuccessfulimport = component_library.import_library_file(supplier,os.path.join("component_definitions",mpn),f"{mpn}-attributes.json")
-    
-    #remember which files are supposed to exist so we can later delete invalid stuff
-    add_filename_to_drawing_instance_list(instance_name_w_suffix)
 
     if svgexists:
         #reference the drawing filepath, not included in fileio.path() because each project file structure is different

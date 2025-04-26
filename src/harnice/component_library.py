@@ -14,8 +14,14 @@ from inspect import currentframe
 import shutil
 import filecmp
 
+#this list is used to keep track of all the valid instances:
+drawing_instance_filenames = [None]
+#when creating new instances, add to this list by add_filename_to_drawing_instance_list().
+#directories in drawing-instances that are not named in this list will be deleted by delete_unmatched_files().
+
 def pull():
     load_dotenv()
+    global drawing_instance_filenames
     supported_library_components = ['connector', 'backshell']
     instances = instances_list.read_instance_rows()
 
@@ -95,6 +101,11 @@ def pull():
             print(f"Libraries for component type '{instance.get('item_type')}' either not needed or not supported")
 
         updated_instances.append(instance)
+
+        #TODO: combine these two?
+        #remember which files are supposed to exist so we can later delete invalid stuff
+        add_filename_to_drawing_instance_list(instance_name_w_suffix)
+
         print()
 
     # Write all modified rows back at once
@@ -408,6 +419,39 @@ def find_modifications(dir1, dir2):
             return True
 
     return False
+
+def add_filename_to_drawing_instance_list(filename):
+    global drawing_instance_filenames  # Declare the global variable
+    if drawing_instance_filenames == [None]:  # Replace initial None with the first item
+        drawing_instance_filenames = [filename]
+    else:
+        drawing_instance_filenames.append(filename)  # Append new filename
+
+def delete_unmatched_files():
+    global drawing_instance_filenames  # Access the global variable
+
+    # List all files and directories in the directory
+    for item in os.listdir(fileio.dirpath("editable_component_data")):
+        item_path = os.path.join(fileio.dirpath("editable_component_data"), item)
+
+        # Check if the item is not in the allowed list
+        if item not in drawing_instance_filenames:
+            # Check if it's a file
+            if os.path.isfile(item_path):
+                try:
+                    os.remove(item_path)  # Delete the file
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching file: {basename(item_path)} in 'drawing instances'")
+                except Exception as e:
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching file: {basename(item_path)} in 'drawing instances': {e}")
+
+            # Check if it's a directory
+            elif os.path.isdir(item_path):
+                try:
+                    shutil.rmtree(item_path)  # Delete the directory and its contents
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching directory: {basename(item_path)} in 'drawing instances'")
+                except Exception as e:
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing instances': {e}")
+      
 
 if __name__ == "__main__":
     generate_new_connector_template()
