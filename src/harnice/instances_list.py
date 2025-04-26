@@ -1,224 +1,197 @@
 import yaml
 import json
 import csv
-import fileio
 from collections import defaultdict
+import fileio
+
+INSTANCES_LIST_COLUMNS = [
+    'instance_name',
+    'bom_line_number',
+    'mpn',
+    'item_type',
+    'parent_instance',
+    'parent_csys',
+    'supplier',
+    'lib_latest_rev',
+    'lib_rev_used_here',
+    'length',
+    'diameter',
+    'translate_x',
+    'translate_y',
+    'rotate_csys'
+]
 
 def load_yaml_data():
     with open(fileio.path('harness yaml'), 'r') as file:
         return yaml.safe_load(file)
 
-def append_instance_row(row):
-    with open(fileio.path('instances list'), 'a', newline='') as tsvfile:
-        writer = csv.writer(tsvfile, delimiter='\t')
-        writer.writerow(row)
+def read_instance_rows():
+    with open(fileio.path('instances list'), newline='', encoding='utf-8') as f:
+        return list(csv.DictReader(f, delimiter='\t'))
+
+def write_instance_rows(rows):
+    with open(fileio.path('instances list'), 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
+
+def append_instance_row(data_dict):
+    with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
+        writer.writerow({key: data_dict.get(key, '') for key in INSTANCES_LIST_COLUMNS})
 
 def make_new_list():
-    with open(fileio.path('instances list'), 'w', newline='') as tsvfile:
-        writer = csv.writer(tsvfile, delimiter='\t')
-        writer.writerow([
-            'instance_name',
-            'bom_line_number',
-            'mpn',
-            'item_type',
-            'parent_instance',
-            'parent_csys',
-            'supplier',
-            'length',
-            'diameter',
-            'translate_x',
-            'translate_y',
-            'rotate_csys'
-        ])
+    write_instance_rows([])
 
 def add_connectors():
-    yaml_data_parsed = load_yaml_data()
-    connectors = yaml_data_parsed.get('connectors', {})
-
-    for instance_name, connector in connectors.items():
-        mpn = connector.get('mpn', '')
-        supplier = connector.get('supplier', '')
-        component_instances = []
-
+    yaml_data = load_yaml_data()
+    for instance_name, connector in yaml_data.get('connectors', {}).items():
         for component in connector.get('additional_components', []):
-            component_mpn = component.get('mpn', '')
-            component_type = component.get('type', '')
-            component_supplier = component.get('supplier', '')
+            suffix = 'bs' if component.get('type', '').lower() == 'backshell' else component.get('type', '').lower()
+            component_instance = f"{instance_name}.{suffix}"
+            append_instance_row({
+                'instance_name': component_instance,
+                'mpn': component.get('mpn', ''),
+                'item_type': component.get('type', ''),
+                'parent_instance': instance_name,
+                'parent_csys': 'PULL FROM CONNECTOR LIBRARY',
+                'supplier': component.get('supplier', '')
+            })
 
-            suffix = 'bs' if component_type.lower() == 'backshell' else component_type.lower()
-            component_instance_name = f'{instance_name}.{suffix}'
-            component_instances.append(component_instance_name)
-
-            append_instance_row([
-                component_instance_name,
-                '',
-                component_mpn,
-                component_type,
-                instance_name,
-                '',  # parent_csys
-                component_supplier,
-                '', '', '', '', ''
-            ])
-
-        append_instance_row([
-            instance_name,
-            '',
-            mpn,
-            'Connector',
-            '',
-            '',  # parent_csys
-            supplier,
-            '', '', '', '', ''
-        ])
+        append_instance_row({
+            'instance_name': instance_name,
+            'mpn': connector.get('mpn', ''),
+            'item_type': 'Connector',
+            'parent_csys': 'PULL FROM CONNECTOR LIBRARY',
+            'supplier': connector.get('supplier', '')
+        })
 
 def add_cables():
-    yaml_data_parsed = load_yaml_data()
-    cables = yaml_data_parsed.get('cables', {})
-
-    for cable_name, cable in cables.items():
-        mpn = cable.get('mpn', '')
-        supplier = cable.get('supplier', '')
-
-        append_instance_row([
-            cable_name,
-            '',
-            mpn,
-            'Cable',
-            '',
-            '',  # parent_csys
-            supplier,
-            '', '', '', '', ''
-        ])
+    yaml_data = load_yaml_data()
+    for cable_name, cable in yaml_data.get('cables', {}).items():
+        append_instance_row({
+            'instance_name': cable_name,
+            'mpn': cable.get('mpn', ''),
+            'item_type': 'Cable',
+            'supplier': cable.get('supplier', '')
+        })
 
 def add_formboard_segments():
     with open(fileio.path('formboard graph definition'), 'r') as f:
-        formboard_data = yaml.safe_load(f)
-
-    for segment_name, segment in formboard_data.items():
-        append_instance_row([
-            segment_name,
-            '',
-            '',
-            'Segment',
-            '',
-            '',  # parent_csys
-            '',
-            segment.get('length', ''),
-            segment.get('diameter', ''),
-            '', '', ''
-        ])
+        segments = yaml.safe_load(f)
+    for seg_name, seg in segments.items():
+        append_instance_row({
+            'instance_name': seg_name,
+            'item_type': 'Segment',
+            'length': seg.get('length', ''),
+            'diameter': seg.get('diameter', '')
+        })
 
 def add_cable_lengths():
     with open(fileio.path('connections to graph'), 'r') as json_file:
         graph_data = json.load(json_file)
 
-    tsv_path = fileio.path('instances list')
-    with open(tsv_path, newline='') as tsv_file:
-        reader = csv.DictReader(tsv_file, delimiter='\t')
-        rows = list(reader)
-        fieldnames = reader.fieldnames or []
-
-    if 'length' not in fieldnames:
-        fieldnames.append('length')
-    if 'parent_csys' not in fieldnames:
-        fieldnames.insert(fieldnames.index('parent_instance') + 1, 'parent_csys')
-    for field in ['translate_x', 'translate_y', 'rotate_csys']:
-        if field not in fieldnames:
-            fieldnames.append(field)
-
+    rows = read_instance_rows()
     for row in rows:
-        if row.get('item_type') == 'Cable':
-            instance = row.get('instance_name')
-            row['length'] = graph_data.get(instance, {}).get('wirelength', '')
-        else:
-            row['length'] = row.get('length', '')
+        if row.get('item_type', '').lower() == 'cable':
+            row['length'] = graph_data.get(row['instance_name'], {}).get('wirelength', '')
 
-    with open(tsv_path, 'w', newline='') as tsv_file:
-        writer = csv.DictWriter(tsv_file, fieldnames=fieldnames, delimiter='\t')
-        writer.writeheader()
-        writer.writerows(rows)
+    write_instance_rows(rows)
 
 def convert_to_bom():
-    mpn_groups = defaultdict(lambda: {
-        'qty': 0,
-        'item_type': '',
-        'supplier': '',
-        'total_length': 0.0
-    })
+    rows = read_instance_rows()
+    mpn_groups = defaultdict(lambda: {'qty': 0, 'item_type': '', 'supplier': '', 'total_length': 0.0})
 
-    with open(fileio.path('instances list'), newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        for row in reader:
-            mpn = row.get('mpn', '').strip()
-            if not mpn:
-                continue
+    for row in rows:
+        mpn = row.get('mpn', '').strip()
+        if not mpn:
+            continue
+        group = mpn_groups[mpn]
+        group['qty'] += 1
+        group['item_type'] = row.get('item_type', '')
+        group['supplier'] = row.get('supplier', '')
+        if group['item_type'].lower() == 'cable':
+            try:
+                group['total_length'] += float(row.get('length', '') or 0)
+            except ValueError:
+                pass
 
-            item_type = row.get('item_type', '').strip()
-            supplier = row.get('supplier', '').strip()
-            length_str = row.get('length', '').strip()
-
-            mpn_data = mpn_groups[mpn]
-            mpn_data['qty'] += 1
-            mpn_data['item_type'] = item_type
-            mpn_data['supplier'] = supplier
-
-            if item_type.lower() == 'cable' and length_str:
-                try:
-                    mpn_data['total_length'] += float(length_str)
-                except ValueError:
-                    pass
-
-    bom_rows = []
-    for i, (mpn, data) in enumerate(mpn_groups.items(), start=1):
+    output = []
+    for i, (mpn, group) in enumerate(mpn_groups.items(), 1):
         row = {
             'bom_line_number': i,
             'mpn': mpn,
-            'item_type': data['item_type'],
-            'qty': data['qty'],
-            'supplier': data['supplier']
+            'item_type': group['item_type'],
+            'qty': group['qty'],
+            'supplier': group['supplier']
         }
-        if data['item_type'].lower() == 'cable':
-            row['total_length_exact'] = f"{data['total_length']:.2f}"
-        bom_rows.append(row)
+        if group['item_type'].lower() == 'cable':
+            row['total_length_exact'] = f"{group['total_length']:.2f}"
+        output.append(row)
 
     fieldnames = ['bom_line_number', 'mpn', 'item_type', 'qty', 'supplier', 'total_length_exact']
     with open(fileio.path('harness bom'), 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t', extrasaction='ignore')
         writer.writeheader()
-        writer.writerows(bom_rows)
+        writer.writerows(output)
 
     return fileio.path('harness bom')
 
 def add_bom_line_numbers():
-    mpn_to_bom_line = {}
     with open(fileio.path('harness bom'), newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter='\t')
-        for row in reader:
-            mpn = row.get('mpn', '').strip()
-            bom_line = row.get('bom_line_number', '').strip()
-            if mpn and bom_line:
-                mpn_to_bom_line[mpn] = bom_line
+        mpn_map = {row['mpn']: row['bom_line_number'] for row in reader if row.get('mpn')}
 
-    with open(fileio.path('instances list'), newline='', encoding='utf-8') as f:
+    rows = read_instance_rows()
+    for row in rows:
+        row['bom_line_number'] = mpn_map.get(row.get('mpn', ''), '')
+
+    write_instance_rows(rows)
+    return fileio.path('instances list')
+
+def add_nodes():
+    with open(fileio.path('formboard graph definition'), 'r') as f:
+        graph = yaml.safe_load(f)
+
+    node_set = set()
+    for seg in graph.values():
+        node_set.update([seg.get('segment_end_a'), seg.get('segment_end_b')])
+
+    for node in sorted(filter(None, node_set)):
+        append_instance_row({
+            'instance_name': f'{node}.node',
+            'item_type': 'Node',
+            'parent_instance': node
+        })
+
+def add_lib_latest_rev(instance_name, rev):
+    with open(fileio.path("instances list"), newline='') as f:
         reader = csv.DictReader(f, delimiter='\t')
         rows = list(reader)
-        fieldnames = reader.fieldnames or []
-
-        if 'bom_line_number' not in fieldnames:
-            fieldnames.append('bom_line_number')
-        if 'parent_csys' not in fieldnames:
-            fieldnames.insert(fieldnames.index('parent_instance') + 1, 'parent_csys')
-        for field in ['translate_x', 'translate_y', 'rotate_csys']:
-            if field not in fieldnames:
-                fieldnames.append(field)
+        fieldnames = reader.fieldnames
 
     for row in rows:
-        mpn = row.get('mpn', '').strip()
-        row['bom_line_number'] = mpn_to_bom_line.get(mpn, '')
+        if row.get("instance_name") == instance_name:
+            row["lib_latest_rev"] = str(rev)
+            break  # assume instance_name is unique
 
-    with open(fileio.path('instances list'), 'w', newline='', encoding='utf-8') as f:
+    with open(fileio.path("instances list"), "w", newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
         writer.writerows(rows)
 
-    return fileio.path('instances list')
+def add_lib_used_earliest_rev(instance_name, rev):
+    with open(fileio.path("instances list"), newline='') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames
+
+    for row in rows:
+        if row.get("instance_name") == instance_name:
+            row["lib_rev_used_here"] = str(rev)
+            break  # assume instance_name is unique
+
+    with open(fileio.path("instances list"), "w", newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)

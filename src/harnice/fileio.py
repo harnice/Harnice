@@ -60,8 +60,7 @@ def partnumber(format):
 
 def harnice_file_structure():
     return {
-            "drawing_instances":{},
-            "library_used":{},
+            "editable_component_data":{},
             "support_do_not_edit": {
                 "lists":{
                     f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
@@ -71,9 +70,6 @@ def harnice_file_structure():
                 },
                 "formboard_data": {
                     f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
-                    f"{partnumber("pn-rev")}.formboard_node_locations_inches.json":"formboard node locations inches",
-                    f"{partnumber("pn-rev")}.formboard_node_locations_px.json":"formboard node locations px",
-                    f"{partnumber("pn-rev")}.formboard_segment_to_from_center.json":"formboard segment to from center",
                     f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
                 "master_svgs": {
@@ -100,8 +96,7 @@ def harnice_file_structure():
         }
 
 def generate_structure():
-    os.makedirs(dirpath("drawing_instances"), exist_ok=True)
-    os.makedirs(dirpath("library_used"), exist_ok=True)
+    os.makedirs(dirpath("editable_component_data"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
     os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
@@ -197,37 +192,3 @@ def name(target_value):
 
     return recursive_search(harnice_file_structure())
 
-def import_library_record(domain, library_subpath, lib_file):
-    """
-    Copies a file from a Harnice library to a local 'library_used' directory with the same subpath structure.
-    """
-    load_dotenv()
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Importing library {lib_file}:")
-    # Step 1: Check if lib_file exists in Harnice library
-    harnice_path = os.getenv(domain)
-    source_file_path = os.path.join(harnice_path, library_subpath)
-    
-    if not os.path.isfile(os.path.join(source_file_path,lib_file)):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Failed to import library: file '{lib_file}' not found in {source_file_path}")
-        return False
-
-    # Step 2: Check if the file already exists in the local library
-    target_directory = os.path.join(os.getcwd(), "library_used", library_subpath)
-    target_filename = os.path.join(target_directory, lib_file)
-    
-    if os.path.isfile(target_filename):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Library instance '{lib_file}' already exists in this part number's library_used. If you wish to replace it, remove the instance and rerun this command.")
-        return True
-
-    # Step 3: Ensure the target directory structure exists
-    if not os.path.exists(target_directory):
-        os.makedirs(target_directory)
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added directory '{library_subpath}' to '{file.partnumber("pn-rev")}/library_used/'.")
-
-    # Step 4: Copy the file from Harnice library to the target directory
-    shutil.copy(os.path.join(source_file_path,lib_file), target_filename)
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{lib_file}' added to '{file.partnumber("pn-rev")}/library_used/{library_subpath}'.")
-
-    return True
-    #returns True if import was successful or if already exists 
-    #returns False if library not found (try and import this again?)

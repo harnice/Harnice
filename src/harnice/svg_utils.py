@@ -6,7 +6,7 @@ import shutil
 from os.path import basename
 from inspect import currentframe
 import fileio
-
+import component_library
 
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     if os.path.exists(filepath):
@@ -140,9 +140,9 @@ def prep_tblock_svg_master():
     wanted_tblock_libdomain = "rs"
     wanted_tblock_libsubpath = "page_defaults"
     wanted_tblock_libfilename = "rs-tblock-default.svg"
-    library_used_tblock_filepath = os.path.join(os.getcwd(), "library_used", wanted_tblock_libsubpath, wanted_tblock_libfilename)
+    library_used_tblock_filepath = os.path.join(os.getcwd(), "editable_component_data", wanted_tblock_libsubpath, wanted_tblock_libfilename)
 
-    fileio.import_library_record(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
+    component_library.import_library_file(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
 
     if os.path.exists(fileio.path("tblock master svg")):
         os.remove(fileio.path("tblock master svg"))

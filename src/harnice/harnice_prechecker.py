@@ -9,26 +9,24 @@ import fileio
 pn = None
 rev = None
 
-def generate_revision_history_tsv(filename):
-    """
-    Creates and saves a TSV file named {pn}-revision-history.tsv in the parent directory.
+def harnice_prechecker():
+    if check_directory_format() == False:
+        return False
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: You're in a valid directory.")
+    check_existence_of_rev_history_file_in_parent(pn)
+    find_pn_and_rev_entry_in_tsv()
+    if check_revision_status() == False:
+        return False
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Status for this rev is clear; moving forward.")
+    export_rev_row_from_tsv_to_project_rev_json()
+    return True
 
-    :param pn: The prefix to use in the file name.
-    """
-    # Get the parent directory path
-    parent_dir = os.path.dirname(os.getcwd())
-
-    # Construct the file path
-    file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
-
-    # Define the columns for the TSV file
-    columns = ["pn", "desc", "rev", "status", "releaseticket", "datestarted", "datemodified", "datereleased", "drawnby", "checkedby", "revisionupdates", "affectedinstances"]
-
-    # Write the TSV file
-    with open(file_path, 'w') as file:
-        file.write('\t'.join(columns) + '\n')
-    
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: New {pn}-revision-history document added to parent PN directory.")
+def pn_from_cwd():
+    check_directory_format()
+    return pn
+def rev_from_cwd():
+    check_directory_format()
+    return rev
 
 def check_directory_format():
     """
@@ -57,6 +55,28 @@ def check_directory_format():
     else:
         check_subdirectory_format()
         return False
+
+
+def generate_revision_history_tsv(filename):
+    """
+    Creates and saves a TSV file named {pn}-revision_history.tsv in the parent directory.
+
+    :param pn: The prefix to use in the file name.
+    """
+    # Get the parent directory path
+    parent_dir = os.path.dirname(os.getcwd())
+
+    # Construct the file path
+    file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
+
+    # Define the columns for the TSV file
+    columns = ["pn", "desc", "rev", "status", "releaseticket", "datestarted", "datemodified", "datereleased", "drawnby", "checkedby", "revisionupdates", "affectedinstances"]
+
+    # Write the TSV file
+    with open(file_path, 'w') as file:
+        file.write('\t'.join(columns) + '\n')
+    
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: New {pn}-revision-history document added to parent PN directory.")
 
 def check_subdirectory_format():
     """
@@ -92,7 +112,7 @@ def check_subdirectory_format():
 
 def check_existence_of_rev_history_file_in_parent(pn):
     """
-    Checks if the parent directory contains a file named {pn}-revision-history.tsv.
+    Checks if the parent directory contains a file named {pn}-revision_history.tsv.
 
     :param pn: The prefix to check in the file name.
     :return: True if the file exists in the parent directory, otherwise False.
@@ -101,20 +121,20 @@ def check_existence_of_rev_history_file_in_parent(pn):
     parent_dir = os.path.dirname(os.getcwd())
 
     # Construct the expected file name
-    expected_file = f"{pn}-revision-history.tsv"
+    expected_file = f"{pn}-revision_history.tsv"
 
     # Check if the file exists in the parent directory
     file_path = os.path.join(parent_dir, expected_file)
     if os.path.isfile(file_path):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: {pn}-revision-history.tsv exists.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: {pn}-revision_history.tsv exists.")
         return True
     else:
-        generate_revision_history_tsv(f"{pn}-revision-history.tsv")
+        generate_revision_history_tsv(f"{pn}-revision_history.tsv")
         return True
 
 def find_pn_and_rev_entry_in_tsv():
     """
-    Looks for a row in the TSV file named {pn}-revision-history.tsv in the parent directory
+    Looks for a row in the TSV file named {pn}-revision_history.tsv in the parent directory
     where the "PN" column matches the global 'pn' value and the "Rev" column matches the global 'rev' value.
 
     :return: True if the row is found, False otherwise.
@@ -122,7 +142,7 @@ def find_pn_and_rev_entry_in_tsv():
 
     # Construct the file path in the parent directory
     parent_dir = os.path.dirname(os.getcwd())
-    file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
+    file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
 
     try:
         with open(file_path, 'r') as file:
@@ -146,7 +166,7 @@ def find_pn_and_rev_entry_in_tsv():
                     ):
                     num_matching_rev_records += 1
             if num_matching_rev_records == 0:
-                print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Revision record not found in {pn}-revision-history.tsv. Generating now.")
+                print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Revision record not found in {pn}-revision_history.tsv. Generating now.")
                 add_initial_release_row_to_existing_tsv()
                 return True
             
@@ -155,7 +175,7 @@ def find_pn_and_rev_entry_in_tsv():
                 return True
 
             if num_matching_rev_records > 1:
-                print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Duplicate revision entries in {pn}-revision-history.tsv. Please fix this document before continuing. ")
+                print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Duplicate revision entries in {pn}-revision_history.tsv. Please fix this document before continuing. ")
                 return False
 
 
@@ -165,7 +185,7 @@ def find_pn_and_rev_entry_in_tsv():
 
 def add_initial_release_row_to_existing_tsv():
     """
-    Adds a singular row to an existing TSV file named {pn}-revision-history.tsv in the parent directory.
+    Adds a singular row to an existing TSV file named {pn}-revision_history.tsv in the parent directory.
     The row will include only the specific values for "PN", "Rev", and "Revision Updates" without repeating headers.
     """
 
@@ -173,7 +193,7 @@ def add_initial_release_row_to_existing_tsv():
     parent_dir = os.path.dirname(os.getcwd())
 
     # Construct the file path
-    file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
+    file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
 
     # Construct the row values
     today_date = datetime.date.today().isoformat()
@@ -184,13 +204,13 @@ def add_initial_release_row_to_existing_tsv():
     with open(file_path, 'a') as file:
         file.write(row)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Revision record added to {pn}-revision-history.tsv")
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Revision record added to {pn}-revision_history.tsv")
 
 def check_revision_status():
 
     # Construct the file path in the parent directory
     parent_dir = os.path.dirname(os.getcwd())
-    file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
+    file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
 
     try:
         with open(file_path, 'r') as file:
@@ -227,10 +247,10 @@ def check_revision_status():
 def export_rev_row_from_tsv_to_project_rev_json():
     # Get the parent directory path
     parent_dir = os.path.dirname(os.getcwd())
-    tsv_file_path = os.path.join(parent_dir, f"{pn}-revision-history.tsv")
+    tsv_file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
 
     if not os.path.isfile(tsv_file_path):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {pn}-revision-history.tsv not found.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File {pn}-revision_history.tsv not found.")
         return
 
     try:
@@ -248,26 +268,10 @@ def export_rev_row_from_tsv_to_project_rev_json():
                     with open(fileio.path("tblock master text"), 'w') as json_file:
                         json.dump(json_data, json_file, indent=4, separators=(',', ': '), ensure_ascii=False)
 
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Revision data updated from {pn}-revision-history.tsv into {pn}-rev{rev}-tblock-master-text.json")
+                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Revision data updated from {pn}-revision_history.tsv into {pn}-rev{rev}-tblock-master-text.json")
                     return
 
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Matching row not found in the TSV file.")
 
     except Exception as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An error occurred: {e}")
-
-def harnice_prechecker():
-    if check_directory_format() == False:
-        return False
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: You're in a valid directory.")
-    check_existence_of_rev_history_file_in_parent(pn)
-    find_pn_and_rev_entry_in_tsv()
-    if check_revision_status() == False:
-        return False
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Status for this rev is clear; moving forward.")
-    export_rev_row_from_tsv_to_project_rev_json()
-    return True
-    
-
-if __name__ == "__main__":
-    harnice_prechecker()
