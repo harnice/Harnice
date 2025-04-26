@@ -3,6 +3,7 @@ import json
 import csv
 from collections import defaultdict
 import fileio
+import os
 
 INSTANCES_LIST_COLUMNS = [
     'instance_name',
@@ -54,7 +55,6 @@ def add_connectors():
                 'mpn': component.get('mpn', ''),
                 'item_type': component.get('type', ''),
                 'parent_instance': instance_name,
-                'parent_csys': 'PULL FROM CONNECTOR LIBRARY',
                 'supplier': component.get('supplier', '')
             })
 
@@ -62,7 +62,7 @@ def add_connectors():
             'instance_name': instance_name,
             'mpn': connector.get('mpn', ''),
             'item_type': 'Connector',
-            'parent_csys': 'PULL FROM CONNECTOR LIBRARY',
+            'parent_instance': instance_name,
             'supplier': connector.get('supplier', '')
         })
 
@@ -195,3 +195,57 @@ def add_lib_used_earliest_rev(instance_name, rev):
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
         writer.writerows(rows)
+
+def update_offsets():
+    instances = read_instance_rows()
+    instance_lookup = {inst.get('instance_name'): inst for inst in instances}
+
+    for instance in instances:
+        instance_name = instance.get('instance_name', '').strip()
+        if not instance_name:
+            continue
+
+        # Build the path to the attributes JSON file
+        attributes_path = os.path.join(
+            fileio.dirpath("editable_component_data"),
+            instance_name,
+            f"{instance_name}-attributes.json"
+        )
+
+        # Skip if the attributes file does not exist
+        if not os.path.exists(attributes_path):
+            continue
+
+        # Load the attributes JSON
+        try:
+            with open(attributes_path, 'r', encoding='utf-8') as f:
+                attributes_data = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            continue  # Skip invalid or missing JSON
+
+        # Get csys_parent_prefs from attributes
+        csys_parent_prefs = attributes_data.get("plotting_info", {}).get("csys_parent_prefs", [])
+
+        print(f"Assigning parent_csys to {instance.get('instance_name')}")
+        # Iterate through parent preferences
+        for pref in csys_parent_prefs:
+            candidate_name = f"{instance.get("parent_instance")}{pref}"
+            print(f"{pref} : {candidate_name}")
+            if candidate_name in instance_lookup:
+                instance['parent_csys'] = candidate_name
+                print(f"Found parent csys {candidate_name}")
+                break  # Found a match, exit early
+        # If no match, do nothing (parent_csys remains unchanged)
+        print()
+
+    write_instance_rows(instances)
+
+
+"""
+template instances list modifier:
+def example_instances_list_function():
+    instances = read_instance_rows()
+    for instance in instances:
+        # do stuff
+    write_instance_rows(instances)
+"""

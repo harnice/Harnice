@@ -31,8 +31,7 @@ def harnice():
     print()
     print("############ CHECKING COMPONENTS AGAINST LIBRARY #############")
     component_library.pull()
-    instances_list.update_offsets()
-
+    
     #process the formboard definition to get the list of segments and their locations
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
@@ -64,6 +63,8 @@ def harnice():
 
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
+    instances_list.update_offsets()
+    exit()
     formboard_illustration_functions.update_all_instances()
     #formboard_illustration_functions.update_segment_instances()
     #formboard_illustration_functions.delete_unmatched_files()
