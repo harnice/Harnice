@@ -36,14 +36,18 @@ def harnice():
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     formboard_functions.formboard_processor()
+    #segments are defined, with source of truth being "formboard graph definition"
     instances_list.add_nodes()
+    #segments now exist in instances list but do not have attributes
     instances_list.add_formboard_segments()
+    #segments now exist in instances list but do not have attributes
     instances_list.add_cable_lengths()
+    #segments now exist in instances list but do not have attributes
     wirelist.add_lengths()
+    #wirelist now contains wirelengths
     wirelist.tsv_to_xls()
     formboard_functions.generate_node_coordinates()
     formboard_functions.visualize_formboard_graph()
-    #TODO: update formboard_functions.map_connections_to_graph()
 
     #condense instance list into a bom
     print()
