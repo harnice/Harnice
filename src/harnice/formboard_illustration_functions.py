@@ -25,13 +25,13 @@ def update_all_instances():
         # translation group_translate[0], group_translate[1], and rotation group_translate[2]
         # copy instance svg from instance folder into formboard-master
 
-
 def calculate_formboard_location(instance_name):
     """
     Given an instance_name, recursively trace up the parent_csys chain 
     until reaching an instance with no parent_csys defined.
 
-    After tracing, iterate back down the chain, performing the translate/rotate algorithm.
+    After tracing, iterate back down the chain, performing the translate/rotate algorithm,
+    but excluding the last instance (the input instance itself) from movement calculations.
 
     Returns:
         (component_x_pos, component_y_pos, component_angle)
@@ -56,7 +56,8 @@ def calculate_formboard_location(instance_name):
     y_pos = 0.0
     angle = 0.0  # degrees
 
-    for name in reversed(chain):
+    # Skip the last element (the starting instance)
+    for name in reversed(chain[1:]):
         row = instances_lookup.get(name, {})
         
         translate_x = row.get('translate_x', '').strip()
@@ -84,7 +85,7 @@ def calculate_formboard_location(instance_name):
         y_pos += math.sin(rad) * translate_x + math.cos(rad) * translate_y
         angle += rotate_csys
 
-        print(f"After {name}: {x_pos}, {y_pos}, {angle}")
+        #print(f"After {name}: {x_pos}, {y_pos}, {angle}")
 
     return x_pos, y_pos, angle
 
