@@ -11,6 +11,7 @@ import formboard_illustration_functions
 import os
 
 def harnice():
+    """
     #build file structure
     fileio.generate_structure()
 
@@ -60,7 +61,7 @@ def harnice():
     print()
     print("############ LOOKING FOR BUILDNOTES FILE #############")
     flagnote_functions.look_for_buildnotes_file()
-
+"""
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
     formboard_illustration_functions.update_all_instances()

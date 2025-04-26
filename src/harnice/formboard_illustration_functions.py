@@ -7,6 +7,7 @@ from os.path import basename, dirname
 from inspect import currentframe
 import yaml
 import csv
+import math
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
 import fileio
 import component_library
@@ -16,9 +17,77 @@ def update_all_instances():
     instances = instances_list.read_instance_rows()
     
     for instance in instances:
-        group_translate = calculate_formboard_location()
-        #add group to svg with name instance.get('instance_name'), translation group_translate[0], group_translate[1], and rotation group_translate[2]
-        #copy instance svg from instance folder into formboard-master
+        print(f"Working {instance.get('instance_name')}")
+        group_translate = calculate_formboard_location(instance["instance_name"])
+        print(f"result: {group_translate}")
+        print()
+        # add group to svg with name instance['instance_name'],
+        # translation group_translate[0], group_translate[1], and rotation group_translate[2]
+        # copy instance svg from instance folder into formboard-master
+
+
+def calculate_formboard_location(instance_name):
+    """
+    Given an instance_name, recursively trace up the parent_csys chain 
+    until reaching an instance with no parent_csys defined.
+
+    After tracing, iterate back down the chain, performing the translate/rotate algorithm.
+
+    Returns:
+        (component_x_pos, component_y_pos, component_angle)
+    """
+    instances = instances_list.read_instance_rows()
+    instances_lookup = {row['instance_name']: row for row in instances}
+
+    chain = []
+    current = instance_name
+
+    while current:
+        chain.append(current)
+        row = instances_lookup.get(current)
+        if not row:
+            break
+        parent = row.get('parent_csys', '').strip()
+        if not parent:
+            break
+        current = parent
+
+    x_pos = 0.0
+    y_pos = 0.0
+    angle = 0.0  # degrees
+
+    for name in reversed(chain):
+        row = instances_lookup.get(name, {})
+        
+        translate_x = row.get('translate_x', '').strip()
+        translate_y = row.get('translate_y', '').strip()
+        rotate_csys = row.get('rotate_csys', '').strip()
+
+        try:
+            translate_x = float(translate_x) if translate_x else 0.0
+        except ValueError:
+            translate_x = 0.0
+        
+        try:
+            translate_y = float(translate_y) if translate_y else 0.0
+        except ValueError:
+            translate_y = 0.0
+
+        try:
+            rotate_csys = float(rotate_csys) if rotate_csys else 0.0
+        except ValueError:
+            rotate_csys = 0.0
+
+        rad = math.radians(angle)
+
+        x_pos += math.cos(rad) * translate_x - math.sin(rad) * translate_y
+        y_pos += math.sin(rad) * translate_x + math.cos(rad) * translate_y
+        angle += rotate_csys
+
+        print(f"After {name}: {x_pos}, {y_pos}, {angle}")
+
+    return x_pos, y_pos, angle
+
 
 
 """def update_all_instances():
