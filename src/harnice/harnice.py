@@ -63,7 +63,8 @@ def harnice():
 
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
-    instances_list.update_offsets()
+    instances_list.update_parent_csys()
+    instances_list.update_component_translate()
     exit()
     formboard_illustration_functions.update_all_instances()
     #formboard_illustration_functions.update_segment_instances()

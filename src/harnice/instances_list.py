@@ -196,7 +196,7 @@ def add_lib_used_earliest_rev(instance_name, rev):
         writer.writeheader()
         writer.writerows(rows)
 
-def update_offsets():
+def update_parent_csys():
     instances = read_instance_rows()
     instance_lookup = {inst.get('instance_name'): inst for inst in instances}
 
@@ -240,6 +240,43 @@ def update_offsets():
 
     write_instance_rows(instances)
 
+def update_component_translate():
+    instances = read_instance_rows()
+    for instance in instances:
+        instance_name = instance.get('instance_name', '').strip()
+        if not instance_name:
+            continue
+
+        attributes_path = os.path.join(
+            fileio.dirpath("editable_component_data"),
+            instance_name,
+            f"{instance_name}-attributes.json"
+        )
+
+        if not os.path.exists(attributes_path):
+            continue
+
+        try:
+            with open(attributes_path, "r", encoding="utf-8") as f:
+                attributes_data = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            continue
+
+        print(f"Pulling in offsets from {instance.get("instance_name")}-attributes.json")
+        component_translate = (
+            attributes_data
+            .get("plotting_info", {})
+            .get("component_translate_inches", {})
+        )
+
+        if component_translate:
+            instance['translate_x'] = str(component_translate.get('translate_x', ''))
+            instance['translate_y'] = str(component_translate.get('translate_y', ''))
+            instance['rotate_csys'] = str(component_translate.get('rotate_csys', ''))
+        
+        print()
+
+    write_instance_rows(instances)
 
 """
 template instances list modifier:
