@@ -31,7 +31,7 @@ def harnice():
     print()
     print("############ CHECKING COMPONENTS AGAINST LIBRARY #############")
     component_library.pull()
-
+    
     #process the formboard definition to get the list of segments and their locations
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
@@ -61,6 +61,16 @@ def harnice():
     #print("############ LOOKING FOR BUILDNOTES FILE #############")
     #flagnote_functions.look_for_buildnotes_file()
 
+    print()
+    print("############ REBUILDING FORMBOARD DRAWING #############")
+    instances_list.update_parent_csys()
+    instances_list.update_component_translate()
+    formboard_illustration_functions.update_all_instances()
+    #formboard_illustration_functions.update_segment_instances()
+    #formboard_illustration_functions.delete_unmatched_files()
+    #formboard_illustration_functions.update_formboard_master_svg()
+    #formboard_illustration_functions.replace_all_segment_groups()
+
     #prep all the different master SVG's
     #print()
     #print("############ PREPPING MASTER SVG's #############")
@@ -68,11 +78,7 @@ def harnice():
     #bom_svg_prepper.prep_bom_svg_master()
     #print("#    ############ WORKING ON TBLOCK SVG MASTER ############")
     #tblock_svg_prepper.prep_tblock_svg_master()
-
-    print()
-    print("############ REBUILDING FORMBOARD DRAWING #############")
-    formboard_illustration_functions.regen_formboard()
-
+    
     #generate blank harnice output svg
     #print()
     #print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
@@ -93,3 +99,6 @@ def harnice():
 
 if __name__ == "__main__":
     harnice()
+
+#test
+#test2

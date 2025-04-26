@@ -7,117 +7,88 @@ from os.path import basename, dirname
 from inspect import currentframe
 import yaml
 import csv
+import math
 from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
 import fileio
 import component_library
+import instances_list
 
-#this list is used to keep track of all the valid instances:
-drawing_instance_filenames = [None]
-#when creating new instances, add to this list by add_filename_to_drawing_instance_list().
-#directories in drawing-instances that are not named in this list will be deleted by delete_unmatched_files().
+def update_all_instances():
+    instances = instances_list.read_instance_rows()
+    
+    for instance in instances:
+        print(f"Working {instance.get('instance_name')}")
+        group_translate = calculate_formboard_location(instance["instance_name"])
+        print(f"result: {group_translate}")
+        print()
+        # add group to svg with name instance['instance_name'],
+        # translation group_translate[0], group_translate[1], and rotation group_translate[2]
+        # copy instance svg from instance folder into formboard-master
 
-def add_filename_to_drawing_instance_list(filename):
-    global drawing_instance_filenames  # Declare the global variable
-    if drawing_instance_filenames == [None]:  # Replace initial None with the first item
-        drawing_instance_filenames = [filename]
-    else:
-        drawing_instance_filenames.append(filename)  # Append new filename
+def calculate_formboard_location(instance_name):
+    """
+    Given an instance_name, recursively trace up the parent_csys chain 
+    until reaching an instance with no parent_csys defined.
 
-def delete_unmatched_files():
-    global drawing_instance_filenames  # Access the global variable
+    After tracing, iterate back down the chain, performing the translate/rotate algorithm,
+    but excluding the last instance (the input instance itself) from movement calculations.
 
-    # Ensure the directory exists
-    if not os.path.exists(fileio.dirpath("editable_component_data")):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Directory {fileio.dirpath("editable_component_data")} does not exist.")
-        return
+    Returns:
+        (component_x_pos, component_y_pos, component_angle)
+    """
+    instances = instances_list.read_instance_rows()
+    instances_lookup = {row['instance_name']: row for row in instances}
 
-    # List all files and directories in the directory
-    for item in os.listdir(fileio.dirpath("editable_component_data")):
-        item_path = os.path.join(fileio.dirpath("editable_component_data"), item)
+    chain = []
+    current = instance_name
 
-        # Check if the item is not in the allowed list
-        if item not in drawing_instance_filenames:
-            # Check if it's a file
-            if os.path.isfile(item_path):
-                try:
-                    os.remove(item_path)  # Delete the file
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching file: {basename(item_path)} in 'drawing instances'")
-                except Exception as e:
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching file: {basename(item_path)} in 'drawing instances': {e}")
+    while current:
+        chain.append(current)
+        row = instances_lookup.get(current)
+        if not row:
+            break
+        parent = row.get('parent_csys', '').strip()
+        if not parent:
+            break
+        current = parent
 
-            # Check if it's a directory
-            elif os.path.isdir(item_path):
-                try:
-                    shutil.rmtree(item_path)  # Delete the directory and its contents
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Deleted unmatching directory: {basename(item_path)} in 'drawing instances'")
-                except Exception as e:
-                    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing instances': {e}")
+    x_pos = 0.0
+    y_pos = 0.0
+    angle = 0.0  # degrees
 
-def update_all_bom_instances():
-    #TODO: rebuild this approach by adding instances using fileio.path("instances list")
-    #Go through the harness bom and call update_bom_instance slightly differently depending on small details
-    #bom instances account for every item except segments
-
-    with open(fileio.path("harness bom"), 'r') as bom_file:
-        # Read the header line first
-        header_line = bom_file.readline()
-        header = header_line.strip().split("\t")
+    # Skip the last element (the starting instance)
+    for name in reversed(chain[1:]):
+        row = instances_lookup.get(name, {})
         
-        # Identify indices from the header
-        id_index = header.index("Id")
-        mpn_index = header.index("MPN")
-        desc_simple_index = header.index("Description Simple")
-        supplier_index = header.index("Supplier")
+        translate_x = row.get('translate_x', '').strip()
+        translate_y = row.get('translate_y', '').strip()
+        rotate_csys = row.get('rotate_csys', '').strip()
 
-        # Read the remaining data (if needed)
-        bom_data = bom_file.read()
-        bom_lines = bom_data.splitlines()
+        try:
+            translate_x = float(translate_x) if translate_x else 0.0
+        except ValueError:
+            translate_x = 0.0
+        
+        try:
+            translate_y = float(translate_y) if translate_y else 0.0
+        except ValueError:
+            translate_y = 0.0
 
-    # Load YAML file
-    with open(fileio.path("harness yaml"), 'r') as yaml_file:
-        yaml_data = yaml.safe_load(yaml_file)
+        try:
+            rotate_csys = float(rotate_csys) if rotate_csys else 0.0
+        except ValueError:
+            rotate_csys = 0.0
 
-    #for each line in harness bom:
-    for line in bom_lines:
+        rad = math.radians(angle)
 
-        columns = line.strip().split("\t")
-        current_desc_simple = columns[desc_simple_index]
+        x_pos += math.cos(rad) * translate_x - math.sin(rad) * translate_y
+        y_pos += math.sin(rad) * translate_x + math.cos(rad) * translate_y
+        angle += rotate_csys
 
-        #if "Description Simple" == "Backshell" in harness bom (do this first because it informs rotation of others)
-        if current_desc_simple == "Backshell":
-            current_mpn = columns[mpn_index]
+        #print(f"After {name}: {x_pos}, {y_pos}, {angle}")
 
-            #for each connector in yaml
-            for connector_name, connector in yaml_data.get("connectors", {}).items():
-                # Check if any additional component is a Backshell with mpn equal to current_mpn
-                if any(
-                    component.get("type") == "Backshell" and component.get("mpn") == current_mpn
-                    for component in connector.get("additional_components", [])
-                ):
-                    backshelldrivenrotation = 0
-                    backshelldrivenoffset = 0
-                    update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[id_index], current_desc_simple, backshelldrivenrotation, backshelldrivenoffset)
-                    
-
-        if current_desc_simple == "Connector":
-            current_mpn = columns[mpn_index]  
-
-            #for each connector in yaml
-            for connector_name, connector in yaml_data.get("connectors", {}).items():
-                #if "mpn" in yaml == "MPN" in harness bom
-                if connector.get("mpn") == current_mpn:
-
-                    #if connector has any backshell as an additional part
-                    if any(
-                        component.get("type") == "Backshell" for 
-                        component in connector.get("additional_components", [])
-                    ):
-                        #TODO look up the rotations from that backshell's json definition
-                        backshelldrivenrotation = 0
-                        backshelldrivenoffset = 0
-                    
-                update_bom_instance(f"{connector_name}", current_mpn, columns[supplier_index], columns[id_index], current_desc_simple, backshelldrivenrotation, backshelldrivenoffset)
-                
+    return x_pos, y_pos, angle
+         
 def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rotation, offset):
     #create an svg for that instance
 
@@ -133,9 +104,6 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
     #import from library
     svgexists = component_library.import_library_file(supplier,os.path.join("component_definitions",mpn),f"{mpn}-drawing.svg")
     jsonsuccessfulimport = component_library.import_library_file(supplier,os.path.join("component_definitions",mpn),f"{mpn}-attributes.json")
-    
-    #remember which files are supposed to exist so we can later delete invalid stuff
-    add_filename_to_drawing_instance_list(instance_name_w_suffix)
 
     if svgexists:
         #reference the drawing filepath, not included in fileio.path() because each project file structure is different
@@ -369,25 +337,3 @@ def retrieve_angle_of_segment(segmentname):
         raise KeyError(f"Segment '{segmentname}' not found in the JSON data.")
     
     return angle
-
-def regen_formboard():
-    print("#    ############ UPDATING CONNECTOR INSTANCES ############")
-    update_all_bom_instances()
-
-    print("#    ############ UPDATING SEGMENT INSTANCES ############")
-    update_segment_instances()
-
-    print("#    ############ DELETING UNMATCHED FILES ############")
-    delete_unmatched_files()
-
-    print("#    ############ CREATING NEW FORMBOARD MASTER SVG WITH GROUP STRUCTURE ############")
-    #creates an svg file with the groups in the right places
-    #after that file is saved, content is imported.
-    update_formboard_master_svg()
-
-    print("#    ############ REPLACING ALL INSTANCE GROUPS INTO FORMBOARD MASTER ############")
-    #TODO: combine into the above function after segments are included in the instance list
-    replace_all_segment_groups()
-
-if __name__ == "__main__":
-    regen_formboard()
