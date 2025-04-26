@@ -57,9 +57,9 @@ def harnice():
     run_wireviz.generate_esch()
 
     #print()
-    print()
-    print("############ LOOKING FOR BUILDNOTES FILE #############")
-    flagnote_functions.look_for_buildnotes_file()
+    #print()
+    #print("############ LOOKING FOR BUILDNOTES FILE #############")
+    #flagnote_functions.look_for_buildnotes_file()
 
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
@@ -78,7 +78,7 @@ def harnice():
     #bom_svg_prepper.prep_bom_svg_master()
     #print("#    ############ WORKING ON TBLOCK SVG MASTER ############")
     #tblock_svg_prepper.prep_tblock_svg_master()
-
+    
     #generate blank harnice output svg
     #print()
     #print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
