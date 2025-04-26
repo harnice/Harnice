@@ -104,7 +104,7 @@ def pull():
 
         #TODO: combine these two?
         #remember which files are supposed to exist so we can later delete invalid stuff
-        add_filename_to_drawing_instance_list(instance_name_w_suffix)
+        add_filename_to_drawing_instance_list(instance.get('instance_name'))
 
         print()
 
