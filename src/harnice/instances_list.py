@@ -254,6 +254,7 @@ def update_component_translate():
         )
 
         if not os.path.exists(attributes_path):
+            print(f"Offsets not found for {instance.get("instance_name")}")
             continue
 
         try:
@@ -262,7 +263,7 @@ def update_component_translate():
         except (json.JSONDecodeError, IOError):
             continue
 
-        print(f"Pulling in offsets from {instance.get("instance_name")}-attributes.json")
+        print(f"Pulling in translation from {instance.get("instance_name")}-attributes.json")
         component_translate = (
             attributes_data
             .get("plotting_info", {})
@@ -273,8 +274,6 @@ def update_component_translate():
             instance['translate_x'] = str(component_translate.get('translate_x', ''))
             instance['translate_y'] = str(component_translate.get('translate_y', ''))
             instance['rotate_csys'] = str(component_translate.get('rotate_csys', ''))
-        
-        print()
 
     write_instance_rows(instances)
 
