@@ -33,18 +33,17 @@ def harnice():
     print("############ CHECKING COMPONENTS AGAINST LIBRARY #############")
     component_library.pull()
     
-    #process the formboard definition to get the list of segments and their locations
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     print("Generating nodes from connectors")
-    formboard_functions_new.generate_nodes_from_connectors()
+    instances_list.generate_nodes_from_connectors()
     print()
-
-    if not(formboard definition exists) == True:
-        print("Making a blank formboard definition file")
-        mkdir
-    else:
-        print("Formboard definition file exists, preserving")
+    exit()
+    #if not(formboard definition exists) == True:
+        #print("Making a blank formboard definition file")
+        #mkdir
+    #else:
+        #print("Formboard definition file exists, preserving")
     print()
 
     print("Validating nodes agree with segments agree with yaml")

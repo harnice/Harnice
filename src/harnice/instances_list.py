@@ -277,11 +277,21 @@ def update_component_translate():
 
     write_instance_rows(instances)
 
+def generate_nodes_from_connectors():
+    instances = read_instance_rows()
+    for instance in instances:
+        if instance.get('item_type') == "Connector":
+            append_instance_row({
+                'instance_name': instance.get('instance_name') + ".node",
+                'item_type': 'Node',
+        })
+
 """
 template instances list modifier:
 def example_instances_list_function():
     instances = read_instance_rows()
     for instance in instances:
         # do stuff
+        # instance.get()
     write_instance_rows(instances)
 """
