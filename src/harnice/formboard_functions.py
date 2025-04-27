@@ -110,8 +110,8 @@ def generate_segments(more_than_two_connectors):
     if more_than_two_connectors == False:
         segment_name = f"{base_segment_name}{segment_counter}"
         data[segment_name] = {
-                "segment_end_a": connectors[0],
-                "segment_end_b": connectors[1],
+                "segment_end_a": connectors[0] + ".node",
+                "segment_end_b": connectors[1] + ".node",
                 "length": None,
                 "angle": None,
                 "diameter": 0.5
@@ -122,7 +122,7 @@ def generate_segments(more_than_two_connectors):
             segment_name = f"{base_segment_name}{segment_counter}"
             data[segment_name] = {
                 "segment_end_a": "node1",
-                "segment_end_b": connector,
+                "segment_end_b": connector + ".node",
                 "length": None,
                 "angle": None,
                 "diameter": 0.5
@@ -356,6 +356,43 @@ def visualize_formboard_graph():
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: SVG graph visualization written to {output_file_path}")
 
+def get_num_connectors():
+    connectors = []
+    with open(fileio.path("instances list"), mode='r') as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter='\t')
+        for row in reader:
+            if row["item_type"] == "Connector":
+                connectors.append(row["instance_name"])
+    return len(connectors)
+
+def field_contains_null(file_path, field):
+    """Checks if the specified field contains any null values in the JSON file."""
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
+        return False
+
+    for item in data.values():
+        if item.get(field) is None:
+            return True  # Found at least one null value
+    return False
+
+def field_contains_numbers(file_path, field):
+    """Checks if the specified field contains any numerical values in the JSON file."""
+    try:
+        with open(file_path, "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
+        return False
+
+    for item in data.values():
+        if isinstance(item.get(field), (int, float)):
+            return True  # Found at least one numerical value
+    return False
+
 def map_connections_to_graph():
     """Maps connections from a wirelist to a formboard graph, calculates total lengths, and outputs the result as a JSON file."""
     output_path = fileio.path("connections to graph")
@@ -442,42 +479,6 @@ def map_connections_to_graph():
 
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {fileio.name("connections to graph")}")
 
-def get_num_connectors():
-    connectors = []
-    with open(fileio.path("instances list"), mode='r') as tsv_file:
-        reader = csv.DictReader(tsv_file, delimiter='\t')
-        for row in reader:
-            if row["item_type"] == "Connector":
-                connectors.append(row["instance_name"])
-    return len(connectors)
-
-def field_contains_null(file_path, field):
-    """Checks if the specified field contains any null values in the JSON file."""
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
-        return False
-
-    for item in data.values():
-        if item.get(field) is None:
-            return True  # Found at least one null value
-    return False
-
-def field_contains_numbers(file_path, field):
-    """Checks if the specified field contains any numerical values in the JSON file."""
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
-        return False
-
-    for item in data.values():
-        if isinstance(item.get(field), (int, float)):
-            return True  # Found at least one numerical value
-    return False
 
 if __name__ == "__main__":
     formboard_processor()
