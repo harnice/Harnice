@@ -393,5 +393,92 @@ def field_contains_numbers(file_path, field):
             return True  # Found at least one numerical value
     return False
 
+def map_connections_to_graph():
+    """Maps connections from a wirelist to a formboard graph, calculates total lengths, and outputs the result as a JSON file."""
+    output_path = fileio.path("connections to graph")
+
+    # Read the wirelist TSV file
+    try:
+        with open(fileio.path("wirelist no formats"), 'r') as file:
+            reader = csv.DictReader(file, delimiter='\t')
+            wirelist = [row for row in reader]
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Wirelist file not found: {fileio.name("wirelist no formats")}")
+
+    # Load the graph definition JSON
+    try:
+        with open(fileio.path("formboard graph definition"), 'r') as f:
+            graph_definition = json.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Graph definition file not found: {fileio.name("formboard graph definition")}")
+
+    # Parse the graph into adjacency lists and track segments
+    graph = defaultdict(set)
+    segment_map = {}  # Maps node pairs to their connecting segment
+    for segment, details in graph_definition.items():
+        node_a = details["segment_end_a"]
+        node_b = details["segment_end_b"]
+        length = details.get("length", 0)
+
+        # Add nodes to adjacency list
+        graph[node_a].add(node_b)
+        graph[node_b].add(node_a)
+
+        # Map the segment details to the node pair
+        segment_map[frozenset([node_a, node_b])] = {
+            "segment": segment,
+            "length": length
+        }
+
+    # Function to find the path and segments from source to destination using BFS
+    def find_path_with_segments(source, destination):
+        if source not in graph or destination not in graph:
+            return [], 0
+        queue = [(source, [source], [], 0)]  # (current node, path of nodes, path of segments, total length)
+        visited = set()
+        while queue:
+            current, node_path, segment_path, total_length = queue.pop(0)  # FIFO queue
+            if current == destination:
+                return segment_path, total_length
+            if current in visited:
+                continue
+            visited.add(current)
+            for neighbor in graph[current]:
+                if neighbor not in visited:
+                    segment_details = segment_map.get(frozenset([current, neighbor]), {})
+                    segment = segment_details.get("segment")
+                    length = segment_details.get("length", 0)
+                    queue.append(
+                        (neighbor, node_path + [neighbor], segment_path + [segment], total_length + length)
+                    )
+        return [], 0
+
+    # Generate the connections-to-graph JSON
+    connections_to_graph = {}
+    for row in wirelist:
+        wire = row['Wire']
+        subwire = row['Subwire']
+        source = row['Source']
+        destination = row['Destination']
+        segment_path, total_length = find_path_with_segments(source, destination)
+        if not segment_path:
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Warning: No path found for {wire} - {subwire} from {source} to {destination}")
+            continue
+        if wire not in connections_to_graph:
+            connections_to_graph[wire] = {"subconnections": {}, "wirelength": 0}
+        connections_to_graph[wire]["subconnections"][subwire] = {
+            "segments": segment_path,
+            "total_length": total_length
+        }
+        # Update the wirelength as the maximum total_length among subconnections
+        connections_to_graph[wire]["wirelength"] = max(connections_to_graph[wire]["wirelength"], total_length)
+
+    # Save the output JSON
+    with open(fileio.path("connections to graph"), 'w') as f:
+        json.dump(connections_to_graph, f, indent=4)
+
+    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {fileio.name("connections to graph")}")
+
+
 if __name__ == "__main__":
     formboard_processor()

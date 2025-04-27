@@ -159,7 +159,7 @@ def add_nodes():
 
     for node in sorted(filter(None, node_set)):
         append_instance_row({
-            'instance_name': f'{node}.node',
+            'instance_name': node,
             'item_type': 'Node',
             'parent_instance': node
         })
