@@ -215,17 +215,13 @@ def update_parent_csys():
         # Get csys_parent_prefs from attributes
         csys_parent_prefs = attributes_data.get("plotting_info", {}).get("csys_parent_prefs", [])
 
-        print(f"Assigning parent_csys to {instance.get('instance_name')}")
         # Iterate through parent preferences
         for pref in csys_parent_prefs:
             candidate_name = f"{instance.get("parent_instance")}{pref}"
-            print(f"{pref} : {candidate_name}")
             if candidate_name in instance_lookup:
                 instance['parent_csys'] = candidate_name
-                print(f"Found parent csys {candidate_name}")
                 break  # Found a match, exit early
         # If no match, do nothing (parent_csys remains unchanged)
-        print()
 
     write_instance_rows(instances)
 
@@ -243,7 +239,6 @@ def update_component_translate():
         )
 
         if not os.path.exists(attributes_path):
-            print(f"Offsets not found for {instance.get("instance_name")}")
             continue
 
         try:
@@ -252,7 +247,6 @@ def update_component_translate():
         except (json.JSONDecodeError, IOError):
             continue
 
-        print(f"Pulling in translation from {instance.get("instance_name")}-attributes.json")
         component_translate = (
             attributes_data
             .get("plotting_info", {})

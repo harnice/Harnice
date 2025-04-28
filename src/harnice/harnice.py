@@ -38,7 +38,7 @@ def harnice():
     instances_list.generate_nodes_from_connectors()
     print()
 
-    print("Searching component definitions for preferred parent csys")
+    print("Pulling in preferred parent_csys and component offsets from component data")
     instances_list.update_parent_csys()
     instances_list.update_component_translate()
     print()
@@ -60,8 +60,10 @@ def harnice():
     instances_list.add_segments_from_formboard()
     print()
 
-    print("Validating segments are structured correctly and map to wires")
-    formboard_functions_new.validate_segments()
+    print("Validating segments are structured correctly")
+    formboard_functions_new.map_cables_to_segments()
+    formboard_functions_new.detect_loops()
+    formboard_functions_new.detect_dead_segments()
     print()
 
     print("Generating node and segment coordinates")
