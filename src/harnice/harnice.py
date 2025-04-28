@@ -60,14 +60,14 @@ def harnice():
     instances_list.add_segments_from_formboard()
     print()
 
+    print("Validating segments are structured correctly and map to wires")
+    formboard_functions_new.validate_segments()
+    print()
+
     print("Generating node and segment coordinates")
     formboard_functions_new.generate_node_coordinates()
     print()
     exit()
-
-    print("Validating segments are structured correctly and map to wires")
-    formboard_functions_new.validate_segments()
-    print()
 
     
     """

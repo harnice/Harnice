@@ -301,7 +301,6 @@ def add_nodes_from_formboard():
     # Add any node from formboard that's missing in instances list
     for node_name in nodes_in_formboard:
         if node_name and node_name not in existing_instance_names:
-            print(f"Added orphan node {node_name} to instances list")
             instances.append({
                 'instance_name': node_name,
                 'item_type': 'Node',
@@ -325,13 +324,21 @@ def add_segments_from_formboard():
     # Add any segment from formboard that's missing in instances list
     for segment_name, segment in formboard_data.items():
         if segment_name not in existing_instance_names:
-            print(f"Added missing segment {segment_name} to instances list")
             instances.append({
                 'instance_name': segment_name,
                 'item_type': 'Segment',
             })
 
     write_instance_rows(instances)
+
+def parent(instance_name):
+    instances = read_instance_rows()
+    for instance in instances:
+        if instance.get('instance_name') == instance_name:
+            print(f"!!!!!!!!!!")
+            print(f" for known child: {instance.get('instance_name')}")
+            print(f"returning parent: {instance.get('parent_instance')}")
+            return instance.get('parent_instance')
 
 """
 template instances list modifier:

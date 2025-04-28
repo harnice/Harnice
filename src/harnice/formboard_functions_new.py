@@ -2,7 +2,7 @@ import json
 import os
 import random
 import math
-from collections import deque
+from collections import defaultdict, deque
 import instances_list
 import fileio
 import csv
@@ -128,7 +128,6 @@ def validate_nodes():
     # Append new rows to instances list if any
     if new_instance_rows:
         instances_list.append_instance_rows(new_instance_rows)
-
 
 def generate_node_coordinates():
     # === Step 1: Read formboard graph definition ===
@@ -290,5 +289,114 @@ def generate_node_coordinates():
     # === Step 9: Write all modified instances back ===
     instances_list.write_instance_rows(instances)
     print("Node and segment coordinates updated in instances list.")
+
+def validate_segments():
+    from collections import defaultdict, deque
+
+    instances = instances_list.read_instance_rows()
+
+    wirelist = []
+    with open(fileio.path("wirelist no formats"), 'r', newline='') as file:
+        reader = csv.DictReader(file, delimiter='\t')
+        for row in reader:
+            wirelist.append({k: v for k, v in row.items()})
+
+    try:
+        with open(fileio.path("formboard graph definition"), 'r') as file:
+            formboard_graph_definition = json.load(file)
+    except FileNotFoundError:
+        print(f"Graph definition file not found: {fileio.name('formboard graph definition')}")
+        return
+
+    graph = defaultdict(set)
+    segment_map = {}
+    for segment_id, details in formboard_graph_definition.items():
+        node_a = details.get('segment_end_a', '')
+        node_b = details.get('segment_end_b', '')
+        length = details.get('length', 0)
+
+        if not node_a or not node_b:
+            continue
+
+        graph[node_a].add(node_b)
+        graph[node_b].add(node_a)
+
+        segment_map[frozenset([node_a, node_b])] = {
+            'segment': segment_id,
+            'length': length
+        }
+
+    def find_path_with_segments(source_node, destination_node):
+        if source_node not in graph or destination_node not in graph:
+            return [], 0
+        queue = deque([(source_node, [], 0)])
+        visited = set()
+        while queue:
+            current, segment_path, total_length = queue.popleft()
+            if current == destination_node:
+                return segment_path, total_length
+            if current in visited:
+                continue
+            visited.add(current)
+            for neighbor in graph[current]:
+                if neighbor not in visited:
+                    seg_info = segment_map.get(frozenset([current, neighbor]), {})
+                    seg_id = seg_info.get('segment')
+                    seg_length = seg_info.get('length', 0)
+                    queue.append((neighbor, segment_path + [seg_id], total_length + seg_length))
+        return [], 0
+
+    connections_to_graph = {}
+
+    for instance in instances:
+        if instance.get('item_type') != 'Cable':
+            continue
+
+        cable_name = instance.get('instance_name')
+        if not cable_name:
+            continue
+
+        matching_rows = [row for row in wirelist if row.get('Wire', '') == cable_name]
+
+        if not matching_rows:
+            continue
+
+        total_segments = []
+        total_cable_length = 0
+
+        for row in matching_rows:
+            source_connector = row.get('Source', '').strip()
+            destination_connector = row.get('Destination', '').strip()
+
+            if not source_connector or not destination_connector:
+                continue
+
+            source_node = f"{source_connector}.node"
+            destination_node = f"{destination_connector}.node"
+
+            segment_path, path_length = find_path_with_segments(source_node, destination_node)
+
+            if not segment_path:
+                raise ValueError(
+                    f"Path not found between {source_node} and {destination_node} for cable '{cable_name}'."
+                )
+
+            total_segments.extend(segment_path)
+            total_cable_length += path_length
+
+        if not total_segments:
+            continue
+
+        connections_to_graph[cable_name] = {
+            "segments": total_segments,
+            "total_length": total_cable_length
+        }
+
+    output_path = fileio.path("connections to graph")
+    with open(output_path, 'w') as file:
+        json.dump(connections_to_graph, file, indent=4)
+
+    instances_list.write_instance_rows(instances)
+
 
 
