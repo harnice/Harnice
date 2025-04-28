@@ -3,7 +3,7 @@ import wirelist
 import instances_list
 import svg_utils
 import flagnote_functions
-import formboard_functions_new
+import formboard_functions
 import harnice_prechecker
 import component_library
 import fileio
@@ -52,7 +52,7 @@ def harnice():
     print()
 
     print("Validating nodes exist and generating segments if they don't")
-    formboard_functions_new.validate_nodes()
+    formboard_functions.validate_nodes()
     print()
 
     print("Adding stuff from formboard processor into instances list")
@@ -61,13 +61,13 @@ def harnice():
     print()
 
     print("Validating segments are structured correctly")
-    formboard_functions_new.map_cables_to_segments()
-    formboard_functions_new.detect_loops()
-    formboard_functions_new.detect_dead_segments()
+    formboard_functions.map_cables_to_segments()
+    formboard_functions.detect_loops()
+    formboard_functions.detect_dead_segments()
     print()
 
     print("Generating node and segment coordinates")
-    formboard_functions_new.generate_node_coordinates()
+    formboard_functions.generate_node_coordinates()
     print()
 
     print("Adding lengths to instances list and wirelist")
