@@ -69,35 +69,16 @@ def harnice():
     print("Generating node and segment coordinates")
     formboard_functions_new.generate_node_coordinates()
     print()
-    exit()
 
-    
-    """
-    print("Running formboard_functions.formboard_processor()")
-    formboard_functions.formboard_processor()
-    print("Segments and nodes exist only within their source of truth which is 'formboard graph definition'")
-    print()
-
-    print("Running instances_list.add_nodes()")
-    instances_list.add_nodes()
-    print("Nodes now exist in instances list but do not have any attributes yet")
-    print()
-
-    print("Running instances_list.add_formboard_segments()")
-    instances_list.add_formboard_segments()
-    print("Segments now exist in instances list with attributes length and diameter as defined in 'formboard graph definition")
-    print()
-    exit()
-
-    formboard_functions.map_connections_to_graph()
+    print("Adding lengths to instances list and wirelist")
     instances_list.add_cable_lengths()
-    #segments now exist in instances list but do not have attributes
     wirelist.add_lengths()
-    #wirelist now contains wirelengths
+    print()
+
+    print("Exporting a beautiful wirelist")
     wirelist.tsv_to_xls()
-    formboard_functions.generate_node_coordinates()
-    formboard_functions.visualize_formboard_graph()
-    """
+    print()
+
     #condense instance list into a bom
     print()
     print("############ GENERATING A BOM #############")

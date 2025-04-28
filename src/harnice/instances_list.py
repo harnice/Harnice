@@ -80,12 +80,12 @@ def add_cable_lengths():
     with open(fileio.path('connections to graph'), 'r') as json_file:
         graph_data = json.load(json_file)
 
-    rows = read_instance_rows()
-    for row in rows:
-        if row.get('item_type', '').lower() == 'cable':
-            row['length'] = graph_data.get(row['instance_name'], {}).get('wirelength', '')
+    instances = read_instance_rows()
+    for instance in instances:
+        if instance.get('item_type', '').lower() == 'cable':
+            instance['length'] = graph_data.get(instance['instance_name'], {}).get('total_length', '')
 
-    write_instance_rows(rows)
+    write_instance_rows(instances)
 
 def convert_to_bom():
     rows = read_instance_rows()
