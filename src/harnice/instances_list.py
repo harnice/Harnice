@@ -76,17 +76,6 @@ def add_cables():
             'supplier': cable.get('supplier', '')
         })
 
-def add_formboard_segments():
-    with open(fileio.path('formboard graph definition'), 'r') as f:
-        segments = yaml.safe_load(f)
-    for seg_name, seg in segments.items():
-        append_instance_row({
-            'instance_name': seg_name,
-            'item_type': 'Segment',
-            'length': seg.get('length', ''),
-            'diameter': seg.get('diameter', '')
-        })
-
 def add_cable_lengths():
     with open(fileio.path('connections to graph'), 'r') as json_file:
         graph_data = json.load(json_file)

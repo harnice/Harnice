@@ -40,6 +40,7 @@ def harnice():
 
     print("Searching component definitions for preferred parent csys")
     instances_list.update_parent_csys()
+    instances_list.update_component_translate()
     print()
 
     if not os.path.exists(fileio.name("formboard graph definition")):
