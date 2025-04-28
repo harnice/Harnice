@@ -2,9 +2,8 @@ import run_wireviz
 import wirelist
 import instances_list
 import svg_utils
-import formboard_functions
 import flagnote_functions
-import formboard_functions_new
+import formboard_functions
 import harnice_prechecker
 import component_library
 import fileio
@@ -33,57 +32,53 @@ def harnice():
     print("############ CHECKING COMPONENTS AGAINST LIBRARY #############")
     component_library.pull()
     
-    #process the formboard definition to get the list of segments and their locations
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
     print("Generating nodes from connectors")
-    formboard_functions_new.generate_nodes_from_connectors()
+    instances_list.generate_nodes_from_connectors()
     print()
 
-    if not(formboard definition exists) == True:
+    print("Pulling in preferred parent_csys and component offsets from component data")
+    instances_list.update_parent_csys()
+    instances_list.update_component_translate()
+    print()
+
+    if not os.path.exists(fileio.name("formboard graph definition")):
         print("Making a blank formboard definition file")
-        mkdir
+        with open(fileio.name("formboard graph definition"), 'w') as f:
+            pass  # Creates an empty file
     else:
         print("Formboard definition file exists, preserving")
     print()
 
-    print("Validating nodes agree with segments agree with yaml")
-    formboard_functions_new.validate_nodes()
+    print("Validating nodes exist and generating segments if they don't")
+    formboard_functions.validate_nodes()
     print()
 
-    print("Validating segments are structured correctly and map to wires")
-    formboard_functions_new.validate_segments()
+    print("Adding stuff from formboard processor into instances list")
+    instances_list.add_nodes_from_formboard()
+    instances_list.add_segments_from_formboard()
     print()
 
-    print("Generating node locations")
-    formboard_functions_new.generate_node_locations()
-    
-    """
-    print("Running formboard_functions.formboard_processor()")
-    formboard_functions.formboard_processor()
-    print("Segments and nodes exist only within their source of truth which is 'formboard graph definition'")
+    print("Validating segments are structured correctly")
+    formboard_functions.map_cables_to_segments()
+    formboard_functions.detect_loops()
+    formboard_functions.detect_dead_segments()
     print()
 
-    print("Running instances_list.add_nodes()")
-    instances_list.add_nodes()
-    print("Nodes now exist in instances list but do not have any attributes yet")
-    print()
-
-    print("Running instances_list.add_formboard_segments()")
-    instances_list.add_formboard_segments()
-    print("Segments now exist in instances list with attributes length and diameter as defined in 'formboard graph definition")
-    print()
-    exit()
-
-    formboard_functions.map_connections_to_graph()
-    instances_list.add_cable_lengths()
-    #segments now exist in instances list but do not have attributes
-    wirelist.add_lengths()
-    #wirelist now contains wirelengths
-    wirelist.tsv_to_xls()
+    print("Generating node and segment coordinates")
     formboard_functions.generate_node_coordinates()
-    formboard_functions.visualize_formboard_graph()
-    """
+    print()
+
+    print("Adding lengths to instances list and wirelist")
+    instances_list.add_cable_lengths()
+    wirelist.add_lengths()
+    print()
+
+    print("Exporting a beautiful wirelist")
+    wirelist.tsv_to_xls()
+    print()
+
     #condense instance list into a bom
     print()
     print("############ GENERATING A BOM #############")
@@ -102,7 +97,6 @@ def harnice():
 
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
-    instances_list.update_parent_csys()
     instances_list.update_component_translate()
     formboard_illustration_functions.update_all_instances()
     #formboard_illustration_functions.update_segment_instances()

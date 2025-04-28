@@ -62,7 +62,7 @@ def add_connectors():
             'instance_name': instance_name,
             'mpn': connector.get('mpn', ''),
             'item_type': 'Connector',
-            'parent_instance': instance_name,
+            'parent_instance': instance_name, #needed to find parent csys
             'supplier': connector.get('supplier', '')
         })
 
@@ -76,27 +76,16 @@ def add_cables():
             'supplier': cable.get('supplier', '')
         })
 
-def add_formboard_segments():
-    with open(fileio.path('formboard graph definition'), 'r') as f:
-        segments = yaml.safe_load(f)
-    for seg_name, seg in segments.items():
-        append_instance_row({
-            'instance_name': seg_name,
-            'item_type': 'Segment',
-            'length': seg.get('length', ''),
-            'diameter': seg.get('diameter', '')
-        })
-
 def add_cable_lengths():
     with open(fileio.path('connections to graph'), 'r') as json_file:
         graph_data = json.load(json_file)
 
-    rows = read_instance_rows()
-    for row in rows:
-        if row.get('item_type', '').lower() == 'cable':
-            row['length'] = graph_data.get(row['instance_name'], {}).get('wirelength', '')
+    instances = read_instance_rows()
+    for instance in instances:
+        if instance.get('item_type', '').lower() == 'cable':
+            instance['length'] = graph_data.get(instance['instance_name'], {}).get('total_length', '')
 
-    write_instance_rows(rows)
+    write_instance_rows(instances)
 
 def convert_to_bom():
     rows = read_instance_rows()
@@ -226,17 +215,13 @@ def update_parent_csys():
         # Get csys_parent_prefs from attributes
         csys_parent_prefs = attributes_data.get("plotting_info", {}).get("csys_parent_prefs", [])
 
-        print(f"Assigning parent_csys to {instance.get('instance_name')}")
         # Iterate through parent preferences
         for pref in csys_parent_prefs:
             candidate_name = f"{instance.get("parent_instance")}{pref}"
-            print(f"{pref} : {candidate_name}")
             if candidate_name in instance_lookup:
                 instance['parent_csys'] = candidate_name
-                print(f"Found parent csys {candidate_name}")
                 break  # Found a match, exit early
         # If no match, do nothing (parent_csys remains unchanged)
-        print()
 
     write_instance_rows(instances)
 
@@ -254,7 +239,6 @@ def update_component_translate():
         )
 
         if not os.path.exists(attributes_path):
-            print(f"Offsets not found for {instance.get("instance_name")}")
             continue
 
         try:
@@ -263,7 +247,6 @@ def update_component_translate():
         except (json.JSONDecodeError, IOError):
             continue
 
-        print(f"Pulling in translation from {instance.get("instance_name")}-attributes.json")
         component_translate = (
             attributes_data
             .get("plotting_info", {})
@@ -277,11 +260,86 @@ def update_component_translate():
 
     write_instance_rows(instances)
 
+def generate_nodes_from_connectors():
+    instances = read_instance_rows()
+
+    #Append a new '.node' child row
+    for instance in instances:
+        if instance.get('item_type') == "Connector":
+            append_instance_row({
+                'instance_name': instance.get('instance_name') + ".node",
+                'item_type': 'Node',
+                'parent_instance': instance.get('instance_name'),
+            })
+
+def add_nodes_from_formboard():
+    instances = read_instance_rows()
+
+    try:
+        with open(fileio.path("formboard graph definition"), "r") as f:
+            formboard_data = json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
+        formboard_data = {}
+
+    # Find all nodes already defined in formboard
+    nodes_in_formboard = set()
+    for segment in formboard_data.values():
+        nodes_in_formboard.add(segment.get('segment_end_a', ''))
+        nodes_in_formboard.add(segment.get('segment_end_b', ''))
+    nodes_in_formboard.discard('')
+
+    # Collect all known instance names for lookup
+    existing_instance_names = {instance.get('instance_name', '') for instance in instances}
+
+    # Add any node from formboard that's missing in instances list
+    for node_name in nodes_in_formboard:
+        if node_name and node_name not in existing_instance_names:
+            instances.append({
+                'instance_name': node_name,
+                'item_type': 'Node',
+            })
+
+    write_instance_rows(instances)
+
+def add_segments_from_formboard():
+    instances = read_instance_rows()
+
+    try:
+        with open(fileio.path("formboard graph definition"), "r") as f:
+            formboard_data = json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
+        formboard_data = {}
+
+    # Collect existing instance names for lookup
+    existing_instance_names = {instance.get('instance_name', '') for instance in instances}
+
+    # Add any segment from formboard that's missing in instances list
+    for segment_name, segment in formboard_data.items():
+        if segment_name not in existing_instance_names:
+            instances.append({
+                'instance_name': segment_name,
+                'item_type': 'Segment',
+            })
+
+    write_instance_rows(instances)
+
+def parent(instance_name):
+    instances = read_instance_rows()
+    for instance in instances:
+        if instance.get('instance_name') == instance_name:
+            print(f"!!!!!!!!!!")
+            print(f" for known child: {instance.get('instance_name')}")
+            print(f"returning parent: {instance.get('parent_instance')}")
+            return instance.get('parent_instance')
+
 """
 template instances list modifier:
 def example_instances_list_function():
     instances = read_instance_rows()
     for instance in instances:
         # do stuff
+        # instance.get()
     write_instance_rows(instances)
 """

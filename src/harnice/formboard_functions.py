@@ -1,313 +1,215 @@
-import os
 import json
-import csv
+import os
 import random
 import math
+from collections import defaultdict, deque
 import instances_list
-import yaml
-from os.path import basename
-from inspect import currentframe
 import fileio
-from collections import defaultdict
+import csv
 
-def formboard_processor():
-    num_connectors = get_num_connectors()
-    precheck_result = generate_segments_precheck()
-    """
-                segment file       length and angle data
-            2:   false              false
-            1:   TRUE               false
-            -1:  TRUE               partial
-            0:   TRUE               TRUE
-    """
-        #2: Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.
-        #1: Segments already exist, but no length or angle data exists yet
-        #-1: Only some length and angle data exits. Complete this file before rerunning. Aborting formboard generation process.
-        #0: Length and angle data already exist for each segment. Preserving this data and exiting.
-    
-    if(precheck_result) == 2:
-        if num_connectors < 2:
-            raise ValueError("At least two connectors are required to generate segments.")
+def validate_nodes():
+    instances = instances_list.read_instance_rows()
+    instance_lookup = {instance.get('instance_name'): instance for instance in instances if instance.get('instance_name')}
+    new_instance_rows = []  # <--- Track new nodes to add
 
-        if num_connectors == 2:
-            generate_segments(False)
-            add_random_lengths_angles()
+    # Collect connector names directly
+    num_connectors = 0
+    for instance in instances:
+        if instance.get('item_type') == 'Connector':
+            num_connectors += 1
+
+    # Try to load existing formboard graph
+    try:
+        with open(fileio.path("formboard graph definition"), 'r') as f:
+            formboard_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        formboard_data = {}
+
+    segment_ids = list(formboard_data.keys())
+
+    # Collect all relevant node names
+    all_node_names = [
+        instance.get('instance_name')
+        for instance in instances
+        if instance.get('item_type') == 'Node'
+    ]
+
+    # Extract all nodes already involved in segments
+    nodes_in_segments = set()
+    for segment in formboard_data.values():
+        nodes_in_segments.add(segment.get('segment_end_a', ''))
+        nodes_in_segments.add(segment.get('segment_end_b', ''))
+    nodes_in_segments.discard('')  # Clean up blanks
+
+    # --- Case 1: No segments exist yet ---
+    if not segment_ids:
+        if num_connectors > 2:
+            origin_node = "node1"
+            node_counter = 0
+            for instance in instances:
+                if instance.get("item_type") == "Node":
+                    segment_name = instance.get("parent_instance") + "_leg"
+                    formboard_data[segment_name] = {
+                        "segment_end_a": origin_node,
+                        "segment_end_b": instance.get("instance_name"),
+                        "length": random.randint(6, 18),
+                        "angle": 0 if node_counter == 0 else random.randint(0, 359),
+                        "diameter": 0.1
+                    }
+                    node_counter += 1
+        elif num_connectors == 2:
+            # Two connectors: direct connection (connect their .node entries)
+            segment_name = "segment"
+            segment_end = []
+
+            for instance in instances:
+                if instance.get("item_type") == "Node":
+                    segment_end.append(instance.get("instance_name"))
+
+            if len(segment_end) != 2:
+                raise ValueError("Error: Expected exactly two nodes to connect, but found different number.")
+
+            formboard_data[segment_name] = {
+                "segment_end_a": segment_end[0],
+                "segment_end_b": segment_end[1],
+                "length": random.randint(6, 18),
+                "angle": 0,
+                "diameter": 0.1
+            }
+        else:
+            raise ValueError("Error: Fewer than two connectors defined, cannot build segments.")
+
+    # --- Case 2: Segments already exist ---
+    else:
+        missing_nodes = set(all_node_names) - nodes_in_segments
+
+        if not missing_nodes:
+            # Success — all nodes are represented
+            return
 
         if num_connectors > 2:
-            generate_segments(True)
-            add_random_lengths_angles()
+            addon_new_seg_from_node = ""
+            for instance in instances:
+                if instance.get('item_type') == "Node" and instance.get('parent_instance') == "":
+                    addon_new_seg_from_node = instance.get('instance_name')
+                    break
 
-    if(precheck_result) == 1:
-        add_random_lengths_angles()
+            if addon_new_seg_from_node == "":
+                for instance in instances:
+                    if instance.get('item_type') == "Node":
+                        addon_new_seg_from_node = instance.get('instance_name')
+                        break
 
-    if(precheck_result) == -1:
-        raise ValueError(f"Only some length and angle data exits in file {fileio.name("formboard graph definition")}. Complete this file before rerunning.")
+            for node_counter, missing_node in enumerate(missing_nodes):
+                segment_name = f"{missing_node}_leg"
+                if segment_name in formboard_data:
+                    continue
 
-def generate_segments_precheck():
-    """Generates the graph definition with lengths and angles set to null."""
-    # Step 2: Check if the file exists
-    if os.path.exists(fileio.path("formboard graph definition")):
-        # Load the existing file
-        with open(fileio.path("formboard graph definition"), "r") as json_file:
-            try:
-                data = json.load(json_file)
-            except json.JSONDecodeError:
-                print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: Existing JSON file is invalid. Recreating it.")
-                data = {}
+                formboard_data[segment_name] = {
+                    "segment_end_a": addon_new_seg_from_node,
+                    "segment_end_b": missing_node,
+                    "length": random.randint(6, 18),
+                    "angle": random.randint(0, 359),
+                    "diameter": 0.1
+                }
 
-        # Check "length" and "angle" values
-        length_has_null = field_contains_null(fileio.path("formboard graph definition"), "length")
-        length_has_numbers = field_contains_numbers(fileio.path("formboard graph definition"), "length")
-        angle_has_null = field_contains_null(fileio.path("formboard graph definition"), "angle")
-        angle_has_numbers = field_contains_numbers(fileio.path("formboard graph definition"), "angle")
-
-        all_has_null = (
-            not length_has_numbers
-            and not angle_has_numbers
-        )
-
-        all_has_numbers = (
-            not length_has_null
-            and not angle_has_null
-        )
-
-        mixed_null_and_numbers = (
-            not all_has_numbers
-            and not all_has_null
-        )
-
-        if(all_has_null == True):
-            #Segments already exist, but no length or angle data exists yet.
-            return 1
-
-        if(all_has_numbers == True):
-            #Length and angle data already exist for each segment. Preserving this data.
-            return 0
-
-        if(mixed_null_and_numbers == True):
-            #Only some length and angle data exits. Complete this file before rerunning. Aborting formboard generation process.
-            return -1
-
-    #else: (all other options have returned before this point)
-    #Segment file does not exist yet. Generating a basic wheel-spoke net. Modify {fileio.name("formboard graph definition")} as needed.
-    return 2
-
-def generate_segments(more_than_two_connectors):
-    # Read connectors from the instances list
-    connectors = []
-    with open(fileio.path("instances list"), mode='r') as tsv_file:
-        reader = csv.DictReader(tsv_file, delimiter='\t')
-        for row in reader:
-            if row["item_type"] == "Connector":
-                connectors.append(row["instance_name"])
-
-    base_segment_name = "segment"
-    segment_counter = 1
-    data = {}
-
-    # Create segments with specified fields
-
-    if more_than_two_connectors == False:
-        segment_name = f"{base_segment_name}{segment_counter}"
-        data[segment_name] = {
-                "segment_end_a": connectors[0] + ".node",
-                "segment_end_b": connectors[1] + ".node",
-                "length": None,
-                "angle": None,
-                "diameter": 0.5
-            }
-    
-    if more_than_two_connectors == True:
-        for connector in connectors:
-            segment_name = f"{base_segment_name}{segment_counter}"
-            data[segment_name] = {
-                "segment_end_a": "node1",
-                "segment_end_b": connector + ".node",
-                "length": None,
-                "angle": None,
-                "diameter": 0.5
-            }
-            segment_counter += 1
-
-    # Save the graph definition to JSON
-    with open(fileio.path("formboard graph definition"), "w") as json_file:
-        json.dump(data, json_file, indent=4)
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Graph definition saved to {fileio.path("formboard graph definition")}")
-
-    return True
-
-def add_random_lengths_angles():
-    # Read the existing JSON data
-    try:
-        with open(fileio.path("formboard graph definition"), "r") as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {fileio.name("formboard graph definition")}")
-        return
-    except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {fileio.name("formboard graph definition")}")
-        return
-
-    # Update the "length" and "angle" fields
-    segment_counter = 0
-    for segment in data.values():
-        if segment_counter == 0:
-            #the first segment is horizontal
-            segment["angle"] = 0
         else:
-            #all other segments are random
-            segment["angle"] = random.randint(0, 359)
+            raise ValueError("Unexpected condition: Missing nodes but <= 2 connectors. Should have been caught earlier.")
 
-        segment["length"] = random.randint(6, 18)
-        segment_counter += 1
+    # Save updated formboard graph
+    with open(fileio.path("formboard graph definition"), 'w') as f:
+        json.dump(formboard_data, f, indent=2)
 
-    # Write the updated data back to the JSON file
-    with open(fileio.path("formboard graph definition"), "w") as file:
-        json.dump(data, file, indent=4)
-
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added random lengths and angles to {fileio.name("formboard graph definition")}")
+    # Append new rows to instances list if any
+    if new_instance_rows:
+        instances_list.append_instance_rows(new_instance_rows)
 
 def generate_node_coordinates():
-    # Read the segment data
+    # === Step 1: Read formboard graph definition ===
     try:
         with open(fileio.path("formboard graph definition"), "r") as file:
             segment_data = json.load(file)
     except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {fileio.name('formboard graph definition')}")
+        print(f"File not found: {fileio.name('formboard graph definition')}")
         return
     except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in file: {fileio.name('formboard graph definition')}")
+        print(f"Invalid JSON in file: {fileio.name('formboard graph definition')}")
         return
 
-    # Read the instances list
-    with open(fileio.path("instances list"), newline='') as tsv_file:
-        reader = csv.DictReader(tsv_file, delimiter='\t')
-        rows = list(reader)
-        fieldnames = reader.fieldnames or []
+    # === Step 2: Read instances list ===
+    instances = instances_list.read_instance_rows()
+    instance_lookup = {inst.get('instance_name', ''): inst for inst in instances}
 
-    for i, row in enumerate(rows):
-        if None in row:
-            print(f"Row {i} has extra columns: {row[None]}")
-            del row[None]
-
-    for field in ['translate_x', 'translate_y', 'instance_name']:
-        if field not in fieldnames:
-            fieldnames.append(field)
-
-    row_lookup = {row['instance_name']: row for row in rows if 'instance_name' in row}
-
-    # Set origin as first connector
+    # === Step 3: Set origin node ===
     origin_node = None
-    for row in rows:
-        if row.get("item_type") == "Connector":
-            origin_node = row.get("instance_name")
+    for instance in instances:
+        if instance.get('item_type') == "Node":
+            origin_node = instance.get('instance_name')
             break
 
-    if origin_node is None:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: No connector found to initialize coordinates.")
+    if not origin_node:
+        print("No node found to initialize coordinates.")
         return
 
-    # Build graph structure to traverse
+    # === Step 4: Build graph structure ===
     graph = {}
-    for name, segment in segment_data.items():
-        a = segment["segment_end_a"]
-        b = segment["segment_end_b"]
-        graph.setdefault(a, []).append((b, segment))
-        graph.setdefault(b, []).append((a, segment))  # bidirectional for traversal
+    for segment in segment_data.values():
+        a = segment.get("segment_end_a")
+        b = segment.get("segment_end_b")
+        if a and b:
+            graph.setdefault(a, []).append((b, segment))
+            graph.setdefault(b, []).append((a, segment))
 
-    # Coordinate assignment (propagation from origin)
-    visited = set()
-    node_coordinates = {origin_node: (0, 0)}
-    queue = [origin_node]
+    # === Step 5: Propagate node coordinates ===
+    node_coordinates = {origin_node: (0.0, 0.0)}
+    queue = deque([origin_node])
 
     while queue:
-        current = queue.pop(0)
-        visited.add(current)
+        current = queue.popleft()
         current_x, current_y = node_coordinates[current]
 
         for neighbor, segment in graph.get(current, []):
             if neighbor in node_coordinates:
-                continue  # already assigned
+                continue
 
-            if segment["segment_end_a"] == current:
-                direction = 1
-                angle = segment["angle"]
-            elif segment["segment_end_b"] == current:
-                direction = -1
-                angle = (segment["angle"] + 180) % 360
-            else:
-                continue  # shouldn't happen
-
-            length = segment["length"]
-            dx = length * math.cos(math.radians(angle)) * direction
-            dy = length * math.sin(math.radians(angle)) * direction
+            radians = math.radians(segment.get("angle"))
+            length = segment.get("length", 0)
+            dx = length * math.cos(radians)
+            dy = length * math.sin(radians)
 
             new_x = round(current_x + dx, 2)
             new_y = round(current_y + dy, 2)
             node_coordinates[neighbor] = (new_x, new_y)
             queue.append(neighbor)
 
-    # Write all node coordinates back to *.node rows
-    for node, (x, y) in node_coordinates.items():
-        target_name = f"{node}.node"
-        if target_name in row_lookup:
-            row_lookup[target_name]['translate_x'] = f"{x}"
-            row_lookup[target_name]['translate_y'] = f"{y}"
+    # === Step 6: Update instances list with node coordinates ===
+    for node_name, (x, y) in node_coordinates.items():
+        instance = instance_lookup.get(node_name)
+        if instance:
+            instance['translate_x'] = str(x)
+            instance['translate_y'] = str(y)
 
-    # Write to file
-    with open(fileio.path("instances list"), mode='w', newline='') as tsv_file:
-        writer = csv.DictWriter(tsv_file, fieldnames=fieldnames, delimiter='\t', extrasaction='ignore')
-        writer.writeheader()
-        writer.writerows(rows)
-
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: All node coordinates written to instances list.")
-
-def visualize_formboard_graph():
+    # === Step 7: Prepare SVG visualization ===
     output_file_path = fileio.path("formboard graph definition svg")
 
-    # Read the segment data
-    try:
-        with open(fileio.path("formboard graph definition"), "r") as segment_file:
-            segment_data = json.load(segment_file)
-    except FileNotFoundError as e:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {e.filename}")
-        return
-    except json.JSONDecodeError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Invalid JSON in formboard graph definition.")
-        return
-
-    # Read node coordinates from instances list (.node entries only)
-    node_coordinates = {}
-    try:
-        with open(fileio.path("instances list"), newline='') as tsv_file:
-            reader = csv.DictReader(tsv_file, delimiter='\t')
-            for row in reader:
-                name = row.get("instance_name", "")
-                if not name.endswith(".node"):
-                    continue
-                try:
-                    x = float(row.get("translate_x", ""))
-                    y = float(row.get("translate_y", ""))
-                    node_coordinates[name] = (x, y)
-                except (ValueError, TypeError):
-                    continue
-    except FileNotFoundError as e:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found: {e.filename}")
-        return
-
-    if not node_coordinates:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: No valid .node coordinates found.")
-        return
-
-    # SVG setup
-    svg_elements = []
-    padding = 50  # padding in pixels
+    padding = 50
     radius = 5
     font_size = 12
-    scale = 96  # scale from inches to pixels
+    scale = 96  # 96 pixels per inch
 
-    all_x = [coord[0] * scale for coord in node_coordinates.values()]
-    all_y = [coord[1] * scale for coord in node_coordinates.values()]
+    # Collect node coordinates for SVG
+    node_coordinates_svg = {
+        inst_name: (float(inst.get('translate_x', '')), float(inst.get('translate_y', '')))
+        for inst_name, inst in instance_lookup.items()
+        if inst.get('item_type') == 'Node' and inst.get('translate_x') and inst.get('translate_y')
+    }
+
+    if not node_coordinates_svg:
+        print("No valid node coordinates found for SVG.")
+        return
+
+    all_x = [coord[0] * scale for coord in node_coordinates_svg.values()]
+    all_y = [coord[1] * scale for coord in node_coordinates_svg.values()]
     min_x, max_x = min(all_x), max(all_x)
     min_y, max_y = min(all_y), max(all_y)
     width = max_x - min_x + 2 * padding
@@ -316,169 +218,260 @@ def visualize_formboard_graph():
     def map_coordinates(x, y):
         return x * scale - min_x + padding, height - (y * scale - min_y + padding)
 
+    svg_elements = []
+    segment_midpoints = {}
+
     # Draw segments
     for segment_id, segment in segment_data.items():
-        start_node_key = f"{segment['segment_end_a']}.node"
-        end_node_key = f"{segment['segment_end_b']}.node"
-        if start_node_key in node_coordinates and end_node_key in node_coordinates:
-            start_x, start_y = map_coordinates(*node_coordinates[start_node_key])
-            end_x, end_y = map_coordinates(*node_coordinates[end_node_key])
+        end_a_name = segment.get('segment_end_a', '')
+        end_b_name = segment.get('segment_end_b', '')
+
+        coord_a = node_coordinates_svg.get(end_a_name)
+        coord_b = node_coordinates_svg.get(end_b_name)
+
+        if coord_a and coord_b:
+            start_x, start_y = map_coordinates(*coord_a)
+            end_x, end_y = map_coordinates(*coord_b)
+
+            # Midpoint in SVG units
+            mid_x_svg = (start_x + end_x) / 2
+            mid_y_svg = (start_y + end_y) / 2
+
+            # Convert midpoint back to logical inches
+            mid_x_logical = (mid_x_svg + min_x - padding) / scale
+            mid_y_logical = (height - mid_y_svg + min_y - padding) / scale
+
+            segment_midpoints[segment_id] = (round(mid_x_logical, 2), round(mid_y_logical, 2))
+
             svg_elements.append(
                 f'<line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}" '
                 f'stroke="black" stroke-width="2" />'
             )
-            mid_x, mid_y = (start_x + end_x) / 2, (start_y + end_y) / 2
             svg_elements.append(
-                f'<text x="{mid_x}" y="{mid_y}" font-size="{font_size}" '
+                f'<text x="{mid_x_svg}" y="{mid_y_svg}" font-size="{font_size}" '
                 f'text-anchor="middle" fill="blue">{segment_id}</text>'
             )
 
     # Draw nodes
-    for node, coord in node_coordinates.items():
-        x, y = map_coordinates(*coord)
-        svg_elements.append(
-            f'<circle cx="{x}" cy="{y}" r="{radius}" fill="red" />'
-        )
+    for node_name, (x_logical, y_logical) in node_coordinates_svg.items():
+        x, y = map_coordinates(x_logical, y_logical)
+        label = node_name.removesuffix(".node")
+        svg_elements.append(f'<circle cx="{x}" cy="{y}" r="{radius}" fill="red" />')
         svg_elements.append(
             f'<text x="{x}" y="{y - 10}" font-size="{font_size}" '
-            f'text-anchor="middle" fill="black">{node}</text>'
+            f'text-anchor="middle" fill="black">{label}</text>'
         )
 
+    # Write SVG file
     svg_content = (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}">'
         + "".join(svg_elements)
         + "</svg>"
     )
-
     with open(output_file_path, "w") as output_file:
         output_file.write(svg_content)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: SVG graph visualization written to {output_file_path}")
+    print("-SVG graph visualization written.")
 
-def get_num_connectors():
-    connectors = []
-    with open(fileio.path("instances list"), mode='r') as tsv_file:
-        reader = csv.DictReader(tsv_file, delimiter='\t')
+    # === Step 8: Update instances list with segment midpoints ===
+    for segment_name, (mid_x, mid_y) in segment_midpoints.items():
+        instance = instance_lookup.get(segment_name)
+        if instance:
+            instance['translate_x'] = str(mid_x)
+            instance['translate_y'] = str(mid_y)
+
+    # === Step 9: Write all modified instances back ===
+    instances_list.write_instance_rows(instances)
+    print("-Node and segment coordinates updated in instances list.")
+
+def map_cables_to_segments():
+    from collections import defaultdict, deque
+
+    instances = instances_list.read_instance_rows()
+
+    wirelist = []
+    with open(fileio.path("wirelist no formats"), 'r', newline='') as file:
+        reader = csv.DictReader(file, delimiter='\t')
         for row in reader:
-            if row["item_type"] == "Connector":
-                connectors.append(row["instance_name"])
-    return len(connectors)
+            wirelist.append({k: v for k, v in row.items()})
 
-def field_contains_null(file_path, field):
-    """Checks if the specified field contains any null values in the JSON file."""
     try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
-        return False
-
-    for item in data.values():
-        if item.get(field) is None:
-            return True  # Found at least one null value
-    return False
-
-def field_contains_numbers(file_path, field):
-    """Checks if the specified field contains any numerical values in the JSON file."""
-    try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("from {basename(__file__)} > {currentframe().f_code.co_name}: Error: File not found or invalid JSON format.")
-        return False
-
-    for item in data.values():
-        if isinstance(item.get(field), (int, float)):
-            return True  # Found at least one numerical value
-    return False
-
-def map_connections_to_graph():
-    """Maps connections from a wirelist to a formboard graph, calculates total lengths, and outputs the result as a JSON file."""
-    output_path = fileio.path("connections to graph")
-
-    # Read the wirelist TSV file
-    try:
-        with open(fileio.path("wirelist no formats"), 'r') as file:
-            reader = csv.DictReader(file, delimiter='\t')
-            wirelist = [row for row in reader]
+        with open(fileio.path("formboard graph definition"), 'r') as file:
+            formboard_graph_definition = json.load(file)
     except FileNotFoundError:
-        raise FileNotFoundError(f"Wirelist file not found: {fileio.name("wirelist no formats")}")
+        print(f"Graph definition file not found: {fileio.name('formboard graph definition')}")
+        return
 
-    # Load the graph definition JSON
-    try:
-        with open(fileio.path("formboard graph definition"), 'r') as f:
-            graph_definition = json.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Graph definition file not found: {fileio.name("formboard graph definition")}")
-
-    # Parse the graph into adjacency lists and track segments
     graph = defaultdict(set)
-    segment_map = {}  # Maps node pairs to their connecting segment
-    for segment, details in graph_definition.items():
-        node_a = details["segment_end_a"]
-        node_b = details["segment_end_b"]
-        length = details.get("length", 0)
+    segment_map = {}
+    for segment_id, details in formboard_graph_definition.items():
+        node_a = details.get('segment_end_a', '')
+        node_b = details.get('segment_end_b', '')
+        length = details.get('length', 0)
 
-        # Add nodes to adjacency list
+        if not node_a or not node_b:
+            continue
+
         graph[node_a].add(node_b)
         graph[node_b].add(node_a)
 
-        # Map the segment details to the node pair
         segment_map[frozenset([node_a, node_b])] = {
-            "segment": segment,
-            "length": length
+            'segment': segment_id,
+            'length': length
         }
 
-    # Function to find the path and segments from source to destination using BFS
-    def find_path_with_segments(source, destination):
-        if source not in graph or destination not in graph:
+    def find_path_with_segments(source_node, destination_node):
+        if source_node not in graph or destination_node not in graph:
             return [], 0
-        queue = [(source, [source], [], 0)]  # (current node, path of nodes, path of segments, total length)
+        queue = deque([(source_node, [], 0)])
         visited = set()
         while queue:
-            current, node_path, segment_path, total_length = queue.pop(0)  # FIFO queue
-            if current == destination:
+            current, segment_path, total_length = queue.popleft()
+            if current == destination_node:
                 return segment_path, total_length
             if current in visited:
                 continue
             visited.add(current)
             for neighbor in graph[current]:
                 if neighbor not in visited:
-                    segment_details = segment_map.get(frozenset([current, neighbor]), {})
-                    segment = segment_details.get("segment")
-                    length = segment_details.get("length", 0)
-                    queue.append(
-                        (neighbor, node_path + [neighbor], segment_path + [segment], total_length + length)
-                    )
+                    seg_info = segment_map.get(frozenset([current, neighbor]), {})
+                    seg_id = seg_info.get('segment')
+                    seg_length = seg_info.get('length', 0)
+                    queue.append((neighbor, segment_path + [seg_id], total_length + seg_length))
         return [], 0
 
-    # Generate the connections-to-graph JSON
     connections_to_graph = {}
-    for row in wirelist:
-        wire = row['Wire']
-        subwire = row['Subwire']
-        source = row['Source']
-        destination = row['Destination']
-        segment_path, total_length = find_path_with_segments(source, destination)
-        if not segment_path:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Warning: No path found for {wire} - {subwire} from {source} to {destination}")
+
+    for instance in instances:
+        if instance.get('item_type') != 'Cable':
             continue
-        if wire not in connections_to_graph:
-            connections_to_graph[wire] = {"subconnections": {}, "wirelength": 0}
-        connections_to_graph[wire]["subconnections"][subwire] = {
-            "segments": segment_path,
-            "total_length": total_length
+
+        cable_name = instance.get('instance_name')
+        if not cable_name:
+            continue
+
+        matching_rows = [row for row in wirelist if row.get('Wire', '') == cable_name]
+
+        if not matching_rows:
+            continue
+
+        total_segments = []
+        total_cable_length = 0
+
+        for row in matching_rows:
+            source_connector = row.get('Source', '').strip()
+            destination_connector = row.get('Destination', '').strip()
+
+            if not source_connector or not destination_connector:
+                continue
+
+            source_node = f"{source_connector}.node"
+            destination_node = f"{destination_connector}.node"
+
+            segment_path, path_length = find_path_with_segments(source_node, destination_node)
+
+            if not segment_path:
+                raise ValueError(
+                    f"Path not found between {source_node} and {destination_node} for cable '{cable_name}'."
+                )
+
+            total_segments.extend(segment_path)
+            total_cable_length += path_length
+
+        if not total_segments:
+            continue
+
+        connections_to_graph[cable_name] = {
+            "segments": total_segments,
+            "total_length": total_cable_length
         }
-        # Update the wirelength as the maximum total_length among subconnections
-        connections_to_graph[wire]["wirelength"] = max(connections_to_graph[wire]["wirelength"], total_length)
 
-    # Save the output JSON
-    with open(fileio.path("connections to graph"), 'w') as f:
-        json.dump(connections_to_graph, f, indent=4)
+    output_path = fileio.path("connections to graph")
+    with open(output_path, 'w') as file:
+        json.dump(connections_to_graph, file, indent=4)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Wires mapped to segments at: {fileio.name("connections to graph")}")
+    instances_list.write_instance_rows(instances)
+    print("-All cables have valid paths from start connector to end connector via segments.")
 
+def detect_loops():
+    # Step 1: Read the formboard graph definition
+    try:
+        with open(fileio.path("formboard graph definition"), 'r') as file:
+            graph_definition = json.load(file)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Formboard graph definition not found: {fileio.name('formboard graph definition')}")
+    except json.JSONDecodeError:
+        raise ValueError(f"Invalid JSON in formboard graph definition: {fileio.name('formboard graph definition')}")
 
-if __name__ == "__main__":
-    formboard_processor()
+    # Step 2: Build adjacency list
+    adjacency = defaultdict(list)
+    for segment in graph_definition.values():
+        node_a = segment.get('segment_end_a')
+        node_b = segment.get('segment_end_b')
+        if node_a and node_b:
+            adjacency[node_a].append(node_b)
+            adjacency[node_b].append(node_a)
+
+    # Step 3: DFS to detect cycles
+    visited = set()
+
+    def dfs(node, parent):
+        visited.add(node)
+        for neighbor in adjacency[node]:
+            if neighbor not in visited:
+                if dfs(neighbor, node):
+                    return True
+            elif neighbor != parent:
+                return True
+        return False
+
+    # Step 4: Check each connected component
+    for node in adjacency:
+        if node not in visited:
+            if dfs(node, None):
+                raise Exception("Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet. ")
+
+    print("-No loops found in formboard graph definition.")
+    # No loops detected; function ends silently
+
+def detect_dead_segments():
+    """
+    Checks that every segment in the instances list is referenced in the connections_to_graph.
+    Raises an exception listing missing segments if any are not connected to a cable.
+    """
+    # Step 1: Read connections_to_graph
+    try:
+        with open(fileio.path("connections to graph"), "r") as file:
+            connections_data = json.load(file)
+    except FileNotFoundError:
+        raise Exception(f"Connections to graph file not found: {fileio.name('connections to graph')}")
+    except json.JSONDecodeError:
+        raise Exception(f"Invalid JSON in file: {fileio.name('connections to graph')}")
+
+    connected_segments = set()
+    for cable_info in connections_data.values():
+        for segment in cable_info.get("segments", []):
+            if segment:
+                connected_segments.add(segment)
+
+    # Step 2: Read instances list
+    with open(fileio.path("instances list"), "r", newline='') as file:
+        reader = csv.DictReader(file, delimiter="\t")
+        instance_rows = list(reader)
+
+    instance_segments = set()
+    for instance in instance_rows:
+        if instance.get('item_type', '').strip() == "Segment":
+            segment_name = instance.get('instance_name', '').strip()
+            if segment_name:
+                instance_segments.add(segment_name)
+
+    # Step 3: Compare
+    missing_segments = instance_segments - connected_segments
+
+    if missing_segments:
+        missing_list = ", ".join(sorted(missing_segments))
+        raise Exception(f"The following segments do not contain cables: {missing_list}. Remove that segment from formboard definition and rerun.")
+
+    print("-All segments in formboard definition are used by one or more cables.")
