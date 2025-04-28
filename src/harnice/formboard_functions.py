@@ -260,8 +260,6 @@ def generate_node_coordinates():
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: All node coordinates written to instances list.")
-
 def visualize_formboard_graph():
     output_file_path = fileio.path("formboard graph definition svg")
 

@@ -2,7 +2,6 @@ import run_wireviz
 import wirelist
 import instances_list
 import svg_utils
-import formboard_functions
 import flagnote_functions
 import formboard_functions_new
 import harnice_prechecker
@@ -38,24 +37,37 @@ def harnice():
     print("Generating nodes from connectors")
     instances_list.generate_nodes_from_connectors()
     print()
-    exit()
-    #if not(formboard definition exists) == True:
-        #print("Making a blank formboard definition file")
-        #mkdir
-    #else:
-        #print("Formboard definition file exists, preserving")
+
+    print("Searching component definitions for preferred parent csys")
+    instances_list.update_parent_csys()
     print()
 
-    print("Validating nodes agree with segments agree with yaml")
+    if not os.path.exists(fileio.name("formboard graph definition")):
+        print("Making a blank formboard definition file")
+        with open(fileio.name("formboard graph definition"), 'w') as f:
+            pass  # Creates an empty file
+    else:
+        print("Formboard definition file exists, preserving")
+    print()
+
+    print("Validating nodes exist and generating segments if they don't")
     formboard_functions_new.validate_nodes()
     print()
+
+    print("Adding stuff from formboard processor into instances list")
+    instances_list.add_nodes_from_formboard()
+    instances_list.add_segments_from_formboard()
+    print()
+
+    print("Generating node and segment coordinates")
+    formboard_functions_new.generate_node_coordinates()
+    print()
+    exit()
 
     print("Validating segments are structured correctly and map to wires")
     formboard_functions_new.validate_segments()
     print()
 
-    print("Generating node locations")
-    formboard_functions_new.generate_node_locations()
     
     """
     print("Running formboard_functions.formboard_processor()")
@@ -101,7 +113,6 @@ def harnice():
 
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
-    instances_list.update_parent_csys()
     instances_list.update_component_translate()
     formboard_illustration_functions.update_all_instances()
     #formboard_illustration_functions.update_segment_instances()

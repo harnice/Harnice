@@ -62,7 +62,7 @@ def add_connectors():
             'instance_name': instance_name,
             'mpn': connector.get('mpn', ''),
             'item_type': 'Connector',
-            'parent_instance': instance_name,
+            'parent_instance': instance_name, #needed to find parent csys
             'supplier': connector.get('supplier', '')
         })
 
@@ -279,12 +279,70 @@ def update_component_translate():
 
 def generate_nodes_from_connectors():
     instances = read_instance_rows()
+
+    #Append a new '.node' child row
     for instance in instances:
         if instance.get('item_type') == "Connector":
             append_instance_row({
                 'instance_name': instance.get('instance_name') + ".node",
                 'item_type': 'Node',
-        })
+                'parent_instance': instance.get('instance_name'),
+            })
+
+def add_nodes_from_formboard():
+    instances = read_instance_rows()
+
+    try:
+        with open(fileio.path("formboard graph definition"), "r") as f:
+            formboard_data = json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
+        formboard_data = {}
+
+    # Find all nodes already defined in formboard
+    nodes_in_formboard = set()
+    for segment in formboard_data.values():
+        nodes_in_formboard.add(segment.get('segment_end_a', ''))
+        nodes_in_formboard.add(segment.get('segment_end_b', ''))
+    nodes_in_formboard.discard('')
+
+    # Collect all known instance names for lookup
+    existing_instance_names = {instance.get('instance_name', '') for instance in instances}
+
+    # Add any node from formboard that's missing in instances list
+    for node_name in nodes_in_formboard:
+        if node_name and node_name not in existing_instance_names:
+            print(f"Added orphan node {node_name} to instances list")
+            instances.append({
+                'instance_name': node_name,
+                'item_type': 'Node',
+            })
+
+    write_instance_rows(instances)
+
+def add_segments_from_formboard():
+    instances = read_instance_rows()
+
+    try:
+        with open(fileio.path("formboard graph definition"), "r") as f:
+            formboard_data = json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
+        formboard_data = {}
+
+    # Collect existing instance names for lookup
+    existing_instance_names = {instance.get('instance_name', '') for instance in instances}
+
+    # Add any segment from formboard that's missing in instances list
+    for segment_name, segment in formboard_data.items():
+        if segment_name not in existing_instance_names:
+            print(f"Added missing segment {segment_name} to instances list")
+            instances.append({
+                'instance_name': segment_name,
+                'item_type': 'Segment',
+            })
+
+    write_instance_rows(instances)
 
 """
 template instances list modifier:
