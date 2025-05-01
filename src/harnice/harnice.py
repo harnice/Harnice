@@ -79,6 +79,10 @@ def harnice():
     wirelist.tsv_to_xls()
     print()
 
+    print("Adding angles to nodes")
+    instances_list.add_angles_to_nodes()
+    print()
+
     #condense instance list into a bom
     print()
     print("############ GENERATING A BOM #############")
