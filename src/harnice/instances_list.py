@@ -361,7 +361,7 @@ def add_angles_to_nodes():
     instances = read_instance_rows()
     instance_lookup = {row['instance_name']: row for row in instances}
 
-    # For each Node instance, compute average angle
+    # For each Node, compute average angle
     for instance in instances:
         if instance.get("item_type") != "Node":
             continue
@@ -371,26 +371,24 @@ def add_angles_to_nodes():
         count = 0
 
         for segment in formboard_data.values():
-            if segment.get("segment_end_b") == instance_name:
+            if segment.get("segment_end_a") == instance_name or segment.get("segment_end_b") == instance_name:
                 angle = segment.get("angle")
+                if segment.get("segment_end_a") == instance_name:
+                    angle += 180
                 if isinstance(angle, (int, float)):
                     total_angle += angle 
-                    total_angle += 180
-                    if total_angle >= 360:
-                        total_angle -= 360
                     count += 1
-            
-            if segment.get("segment_end_a") == instance_name:
-                angle = segment.get("angle")
-                if isinstance(angle, (int, float)):
-                    total_angle += angle
-                    count += 1
+                #flip influences from the A side of each segment
 
         if count > 0:
             average_angle = round(total_angle / count, 2)
             instance["rotate_csys"] = str(average_angle)
         else:
             instance["rotate_csys"] = ""
+
+        #keep it to 360 deg
+        while total_angle >= 360:
+            total_angle -= 360
 
     write_instance_rows(instances)
 

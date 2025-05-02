@@ -58,7 +58,8 @@ def make_new_formboard_master_svg():
             if instance.get("absolute_rotation") != "":
                 angle = instance.get("absolute_rotation")
 
-            content_lines.append(f'      <g transform="translate({px_x},{px_y}) rotate({angle})">'
+            content_lines.append(f'      <g transform="translate({px_x},-{px_y}) rotate(-{angle})">'
+            #NOTE THE NEGATIVES! i think it is needed to transform my csys (right-hand rule, ccw is positive angle, up is +), to inkscape (cw is positive angle, up is -)
             )
             content_lines.append(inner_svg)
             content_lines.append('      </g>')
@@ -137,8 +138,6 @@ def calculate_formboard_location(instance_name):
         angle += rotate_csys
 
         #print(f"After {name}: {x_pos}, {y_pos}, {angle}")
-    print("!!!!!!!")
-    print(f"{instance_name}: {x_pos}, {y_pos}, {angle}")
     return x_pos, y_pos, angle
 
 def update_segment_instances():
