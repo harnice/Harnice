@@ -312,18 +312,21 @@ def add_segments_from_formboard():
         print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
         formboard_data = {}
 
-    # Collect existing instance names for lookup
-    existing_instance_names = {instance.get('instance_name', '') for instance in instances}
+    # Gather all existing instance names to avoid duplicates
+    existing_instance_names = {inst.get('instance_name', '') for inst in instances}
 
-    # Add any segment from formboard that's missing in instances list
+    # Append segments that are missing in the instances list
     for segment_name, segment in formboard_data.items():
         if segment_name not in existing_instance_names:
             instances.append({
                 'instance_name': segment_name,
                 'item_type': 'Segment',
+                'length': str(segment.get('length', '')),
+                'diameter': str(segment.get('diameter', '')),
             })
 
     write_instance_rows(instances)
+
 
 def parent(instance_name):
     instances = read_instance_rows()
