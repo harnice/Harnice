@@ -8,7 +8,7 @@ from inspect import currentframe
 import fileio
 import component_library
 
-def new_blank_svg(filepath, groupname):
+"""def new_blank_svg(filepath, groupname):
     # Delete the file if it exists
     if os.path.exists(filepath):
         os.remove(filepath)
@@ -18,10 +18,12 @@ def new_blank_svg(filepath, groupname):
         f.write(
             '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
             '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n'
-            f'  <g id="{groupname}-contents-start" />\n'
-            f'  <g id="{groupname}-contents-end" />\n'
+            f'  <g id="{groupname}-contents-start">\n'
+            f'  </g>\n'
+            f'  <g id="{groupname}-contents-end">\n'
+            f'  </g>\n'
             '</svg>\n'
-        )
+        )"""
 
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     if os.path.exists(filepath):

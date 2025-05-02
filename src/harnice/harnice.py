@@ -103,8 +103,8 @@ def harnice():
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
     #generate blank harnice output svg
-    svg_utils.new_blank_svg(fileio.path("formboard master svg"), "formboard-master")
-    
+    formboard_illustration_functions.make_new_formboard_master_svg()
+
     
     #generate_harnice_output_svg.ensure_groups_exist_in_harnice_output()
 

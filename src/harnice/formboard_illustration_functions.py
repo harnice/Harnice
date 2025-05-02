@@ -7,39 +7,58 @@ import os
 #from inspect import currentframe
 #import yaml
 #import csv
-#import math
+import math
 #from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
 #import fileio
 #import component_library
-#import instances_list
+import instances_list
 
+import svg_utils
+import fileio
+from collections import defaultdict
 
-def new_blank_svg(filepath, groupname):
-    # Delete the file if it exists
+def make_new_formboard_master_svg():
+    filepath = fileio.path("formboard master svg")
     if os.path.exists(filepath):
         os.remove(filepath)
 
-    # Create a blank SVG with two named groups
-    with open(filepath, 'w') as f:
-        f.write(
-            '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
-            '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n'
-            f'  <g id="{groupname}-contents-start" />\n'
-            f'  <g id="{groupname}-contents-end" />\n'
-            '</svg>\n'
-        )
-
-def update_all_instances():
     instances = instances_list.read_instance_rows()
-    
+
+    # Group instances by item_type, excluding certain types
+    excluded_item_types = {"Cable", "Node"}
+    from collections import defaultdict
+    grouped_instances = defaultdict(list)
     for instance in instances:
-        print(f"Working {instance.get('instance_name')}")
-        group_translate = calculate_formboard_location(instance["instance_name"])
-        print(f"result: {group_translate}")
-        print()
-        # add group to svg with name instance['instance_name'],
-        # translation group_translate[0], group_translate[1], and rotation group_translate[2]
-        # copy instance svg from instance folder into formboard-master
+        item_type = instance.get("item_type", "").strip()
+        if item_type and item_type not in excluded_item_types:
+            grouped_instances[item_type].append(instance)
+
+    # Build SVG content for <formboard-master-contents-start>
+    content_lines = []
+    for item_type, items in grouped_instances.items():
+        content_lines.append(f'    <g id="{item_type}">')
+        for instance in items:
+            instance_name = instance.get("instance_name", "")
+            if not instance_name:
+                continue
+            x, y, angle = calculate_formboard_location(instance_name)
+            content_lines.append(
+                f'      <g id="{instance_name}-contents-start" transform="translate({x},{y}) rotate({angle})"></g>'
+            )
+            content_lines.append(f'      <g id="{instance_name}-contents-end" />')
+        content_lines.append(f'    </g>')
+
+    # Write the full SVG file directly
+    with open(filepath, 'w') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
+        f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')
+        f.write('  <g id="formboard-master-contents-start">\n')
+        f.writelines(line + '\n' for line in content_lines)
+        f.write('  </g>\n')
+        f.write('  <g id="formboard-master-contents-end">\n')
+        f.write('  </g>\n')
+        f.write('</svg>\n')
+
 
 def calculate_formboard_location(instance_name):
     """
