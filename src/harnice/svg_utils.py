@@ -129,47 +129,6 @@ def rotate_svg_group(svg_path, group_name, angle):
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Unexpected error: {e}")
 
 
-def pull_tblock_info_from_json():
-    with open(fileio.path("tblock master text"), 'r') as jf:
-        return json.load(jf)
-
-
-def prep_tblock_svg_master():
-    json_tblock_data = pull_tblock_info_from_json()
-
-    wanted_tblock_libdomain = "rs"
-    wanted_tblock_libsubpath = "page_defaults"
-    wanted_tblock_libfilename = "rs-tblock-default.svg"
-    library_used_tblock_filepath = os.path.join(os.getcwd(), "editable_component_data", wanted_tblock_libsubpath, wanted_tblock_libfilename)
-
-    component_library.import_library_file(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
-
-    if os.path.exists(fileio.path("tblock master svg")):
-        os.remove(fileio.path("tblock master svg"))
-
-    shutil.copy(library_used_tblock_filepath, fileio.dirpath("master_svgs"))
-    os.rename(
-        os.path.join(fileio.dirpath("master_svgs"), wanted_tblock_libfilename),
-        fileio.path("tblock master svg")
-    )
-
-    with open(fileio.path("tblock master svg"), 'r') as inf:
-        content = inf.read()
-
-    def replacer(match):
-        key = match.group(1)
-        old_text = match.group(0)
-        new_text = str(json_tblock_data.get(key, old_text))
-        print(f"Replacing: '{old_text}' with: '{new_text}'")
-        return new_text
-
-    updated_content = re.sub(r"tblock-key-(\w+)", replacer, content)
-
-    with open(fileio.path("tblock master svg"), 'w') as inf:
-        inf.write(updated_content)
-        print("Updated tblock info.")
-
-
 def read_tsv(file_path, columns, numeric_filter_column):
     with open(file_path, 'r', newline='', encoding='utf-8') as tsv_file:
         reader = csv.DictReader(tsv_file, delimiter='\t')
