@@ -24,7 +24,7 @@ def make_new_formboard_master_svg():
     # Prepare lines for SVG content
     content_lines = []
     for item_type, items in grouped_instances.items():
-        content_lines.append(f'    <g id="{item_type}">')
+        content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
         for instance in items:
             instance_name = instance.get("instance_name", "")
             if not instance_name:
@@ -48,7 +48,7 @@ def make_new_formboard_master_svg():
             svg_px_y = -1 * px_y
             svg_angle = -1 * angle
 
-            content_lines.append(f'      <g transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
+            content_lines.append(f'      <g id="{instance_name}" inkscape:label="{instance_name}" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
             )
             content_lines.append(inner_svg)
             content_lines.append('      </g>')
@@ -64,7 +64,6 @@ def make_new_formboard_master_svg():
         f.write('  <g id="formboard-master-contents-end">\n')
         f.write('  </g>\n')
         f.write('</svg>\n')
-
 
 def calculate_formboard_location(instance_name):
     """
