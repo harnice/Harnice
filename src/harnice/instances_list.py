@@ -19,7 +19,8 @@ INSTANCES_LIST_COLUMNS = [
     'diameter',
     'translate_x',
     'translate_y',
-    'rotate_csys'
+    'rotate_csys',
+    'absolute_rotation'
 ]
 
 def load_yaml_data():
@@ -312,24 +313,27 @@ def add_segments_from_formboard():
         print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
         formboard_data = {}
 
-    # Collect existing instance names for lookup
-    existing_instance_names = {instance.get('instance_name', '') for instance in instances}
+    # Gather all existing instance names to avoid duplicates
+    existing_instance_names = {inst.get('instance_name', '') for inst in instances}
 
-    # Add any segment from formboard that's missing in instances list
+    # Append segments that are missing in the instances list
     for segment_name, segment in formboard_data.items():
         if segment_name not in existing_instance_names:
             instances.append({
                 'instance_name': segment_name,
                 'item_type': 'Segment',
+                'length': str(segment.get('length', '')),
+                'diameter': str(segment.get('diameter', '')),
+                'parent_csys': str(segment.get('segment_end_a', '')),
             })
 
     write_instance_rows(instances)
+
 
 def parent(instance_name):
     instances = read_instance_rows()
     for instance in instances:
         if instance.get('instance_name') == instance_name:
-            print(f"!!!!!!!!!!")
             print(f" for known child: {instance.get('instance_name')}")
             print(f"returning parent: {instance.get('parent_instance')}")
             return instance.get('parent_instance')
@@ -356,7 +360,7 @@ def add_angles_to_nodes():
     instances = read_instance_rows()
     instance_lookup = {row['instance_name']: row for row in instances}
 
-    # For each Node instance, compute average angle
+    # For each Node, compute average angle
     for instance in instances:
         if instance.get("item_type") != "Node":
             continue
@@ -366,20 +370,14 @@ def add_angles_to_nodes():
         count = 0
 
         for segment in formboard_data.values():
-            if segment.get("segment_end_b") == instance_name:
+            if segment.get("segment_end_a") == instance_name or segment.get("segment_end_b") == instance_name:
                 angle = segment.get("angle")
+                if segment.get("segment_end_a") == instance_name:
+                    angle += 180
                 if isinstance(angle, (int, float)):
                     total_angle += angle 
-                    total_angle += 180
-                    if total_angle >= 360:
-                        total_angle -= 360
                     count += 1
-            
-            if segment.get("segment_end_a") == instance_name:
-                angle = segment.get("angle")
-                if isinstance(angle, (int, float)):
-                    total_angle += angle
-                    count += 1
+                #flip influences from the A side of each segment
 
         if count > 0:
             average_angle = round(total_angle / count, 2)
@@ -387,9 +385,13 @@ def add_angles_to_nodes():
         else:
             instance["rotate_csys"] = ""
 
+        #keep it to 360 deg
+        while total_angle >= 360:
+            total_angle -= 360
+
     write_instance_rows(instances)
 
-def add_angles_to_segments():
+def add_absolute_angles_to_segments():
     # Load formboard graph definition
     with open(fileio.path("formboard graph definition"), "r") as f:
         formboard_data = json.load(f)
@@ -403,7 +405,7 @@ def add_angles_to_segments():
             instance_name = instance.get("instance_name", "")
             segment_data = formboard_data.get(instance_name, {})
             angle = segment_data.get("angle", "")
-            instance["rotate_csys"] = str(angle) if angle != "" else ""
+            instance["absolute_rotation"] = str(angle) if angle != "" else ""
 
     write_instance_rows(instances)
 

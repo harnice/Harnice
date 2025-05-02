@@ -141,15 +141,16 @@ def generate_node_coordinates():
     instance_lookup = {inst.get('instance_name', ''): inst for inst in instances}
 
     # === Step 3: Set origin node ===
-    origin_node = None
-    for instance in instances:
-        if instance.get('item_type') == "Node":
-            origin_node = instance.get('instance_name')
-            break
+    origin_node = ''
+    for segment in segment_data.values():
+        origin_node = segment.get("segment_end_a")
+        break
 
     if not origin_node:
         print("No node found to initialize coordinates.")
         return
+
+    print(f"Origin node: {origin_node}")
 
     # === Step 4: Build graph structure ===
     graph = {}
@@ -274,14 +275,7 @@ def generate_node_coordinates():
 
     print("-SVG graph visualization written.")
 
-    # === Step 8: Update instances list with segment midpoints ===
-    for segment_name, (mid_x, mid_y) in segment_midpoints.items():
-        instance = instance_lookup.get(segment_name)
-        if instance:
-            instance['translate_x'] = str(mid_x)
-            instance['translate_y'] = str(mid_y)
-
-    # === Step 9: Write all modified instances back ===
+    # === Step 8: Write all modified instances back ===
     instances_list.write_instance_rows(instances)
     print("-Node and segment coordinates updated in instances list.")
 
