@@ -366,7 +366,16 @@ def add_angles_to_nodes():
         count = 0
 
         for segment in formboard_data.values():
-            if segment.get("segment_end_a") == instance_name or segment.get("segment_end_b") == instance_name:
+            if segment.get("segment_end_b") == instance_name:
+                angle = segment.get("angle")
+                if isinstance(angle, (int, float)):
+                    total_angle += angle 
+                    total_angle += 180
+                    if total_angle >= 360:
+                        total_angle -= 360
+                    count += 1
+            
+            if segment.get("segment_end_a") == instance_name:
                 angle = segment.get("angle")
                 if isinstance(angle, (int, float)):
                     total_angle += angle
@@ -380,7 +389,23 @@ def add_angles_to_nodes():
 
     write_instance_rows(instances)
 
+def add_angles_to_segments():
+    # Load formboard graph definition
+    with open(fileio.path("formboard graph definition"), "r") as f:
+        formboard_data = json.load(f)
 
+    # Read instances list
+    instances = read_instance_rows()
+
+    # For each Segment instance, add the angle to the instances list
+    for instance in instances:
+        if instance.get("item_type") == "Segment":
+            instance_name = instance.get("instance_name", "")
+            segment_data = formboard_data.get(instance_name, {})
+            angle = segment_data.get("angle", "")
+            instance["rotate_csys"] = str(angle) if angle != "" else ""
+
+    write_instance_rows(instances)
 
 """
 template instances list modifier:
