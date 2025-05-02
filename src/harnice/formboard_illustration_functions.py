@@ -1,17 +1,33 @@
 import os
-from os.path import basename, dirname
-import json
-import shutil
-import xml.etree.ElementTree as ET
-from os.path import basename, dirname
-from inspect import currentframe
-import yaml
-import csv
-import math
-from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
-import fileio
-import component_library
-import instances_list
+#from os.path import basename, dirname
+#import json
+#import shutil
+#import xml.etree.ElementTree as ET
+#from os.path import basename, dirname
+#from inspect import currentframe
+#import yaml
+#import csv
+#import math
+#from flagnote_functions import update_flagnotes_of_instance, apply_bubble_transforms_to_flagnote_group
+#import fileio
+#import component_library
+#import instances_list
+
+
+def new_blank_svg(filepath, groupname):
+    # Delete the file if it exists
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
+    # Create a blank SVG with two named groups
+    with open(filepath, 'w') as f:
+        f.write(
+            '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+            '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n'
+            f'  <g id="{groupname}-contents-start" />\n'
+            f'  <g id="{groupname}-contents-end" />\n'
+            '</svg>\n'
+        )
 
 def update_all_instances():
     instances = instances_list.read_instance_rows()
@@ -88,7 +104,8 @@ def calculate_formboard_location(instance_name):
         #print(f"After {name}: {x_pos}, {y_pos}, {angle}")
 
     return x_pos, y_pos, angle
-         
+
+"""
 def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rotation, offset):
     #create an svg for that instance
 
@@ -269,7 +286,7 @@ def update_formboard_master_svg():
         svg_utils.find_and_replace_svg_group(fileio.path("formboard master svg"), source_svg_filepath, f"unique-instance-{instance_name}")
 
 def replace_all_segment_groups():
-    """Replace all segment groups in the target SVG with their corresponding source SVG groups."""
+    #Replace all segment groups in the target SVG with their corresponding source SVG groups.
     # Load the segment data JSON
     try:
         with open(fileio.path("formboard segment to from center"), 'r') as json_file:
@@ -322,6 +339,7 @@ def retrieve_angle_of_connector(connectorname):
     return angle
 
 def retrieve_angle_of_segment(segmentname):
+
     # Check if the file exists
     if not os.path.isfile(fileio.path("formboard graph definition")):
         raise FileNotFoundError(f"File not found: {fileio.name("formboard graph definition")}")
@@ -337,3 +355,4 @@ def retrieve_angle_of_segment(segmentname):
         raise KeyError(f"Segment '{segmentname}' not found in the JSON data.")
     
     return angle
+"""

@@ -102,8 +102,13 @@ def harnice():
 
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
-    instances_list.update_component_translate()
-    formboard_illustration_functions.update_all_instances()
+    #generate blank harnice output svg
+    svg_utils.new_blank_svg(fileio.path("formboard master svg"), "formboard-master")
+    
+    
+    #generate_harnice_output_svg.ensure_groups_exist_in_harnice_output()
+
+    #formboard_illustration_functions.update_all_instances()
     #formboard_illustration_functions.update_segment_instances()
     #formboard_illustration_functions.delete_unmatched_files()
     #formboard_illustration_functions.update_formboard_master_svg()
@@ -117,16 +122,7 @@ def harnice():
     #print("#    ############ WORKING ON TBLOCK SVG MASTER ############")
     #tblock_svg_prepper.prep_tblock_svg_master()
     
-    #generate blank harnice output svg
-    #print()
-    #print("############ GENERATING BLANK HARNICE-OUTPUT.SVG #############")
-    #if not utility.file_exists_in_directory(f"{fileio.partnumber("pn-rev")}-harnice-output.svg"):
-    #TODO: file_exists_in_directory(search_for_filename, directory=".") should be changed to os.path.isfile(os.path.join(directory, search_for_filename))
-        #print()
-        #generate_harnice_output_svg.generate_blank_harnice_output_svg()
-    #else :
-        #print(f"{fileio.partnumber("pn-rev")}-harnice-output.svg already exists")
-        #generate_harnice_output_svg.ensure_groups_exist_in_harnice_output()
+    
 
     #combine all master SVG groups into PN-harnice-output.svg
     #print()
