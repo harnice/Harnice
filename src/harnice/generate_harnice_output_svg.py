@@ -6,12 +6,6 @@ import fileio
 from os.path import basename
 from inspect import currentframe
 
-
-harnice_output_svg_filename = f"{fileio.partnumber("pn-rev")}-harnice-output.svg"
-
-harnice_output_svg_filepath = os.path.join(os.getcwd(),harnice_output_svg_filename)
-
-
 # List of group definitions with their transformation parameters
 group_definitions = [
     {'name': 'formboard', 'x': 0, 'y': 20*96, 'scale': 1},
