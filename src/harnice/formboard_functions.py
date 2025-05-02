@@ -50,8 +50,8 @@ def validate_nodes():
                 if instance.get("item_type") == "Node":
                     segment_name = instance.get("parent_instance") + "_leg"
                     formboard_data[segment_name] = {
-                        "segment_end_a": origin_node,
-                        "segment_end_b": instance.get("instance_name"),
+                        "segment_end_a": instance.get("instance_name") if node_counter == 0 else origin_node,
+                        "segment_end_b": origin_node if node_counter == 0 else instance.get("instance_name"),
                         "length": random.randint(6, 18),
                         "angle": 0 if node_counter == 0 else random.randint(0, 359),
                         "diameter": 0.1
