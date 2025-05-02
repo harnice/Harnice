@@ -103,8 +103,11 @@ def harnice():
     print()
     print("############ REBUILDING FORMBOARD DRAWING #############")
     #generate blank harnice output svg
+    print("Updating segment instances")
     formboard_illustration_functions.update_segment_instances()
-    exit()
+    print()
+
+    print("Generating new fomboard master drawing (deleting existing if present)")
     formboard_illustration_functions.make_new_formboard_master_svg()
 
     

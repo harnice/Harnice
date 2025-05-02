@@ -52,8 +52,9 @@ def make_new_formboard_master_svg():
             except Exception as e:
                 raise RuntimeError(f"Failed to read SVG data for {instance_name}: {e}")
 
-            content_lines.append(
-                f'      <g transform="translate({x},{y}) rotate({angle})">'
+            px_x = x * 96
+            px_y = y * 96
+            content_lines.append(f'      <g transform="translate({px_x},{px_y}) rotate({angle})">'
             )
             content_lines.append(inner_svg)
             content_lines.append('      </g>')
@@ -132,7 +133,8 @@ def calculate_formboard_location(instance_name):
         angle += rotate_csys
 
         #print(f"After {name}: {x_pos}, {y_pos}, {angle}")
-
+    print("!!!!!!!")
+    print(f"{instance_name}: {x_pos}, {y_pos}, {angle}")
     return x_pos, y_pos, angle
 
 def update_segment_instances():
@@ -171,9 +173,9 @@ def update_segment_instances():
                 with open(output_filename, 'w') as svg_file:
                     svg_file.write(svg_content)
 
-                add_filename_to_drawing_instance_list(os.path.basename(segment_dir))
+                component_library.add_filename_to_drawing_instance_list(os.path.basename(segment_dir))
 
-                print(f"Generated SVG for {segment_name}: {output_filename}")
+                print(f"Built segment SVG for segment {segment_name} (deleted existing if present)")
 
             except Exception as e:
                 print(f"Error processing segment {segment_name}: {e}")
