@@ -1,150 +1,79 @@
-<?xml version="1.0" ?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" version="1.1" id="svg1">
-  <defs id="defs1">
-    <rect x="197.53245" y="17.037839" width="138.96487" height="107.55136" id="rect1"/>
-    <marker style="overflow:visible" id="ConcaveTriangle-80" refX="0" refY="0" orient="auto-start-reverse" markerWidth="1" markerHeight="1" viewBox="0 0 1 1">
-      <path transform="scale(0.7)" d="M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z" style="fill:context-stroke;fill-rule:evenodd;stroke:none" id="path7-4"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="D38999_26ZB98PN-drawing.svg"
+   width="3.125in"
+   height="1.5625in"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <rect
+       x="197.53246"
+       y="17.03784"
+       width="138.96487"
+       height="107.55136"
+       id="rect1" />
+    <marker
+       style="overflow:visible"
+       id="ConcaveTriangle-80"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1">
+      <path
+         transform="scale(0.7)"
+         d="M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         id="path7-4" />
     </marker>
   </defs>
-  <sodipodi:namedview id="namedview1" pagecolor="#ffffff" bordercolor="#000000" borderopacity="0.25" inkscape:showpageshadow="2" inkscape:pageopacity="0.0" inkscape:deskcolor="#d1d1d1"/>
-  <g id="connector-drawing-contents-start">
-    <g id="connector-drawing">
-      <g id="add-drawing-here">
-        <circle style="fill:#000000;stroke:#000000;stroke-width:0.015;stroke-dasharray:0.18, 0.18" id="path1" cx="0" cy="0" r="10" inkscape:label="placeholder-deleteme"/>
-      </g>
-    </g>
-    <g id="bubble-location-0">
-      <g id="note-0-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-0-location" cx="192.0" cy="0.0" r="10"/>
-      </g>
-      <g id="path-0-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 192.0,0.0 -67.19999999999999,0.0" id="path-location-index-0"/>
-      </g>
-      <g id="as-printed-flagnote-0-translatables">
-        <g id="as-printed-flagnote-0-contents-start"/>
-        <g id="as-printed-flagnote-0-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-1">
-      <g id="note-1-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-1-location" cx="180.42098319089442" cy="65.6678675185284" r="10"/>
-      </g>
-      <g id="path-1-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 180.42098319089442,65.6678675185284 -63.14734411681303,-22.983753631484937" id="path-location-index-1"/>
-      </g>
-      <g id="as-printed-flagnote-1-translatables">
-        <g id="as-printed-flagnote-1-contents-start"/>
-        <g id="as-printed-flagnote-1-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-2">
-      <g id="note-2-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-2-location" cx="180.42098319089442" cy="-65.6678675185284" r="10"/>
-      </g>
-      <g id="path-2-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 180.42098319089442,-65.6678675185284 -63.14734411681303,22.983753631484937" id="path-location-index-2"/>
-      </g>
-      <g id="as-printed-flagnote-2-translatables">
-        <g id="as-printed-flagnote-2-contents-start"/>
-        <g id="as-printed-flagnote-2-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-3">
-      <g id="note-3-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-3-location" cx="147.08053307884379" cy="123.41522105981554" r="10"/>
-      </g>
-      <g id="path-3-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 147.08053307884379,123.41522105981554 -51.478186577595324,-43.19532737093543" id="path-location-index-3"/>
-      </g>
-      <g id="as-printed-flagnote-3-translatables">
-        <g id="as-printed-flagnote-3-contents-start"/>
-        <g id="as-printed-flagnote-3-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-4">
-      <g id="note-4-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-4-location" cx="147.08053307884379" cy="-123.41522105981554" r="10"/>
-      </g>
-      <g id="path-4-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 147.08053307884379,-123.41522105981554 -51.478186577595324,43.19532737093543" id="path-location-index-4"/>
-      </g>
-      <g id="as-printed-flagnote-4-translatables">
-        <g id="as-printed-flagnote-4-contents-start"/>
-        <g id="as-printed-flagnote-4-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-5">
-      <g id="note-5-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-5-location" cx="96.00000000000003" cy="166.27687752661222" r="10"/>
-      </g>
-      <g id="path-5-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 96.00000000000003,166.27687752661222 -33.60000000000001,-58.19690713431427" id="path-location-index-5"/>
-      </g>
-      <g id="as-printed-flagnote-5-translatables">
-        <g id="as-printed-flagnote-5-contents-start"/>
-        <g id="as-printed-flagnote-5-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-6">
-      <g id="note-6-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-6-location" cx="96.00000000000003" cy="-166.27687752661222" r="10"/>
-      </g>
-      <g id="path-6-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 96.00000000000003,-166.27687752661222 -33.60000000000001,58.19690713431427" id="path-location-index-6"/>
-      </g>
-      <g id="as-printed-flagnote-6-translatables">
-        <g id="as-printed-flagnote-6-contents-start"/>
-        <g id="as-printed-flagnote-6-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-7">
-      <g id="note-7-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-7-location" cx="33.34045011205064" cy="189.08308857834393" r="10"/>
-      </g>
-      <g id="path-7-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 33.34045011205064,189.08308857834393 -11.669157539217721,-66.17908100242036" id="path-location-index-7"/>
-      </g>
-      <g id="as-printed-flagnote-7-translatables">
-        <g id="as-printed-flagnote-7-contents-start"/>
-        <g id="as-printed-flagnote-7-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-8">
-      <g id="note-8-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-8-location" cx="33.34045011205064" cy="-189.08308857834393" r="10"/>
-      </g>
-      <g id="path-8-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m 33.34045011205064,-189.08308857834393 -11.669157539217721,66.17908100242036" id="path-location-index-8"/>
-      </g>
-      <g id="as-printed-flagnote-8-translatables">
-        <g id="as-printed-flagnote-8-contents-start"/>
-        <g id="as-printed-flagnote-8-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-9">
-      <g id="note-9-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-9-location" cx="-33.34045011205062" cy="189.08308857834393" r="10"/>
-      </g>
-      <g id="path-9-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m -33.34045011205062,189.08308857834393 11.669157539217714,-66.17908100242036" id="path-location-index-9"/>
-      </g>
-      <g id="as-printed-flagnote-9-translatables">
-        <g id="as-printed-flagnote-9-contents-start"/>
-        <g id="as-printed-flagnote-9-contents-end"/>
-      </g>
-    </g>
-    <g id="bubble-location-10">
-      <g id="note-10-location-opacity" opacity="1">
-        <circle style="fill:#ff0000;stroke:#000000;stroke-width:0.0127855;stroke-dasharray:0.153426, 0.153426" id="bubble-location-index-10-location" cx="-33.34045011205062" cy="-189.08308857834393" r="10"/>
-      </g>
-      <g id="path-10-opacity" opacity="1">
-        <path style="display:inline;fill:none;stroke:#000000;stroke-width:1px;marker-end:url(#ConcaveTriangle-80)" d="m -33.34045011205062,-189.08308857834393 11.669157539217714,66.17908100242036" id="path-location-index-10"/>
-      </g>
-      <g id="as-printed-flagnote-10-translatables">
-        <g id="as-printed-flagnote-10-contents-start"/>
-        <g id="as-printed-flagnote-10-contents-end"/>
-      </g>
-    </g>
-  </g>
-  <g id="connector-drawing-contents-end"/>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="in"
+     showgrid="true"
+     inkscape:zoom="1.4925513"
+     inkscape:cx="40.53462"
+     inkscape:cy="198.65314"
+     inkscape:window-width="1104"
+     inkscape:window-height="1040"
+     inkscape:window-x="0"
+     inkscape:window-y="44"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1">
+    <inkscape:grid
+       id="grid1"
+       units="in"
+       originx="0"
+       originy="0"
+       spacingx="9.6000004"
+       spacingy="9.6000004"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="5"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
+  <rect
+     style="fill:#6f4217;fill-opacity:1;stroke-width:1.43679"
+     id="rect4"
+     width="153.32393"
+     height="149.451"
+     x="0.84965467"
+     y="-74.318138" />
 </svg>
