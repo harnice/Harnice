@@ -17,23 +17,26 @@ import svg_utils
 import fileio
 from collections import defaultdict
 
+import os
+from collections import defaultdict
+import component_library
+
 def make_new_formboard_master_svg():
     filepath = fileio.path("formboard master svg")
     if os.path.exists(filepath):
         os.remove(filepath)
 
     instances = instances_list.read_instance_rows()
-
-    # Group instances by item_type, excluding certain types
     excluded_item_types = {"Cable", "Node"}
-    from collections import defaultdict
+
+    # Group instances by item_type
     grouped_instances = defaultdict(list)
     for instance in instances:
         item_type = instance.get("item_type", "").strip()
         if item_type and item_type not in excluded_item_types:
             grouped_instances[item_type].append(instance)
 
-    # Build SVG content for <formboard-master-contents-start>
+    # Prepare lines for SVG content
     content_lines = []
     for item_type, items in grouped_instances.items():
         content_lines.append(f'    <g id="{item_type}">')
@@ -41,14 +44,22 @@ def make_new_formboard_master_svg():
             instance_name = instance.get("instance_name", "")
             if not instance_name:
                 continue
-            x, y, angle = calculate_formboard_location(instance_name)
-            content_lines.append(
-                f'      <g id="{instance_name}-contents-start" transform="translate({x},{y}) rotate({angle})"></g>'
-            )
-            content_lines.append(f'      <g id="{instance_name}-contents-end" />')
-        content_lines.append(f'    </g>')
 
-    # Write the full SVG file directly
+            x, y, angle = calculate_formboard_location(instance_name)
+
+            try:
+                inner_svg = component_library.copy_svg_data(instance_name)
+            except Exception as e:
+                raise RuntimeError(f"Failed to read SVG data for {instance_name}: {e}")
+
+            content_lines.append(
+                f'      <g transform="translate({x},{y}) rotate({angle})">'
+            )
+            content_lines.append(inner_svg)
+            content_lines.append('      </g>')
+        content_lines.append('    </g>')
+
+    # Write full SVG
     with open(filepath, 'w') as f:
         f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
         f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')

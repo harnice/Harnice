@@ -453,6 +453,25 @@ def delete_unmatched_files():
                 except Exception as e:
                     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error deleting unmatching directory: {basename(item_path)} in 'drawing instances': {e}")
       
+def copy_svg_data(instance_name):
+    svg_path = os.path.join(
+        fileio.dirpath("editable_component_data"),
+        instance_name,
+        f"{instance_name}-drawing.svg"
+    )
 
+    if not os.path.exists(svg_path):
+        raise FileNotFoundError(f"SVG file not found: {svg_path}")
+
+    with open(svg_path, 'r') as f:
+        contents = f.read()
+
+    # Extract contents between <svg> and </svg>
+    match = re.search(r"<svg[^>]*>(.*?)</svg>", contents, flags=re.DOTALL)
+    if not match:
+        raise ValueError(f"No valid <svg> content in {svg_path}")
+
+    return match.group(1).strip()
+    
 if __name__ == "__main__":
     generate_new_connector_template()
