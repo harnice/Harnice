@@ -80,7 +80,6 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
                     f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
                 },
-                f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
             "wireviz_outputs":{
