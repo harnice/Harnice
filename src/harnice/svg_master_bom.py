@@ -2,7 +2,7 @@ import csv
 import fileio
 
 def prep_bom_svg_master():
-    # === Config ===
+    # === Configuration ===
     selected_columns = ["bom_line_number", "qty", "total_length_exact", "mpn"]
     header_labels = ["ITEM", "QTY", "LENGTH", "MPN"]
     column_widths = [0.375 * 96, 0.375 * 96, 0.75 * 96, 1.75 * 96]  # in pixels
@@ -20,10 +20,8 @@ def prep_bom_svg_master():
             if row.get("bom_line_number", "").isdigit()
         ]
 
-    # Sort by bom_line_number numerically
+    # Sort and append header at the bottom (last row)
     data_rows.sort(key=lambda r: int(r[0]))
-
-    # Add header row last (to appear at bottom when flipped)
     table_rows = data_rows + [header_labels]
 
     num_rows = len(table_rows)
@@ -32,14 +30,23 @@ def prep_bom_svg_master():
 
     # === Begin SVG Output ===
     svg_lines = [
-        f'<svg width="{svg_width}" height="{svg_height}" font-family="{font_family}" font-size="{font_size}">',
-        f'<g id="bom-master-contents-start" transform="translate({-1 * svg_width}, {-1 * svg_height})">'
+        f'<svg width="{svg_width}" height="{svg_height}" '
+        f'font-family="{font_family}" font-size="{font_size}">',
+        '<g id="bom-master-contents-start">'
     ]
 
+    # Compute left edges for each column starting at origin and going left
+    column_x_positions = []
+    running_x = 0
+    for width in column_widths:
+        running_x += width
+        column_x_positions.append(-running_x)
+
+    # === Draw table from origin outward ===
     for row_index, row in enumerate(reversed(table_rows)):
-        y = row_index * row_height
+        y = -1 * (row_index + 1) * row_height  # Upward from origin
         for col_index, cell in enumerate(row):
-            x = sum(column_widths[:col_index])
+            x = column_x_positions[col_index]
             cell_width = column_widths[col_index]
 
             # Cell background
@@ -57,21 +64,27 @@ def prep_bom_svg_master():
                 text_x = x + 5
 
             text_y = y + row_height / 2
+            is_header_row = (row_index == 0)
+            font_weight = 'bold' if is_header_row else 'normal'
+
             svg_lines.append(
                 f'<text x="{text_x}" y="{text_y}" fill="black" '
-                f'text-anchor="{text_anchor}" dominant-baseline="middle">{cell}</text>'
-            )
+                f'text-anchor="{text_anchor}" dominant-baseline="middle" '
+                f'font-weight="{font_weight}">{cell}</text>'
+)
 
-            if (col_index == 0): # Determine if the current column is the "ITEM" column
-                if (row_index != 0): # Determine if the current row is not the header row
-                    circle_cx = x + cell_width / 2
-                    circle_cy = y + row_height / 2
-                    radius = min(cell_width, row_height) / 2 - 2
+            # Circle on ITEM column (not header row)
+            is_item_column = (col_index == 0)
+            is_data_row = (row_index != 0)
+            if is_item_column and is_data_row:
+                circle_cx = x + cell_width / 2
+                circle_cy = y + row_height / 2
+                radius = min(cell_width, row_height) / 2 - 2
 
-                    svg_lines.append(
-                        f'<circle cx="{circle_cx}" cy="{circle_cy}" r="{radius}" '
-                        f'fill="none" stroke="black" stroke-width="{line_width}"/>'
-                    )
+                svg_lines.append(
+                    f'<circle cx="{circle_cx}" cy="{circle_cy}" r="{radius}" '
+                    f'fill="none" stroke="black" stroke-width="{line_width}"/>'
+                )
 
     svg_lines.append('</g>')
     svg_lines.append('<g id="bom-master-contents-end"></g>')
