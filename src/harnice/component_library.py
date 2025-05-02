@@ -92,8 +92,9 @@ def pull():
                 if find_modifications(source_lib_path, target_directory) == False:
                     print("Library is up to date.")
                 else:
-                    print(f"You've modified the libary as-imported. In order to maintain traceability, you're not really supposed to do that")
-                    exit()
+                    raise RuntimeError(
+                        "Either you've modified the library as-imported (not allowed for traceability purposes) or the library has changed without adding a new rev. Either choose a different rev or delete the libraries used from the part to re-import."
+                    )
 
             copy_in_editable_file(instance.get('instance_name'))
 
