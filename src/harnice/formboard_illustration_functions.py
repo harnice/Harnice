@@ -135,6 +135,50 @@ def calculate_formboard_location(instance_name):
 
     return x_pos, y_pos, angle
 
+def update_segment_instances():
+    instances = instances_list.read_instance_rows()
+
+    for instance in instances:
+        if instance.get("item_type") == "Segment":
+            segment_name = instance.get("instance_name", "").strip()
+            if not segment_name:
+                continue
+
+            try:
+                # Get length and diameter in inches and convert to pixels
+                length_in = float(instance.get("length", 0))
+                diameter_in = float(instance.get("diameter", 1))
+                length = 96 * length_in
+                diameter = 96 * diameter_in
+
+                outline_thickness = 0.05 * 96
+                centerline_thickness = 0.015 * 96
+
+                half_length = length / 2
+                half_diameter = diameter / 2
+
+                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="{-half_length} {-half_diameter} {length} {diameter}">
+    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" stroke-width="{diameter}" />
+    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
+    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
+</svg>'''
+
+                segment_dir = os.path.join(fileio.dirpath("editable_component_data"), segment_name)
+                os.makedirs(segment_dir, exist_ok=True)
+
+                output_filename = os.path.join(segment_dir, f"{segment_name}-drawing.svg")
+
+                with open(output_filename, 'w') as svg_file:
+                    svg_file.write(svg_content)
+
+                add_filename_to_drawing_instance_list(os.path.basename(segment_dir))
+
+                print(f"Generated SVG for {segment_name}: {output_filename}")
+
+            except Exception as e:
+                print(f"Error processing segment {segment_name}: {e}")
+
+
 """
 def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rotation, offset):
     #create an svg for that instance
@@ -187,62 +231,6 @@ def update_bom_instance(instance_name, mpn, supplier, bomid, instance_type, rota
         svg_utils.rotate_svg_group(instance_svg_path, "connector-instance-rotatables", connector_angle)
         #TODO: offset and rotate per rotation and offset arguents of this function
         update_flagnotes_of_instance(os.path.dirname(instance_svg_path), instance_name_w_suffix, connector_angle, bomid)
-
-def update_segment_instances():
-    #create SVGs for segments (instances that are not in the bom)
-    try:
-        with open(fileio.path("formboard graph definition"), 'r') as json_file:
-            graph_data = json.load(json_file)
-    except FileNotFoundError:
-        print(f"Error: File {fileio.name("formboard graph definition")} not found.")
-        return
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
-        return
-
-    # Iterate through each segment in the JSON
-    for segment_name, segment_data in graph_data.items():
-        try:
-            # Extract segment details
-            length = 96* segment_data.get("length", 0)
-            diameter = 96* segment_data.get("diameter", 1)  # Default to 1 if diameter is not specified
-
-            outline_line_thickness = 0.05 * 96
-            centerline_line_thickness = 0.015 * 96
-            
-            # Calculate SVG dimensions
-            half_length = length / 2
-            half_diameter = diameter / 2
-
-            # Generate SVG content
-            svg_content = f'''
-    <svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="{-half_length} {-half_diameter} {length} {diameter}">
-    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" stroke-width="{diameter}" />
-    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="white" stroke-width="{diameter-outline_line_thickness}" />
-    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" style="stroke-width:{centerline_line_thickness};stroke-dasharray:18,18;stroke-dashoffset:0"/>
-    </svg>'''
-
-            # Define output filename
-            os.makedirs(os.path.join(fileio.dirpath("editable_component_data"), segment_name), exist_ok=True)
-
-            output_filename = os.path.join(fileio.dirpath("editable_component_data"), segment_name, f"{fileio.partnumber("pn-rev")}-{segment_name}.svg")
-            
-            # Write SVG file
-            with open(output_filename, 'w') as svg_file:
-                svg_file.write(svg_content)
-
-            add_filename_to_drawing_instance_list(basename(dirname(output_filename)))
-
-            svg_utils.add_entire_svg_file_contents_to_group(output_filename, "segment_contents_rotatables")
-
-            svg_utils.rotate_svg_group(output_filename, "segment_contents_rotatables", -1*retrieve_angle_of_segment(segment_name))
-
-            svg_utils.add_entire_svg_file_contents_to_group(output_filename, f"unique-instance-{segment_name}")
-            
-            print(f"Generated SVG for {segment_name}: {output_filename}")
-        
-        except Exception as e:
-            print(f"Error processing segment {segment_name}: {e}")
 
 def update_formboard_master_svg():
     # Create the root SVG element
