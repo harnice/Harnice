@@ -274,14 +274,7 @@ def generate_node_coordinates():
 
     print("-SVG graph visualization written.")
 
-    # === Step 8: Update instances list with segment midpoints ===
-    for segment_name, (mid_x, mid_y) in segment_midpoints.items():
-        instance = instance_lookup.get(segment_name)
-        if instance:
-            instance['translate_x'] = str(mid_x)
-            instance['translate_y'] = str(mid_y)
-
-    # === Step 9: Write all modified instances back ===
+    # === Step 8: Write all modified instances back ===
     instances_list.write_instance_rows(instances)
     print("-Node and segment coordinates updated in instances list.")
 

@@ -19,7 +19,8 @@ INSTANCES_LIST_COLUMNS = [
     'diameter',
     'translate_x',
     'translate_y',
-    'rotate_csys'
+    'rotate_csys',
+    'absolute_rotation'
 ]
 
 def load_yaml_data():
@@ -323,6 +324,7 @@ def add_segments_from_formboard():
                 'item_type': 'Segment',
                 'length': str(segment.get('length', '')),
                 'diameter': str(segment.get('diameter', '')),
+                'parent_csys': str(segment.get('segment_end_a', '')),
             })
 
     write_instance_rows(instances)
@@ -392,7 +394,7 @@ def add_angles_to_nodes():
 
     write_instance_rows(instances)
 
-def add_angles_to_segments():
+def add_absolute_angles_to_segments():
     # Load formboard graph definition
     with open(fileio.path("formboard graph definition"), "r") as f:
         formboard_data = json.load(f)
@@ -406,7 +408,7 @@ def add_angles_to_segments():
             instance_name = instance.get("instance_name", "")
             segment_data = formboard_data.get(instance_name, {})
             angle = segment_data.get("angle", "")
-            instance["rotate_csys"] = str(angle) if angle != "" else ""
+            instance["absolute_rotation"] = str(angle) if angle != "" else ""
 
     write_instance_rows(instances)
 

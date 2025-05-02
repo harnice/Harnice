@@ -54,6 +54,10 @@ def make_new_formboard_master_svg():
 
             px_x = x * 96
             px_y = y * 96
+
+            if instance.get("absolute_rotation") != "":
+                angle = instance.get("absolute_rotation")
+
             content_lines.append(f'      <g transform="translate({px_x},{px_y}) rotate({angle})">'
             )
             content_lines.append(inner_svg)
@@ -156,15 +160,13 @@ def update_segment_instances():
                 outline_thickness = 0.05 * 96
                 centerline_thickness = 0.015 * 96
 
-                half_length = length / 2
                 half_diameter = diameter / 2
 
-                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="{-half_length} {-half_diameter} {length} {diameter}">
-    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" stroke-width="{diameter}" />
-    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
-    <line x1="{-half_length}" y1="0" x2="{half_length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
-</svg>'''
-
+                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="0 {-half_diameter} {length} {diameter}">
+                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" stroke-width="{diameter}" />
+                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
+                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
+                </svg>'''
                 segment_dir = os.path.join(fileio.dirpath("editable_component_data"), segment_name)
                 os.makedirs(segment_dir, exist_ok=True)
 

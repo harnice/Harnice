@@ -80,7 +80,7 @@ def harnice():
     print()
 
     print("Adding angles to nodes")
-    instances_list.add_angles_to_segments()
+    instances_list.add_absolute_angles_to_segments()
     instances_list.add_angles_to_nodes()
     print()
 
