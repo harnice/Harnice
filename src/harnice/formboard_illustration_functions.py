@@ -54,12 +54,16 @@ def make_new_formboard_master_svg():
 
             px_x = x * 96
             px_y = y * 96
-
+            
             if instance.get("absolute_rotation") != "":
-                angle = instance.get("absolute_rotation")
+                angle = float(instance.get("absolute_rotation"))
 
-            content_lines.append(f'      <g transform="translate({px_x},-{px_y}) rotate(-{angle})">'
-            #NOTE THE NEGATIVES! i think it is needed to transform my csys (right-hand rule, ccw is positive angle, up is +), to inkscape (cw is positive angle, up is -)
+            #transform harnice csys (right-hand rule, ccw is positive angle, up is +), to svg csys (cw is positive angle, up is -)
+            svg_px_x = px_x
+            svg_px_y = -1 * px_y
+            svg_angle = -1 * angle
+
+            content_lines.append(f'      <g transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
             )
             content_lines.append(inner_svg)
             content_lines.append('      </g>')

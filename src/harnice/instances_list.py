@@ -334,7 +334,6 @@ def parent(instance_name):
     instances = read_instance_rows()
     for instance in instances:
         if instance.get('instance_name') == instance_name:
-            print(f"!!!!!!!!!!")
             print(f" for known child: {instance.get('instance_name')}")
             print(f"returning parent: {instance.get('parent_instance')}")
             return instance.get('parent_instance')
