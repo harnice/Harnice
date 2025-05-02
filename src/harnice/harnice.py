@@ -8,7 +8,7 @@ import harnice_prechecker
 import component_library
 import fileio
 import svg_master_formboard
-import svg_master_bom
+import svg_masters
 import os
 
 def harnice():
@@ -116,9 +116,9 @@ def harnice():
     print()
     print("############ REBUILDING HARNICE OUTPUT #############")
     print("Working on BOM svg master")
-    svg_master_bom.prep_bom_svg_master()
-    #print("#    ############ WORKING ON TBLOCK SVG MASTER ############")
-    #tblock_svg_prepper.prep_tblock_svg_master()
+    svg_masters.prep_bom()
+    print("Working on Tblock svg master")
+    svg_masters.prep_tblock()
     
     
 

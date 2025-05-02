@@ -1,7 +1,7 @@
 import csv
 import fileio
 
-def prep_bom_svg_master():
+def prep_bom():
     # === Configuration ===
     selected_columns = ["bom_line_number", "qty", "total_length_exact", "mpn"]
     header_labels = ["ITEM", "QTY", "LENGTH", "MPN"]
@@ -71,7 +71,7 @@ def prep_bom_svg_master():
                 f'<text x="{text_x}" y="{text_y}" fill="black" '
                 f'text-anchor="{text_anchor}" dominant-baseline="middle" '
                 f'font-weight="{font_weight}">{cell}</text>'
-)
+            )
 
             # Circle on ITEM column (not header row)
             is_item_column = (col_index == 0)
@@ -94,5 +94,4 @@ def prep_bom_svg_master():
     with open(fileio.path("bom table master svg"), "w", encoding="utf-8") as svg_file:
         svg_file.write("\n".join(svg_lines))
 
-if __name__ == "__main__":
-    prep_bom_svg_master()
+def prep_tblock():
