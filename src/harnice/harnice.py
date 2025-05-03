@@ -31,7 +31,7 @@ def harnice():
 
     print()
     print("############ CHECKING COMPONENTS AGAINST LIBRARY #############")
-    component_library.pull()
+    component_library.pull_parts()
     
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
