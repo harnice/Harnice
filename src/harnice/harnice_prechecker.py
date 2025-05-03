@@ -62,11 +62,9 @@ def generate_revision_history_tsv(filename):
 
     :param pn: The prefix to use in the file name.
     """
-    # Get the parent directory path
-    parent_dir = os.path.dirname(os.getcwd())
 
     # Construct the file path
-    file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
+    file_path = fileio.path("revision history")
 
     # Define the columns for the TSV file
     columns = [
@@ -124,24 +122,11 @@ def check_subdirectory_format():
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Please navigate to a valid rev folder (I see there is a valid one inside this one!)")
 
 def check_existence_of_rev_history_file_in_parent(pn):
-    """
-    Checks if the parent directory contains a file named {pn}-revision_history.tsv.
-
-    :param pn: The prefix to check in the file name.
-    :return: True if the file exists in the parent directory, otherwise False.
-    """
-    # Get the parent directory path
-    parent_dir = os.path.dirname(os.getcwd())
-
-    # Construct the expected file name
-    expected_file = f"{pn}-revision_history.tsv"
-
-    # Check if the file exists in the parent directory
-    file_path = os.path.join(parent_dir, expected_file)
+    file_path = fileio.path("revision history")
     if os.path.isfile(file_path):
         return True
     else:
-        generate_revision_history_tsv(f"{pn}-revision_history.tsv")
+        generate_revision_history_tsv()
         return True
 
 def find_pn_and_rev_entry_in_tsv():
@@ -153,8 +138,7 @@ def find_pn_and_rev_entry_in_tsv():
     """
 
     # Construct the file path in the parent directory
-    parent_dir = os.path.dirname(os.getcwd())
-    file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
+    file_path = fileio.path("revision history")
 
     try:
         with open(file_path, 'r') as file:
@@ -200,12 +184,8 @@ def add_initial_release_row_to_existing_tsv():
     Adds a singular row to an existing TSV file named {pn}-revision_history.tsv in the parent directory.
     The row will include only the specific values for "PN", "Rev", and "Revision Updates" without repeating headers.
     """
-
-    # Get the parent directory path
-    parent_dir = os.path.dirname(os.getcwd())
-
     # Construct the file path
-    file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
+    file_path = fileio.path("revision history")
 
     # Construct the row values
     today_date = datetime.date.today().isoformat()
@@ -221,8 +201,7 @@ def add_initial_release_row_to_existing_tsv():
 def check_revision_status():
 
     # Construct the file path in the parent directory
-    parent_dir = os.path.dirname(os.getcwd())
-    file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
+    file_path = fileio.path("revision history")
 
     try:
         with open(file_path, 'r') as file:
