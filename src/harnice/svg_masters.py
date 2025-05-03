@@ -1,5 +1,11 @@
 import csv
 import fileio
+import os
+import shutil
+import re
+from inspect import currentframe
+from os.path import basename
+import component_library
 
 def prep_bom():
     # === Configuration ===
@@ -95,15 +101,40 @@ def prep_bom():
         svg_file.write("\n".join(svg_lines))
 
 def prep_tblock():
-    json_tblock_data = []
-    with open(fileio.path("tblock master text"), 'r') as jf:
-        return json.load(jf)
-    json_tblock_data = json_tblock_data
+    # === Step 1: Load revision row from TSV ===
+    pn = fileio.partnumber("pn")
+    rev = fileio.partnumber("R")
+    parent_dir = os.path.dirname(os.getcwd())
+    tsv_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
 
+    if not os.path.isfile(tsv_path):
+        print(f"[ERROR] {tsv_path} not found.")
+        return
+
+    with open(tsv_path, "r", encoding="utf-8") as file:
+        header = file.readline().strip().split('\t')
+        json_tblock_data = {}
+
+        for line in file:
+            row = line.strip().split('\t')
+            padded_row = row + [""] * (len(header) - len(row))
+            row_dict = dict(zip(header, padded_row))
+
+            if row_dict.get("pn", "").strip() == pn and row_dict.get("rev", "").strip() == rev:
+                json_tblock_data = row_dict
+                break
+
+    if not json_tblock_data:
+        print(f"[ERROR] No matching revision row found for pn={pn}, rev={rev}")
+        return
+
+    # === Step 2: Prepare default tblock SVG ===
     wanted_tblock_libdomain = "rs"
     wanted_tblock_libsubpath = "page_defaults"
     wanted_tblock_libfilename = "rs-tblock-default.svg"
-    library_used_tblock_filepath = os.path.join(os.getcwd(), "editable_component_data", wanted_tblock_libsubpath, wanted_tblock_libfilename)
+    library_used_tblock_filepath = os.path.join(
+        os.getcwd(), "editable_component_data", wanted_tblock_libsubpath, wanted_tblock_libfilename
+    )
 
     component_library.import_library_file(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
 
@@ -116,6 +147,7 @@ def prep_tblock():
         fileio.path("tblock master svg")
     )
 
+    # === Step 3: Perform key substitution ===
     with open(fileio.path("tblock master svg"), 'r') as inf:
         content = inf.read()
 
@@ -128,6 +160,6 @@ def prep_tblock():
 
     updated_content = re.sub(r"tblock-key-(\w+)", replacer, content)
 
-    with open(fileio.path("tblock master svg"), 'w') as inf:
-        inf.write(updated_content)
-        print("Updated tblock info.")
+    with open(fileio.path("tblock master svg"), 'w') as outf:
+        outf.write(updated_content)
+        print("[INFO] tblock master svg updated successfully.")
