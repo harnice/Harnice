@@ -69,7 +69,21 @@ def generate_revision_history_tsv(filename):
     file_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
 
     # Define the columns for the TSV file
-    columns = ["pn", "desc", "rev", "status", "releaseticket", "datestarted", "datemodified", "datereleased", "drawnby", "checkedby", "revisionupdates", "affectedinstances"]
+    columns = [
+        "pn", 
+        "desc", 
+        "rev", 
+        "status", 
+        "releaseticket", 
+        "datestarted", 
+        "datemodified", 
+        "datereleased", 
+        "drawnby", 
+        "checkedby", 
+        "revisionupdates", 
+        "affectedinstances",
+        "tblock_supplier",
+        "tblock"]
 
     # Write the TSV file
     with open(file_path, 'w') as file:
