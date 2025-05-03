@@ -100,6 +100,12 @@ def prep_bom():
     with open(fileio.path("bom table master svg"), "w", encoding="utf-8") as svg_file:
         svg_file.write("\n".join(svg_lines))
 
+import os
+import re
+import json
+import fileio
+import component_library
+
 def prep_tblock():
     # === Step 1: Load revision row from TSV ===
     pn = fileio.partnumber("pn")
@@ -108,47 +114,53 @@ def prep_tblock():
     tsv_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
 
     if not os.path.isfile(tsv_path):
-        print(f"[ERROR] {tsv_path} not found.")
-        return
+        raise FileNotFoundError(f"[ERROR] {tsv_path} not found.")
 
+    revision_row = {}
     with open(tsv_path, "r", encoding="utf-8") as file:
         header = file.readline().strip().split('\t')
-        json_tblock_data = {}
-
         for line in file:
             row = line.strip().split('\t')
             padded_row = row + [""] * (len(header) - len(row))
             row_dict = dict(zip(header, padded_row))
 
             if row_dict.get("pn", "").strip() == pn and row_dict.get("rev", "").strip() == rev:
-                json_tblock_data = row_dict
+                revision_row = {k: v.strip() for k, v in row_dict.items()}
                 break
 
-    if not json_tblock_data:
-        print(f"[ERROR] No matching revision row found for pn={pn}, rev={rev}")
-        return
+    if not revision_row:
+        raise ValueError(f"[ERROR] No matching revision row found for pn={pn}, rev={rev}")
 
-    # === Step 2: Prepare default tblock SVG ===
-    wanted_tblock_libdomain = "rs"
-    wanted_tblock_libsubpath = "page_defaults"
-    wanted_tblock_libfilename = "rs-tblock-default.svg"
-    library_used_tblock_filepath = os.path.join(
-        os.getcwd(), "editable_component_data", wanted_tblock_libsubpath, wanted_tblock_libfilename
-    )
+    # === Step 2: Load or initialize JSON ===
+    json_path = fileio.path("tblock master text")
+    if os.path.isfile(json_path):
+        with open(json_path, "r", encoding="utf-8") as jf:
+            json_tblock_data = json.load(jf)
+    else:
+        json_tblock_data = {}
 
-    component_library.import_library_file(wanted_tblock_libdomain, wanted_tblock_libsubpath, wanted_tblock_libfilename)
+    # Update JSON with non-empty revision history fields
+    json_tblock_data.update({k: v for k, v in revision_row.items() if v})
 
-    if os.path.exists(fileio.path("tblock master svg")):
-        os.remove(fileio.path("tblock master svg"))
+    with open(json_path, "w", encoding="utf-8") as jf:
+        json.dump(json_tblock_data, jf, indent=2)
 
-    shutil.copy(library_used_tblock_filepath, fileio.dirpath("master_svgs"))
-    os.rename(
-        os.path.join(fileio.dirpath("master_svgs"), wanted_tblock_libfilename),
-        fileio.path("tblock master svg")
-    )
+    # === Step 3: Check tblock source fields ===
+    tblock_supplier = revision_row.get("tblock_supplier", "").strip()
+    tblock_name = revision_row.get("tblock", "").strip()
 
-    # === Step 3: Perform key substitution ===
-    with open(fileio.path("tblock master svg"), 'r') as inf:
+    if not tblock_supplier or not tblock_name:
+        print(f"[INFO] Skipping tblock import and SVG update due to missing tblock or tblock_supplier.")
+        return  # Exit early without importing or overwriting the SVG
+
+    # === Step 4: Import from library and update SVG ===
+    component_library.update_tblock_from_lib(tblock_supplier, tblock_name)
+
+    svg_path = fileio.path("tblock master svg")
+    if not os.path.isfile(svg_path):
+        raise FileNotFoundError(f"[ERROR] Expected SVG file not found: {svg_path}")
+
+    with open(svg_path, 'r', encoding="utf-8") as inf:
         content = inf.read()
 
     def replacer(match):
@@ -160,6 +172,7 @@ def prep_tblock():
 
     updated_content = re.sub(r"tblock-key-(\w+)", replacer, content)
 
-    with open(fileio.path("tblock master svg"), 'w') as outf:
+    with open(svg_path, 'w', encoding="utf-8") as outf:
         outf.write(updated_content)
-        print("[INFO] tblock master svg updated successfully.")
+
+    print("[INFO] tblock master svg updated successfully.")
