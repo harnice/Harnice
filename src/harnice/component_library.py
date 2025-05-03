@@ -437,5 +437,23 @@ def copy_svg_data(instance_name):
 
     return match.group(1).strip()
     
+def update_tblock_from_lib(domain, lib_file):
+    """
+    Rewrites a new tblock from a template in a library.
+    """
+    load_dotenv()
+    # Step 1: Check if lib_file exists in Harnice library
+    source_file_path = os.path.join(os.getenv(domain), "titleblocks", lib_file)
+    
+    if not os.path.isfile(source_file_path):
+        raise FileNotFoundError(f"Specified titleblock not found in library: {domain}/titleblocks/{lib_file}")
+
+    # Step 2: Check if the file already exists in the local library
+    if os.path.isfile(fileio.path("tblock master svg")):
+        os.remove(fileio.path("tblock master svg"))
+
+    # Step 4: Copy the file from Harnice library to the target directory
+    shutil.copy(os.path.join(source_file_path), fileio.path("tblock master svg"))
+
 if __name__ == "__main__":
     generate_new_connector_template()
