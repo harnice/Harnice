@@ -7,7 +7,7 @@ from os.path import basename
 from inspect import currentframe
 
 buildnotes_filepath = fileio.path("buildnotes tsv")
-revnotes_filepath = os.path.join(os.path.dirname(os.getcwd()), f"{fileio.partnumber("pn")}-revision_history.tsv")
+revnotes_filepath = fileio.path("revision history")
 
 
 def update_flagnotes_of_instance(target_filepath, instance_name, rotation_angle, bomid):

@@ -100,24 +100,16 @@ def prep_bom():
     with open(fileio.path("bom table master svg"), "w", encoding="utf-8") as svg_file:
         svg_file.write("\n".join(svg_lines))
 
-import os
-import re
-import json
-import fileio
-import component_library
-
 def prep_tblock():
     # === Step 1: Load revision row from TSV ===
     pn = fileio.partnumber("pn")
     rev = fileio.partnumber("R")
-    parent_dir = os.path.dirname(os.getcwd())
-    tsv_path = os.path.join(parent_dir, f"{pn}-revision_history.tsv")
 
-    if not os.path.isfile(tsv_path):
-        raise FileNotFoundError(f"[ERROR] {tsv_path} not found.")
+    if not os.path.isfile(fileio.path("revision history")):
+        raise FileNotFoundError(f"[ERROR] {fileio.path('revision_history')} not found.")
 
     revision_row = {}
-    with open(tsv_path, "r", encoding="utf-8") as file:
+    with open(fileio.path("revision history"), "r", encoding="utf-8") as file:
         header = file.readline().strip().split('\t')
         for line in file:
             row = line.strip().split('\t')
@@ -132,9 +124,8 @@ def prep_tblock():
         raise ValueError(f"[ERROR] No matching revision row found for pn={pn}, rev={rev}")
 
     # === Step 2: Load or initialize JSON ===
-    json_path = fileio.path("tblock master text")
-    if os.path.isfile(json_path):
-        with open(json_path, "r", encoding="utf-8") as jf:
+    if os.path.isfile(fileio.path("tblock master text")):
+        with open(fileio.path("tblock master text"), "r", encoding="utf-8") as jf:
             json_tblock_data = json.load(jf)
     else:
         json_tblock_data = {}
@@ -142,7 +133,7 @@ def prep_tblock():
     # Update JSON with non-empty revision history fields
     json_tblock_data.update({k: v for k, v in revision_row.items() if v})
 
-    with open(json_path, "w", encoding="utf-8") as jf:
+    with open(fileio.path("tblock master text"), "w", encoding="utf-8") as jf:
         json.dump(json_tblock_data, jf, indent=2)
 
     # === Step 3: Check tblock source fields ===
@@ -151,16 +142,15 @@ def prep_tblock():
 
     if not tblock_supplier or not tblock_name:
         print(f"[INFO] Skipping tblock import and SVG update due to missing tblock or tblock_supplier.")
-        return  # Exit early without importing or overwriting the SVG
+        return
 
     # === Step 4: Import from library and update SVG ===
     component_library.update_tblock_from_lib(tblock_supplier, tblock_name)
 
-    svg_path = fileio.path("tblock master svg")
-    if not os.path.isfile(svg_path):
-        raise FileNotFoundError(f"[ERROR] Expected SVG file not found: {svg_path}")
+    if not os.path.isfile(fileio.path("tblock master svg")):
+        raise FileNotFoundError(f"[ERROR] Expected SVG file not found: {fileio.path('tblock master svg')}")
 
-    with open(svg_path, 'r', encoding="utf-8") as inf:
+    with open(fileio.path("tblock master svg"), 'r', encoding="utf-8") as inf:
         content = inf.read()
 
     def replacer(match):
@@ -172,7 +162,7 @@ def prep_tblock():
 
     updated_content = re.sub(r"tblock-key-(\w+)", replacer, content)
 
-    with open(svg_path, 'w', encoding="utf-8") as outf:
+    with open(fileio.path("tblock master svg"), 'w', encoding="utf-8") as outf:
         outf.write(updated_content)
 
     print("[INFO] tblock master svg updated successfully.")
