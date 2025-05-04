@@ -104,7 +104,7 @@ def prep_bom():
 def prep_tblock():
     # === Titleblock Defaults ===
     default_supplier = "public"
-    default_lib_file = "library-tblock-11x8.5-border"
+    default_titleblock = "harnice_tblock-11x8.5"
     default_position = [-10 * 96, 0]
     tblock_name = "tblock1"
 
@@ -113,7 +113,7 @@ def prep_tblock():
         "titleblocks": {
             tblock_name: {
                 "supplier": default_supplier,
-                "lib_file": default_lib_file,
+                "titleblock": default_titleblock,
                 "default_position": default_position,
                 "text_replacements": {
                     "tblock-key-desc": "",
@@ -160,21 +160,21 @@ def prep_tblock():
     # === Generate Titleblock Master SVG ===
     for name, tblock in tblock_data.get("titleblocks", {}).items():
         supplier = tblock.get("supplier")
-        lib_file = tblock.get("lib_file")
+        titleblock = tblock.get("titleblock")
         text_map = tblock.get("text_replacements", {})
 
-        svg_name = f"{fileio.partnumber('pn-rev')}.{name}_master.svg"
-        svg_path = os.path.join(fileio.dirpath("master_svgs"), svg_name)
+        destination_svg_name = f"{fileio.partnumber('pn-rev')}.{name}_master.svg"
+        destination_svg_path = os.path.join(fileio.dirpath("master_svgs"), destination_svg_name)
 
         # Copy the library file into editable location
         component_library.pull_file_from_lib(
             supplier,
-            os.path.join("titleblocks", f"{lib_file}.svg"),
-            svg_path
+            os.path.join("titleblocks", titleblock, f"{titleblock}.svg"),
+            destination_svg_path
         )
 
         # Replace text in the SVG
-        with open(svg_path, "r", encoding="utf-8") as f:
+        with open(destination_svg_path, "r", encoding="utf-8") as f:
             svg = f.read()
 
         for old, new in text_map.items():
@@ -191,5 +191,5 @@ def prep_tblock():
 
             svg = svg.replace(old, new)
 
-        with open(svg_path, "w", encoding="utf-8") as f:
+        with open(destination_svg_path, "w", encoding="utf-8") as f:
             f.write(svg)
