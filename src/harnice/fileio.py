@@ -80,7 +80,6 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
                     f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
                 },
-                f"{partnumber("pn-rev")}.tblock_master_text.json":"tblock master text",
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
             "wireviz_outputs":{
@@ -120,7 +119,7 @@ def path(target_value):
         list: A list of container names leading to the element containing the target value, or None if not found.
     """
     if target_value == "revision history":
-        file_path = os.path.join(os.path.dirname(os.getcwd()), f"{pn}-revision_history.tsv")
+        file_path = os.path.join(os.path.dirname(os.getcwd()), f"{partnumber("R")}-revision_history.tsv")
         return file_path
 
     def recursive_search(data, path):

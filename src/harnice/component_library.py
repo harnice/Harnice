@@ -19,7 +19,7 @@ drawing_instance_filenames = [None]
 #when creating new instances, add to this list by add_filename_to_drawing_instance_list().
 #directories in drawing-instances that are not named in this list will be deleted by delete_unmatched_files().
 
-def pull():
+def pull_parts():
     load_dotenv()
     global drawing_instance_filenames
     supported_library_components = ['connector', 'backshell']
@@ -40,7 +40,7 @@ def pull():
                 with open(
                     os.path.join(
                         os.getenv(instance.get('supplier')),
-                        "component_definitions",
+                        "parts",
                         instance.get('mpn', ''),
                         f"{instance.get('mpn', '')}-revision_history.tsv"
                     ),
@@ -70,7 +70,7 @@ def pull():
             # build paths
             mpn = instance.get('mpn')
             mpn_rev = f"{mpn}-rev{highest_rev}"
-            source_lib_path = os.path.join(os.getenv(instance.get('supplier')), "component_definitions", mpn, mpn_rev)
+            source_lib_path = os.path.join(os.getenv(instance.get('supplier')), "parts", mpn, mpn_rev)
             target_directory = os.path.join(fileio.dirpath("editable_component_data"), instance.get('instance_name'), "library_used_do_not_edit", mpn_rev)
 
             # Check for outdated or modified libs
@@ -362,42 +362,6 @@ def detect_modified_files(domain, library_subpath, lib_name):
         if all files match, return True
         if any file does not match, return False
     """
-
-def import_library_file(domain, library_subpath, lib_file):
-    """
-    Copies a file from a Harnice library to a local 'library_used' directory with the same subpath structure.
-    """
-    load_dotenv()
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Importing library {lib_file}:")
-    # Step 1: Check if lib_file exists in Harnice library
-    harnice_path = os.getenv(domain)
-    source_file_path = os.path.join(harnice_path, library_subpath)
-    
-    if not os.path.isfile(os.path.join(source_file_path,lib_file)):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Failed to import library: file '{lib_file}' not found in {source_file_path}")
-        return False
-
-    # Step 2: Check if the file already exists in the local library
-    target_directory = os.path.join(os.getcwd(), "editable_component_data", library_subpath)
-    target_filename = os.path.join(target_directory, lib_file)
-    
-    if os.path.isfile(target_filename):
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Library instance '{lib_file}' already exists in this part number's library_used. If you wish to replace it, remove the instance and rerun this command.")
-        return True
-
-    # Step 3: Ensure the target directory structure exists
-    if not os.path.exists(target_directory):
-        os.makedirs(target_directory)
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Added directory '{library_subpath}' to '{file.partnumber("pn-rev")}/library_used/'.")
-
-    # Step 4: Copy the file from Harnice library to the target directory
-    shutil.copy(os.path.join(source_file_path,lib_file), target_filename)
-    print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File '{lib_file}' added to '{file.partnumber("pn-rev")}/library_used/{library_subpath}'.")
-
-    return True
-    #returns True if import was successful or if already exists 
-    #returns False if library not found (try and import this again?)
-
 def find_modifications(dir1, dir2):
     # Perform a recursive comparison
     dir_comparison = filecmp.dircmp(dir1, dir2)
@@ -473,5 +437,23 @@ def copy_svg_data(instance_name):
 
     return match.group(1).strip()
     
+def update_tblock_from_lib(domain, lib_file):
+    """
+    Rewrites a new tblock from a template in a library.
+    """
+    load_dotenv()
+    # Step 1: Check if lib_file exists in Harnice library
+    source_file_path = os.path.join(os.getenv(domain), "titleblocks", lib_file)
+    
+    if not os.path.isfile(source_file_path):
+        raise FileNotFoundError(f"Specified titleblock not found in library: {domain}/titleblocks/{lib_file}")
+
+    # Step 2: Check if the file already exists in the local library
+    if os.path.isfile(fileio.path("tblock master svg")):
+        os.remove(fileio.path("tblock master svg"))
+
+    # Step 4: Copy the file from Harnice library to the target directory
+    shutil.copy(os.path.join(source_file_path), fileio.path("tblock master svg"))
+
 if __name__ == "__main__":
     generate_new_connector_template()

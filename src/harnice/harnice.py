@@ -7,7 +7,8 @@ import formboard_functions
 import harnice_prechecker
 import component_library
 import fileio
-import formboard_illustration_functions
+import svg_master_formboard
+import svg_masters
 import os
 
 def harnice():
@@ -30,7 +31,7 @@ def harnice():
 
     print()
     print("############ CHECKING COMPONENTS AGAINST LIBRARY #############")
-    component_library.pull()
+    component_library.pull_parts()
     
     print()
     print("############ RUNNING FORMBOARD PROCESSOR #############")
@@ -104,28 +105,20 @@ def harnice():
     print("############ REBUILDING FORMBOARD DRAWING #############")
     #generate blank harnice output svg
     print("Updating segment instances")
-    formboard_illustration_functions.update_segment_instances()
+    svg_master_formboard.update_segment_instances()
     print()
 
     print("Generating new fomboard master drawing (deleting existing if present)")
-    formboard_illustration_functions.make_new_formboard_master_svg()
-
-    
-    #generate_harnice_output_svg.ensure_groups_exist_in_harnice_output()
-
-    #formboard_illustration_functions.update_all_instances()
-    #formboard_illustration_functions.update_segment_instances()
+    svg_master_formboard.make_new_formboard_master_svg()
     #formboard_illustration_functions.delete_unmatched_files()
-    #formboard_illustration_functions.update_formboard_master_svg()
-    #formboard_illustration_functions.replace_all_segment_groups()
 
     #prep all the different master SVG's
-    #print()
-    #print("############ PREPPING MASTER SVG's #############")
-    #print("#    ############ WORKING ON BOM SVG MASTER ############")
-    #bom_svg_prepper.prep_bom_svg_master()
-    #print("#    ############ WORKING ON TBLOCK SVG MASTER ############")
-    #tblock_svg_prepper.prep_tblock_svg_master()
+    print()
+    print("############ REBUILDING HARNICE OUTPUT #############")
+    print("Working on BOM svg master")
+    svg_masters.prep_bom()
+    print("Working on Tblock svg master")
+    svg_masters.prep_tblock()
     
     
 
