@@ -89,10 +89,15 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.png":"wireviz png",
                 f"{partnumber("pn-rev")}.svg":"wireviz svg"
             },
+            "page_setup":{
+                f"{partnumber("pn-rev")}.titleblock_setup.json":"titleblock setup",
+                f"{partnumber("pn-rev")}.formboard_scale.json":"formboard scale"
+            },
             f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
             f"{partnumber("pn-rev")}.harnice_output.svg":"harnice output",
             f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
-            f"{partnumber("pn-rev")}.yaml":"harness yaml"
+            f"{partnumber("pn-rev")}.yaml":"harness yaml",
+            f"{partnumber("pn-rev")}.harness_requirements.json":"harness requirements"
         }
 
 def generate_structure():
