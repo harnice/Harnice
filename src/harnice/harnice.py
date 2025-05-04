@@ -119,7 +119,7 @@ def harnice():
     svg_masters.prep_bom()
     print("Working on Tblock svg master")
     svg_masters.prep_tblock()
-    
+    print("Working on Harnice Output")
     
 
     #combine all master SVG groups into PN-harnice-output.svg
