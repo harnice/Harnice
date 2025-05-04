@@ -101,12 +101,40 @@ def prep_bom():
         svg_file.write("\n".join(svg_lines))
 
 def prep_tblock():
-    # === Step 1: Load revision row from TSV ===
-    pn = fileio.partnumber("pn")
-    rev = fileio.partnumber("R")
+    #structure of titleblock setup:
+    default_harnice_tblock_supplier = "public"
+    default_harnice_tblock_lib_file = "library-tblock-11x8.5-border"
+    """
+    "titleblocks":{
+        "tblock1":{
+            "supplier":default_harnice_tblock_supplier,
+            "lib_file":default_harnice_tblock_lib_file,
+            "default_position":[-10*96, 0]
+            "text_replacements":{
+                "old_text":"new_text"
+                }
+        }
+    }
+    """
+    #if file does not exist: fileio.path("titleblock setup")
+        #make a blank file
+        #file contains exact structure above
 
-    if not os.path.isfile(fileio.path("revision history")):
-        raise FileNotFoundError(f"[ERROR] {fileio.path('revision_history')} not found.")
+    #update it from revision history
+        #load file fileio.path("revision history")
+        #for each row in rows:
+            #if row.get('rev') == fileio.partnumber("R"):
+                #for each column in columns:
+                    #if column == "":
+                        #continue
+                    #write an entry in "text_replacements" of titleblock setup
+                        #f"{header_of_column}-tblock-text-replacement" : f"{info_of_column}
+    #if there are entries in text_replacements that are not found in revision_history, do not change them
+
+    #for each titleblock in titleblocks:
+        #pull a new tblock file from library and name it "{tblock1}-master-svg"
+        #for each item in text_replacements:
+            #find text "old text" in svg file and replace it with "new text"
 
     revision_row = {}
     with open(fileio.path("revision history"), "r", encoding="utf-8") as file:
@@ -145,7 +173,7 @@ def prep_tblock():
         return
 
     # === Step 4: Import from library and update SVG ===
-    component_library.update_tblock_from_lib(tblock_supplier, tblock_name)
+    component_library.pull_tblock_from_lib(tblock_supplier, tblock_name)
 
     if not os.path.isfile(fileio.path("tblock master svg")):
         raise FileNotFoundError(f"[ERROR] Expected SVG file not found: {fileio.path('tblock master svg')}")
