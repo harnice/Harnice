@@ -56,16 +56,7 @@ def check_directory_format():
         check_subdirectory_format()
         return False
 
-def generate_revision_history_tsv(filename):
-    """
-    Creates and saves a TSV file named {pn}-revision_history.tsv in the parent directory.
-
-    :param pn: The prefix to use in the file name.
-    """
-
-    # Construct the file path
-    file_path = fileio.path("revision history")
-
+def generate_revision_history_tsv():
     # Define the columns for the TSV file
     columns = [
         "pn", 
@@ -79,12 +70,11 @@ def generate_revision_history_tsv(filename):
         "drawnby", 
         "checkedby", 
         "revisionupdates", 
-        "affectedinstances",
-        "tblock_supplier",
-        "tblock"]
+        "affectedinstances"
+        ]
 
     # Write the TSV file
-    with open(file_path, 'w') as file:
+    with open(fileio.path("revision history"), 'w') as file:
         file.write('\t'.join(columns) + '\n')
     
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: New {pn}-revision-history document added to parent PN directory.")
