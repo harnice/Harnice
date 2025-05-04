@@ -106,6 +106,7 @@ def generate_structure():
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
     os.makedirs(dirpath("master_svgs"), exist_ok=True)
     os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
+    os.makedirs(dirpath("page_setup"), exist_ok=True)
 
 def path(target_value):
     #returns the filepath/filename of a filekey. 
