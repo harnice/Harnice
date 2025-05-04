@@ -3,6 +3,7 @@ import fileio
 import os
 import shutil
 import re
+import json
 from inspect import currentframe
 from os.path import basename
 import component_library
@@ -101,96 +102,94 @@ def prep_bom():
         svg_file.write("\n".join(svg_lines))
 
 def prep_tblock():
-    #structure of titleblock setup:
-    default_harnice_tblock_supplier = "public"
-    default_harnice_tblock_lib_file = "library-tblock-11x8.5-border"
-    """
-    "titleblocks":{
-        "tblock1":{
-            "supplier":default_harnice_tblock_supplier,
-            "lib_file":default_harnice_tblock_lib_file,
-            "default_position":[-10*96, 0]
-            "text_replacements":{
-                "old_text":"new_text"
+    # === Titleblock Defaults ===
+    default_supplier = "public"
+    default_lib_file = "library-tblock-11x8.5-border"
+    default_position = [-10 * 96, 0]
+    tblock_name = "tblock1"
+
+    # === Define Blank Setup ===
+    blank_setup = {
+        "titleblocks": {
+            tblock_name: {
+                "supplier": default_supplier,
+                "lib_file": default_lib_file,
+                "default_position": default_position,
+                "text_replacements": {
+                    "tblock-key-desc": "",
+                    "tblock-key-pn": "pull_from_revision_history(pn)",
+                    "tblock-key-drawnby": "",
+                    "tblock-key-rev": "pull_from_revision_history(rev)",
+                    "tblock-key-releaseticket": ""
                 }
+            }
         }
     }
-    """
-    #if file does not exist: fileio.path("titleblock setup")
-        #make a blank file
-        #file contains exact structure above
 
-    #update it from revision history
-        #load file fileio.path("revision history")
-        #for each row in rows:
-            #if row.get('rev') == fileio.partnumber("R"):
-                #for each column in columns:
-                    #if column == "":
-                        #continue
-                    #write an entry in "text_replacements" of titleblock setup
-                        #f"{header_of_column}-tblock-text-replacement" : f"{info_of_column}
-    #if there are entries in text_replacements that are not found in revision_history, do not change them
+    # === Load or Initialize Titleblock Setup ===
+    if not os.path.exists(fileio.path("titleblock setup")) or os.path.getsize(fileio.path("titleblock setup")) == 0:
+        with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
+            json.dump(blank_setup, f, indent=4)
+        tblock_data = blank_setup
+    else:
+        try:
+            with open(fileio.path("titleblock setup"), "r", encoding="utf-8") as f:
+                tblock_data = json.load(f)
+        except json.JSONDecodeError:
+            with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
+                json.dump(blank_setup, f, indent=4)
+            tblock_data = blank_setup
 
-    #for each titleblock in titleblocks:
-        #pull a new tblock file from library and name it "{tblock1}-master-svg"
-        #for each item in text_replacements:
-            #find text "old text" in svg file and replace it with "new text"
-
+    # === Load revision row for current part/revision ===
     revision_row = {}
-    with open(fileio.path("revision history"), "r", encoding="utf-8") as file:
-        header = file.readline().strip().split('\t')
-        for line in file:
-            row = line.strip().split('\t')
-            padded_row = row + [""] * (len(header) - len(row))
-            row_dict = dict(zip(header, padded_row))
-
-            if row_dict.get("pn", "").strip() == pn and row_dict.get("rev", "").strip() == rev:
-                revision_row = {k: v.strip() for k, v in row_dict.items()}
-                break
+    if os.path.exists(fileio.path("revision history")):
+        with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            for row in reader:
+                if row.get("rev") == fileio.partnumber("R"):
+                    revision_row = {k: (v or "").strip() for k, v in row.items()}
+                    break
 
     if not revision_row:
-        raise ValueError(f"[ERROR] No matching revision row found for pn={pn}, rev={rev}")
+        raise ValueError(f"[ERROR] No revision row found for rev '{fileio.partnumber('R')}' in revision history")
 
-    # === Step 2: Load or initialize JSON ===
-    if os.path.isfile(fileio.path("tblock master text")):
-        with open(fileio.path("tblock master text"), "r", encoding="utf-8") as jf:
-            json_tblock_data = json.load(jf)
-    else:
-        json_tblock_data = {}
+    # === Save Updated Titleblock Setup ===
+    with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
+        json.dump(tblock_data, f, indent=4)
 
-    # Update JSON with non-empty revision history fields
-    json_tblock_data.update({k: v for k, v in revision_row.items() if v})
+    # === Generate Titleblock Master SVG ===
+    for name, tblock in tblock_data.get("titleblocks", {}).items():
+        supplier = tblock.get("supplier")
+        lib_file = tblock.get("lib_file")
+        text_map = tblock.get("text_replacements", {})
 
-    with open(fileio.path("tblock master text"), "w", encoding="utf-8") as jf:
-        json.dump(json_tblock_data, jf, indent=2)
+        svg_name = f"{fileio.partnumber('pn-rev')}.{name}_master.svg"
+        svg_path = os.path.join(fileio.dirpath("master_svgs"), svg_name)
 
-    # === Step 3: Check tblock source fields ===
-    tblock_supplier = revision_row.get("tblock_supplier", "").strip()
-    tblock_name = revision_row.get("tblock", "").strip()
+        # Copy the library file into editable location
+        component_library.pull_file_from_lib(
+            supplier,
+            os.path.join("titleblocks", f"{lib_file}.svg"),
+            svg_path
+        )
 
-    if not tblock_supplier or not tblock_name:
-        print(f"[INFO] Skipping tblock import and SVG update due to missing tblock or tblock_supplier.")
-        return
+        # Replace text in the SVG
+        with open(svg_path, "r", encoding="utf-8") as f:
+            svg = f.read()
 
-    # === Step 4: Import from library and update SVG ===
-    component_library.pull_tblock_from_lib(tblock_supplier, tblock_name)
+        for old, new in text_map.items():
+            if new.startswith("pull_from_revision_history(") and new.endswith(")"):
+                field_name = new[len("pull_from_revision_history("):-1]
+                if field_name not in revision_row:
+                    raise KeyError(f"[ERROR] Field '{field_name}' not found in revision history")
+                new = revision_row[field_name]
+                if not new:
+                    raise ValueError(f"[ERROR] Field '{field_name}' is empty in revision history")
 
-    if not os.path.isfile(fileio.path("tblock master svg")):
-        raise FileNotFoundError(f"[ERROR] Expected SVG file not found: {fileio.path('tblock master svg')}")
+            if old not in svg:
+                print(f"[WARN] key '{old}' not found in title block")
 
-    with open(fileio.path("tblock master svg"), 'r', encoding="utf-8") as inf:
-        content = inf.read()
+            svg = svg.replace(old, new)
 
-    def replacer(match):
-        key = match.group(1)
-        old_text = match.group(0)
-        new_text = str(json_tblock_data.get(key, old_text))
-        print(f"Replacing: '{old_text}' with: '{new_text}'")
-        return new_text
-
-    updated_content = re.sub(r"tblock-key-(\w+)", replacer, content)
-
-    with open(fileio.path("tblock master svg"), 'w', encoding="utf-8") as outf:
-        outf.write(updated_content)
-
-    print("[INFO] tblock master svg updated successfully.")
+        with open(svg_path, "w", encoding="utf-8") as f:
+            f.write(svg)

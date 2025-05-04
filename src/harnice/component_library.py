@@ -438,26 +438,24 @@ def copy_svg_data(instance_name):
 
     return match.group(1).strip()
     
-def pull_file_from_lib(domain, lib_file, destination_filepath, remove_ok = True):
+def pull_file_from_lib(domain, lib_file, destination_filepath, remove_ok=True):
     load_dotenv()
+
     # Step 1: Check the source file
-    source_filepath = os.path.join(os.getenv(domain), "titleblocks", lib_file)
+    source_filepath = os.path.join(os.getenv(domain), lib_file)
     if not os.path.isfile(source_filepath):
-        raise FileNotFoundError(f"Specified titleblock not found in library: {domain}/titleblocks/{lib_file}")
+        raise FileNotFoundError(f"Specified titleblock not found in library: {source_filepath}")
 
     # Step 2: Check on the destination file
     if os.path.isfile(destination_filepath):
-        if remove_ok == True:
+        if remove_ok:
             os.remove(destination_filepath)
         else:
-            print(f"importing file from library: {lib_file}. File already exists and I was told not to rewrite it")
+            print(f"Importing file from library: {lib_file}. File already exists and I was told not to rewrite it.")
             return
 
-    # Make the transfer (this section has bad syntax:)
-    #copy the source file into the destination directory. keep the same name
-    shutil.copy(source_filepath, os.path.dir(destination_filepath))
-    #rename the imported file to the name coming in from destination_filepath
-    os.rename(destination_filepath)
+    # Step 3: Copy directly to destination
+    shutil.copy(source_filepath, destination_filepath)
 
 if __name__ == "__main__":
     generate_new_connector_template()
