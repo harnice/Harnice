@@ -10,6 +10,7 @@ import fileio
 import svg_master_formboard
 import svg_masters
 import os
+import svg_harnice_output
 
 def harnice():
     #build file structure
@@ -120,6 +121,7 @@ def harnice():
     print("Working on Tblock svg master")
     svg_masters.prep_tblock()
     print("Working on Harnice Output")
+    svg_harnice_output.update_harnice_output()
     
 
     #combine all master SVG groups into PN-harnice-output.svg
