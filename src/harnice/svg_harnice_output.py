@@ -1,30 +1,29 @@
 import os
 import json
+import re
 from dotenv import load_dotenv
-import fileio  # assumed to be your file path utility module
+import fileio
 
 def update_harnice_output():
-
-    #def update_harnice_output():
-        #for each tblock in titleblocks of fileio.path("titleblock setup")
-            #read file in library at location os.path.join(dotenv(supplier),"titleblocks", titleblock, f"{titleblock}_attributes.json") as attributes,
-            #make a new group with id = <titleblock name>, translate <default position>
-            #inside that group,
-                #make a group with id = "tblock"
-                    #inside that group,
-                    #copy in svg contents of os.path.join(fileio.dirpath("master_svgs"),f"{titleblock name}.svg"
-                #make a group with id = "bom", translate to attributes.periphery_locs.bom_loc[]
-                #inside that group, 
-                    #copy in svg contents of fileio.path("bom table master svg")
-
     load_dotenv()
 
     # Load titleblock setup
     with open(fileio.path("titleblock setup"), "r", encoding="utf-8") as f:
         titleblock_setup = json.load(f)
 
+    # Initialize attribute collection
+    collected_attrs = {
+        "xmlns": "http://www.w3.org/2000/svg",
+        "version": "1.1",
+        "font-family": "Arial",
+        "font-size": "8",
+        "width": "1056.0",
+        "height": "816.0",
+        "viewBox": "0 0 1056.0 816.0"
+    }
+
     # Start composing the final SVG content
-    svg_output = ['''<svg xmlns="http://www.w3.org/2000/svg" version="1.1" font-family="Arial" font-size="8">''']
+    svg_output = []
 
     for tblock_name, tblock_data in titleblock_setup.get("titleblocks", {}).items():
         # Load attributes JSON from library
@@ -46,23 +45,26 @@ def update_harnice_output():
         # Subgroup: tblock SVG
         svg_output.append('<g id="tblock">')
         tblock_svg_path = os.path.join(fileio.dirpath("master_svgs"), f"{fileio.partnumber("pn-rev")}.{tblock_name}_master.svg")
-        svg_output.extend(extract_svg_body(tblock_svg_path))
+        body, attrs = extract_svg_body(tblock_svg_path)
+        svg_output.append(body)
         svg_output.append('</g>')  # end tblock group
 
         # Subgroup: BOM
         bom_loc = attributes.get("periphery_locs", {}).get("bom_loc", [0, 0])
         translate_bom = f'translate({bom_loc[0]},{bom_loc[1]})'
         svg_output.append(f'<g id="bom" transform="{translate_bom}">')
-        svg_output.extend(extract_svg_body(fileio.path("bom table master svg")))
+        body, attrs = extract_svg_body(fileio.path("bom table master svg"))
+        svg_output.append(body)
         svg_output.append('</g>')  # end bom group
 
         svg_output.append('</g>')  # end outer group
 
-    svg_output.append('</svg>')
+    # Compose and write final SVG
+    svg_attrs_string = " ".join(f'{k}="{v}"' for k, v in collected_attrs.items())
+    final_output = [f'<svg {svg_attrs_string}>'] + svg_output + ['</svg>']
 
-    # Write final SVG
     with open(fileio.path("harnice output"), "w", encoding="utf-8") as f:
-        f.write('\n'.join(svg_output))
+        f.write('\n'.join(final_output))
 
 
 def extract_svg_body(svg_path):
@@ -71,10 +73,18 @@ def extract_svg_body(svg_path):
     with open(svg_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Extract content between <svg ...> and </svg>
     start = content.find("<svg")
     end = content.find("</svg>")
     if start == -1 or end == -1:
         raise ValueError(f"[ERROR] Malformed SVG: {svg_path}")
     body_start = content.find(">", start) + 1
-    return [content[body_start:end].strip()]
+
+    # Parse attributes from <svg ...>
+    header_match = re.search(r'<svg\s+([^>]*)>', content)
+    attrs = {}
+    if header_match:
+        for attr in re.findall(r'(\S+)="([^"]*)"', header_match.group(1)):
+            key, value = attr
+            attrs[key] = value
+
+    return content[body_start:end].strip(), attrs
