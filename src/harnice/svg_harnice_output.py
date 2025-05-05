@@ -24,7 +24,7 @@ def update_harnice_output():
         titleblock_setup = json.load(f)
 
     # Start composing the final SVG content
-    svg_output = ['''<svg xmlns="http://www.w3.org/2000/svg" version="1.1">''']
+    svg_output = ['''<svg xmlns="http://www.w3.org/2000/svg" version="1.1" font-family="Arial" font-size="8">''']
 
     for tblock_name, tblock_data in titleblock_setup.get("titleblocks", {}).items():
         # Load attributes JSON from library
