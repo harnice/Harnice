@@ -7,6 +7,11 @@ from collections import defaultdict
 import component_library
 
 def make_new_formboard_master_svg():
+    #things that did not work in source svgs:
+        #sodipodi:nodetypes
+        #sodipodi:namedview
+        #inkscape:namedview
+        #visio namespace: (v:)
     filepath = fileio.path("formboard master svg")
     if os.path.exists(filepath):
         os.remove(filepath)

@@ -11,7 +11,7 @@ def update_harnice_output():
     with open(fileio.path("titleblock setup"), "r", encoding="utf-8") as f:
         titleblock_setup = json.load(f)
 
-    # Initialize attribute collection
+    # === Root SVG attributes ===
     collected_attrs = {
         "xmlns": "http://www.w3.org/2000/svg",
         "version": "1.1",
@@ -22,11 +22,10 @@ def update_harnice_output():
         "viewBox": "0 0 1056.0 816.0"
     }
 
-    # Start composing the final SVG content
-    svg_output = []
+    # === Build contents for support_do_not_edit-contents_start group ===
+    inner_groups = []
 
     for tblock_name, tblock_data in titleblock_setup.get("titleblocks", {}).items():
-        # Load attributes JSON from library
         supplier = os.getenv(tblock_data.get("supplier"))
         titleblock = tblock_data.get("titleblock")
         attr_path = os.path.join(supplier, "titleblocks", titleblock, f"{titleblock}_attributes.json")
@@ -35,36 +34,63 @@ def update_harnice_output():
         with open(attr_path, "r", encoding="utf-8") as f:
             attributes = json.load(f)
 
-        # Get default position
         default_position = tblock_data.get("default_position", [0, 0])
         translate_main = f'translate({default_position[0]},{default_position[1]})'
 
-        # Outer group for titleblock
-        svg_output.append(f'<g id="{tblock_name}" transform="{translate_main}">')
+        group = [f'<g id="{tblock_name}" transform="{translate_main}">']
 
-        # Subgroup: tblock SVG
-        svg_output.append('<g id="tblock">')
+        # Titleblock group
+        group.append('<g id="tblock">')
         tblock_svg_path = os.path.join(fileio.dirpath("master_svgs"), f"{fileio.partnumber("pn-rev")}.{tblock_name}_master.svg")
-        body, attrs = extract_svg_body(tblock_svg_path)
-        svg_output.append(body)
-        svg_output.append('</g>')  # end tblock group
+        body, _ = extract_svg_body(tblock_svg_path)
+        group.append(body)
+        group.append('</g>')
 
-        # Subgroup: BOM
+        # BOM group
         bom_loc = attributes.get("periphery_locs", {}).get("bom_loc", [0, 0])
         translate_bom = f'translate({bom_loc[0]},{bom_loc[1]})'
-        svg_output.append(f'<g id="bom" transform="{translate_bom}">')
-        body, attrs = extract_svg_body(fileio.path("bom table master svg"))
-        svg_output.append(body)
-        svg_output.append('</g>')  # end bom group
+        group.append(f'<g id="bom" transform="{translate_bom}">')
+        body, _ = extract_svg_body(fileio.path("bom table master svg"))
+        group.append(body)
+        group.append('</g>')
 
-        svg_output.append('</g>')  # end outer group
+        group.append('</g>')  # End outer titleblock group
+        inner_groups.append("\n".join(group))
+"""
+FOUND THIS IN SVG: FIX IT IN LINE BELOW OR CLOSE:
+"this looks like a problem:
 
-    # Compose and write final SVG
-    svg_attrs_string = " ".join(f'{k}="{v}"' for k, v in collected_attrs.items())
-    final_output = [f'<svg {svg_attrs_string}>'] + svg_output + ['</svg>']
+  <g
+     id="<g id="support_do_not_edit-contents_start">
+     """
+     
+    group_start = '<g id="support_do_not_edit-contents_start">\n' + "\n".join(inner_groups) + '\n</g>'
+    group_end = '<g id="support_do_not_edit-contents_end"></g>'
 
-    with open(fileio.path("harnice output"), "w", encoding="utf-8") as f:
-        f.write('\n'.join(final_output))
+    # === Handle existing file ===
+    output_path = fileio.path("harnice output")
+    if os.path.exists(output_path):
+        with open(output_path, "r", encoding="utf-8") as f:
+            existing = f.read()
+
+        # Replace <svg ...> tag with new attributes
+        new_header = "<svg " + " ".join(f'{k}="{v}"' for k, v in collected_attrs.items()) + ">"
+        existing = re.sub(r"<svg[^>]*>", new_header, existing, count=1)
+
+        # Replace contents between support_do_not_edit-contents_start and _end
+        pattern = r'support_do_not_edit-contents_start.*?support_do_not_edit-contents_end'
+        replacement = group_start + '\n' + group_end
+        if re.search(pattern, existing, flags=re.DOTALL):
+            existing = re.sub(pattern, replacement, existing, flags=re.DOTALL)
+
+        final_output = existing
+    else:
+        # Create full output from scratch
+        svg_attrs = " ".join(f'{k}="{v}"' for k, v in collected_attrs.items())
+        final_output = f'<svg {svg_attrs}>\n{group_start}\n{group_end}\n</svg>'
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(final_output)
 
 
 def extract_svg_body(svg_path):
@@ -88,3 +114,11 @@ def extract_svg_body(svg_path):
             attrs[key] = value
 
     return content[body_start:end].strip(), attrs
+
+def check_group_balance(svg_text):
+    open_groups = len(re.findall(r'<g\b[^>]*>', svg_text))
+    close_groups = len(re.findall(r'</g>', svg_text))
+    if open_groups != close_groups:
+        print(f"[WARNING] Unbalanced <g> tags: {open_groups} opening vs {close_groups} closing.")
+    else:
+        print(f"[OK] Balanced <g> tags: {open_groups} pairs.")
