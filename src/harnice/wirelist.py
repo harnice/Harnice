@@ -149,3 +149,47 @@ def tsv_to_xls():
                     sheet.write(row_idx, col_idx, cell)
 
     workbook.save(fileio.path("wirelist formatted"))
+
+def generate_svg():
+    # === Layout Configuration ===
+    col_width = 0.75 * 96  # 0.75 inch
+    row_height = 0.25 * 96
+    font_size = 8
+    font_family = "Arial"
+    start_x = 0
+    start_y = 0
+
+    # === Read TSV data ===
+    path = fileio.path("wirelist no formats")
+    with open(path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        data_rows = list(reader)
+
+    # === SVG Header ===
+    svg_lines = [f'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" font-family="{font_family}" font-size="{font_size}">
+  <g id="wirelist" transform="translate(0,0)">''']
+
+    # === Header Row ===
+    for col_idx, col in enumerate(WIRELIST_COLUMNS):
+        x = start_x + col_idx * col_width
+        svg_lines.append(f'''
+    <rect x="{x}" y="{start_y}" width="{col_width}" height="{row_height}" fill="{col['fill']}" />
+    <text x="{x + 4}" y="{start_y + row_height/2}" fill="{col['font']}" dominant-baseline="middle">{col['name']}</text>''')
+
+    # === Data Rows ===
+    for row_idx, row in enumerate(data_rows):
+        y = start_y + (row_idx + 1) * row_height
+        for col_idx, col in enumerate(WIRELIST_COLUMNS):
+            x = start_x + col_idx * col_width
+            text = row.get(col["name"], "")
+            svg_lines.append(f'''
+    <text x="{x + 4}" y="{y + row_height/2}" fill="black" dominant-baseline="middle">{text}</text>''')
+
+    # === Close SVG ===
+    svg_lines.append("  </g>\n</svg>")
+
+    # === Write File ===
+    out_path = fileio.path("wirelist master svg")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(svg_lines))

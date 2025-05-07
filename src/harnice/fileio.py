@@ -77,7 +77,8 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
                     f"{partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
                     f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                    f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
+                    f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
+                    f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg"
                 },
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },

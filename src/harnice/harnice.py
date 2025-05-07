@@ -79,6 +79,7 @@ def harnice():
 
     print("Exporting a beautiful wirelist")
     wirelist.tsv_to_xls()
+    wirelist.generate_svg()
     print()
 
     print("Adding angles to nodes")
