@@ -109,7 +109,7 @@ def prep_tblock():
     # === Titleblock Defaults ===
     default_supplier = "public"
     default_titleblock = "harnice_tblock-11x8.5"
-    default_position = [-10 * 96, 0]
+    default_position = [0, -15*96]
     tblock_name = "tblock1"
 
     # === Define Blank Setup ===
