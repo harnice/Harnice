@@ -9,7 +9,7 @@ def update_harnice_output():
 
     # Load titleblock setup
     with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
-        titleblock_setup = json.load(f)
+        harnice_output_contents = json.load(f)
 
     # === Root SVG attributes ===
     collected_attrs = {
@@ -27,7 +27,7 @@ def update_harnice_output():
     group_position = [0, -1600]
     position_x_delta = 1800
 
-    for tblock_name, tblock_data in titleblock_setup.get("titleblocks", {}).items():
+    for tblock_name, tblock_data in harnice_output_contents.get("titleblocks", {}).items():
         supplier = os.getenv(tblock_data.get("supplier"))
         titleblock = tblock_data.get("titleblock")
         attr_path = os.path.join(supplier, "titleblocks", titleblock, f"{titleblock}_attributes.json")
@@ -61,7 +61,8 @@ def update_harnice_output():
 
     # Formboard group
     translate_main = f'translate({group_position[0]},{group_position[1]})'
-    group = [f'<g id="formboard" transform="{translate_main}">']
+    scale = harnice_output_contents.get("formboard", {}).get("scale", 1)
+    group = [f'<g id="formboard" transform="translate({group_position[0]},{group_position[1]}) scale({scale})">']
     body, _ = extract_svg_body(fileio.path("formboard master svg"))
     group.append(body)
     group.append('</g>')

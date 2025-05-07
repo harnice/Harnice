@@ -162,16 +162,11 @@ def prep_tblock():
 
 def update_output_contents():
     # === Titleblock Defaults ===
-    default_supplier = "public"
-    default_titleblock = "harnice_tblock-11x8.5"
-    tblock_name = "tblock1"
-
-    # === Define Blank Setup ===
     blank_setup = {
         "titleblocks": {
-            tblock_name: {
-                "supplier": default_supplier,
-                "titleblock": default_titleblock,
+            "tblock1": {
+                "supplier": "public",
+                "titleblock": "harnice_tblock-11x8.5",
                 "text_replacements": {
                     "tblock-key-desc": "",
                     "tblock-key-pn": "pull_from_revision_history(pn)",
@@ -180,6 +175,9 @@ def update_output_contents():
                     "tblock-key-releaseticket": ""
                 }
             }
+        },
+        "formboard": {
+            "scale": 1
         }
     }
 
