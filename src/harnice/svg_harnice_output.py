@@ -24,6 +24,8 @@ def update_harnice_output():
 
     # === Build contents for support_do_not_edit-contents_start group ===
     inner_groups = []
+    group_position = [0, -1600]
+    position_x_delta = 1800
 
     for tblock_name, tblock_data in titleblock_setup.get("titleblocks", {}).items():
         supplier = os.getenv(tblock_data.get("supplier"))
@@ -34,8 +36,8 @@ def update_harnice_output():
         with open(attr_path, "r", encoding="utf-8") as f:
             attributes = json.load(f)
 
-        default_position = tblock_data.get("default_position", [0, 0])
-        translate_main = f'translate({default_position[0]},{default_position[1]})'
+        translate_main = f'translate({group_position[0]},{group_position[1]})'
+        group_position[0] += position_x_delta
 
         group = [f'<g id="{tblock_name}" transform="{translate_main}">']
 
