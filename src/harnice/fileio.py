@@ -88,8 +88,7 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.svg":"wireviz svg"
             },
             "page_setup":{
-                f"{partnumber("pn-rev")}.titleblock_setup.json":"titleblock setup",
-                f"{partnumber("pn-rev")}.formboard_scale.json":"formboard scale"
+                f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
             },
             f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
             f"{partnumber("pn-rev")}.harnice_output.svg":"harnice output",

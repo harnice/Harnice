@@ -15,7 +15,7 @@ def prep_bom():
     column_widths = [0.375 * 96, 0.375 * 96, 0.75 * 96, 1.75 * 96]  # in pixels
     row_height = 0.16 * 96
     font_size = 8
-    font_family = "Arial"
+    font_family = "Arial, Helvetica, sans-serif"
     line_width = 0.008 * 96
 
     # === Read TSV Data ===
@@ -37,9 +37,15 @@ def prep_bom():
 
     # === Begin SVG Output ===
     svg_lines = [
-        f'<svg width="{svg_width}" height="{svg_height}" '
+        f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
         f'font-family="{font_family}" font-size="{font_size}">',
-        '<g id="bom-master-contents-start">'
+        '<style>',
+        '  rect.cell { fill: white; stroke: black; }',
+        '  rect.header { fill: #e0e0e0; stroke: black; }',
+        '  text { fill: black; dominant-baseline: middle; font-family: Arial, Helvetica, sans-serif; }',
+        '  .header { font-weight: bold; }',
+        '  circle { fill: none; stroke: black; }',
+        '</style>'
     ]
 
     # Compute left edges for each column starting at origin and going left
@@ -51,7 +57,11 @@ def prep_bom():
 
     # === Draw table from origin outward ===
     for row_index, row in enumerate(reversed(table_rows)):
-        y = -1 * (row_index + 1) * row_height  # Upward from origin
+        y = -1 * (row_index + 1) * row_height
+        is_header_row = (row_index == 0)
+        rect_class = "header" if is_header_row else "cell"
+        text_class = "header" if is_header_row else ""
+
         for col_index, cell in enumerate(row):
             x = column_x_positions[col_index]
             cell_width = column_widths[col_index]
@@ -59,7 +69,7 @@ def prep_bom():
             # Cell background
             svg_lines.append(
                 f'<rect x="{x}" y="{y}" width="{cell_width}" height="{row_height}" '
-                f'fill="white" stroke="black" stroke-width="{line_width}"/>'
+                f'class="{rect_class}" stroke-width="{line_width}"/>'
             )
 
             # Text alignment
@@ -71,18 +81,14 @@ def prep_bom():
                 text_x = x + 5
 
             text_y = y + row_height / 2
-            is_header_row = (row_index == 0)
-            font_weight = 'bold' if is_header_row else 'normal'
-
             svg_lines.append(
-                f'<text x="{text_x}" y="{text_y}" fill="black" '
-                f'text-anchor="{text_anchor}" dominant-baseline="middle" '
-                f'font-weight="{font_weight}">{cell}</text>'
+                f'<text x="{text_x}" y="{text_y}" text-anchor="{text_anchor}" '
+                f'class="{text_class}">{cell}</text>'
             )
 
             # Circle on ITEM column (not header row)
             is_item_column = (col_index == 0)
-            is_data_row = (row_index != 0)
+            is_data_row = not is_header_row
             if is_item_column and is_data_row:
                 circle_cx = x + cell_width / 2
                 circle_cy = y + row_height / 2
@@ -90,11 +96,9 @@ def prep_bom():
 
                 svg_lines.append(
                     f'<circle cx="{circle_cx}" cy="{circle_cy}" r="{radius}" '
-                    f'fill="none" stroke="black" stroke-width="{line_width}"/>'
+                    f'stroke-width="{line_width}"/>'
                 )
 
-    svg_lines.append('</g>')
-    svg_lines.append('<g id="bom-master-contents-end"></g>')
     svg_lines.append('</svg>')
 
     # === Write SVG Output ===
@@ -102,44 +106,6 @@ def prep_bom():
         svg_file.write("\n".join(svg_lines))
 
 def prep_tblock():
-    # === Titleblock Defaults ===
-    default_supplier = "public"
-    default_titleblock = "harnice_tblock-11x8.5"
-    default_position = [-10 * 96, 0]
-    tblock_name = "tblock1"
-
-    # === Define Blank Setup ===
-    blank_setup = {
-        "titleblocks": {
-            tblock_name: {
-                "supplier": default_supplier,
-                "titleblock": default_titleblock,
-                "default_position": default_position,
-                "text_replacements": {
-                    "tblock-key-desc": "",
-                    "tblock-key-pn": "pull_from_revision_history(pn)",
-                    "tblock-key-drawnby": "",
-                    "tblock-key-rev": "pull_from_revision_history(rev)",
-                    "tblock-key-releaseticket": ""
-                }
-            }
-        }
-    }
-
-    # === Load or Initialize Titleblock Setup ===
-    if not os.path.exists(fileio.path("titleblock setup")) or os.path.getsize(fileio.path("titleblock setup")) == 0:
-        with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
-            json.dump(blank_setup, f, indent=4)
-        tblock_data = blank_setup
-    else:
-        try:
-            with open(fileio.path("titleblock setup"), "r", encoding="utf-8") as f:
-                tblock_data = json.load(f)
-        except json.JSONDecodeError:
-            with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
-                json.dump(blank_setup, f, indent=4)
-            tblock_data = blank_setup
-
     # === Load revision row for current part/revision ===
     revision_row = {}
     if os.path.exists(fileio.path("revision history")):
@@ -153,9 +119,9 @@ def prep_tblock():
     if not revision_row:
         raise ValueError(f"[ERROR] No revision row found for rev '{fileio.partnumber('R')}' in revision history")
 
-    # === Save Updated Titleblock Setup ===
-    with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
-        json.dump(tblock_data, f, indent=4)
+    # === Read Page Setup File ===
+    with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:  
+        tblock_data = json.load(f)
 
     # === Generate Titleblock Master SVG ===
     for name, tblock in tblock_data.get("titleblocks", {}).items():
@@ -177,6 +143,9 @@ def prep_tblock():
         with open(destination_svg_path, "r", encoding="utf-8") as f:
             svg = f.read()
 
+        with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
+            harnice_output_contents = json.load(f)
+
         for old, new in text_map.items():
             if new.startswith("pull_from_revision_history(") and new.endswith(")"):
                 field_name = new[len("pull_from_revision_history("):-1]
@@ -185,6 +154,16 @@ def prep_tblock():
                 new = revision_row[field_name]
                 if not new:
                     raise ValueError(f"[ERROR] Field '{field_name}' is empty in revision history")
+            
+            if new.startswith("pull_from_harnice_output_contents(") and new.endswith(")"):
+                field_name = new[len("pull_from_harnice_output_contents("):-1]
+                if field_name != "formboard.scale":
+                    raise KeyError(f"[ERROR] You're trying to pull something from harnice output contents that is not defined {field_name}")
+                new = harnice_output_contents.get("formboard", {}).get("scale", 1)
+                #convert to str
+                new = f'{new:.3f}'
+                if not new:
+                    raise ValueError(f"Scale is empty in {fileio.name("harnice output contents")}")
 
             if old not in svg:
                 print(f"[WARN] key '{old}' not found in title block")
@@ -193,3 +172,42 @@ def prep_tblock():
 
         with open(destination_svg_path, "w", encoding="utf-8") as f:
             f.write(svg)
+
+def update_output_contents():
+    # === Titleblock Defaults ===
+    blank_setup = {
+        "titleblocks": {
+            "tblock1": {
+                "supplier": "public",
+                "titleblock": "harnice_tblock-11x8.5",
+                "text_replacements": {
+                    "tblock-key-desc": "",
+                    "tblock-key-pn": "pull_from_revision_history(pn)",
+                    "tblock-key-drawnby": "",
+                    "tblock-key-rev": "pull_from_revision_history(rev)",
+                    "tblock-key-releaseticket": "",
+                    "tblock-key-scale": "pull_from_harnice_output_contents(formboard.scale)"
+                }
+            }
+        },
+        "formboard": {
+            "scale": 1
+        }
+    }
+
+    # === Load or Initialize Titleblock Setup ===
+    if not os.path.exists(fileio.path("harnice output contents")) or os.path.getsize(fileio.path("harnice output contents")) == 0:
+        with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
+            json.dump(blank_setup, f, indent=4)
+        tblock_data = blank_setup
+    else:
+        try:
+            with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
+                tblock_data = json.load(f)
+        except json.JSONDecodeError:
+            with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
+                json.dump(blank_setup, f, indent=4)
+            tblock_data = blank_setup
+
+    with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
+        json.dump(tblock_data, f, indent=4)
