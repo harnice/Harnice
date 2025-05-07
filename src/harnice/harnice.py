@@ -116,6 +116,8 @@ def harnice():
     #prep all the different master SVG's
     print()
     print("############ REBUILDING HARNICE OUTPUT #############")
+    print("Updating page setup")
+    svg_masters.update_output_contents()
     print("Working on BOM svg master")
     svg_masters.prep_bom()
     print("Working on Tblock svg master")

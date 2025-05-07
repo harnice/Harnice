@@ -8,7 +8,7 @@ def update_harnice_output():
     load_dotenv()
 
     # Load titleblock setup
-    with open(fileio.path("titleblock setup"), "r", encoding="utf-8") as f:
+    with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
         titleblock_setup = json.load(f)
 
     # === Root SVG attributes ===

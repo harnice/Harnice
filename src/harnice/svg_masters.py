@@ -106,42 +106,6 @@ def prep_bom():
         svg_file.write("\n".join(svg_lines))
 
 def prep_tblock():
-    # === Titleblock Defaults ===
-    default_supplier = "public"
-    default_titleblock = "harnice_tblock-11x8.5"
-    tblock_name = "tblock1"
-
-    # === Define Blank Setup ===
-    blank_setup = {
-        "titleblocks": {
-            tblock_name: {
-                "supplier": default_supplier,
-                "titleblock": default_titleblock,
-                "text_replacements": {
-                    "tblock-key-desc": "",
-                    "tblock-key-pn": "pull_from_revision_history(pn)",
-                    "tblock-key-drawnby": "",
-                    "tblock-key-rev": "pull_from_revision_history(rev)",
-                    "tblock-key-releaseticket": ""
-                }
-            }
-        }
-    }
-
-    # === Load or Initialize Titleblock Setup ===
-    if not os.path.exists(fileio.path("titleblock setup")) or os.path.getsize(fileio.path("titleblock setup")) == 0:
-        with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
-            json.dump(blank_setup, f, indent=4)
-        tblock_data = blank_setup
-    else:
-        try:
-            with open(fileio.path("titleblock setup"), "r", encoding="utf-8") as f:
-                tblock_data = json.load(f)
-        except json.JSONDecodeError:
-            with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
-                json.dump(blank_setup, f, indent=4)
-            tblock_data = blank_setup
-
     # === Load revision row for current part/revision ===
     revision_row = {}
     if os.path.exists(fileio.path("revision history")):
@@ -155,9 +119,9 @@ def prep_tblock():
     if not revision_row:
         raise ValueError(f"[ERROR] No revision row found for rev '{fileio.partnumber('R')}' in revision history")
 
-    # === Save Updated Titleblock Setup ===
-    with open(fileio.path("titleblock setup"), "w", encoding="utf-8") as f:
-        json.dump(tblock_data, f, indent=4)
+    # === Read Page Setup File ===
+    with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:  
+        tblock_data = json.load(f)
 
     # === Generate Titleblock Master SVG ===
     for name, tblock in tblock_data.get("titleblocks", {}).items():
@@ -195,3 +159,43 @@ def prep_tblock():
 
         with open(destination_svg_path, "w", encoding="utf-8") as f:
             f.write(svg)
+
+def update_output_contents():
+    # === Titleblock Defaults ===
+    default_supplier = "public"
+    default_titleblock = "harnice_tblock-11x8.5"
+    tblock_name = "tblock1"
+
+    # === Define Blank Setup ===
+    blank_setup = {
+        "titleblocks": {
+            tblock_name: {
+                "supplier": default_supplier,
+                "titleblock": default_titleblock,
+                "text_replacements": {
+                    "tblock-key-desc": "",
+                    "tblock-key-pn": "pull_from_revision_history(pn)",
+                    "tblock-key-drawnby": "",
+                    "tblock-key-rev": "pull_from_revision_history(rev)",
+                    "tblock-key-releaseticket": ""
+                }
+            }
+        }
+    }
+
+    # === Load or Initialize Titleblock Setup ===
+    if not os.path.exists(fileio.path("harnice output contents")) or os.path.getsize(fileio.path("harnice output contents")) == 0:
+        with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
+            json.dump(blank_setup, f, indent=4)
+        tblock_data = blank_setup
+    else:
+        try:
+            with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
+                tblock_data = json.load(f)
+        except json.JSONDecodeError:
+            with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
+                json.dump(blank_setup, f, indent=4)
+            tblock_data = blank_setup
+
+    with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
+        json.dump(tblock_data, f, indent=4)
