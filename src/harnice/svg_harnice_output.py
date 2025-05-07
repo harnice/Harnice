@@ -3,6 +3,7 @@ import json
 import re
 from dotenv import load_dotenv
 import fileio
+import svg_masters
 
 def update_harnice_output():
     load_dotenv()
@@ -28,6 +29,8 @@ def update_harnice_output():
     position_x_delta = 1800
 
     for tblock_name, tblock_data in harnice_output_contents.get("titleblocks", {}).items():
+        svg_masters.prep_tblock(tblock_name)
+
         supplier = os.getenv(tblock_data.get("supplier"))
         titleblock = tblock_data.get("titleblock")
         attr_path = os.path.join(supplier, "titleblocks", titleblock, f"{titleblock}_attributes.json")
@@ -60,15 +63,42 @@ def update_harnice_output():
         inner_groups.append("\n".join(group))
 
     # Formboard group
-    translate_main = f'translate({group_position[0]},{group_position[1]})'
-    scale = harnice_output_contents.get("formboard", {}).get("scale", 1)
-    group = [f'<g id="formboard" transform="translate({group_position[0]},{group_position[1]}) scale({scale})">']
-    body, _ = extract_svg_body(fileio.path("formboard master svg"))
-    group.append(body)
-    group.append('</g>')
-    inner_groups.append("\n".join(group))
-    group_position[0] += position_x_delta
-    
+    for formboard_name, formboard_data in harnice_output_contents.get("formboards", {}).items():
+        if "scale" not in formboard_data:
+            raise KeyError(f"[ERROR] 'scale' not specified for formboard: {formboard_name}")
+        
+        scale_key = formboard_data["scale"]
+        scales_lookup = harnice_output_contents.get("scales:", {})
+        
+        if scale_key not in scales_lookup:
+            raise KeyError(f"[ERROR] Scale key '{scale_key}' not found in 'scales:' lookup for formboard: {formboard_name}")
+
+        scale_value = scales_lookup[scale_key]
+
+        translate_main = f'translate({group_position[0]},{group_position[1]}) scale({scale_value})'
+        group_position[0] += position_x_delta
+
+        group = [f'<g id="{formboard_name}" transform="{translate_main}">']
+
+        # Formboard contents
+        body, _ = extract_svg_body(fileio.path("formboard master svg"))
+
+        # Apply opacity="0" to hidden instance IDs
+        hide_instances = set(formboard_data.get("hide_instances", []))
+        modified_body = []
+        for line in body.splitlines():
+            if any(f'id="{hid}"' in line for hid in hide_instances):
+                if "opacity=" not in line:
+                    line = line.replace(">", ' opacity="0">')
+                else:
+                    line = re.sub(r'opacity="[^"]*"', 'opacity="0"', line)
+            modified_body.append(line)
+
+        group.extend(modified_body)
+        group.append('</g>')  # End formboard group
+        inner_groups.append("\n".join(group))
+
+
     group_start = '<g id="support_do_not_edit-contents_start">\n' + "\n".join(inner_groups) + '\n</g>'
     group_end = '<g id="support_do_not_edit-contents_end"></g>'
 
