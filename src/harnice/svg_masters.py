@@ -143,6 +143,9 @@ def prep_tblock():
         with open(destination_svg_path, "r", encoding="utf-8") as f:
             svg = f.read()
 
+        with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
+            harnice_output_contents = json.load(f)
+
         for old, new in text_map.items():
             if new.startswith("pull_from_revision_history(") and new.endswith(")"):
                 field_name = new[len("pull_from_revision_history("):-1]
@@ -151,6 +154,16 @@ def prep_tblock():
                 new = revision_row[field_name]
                 if not new:
                     raise ValueError(f"[ERROR] Field '{field_name}' is empty in revision history")
+            
+            if new.startswith("pull_from_harnice_output_contents(") and new.endswith(")"):
+                field_name = new[len("pull_from_harnice_output_contents("):-1]
+                if field_name != "formboard.scale":
+                    raise KeyError(f"[ERROR] You're trying to pull something from harnice output contents that is not defined {field_name}")
+                new = harnice_output_contents.get("formboard", {}).get("scale", 1)
+                #convert to str
+                new = f'{new:.3f}'
+                if not new:
+                    raise ValueError(f"Scale is empty in {fileio.name("harnice output contents")}")
 
             if old not in svg:
                 print(f"[WARN] key '{old}' not found in title block")
@@ -172,7 +185,8 @@ def update_output_contents():
                     "tblock-key-pn": "pull_from_revision_history(pn)",
                     "tblock-key-drawnby": "",
                     "tblock-key-rev": "pull_from_revision_history(rev)",
-                    "tblock-key-releaseticket": ""
+                    "tblock-key-releaseticket": "",
+                    "tblock-key-scale": "pull_from_harnice_output_contents(formboard.scale)"
                 }
             }
         },
