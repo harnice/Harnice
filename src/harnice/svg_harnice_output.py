@@ -58,6 +58,15 @@ def update_harnice_output():
 
         group.append('</g>')  # End outer titleblock group
         inner_groups.append("\n".join(group))
+
+    # Formboard group
+    translate_main = f'translate({group_position[0]},{group_position[1]})'
+    group = [f'<g id="formboard" transform="{translate_main}">']
+    body, _ = extract_svg_body(fileio.path("formboard master svg"))
+    group.append(body)
+    group.append('</g>')
+    inner_groups.append("\n".join(group))
+    group_position[0] += position_x_delta
     
     group_start = '<g id="support_do_not_edit-contents_start">\n' + "\n".join(inner_groups) + '\n</g>'
     group_end = '<g id="support_do_not_edit-contents_end"></g>'
