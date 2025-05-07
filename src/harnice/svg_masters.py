@@ -105,7 +105,7 @@ def prep_bom():
     with open(fileio.path("bom table master svg"), "w", encoding="utf-8") as svg_file:
         svg_file.write("\n".join(svg_lines))
 
-def prep_tblock():
+def prep_tblock(tblock_name):
     # === Load revision row for current part/revision ===
     revision_row = {}
     if os.path.exists(fileio.path("revision history")):
@@ -121,93 +121,52 @@ def prep_tblock():
 
     # === Read Page Setup File ===
     with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:  
-        tblock_data = json.load(f)
+        harnice_output_contents = json.load(f)
 
-    # === Generate Titleblock Master SVG ===
-    for name, tblock in tblock_data.get("titleblocks", {}).items():
-        supplier = tblock.get("supplier")
-        titleblock = tblock.get("titleblock")
-        text_map = tblock.get("text_replacements", {})
+    tblock_data = harnice_output_contents.get("titleblocks", {}).get(tblock_name)
+    if not tblock_data:
+        raise KeyError(f"[ERROR] Titleblock '{tblock_name}' not found in harnice output contents")
 
-        destination_svg_name = f"{fileio.partnumber('pn-rev')}.{name}_master.svg"
-        destination_svg_path = os.path.join(fileio.dirpath("master_svgs"), destination_svg_name)
+    supplier = tblock_data.get("supplier")
+    titleblock = tblock_data.get("titleblock")
+    text_map = tblock_data.get("text_replacements", {})
 
-        # Copy the library file into editable location
-        component_library.pull_file_from_lib(
-            supplier,
-            os.path.join("titleblocks", titleblock, f"{titleblock}.svg"),
-            destination_svg_path
-        )
+    destination_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
+    destination_svg_path = os.path.join(fileio.dirpath("master_svgs"), destination_svg_name)
 
-        # Replace text in the SVG
-        with open(destination_svg_path, "r", encoding="utf-8") as f:
-            svg = f.read()
+    # Copy the library file into editable location
+    component_library.pull_file_from_lib(
+        supplier,
+        os.path.join("titleblocks", titleblock, f"{titleblock}.svg"),
+        destination_svg_path
+    )
 
-        with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
-            harnice_output_contents = json.load(f)
+    # Replace text in the SVG
+    with open(destination_svg_path, "r", encoding="utf-8") as f:
+        svg = f.read()
 
-        for old, new in text_map.items():
-            if new.startswith("pull_from_revision_history(") and new.endswith(")"):
-                field_name = new[len("pull_from_revision_history("):-1]
-                if field_name not in revision_row:
-                    raise KeyError(f"[ERROR] Field '{field_name}' not found in revision history")
-                new = revision_row[field_name]
-                if not new:
-                    raise ValueError(f"[ERROR] Field '{field_name}' is empty in revision history")
-            
-            if new.startswith("pull_from_harnice_output_contents(") and new.endswith(")"):
-                field_name = new[len("pull_from_harnice_output_contents("):-1]
-                if field_name != "formboard.scale":
-                    raise KeyError(f"[ERROR] You're trying to pull something from harnice output contents that is not defined {field_name}")
-                new = harnice_output_contents.get("formboard", {}).get("scale", 1)
-                #convert to str
-                new = f'{new:.3f}'
-                if not new:
-                    raise ValueError(f"Scale is empty in {fileio.name("harnice output contents")}")
+    for old, new in text_map.items():
+        if new.startswith("pull_from_revision_history(") and new.endswith(")"):
+            field_name = new[len("pull_from_revision_history("):-1]
+            if field_name not in revision_row:
+                raise KeyError(f"[ERROR] Field '{field_name}' not found in revision history")
+            new = revision_row[field_name]
+            if not new:
+                raise ValueError(f"[ERROR] Field '{field_name}' is empty in revision history")
 
-            if old not in svg:
-                print(f"[WARN] key '{old}' not found in title block")
+        # Handle scale lookup if the replacement is for "Scale"
+        if old.lower().find("scale") != -1:
+            scales_lookup = harnice_output_contents.get("scales:", {})
+            if new not in scales_lookup:
+                raise KeyError(f"[ERROR] Scale key '{new}' not found in scales lookup")
+            new = f"{scales_lookup[new]:.3f}"
 
-            svg = svg.replace(old, new)
+        if old not in svg:
+            print(f"[WARN] key '{old}' not found in title block")
 
-        with open(destination_svg_path, "w", encoding="utf-8") as f:
-            f.write(svg)
+        svg = svg.replace(old, new)
 
-def update_output_contents():
-    # === Titleblock Defaults ===
-    blank_setup = {
-        "titleblocks": {
-            "tblock1": {
-                "supplier": "public",
-                "titleblock": "harnice_tblock-11x8.5",
-                "text_replacements": {
-                    "tblock-key-desc": "",
-                    "tblock-key-pn": "pull_from_revision_history(pn)",
-                    "tblock-key-drawnby": "",
-                    "tblock-key-rev": "pull_from_revision_history(rev)",
-                    "tblock-key-releaseticket": "",
-                    "tblock-key-scale": "pull_from_harnice_output_contents(formboard.scale)"
-                }
-            }
-        },
-        "formboard": {
-            "scale": 1
-        }
-    }
+    with open(destination_svg_path, "w", encoding="utf-8") as f:
+        f.write(svg)
 
-    # === Load or Initialize Titleblock Setup ===
-    if not os.path.exists(fileio.path("harnice output contents")) or os.path.getsize(fileio.path("harnice output contents")) == 0:
-        with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
-            json.dump(blank_setup, f, indent=4)
-        tblock_data = blank_setup
-    else:
-        try:
-            with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
-                tblock_data = json.load(f)
-        except json.JSONDecodeError:
-            with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
-                json.dump(blank_setup, f, indent=4)
-            tblock_data = blank_setup
-
-    with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
-        json.dump(tblock_data, f, indent=4)
+        

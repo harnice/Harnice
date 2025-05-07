@@ -198,3 +198,47 @@ def name(target_value):
 
     return recursive_search(harnice_file_structure())
 
+def update_output_contents():
+    # === Titleblock Defaults ===
+    blank_setup = {
+        "titleblocks": {
+            "tblock1": {
+                "supplier": "public",
+                "titleblock": "harnice_tblock-11x8.5",
+                "text_replacements": {
+                    "tblock-key-desc": "",
+                    "tblock-key-pn": "pull_from_revision_history(pn)",
+                    "tblock-key-drawnby": "",
+                    "tblock-key-rev": "pull_from_revision_history(rev)",
+                    "tblock-key-releaseticket": "",
+                    "tblock-key-scale": "A"
+                }
+            }
+        },
+        "formboards": {
+            "formboard1": {
+                "scale": "A",
+                "hide_instances": []
+            }
+        },
+        "scales:": {
+            "A": 1
+        }
+    }
+
+    # === Load or Initialize Titleblock Setup ===
+    if not os.path.exists(path("harnice output contents")) or os.path.getsize(path("harnice output contents")) == 0:
+        with open(path("harnice output contents"), "w", encoding="utf-8") as f:
+            json.dump(blank_setup, f, indent=4)
+        tblock_data = blank_setup
+    else:
+        try:
+            with open(path("harnice output contents"), "r", encoding="utf-8") as f:
+                tblock_data = json.load(f)
+        except json.JSONDecodeError:
+            with open(path("harnice output contents"), "w", encoding="utf-8") as f:
+                json.dump(blank_setup, f, indent=4)
+            tblock_data = blank_setup
+
+    with open(path("harnice output contents"), "w", encoding="utf-8") as f:
+        json.dump(tblock_data, f, indent=4)

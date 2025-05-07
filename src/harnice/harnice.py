@@ -117,11 +117,9 @@ def harnice():
     print()
     print("############ REBUILDING HARNICE OUTPUT #############")
     print("Updating page setup")
-    svg_masters.update_output_contents()
+    fileio.update_output_contents()
     print("Working on BOM svg master")
     svg_masters.prep_bom()
-    print("Working on Tblock svg master")
-    svg_masters.prep_tblock()
     print("Working on Harnice Output")
     svg_harnice_output.update_harnice_output()
     
