@@ -186,12 +186,18 @@ def update_output_contents():
                     "tblock-key-drawnby": "",
                     "tblock-key-rev": "pull_from_revision_history(rev)",
                     "tblock-key-releaseticket": "",
-                    "tblock-key-scale": "pull_from_harnice_output_contents(formboard.scale)"
+                    "tblock-key-scale": "A"
                 }
             }
         },
-        "formboard": {
-            "scale": 1
+        "formboards": {
+            "formboard1": {
+                "scale": "A",
+                "hide_instances": []
+            }
+        },
+        "scales:": {
+            "A": 1
         }
     }
 
