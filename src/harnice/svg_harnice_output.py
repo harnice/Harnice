@@ -56,14 +56,7 @@ def update_harnice_output():
 
         group.append('</g>')  # End outer titleblock group
         inner_groups.append("\n".join(group))
-"""
-FOUND THIS IN SVG: FIX IT IN LINE BELOW OR CLOSE:
-"this looks like a problem:
-
-  <g
-     id="<g id="support_do_not_edit-contents_start">
-     """
-     
+    
     group_start = '<g id="support_do_not_edit-contents_start">\n' + "\n".join(inner_groups) + '\n</g>'
     group_end = '<g id="support_do_not_edit-contents_end"></g>'
 
@@ -78,7 +71,12 @@ FOUND THIS IN SVG: FIX IT IN LINE BELOW OR CLOSE:
         existing = re.sub(r"<svg[^>]*>", new_header, existing, count=1)
 
         # Replace contents between support_do_not_edit-contents_start and _end
-        pattern = r'support_do_not_edit-contents_start.*?support_do_not_edit-contents_end'
+        pattern = (
+            r'<g[^>]*id="support_do_not_edit-contents_start"[^>]*>'  # matches opening group with extra attributes
+            r'.*?'                                                   # non-greedy match of inner content
+            r'</g>\s*'                                               # closing tag of start group
+            r'<g[^>]*id="support_do_not_edit-contents_end"[^>]*/?>'  # matches empty end group (self-closing or not)
+        )
         replacement = group_start + '\n' + group_end
         if re.search(pattern, existing, flags=re.DOTALL):
             existing = re.sub(pattern, replacement, existing, flags=re.DOTALL)
