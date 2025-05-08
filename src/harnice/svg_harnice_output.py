@@ -101,6 +101,15 @@ def update_harnice_output():
         group.append('</g>')  # End formboard group
         inner_groups.append("\n".join(group))
 
+    # Wirelist group
+    translate_main = f'translate({group_position[0]},{group_position[1]})'
+    scale = harnice_output_contents.get("formboard", {}).get("scale", 1)
+    group = [f'<g id="formboard" transform="translate({group_position[0]},{group_position[1]}) scale({scale})">']
+    body, _ = extract_svg_body(fileio.path("wirelist master svg"))
+    group.append(body)
+    group.append('</g>')
+    inner_groups.append("\n".join(group))
+    group_position[0] += position_x_delta
 
     group_start = '<g id="support_do_not_edit-contents_start">\n' + "\n".join(inner_groups) + '\n</g>'
     group_end = '<g id="support_do_not_edit-contents_end"></g>'
