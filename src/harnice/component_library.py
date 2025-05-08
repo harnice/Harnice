@@ -467,16 +467,19 @@ def make_new_tblock(filename):
     outer_margin = 20
     inner_margin = 40
     tick_spacing = 96
-    tb_origin_offset = (6 * 96, 1 * 96)
+    tb_origin_offset = (398, 48)
     row_heights = [24, 24]
     column_widths = [
-        [96, 96, 96, 96],
-        [96, 96, 96, 96]
+        [264, 50, 84],
+        [73, 126, 139, 60]
     ]
+    #text position
+    label_offset = (2, 7)     # (x, y) from top-left of cell
+    key_offset_y = 16          # y from top of cell
     cell_texts = [
-        [("DESCRIPTION", "tblock-key-desc"), ("", ""), ("", ""), ("RELEASE TICKET", "tblock-key-releaseticket")],
+        [("DESCRIPTION", "tblock-key-desc"), ("REV", "tblock-key-rev"), ("RELEASE TICKET", "tblock-key-releaseticket")],
         [("SCALE", "tblock-key-scale"), ("PART NUMBER", "tblock-key-pn"),
-         ("DRAWN BY", "tblock-key-drawnby"), ("REV", "tblock-key-rev")]
+         ("DRAWN BY", "tblock-key-drawnby"), ("SHEET", "tblock-key-sheet")]
     ]
 
     width, height = page_size
@@ -581,6 +584,19 @@ def make_new_tblock(filename):
     # === Titleblock Cells ===
     tb_origin_x = width - inner_margin - tb_origin_offset[0]
     tb_origin_y = height - inner_margin - tb_origin_offset[1]
+
+    # === Logo block ===
+    logo_width = 1.25 * 96  # example: 0.5 inch wide
+    logo_height = sum(row_heights)
+
+    logo_group = ET.SubElement(svg, "g", {"id": "logo"})
+    add_rect(logo_group,
+            tb_origin_x - logo_width,
+            tb_origin_y,
+            logo_width,
+            logo_height,
+            stroke="black", fill="none")
+
     y_cursor = tb_origin_y
 
     for row_idx, row_height in enumerate(row_heights):
@@ -596,15 +612,23 @@ def make_new_tblock(filename):
         x_cursor = tb_origin_x
         for col_idx, col_width in enumerate(row_cols):
             label, key_id = row_cells[col_idx]
-            group_id = f"tblock-row{row_idx}-col{col_idx}"
+            group_id = f"{label.lower().replace(' ', '-')}"
             cell_group = ET.SubElement(svg, "g", {"id": group_id})
 
             add_rect(cell_group, x_cursor, y_cursor, col_width, row_height)
 
             if label:
-                add_text(cell_group, x_cursor + 4, y_cursor + 10, label, size=7, bold=True)
+                add_text(cell_group,
+                         x_cursor + label_offset[0],
+                         y_cursor + label_offset[1],
+                         label, size=7, bold=True)
             if key_id:
-                add_text(cell_group, x_cursor + 4, y_cursor + 20, key_id, size=7, id=key_id)
+                center_x = x_cursor + col_width / 2
+                add_text(cell_group,
+                         center_x,
+                         y_cursor + key_offset_y,
+                         key_id, size=7, anchor="middle", id=key_id)
+
 
             x_cursor += col_width
         y_cursor += row_height
