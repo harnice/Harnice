@@ -6,6 +6,9 @@ import fileio
 import svg_masters
 
 def update_harnice_output():
+    svg_masters.prep_bom()
+    svg_masters.prep_wirelist()
+
     load_dotenv()
 
     # Load titleblock setup

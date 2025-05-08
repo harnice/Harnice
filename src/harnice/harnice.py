@@ -79,7 +79,6 @@ def harnice():
 
     print("Exporting a beautiful wirelist")
     wirelist.tsv_to_xls()
-    wirelist.generate_svg()
     print()
 
     print("Adding angles to nodes")
@@ -119,8 +118,6 @@ def harnice():
     print("############ REBUILDING HARNICE OUTPUT #############")
     print("Updating page setup")
     fileio.update_output_contents()
-    print("Working on BOM svg master")
-    svg_masters.prep_bom()
     print("Working on Harnice Output")
     svg_harnice_output.update_harnice_output()
     
