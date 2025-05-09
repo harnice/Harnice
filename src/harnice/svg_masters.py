@@ -189,7 +189,7 @@ def prep_wirelist():
     # === SVG Header ===
     svg_lines = [f'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" font-family="{font_family}" font-size="{font_size}">
-  <g id="wirelist" transform="translate(0,0)">''']
+  ''']
 
     # === Header Row ===
     for col_idx, col in enumerate(WIRELIST_COLUMNS):
@@ -210,7 +210,7 @@ def prep_wirelist():
     <text x="{x + col_width/2}" y="{y + row_height/2}" fill="black" text-anchor="middle" dominant-baseline="middle">{text}</text>''')
 
     # === Close SVG ===
-    svg_lines.append("  </g>\n</svg>")
+    svg_lines.append("\n</svg>")
 
     # === Write File ===
     out_path = fileio.path("wirelist master svg")
