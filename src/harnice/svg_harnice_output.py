@@ -110,7 +110,7 @@ def update_harnice_output():
     group.append('</g>')
     inner_groups.append("\n".join(group))
     group_position[0] += position_x_delta
-"""
+    """
     group_start = '<g id="support_do_not_edit-contents_start">\n' + "\n".join(inner_groups) + '\n</g>'
     group_end = '<g id="support_do_not_edit-contents_end"></g>'
 
