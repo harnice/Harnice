@@ -103,8 +103,7 @@ def update_harnice_output():
 
     # Wirelist group
     translate_main = f'translate({group_position[0]},{group_position[1]})'
-    scale = harnice_output_contents.get("formboard", {}).get("scale", 1)
-    group = [f'<g id="formboard" transform="translate({group_position[0]},{group_position[1]}) scale({scale})">']
+    group = [f'<g id="wirelist" transform="translate({group_position[0]},{group_position[1]})">']
     body, _ = extract_svg_body(fileio.path("wirelist master svg"))
     group.append(body)
     group.append('</g>')
