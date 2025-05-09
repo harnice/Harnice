@@ -457,10 +457,6 @@ def pull_file_from_lib(domain, lib_file, destination_filepath, remove_ok=True):
     # Step 3: Copy directly to destination
     shutil.copy(source_filepath, destination_filepath)
 
-import os
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
-
 def make_new_tblock(filename):
     # === Parameters ===
     page_size = [11 * 96, 8.5 * 96]
@@ -489,7 +485,7 @@ def make_new_tblock(filename):
         "height": str(height)
     })
 
-    contents_group = ET.SubElement(svg, "g", {"id": "contents"})
+    contents_group = ET.SubElement(svg, "g", {"id": "contents-start"})
 
     def add_rect(parent, x, y, w, h, stroke="black", fill="none", stroke_width=1):
         ET.SubElement(parent, "rect", {
@@ -614,6 +610,7 @@ def make_new_tblock(filename):
         y_cursor += row_height
 
     # === Write SVG with indentation ===
+    ET.SubElement(svg, "g", {"id": "contents-end"})
     rough_string = ET.tostring(svg, encoding="utf-8")
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
     with open(os.path.join(os.getcwd(), filename), "w", encoding="utf-8") as f:
