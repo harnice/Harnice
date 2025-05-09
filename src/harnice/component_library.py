@@ -473,9 +473,8 @@ def make_new_tblock(filename):
         [264, 50, 84],
         [73, 126, 139, 60]
     ]
-    #text position
-    label_offset = (2, 7)     # (x, y) from top-left of cell
-    key_offset_y = 16          # y from top of cell
+    label_offset = (2, 7)
+    key_offset_y = 16
     cell_texts = [
         [("DESCRIPTION", "tblock-key-desc"), ("REV", "tblock-key-rev"), ("RELEASE TICKET", "tblock-key-releaseticket")],
         [("SCALE", "tblock-key-scale"), ("PART NUMBER", "tblock-key-pn"),
@@ -489,6 +488,8 @@ def make_new_tblock(filename):
         "width": str(width),
         "height": str(height)
     })
+
+    contents_group = ET.SubElement(svg, "g", {"id": "contents"})
 
     def add_rect(parent, x, y, w, h, stroke="black", fill="none", stroke_width=1):
         ET.SubElement(parent, "rect", {
@@ -515,30 +516,26 @@ def make_new_tblock(filename):
             attrs["id"] = id
         ET.SubElement(parent, "text", attrs).text = text
 
-    # === initialize border group
-    border_group = ET.SubElement(svg, "g", {"id": "border"})
+    # === Border Group ===
+    border_group = ET.SubElement(contents_group, "g", {"id": "border"})
 
-    # === Tick marks with full gridlines and centered labels ===
     x_ticks = int((width - 2 * inner_margin) // tick_spacing)
     for i in range(x_ticks):
         x0 = inner_margin + i * tick_spacing
         x1 = x0 + tick_spacing
         x_center = (x0 + x1) / 2
 
-        # Vertical gridline
         ET.SubElement(border_group, "line", {
             "x1": str(x0), "y1": str(outer_margin),
             "x2": str(x0), "y2": str(height - outer_margin),
             "stroke": "black", "stroke-width": "0.5"
         })
 
-        # Centered number
         label_y_top = (outer_margin + inner_margin) / 2
         label_y_bot = height - label_y_top
         add_text(border_group, x_center, label_y_top, str(i + 1), anchor="middle")
         add_text(border_group, x_center, label_y_bot, str(i + 1), anchor="middle")
 
-    # Final rightmost vertical gridline
     x_end = inner_margin + x_ticks * tick_spacing
     ET.SubElement(border_group, "line", {
         "x1": str(x_end), "y1": str(outer_margin),
@@ -552,21 +549,18 @@ def make_new_tblock(filename):
         y1 = y0 + tick_spacing
         y_center = (y0 + y1) / 2
 
-        # Horizontal gridline
         ET.SubElement(border_group, "line", {
             "x1": str(outer_margin), "y1": str(y0),
             "x2": str(width - outer_margin), "y2": str(y0),
             "stroke": "black", "stroke-width": "0.5"
         })
 
-        # Centered letter
         label = chr(ord('A') + j)
         label_x_left = (outer_margin + inner_margin) / 2
         label_x_right = width - label_x_left
         add_text(border_group, label_x_left, y_center + 4, label, anchor="middle")
         add_text(border_group, label_x_right, y_center + 4, label, anchor="middle")
 
-    # Final bottommost horizontal gridline
     y_end = inner_margin + y_ticks * tick_spacing
     ET.SubElement(border_group, "line", {
         "x1": str(outer_margin), "y1": str(y_end),
@@ -574,47 +568,34 @@ def make_new_tblock(filename):
         "stroke": "black", "stroke-width": "0.5"
     })
 
-
-    # === Border Group ===
     add_rect(border_group, outer_margin, outer_margin, width - 2 * outer_margin, height - 2 * outer_margin)
     add_rect(border_group, inner_margin, inner_margin,
-         width - 2 * inner_margin, height - 2 * inner_margin,
-         stroke="black", fill="white", stroke_width=1)
+             width - 2 * inner_margin, height - 2 * inner_margin,
+             stroke="black", fill="white", stroke_width=1)
 
-    # === Titleblock Cells ===
+    # === Logo Group ===
     tb_origin_x = width - inner_margin - tb_origin_offset[0]
     tb_origin_y = height - inner_margin - tb_origin_offset[1]
-
-    # === Logo block ===
-    logo_width = 1.25 * 96  # example: 0.5 inch wide
+    logo_width = 1.25 * 96
     logo_height = sum(row_heights)
-
-    logo_group = ET.SubElement(svg, "g", {"id": "logo"})
+    logo_group = ET.SubElement(contents_group, "g", {"id": "logo"})
     add_rect(logo_group,
-            tb_origin_x - logo_width,
-            tb_origin_y,
-            logo_width,
-            logo_height,
-            stroke="black", fill="none")
+             tb_origin_x - logo_width,
+             tb_origin_y,
+             logo_width,
+             logo_height,
+             stroke="black", fill="none")
 
+    # === Titleblock Cell Groups ===
     y_cursor = tb_origin_y
-
     for row_idx, row_height in enumerate(row_heights):
-        if row_idx >= len(column_widths) or row_idx >= len(cell_texts):
-            raise ValueError(f"[ERROR] Row {row_idx} missing in column_widths or cell_texts.")
-
         row_cols = column_widths[row_idx]
         row_cells = cell_texts[row_idx]
-
-        if len(row_cols) != len(row_cells):
-            raise ValueError(f"[ERROR] Row {row_idx} mismatch: {len(row_cols)} widths vs {len(row_cells)} cells.")
-
         x_cursor = tb_origin_x
         for col_idx, col_width in enumerate(row_cols):
             label, key_id = row_cells[col_idx]
-            group_id = f"{label.lower().replace(' ', '-')}"
-            cell_group = ET.SubElement(svg, "g", {"id": group_id})
-
+            group_id = label.lower().replace(" ", "-") if label else f"cell-r{row_idx}-c{col_idx}"
+            cell_group = ET.SubElement(contents_group, "g", {"id": group_id})
             add_rect(cell_group, x_cursor, y_cursor, col_width, row_height)
 
             if label:
@@ -628,7 +609,6 @@ def make_new_tblock(filename):
                          center_x,
                          y_cursor + key_offset_y,
                          key_id, size=7, anchor="middle", id=key_id)
-
 
             x_cursor += col_width
         y_cursor += row_height
