@@ -4,6 +4,7 @@ import re
 from dotenv import load_dotenv
 import fileio
 import svg_masters
+from lxml import etree as ET
 
 def update_harnice_output():
     svg_masters.prep_bom()
@@ -143,28 +144,43 @@ def update_harnice_output():
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_output)
 
-
 def extract_svg_body(svg_path):
     if not os.path.isfile(svg_path):
         raise FileNotFoundError(f"[ERROR] SVG file not found: {svg_path}")
-    with open(svg_path, "r", encoding="utf-8") as f:
-        content = f.read()
 
-    start = content.find("<svg")
-    end = content.find("</svg>")
-    if start == -1 or end == -1:
-        raise ValueError(f"[ERROR] Malformed SVG: {svg_path}")
-    body_start = content.find(">", start) + 1
+    parser = ET.XMLParser(recover=True)
+    tree = ET.parse(svg_path, parser=parser)
+    root = tree.getroot()
 
-    # Parse attributes from <svg ...>
-    header_match = re.search(r'<svg\s+([^>]*)>', content)
-    attrs = {}
-    if header_match:
-        for attr in re.findall(r'(\S+)="([^"]*)"', header_match.group(1)):
-            key, value = attr
-            attrs[key] = value
+    # Define which tags or namespace fragments to remove
+    unwanted_tags = {"defs", "metadata"}
+    unwanted_ns_fragments = ("sodipodi", "inkscape")
 
-    return content[body_start:end].strip(), attrs
+    # Remove unwanted elements
+    for elem in root.xpath("//*"):
+        tag = elem.tag
+        tag_name = tag.split("}")[-1]  # localname without namespace
+        ns_uri = tag.split("}")[0][1:] if "}" in tag else ""
+
+        if (
+            tag_name in unwanted_tags or
+            any(ns in tag for ns in unwanted_ns_fragments) or
+            any(ns in ns_uri for ns in unwanted_ns_fragments)
+        ):
+            parent = elem.getparent()
+            if parent is not None:
+                parent.remove(elem)
+
+    # Collect clean root attributes
+    allowed_attrs = {
+        k: v for k, v in root.attrib.items()
+        if not k.startswith("xmlns") and k not in {"version", "viewBox"}
+    }
+
+    # Return only child elements as string
+    inner_xml = "".join(ET.tostring(child, encoding="unicode") for child in root.iterchildren())
+    return inner_xml.strip(), allowed_attrs
+
 
 def check_group_balance(svg_text):
     open_groups = len(re.findall(r'<g\b[^>]*>', svg_text))

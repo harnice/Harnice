@@ -22,6 +22,7 @@
     pip3 install wireviz
     pip3 install dotenv
     pip install xlwt
+    pip install lxml
     brew install graphviz
 
 3a. if you get errors installing graphviz related to path issues, do this:
