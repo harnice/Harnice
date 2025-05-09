@@ -212,7 +212,8 @@ def update_output_contents():
                     "tblock-key-drawnby": "",
                     "tblock-key-rev": "pull_from_revision_history(rev)",
                     "tblock-key-releaseticket": "",
-                    "tblock-key-scale": "A"
+                    "tblock-key-scale": "A",
+                    "tblock-key-sheet": "1 of 1"
                 }
             }
         },
