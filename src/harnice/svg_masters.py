@@ -46,7 +46,8 @@ def prep_bom():
         '  text { fill: black; dominant-baseline: middle; font-family: Arial, Helvetica, sans-serif; }',
         '  .header { font-weight: bold; }',
         '  circle { fill: none; stroke: black; }',
-        '</style>'
+        '</style>',
+        '<g id="bom-contents-start">'
     ]
 
     # Compute left edges for each column starting at origin and going left
@@ -100,11 +101,14 @@ def prep_bom():
                     f'stroke-width="{line_width}"/>'
                 )
 
+    svg_lines.append('</g>')
+    svg_lines.append('<g id="bom-contents-end"/>')
     svg_lines.append('</svg>')
 
     # === Write SVG Output ===
     with open(fileio.path("bom table master svg"), "w", encoding="utf-8") as svg_file:
         svg_file.write("\n".join(svg_lines))
+
 
 def prep_tblock(tblock_name):
     # === Load revision row for current part/revision ===
