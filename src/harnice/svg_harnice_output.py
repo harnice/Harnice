@@ -64,7 +64,7 @@ def update_harnice_output():
 
         group.append('</g>')  # End outer titleblock group
         inner_groups.append("\n".join(group))
-
+    """
     # Formboard group
     for formboard_name, formboard_data in harnice_output_contents.get("formboards", {}).items():
         if "scale" not in formboard_data:
@@ -109,7 +109,7 @@ def update_harnice_output():
     group.append('</g>')
     inner_groups.append("\n".join(group))
     group_position[0] += position_x_delta
-
+"""
     group_start = '<g id="support_do_not_edit-contents_start">\n' + "\n".join(inner_groups) + '\n</g>'
     group_end = '<g id="support_do_not_edit-contents_end"></g>'
 
