@@ -49,21 +49,21 @@ def update_harnice_output():
         group = [f'<g id="{tblock_name}" transform="{translate_main}">']
 
         # Titleblock group
-        group.append('<g id="tblock">')
-        tblock_svg_path = os.path.join(fileio.dirpath("master_svgs"), f"{fileio.partnumber("pn-rev")}.{tblock_name}_master.svg")
-        body, _ = extract_svg_body(tblock_svg_path)
-        group.append(body)
-        group.append('</g>')
+        group.append(f'<g id="{tblock_name}-contents-start">')
+        group.append(f'</g>')
+        group.append(f'<g id="{tblock_name}-contents-end"></g>')
 
         # BOM group
         bom_loc = attributes.get("periphery_locs", {}).get("bom_loc", [0, 0])
         translate_bom = f'translate({bom_loc[0]},{bom_loc[1]})'
-        group.append(f'<g id="bom" transform="{translate_bom}">')
-        body, _ = extract_svg_body(fileio.path("bom table master svg"))
-        group.append(body)
+        group.append(f'<g id="bom_translated" transform="{translate_bom}">')
+        group.append(f'<g id="bom-{tblock_name}-contents-start">')
+        group.append(f'</g>')
+        group.append(f'<g id="bom-{tblock_name}-contents-end"></g>')
         group.append('</g>')
 
         group.append('</g>')  # End outer titleblock group
+
         inner_groups.append("\n".join(group))
     """
     # Formboard group
@@ -143,6 +143,13 @@ def update_harnice_output():
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_output)
+
+    #go back and replace each item with contents
+    for tblock_name, tblock_data in harnice_output_contents.get("titleblocks", {}).items():
+        find_and_replace_svg_group(fileio.path("harnice output contents"), source_svg_filepath, source_group_name, destination_group_name):
+    
+        #group.append(f'<g id="{tblock_name}-contents-start">')
+        #group.append(f'<g id="bom-{tblock_name}-contents-start">')
 
 def extract_svg_body(svg_path):
     if not os.path.isfile(svg_path):
