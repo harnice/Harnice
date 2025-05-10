@@ -73,12 +73,16 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
                 "master_svgs": {
-                    f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                    f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                    f"{partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
-                    f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                    f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
-                    f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg"
+                    "generated_svgs": {
+                        f"{partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
+                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg"
+                        f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
+                        f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
+                        f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
+                        f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg"
+                    },
+                    "svg_instances": {},
+                    f"{partnumber("pn-rev")}.master.svg":"master svg"
                 },
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
