@@ -1,15 +1,18 @@
 import os
 import json
 import re
+import csv
 from dotenv import load_dotenv
 import fileio
+import component_library
 from lxml import etree as ET
 
-def update_tblock_svg_block(tblock_name):
+def tblock(tblock_name):
     # === Load revision row for current part/revision ===
     revision_row = {}
-    if os.path.exists(fileio.path("revision history")):
-        with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
+    rev_path = fileio.path("revision history")
+    if os.path.exists(rev_path):
+        with open(rev_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t")
             for row in reader:
                 if row.get("rev") == fileio.partnumber("R"):
@@ -19,8 +22,8 @@ def update_tblock_svg_block(tblock_name):
     if not revision_row:
         raise ValueError(f"[ERROR] No revision row found for rev '{fileio.partnumber('R')}' in revision history")
 
-    # === Read Page Setup File ===
-    with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:  
+    # === Read Harnice Output Contents ===
+    with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
         harnice_output_contents = json.load(f)
 
     tblock_data = harnice_output_contents.get("titleblocks", {}).get(tblock_name)
@@ -32,16 +35,16 @@ def update_tblock_svg_block(tblock_name):
     text_map = tblock_data.get("text_replacements", {})
 
     destination_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
-    destination_svg_path = os.path.join(fileio.dirpath("master_svgs"), destination_svg_name)
+    destination_svg_path = os.path.join(fileio.dirpath("svg_blocks"), destination_svg_name)
 
-    # Copy the library file into editable location
+    # === Copy the library file to master SVGs ===
     component_library.pull_file_from_lib(
         supplier,
         os.path.join("titleblocks", titleblock, f"{titleblock}.svg"),
         destination_svg_path
     )
 
-    # Replace text in the SVG
+    # === Perform Text Replacements ===
     with open(destination_svg_path, "r", encoding="utf-8") as f:
         svg = f.read()
 
@@ -54,15 +57,15 @@ def update_tblock_svg_block(tblock_name):
             if not new:
                 raise ValueError(f"[ERROR] Field '{field_name}' is empty in revision history")
 
-        # Handle scale lookup if the replacement is for "Scale"
-        if old.lower().find("scale") != -1:
+        # If replacing scale, convert to decimal
+        if "scale" in old.lower():
             scales_lookup = harnice_output_contents.get("scales:", {})
             if new not in scales_lookup:
                 raise KeyError(f"[ERROR] Scale key '{new}' not found in scales lookup")
             new = f"{scales_lookup[new]:.3f}"
 
         if old not in svg:
-            print(f"[WARN] key '{old}' not found in title block")
+            print(f"[WARN] Key '{old}' not found in titleblock SVG")
 
         svg = svg.replace(old, new)
 

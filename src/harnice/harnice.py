@@ -116,14 +116,15 @@ def harnice():
 
     #===================================
     #NEXT COMPLETE BLOCKS (direct compilations and library imports of the above)
-    svg_blocks = fileio.update_page_setup_json()
+    page_setup_contents = fileio.update_page_setup_json()
 
     #titleblocks
-    for tblock_name, tblock_entry in svg_blocks.get("titleblocks", {}).items():
-        svg_utils.update_tblock_svg_block(tblock_name, tblock_entry)
+    for tblock_name in page_setup_contents.get("titleblocks", {}):
+        print(f"!!!!!!!! {tblock_name}")
+        svg_blocks.tblock(tblock_name)
 
     #formboards
-    for formboard_name, formboard_entry in svg_blocks.get("formboards", {}).items():
+    for formboard_name, formboard_entry in page_setup_contents.get("formboards", {}).items():
         #update that instance
         print(f"!!!!!!!! {formboard_name}")
         #svg_utils.update_svg_instance(svg_instance)
