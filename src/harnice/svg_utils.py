@@ -92,7 +92,7 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, source_
             print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error writing to <{target_svg_filepath}>: {e}")
             return success
 
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Replaced group <{destination_group_name}> with <{source_group_name}> from <{source_svg_filepath}> to <{target_svg_filepath}>.")
+        #print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Replaced group <{destination_group_name}> with <{source_group_name}> from <{source_svg_filepath}> to <{target_svg_filepath}>.")
         success = 1
 
     except Exception as e:
