@@ -130,9 +130,9 @@ def harnice():
     svg_blocks.update_tblocks(page_setup_contents, revinfo)
 
     #formboards
-    for formboard_name, formboard_entry in page_setup_contents.get("formboards", {}).items():
+    #for formboard_name, formboard_entry in page_setup_contents.get("formboards", {}).items():
         #update that instance
-        svg_utils.update_svg_instance(svg_instance)
+        #svg_utils.update_svg_instance(svg_instance)
 
     
     #===================================

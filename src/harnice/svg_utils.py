@@ -62,20 +62,20 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, source_
 
         source_start_index = source_svg_content.find(source_start_tag)
         if source_start_index == -1:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source start tag <{source_start_tag}> not found in <{fileio.name(source_svg_filepath)}>.")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source start tag <{source_start_tag}> not found in <{source_svg_filepath}>.")
             return success
         source_end_index = source_svg_content.find(source_end_tag)
         if source_end_index == -1:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source end tag <{source_end_tag}> not found in <{fileio.name(source_svg_filepath)}>.")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Source end tag <{source_end_tag}> not found in <{source_svg_filepath}>.")
             return success
 
         dest_start_index = target_svg_content.find(dest_start_tag)
         if dest_start_index == -1:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target start tag <{dest_start_tag}> not found in <{fileio.name(target_svg_filepath)}>.")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target start tag <{dest_start_tag}> not found in <{target_svg_filepath}>.")
             return success
         dest_end_index = target_svg_content.find(dest_end_tag)
         if dest_end_index == -1:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target end tag <{dest_end_tag}> not found in <{fileio.name(target_svg_filepath)}>.")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Target end tag <{dest_end_tag}> not found in <{target_svg_filepath}>.")
             return success
 
         replacement_group_content = source_svg_content[source_start_index:source_end_index]
@@ -89,14 +89,14 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, source_
             with open(target_svg_filepath, 'w') as updated_file:
                 updated_file.write(updated_svg_content)
         except Exception as e:
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error writing to <{fileio.name(target_svg_filepath)}>: {e}")
+            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error writing to <{target_svg_filepath}>: {e}")
             return success
 
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Replaced group <{destination_group_name}> with <{source_group_name}> from <{fileio.name(source_svg_filepath)}> to <{fileio.name(target_svg_filepath)}>.")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Replaced group <{destination_group_name}> with <{source_group_name}> from <{source_svg_filepath}> to <{target_svg_filepath}>.")
         success = 1
 
     except Exception as e:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error processing files <{fileio.name(source_svg_filepath)}> and <{fileio.name(target_svg_filepath)}>: {e}")
+        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error processing files <{source_svg_filepath}> and <{target_svg_filepath}>: {e}")
     return success
 
 
