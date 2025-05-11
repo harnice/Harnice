@@ -106,28 +106,33 @@ def harnice():
     print("############ REBUILDING SVGs #############")
     #===================================
     #FIRST COMPLETE GENERATED SVGS
+    print("Generating new formboard drawing:")
     svg_generated.make_new_formboard_master_svg()
+    print("")
+    print("Generating new wirelist drawing:")
     svg_generated.prep_wirelist()
+    print("")
     #TODO: revision history
     #TODO: buildnotes table
+    print("Generating new bom drawing:")
     svg_generated.prep_bom()
+    print("")
     #esch done under run_wireviz.generate_esch()
 
 
     #===================================
     #NEXT COMPLETE BLOCKS (direct compilations and library imports of the above)
     page_setup_contents = fileio.update_page_setup_json()
+    revinfo = harnice_prechecker.revision_info()
 
     #titleblocks
-    for tblock_name in page_setup_contents.get("titleblocks", {}):
-        print(f"!!!!!!!! {tblock_name}")
-        svg_blocks.tblock(tblock_name)
+    print("Generating new titleblock block drawings:")
+    svg_blocks.update_tblocks(page_setup_contents, revinfo)
 
     #formboards
     for formboard_name, formboard_entry in page_setup_contents.get("formboards", {}).items():
         #update that instance
-        print(f"!!!!!!!! {formboard_name}")
-        #svg_utils.update_svg_instance(svg_instance)
+        svg_utils.update_svg_instance(svg_instance)
 
     
     #===================================
