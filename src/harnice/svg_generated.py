@@ -216,13 +216,6 @@ def prep_bom():
     svg_lines = [
         f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
         f'font-family="{font_family}" font-size="{font_size}">',
-        '<style>',
-        '  rect.cell { fill: white; stroke: black; }',
-        '  rect.header { fill: #e0e0e0; stroke: black; }',
-        '  text { fill: black; dominant-baseline: middle; font-family: Arial, Helvetica, sans-serif; }',
-        '  .header { font-weight: bold; }',
-        '  circle { fill: none; stroke: black; }',
-        '</style>',
         '<g id="bom-contents-start">'
     ]
 
@@ -237,8 +230,8 @@ def prep_bom():
     for row_index, row in enumerate(reversed(table_rows)):
         y = -1 * (row_index + 1) * row_height
         is_header_row = (row_index == 0)
-        rect_class = "header" if is_header_row else "cell"
-        text_class = "header" if is_header_row else ""
+        rect_fill = "#e0e0e0" if is_header_row else "white"
+        font_weight = "bold" if is_header_row else "normal"
 
         for col_index, cell in enumerate(row):
             x = column_x_positions[col_index]
@@ -247,7 +240,7 @@ def prep_bom():
             # Cell background
             svg_lines.append(
                 f'<rect x="{x}" y="{y}" width="{cell_width}" height="{row_height}" '
-                f'class="{rect_class}" stroke-width="{line_width}"/>'
+                f'style="fill:{rect_fill};stroke:black;stroke-width:{line_width}"/>'
             )
 
             # Text alignment
@@ -261,7 +254,8 @@ def prep_bom():
             text_y = y + row_height / 2
             svg_lines.append(
                 f'<text x="{text_x}" y="{text_y}" text-anchor="{text_anchor}" '
-                f'class="{text_class}">{cell}</text>'
+                f'style="fill:black;dominant-baseline:middle;font-weight:{font_weight};'
+                f'font-family:{font_family};font-size:{font_size}">{cell}</text>'
             )
 
             # Circle on ITEM column (not header row)
@@ -274,7 +268,7 @@ def prep_bom():
 
                 svg_lines.append(
                     f'<circle cx="{circle_cx}" cy="{circle_cy}" r="{radius}" '
-                    f'stroke-width="{line_width}"/>'
+                    f'style="fill:none;stroke:black;stroke-width:{line_width}"/>'
                 )
 
     svg_lines.append('</g>')
