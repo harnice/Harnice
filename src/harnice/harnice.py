@@ -120,9 +120,7 @@ def harnice():
 
     #titleblocks
     for tblock_name, tblock_entry in svg_blocks.get("titleblocks", {}).items():
-        #update that instance
-        print(f"!!!!!!!! {tblock_name}")
-        #svg_utils.update_svg_instance(svg_instance)
+        svg_utils.update_tblock_svg_block(tblock_name, tblock_entry)
 
     #formboards
     for formboard_name, formboard_entry in svg_blocks.get("formboards", {}).items():

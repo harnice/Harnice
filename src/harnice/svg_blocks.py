@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import fileio
 from lxml import etree as ET
 
-def prep_tblock(tblock_name):
+def update_tblock_svg_block(tblock_name):
     # === Load revision row for current part/revision ===
     revision_row = {}
     if os.path.exists(fileio.path("revision history")):
