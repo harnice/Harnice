@@ -1,4 +1,9 @@
+def update_support_do_not_edit_group():
+    return
+
+
 def update_harnice_output():
+    """
     if file does not exist fileio.path("harnice output"):
 
         #initialize the svg
@@ -40,4 +45,5 @@ def update_harnice_output():
             svg_master, 
             svg_master
         )
-        
+    """
+    return

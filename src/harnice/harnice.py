@@ -7,20 +7,20 @@ import formboard_functions
 import harnice_prechecker
 import component_library
 import fileio
-import svg_master_formboard
-import svg_masters
-import os
+import svg_blocks
+import svg_generated
 import svg_harnice_output
+import os
 
 def harnice():
-    #build file structure
-    fileio.generate_structure()
-
     #check if revision history is set up correctly
     print()
     print("############ CHECKING REV HISTORY #############")
     if(harnice_prechecker.harnice_prechecker() == False):
         return
+    
+    #build file structure
+    fileio.generate_structure()
 
     #make a list of every single instance in the project
     print()
@@ -103,45 +103,42 @@ def harnice():
     #flagnote_functions.look_for_buildnotes_file()
 
     print()
-    print("############ REBUILDING FORMBOARD DRAWING #############")
-    #generate blank harnice output svg
-    print("Updating segment instances")
-    svg_master_formboard.update_segment_instances()
-    print()
+    print("############ REBUILDING SVGs #############")
+    #===================================
+    #FIRST COMPLETE GENERATED SVGS
+    svg_generated.make_new_formboard_master_svg()
+    svg_generated.prep_wirelist()
+    #TODO: revision history
+    #TODO: buildnotes table
+    svg_generated.prep_bom()
+    #esch done under run_wireviz.generate_esch()
 
-    print("Generating new fomboard master drawing (deleting existing if present)")
-    svg_master_formboard.make_new_formboard_master_svg()
-    #formboard_illustration_functions.delete_unmatched_files()
 
-    #prep all the different master SVG's
-    print()
-    print("############ REBUILDING HARNICE OUTPUT #############")
-    #know how many groups (svg instances) are going to show up on the output svg
-    svg_instances = fileio.update_master_svg_contents()
+    #===================================
+    #NEXT COMPLETE BLOCKS (direct compilations and library imports of the above)
+    svg_blocks = fileio.update_page_setup_json()
 
-    #update all the titleblocks as svg instances:
-    for tblock_name, tblock_entry in svg_instances.get("titleblocks", {}).items():
+    #titleblocks
+    for tblock_name, tblock_entry in svg_blocks.get("titleblocks", {}).items():
         #update that instance
         print(f"!!!!!!!! {tblock_name}")
         #svg_utils.update_svg_instance(svg_instance)
 
-    #update all the formboards as svg instances:
-    for formboard_name, formboard_entry in svg_instances.get("formboards", {}).items():
+    #formboards
+    for formboard_name, formboard_entry in svg_blocks.get("formboards", {}).items():
         #update that instance
         print(f"!!!!!!!! {formboard_name}")
         #svg_utils.update_svg_instance(svg_instance)
 
-
-    #merge them all into one file
-    #svg_harnice_output.update_harnice_output()
     
+    #===================================
+    #LAST, MERGE THEM ALL INTO A USEFUL OUTPUT FILE
+    #merge them all into one parent support_do_not_edit file
+    svg_harnice_output.update_support_do_not_edit_group()
 
-    #combine all master SVG groups into PN-harnice-output.svg
-    #print()
-    #print("############ REGENERATE PN-HARNICE-OUTPUT.SVG #############")
-    #rsvg_section_replacer.egen_harnice_output_svg()
-
-    return
+    #add the above to the user-editable main output svg
+    svg_harnice_output.update_harnice_output()
+    
 
 if __name__ == "__main__":
     harnice()

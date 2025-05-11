@@ -3,7 +3,6 @@ import json
 import re
 from dotenv import load_dotenv
 import fileio
-import svg_masters
 from lxml import etree as ET
 
 def prep_tblock(tblock_name):
@@ -69,5 +68,3 @@ def prep_tblock(tblock_name):
 
     with open(destination_svg_path, "w", encoding="utf-8") as f:
         f.write(svg)
-
-
