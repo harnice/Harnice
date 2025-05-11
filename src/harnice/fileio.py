@@ -72,10 +72,10 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
                     f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
-                "master_svgs": {
-                    "generated_svgs": {
+                "svg: {
+                    "svg_generated": {
                         f"{partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
-                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg"
+                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
                         f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
                         f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
                         f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
@@ -103,11 +103,17 @@ def harnice_file_structure():
         }
 
 def generate_structure():
+    #rebuild all from this directory if exists
+    if os.path.exists(dirpath("support_do_not_edit")):
+        shutil.rmtree(dirpath("support_do_not_edit"))
+
     os.makedirs(dirpath("editable_component_data"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
     os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
     os.makedirs(dirpath("master_svgs"), exist_ok=True)
+    os.makedirs(dirpath("generated_svgs"), exist_ok=True)
+    os.makedirs(dirpath("svg_instances"), exist_ok=True)
     os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
     os.makedirs(dirpath("page_setup"), exist_ok=True)
 
@@ -203,7 +209,7 @@ def name(target_value):
 
     return recursive_search(harnice_file_structure())
 
-def update_output_contents():
+def update_master_svg_contents():
     # === Titleblock Defaults ===
     blank_setup = {
         "titleblocks": {
@@ -248,3 +254,5 @@ def update_output_contents():
 
     with open(path("harnice output contents"), "w", encoding="utf-8") as f:
         json.dump(tblock_data, f, indent=4)
+
+    return tblock_data

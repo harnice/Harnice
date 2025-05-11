@@ -116,10 +116,24 @@ def harnice():
     #prep all the different master SVG's
     print()
     print("############ REBUILDING HARNICE OUTPUT #############")
-    print("Updating page setup")
-    fileio.update_output_contents()
-    print("Working on Harnice Output")
-    svg_harnice_output.update_harnice_output()
+    #know how many groups (svg instances) are going to show up on the output svg
+    svg_instances = fileio.update_master_svg_contents()
+
+    #update all the titleblocks as svg instances:
+    for tblock_name, tblock_entry in svg_instances.get("titleblocks", {}).items():
+        #update that instance
+        print(f"!!!!!!!! {tblock_name}")
+        #svg_utils.update_svg_instance(svg_instance)
+
+    #update all the formboards as svg instances:
+    for formboard_name, formboard_entry in svg_instances.get("formboards", {}).items():
+        #update that instance
+        print(f"!!!!!!!! {formboard_name}")
+        #svg_utils.update_svg_instance(svg_instance)
+
+
+    #merge them all into one file
+    #svg_harnice_output.update_harnice_output()
     
 
     #combine all master SVG groups into PN-harnice-output.svg

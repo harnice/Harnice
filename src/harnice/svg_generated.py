@@ -1,9 +1,17 @@
 import os
+import re
+import csv
+import json
 import math
-import instances_list
-import svg_utils
-import fileio
+import shutil
+from os.path import basename
+from inspect import currentframe
 from collections import defaultdict
+
+import fileio
+import wirelist
+import svg_utils
+import instances_list
 import component_library
 
 def make_new_formboard_master_svg():
@@ -173,3 +181,153 @@ def update_segment_instances():
 
             except Exception as e:
                 print(f"Error processing segment {segment_name}: {e}")
+                
+def prep_bom():
+    # === Configuration ===
+    selected_columns = ["bom_line_number", "qty", "total_length_exact", "mpn"]
+    header_labels = ["ITEM", "QTY", "LENGTH", "MPN"]
+    column_widths = [0.375 * 96, 0.375 * 96, 0.75 * 96, 1.75 * 96]  # in pixels
+    row_height = 0.16 * 96
+    font_size = 8
+    font_family = "Arial, Helvetica, sans-serif"
+    line_width = 0.008 * 96
+
+    # === Read TSV Data ===
+    with open(fileio.path("harness bom"), "r", newline="", encoding="utf-8") as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter="\t")
+        data_rows = [
+            [row.get(col, "") for col in selected_columns]
+            for row in reader
+            if row.get("bom_line_number", "").isdigit()
+        ]
+
+    # Sort and append header at the bottom (last row)
+    data_rows.sort(key=lambda r: int(r[0]))
+    table_rows = data_rows + [header_labels]
+
+    num_rows = len(table_rows)
+    svg_width = sum(column_widths)
+    svg_height = num_rows * row_height
+
+    # === Begin SVG Output ===
+    svg_lines = [
+        f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
+        f'font-family="{font_family}" font-size="{font_size}">',
+        '<style>',
+        '  rect.cell { fill: white; stroke: black; }',
+        '  rect.header { fill: #e0e0e0; stroke: black; }',
+        '  text { fill: black; dominant-baseline: middle; font-family: Arial, Helvetica, sans-serif; }',
+        '  .header { font-weight: bold; }',
+        '  circle { fill: none; stroke: black; }',
+        '</style>',
+        '<g id="bom-contents-start">'
+    ]
+
+    # Compute left edges for each column starting at origin and going left
+    column_x_positions = []
+    running_x = 0
+    for width in column_widths:
+        running_x += width
+        column_x_positions.append(-running_x)
+
+    # === Draw table from origin outward ===
+    for row_index, row in enumerate(reversed(table_rows)):
+        y = -1 * (row_index + 1) * row_height
+        is_header_row = (row_index == 0)
+        rect_class = "header" if is_header_row else "cell"
+        text_class = "header" if is_header_row else ""
+
+        for col_index, cell in enumerate(row):
+            x = column_x_positions[col_index]
+            cell_width = column_widths[col_index]
+
+            # Cell background
+            svg_lines.append(
+                f'<rect x="{x}" y="{y}" width="{cell_width}" height="{row_height}" '
+                f'class="{rect_class}" stroke-width="{line_width}"/>'
+            )
+
+            # Text alignment
+            if col_index in (0, 1):  # center-aligned
+                text_anchor = "middle"
+                text_x = x + cell_width / 2
+            else:  # left-aligned
+                text_anchor = "start"
+                text_x = x + 5
+
+            text_y = y + row_height / 2
+            svg_lines.append(
+                f'<text x="{text_x}" y="{text_y}" text-anchor="{text_anchor}" '
+                f'class="{text_class}">{cell}</text>'
+            )
+
+            # Circle on ITEM column (not header row)
+            is_item_column = (col_index == 0)
+            is_data_row = not is_header_row
+            if is_item_column and is_data_row:
+                circle_cx = x + cell_width / 2
+                circle_cy = y + row_height / 2
+                radius = min(cell_width, row_height) / 2 - 2
+
+                svg_lines.append(
+                    f'<circle cx="{circle_cx}" cy="{circle_cy}" r="{radius}" '
+                    f'stroke-width="{line_width}"/>'
+                )
+
+    svg_lines.append('</g>')
+    svg_lines.append('<g id="bom-contents-end"/>')
+    svg_lines.append('</svg>')
+
+    # === Write SVG Output ===
+    with open(fileio.path("bom table master svg"), "w", encoding="utf-8") as svg_file:
+        svg_file.write("\n".join(svg_lines))
+
+def prep_wirelist():
+    # === Layout Configuration ===
+    WIRELIST_COLUMNS = wirelist.column_styles()
+    col_width = 0.75 * 96  # 0.75 inch
+    row_height = 0.25 * 96
+    font_size = 8
+    font_family = "Arial"
+    start_x = 0
+    start_y = 0
+
+    # === Read TSV data ===
+    path = fileio.path("wirelist no formats")
+    with open(path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        data_rows = list(reader)
+
+    # === SVG Header ===
+    svg_lines = [f'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" font-family="{font_family}" font-size="{font_size}">
+<g id="wirelist-contents-start">
+''']
+
+    # === Header Row ===
+    for col_idx, col in enumerate(WIRELIST_COLUMNS):
+        x = start_x + col_idx * col_width
+        y = start_y
+        svg_lines.append(f'''
+    <rect x="{x}" y="{y}" width="{col_width}" height="{row_height}" fill="{col['fill']}" stroke="black" />
+    <text x="{x + col_width/2}" y="{y + row_height/2}" fill="{col['font']}" text-anchor="middle" dominant-baseline="middle">{col['name']}</text>''')
+
+    # === Data Rows ===
+    for row_idx, row in enumerate(data_rows):
+        y = start_y + (row_idx + 1) * row_height
+        for col_idx, col in enumerate(WIRELIST_COLUMNS):
+            x = start_x + col_idx * col_width
+            text = row.get(col["name"], "")
+            svg_lines.append(f'''
+    <rect x="{x}" y="{y}" width="{col_width}" height="{row_height}" fill="white" stroke="black" />
+    <text x="{x + col_width/2}" y="{y + row_height/2}" fill="black" text-anchor="middle" dominant-baseline="middle">{text}</text>''')
+
+    # === Close content group and SVG ===
+    svg_lines.append('</g>')
+    svg_lines.append('<g id="wirelist-contents-end"/>')
+    svg_lines.append('</svg>')
+
+    # === Write File ===
+    out_path = fileio.path("wirelist master svg")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(svg_lines))
