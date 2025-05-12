@@ -164,6 +164,10 @@ def prep_formboard_drawings(page_setup_contents):
                 if instance.get("absolute_rotation") != "":
                     angle = float(instance.get("absolute_rotation"))
 
+                #segments are positioned using absolute rotation and are the only items that must be corrected for changes in origin orientation
+                if instance.get("item_type") == "Segment":
+                    angle += origin[2]
+
                 #transform harnice csys (right-hand rule, ccw is positive angle, up is +), to svg csys (cw is positive angle, up is -)
                 svg_px_x = px_x
                 svg_px_y = -1 * px_y
