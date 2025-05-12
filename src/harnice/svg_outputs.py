@@ -8,7 +8,6 @@ from os.path import basename
 from inspect import currentframe
 from collections import defaultdict
 from dotenv import load_dotenv
-#from lxml import etree as ET
 import fileio
 import wirelist
 import svg_utils
@@ -17,7 +16,7 @@ import component_library
 
 def prep_formboard_drawings(page_setup_contents):
     
-    def calculate_formboard_location(instance_name):
+    def calculate_formboard_location(instance_name, origin):
         """
         Given an instance_name, recursively trace up the parent_csys chain 
         until reaching an instance with no parent_csys defined.
@@ -44,9 +43,9 @@ def prep_formboard_drawings(page_setup_contents):
                 break
             current = parent
 
-        x_pos = 0.0
-        y_pos = 0.0
-        angle = 0.0  # degrees
+        x_pos = origin[0]
+        y_pos = origin[1]
+        angle = origin[2]  # degrees
 
         # Skip the last element (the starting instance)
         for name in reversed(chain[1:]):
@@ -130,6 +129,12 @@ def prep_formboard_drawings(page_setup_contents):
         instances = instances_list.read_instance_rows()
         excluded_item_types = {"Cable", "Node"}
 
+
+        rotation = page_setup_contents["formboards"].get(formboard_name, {}).get("rotation", 0)
+        if rotation == "":
+            raise KeyError(f"[ERROR] Rotation '{rotation}' not found in harnice output contents")
+        origin = [0, 0, rotation]
+
         # Group instances by item_type
         grouped_instances = defaultdict(list)
         for instance in instances:
@@ -146,7 +151,7 @@ def prep_formboard_drawings(page_setup_contents):
                 if not instance_name:
                     continue
 
-                x, y, angle = calculate_formboard_location(instance_name)
+                x, y, angle = calculate_formboard_location(instance_name, origin)
 
                 try:
                     inner_svg = component_library.copy_svg_data(instance_name)

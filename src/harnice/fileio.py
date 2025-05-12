@@ -228,6 +228,7 @@ def update_page_setup_json():
         "formboards": {
             "formboard1": {
                 "scale": "A",
+                "rotation": 0,
                 "hide_instances": []
             }
         },
