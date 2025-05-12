@@ -129,11 +129,13 @@ def prep_formboard_drawings(page_setup_contents):
         instances = instances_list.read_instance_rows()
         excluded_item_types = {"Cable", "Node"}
 
-
         rotation = page_setup_contents["formboards"].get(formboard_name, {}).get("rotation", 0)
         if rotation == "":
             raise KeyError(f"[ERROR] Rotation '{rotation}' not found in harnice output contents")
         origin = [0, 0, rotation]
+
+        scale_name = page_setup_contents["formboards"].get(formboard_name, {}).get("scale", "A")
+        scale = page_setup_contents["scales"].get(scale_name)
 
         # Group instances by item_type
         grouped_instances = defaultdict(list)
@@ -184,7 +186,9 @@ def prep_formboard_drawings(page_setup_contents):
             f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
             f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')
             f.write(f'  <g id="{formboard_name}-contents-start">\n')
+            f.write(f'    <g id="{formboard_name}-scale_group" transform="scale({scale})">\n')
             f.writelines(line + '\n' for line in content_lines)
+            f.write('    </g>\n')
             f.write('  </g>\n')
             f.write(f'  <g id="{formboard_name}-master-contents-end">\n')
             f.write('  </g>\n')
@@ -404,7 +408,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
 
             # If replacing scale, convert to decimal
             if "scale" in old.lower():
-                scales_lookup = page_setup_contents.get("scales:", {})
+                scales_lookup = page_setup_contents.get("scales", {})
                 if new not in scales_lookup:
                     raise KeyError(f"[ERROR] Scale key '{new}' not found in scales lookup")
                 new = f"{scales_lookup[new]:.3f}"

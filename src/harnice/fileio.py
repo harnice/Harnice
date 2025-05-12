@@ -232,7 +232,7 @@ def update_page_setup_json():
                 "hide_instances": []
             }
         },
-        "scales:": {
+        "scales": {
             "A": 1
         }
     }
