@@ -149,6 +149,10 @@ def prep_formboard_drawings(page_setup_contents):
         for item_type, items in grouped_instances.items():
             content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
             for instance in items:
+                #cancel if hidden
+                if instance.get("instance_name") in page_setup_contents["formboards"].get(formboard_name, {}).get("hide_instances", []):
+                    continue
+
                 instance_name = instance.get("instance_name", "")
                 if not instance_name:
                     continue
