@@ -133,7 +133,7 @@ def harnice():
     #===================================
     #LAST, MERGE THEM ALL INTO A USEFUL OUTPUT FILE
     #merge them all into one parent support_do_not_edit file
-    #svg_harnice_output.prep_master()
+    svg_outputs.prep_master(page_setup_contents)
 
     #add the above to the user-editable main output svg
     #svg_harnice_output.update_harnice_output()

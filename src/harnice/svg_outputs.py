@@ -425,8 +425,54 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         with open(destination_svg_path, "w", encoding="utf-8") as f:
             f.write(svg)
 
-def prep_master():
-    return
+def prep_master(page_setup_contents):
+    # === Build basic SVG contents ===
+    svg = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
+        '<svg xmlns="http://www.w3.org/2000/svg" version="1.1">',
+        '  <g id="svg-master-contents-start">'
+    ]
+
+    # Add titleblock placeholders
+    for tblock_name in page_setup_contents.get("titleblocks", {}):
+        svg += [
+            f'    <g id="{tblock_name}-contents-start"></g>',
+            f'    <g id="{tblock_name}-contents-end"></g>'
+        ]
+
+    # Add formboard placeholders
+    for formboard_name in page_setup_contents.get("formboards", {}):
+        svg += [
+            f'    <g id="{formboard_name}-contents-start"></g>',
+            f'    <g id="{formboard_name}-contents-end"></g>'
+        ]
+
+    # Add other master group placeholders
+    svg += [
+        f'    <g id="esch-master-contents-start"></g>',
+        f'    <g id="esch-master-contents-end"></g>',
+        f'    <g id="wirelist-contents-start"></g>',
+        f'    <g id="wirelist-contents-end"></g>',
+        '  </g>',  # Close svg-master-contents-start
+        '</svg>'
+    ]
+
+    # === Write SVG ===
+    with open(fileio.path("master svg"), "w", encoding="utf-8") as f:
+        f.write("\n".join(svg))
+
+
+    # === Import stuff ===
+    for tblock_name in page_setup_contents.get("titleblocks", {}):
+        source_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
+        source_svg_path = os.path.join(fileio.dirpath("tblock_svgs"), source_svg_name)
+        svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, tblock_name, tblock_name)
+
+    for formboard_name in page_setup_contents.get("formboards", {}):
+        source_svg_name = f"{fileio.partnumber("pn-rev")}.{formboard_name}.svg"
+        source_svg_path = os.path.join(fileio.dirpath("formboard_svgs"), source_svg_name)
+        svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, f"{formboard_name}-master", formboard_name)
+        
 
 def update_harnice_output():
 
