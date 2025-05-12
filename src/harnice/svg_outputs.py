@@ -7,16 +7,16 @@ import shutil
 from os.path import basename
 from inspect import currentframe
 from collections import defaultdict
-
+from dotenv import load_dotenv
 import fileio
 import wirelist
 import svg_utils
 import instances_list
 import component_library
 
-def make_new_formboard_master_svg():
+def prep_formboard_drawings(page_setup_contents):
     
-    def calculate_formboard_location(instance_name):
+    def calculate_formboard_location(instance_name, origin):
         """
         Given an instance_name, recursively trace up the parent_csys chain 
         until reaching an instance with no parent_csys defined.
@@ -43,9 +43,9 @@ def make_new_formboard_master_svg():
                 break
             current = parent
 
-        x_pos = 0.0
-        y_pos = 0.0
-        angle = 0.0  # degrees
+        x_pos = origin[0]
+        y_pos = origin[1]
+        angle = origin[2]  # degrees
 
         # Skip the last element (the starting instance)
         for name in reversed(chain[1:]):
@@ -79,8 +79,8 @@ def make_new_formboard_master_svg():
             #print(f"After {name}: {x_pos}, {y_pos}, {angle}")
         return x_pos, y_pos, angle
 
-   #=================================================
-   #FIRST, UPDATE SEGMENT INSTANCES
+    #=================================================
+    #FIRST, UPDATE SEGMENT INSTANCES
     instances = instances_list.read_instance_rows()
 
     for instance in instances:
@@ -121,69 +121,82 @@ def make_new_formboard_master_svg():
             except Exception as e:
                 print(f"Error processing segment {segment_name}: {e}")
  
- #==========================
-    #things that did not work in source svgs:
-        #sodipodi:nodetypes
-        #sodipodi:namedview
-        #inkscape:namedview
-        #visio namespace: (v:)
-    filepath = fileio.path("formboard master svg")
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    #==========================
+    for formboard_name in page_setup_contents.get("formboards", {}):
+        filename = f"{fileio.partnumber("pn-rev")}.{formboard_name}.svg"
+        filepath = os.path.join(fileio.dirpath("formboard_svgs"),filename)
 
-    instances = instances_list.read_instance_rows()
-    excluded_item_types = {"Cable", "Node"}
+        instances = instances_list.read_instance_rows()
+        excluded_item_types = {"Cable", "Node"}
 
-    # Group instances by item_type
-    grouped_instances = defaultdict(list)
-    for instance in instances:
-        item_type = instance.get("item_type", "").strip()
-        if item_type and item_type not in excluded_item_types:
-            grouped_instances[item_type].append(instance)
+        rotation = page_setup_contents["formboards"].get(formboard_name, {}).get("rotation", 0)
+        if rotation == "":
+            raise KeyError(f"[ERROR] Rotation '{rotation}' not found in harnice output contents")
+        origin = [0, 0, rotation]
 
-    # Prepare lines for SVG content
-    content_lines = []
-    for item_type, items in grouped_instances.items():
-        content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
-        for instance in items:
-            instance_name = instance.get("instance_name", "")
-            if not instance_name:
-                continue
+        scale_name = page_setup_contents["formboards"].get(formboard_name, {}).get("scale", "A")
+        scale = page_setup_contents["scales"].get(scale_name)
 
-            x, y, angle = calculate_formboard_location(instance_name)
+        # Group instances by item_type
+        grouped_instances = defaultdict(list)
+        for instance in instances:
+            item_type = instance.get("item_type", "").strip()
+            if item_type and item_type not in excluded_item_types:
+                grouped_instances[item_type].append(instance)
 
-            try:
-                inner_svg = component_library.copy_svg_data(instance_name)
-            except Exception as e:
-                raise RuntimeError(f"Failed to read SVG data for {instance_name}: {e}")
+        # Prepare lines for SVG content
+        content_lines = []
+        for item_type, items in grouped_instances.items():
+            content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
+            for instance in items:
+                #cancel if hidden
+                if instance.get("instance_name") in page_setup_contents["formboards"].get(formboard_name, {}).get("hide_instances", []):
+                    continue
 
-            px_x = x * 96
-            px_y = y * 96
+                instance_name = instance.get("instance_name", "")
+                if not instance_name:
+                    continue
 
-            if instance.get("absolute_rotation") != "":
-                angle = float(instance.get("absolute_rotation"))
+                x, y, angle = calculate_formboard_location(instance_name, origin)
 
-            #transform harnice csys (right-hand rule, ccw is positive angle, up is +), to svg csys (cw is positive angle, up is -)
-            svg_px_x = px_x
-            svg_px_y = -1 * px_y
-            svg_angle = -1 * angle
+                try:
+                    inner_svg = component_library.copy_svg_data(instance_name)
+                except Exception as e:
+                    raise RuntimeError(f"Failed to read SVG data for {instance_name}: {e}")
 
-            content_lines.append(f'      <g id="{instance_name}" inkscape:label="{instance_name}" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
-            )
-            content_lines.append(inner_svg)
-            content_lines.append('      </g>')
-        content_lines.append('    </g>')
+                px_x = x * 96
+                px_y = y * 96
 
-    # Write full SVG
-    with open(filepath, 'w') as f:
-        f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-        f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')
-        f.write('  <g id="formboard-master-contents-start">\n')
-        f.writelines(line + '\n' for line in content_lines)
-        f.write('  </g>\n')
-        f.write('  <g id="formboard-master-contents-end">\n')
-        f.write('  </g>\n')
-        f.write('</svg>\n')
+                if instance.get("absolute_rotation") != "":
+                    angle = float(instance.get("absolute_rotation"))
+
+                #segments are positioned using absolute rotation and are the only items that must be corrected for changes in origin orientation
+                if instance.get("item_type") == "Segment":
+                    angle += origin[2]
+
+                #transform harnice csys (right-hand rule, ccw is positive angle, up is +), to svg csys (cw is positive angle, up is -)
+                svg_px_x = px_x
+                svg_px_y = -1 * px_y
+                svg_angle = -1 * angle
+
+                content_lines.append(f'      <g id="{instance_name}" inkscape:label="{instance_name}" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
+                )
+                content_lines.append(inner_svg)
+                content_lines.append('      </g>')
+            content_lines.append('    </g>')
+
+        # Write full SVG
+        with open(filepath, 'w') as f:
+            f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
+            f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')
+            f.write(f'  <g id="{formboard_name}-contents-start">\n')
+            f.write(f'    <g id="{formboard_name}-scale_group" transform="scale({scale})">\n')
+            f.writelines(line + '\n' for line in content_lines)
+            f.write('    </g>\n')
+            f.write('  </g>\n')
+            f.write(f'  <g id="{formboard_name}-master-contents-end">\n')
+            f.write('  </g>\n')
+            f.write('</svg>\n')
       
 def prep_bom():
     # === Configuration ===
@@ -328,3 +341,136 @@ def prep_wirelist():
     out_path = fileio.path("wirelist master svg")
     with open(out_path, "w", encoding="utf-8") as f:
         f.write("\n".join(svg_lines))
+
+def prep_tblocks(page_setup_contents, revhistory_data):
+    for tblock_name in page_setup_contents.get("titleblocks", {}):
+        tblock_data = page_setup_contents["titleblocks"].get(tblock_name)
+        if not tblock_data:
+            raise KeyError(f"[ERROR] Titleblock '{tblock_name}' not found in harnice output contents")
+
+        supplier_key = tblock_data.get("supplier")
+        supplier_root = os.getenv(supplier_key)
+        if not supplier_root:
+            raise EnvironmentError(f"[ERROR] Environment variable '{supplier_key}' is not set")
+
+        titleblock = tblock_data.get("titleblock")
+
+        # === Load titleblock filepaths from library ===
+        attr_library_path = os.path.join(supplier_root, "titleblocks", titleblock, f"{titleblock}_attributes.json")
+        svg_library_path = os.path.join(supplier_root, "titleblocks", titleblock, f"{titleblock}.svg")
+        if not os.path.isfile(attr_library_path):
+            raise FileNotFoundError(f"[ERROR] Attribute file not found: {attr_library_path}")
+        with open(attr_library_path, "r", encoding="utf-8") as f:
+            tblock_attributes = json.load(f)
+
+        bom_loc = tblock_attributes.get("periphery_locs", {}).get("bom_loc", [0, 0])
+        translate_bom = f'translate({bom_loc[0]},{bom_loc[1]})'
+
+        # === Prepare destination path ===
+        destination_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
+        destination_svg_path = os.path.join(fileio.dirpath("tblock_svgs"), destination_svg_name)
+
+        # === Build basic SVG contents ===
+        svg = [
+            '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
+            '<svg xmlns="http://www.w3.org/2000/svg" version="1.1">',
+            f'  <g id="{tblock_name}-contents-start">',
+            f'    <g id="tblock-contents-start"></g>',
+            f'    <g id="tblock-contents-end"></g>',
+            f'    <g id="bom" transform="{translate_bom}">',
+            f'      <g id="bom-contents-start"></g>',
+            f'      <g id="bom-contents-end"></g>',
+            f'    </g>',
+            f'  </g>',
+            f'  <g id="{tblock_name}-contents-end"></g>',
+            '</svg>'
+        ]
+
+        # === Write SVG ===
+        with open(destination_svg_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(svg))
+
+        # === Import tblock and bom ===
+        svg_utils.find_and_replace_svg_group(destination_svg_path, svg_library_path, "tblock", "tblock")
+        svg_utils.find_and_replace_svg_group(destination_svg_path, fileio.path("bom table master svg"), "bom", "bom")
+
+        # === Perform Text Replacements ===
+        text_map = tblock_data.get("text_replacements", {})
+        
+        with open(destination_svg_path, "r", encoding="utf-8") as f:
+            svg = f.read()
+
+        for old, new in text_map.items():
+            if new.startswith("pull_from_revision_history(") and new.endswith(")"):
+                field_name = new[len("pull_from_revision_history("):-1]
+                value = revhistory_data.get(field_name, "").strip()
+
+                if not value:
+                    raise ValueError(f"[ERROR] Field '{field_name}' is missing or empty in revision history")
+
+                new = value
+
+            # If replacing scale, convert to decimal
+            if "scale" in old.lower():
+                scales_lookup = page_setup_contents.get("scales", {})
+                if new not in scales_lookup:
+                    raise KeyError(f"[ERROR] Scale key '{new}' not found in scales lookup")
+                new = f"{scales_lookup[new]:.3f}"
+
+            if old not in svg:
+                print(f"[WARN] Key '{old}' not found in titleblock SVG")
+
+            svg = svg.replace(old, new)
+        
+        with open(destination_svg_path, "w", encoding="utf-8") as f:
+            f.write(svg)
+
+def prep_master():
+    return
+
+def update_harnice_output():
+
+    """
+    if file does not exist fileio.path("harnice output"):
+
+        #initialize the svg
+        collected_attrs = {
+            "xmlns": "http://www.w3.org/2000/svg",
+            "version": "1.1",
+            "font-family": "Arial",
+            "font-size": "8",
+            "width": "1056.0",
+            "height": "816.0",
+            "viewBox": "0 0 1056.0 816.0"
+        }
+
+    else:
+        #save entire contents of the svg to a variable
+    
+    #chatgpt: make a group with id=support-do-not-edit-contents-start
+
+    #track where the contents groups end up
+    group_position = [0, -1600]
+    position_x_delta = 1800
+
+    #keep track of what to replace later
+    groups_to_replace = ''
+
+    #build the group structure of the svg only
+    for each svg_master in fileio.dirpath("master_svgs"):
+        #append group to support-do-not-edit with id={svg_master}-contents-start and translate=group_position
+        #append group to support-do-not-edit with id={svg_master}-contnets-end
+        #append svg_master to groups_to_replace
+
+    #add all to svg and save file to 
+
+    #conduct the actual replacement process
+    for each svg_master in groups_to_replace:
+        find_and_replace_svg_group(
+            fileio.path("harnice output contents"), 
+            os.path.join(fileio.dirpath("master_svgs"), svg_master), 
+            svg_master, 
+            svg_master
+        )
+    """
+    return

@@ -7,9 +7,7 @@ import formboard_functions
 import harnice_prechecker
 import component_library
 import fileio
-import svg_blocks
-import svg_generated
-import svg_harnice_output
+import svg_outputs
 import os
 
 def harnice():
@@ -104,44 +102,41 @@ def harnice():
 
     print()
     print("############ REBUILDING SVGs #############")
-    #===================================
-    #FIRST COMPLETE GENERATED SVGS
-    print("Generating new formboard drawing:")
-    svg_generated.make_new_formboard_master_svg()
-    print("")
-    print("Generating new wirelist drawing:")
-    svg_generated.prep_wirelist()
-    print("")
-    #TODO: revision history
-    #TODO: buildnotes table
-    print("Generating new bom drawing:")
-    svg_generated.prep_bom()
-    print("")
-    #esch done under run_wireviz.generate_esch()
-
-
-    #===================================
-    #NEXT COMPLETE BLOCKS (direct compilations and library imports of the above)
     page_setup_contents = fileio.update_page_setup_json()
     revinfo = harnice_prechecker.revision_info()
 
-    #titleblocks
-    print("Generating new titleblock block drawings:")
-    svg_blocks.update_tblocks(page_setup_contents, revinfo)
+    #===================================
+    #COMPLETE GENERATED SVGS
+    print("Generating new formboard drawing:")
+    svg_outputs.prep_formboard_drawings(page_setup_contents)
+    print("")
 
-    #formboards
-    #for formboard_name, formboard_entry in page_setup_contents.get("formboards", {}).items():
-        #update that instance
-        #svg_utils.update_svg_instance(svg_instance)
+    print("Generating new wirelist drawing:")
+    svg_outputs.prep_wirelist()
+    print("")
+
+    #TODO: revision history
+
+    #TODO: buildnotes table
+
+    print("Generating new bom drawing:")
+    svg_outputs.prep_bom()
+    print("")
+
+    #esch done under run_wireviz.generate_esch()
+
+    print("Generating new titleblock block drawings:")
+    svg_outputs.prep_tblocks(page_setup_contents, revinfo)
+    print("")
 
     
     #===================================
     #LAST, MERGE THEM ALL INTO A USEFUL OUTPUT FILE
     #merge them all into one parent support_do_not_edit file
-    svg_harnice_output.update_support_do_not_edit_group()
+    #svg_harnice_output.prep_master()
 
     #add the above to the user-editable main output svg
-    svg_harnice_output.update_harnice_output()
+    #svg_harnice_output.update_harnice_output()
     
 
 if __name__ == "__main__":
