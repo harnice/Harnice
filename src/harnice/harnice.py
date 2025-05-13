@@ -136,7 +136,7 @@ def harnice():
     svg_outputs.prep_master(page_setup_contents)
 
     #add the above to the user-editable main output svg
-    #svg_harnice_output.update_harnice_output()
+    svg_outputs.update_harnice_output()
     
 
 if __name__ == "__main__":

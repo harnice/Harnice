@@ -426,8 +426,8 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             f.write(svg)
 
 def prep_master(page_setup_contents):
-    translate = [0, -1600]
-    delta_x_translate = 2400
+    translate = [0, -3200]
+    delta_x_translate = 1600
     # === Build basic SVG contents ===
     svg = [
         '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
@@ -458,6 +458,7 @@ def prep_master(page_setup_contents):
         translate[0] += delta_x_translate
 
     # Add other master group placeholders
+    translate_str = f"translate({translate[0]},{translate[1]})"
     svg += [
         f'    <g id="esch" transform="{translate_str}">',
         f'      <g id="esch-master-contents-start"></g>',
@@ -465,12 +466,14 @@ def prep_master(page_setup_contents):
         f'    </g>'
     ]
     translate[0] += delta_x_translate
+    translate_str = f"translate({translate[0]},{translate[1]})"
     svg += [
         f'    <g id="wirelist" transform="{translate_str}">',
         f'      <g id="wirelist-contents-start"></g>',
         f'      <g id="wirelist-contents-end"></g>',
         f'    </g>'
         '  </g>',  # Close svg-master-contents-start
+        '  <g id="svg-master-contents-end"></g>'
         '</svg>'
     ]
 
@@ -495,48 +498,14 @@ def prep_master(page_setup_contents):
         
 
 def update_harnice_output():
-
-    """
-    if file does not exist fileio.path("harnice output"):
-
-        #initialize the svg
-        collected_attrs = {
-            "xmlns": "http://www.w3.org/2000/svg",
-            "version": "1.1",
-            "font-family": "Arial",
-            "font-size": "8",
-            "width": "1056.0",
-            "height": "816.0",
-            "viewBox": "0 0 1056.0 816.0"
-        }
-
-    else:
-        #save entire contents of the svg to a variable
+    path = fileio.path("harnice output")
     
-    #chatgpt: make a group with id=support-do-not-edit-contents-start
-
-    #track where the contents groups end up
-    group_position = [0, -1600]
-    position_x_delta = 1800
-
-    #keep track of what to replace later
-    groups_to_replace = ''
-
-    #build the group structure of the svg only
-    for each svg_master in fileio.dirpath("master_svgs"):
-        #append group to support-do-not-edit with id={svg_master}-contents-start and translate=group_position
-        #append group to support-do-not-edit with id={svg_master}-contnets-end
-        #append svg_master to groups_to_replace
-
-    #add all to svg and save file to 
-
-    #conduct the actual replacement process
-    for each svg_master in groups_to_replace:
-        find_and_replace_svg_group(
-            fileio.path("harnice output contents"), 
-            os.path.join(fileio.dirpath("master_svgs"), svg_master), 
-            svg_master, 
-            svg_master
-        )
-    """
-    return
+    if not os.path.exists(path):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <g id="svg-master-contents-start"></g>
+  <g id="svg-master-contents-end"></g>
+</svg>
+""")
+    svg_utils.find_and_replace_svg_group(fileio.path("harnice output"), fileio.path("master svg"), "svg-master", "svg-master")
