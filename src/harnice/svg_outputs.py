@@ -295,8 +295,8 @@ def prep_bom():
 def prep_wirelist():
     # === Layout Configuration ===
     WIRELIST_COLUMNS = wirelist.column_styles()
-    col_width = 0.75 * 96  # 0.75 inch
-    row_height = 0.25 * 96
+    col_width = 76
+    row_height = 12
     font_size = 8
     font_family = "Arial"
     start_x = 0
@@ -309,10 +309,11 @@ def prep_wirelist():
         data_rows = list(reader)
 
     # === SVG Header ===
-    svg_lines = [f'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" font-family="{font_family}" font-size="{font_size}">
-    <g id="wirelist-contents-start">
-    ''']
+    svg_lines = [
+        f'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+         <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+         <g id="wirelist-contents-start">
+          ''']
 
     # === Header Row ===
     for col_idx, col in enumerate(WIRELIST_COLUMNS):
@@ -320,7 +321,7 @@ def prep_wirelist():
         y = start_y
         svg_lines.append(f'''
     <rect x="{x}" y="{y}" width="{col_width}" height="{row_height}" fill="{col['fill']}" stroke="black" />
-    <text x="{x + col_width/2}" y="{y + row_height/2}" fill="{col['font']}" text-anchor="middle" dominant-baseline="middle">{col['name']}</text>''')
+    <text x="{x + col_width/2}" y="{y + row_height/2}" fill="{col['font']}" text-anchor="middle" dominant-baseline="middle" font-family="{font_family}" font-size="{font_size}">{col['name']}</text>''')
 
     # === Data Rows ===
     for row_idx, row in enumerate(data_rows):
@@ -330,7 +331,7 @@ def prep_wirelist():
             text = row.get(col["name"], "")
             svg_lines.append(f'''
     <rect x="{x}" y="{y}" width="{col_width}" height="{row_height}" fill="white" stroke="black" />
-    <text x="{x + col_width/2}" y="{y + row_height/2}" fill="black" text-anchor="middle" dominant-baseline="middle">{text}</text>''')
+    <text x="{x + col_width/2}" y="{y + row_height/2}" fill="black" text-anchor="middle" dominant-baseline="middle" font-family="{font_family}" font-size="{font_size}">{text}</text>''')
 
     # === Close content group and SVG ===
     svg_lines.append('</g>')
