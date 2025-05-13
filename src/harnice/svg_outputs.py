@@ -427,7 +427,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
 
 def prep_master(page_setup_contents):
     translate = [0, -1600]
-    delta_x_translate = 1600
+    delta_x_translate = 2400
     # === Build basic SVG contents ===
     svg = [
         '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
@@ -489,6 +489,9 @@ def prep_master(page_setup_contents):
         source_svg_name = f"{fileio.partnumber("pn-rev")}.{formboard_name}.svg"
         source_svg_path = os.path.join(fileio.dirpath("formboard_svgs"), source_svg_name)
         svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, formboard_name, formboard_name)
+    
+    svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("esch master svg"), "esch-master", "esch-master")
+    svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")
         
 
 def update_harnice_output():
