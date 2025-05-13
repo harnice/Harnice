@@ -72,12 +72,15 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
                     f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
-                "master_svgs": {
+                "svg_outputs": {
+                    "tblock_svgs":{},
+                    "formboard_svgs":{},
+                    f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
+                    f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
+                    f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
                     f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
                     f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                    f"{partnumber("pn-rev")}.formboard_master.svg":"formboard master svg",
-                    f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                    f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg"
+                    f"{partnumber("pn-rev")}.master.svg":"master svg"
                 },
                 f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
             },
@@ -98,11 +101,17 @@ def harnice_file_structure():
         }
 
 def generate_structure():
+    #rebuild all from this directory if exists
+    if os.path.exists(dirpath("support_do_not_edit")):
+        shutil.rmtree(dirpath("support_do_not_edit"))
+
     os.makedirs(dirpath("editable_component_data"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
     os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
-    os.makedirs(dirpath("master_svgs"), exist_ok=True)
+    os.makedirs(dirpath("svg_outputs"), exist_ok=True)
+    os.makedirs(dirpath("tblock_svgs"), exist_ok=True)
+    os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
     os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
     os.makedirs(dirpath("page_setup"), exist_ok=True)
 
@@ -198,7 +207,7 @@ def name(target_value):
 
     return recursive_search(harnice_file_structure())
 
-def update_output_contents():
+def update_page_setup_json():
     # === Titleblock Defaults ===
     blank_setup = {
         "titleblocks": {
@@ -211,17 +220,19 @@ def update_output_contents():
                     "tblock-key-drawnby": "",
                     "tblock-key-rev": "pull_from_revision_history(rev)",
                     "tblock-key-releaseticket": "",
-                    "tblock-key-scale": "A"
+                    "tblock-key-scale": "A",
+                    "tblock-key-sheet": "1 of 1"
                 }
             }
         },
         "formboards": {
             "formboard1": {
                 "scale": "A",
+                "rotation": 0,
                 "hide_instances": []
             }
         },
-        "scales:": {
+        "scales": {
             "A": 1
         }
     }
@@ -242,3 +253,5 @@ def update_output_contents():
 
     with open(path("harnice output contents"), "w", encoding="utf-8") as f:
         json.dump(tblock_data, f, indent=4)
+
+    return tblock_data

@@ -2,6 +2,7 @@ import os
 import re
 import datetime
 import json
+import csv
 from os.path import basename
 from inspect import currentframe
 import fileio
@@ -224,3 +225,16 @@ def check_revision_status():
     except Exception as e:
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: An error occurred: {e}")
         return False
+
+def revision_info():
+    rev_path = fileio.path("revision history")
+    if not os.path.exists(rev_path):
+        raise FileNotFoundError(f"[ERROR] Revision history file not found: {rev_path}")
+
+    with open(rev_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            if row.get("rev") == fileio.partnumber("R"):
+                return {k: (v or "").strip() for k, v in row.items()}
+
+    raise ValueError(f"[ERROR] No revision row found for rev '{fileio.partnumber('R')}' in revision history")

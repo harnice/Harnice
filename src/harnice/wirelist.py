@@ -24,6 +24,9 @@ WIRELIST_COLUMNS = [
     {"name": "SubwireLabel at Destination", "fill": "red", "font": "white"}
 ]
 
+def column_styles():
+    return WIRELIST_COLUMNS
+
 def newlist():
     try:
         with open(fileio.path("harness yaml"), 'r') as file:
