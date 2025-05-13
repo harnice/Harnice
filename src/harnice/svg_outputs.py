@@ -495,18 +495,18 @@ def prep_master(page_setup_contents):
         svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, formboard_name, formboard_name)
     
     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("esch master svg"), "esch-master", "esch-master")
-    svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")
-        
+    svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")    
 
 def update_harnice_output():
     path = fileio.path("harnice output")
     
     if not os.path.exists(path):
         with open(path, "w", encoding="utf-8") as f:
-            f.write("""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1">
-  <g id="svg-master-contents-start"></g>
-  <g id="svg-master-contents-end"></g>
-</svg>
-""")
+            f.write(
+                """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+               <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+               <g id="svg-master-contents-start"></g>
+                <g id="svg-master-contents-end"></g>
+                </svg>
+                 """)
     svg_utils.find_and_replace_svg_group(fileio.path("harnice output"), fileio.path("master svg"), "svg-master", "svg-master")
