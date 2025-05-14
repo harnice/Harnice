@@ -485,7 +485,7 @@ def make_new_tblock(filename):
         "height": str(height)
     })
 
-    contents_group = ET.SubElement(svg, "g", {"id": "contents-start"})
+    contents_group = ET.SubElement(svg, "g", {"id": "tblock-contents-start"})
 
     def add_rect(parent, x, y, w, h, stroke="black", fill="none", stroke_width=1):
         ET.SubElement(parent, "rect", {
@@ -610,13 +610,8 @@ def make_new_tblock(filename):
         y_cursor += row_height
 
     # === Write SVG with indentation ===
-    ET.SubElement(svg, "g", {"id": "contents-end"})
+    ET.SubElement(svg, "g", {"id": "tblock-contents-end"})
     rough_string = ET.tostring(svg, encoding="utf-8")
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
     with open(os.path.join(os.getcwd(), filename), "w", encoding="utf-8") as f:
         f.write(pretty)
-
-
-
-if __name__ == "__main__":
-    make_new_tblock("test-tblock.svg")
