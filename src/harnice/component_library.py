@@ -168,9 +168,11 @@ def copy_in_editable_file(instance_name):
             if pattern.match(filename):
                 dst_file = os.path.join(dst_dir, dest_name)
                 if not os.path.exists(dst_file):
-                    #TODO: make blank svg
-
-                    #TODO: copy paste in the contents
+                    shutil.copy2(src_file, dst_file)
+                    copied_files.append({
+                        "source_filename": src_file,
+                        "destination_filename": dst_file
+                    })
                     print(f"Editable file {os.path.basename(dst_file)} copied to instance folder.")
                 else:
                     print(f"Editable file {os.path.basename(dst_file)} left unchanged within its instance folder")
