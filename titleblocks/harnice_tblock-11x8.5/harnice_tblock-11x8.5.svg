@@ -31,7 +31,7 @@
      inkscape:window-maximized="0"
      inkscape:current-layer="border" />
   <g
-     id="contents-start">
+     id="tblock-contents-start">
     <g
        id="border">
       <text
@@ -575,5 +575,5 @@
     </g>
   </g>
   <g
-     id="contents-end" />
+     id="tblock-contents-end" />
 </svg>
