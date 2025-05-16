@@ -101,11 +101,16 @@ def prep_formboard_drawings(page_setup_contents):
 
                 half_diameter = diameter / 2
 
-                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="0 {-half_diameter} {length} {diameter}">
-                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" stroke-width="{diameter}" />
-                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
-                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
-                </svg>'''
+                svg_content = f'''
+                <svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="0 {-half_diameter} {length} {diameter}">
+                    <g id="{instance.get("instance_name")}-contents-start">
+                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" stroke-width="{diameter}" />
+                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
+                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
+                    </g>
+                    <g id="{instance.get("instance_name")}-contents-end"></g>
+                </svg>
+                '''
                 segment_dir = os.path.join(fileio.dirpath("editable_component_data"), segment_name)
                 os.makedirs(segment_dir, exist_ok=True)
 
