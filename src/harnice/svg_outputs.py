@@ -207,7 +207,7 @@ def prep_formboard_drawings(page_setup_contents):
                         f"{instance.get("instance_name")}-drawing.svg"
                     ),
                     #source_group_name
-                    instance.get("mpn"),
+                    instance.get("instance_name"),
                     #destination_group_name
                     instance.get("instance_name")
                 )
