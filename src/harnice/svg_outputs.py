@@ -201,6 +201,7 @@ def prep_formboard_drawings(page_setup_contents):
                 #source_svg_filepath
                 os.path.join(
                     fileio.dirpath("editable_component_data"), 
+                    instance.get("instance_name"),
                     f"{instance.get("instance_name")}-drawing.svg"
                 ),
                 #source_group_name
