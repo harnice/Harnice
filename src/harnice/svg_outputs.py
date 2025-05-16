@@ -101,11 +101,16 @@ def prep_formboard_drawings(page_setup_contents):
 
                 half_diameter = diameter / 2
 
-                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="0 {-half_diameter} {length} {diameter}">
-                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" stroke-width="{diameter}" />
-                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
-                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
-                </svg>'''
+                svg_content = f'''
+                <svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="0 {-half_diameter} {length} {diameter}">
+                    <g id="{instance.get("instance_name")}-contents-start">
+                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" stroke-width="{diameter}" />
+                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
+                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
+                    </g>
+                    <g id="{instance.get("instance_name")}-contents-end"></g>
+                </svg>
+                '''
                 segment_dir = os.path.join(fileio.dirpath("editable_component_data"), segment_name)
                 os.makedirs(segment_dir, exist_ok=True)
 
@@ -159,11 +164,6 @@ def prep_formboard_drawings(page_setup_contents):
 
                 x, y, angle = calculate_formboard_location(instance_name, origin)
 
-                try:
-                    inner_svg = component_library.copy_svg_data(instance_name)
-                except Exception as e:
-                    raise RuntimeError(f"Failed to read SVG data for {instance_name}: {e}")
-
                 px_x = x * 96
                 px_y = y * 96
 
@@ -179,10 +179,10 @@ def prep_formboard_drawings(page_setup_contents):
                 svg_px_y = -1 * px_y
                 svg_angle = -1 * angle
 
-                content_lines.append(f'      <g id="{instance_name}" inkscape:label="{instance_name}" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
+                content_lines.append(f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
                 )
-                content_lines.append(inner_svg)
                 content_lines.append('      </g>')
+                content_lines.append(f'      <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
             content_lines.append('    </g>')
 
         # Write full SVG
@@ -197,6 +197,25 @@ def prep_formboard_drawings(page_setup_contents):
             f.write(f'  <g id="{formboard_name}-contents-end">\n')
             f.write('  </g>\n')
             f.write('</svg>\n')
+
+        #now that the SVG has been written, copy the connector content in:
+        for instance in instances:
+            item_type = instance.get("item_type", "").strip()
+            if item_type and item_type not in excluded_item_types:
+                svg_utils.find_and_replace_svg_group(
+                    #target_svg_filepath
+                    filepath,
+                    #source_svg_filepath
+                    os.path.join(
+                        fileio.dirpath("editable_component_data"), 
+                        instance.get("instance_name"),
+                        f"{instance.get("instance_name")}-drawing.svg"
+                    ),
+                    #source_group_name
+                    instance.get("instance_name"),
+                    #destination_group_name
+                    instance.get("instance_name")
+                )
       
 def prep_bom():
     # === Configuration ===
