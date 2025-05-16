@@ -195,20 +195,22 @@ def prep_formboard_drawings(page_setup_contents):
 
         #now that the SVG has been written, copy the connector content in:
         for instance in instances:
-            svg_utils.find_and_replace_svg_group(
-                #target_svg_filepath
-                filepath,
-                #source_svg_filepath
-                os.path.join(
-                    fileio.dirpath("editable_component_data"), 
-                    instance.get("instance_name"),
-                    f"{instance.get("instance_name")}-drawing.svg"
-                ),
-                #source_group_name
-                instance.get("mpn"),
-                 #destination_group_name
-                instance.get("instance_name")
-            )
+            item_type = instance.get("item_type", "").strip()
+            if item_type and item_type not in excluded_item_types:
+                svg_utils.find_and_replace_svg_group(
+                    #target_svg_filepath
+                    filepath,
+                    #source_svg_filepath
+                    os.path.join(
+                        fileio.dirpath("editable_component_data"), 
+                        instance.get("instance_name"),
+                        f"{instance.get("instance_name")}-drawing.svg"
+                    ),
+                    #source_group_name
+                    instance.get("mpn"),
+                    #destination_group_name
+                    instance.get("instance_name")
+                )
       
 def prep_bom():
     # === Configuration ===
