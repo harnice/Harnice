@@ -529,9 +529,9 @@ def update_harnice_output(page_setup_contents):
             version="1.1"
             width="{page_size_px[0]}"
             height="{page_size_px[1]}">
-            <g id="tblock-contents-start">
+            <g id="tblock-svg-contents-start">
             </g>
-            <g id="tblock-contents-end"></g>
+            <g id="tblock-svg-contents-end"></g>
             <g id="svg-master-contents-start">
             </g>
             <g id="svg-master-contents-end"></g>
@@ -542,6 +542,7 @@ def update_harnice_output(page_setup_contents):
         #source_svg_path = os.path.join(fileio.dirpath("tblock_svgs"), source_svg_name)
         #svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, tblock_name, tblock_name)
 
+        #replace the master svg
         svg_utils.find_and_replace_svg_group(
             filepath, 
             fileio.path("master svg"), 
@@ -549,9 +550,10 @@ def update_harnice_output(page_setup_contents):
             "svg-master"
         )
 
+        #replace the titleblock
         svg_utils.find_and_replace_svg_group(
             filepath, 
             os.path.join(fileio.dirpath("tblock_svgs"), f"{fileio.partnumber('pn-rev')}.{page_name}_master.svg"),
             page_name, 
-            "tblock"
+            "tblock-svg"
         )
