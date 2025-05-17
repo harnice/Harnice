@@ -507,14 +507,19 @@ def update_harnice_output(page_setup_contents):
         
         if not os.path.exists(filepath):
             with open(filepath, "w", encoding="utf-8") as f:
+                #<?xml version="1.0" encoding="UTF-8" standalone="no"?>
                 f.write(
-                    """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
-                <g id="tblock-contents-start"></g>
-                <g id="tblock-contents-end"></g>
-                <g id="svg-master-contents-start"></g>
-                <g id="svg-master-contents-end"></g>
-                    </svg>
+                    """
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+                    version="1.1">
+                    <g id="tblock-contents-start">
+                    </g>
+                    <g id="tblock-contents-end"></g>
+                    <g id="svg-master-contents-start">
+                    </g>
+                    <g id="svg-master-contents-end"></g>
+                </svg>
                     """)
     #for tblock_name in page_setup_contents.get("pages", {}):
         #source_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
