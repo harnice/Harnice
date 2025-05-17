@@ -135,8 +135,11 @@ def harnice():
     #merge them all into one parent support_do_not_edit file
     svg_outputs.prep_master(page_setup_contents)
 
-    #add the above to the user-editable main output svg
+    #add the above to the user-editable main output svgs
     svg_outputs.update_harnice_output(page_setup_contents)
+
+    #make a PDF out of all the above
+    svg_utils.produce_multipage_harnice_output_pdf(page_setup_contents)
     
 
 if __name__ == "__main__":
