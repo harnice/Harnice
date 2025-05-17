@@ -501,26 +501,42 @@ def prep_master(page_setup_contents):
     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")    
 
 def update_harnice_output(page_setup_contents):
-    for page_name in page_setup_contents.get("pages", {}):
-        filename = f"{fileio.partnumber("pn-rev")}.{page_name}.svg"
+    for page_name, page_data in page_setup_contents.get("pages", {}).items():
+        filename = f"{fileio.partnumber('pn-rev')}.{page_name}.svg"
         filepath = os.path.join(fileio.dirpath("page_setup"), filename)
+
+        #pull PDF size from json in library
+        titleblock_supplier = page_data.get("supplier")
+        titleblock = page_data.get("titleblock", {})
+        attr_library_path = os.path.join(
+            os.getenv(titleblock_supplier),
+            "titleblocks",
+            titleblock,
+            f"{titleblock}_attributes.json"
+        )
+        with open(attr_library_path, "r", encoding="utf-8") as f:
+            tblock_attributes = json.load(f)
+        page_size_in = tblock_attributes.get("page_size_in", {})
+        page_size_px = [page_size_in[0] * 96, page_size_in[1] * 96]
         
         if not os.path.exists(filepath):
             with open(filepath, "w", encoding="utf-8") as f:
-                #<?xml version="1.0" encoding="UTF-8" standalone="no"?>
                 f.write(
-                    """
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-                    version="1.1">
-                    <g id="tblock-contents-start">
-                    </g>
-                    <g id="tblock-contents-end"></g>
-                    <g id="svg-master-contents-start">
-                    </g>
-                    <g id="svg-master-contents-end"></g>
-                </svg>
-                    """)
+                    #<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                    f"""
+        <svg xmlns="http://www.w3.org/2000/svg"
+            xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+            version="1.1"
+            width="{page_size_px[0]}"
+            height="{page_size_px[1]}">
+            <g id="tblock-contents-start">
+            </g>
+            <g id="tblock-contents-end"></g>
+            <g id="svg-master-contents-start">
+            </g>
+            <g id="svg-master-contents-end"></g>
+        </svg>
+        """)
     #for tblock_name in page_setup_contents.get("pages", {}):
         #source_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
         #source_svg_path = os.path.join(fileio.dirpath("tblock_svgs"), source_svg_name)
