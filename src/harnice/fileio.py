@@ -210,8 +210,8 @@ def name(target_value):
 def update_page_setup_json():
     # === Titleblock Defaults ===
     blank_setup = {
-        "titleblocks": {
-            "tblock1": {
+        "pages": {
+            "page1": {
                 "supplier": "public",
                 "titleblock": "harnice_tblock-11x8.5",
                 "text_replacements": {
