@@ -587,20 +587,20 @@ def update_page_setup_json():
     }
 
     # === Load or Initialize Titleblock Setup ===
-    if not os.path.exists(path("harnice output contents")) or os.path.getsize(path("harnice output contents")) == 0:
-        with open(path("harnice output contents"), "w", encoding="utf-8") as f:
+    if not os.path.exists(fileio.path("harnice output contents")) or os.path.getsize(fileio.path("harnice output contents")) == 0:
+        with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
             json.dump(blank_setup, f, indent=4)
         tblock_data = blank_setup
     else:
         try:
-            with open(path("harnice output contents"), "r", encoding="utf-8") as f:
+            with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
                 tblock_data = json.load(f)
         except json.JSONDecodeError:
-            with open(path("harnice output contents"), "w", encoding="utf-8") as f:
+            with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
                 json.dump(blank_setup, f, indent=4)
             tblock_data = blank_setup
 
-    with open(path("harnice output contents"), "w", encoding="utf-8") as f:
+    with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
         json.dump(tblock_data, f, indent=4)
 
     return tblock_data
