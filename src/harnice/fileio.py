@@ -94,7 +94,7 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
             },
             f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
-            f"{partnumber("pn-rev")}.harnice_output.svg":"harnice output",
+            f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
             f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
             f"{partnumber("pn-rev")}.yaml":"harness yaml",
             f"{partnumber("pn-rev")}.harness_requirements.json":"harness requirements"
