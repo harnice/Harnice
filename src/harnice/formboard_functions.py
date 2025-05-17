@@ -150,7 +150,7 @@ def generate_node_coordinates():
         print("No node found to initialize coordinates.")
         return
 
-    print(f"Origin node: {origin_node}")
+    print(f"-Origin node: '{origin_node}'")
 
     # === Step 4: Build graph structure ===
     graph = {}
@@ -273,11 +273,8 @@ def generate_node_coordinates():
     with open(output_file_path, "w") as output_file:
         output_file.write(svg_content)
 
-    print("-SVG graph visualization written.")
-
     # === Step 8: Write all modified instances back ===
     instances_list.write_instance_rows(instances)
-    print("-Node and segment coordinates updated in instances list.")
 
 def map_cables_to_segments():
     from collections import defaultdict, deque

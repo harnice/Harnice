@@ -33,7 +33,3 @@ def generate_esch():
     shutil.copy(fileio.path("wireviz svg"), fileio.dirpath("svg_generated"))
     os.rename(os.path.join(fileio.dirpath("svg_generated"),fileio.name("wireviz svg")), fileio.path("esch master svg"))
     svg_utils.add_entire_svg_file_contents_to_group(fileio.path("esch master svg"), "esch-master")
-
-# Run the process
-if __name__ == "__main__":
-    run_wireviz()

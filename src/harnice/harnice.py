@@ -11,136 +11,115 @@ import svg_outputs
 import os
 
 def harnice():
-    #check if revision history is set up correctly
+    print("Thanks for using Harnice!")
     print()
-    print("############ CHECKING REV HISTORY #############")
-    if(harnice_prechecker.harnice_prechecker() == False):
-        return
     
-    #build file structure
+    #=============== CHECK REVISION HISTORY #===============
+    harnice_prechecker.harnice_prechecker()
+        #reads file structure and revision history tsv if exists
+        #writes a new revision history document if else
+
+    #=============== GENERATE FILE STRUCTURE #===============
     fileio.generate_structure()
+        #completely deletes everything in support_do_not_edit
+        #makes sure all the directories exist
 
+    #=============== INITIALIZE INSTANCES LIST #===============
     #make a list of every single instance in the project
-    print()
-    print("############ GENERATING AN INSTANCES LIST #############")
+
     instances_list.make_new_list()
+        #makes blank document
     instances_list.add_connectors()
+        #adds connectors from the yaml to that document
     instances_list.add_cables()
+        #adds cables from the yaml to that document
     wirelist.newlist()
+        #makes a new wirelist
 
-    print()
-    print("############ CHECKING COMPONENTS AGAINST LIBRARY #############")
+    #=============== CHECKING COMPONENTS AGAINST LIBRARY #===============
     component_library.pull_parts()
-    
-    print()
-    print("############ RUNNING FORMBOARD PROCESSOR #############")
-    print("Generating nodes from connectors")
+        #compares existing imported library files against library
+        #imports new files if they don't exist
+        #if they do exist,
+        #checks for updates against the library
+        #checks for modifications against the library
+
+    #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
     instances_list.generate_nodes_from_connectors()
-    print()
+        #makes at least one node per connector, named the same as connectors for now
 
-    print("Pulling in preferred parent_csys and component offsets from component data")
     instances_list.update_parent_csys()
-    instances_list.update_component_translate()
-    print()
+        #updates parent csys of each connector based on its definition json
 
+    instances_list.update_component_translate()
+        #updates translations of any kind of instance with respect to its csys
+
+    #make a formboard definition file from scratch if it doesn't exist
     if not os.path.exists(fileio.name("formboard graph definition")):
-        print("Making a blank formboard definition file")
         with open(fileio.name("formboard graph definition"), 'w') as f:
             pass  # Creates an empty file
-    else:
-        print("Formboard definition file exists, preserving")
-    print()
 
-    print("Validating nodes exist and generating segments if they don't")
     formboard_functions.validate_nodes()
-    print()
-
-    print("Adding stuff from formboard processor into instances list")
     instances_list.add_nodes_from_formboard()
     instances_list.add_segments_from_formboard()
-    print()
+        #validates all nodes exist
+        #generates segments if they don't exist
+        #adds nodes and segments into the instances list
 
-    print("Validating segments are structured correctly")
+    print()
+    print("Validating your formboard graph is structured properly...")
     formboard_functions.map_cables_to_segments()
     formboard_functions.detect_loops()
     formboard_functions.detect_dead_segments()
-    print()
+        #validates segments are structured correctly
 
-    print("Generating node and segment coordinates")
     formboard_functions.generate_node_coordinates()
-    print()
+        #starting from one node, recursively find lengths and angles of related segments to produce locations of each node
 
-    print("Adding lengths to instances list and wirelist")
     instances_list.add_cable_lengths()
     wirelist.add_lengths()
-    print()
+        #add cable lengths to instances and wirelists
 
-    print("Exporting a beautiful wirelist")
     wirelist.tsv_to_xls()
-    print()
+        #now that wirelist is complete, make it pretty
 
-    print("Adding angles to nodes")
     instances_list.add_absolute_angles_to_segments()
+        #add absolute angles to segments only such that they show up correctly on formboard
+        #segments only, because every other instance angle is associated with its parent node
+        #segments have by defintiion more than one node, so there's no easy way to resolve segment angle from that
     instances_list.add_angles_to_nodes()
-    print()
+        #add angles to nodes to base the rotation of each node child instance
 
-    #condense instance list into a bom
-    print()
-    print("############ GENERATING A BOM #############")
+    #=============== GENERATING A BOM #===============
     instances_list.convert_to_bom()
+        #condenses an instance list down into a bom
     instances_list.add_bom_line_numbers()
+        #adds bom line numbers back to the instances list
 
-    #run wireviz
-    print()
-    print("############ RUNNING WIREVIZ #############")
+    #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()
 
-    #print()
-    #print()
-    #print("############ LOOKING FOR BUILDNOTES FILE #############")
-    #flagnote_functions.look_for_buildnotes_file()
-
-    print()
-    print("############ REBUILDING SVGs #############")
-    page_setup_contents = fileio.update_page_setup_json()
+    #=============== REBUILDING OUTPUT SVG #===============
+    page_setup_contents = svg_outputs.update_page_setup_json()
+        #ensure page setup is defined, if not, make a basic one
     revinfo = harnice_prechecker.revision_info()
 
-    #===================================
-    #COMPLETE GENERATED SVGS
-    print("Generating new formboard drawing:")
+    #prepare the building blocks as svgs
     svg_outputs.prep_formboard_drawings(page_setup_contents)
-    print("")
-
-    print("Generating new wirelist drawing:")
     svg_outputs.prep_wirelist()
-    print("")
-
-    #TODO: revision history
-
-    #TODO: buildnotes table
-
-    print("Generating new bom drawing:")
     svg_outputs.prep_bom()
-    print("")
-
     #esch done under run_wireviz.generate_esch()
-
-    print("Generating new titleblock block drawings:")
     svg_outputs.prep_tblocks(page_setup_contents, revinfo)
-    print("")
 
-    
-    #===================================
-    #LAST, MERGE THEM ALL INTO A USEFUL OUTPUT FILE
-    #merge them all into one parent support_do_not_edit file
     svg_outputs.prep_master(page_setup_contents)
+        #merges all building blocks into one main support_do_not_edit master svg file
 
-    #add the above to the user-editable main output svgs
     svg_outputs.update_harnice_output(page_setup_contents)
+        #adds the above to the user-editable svgs in page setup, one per page
 
-    #make a PDF out of all the above
     svg_utils.produce_multipage_harnice_output_pdf(page_setup_contents)
-    
+        #makes a PDF out of each svg in page setup
+
 
 if __name__ == "__main__":
     harnice()

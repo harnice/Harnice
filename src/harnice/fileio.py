@@ -14,15 +14,8 @@ from dotenv import load_dotenv, dotenv_values
 #standard punctuation:
     #  .  separates between name hierarchy levels
     #  _  means nothing, basically a space character
-    #  -  if multiple instances are found at the same hierarchy level with the same name, this separates name from unique instance identifier
-
-#here's the ultimate definition of all Harnice project files:
-
-#syntax:
-#"filename": "filekey"
-
-#filename is the actual file name with a suffix
-#filekey is the shorthand reference for it with no suffix
+    #  -  if multiple instances are found at the same hierarchy level with the same name, 
+                #this separates name from unique instance identifier
 
 def partnumber(format):
     #Returns part numbers in various formats based on the current working directory
@@ -59,6 +52,12 @@ def partnumber(format):
         raise ValueError("Function 'partnumber' not presented with a valid format")
 
 def harnice_file_structure():
+    #syntax:
+    #   "filename": "filekey"
+
+    #filename is the actual file name with a suffix
+    #filekey is the shorthand reference for it with no suffix
+
     return {
             "editable_component_data":{},
             "support_do_not_edit": {
@@ -206,52 +205,3 @@ def name(target_value):
         raise TypeError(f"Could not find filename of key {target_value}.")
 
     return recursive_search(harnice_file_structure())
-
-def update_page_setup_json():
-    # === Titleblock Defaults ===
-    blank_setup = {
-        "pages": {
-            "page1": {
-                "supplier": "public",
-                "titleblock": "harnice_tblock-11x8.5",
-                "text_replacements": {
-                    "tblock-key-desc": "",
-                    "tblock-key-pn": "pull_from_revision_history(pn)",
-                    "tblock-key-drawnby": "",
-                    "tblock-key-rev": "pull_from_revision_history(rev)",
-                    "tblock-key-releaseticket": "",
-                    "tblock-key-scale": "A",
-                    "tblock-key-sheet": "1 of 1"
-                }
-            }
-        },
-        "formboards": {
-            "formboard1": {
-                "scale": "A",
-                "rotation": 0,
-                "hide_instances": []
-            }
-        },
-        "scales": {
-            "A": 1
-        }
-    }
-
-    # === Load or Initialize Titleblock Setup ===
-    if not os.path.exists(path("harnice output contents")) or os.path.getsize(path("harnice output contents")) == 0:
-        with open(path("harnice output contents"), "w", encoding="utf-8") as f:
-            json.dump(blank_setup, f, indent=4)
-        tblock_data = blank_setup
-    else:
-        try:
-            with open(path("harnice output contents"), "r", encoding="utf-8") as f:
-                tblock_data = json.load(f)
-        except json.JSONDecodeError:
-            with open(path("harnice output contents"), "w", encoding="utf-8") as f:
-                json.dump(blank_setup, f, indent=4)
-            tblock_data = blank_setup
-
-    with open(path("harnice output contents"), "w", encoding="utf-8") as f:
-        json.dump(tblock_data, f, indent=4)
-
-    return tblock_data

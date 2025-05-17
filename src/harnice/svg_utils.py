@@ -32,18 +32,12 @@ def add_entire_svg_file_contents_to_group(filepath, new_group_name):
             with open(filepath, "w", encoding="utf-8") as file:
                 file.write(updated_svg_content)
 
-            print(
-                f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
-                f"Added entire contents of {os.path.basename(filepath)} to a new group {new_group_name}-contents-start"
-            )
         except Exception as e:
             print(
-                f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
                 f"Error adding contents of {os.path.basename(filepath)} to a new group {new_group_name}: {e}"
             )
     else:
         print(
-            f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
             f"Trying to add contents of {os.path.basename(filepath)} to a new group but file does not exist."
         )
 
@@ -90,47 +84,6 @@ def find_and_replace_svg_group(target_svg_filepath, source_svg_filepath, source_
         updated_file.write(updated_svg_content)
 
     return 1
-
-
-def rotate_svg_group(svg_path, group_name, angle):
-    id_string = f'id="{group_name}-contents-start"'
-    try:
-        with open(svg_path, 'r', encoding='utf-8') as svg_file:
-            lines = svg_file.readlines()
-
-        group_found = False
-        for i, line in enumerate(lines):
-            if id_string in line:
-                if 'transform="rotate(' in line:
-                    lines[i] = re.sub(r'rotate\(([^)]+)\)', f'rotate({angle})', line)
-                else:
-                    lines[i] = line.strip().replace('>', f' transform="rotate({angle})">') + '\n'
-                group_found = True
-                break
-
-        if not group_found:
-            raise ValueError(f"{group_name} group not initialized correctly.")
-
-        with open(svg_path, 'w', encoding='utf-8') as svg_file:
-            svg_file.writelines(lines)
-
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Rotated {group_name} to {angle} deg in {os.path.basename(svg_path)}.")
-    except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: File not found - {svg_path}")
-    except ValueError as e:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {e}")
-    except Exception as e:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Unexpected error: {e}")
-
-
-def read_tsv(file_path, columns, numeric_filter_column):
-    with open(file_path, 'r', newline='', encoding='utf-8') as tsv_file:
-        reader = csv.DictReader(tsv_file, delimiter='\t')
-        return [
-            [row[col] for col in columns]
-            for row in reader if row[numeric_filter_column].isdigit()
-        ]
-
 
 def produce_multipage_harnice_output_pdf(page_setup_contents):
     partnumber = fileio.partnumber("pn-rev")
