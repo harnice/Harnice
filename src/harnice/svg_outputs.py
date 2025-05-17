@@ -363,10 +363,10 @@ def prep_wirelist():
         f.write("\n".join(svg_lines))
 
 def prep_tblocks(page_setup_contents, revhistory_data):
-    for tblock_name in page_setup_contents.get("titleblocks", {}):
-        tblock_data = page_setup_contents["titleblocks"].get(tblock_name)
+    for page_name in page_setup_contents.get("pages", {}):
+        tblock_data = page_setup_contents["pages"].get(page_name)
         if not tblock_data:
-            raise KeyError(f"[ERROR] Titleblock '{tblock_name}' not found in harnice output contents")
+            raise KeyError(f"[ERROR] Titleblock '{page_name}' not found in harnice output contents")
 
         supplier_key = tblock_data.get("supplier")
         supplier_root = os.getenv(supplier_key)
@@ -387,14 +387,14 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         translate_bom = f'translate({bom_loc[0]},{bom_loc[1]})'
 
         # === Prepare destination path ===
-        destination_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
+        destination_svg_name = f"{fileio.partnumber('pn-rev')}.{page_name}_master.svg"
         destination_svg_path = os.path.join(fileio.dirpath("tblock_svgs"), destination_svg_name)
 
         # === Build basic SVG contents ===
         svg = [
             '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
             '<svg xmlns="http://www.w3.org/2000/svg" version="1.1">',
-            f'  <g id="{tblock_name}-contents-start">',
+            f'  <g id="{page_name}-contents-start">',
             f'    <g id="tblock-contents-start"></g>',
             f'    <g id="tblock-contents-end"></g>',
             f'    <g id="bom" transform="{translate_bom}">',
@@ -402,7 +402,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             f'      <g id="bom-contents-end"></g>',
             f'    </g>',
             f'  </g>',
-            f'  <g id="{tblock_name}-contents-end"></g>',
+            f'  <g id="{page_name}-contents-end"></g>',
             '</svg>'
         ]
 
@@ -455,17 +455,6 @@ def prep_master(page_setup_contents):
         '  <g id="svg-master-contents-start">'
     ]
 
-    # Add titleblock placeholders
-    for tblock_name in page_setup_contents.get("titleblocks", {}):
-        translate_str = f"translate({translate[0]},{translate[1]})"
-        svg += [
-            f'    <g id="{tblock_name}" transform="{translate_str}">',
-            f'      <g id="{tblock_name}-contents-start"></g>',
-            f'      <g id="{tblock_name}-contents-end"></g>',
-            f'    </g>'
-        ]
-        translate[0] += delta_x_translate
-
     # Add formboard placeholders
     for formboard_name in page_setup_contents.get("formboards", {}):
         translate_str = f"translate({translate[0]},{translate[1]})"
@@ -503,11 +492,6 @@ def prep_master(page_setup_contents):
 
 
     # === Import stuff ===
-    for tblock_name in page_setup_contents.get("titleblocks", {}):
-        source_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
-        source_svg_path = os.path.join(fileio.dirpath("tblock_svgs"), source_svg_name)
-        svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, tblock_name, tblock_name)
-
     for formboard_name in page_setup_contents.get("formboards", {}):
         source_svg_name = f"{fileio.partnumber("pn-rev")}.{formboard_name}.svg"
         source_svg_path = os.path.join(fileio.dirpath("formboard_svgs"), source_svg_name)
@@ -516,16 +500,37 @@ def prep_master(page_setup_contents):
     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("esch master svg"), "esch-master", "esch-master")
     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")    
 
-def update_harnice_output():
-    path = fileio.path("harnice output")
-    
-    if not os.path.exists(path):
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(
-                """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-               <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
-               <g id="svg-master-contents-start"></g>
+def update_harnice_output(page_setup_contents):
+    for page_name in page_setup_contents.get("pages", {}):
+        filename = f"{fileio.partnumber("pn-rev")}.{page_name}.svg"
+        filepath = os.path.join(fileio.dirpath("page_setup"), filename)
+        
+        if not os.path.exists(filepath):
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(
+                    """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+                <g id="tblock-contents-start"></g>
+                <g id="tblock-contents-end"></g>
+                <g id="svg-master-contents-start"></g>
                 <g id="svg-master-contents-end"></g>
-                </svg>
-                 """)
-    svg_utils.find_and_replace_svg_group(fileio.path("harnice output"), fileio.path("master svg"), "svg-master", "svg-master")
+                    </svg>
+                    """)
+    #for tblock_name in page_setup_contents.get("pages", {}):
+        #source_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
+        #source_svg_path = os.path.join(fileio.dirpath("tblock_svgs"), source_svg_name)
+        #svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, tblock_name, tblock_name)
+
+        svg_utils.find_and_replace_svg_group(
+            filepath, 
+            fileio.path("master svg"), 
+            "svg-master", 
+            "svg-master"
+        )
+
+        svg_utils.find_and_replace_svg_group(
+            filepath, 
+            os.path.join(fileio.dirpath("tblock_svgs"), f"{fileio.partnumber('pn-rev')}.{page_name}_master.svg"),
+            page_name, 
+            "tblock"
+        )
