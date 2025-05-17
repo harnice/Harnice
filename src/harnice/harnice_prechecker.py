@@ -17,9 +17,8 @@ def harnice_prechecker():
     check_existence_of_rev_history_file_in_parent(pn)
     find_pn_and_rev_entry_in_tsv()
     if check_revision_status() == False:
-        return False
+        raise RuntimeError("Harnice is not allowed to operate on revisions with any value in the 'status' column of the revision history sheet to protect version control.")
     print(f"Status for this rev is clear; moving forward.")
-    return True
 
 def pn_from_cwd():
     check_directory_format()
