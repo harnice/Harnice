@@ -32,18 +32,12 @@ def add_entire_svg_file_contents_to_group(filepath, new_group_name):
             with open(filepath, "w", encoding="utf-8") as file:
                 file.write(updated_svg_content)
 
-            print(
-                f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
-                f"Added entire contents of {os.path.basename(filepath)} to a new group {new_group_name}-contents-start"
-            )
         except Exception as e:
             print(
-                f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
                 f"Error adding contents of {os.path.basename(filepath)} to a new group {new_group_name}: {e}"
             )
     else:
         print(
-            f"from {basename(__file__)} > {currentframe().f_code.co_name}: "
             f"Trying to add contents of {os.path.basename(filepath)} to a new group but file does not exist."
         )
 

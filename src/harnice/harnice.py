@@ -11,6 +11,9 @@ import svg_outputs
 import os
 
 def harnice():
+    print("Thanks for using Harnice!")
+    print()
+    
     #=============== CHECK REVISION HISTORY #===============
     harnice_prechecker.harnice_prechecker()
         #reads file structure and revision history tsv if exists
@@ -63,6 +66,8 @@ def harnice():
         #generates segments if they don't exist
         #adds nodes and segments into the instances list
 
+    print()
+    print("Validating your formboard graph is structured properly...")
     formboard_functions.map_cables_to_segments()
     formboard_functions.detect_loops()
     formboard_functions.detect_dead_segments()

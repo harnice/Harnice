@@ -21,11 +21,9 @@ def pull_parts():
     instances = instances_list.read_instance_rows()
 
     updated_instances = []
+    print()
 
     for instance in instances:
-        print(f"Working {instance.get('instance_name')}")
-        print(f"MPN: {instance.get('mpn')}")
-
         #if the type of instance is supported by harnice library
         if instance.get('item_type', '').lower() in supported_library_components:
             
@@ -53,13 +51,9 @@ def pull_parts():
 
             #see if that library instance has already been imported
             exists_bool, exists_rev = exists_in_lib_used(instance.get('instance_name'), instance.get('mpn'))
-            print(f"Library for component is used in the project: {exists_bool}")
-            if exists_bool:
-                print(f"Library used for component has revision {exists_rev}")
             instance['lib_rev_used_here'] = exists_rev
 
             #find latest release in library
-            print(f"Highest available rev in library is {highest_rev}")
             instance['lib_latest_rev'] = highest_rev
 
             # build paths
@@ -73,22 +67,20 @@ def pull_parts():
             used = instance.get('lib_rev_used_here')
 
             if not exists_bool:
-                print(f"Fetching {mpn_rev} from {source_lib_path}")
                 shutil.copytree(source_lib_path, target_directory)
                 used = latest
-                print(f"File {mpn_rev} added to {target_directory}")
 
             if int(latest) > int(used):
-                print(f"There's a newer revision available. If you want to update, delete {mpn_rev} from library_used.")
+                print(f"There's a newer revision available for {instance.get("instance_name")}. If you want to update, delete 'support_do_not_edit' within the instance directory.")
             elif int(latest) < int(used):
-                print("Somehow you've imported a revision that's newer than what's in the library. You goin crazy!")
+                print(f"Somehow you've imported a revision of {instance.get("instance_name")} that's newer than what's in the library. You goin crazy!")
                 exit()
             else:
                 if find_modifications(source_lib_path, target_directory) == False:
-                    print("Library is up to date.")
+                    print(f"Library for '{instance.get("instance_name")}' is up to date.")
                 else:
                     raise RuntimeError(
-                        "Either you've modified the library as-imported (not allowed for traceability purposes) or the library has changed without adding a new rev. Either choose a different rev or delete the libraries used from the part to re-import."
+                        f"Either you've modified the {instance.get("instance_name")} library as-imported (not allowed for traceability purposes) or the library has changed without adding a new rev. Either choose a different rev or delete the libraries used from the part to re-import."
                     )
 
             #COPY IN EDITABLE FILE
@@ -157,19 +149,13 @@ def pull_parts():
 
                             with open(dst_file, 'w', encoding='utf-8') as file:
                                 file.write(content)
-
-
-                            print(f"Editable file {os.path.basename(dst_file)} copied to instance folder.")
-                        else:
-                            print(f"Editable file {os.path.basename(dst_file)} left unchanged within its instance folder")
                         break
 
 
         else:
-            print(f"Libraries for component type '{instance.get('item_type')}' either not needed or not supported")
+            print(f"Library for '{instance.get('instance_name')}' with component type '{instance.get('item_type')}' either not needed or not supported")
 
         updated_instances.append(instance)
-        print()
 
     # Write all modified rows back at once
     fieldnames = updated_instances[0].keys()

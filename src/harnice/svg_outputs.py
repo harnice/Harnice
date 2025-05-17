@@ -118,9 +118,7 @@ def prep_formboard_drawings(page_setup_contents):
 
                 with open(output_filename, 'w') as svg_file:
                     svg_file.write(svg_content)
-
-                print(f"Built segment SVG for segment {segment_name} (deleted existing if present)")
-
+                    
             except Exception as e:
                 print(f"Error processing segment {segment_name}: {e}")
  
