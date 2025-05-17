@@ -72,7 +72,7 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
                     f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                 },
-                "svg_outputs": {
+                "svg_generated": {
                     "tblock_svgs":{},
                     "formboard_svgs":{},
                     f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
@@ -109,7 +109,7 @@ def generate_structure():
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
     os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
-    os.makedirs(dirpath("svg_outputs"), exist_ok=True)
+    os.makedirs(dirpath("svg_generated"), exist_ok=True)
     os.makedirs(dirpath("tblock_svgs"), exist_ok=True)
     os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
     os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
@@ -210,8 +210,8 @@ def name(target_value):
 def update_page_setup_json():
     # === Titleblock Defaults ===
     blank_setup = {
-        "titleblocks": {
-            "tblock1": {
+        "pages": {
+            "page1": {
                 "supplier": "public",
                 "titleblock": "harnice_tblock-11x8.5",
                 "text_replacements": {
