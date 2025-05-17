@@ -102,7 +102,7 @@ def harnice():
 
     print()
     print("############ REBUILDING SVGs #############")
-    page_setup_contents = fileio.update_page_setup_json()
+    page_setup_contents = svg_outputs.update_page_setup_json()
     revinfo = harnice_prechecker.revision_info()
 
     #===================================
