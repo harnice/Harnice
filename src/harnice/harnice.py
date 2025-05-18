@@ -98,11 +98,19 @@ def harnice():
 
     #=============== HANDLING FLAGNOTES #===============
     instances_list_data = instances_list.read_instance_rows()
+    rev_history_data = harnice_prechecker.revision_info()
+    buildnotes_data = ""
 
     flagnotes.create_flagnote_matrix_for_all_instances(instances_list_data)
-    #TODO: flagnotes.add_bom_numbers()
-    #TODO: flagnotes.add_revnotes()
-    #TODO: flagnotes.add_flagnotes()
+
+    flagnote_matrix_data = flagnotes.read_flagnote_matrix_file()
+    flagnotes.add_flagnote_content(
+        flagnote_matrix_data,
+        instances_list_data,
+        rev_history_data,
+        buildnotes_data
+    )
+
     #TODO: instances_list.add_flagnotes()
 
     #=============== RUNNING WIREVIZ #===============

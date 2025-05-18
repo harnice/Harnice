@@ -65,3 +65,36 @@ def create_flagnote_matrix_for_all_instances(instances_list_data):
     with open(fileio.path("flagnotes json"), 'w', encoding='utf-8') as f:
         json.dump(flagnotes_json, f, indent=2)
 
+def add_flagnote_content(flagnote_matrix_data, instances_list_data, rev_history_data, buildnotes_data):
+    for instance in instances_list_data:
+        instance_name = instance.get("instance_name")
+        if not instance_name:
+            continue  # skip instances without a valid name
+
+        flagnotes = flagnote_matrix_data.get(instance_name, {}).get("flagnotes", [])
+        flagnote_number = 0
+
+        # Add instance name as flagnote with "Rectangle" design
+        if instance_name.strip():
+            if flagnote_number < len(flagnotes):
+                flagnotes[flagnote_number]["design"] = "Rectangle"
+                flagnotes[flagnote_number]["text"] = instance_name
+                flagnote_number += 1
+
+        # Add BOM item number as flagnote with "Circle" design
+        bom_line_number = instance.get("bom_line_number", "").strip()
+        if bom_line_number:
+            if flagnote_number < len(flagnotes):
+                flagnotes[flagnote_number]["design"] = "Circle"
+                flagnotes[flagnote_number]["text"] = bom_line_number
+                flagnote_number += 1
+
+    # === Save updated flagnote matrix ===
+    output_path = fileio.path("flagnotes json")
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(flagnote_matrix_data, f, indent=2)
+
+def read_flagnote_matrix_file():
+    with open(fileio.path("flagnotes json"), 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data
