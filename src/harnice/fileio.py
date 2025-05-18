@@ -81,7 +81,7 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
                     f"{partnumber("pn-rev")}.master.svg":"master svg"
                 },
-                f"{partnumber("pn-rev")}.flagnote_instance_matrix.tsv":"flagnote instance matrix"
+                f"{partnumber("pn-rev")}.flagnotes.json":"flagnotes json"
             },
             "wireviz_outputs":{
                 f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",

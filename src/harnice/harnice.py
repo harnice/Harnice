@@ -2,8 +2,8 @@ import run_wireviz
 import wirelist
 import instances_list
 import svg_utils
-import flagnote_functions
-import formboard_functions
+import flagnotes
+import formboard
 import harnice_prechecker
 import component_library
 import fileio
@@ -59,7 +59,7 @@ def harnice():
         with open(fileio.name("formboard graph definition"), 'w') as f:
             pass  # Creates an empty file
 
-    formboard_functions.validate_nodes()
+    formboard.validate_nodes()
     instances_list.add_nodes_from_formboard()
     instances_list.add_segments_from_formboard()
         #validates all nodes exist
@@ -68,12 +68,12 @@ def harnice():
 
     print()
     print("Validating your formboard graph is structured properly...")
-    formboard_functions.map_cables_to_segments()
-    formboard_functions.detect_loops()
-    formboard_functions.detect_dead_segments()
+    formboard.map_cables_to_segments()
+    formboard.detect_loops()
+    formboard.detect_dead_segments()
         #validates segments are structured correctly
 
-    formboard_functions.generate_node_coordinates()
+    formboard.generate_node_coordinates()
         #starting from one node, recursively find lengths and angles of related segments to produce locations of each node
 
     instances_list.add_cable_lengths()
@@ -95,6 +95,24 @@ def harnice():
         #condenses an instance list down into a bom
     instances_list.add_bom_line_numbers()
         #adds bom line numbers back to the instances list
+
+    #=============== HANDLING FLAGNOTES #===============
+    instances_list_data = instances_list.read_instance_rows()
+    rev_history_data = harnice_prechecker.revision_info()
+    buildnotes_data = ""
+
+    flagnotes.create_flagnote_matrix_for_all_instances(instances_list_data)
+
+    flagnotes.add_flagnote_content(
+        flagnotes.read_flagnote_matrix_file(),
+        instances_list_data,
+        rev_history_data,
+        buildnotes_data
+    )
+
+    instances_list.add_flagnotes(
+        flagnotes.read_flagnote_matrix_file()
+    )
 
     #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()
