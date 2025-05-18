@@ -2,7 +2,7 @@ import run_wireviz
 import wirelist
 import instances_list
 import svg_utils
-import flagnote_functions
+import flagnotes
 import formboard_functions
 import harnice_prechecker
 import component_library
@@ -95,6 +95,15 @@ def harnice():
         #condenses an instance list down into a bom
     instances_list.add_bom_line_numbers()
         #adds bom line numbers back to the instances list
+
+    #=============== HANDLING FLAGNOTES #===============
+    instances_list_data = instances_list.read_instance_rows()
+
+    flagnotes.create_flagnote_matrix_for_all_instances(instances_list_data)
+    #TODO: flagnotes.add_bom_numbers()
+    #TODO: flagnotes.add_revnotes()
+    #TODO: flagnotes.add_flagnotes()
+    #TODO: instances_list.add_flagnotes()
 
     #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()
