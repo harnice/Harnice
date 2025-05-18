@@ -23,3 +23,10 @@ def main():
             new.create_flagnote(description=value)
         else:
             print(f"Unknown type for --new: {item_type}")
+
+def prompt(text, default=None):
+    p = f"{text}"
+    if default:
+        p += f" [{default}]"
+    p += ": "
+    return input(p).strip() or default

@@ -1,8 +1,10 @@
 import os
 import json
 import xml.etree.ElementTree as ET
-from harnice import (
-    harnice_prechecker
+from dotenv import load_dotenv, dotenv_values
+from harnice import(
+    harnice_prechecker,
+    cli
 )
 
 def part(
@@ -10,7 +12,25 @@ def part(
     mfgmpn
     ):
 
-    global pn, rev
+    load_dotenv()
+
+    library_path = os.getenv(library)
+    if not library_path:
+        raise ValueError(f"Environment variable '{library}' is not set.")
+
+    part_directory = os.path.join(library_path, "parts", mfgmpn)
+
+    if os.path.exists(part_directory):
+        response = cli.prompt("This part number already exists within this library. Make a new revision?", "y").lower()
+        if response == "y":
+            print("Making a new revision")
+            # TODO: new revision logic
+        else:
+            print("Figure out what to do next")
+    else:
+        os.makedirs(part_directory)
+        print(f"Created new part directory at: {part_directory}")
+
     pn = harnice_prechecker.pn_from_cwd()
     rev = harnice_prechecker.rev_from_cwd()
 
