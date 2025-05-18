@@ -128,7 +128,7 @@ def prep_formboard_drawings(page_setup_contents):
         filepath = os.path.join(fileio.dirpath("formboard_svgs"),filename)
 
         instances = instances_list.read_instance_rows()
-        excluded_item_types = {"Cable", "Node"}
+        excluded_item_types = {"Cable", "Node", "Flagnote"}
 
         rotation = page_setup_contents["formboards"].get(formboard_name, {}).get("rotation", 0)
         if rotation == "":
