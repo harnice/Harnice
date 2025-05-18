@@ -9,7 +9,7 @@ def main():
     args = parser.parse_args()
 
     if args.render == "harness":
-        render.run_harness()
+        render.render_harness()
     elif args.render == "system":
         render.run_system()
     elif args.new == "part":
