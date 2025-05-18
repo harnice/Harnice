@@ -34,15 +34,22 @@ def part(
         },
         "build_notes": [],
         "flagnote_locations": [
-            {"angle": 0, "distance": 2},
-            {"angle": 15, "distance": 2},
-            {"angle": -15, "distance": 2},
-            {"angle": 30, "distance": 2},
-            {"angle": -30, "distance": 2},
-            {"angle": 45, "distance": 2},
-            {"angle": -45, "distance": 2},
-            {"angle": 60, "distance": 2},
-            {"angle": -60, "distance": 2}
+            {"angle": 0, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 15, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -15, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 30, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -30, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 45, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -45, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 60, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -60, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -75, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 75, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -90, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 90, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -105, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 105, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -120, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
         ]
     }
 
