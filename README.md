@@ -27,3 +27,8 @@ Main branch will always track the latest release.
 V1 will take a YAML harness definition and produce a formboard drawing.
 ## V0
 All work happens on V0 until V0 is merged to main to form V1.0.
+
+
+commands:
+harnice (-r or --render) harness : renders a harness file
+harnice (-n or --new) part "mpn" : overwrites a new start file for a part

@@ -4,7 +4,9 @@ import yaml
 import xlwt
 from os.path import basename
 from inspect import currentframe
-import fileio
+from harnice import (
+    fileio
+)
 
 # Unified column definition with styling
 WIRELIST_COLUMNS = [

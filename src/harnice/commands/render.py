@@ -1,16 +1,18 @@
-import run_wireviz
-import wirelist
-import instances_list
-import svg_utils
-import flagnotes
-import formboard
-import harnice_prechecker
-import component_library
-import fileio
-import svg_outputs
 import os
+from harnice import (
+    run_wireviz,
+    wirelist,
+    instances_list,
+    svg_utils,
+    flagnotes,
+    formboard,
+    harnice_prechecker,
+    component_library,
+    fileio,
+    svg_outputs
+)
 
-def harnice():
+def render_harness():
     print("Thanks for using Harnice!")
     print()
     
@@ -139,5 +141,5 @@ def harnice():
         #makes a PDF out of each svg in page setup
 
 
-if __name__ == "__main__":
-    harnice()
+def run_system():
+    print("System-level rendering not yet implemented.")

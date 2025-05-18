@@ -2,10 +2,12 @@ import os
 import time
 import subprocess
 import shutil
-import svg_utils
 from os.path import basename
 from inspect import currentframe
-import fileio
+from harnice import(
+    svg_utils,
+    fileio
+)
 
 def generate_esch():
     # Run the 'wireviz pn.yaml' command

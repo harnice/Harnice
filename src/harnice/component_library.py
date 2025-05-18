@@ -4,15 +4,18 @@ import xml.dom.minidom
 import os
 import csv
 import json
-import fileio
 import re
 from dotenv import load_dotenv, dotenv_values
-import instances_list
-import harnice_prechecker
 from os.path import basename
 from inspect import currentframe
 import shutil
 import filecmp
+from harnice import(
+    fileio,
+    harnice_prechecker,
+    instances_list,
+    instances_list
+)
 
 def pull_parts():
     load_dotenv()

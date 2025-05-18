@@ -1,5 +1,5 @@
 [project]
-name = "harnice_kenyonshutt"
+name = "harnice"
 version = "0.0.1"
 authors = [
   { name="Kenyon Shutt", email="kenyonshutt@gmail.com" },
@@ -14,5 +14,15 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/"
-Issues = "https://github.com/"
+Homepage = "https://github.com/kenyonshutt/harnice"
+Issues = "https://github.com/kenyonshutt/harnice/issues"
+
+[project.scripts]
+harnice = "harnice.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
