@@ -8,11 +8,13 @@ from os.path import basename
 from inspect import currentframe
 from collections import defaultdict
 from dotenv import load_dotenv
-import fileio
-import wirelist
-import svg_utils
-import instances_list
-import component_library
+from harnice import (
+    fileio,
+    wirelist,
+    svg_utils,
+    instances_list,
+    component_library
+)
 
 def prep_formboard_drawings(page_setup_contents):
     

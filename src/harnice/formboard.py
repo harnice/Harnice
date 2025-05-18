@@ -2,10 +2,12 @@ import json
 import os
 import random
 import math
-from collections import defaultdict, deque
-import instances_list
-import fileio
 import csv
+from collections import defaultdict, deque
+from harnice import (
+    instances_list,
+    fileio
+)
 
 def validate_nodes():
     instances = instances_list.read_instance_rows()

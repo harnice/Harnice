@@ -2,9 +2,11 @@ import yaml
 import json
 import csv
 from collections import defaultdict
-import fileio
 import os
 import math
+from harnice import (
+    fileio
+)
 
 INSTANCES_LIST_COLUMNS = [
     'instance_name',

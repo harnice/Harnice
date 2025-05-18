@@ -1,19 +1,18 @@
 import os
 from harnice import (
-    run_wireviz
-    wirelist
-    instances_list
-    svg_utils
-    flagnotes
-    formboard
-    harnice_prechecker
-    component_library
-    fileio
+    run_wireviz,
+    wirelist,
+    instances_list,
+    svg_utils,
+    flagnotes,
+    formboard,
+    harnice_prechecker,
+    component_library,
+    fileio,
     svg_outputs
-    os
 )
 
-def render_harness()::
+def render_harness():
     print("Thanks for using Harnice!")
     print()
     

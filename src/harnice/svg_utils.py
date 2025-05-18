@@ -3,11 +3,13 @@ import json
 import re
 import csv
 import shutil
+import subprocess
 from os.path import basename
 from inspect import currentframe
-import fileio
-import component_library
-import subprocess
+from harnice import(
+    fileio,
+    component_library,
+)
 
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     if os.path.exists(filepath):
