@@ -3,7 +3,7 @@ import wirelist
 import instances_list
 import svg_utils
 import flagnotes
-import formboard_functions
+import formboard
 import harnice_prechecker
 import component_library
 import fileio
@@ -59,7 +59,7 @@ def harnice():
         with open(fileio.name("formboard graph definition"), 'w') as f:
             pass  # Creates an empty file
 
-    formboard_functions.validate_nodes()
+    formboard.validate_nodes()
     instances_list.add_nodes_from_formboard()
     instances_list.add_segments_from_formboard()
         #validates all nodes exist
@@ -68,12 +68,12 @@ def harnice():
 
     print()
     print("Validating your formboard graph is structured properly...")
-    formboard_functions.map_cables_to_segments()
-    formboard_functions.detect_loops()
-    formboard_functions.detect_dead_segments()
+    formboard.map_cables_to_segments()
+    formboard.detect_loops()
+    formboard.detect_dead_segments()
         #validates segments are structured correctly
 
-    formboard_functions.generate_node_coordinates()
+    formboard.generate_node_coordinates()
         #starting from one node, recursively find lengths and angles of related segments to produce locations of each node
 
     instances_list.add_cable_lengths()
