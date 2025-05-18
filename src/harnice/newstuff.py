@@ -1,4 +1,15 @@
-def generate_new_connector_template():
+import os
+import json
+import xml.etree.ElementTree as ET
+from harnice import (
+    harnice_prechecker
+)
+
+def part(
+    library,
+    mfgmpn
+    ):
+
     global pn, rev
     pn = harnice_prechecker.pn_from_cwd()
     rev = harnice_prechecker.rev_from_cwd()
@@ -134,7 +145,11 @@ def generate_new_connector_template():
         file.write(pretty_svg)
 
 
-def make_new_tblock(filename):
+def tblock(
+    library,
+    name,
+    size
+    ):
     # === Parameters ===
     page_size = [11 * 96, 8.5 * 96]
     outer_margin = 20
