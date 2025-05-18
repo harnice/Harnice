@@ -103,15 +103,16 @@ def harnice():
 
     flagnotes.create_flagnote_matrix_for_all_instances(instances_list_data)
 
-    flagnote_matrix_data = flagnotes.read_flagnote_matrix_file()
     flagnotes.add_flagnote_content(
-        flagnote_matrix_data,
+        flagnotes.read_flagnote_matrix_file(),
         instances_list_data,
         rev_history_data,
         buildnotes_data
     )
 
-    #TODO: instances_list.add_flagnotes()
+    instances_list.add_flagnotes(
+        flagnotes.read_flagnote_matrix_file()
+    )
 
     #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()

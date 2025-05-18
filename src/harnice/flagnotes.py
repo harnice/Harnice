@@ -54,6 +54,7 @@ def create_flagnote_matrix_for_all_instances(instances_list_data):
                 text = ""
 
             flagnote = {
+                "note_type": "",
                 "location": location,
                 "supplier": supplier,
                 "design": design,
@@ -77,6 +78,7 @@ def add_flagnote_content(flagnote_matrix_data, instances_list_data, rev_history_
         # Add instance name as flagnote with "Rectangle" design
         if instance_name.strip():
             if flagnote_number < len(flagnotes):
+                flagnotes[flagnote_number]["note_type"] = "instance_name"
                 flagnotes[flagnote_number]["design"] = "Rectangle"
                 flagnotes[flagnote_number]["text"] = instance_name
                 flagnote_number += 1
@@ -85,6 +87,7 @@ def add_flagnote_content(flagnote_matrix_data, instances_list_data, rev_history_
         bom_line_number = instance.get("bom_line_number", "").strip()
         if bom_line_number:
             if flagnote_number < len(flagnotes):
+                flagnotes[flagnote_number]["note_type"] = "bom_line_number"
                 flagnotes[flagnote_number]["design"] = "Circle"
                 flagnotes[flagnote_number]["text"] = bom_line_number
                 flagnote_number += 1

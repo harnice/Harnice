@@ -4,12 +4,14 @@ import csv
 from collections import defaultdict
 import fileio
 import os
+import math
 
 INSTANCES_LIST_COLUMNS = [
     'instance_name',
     'bom_line_number',
     'mpn',
     'item_type',
+    'note_type',
     'parent_instance',
     'parent_csys',
     'supplier',
@@ -408,6 +410,37 @@ def add_absolute_angles_to_segments():
             instance["absolute_rotation"] = str(angle) if angle != "" else ""
 
     write_instance_rows(instances)
+
+def add_flagnotes(flagnote_matrix_data):
+    instances = read_instance_rows()
+    flagnotes_limit = 15
+
+    for instance in instances:
+        instance_name = instance.get("instance_name")
+        if instance_name not in flagnote_matrix_data:
+            continue
+
+        flagnotes = flagnote_matrix_data[instance_name].get("flagnotes", [])
+        for flagnote_number in range(min(flagnotes_limit, len(flagnotes))):
+            flagnote = flagnotes[flagnote_number]
+            if flagnote.get("text", "") == "":
+                continue
+
+            angle, distance = flagnote.get("location", [0, 0])
+            translate_x = math.cos(angle) * distance
+            translate_y = math.sin(angle) * distance
+
+            append_instance_row({
+                "instance_name": f"{instance_name}-flagnote{flagnote_number}",
+                "item_type": "Flagnote",
+                "note_type": flagnote.get("note_type", ""),
+                "parent_instance": instance_name,
+                "parent_csys": instance_name,
+                "supplier": flagnote.get("supplier", ""),
+                "translate_x": f"{translate_x:.6f}",
+                "translate_y": f"{translate_y:.6f}",
+                "absolute_rotation": "0"
+            })
 
 """
 template instances list modifier:
