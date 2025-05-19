@@ -55,7 +55,7 @@ def check_directory_format():
         rev = int(match.group(2))
         return True
     else:
-        check_subdirectory_format()
+        check_subdirectory_format(os.get.cwd())
         return False
 
 def generate_revision_history_tsv():
@@ -81,37 +81,31 @@ def generate_revision_history_tsv():
     
     print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: New {pn}-revision-history document added to parent PN directory.")
 
-def check_subdirectory_format():
+def check_subdirectory_format(dir_to_check):
     """
-    Checks if the current directory contains a subdirectory with the name {wildcard}-rev{number}.
-    Outputs 'true' if such a subdirectory exists, otherwise 'false'.
+    Checks if the dir_to_check directory contains a subdirectory with the name {wildcard}-rev{number}.
+    Raises a RuntimeError if no matching subdirectory is found.
     """
-    # Get the current directory name and list its subdirectories
-    current_dir = os.getcwd()
-    subdirectories = [d for d in os.listdir(current_dir) if os.path.isdir(os.path.join(current_dir, d))]
 
-    # Define the regex pattern for the format {wildcard}-rev{number}
+    subdirectories = [d for d in os.listdir(dir_to_check) if os.path.isdir(os.path.join(dir_to_check, d))]
+
     pattern = r"^(.*)-rev(\d+)$"
 
     subdirs_checked = 0
     subdirs_matched = 0
     for subdir in subdirectories:
         subdirs_checked += 1
-        # Match the pattern against the subdirectory name
-        match = re.match(pattern, subdir)
-        if match:
+        if re.match(pattern, subdir):
             subdirs_matched += 1
-    
+
+    src = f"from {basename(__file__)} > {currentframe().f_code.co_name}:"
+
     if subdirs_checked == 0:
-        #no subdirectories found
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: If you're currently in a PN directory, create a rev directory inside here. Read documentation on harnice file structure!")
-    if subdirs_checked > 0:
-        if(subdirs_matched == 0):
-            #subdirectories found, but none match
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: If you're currently in a PN directory, create a rev directory inside here. Read documentation on harnice file structure!")
-        else:
-            #subdirectories found, at least one matches
-            print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Please navigate to a valid rev folder (I see there is a valid one inside this one!)")
+        raise RuntimeError(f"{src} No subdirectories found. If you're currently in a PN directory, create a rev directory inside here. Read documentation on harnice file structure!")
+    if subdirs_checked > 0 and subdirs_matched == 0:
+        raise RuntimeError(f"{src} Subdirectories found, but none match '*-revX'. Create a proper rev directory. Read documentation on harnice file structure!")
+    if subdirs_matched > 0:
+        raise RuntimeError(f"{src} Please navigate to a valid rev folder (I see there is a valid one inside this one!)")
 
 def check_existence_of_rev_history_file_in_parent(pn):
     file_path = fileio.path("revision history")
@@ -239,3 +233,76 @@ def revision_info():
                 return {k: (v or "").strip() for k, v in row.items()}
 
     raise ValueError(f"[ERROR] No revision row found for rev '{fileio.partnumber('R')}' in revision history")
+
+
+
+def verify_revision_structure():
+
+    #first figure out where you are
+    cwd_name = name(os.path.getcwd())
+    cwd_path = os.path.getcwd()
+    parent_dirname = use os to find parent dir
+    parent_dirpath = use os to find parent dir path
+    children_dir = [] use os to add the content files or directories of the cwd into this list
+    part_path = ""
+    rev_path = ""
+    pn = ""
+    rev = 0
+
+    mode = "unknown"
+
+    #if you're working in a part file, this must be true:
+    if fr"{cwd_name}-rev*" in children_dir:
+        mode = "partfile"
+        part_path = cwd_path
+        pn = cwd_name
+
+    #if you're working in a revision file, this must be true:
+    if cwd_name == fr"{parent_dir_name}-rev*":
+        mode = "revisionfile"
+        part_path = parent_dirpath
+        rev_path = cwd
+        pn = parent_dirname
+        rev = cwd_name
+
+    if mode == "unknown":
+        print("Couldn't identify your file structure. Do you wish to create a new part out of this directory?")
+        print(f"Part number: {cwd_name}")
+        if cli.prompt(f"Hit enter to proceed or esc to terminate", default='y') == y:
+            mode = "partfile"
+            part_path = cwd_path
+            pn = cwd_name
+
+    #we should know at this point where the revision history file lives
+    revhistory_tsv_filepath = os.path.join(part_path, f"{pn}.revisionhistory.tsv")
+    #open it if it exists
+    if os.exists(revhistory_tsv_filepath):
+        open file at parent_dirpath with name f"{parent_dirname}.{revisionhistory}.tsv" 'r'
+            revision_history_data = get
+    #make a new rev1 line if doesn't exist
+    else:
+        today_date = datetime.date.today().isoformat()
+        row_values = [pn, "", rev, "", "", today_date, "", "", "", "", "Initial Release"]  # Only specific columns filled
+        row = '\t'.join(map(str, row_values)) + '\n'
+        with open(revhistory_tsv_filepath, 'a') as file:
+            file.write(row)
+        rev = 1
+        rev_path = os.path.join(part_path, f"{pn}-rev1")
+
+    if mode == "partfile":
+        for revision in revision_history_data:
+            if revision.get("rev") > highest_rev:
+                if revision.get("status") == "":
+                    highest_unreleased_rev = revision.get("rev")
+
+        if cli.prompt(f"Highest unreleased rev is {highest_unreleased_rev}. Hit to work on it, otherwise enter desired rev:", default = 'y') == y:
+            rev_name = fr"{parent_dir_name}-rev{highest_unreleased_rev}"
+
+    if mode == "revisionfile":
+        if rev exists in any row of revision.get("rev") == :
+            if not revision.get("status") == "":
+                raise("Status for this rev is not blank. Harnice uses this column to version control parts. Either remove the text from that column (unrelease) or 'cd ..' and rerun to make a new rev")
+
+    return mode, pn, rev
+
+    

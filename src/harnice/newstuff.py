@@ -21,6 +21,8 @@ def part(
     part_directory = os.path.join(library_path, "parts", mfgmpn)
 
     if os.path.exists(part_directory):
+        print("This part number already exists within this library.")
+        if os.path.exists()
         response = cli.prompt("This part number already exists within this library. Make a new revision?", "y").lower()
         if response == "y":
             print("Making a new revision")
