@@ -6,7 +6,7 @@ from harnice import (
     svg_utils,
     flagnotes,
     formboard,
-    harnice_prechecker,
+    rev_history,
     component_library,
     fileio,
     svg_outputs
@@ -17,9 +17,10 @@ def render_harness():
     print()
     
     #=============== CHECK REVISION HISTORY #===============
-    harnice_prechecker.harnice_prechecker()
+    fileio.verify_revision_structure()
         #reads file structure and revision history tsv if exists
         #writes a new revision history document if else
+    #TODO: make sure there's a yaml in the rev folder or generate a blank one?
 
     #=============== GENERATE FILE STRUCTURE #===============
     fileio.generate_structure()
@@ -100,7 +101,7 @@ def render_harness():
 
     #=============== HANDLING FLAGNOTES #===============
     instances_list_data = instances_list.read_instance_rows()
-    rev_history_data = harnice_prechecker.revision_info()
+    rev_history_data = rev_history.revision_info()
     buildnotes_data = ""
 
     flagnotes.create_flagnote_matrix_for_all_instances(instances_list_data)
@@ -122,7 +123,7 @@ def render_harness():
     #=============== REBUILDING OUTPUT SVG #===============
     page_setup_contents = svg_outputs.update_page_setup_json()
         #ensure page setup is defined, if not, make a basic one
-    revinfo = harnice_prechecker.revision_info()
+    revinfo = rev_history.revision_info()
 
     #prepare the building blocks as svgs
     svg_outputs.prep_formboard_drawings(page_setup_contents)

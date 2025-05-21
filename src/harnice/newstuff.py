@@ -3,10 +3,10 @@ import json
 import xml.etree.ElementTree as ET
 from dotenv import load_dotenv, dotenv_values
 from harnice import(
-    harnice_prechecker,
+    rev_history,
     cli
 )
-
+"""
 def part(
     library,
     mfgmpn
@@ -33,10 +33,10 @@ def part(
         os.makedirs(part_directory)
         print(f"Created new part directory at: {part_directory}")
 
-    pn = harnice_prechecker.pn_from_cwd()
-    rev = harnice_prechecker.rev_from_cwd()
+    pn = rev_history.pn_from_cwd()
+    rev = rev_history.rev_from_cwd()
 
-    if(harnice_prechecker.harnice_prechecker() == False):
+    if(rev_history.rev_history.) == False):
         return
 
     #======== MAKE NEW PART JSON ===========
@@ -83,9 +83,9 @@ def part(
     # Write new file
     with open(attributes_blank_json_path, "w") as json_file:
         json.dump(attributes_blank_json, json_file, indent=4)
-
+"""
 # Function to create the root SVG element
-#def make_new_part_svg():
+def make_new_part_svg():
     #add_defs()
     #add_named_view()
     #add_content()
