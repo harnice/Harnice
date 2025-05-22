@@ -8,6 +8,7 @@ from os.path import basename
 from inspect import currentframe
 import xml.etree.ElementTree as ET
 import re
+import csv
 from dotenv import load_dotenv, dotenv_values
 from harnice import(
     rev_history,
@@ -246,17 +247,17 @@ def verify_revision_structure():
     part_path = ""
     rev_path = ""
     pn = ""
-    rev = 0
+    rev = ""
     mode = "unknown"
 
-    mode = getmode()
-
     # === Mode: Partfile ===
-    if any(d.startswith(f"{cwd_name}-rev") for d in children_dir):
+    has_rev_dir = any(d.startswith(f"{cwd_name}-rev") for d in children_dir)
+    has_revision_history_file = os.path.exists(os.path.join(cwd_path, f"{cwd_name}.revision_history.tsv"))
+
+    if has_rev_dir or has_revision_history_file:
         mode = "partfile"
         part_path = cwd_path
         pn = cwd_name
-        print(f"You're working on part number: {pn}")
 
     # === Mode: Revisionfile ===
     elif cwd_name.startswith(f"{parent_dirname}-rev"):
@@ -265,68 +266,72 @@ def verify_revision_structure():
         rev_path = cwd_path
         pn = parent_dirname
         rev = int(cwd_name.split("-rev")[-1])
-        print(f"You're working on part number: {pn}")
 
     # === Mode: Unknown — Ask user if they want to proceed ===
     if mode == "unknown":
-        print("Couldn't identify your file structure. Do you wish to create a new part out of this directory?")
-        print(f"Proposed part number: {cwd_name}      Proposed new rev: 1")
-        if cli.prompt("Hit y or enter to proceed or any other key to terminate", default='y') == 'y':
-            mode = "partfile"
-            part_path = cwd_path
-            pn = cwd_name
-        else:
+        print(f"Can't identify a part number from your cwd. Make a PN out of it? {cwd_name}")
+        if not cli.prompt("enter to proceed, any key to exit", default="") == "":
             exit()
-    print(f"!!!{mode}")
+        rev = cli.prompt("Revision number: ", default=1)
+        if not str(rev).isdigit():
+            exit()
 
-    # === Revision History File Handling ===
-    revision_history_data = []
-    if not os.path.exists(path("revision history")):
+        mode = "partfile"
+        part_path = cwd_path
+        pn = cwd_name
+
+    # === find the revision history document
+    if not has_revision_history_file:
         rev_history.generate_revision_history_tsv()
 
-    # === If in Partfile mode, pick a rev ===
-    if mode == "partfile":
-        highest_rev = 0
-        highest_unreleased_rev = None
+    with open(path("revision history"), 'r', encoding='utf-8') as file:
+        reader = csv.DictReader(file, delimiter='\t')
+        revision_history_data = list(reader)
 
-        print("Revisions in tsv:")
-        for revision in revision_history_data:
-            r = int(revision.get("rev"))
-            if r > highest_rev:
-                highest_rev = r
-            if revision.get("status", "") == "":
-                highest_unreleased_rev = r
-            print(f"    {revision.get("rev")}   {revision.get("status")}")
-        print()
+    # === Step through TSV to see if there's a file for the current rev
+    rev_str = str(rev)
+    file_found = False
+    highest_unreleased_rev = ""
+    for line in revision_history_data:
+        try:
+            rev_val = int(line.get('rev'))
+            if rev_val > highest_unreleased_rev and line.get('status') == "":
+                highest_unreleased_rev = rev_val
+        except (TypeError, ValueError):
+            pass
 
-        if highest_unreleased_rev:
-            if cli.prompt(f"Highest unreleased rev is {highest_unreleased_rev}. Hit enter to work on it, otherwise enter desired rev:", default='y') == 'y':
-                rev = highest_unreleased_rev
-            else:
-                rev = int(cli.prompt("Enter desired revision number:"))
+        if line.get('rev') == rev_str:
+            file_found = True
+            break
+
+    if not file_found:
+        rev_dir = os.path.join(part_path, f"{pn}-rev{rev}")
+        if not os.path.exists(rev_dir):
+            os.makedirs(rev_dir)
+
+    rev_dirs = [
+        d for d in os.listdir(part_path)
+        if re.fullmatch(rf"{re.escape(pn)}-rev(\d+)", d)
+    ]
+    line_found = False
+    for rev_dir in rev_dirs:
+        for line in revision_history_data:
+            if line.get('rev') == dir_rev:
+                line_found = True
+                break
+    if not line_found:
+        rev_history.append_new_row(rev)
+
+    if rev == "":
+        if highest_unreleased_rev == "":
+            if rev_dirs == []:
+                rev = cli.prompt("No revisions found. Start with rev1?", default=1)
         else:
-            rev = highest_rev + 1
+            rev = cli.prompt("Which rev would you like to work on? Highest unreleased?", default=highest_unreleased_rev)
 
-        rev_path = os.path.join(part_path, f"{pn}-rev{rev}")
-
-    # === If in Revisionfile mode, validate status ===
-    elif mode == "revisionfile":
-        found = False
-        for revision in revision_history_data:
-            if str(revision.get("rev", "")) == str(rev):
-                found = True
-                if revision.get("status", "") != "":
-                    raise RuntimeError(f"[ERROR] Status for rev{rev} is not blank. Either unrelease it or `cd ..` and run harnice to create a new rev.")
-        if not found:
-            raise RuntimeError(f"[ERROR] Revision {rev} not found in {pn}.revisionhistory.tsv. We only add rows automatically if you're in rev1 but since you're not in rev1 please update manually.")
-
-    if rev_history.find_rev_entry_in_tsv(rev) == False:
-        if rev == 1:
-            message = cli.prompt("Enter a description for this rev", default="Initial release")
-        else:
-            print("We noticed you're working on a higher rev but it's not recorded in the rev history sheet.")
-            message = cli.prompt("    Enter a description for this rev")
-        rev_history.append_new_row(rev, message)
+    print(f"You're working on...")
+    print(f"part number:    {pn}")
+    print(f"   revision:    {rev}")
 
     return mode, pn, rev
 

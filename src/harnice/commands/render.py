@@ -14,7 +14,6 @@ from harnice import (
 
 def render_harness():
     print("Thanks for using Harnice!")
-    print()
     
     #=============== CHECK REVISION HISTORY #===============
     fileio.verify_revision_structure()
