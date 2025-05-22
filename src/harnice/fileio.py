@@ -234,10 +234,16 @@ def name(target_value):
     return recursive_search(harnice_file_structure())
 
 def verify_revision_structure():
+    import os
+    import csv
+    import re
+    from harnice import cli, fileio, rev_history
+    from os.path import basename, dirname
+
     global mode
     global pn
     global rev
-    
+
     cwd_path = os.getcwd()
     cwd_name = os.path.basename(cwd_path)
     parent_dirpath = os.path.dirname(cwd_path)
@@ -247,7 +253,7 @@ def verify_revision_structure():
     part_path = ""
     rev_path = ""
     pn = ""
-    rev = ""
+    rev = None
     mode = "unknown"
 
     # === Mode: Partfile ===
@@ -265,73 +271,106 @@ def verify_revision_structure():
         part_path = parent_dirpath
         rev_path = cwd_path
         pn = parent_dirname
-        rev = int(cwd_name.split("-rev")[-1])
+        try:
+            rev = int(cwd_name.split("-rev")[-1])
+        except ValueError:
+            rev = None
 
-    # === Mode: Unknown — Ask user if they want to proceed ===
+    # === Mode: Unknown — Ask user ===
     if mode == "unknown":
         print(f"Can't identify a part number from your cwd. Make a PN out of it? {cwd_name}")
-        if not cli.prompt("enter to proceed, any key to exit", default="") == "":
+        if cli.prompt("Enter to proceed, any key to exit", default="") != "":
             exit()
-        rev = cli.prompt("Revision number: ", default=1)
-        if not str(rev).isdigit():
+        rev_input = cli.prompt("Revision number", default="1")
+        if not rev_input.isdigit():
             exit()
-
+        rev = int(rev_input)
         mode = "partfile"
         part_path = cwd_path
         pn = cwd_name
 
-    # === find the revision history document
+    # === Ensure revision history exists
     if not has_revision_history_file:
         rev_history.generate_revision_history_tsv()
 
-    with open(path("revision history"), 'r', encoding='utf-8') as file:
+    with open(fileio.path("revision history"), 'r', encoding='utf-8') as file:
         reader = csv.DictReader(file, delimiter='\t')
         revision_history_data = list(reader)
 
-    # === Step through TSV to see if there's a file for the current rev
-    rev_str = str(rev)
-    file_found = False
-    highest_unreleased_rev = ""
-    for line in revision_history_data:
+    # === Find revision folders
+    revs_in_dirs = []
+    for d in os.listdir(part_path):
+        match = re.fullmatch(rf"{re.escape(pn)}-rev(\d+)", d)
+        if match:
+            revs_in_dirs.append(int(match.group(1)))
+    revs_in_dirs.sort()
+
+    # === Find revisions from TSV
+    revs_in_tsv = []
+    for row in revision_history_data:
         try:
-            rev_val = int(line.get('rev'))
-            if rev_val > highest_unreleased_rev and line.get('status') == "":
-                highest_unreleased_rev = rev_val
-        except (TypeError, ValueError):
-            pass
+            revs_in_tsv.append(int(row.get('rev', '')))
+        except (ValueError, TypeError):
+            continue
+    revs_in_tsv.sort()
 
-        if line.get('rev') == rev_str:
-            file_found = True
-            break
+    # === Choose revision
+    chosen_rev_message = ""
+    if rev is None:
+        # Preference 1: highest unreleased in TSV
+        highest_unreleased_rev = None
+        for row in revision_history_data:
+            try:
+                r = int(row['rev'])
+                if row.get('status', '') == "":
+                    highest_unreleased_rev = r
+            except (TypeError, ValueError):
+                continue
 
-    if not file_found:
-        rev_dir = os.path.join(part_path, f"{pn}-rev{rev}")
-        if not os.path.exists(rev_dir):
-            os.makedirs(rev_dir)
+        if highest_unreleased_rev is not None:
+            rev = highest_unreleased_rev
+            chosen_rev_message = f"rev {rev} is the highest unreleased rev in the tsv"
 
-    rev_dirs = [
-        d for d in os.listdir(part_path)
-        if re.fullmatch(rf"{re.escape(pn)}-rev(\d+)", d)
-    ]
-    line_found = False
-    for rev_dir in rev_dirs:
-        for line in revision_history_data:
-            if line.get('rev') == dir_rev:
-                line_found = True
-                break
-    if not line_found:
-        rev_history.append_new_row(rev)
-
-    if rev == "":
-        if highest_unreleased_rev == "":
-            if rev_dirs == []:
-                rev = cli.prompt("No revisions found. Start with rev1?", default=1)
+        # Choosing not to select latest dir rev as an option because we don't know its status
         else:
-            rev = cli.prompt("Which rev would you like to work on? Highest unreleased?", default=highest_unreleased_rev)
+            # Preference 2: ask user
+            existing_revs = []
+            for row in revision_history_data:
+                try:
+                    r = int(row['rev'])
+                    existing_revs.append(r)
+                except (TypeError, ValueError):
+                    continue
+
+            proposed_new_rev_number = max(existing_revs, default=0) + 1
+            print(f"Proposed revision is {proposed_new_rev_number} because all lower revs do not have a clear status.")
+            rev_input = cli.prompt("Choose revision", default=str(proposed_new_rev_number))
+            if rev_input.isdigit():
+                rev = int(rev_input)
+            else:
+                print("Invalid revision. Aborting.")
+                exit()
+
+    # === Abort if rev status is not clear
+    for row in revision_history_data:
+        if row.get('rev') == str(rev):
+            status = row.get('status', '')
+            if status != "":
+                raise RuntimeError(f"Revision {rev} has status '{status}'. Harnice can only work on revs with a clear status.")
+            break
+            
+    # === Create revision folder if it doesn't exist
+    rev_folder = os.path.join(part_path, f"{pn}-rev{rev}")
+    if not os.path.exists(rev_folder):
+        os.makedirs(rev_folder)
+
+    # === Add revision to TSV if missing
+    if rev not in revs_in_tsv:
+        rev_history.append_new_row(rev)
 
     print(f"You're working on...")
     print(f"part number:    {pn}")
-    print(f"   revision:    {rev}")
+    print(f"   revision:    {rev}           chosen because: {chosen_rev_message}")
 
     return mode, pn, rev
 
