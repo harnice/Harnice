@@ -11,15 +11,15 @@ def main():
     if args.render:
         item_type = args.new
         if item_type == "harness":
-            render.render_harness()
+            render.harness()
         elif item_type == "system":
-            render.run_system()
+            render.system()
         elif item_type == "part":
             render.undefined()
         elif item_type == "tblock":
-            render.undefined()
+            render.tblock()
         elif item_type == "titleblock":
-            render.undefined()
+            render.tblock()
         elif item_type == "flagnote":
             render.undefined()
 
