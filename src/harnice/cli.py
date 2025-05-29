@@ -19,8 +19,10 @@ def main():
             render.harness()
         elif render_type == "system":
             render.system()
-        elif render_type in {"part", "flagnote"}:
-            render.undefined()
+        elif render_type == "part":
+            render.part()
+        elif render_type == "flagnote":
+            render.flagnote()
         elif render_type in {"tblock", "titleblock"}:
             render.tblock()
         else:

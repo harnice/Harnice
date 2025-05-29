@@ -143,7 +143,7 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}.drawing.svg":"drawing",
             f"{partnumber("pn-rev")}.attributes.json":"attributes"
         }
-    elif product_type == "tblock":
+    elif product_type in ("tblock", "titleblock"):
         return {
             f"{partnumber("pn-rev")}.params.json":"params",
             f"{partnumber("pn-rev")}.drawing.svg":"drawing",

@@ -301,5 +301,102 @@ def tblock():
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
     with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
         f.write(pretty)
+
+    # === Write attributes file ===
+    periphery_json = {
+        "periphery_locs": {
+            "bom_loc": [tb_origin_x, tb_origin_y]  # same as bottom-left of titleblock
+        },
+        "page_size_in": [
+            round(p["page_size"][0] / 96, 3),
+            round(p["page_size"][1] / 96, 3)
+        ]
+    }
+
+    with open(fileio.path("attributes"), "w", encoding="utf-8") as f:
+        json.dump(periphery_json, f, indent=2)
+
+def part():
+    #======== MAKE NEW PART JSON ===========
+    attributes_blank_json = {
+        "plotting_info": {
+            "csys_parent_prefs": [
+                ".node"
+            ],
+            "component_translate_inches": {
+                "translate_x": 0,
+                "translate_y": 0,
+                "rotate_csys": 0
+            }
+        },
+        "tooling_info": {
+            "tools": []
+        },
+        "build_notes": [],
+        "flagnote_locations": [
+            {"angle": 0, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 15, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -15, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 30, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -30, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 45, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -45, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 60, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -60, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -75, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 75, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -90, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 90, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -105, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": 105, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": -120, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+        ]
+    }
+
+    fileio.verify_revision_structure()
+
+    if os.path.exists(fileio.path("attributes")):
+        os.remove(fileio.path("attributes"))
+
+    with open(fileio.path("attributes"), "w") as json_file:
+        json.dump(attributes_blank_json, json_file, indent=4)
+
+    #======== MAKE NEW PART SVG ===========
+    svg_width = 400
+    svg_height = 400
+
+    # === SVG Init ===
+    svg = ET.Element('svg', {
+        "xmlns": "http://www.w3.org/2000/svg",
+        "version": "1.1",
+        "width": str(svg_width),
+        "height": str(svg_height),
+    })
+
+    # === Group Start ===
+    contents_group = ET.SubElement(svg, "g", {"id": "tblock-contents-start"})
+
+    # === Rectangle ===
+    ET.SubElement(contents_group, "rect", {
+        "x": str(0),
+        "y": str(-48),
+        "width": str(96),
+        "height": str(96),
+        "fill": "#ccc",
+        "stroke": "black",
+        "stroke-width": "1"
+    })
+
+    # === Group End ===
+    ET.SubElement(svg, "g", {"id": "tblock-contents-end"})
+
+    # === Write SVG ===
+    rough_string = ET.tostring(svg, encoding="utf-8")
+    pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
+
+    with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
+        f.write(pretty)
+
+
 def system():
     print("System-level rendering not yet implemented.")
