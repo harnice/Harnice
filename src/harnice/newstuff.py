@@ -8,7 +8,7 @@ from xml.dom import minidom
 from harnice import(
     rev_history,
     cli,
-    fileio,
+    fileio
 )
 from harnice.commands import render
 
@@ -73,12 +73,10 @@ def part(library, mfgmpn):
         ]
     }
 
-    attributes_blank_json_path = os.path.join(fileio.rev_directory(), f"{mfgmpn}-attributes.json")
+    if os.path.exists(fileio.path("attributes")):
+        os.remove(fileio.path("attributes"))
 
-    if os.path.exists(attributes_blank_json_path):
-        os.remove(attributes_blank_json_path)
-
-    with open(attributes_blank_json_path, "w") as json_file:
+    with open(fileio.path("attributes"), "w") as json_file:
         json.dump(attributes_blank_json, json_file, indent=4)
 
     #======== MAKE NEW PART SVG ===========
@@ -113,9 +111,8 @@ def part(library, mfgmpn):
     # === Write SVG ===
     rough_string = ET.tostring(svg, encoding="utf-8")
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
-    attributes_blank_json_path = os.path.join(fileio.rev_directory(), f"{mfgmpn}-drawing.svg")
 
-    with open(attributes_blank_json_path, "w", encoding="utf-8") as f:
+    with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
         f.write(pretty)
 
     # === Write attributes file ===
@@ -159,35 +156,6 @@ def tblock(library, name):
 
     cwd = os.getcwd()
     os.chdir(tblock_directory)
-
-    param_path = os.path.join(tblock_directory, f"{name}-rev1", f"{name}-rev1.params.json")
-    svg_path = os.path.join(tblock_directory, f"{name}-rev1", f"{name}-rev1.params.json")
-
-    # === Default Parameters ===
-    params = {
-        "page_size": [11 * 96, 8.5 * 96],
-        "outer_margin": 20,
-        "inner_margin": 40,
-        "tick_spacing": 96,
-        "tb_origin_offset": [398, 48],
-        "row_heights": [24, 24],
-        "column_widths": [
-            [264, 50, 84],
-            [73, 126, 139, 60]
-        ],
-        "label_offset": [2, 7],
-        "key_offset_y": 16,
-        "cell_texts": [
-            [("DESCRIPTION", "tblock-key-desc"), ("REV", "tblock-key-rev"), ("RELEASE TICKET", "tblock-key-releaseticket")],
-            [("SCALE", "tblock-key-scale"), ("PART NUMBER", "tblock-key-pn"),
-             ("DRAWN BY", "tblock-key-drawnby"), ("SHEET", "tblock-key-sheet")]
-        ]
-    }
-
-    # === If param file doesn't exist, create it ===
-    if not os.path.exists(param_path):
-        with open(param_path, "w", encoding="utf-8") as f:
-            json.dump(params, f, indent=2)
 
     # === carry out the rest in render ===
     render.tblock()

@@ -15,6 +15,14 @@ from harnice import(
     cli
 )
 
+#standard punctuation:
+    #  .  separates between name hierarchy levels
+    #  _  means nothing, basically a space character
+    #  -  if multiple instances are found at the same hierarchy level with the same name, 
+                #this separates name from unique instance identifier
+
+product_type = ""
+
 pn = ""
 rev = 0
 #fileio mode:
@@ -38,11 +46,9 @@ def rev_directory():
     else:
         raise ValueError(f"Unknown fileio mode: {mode}")
 
-#standard punctuation:
-    #  .  separates between name hierarchy levels
-    #  _  means nothing, basically a space character
-    #  -  if multiple instances are found at the same hierarchy level with the same name, 
-                #this separates name from unique instance identifier
+def set_product_type(x):
+    global product_type
+    product_type = x
 
 def partnumber(format):
     #Returns part numbers in various formats based on the current working directory
@@ -85,45 +91,63 @@ def harnice_file_structure():
     #filename is the actual file name with a suffix
     #filekey is the shorthand reference for it with no suffix
 
-    return {
-            "editable_component_data":{},
-            "support_do_not_edit": {
-                "lists":{
-                    f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
-                    f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
-                    f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
-                    f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted"
+    if product_type == "harness":
+        return {
+                "editable_component_data":{},
+                "support_do_not_edit": {
+                    "lists":{
+                        f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
+                        f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
+                        f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
+                        f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted"
+                    },
+                    "formboard_data": {
+                        f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
+                        f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
+                    },
+                    "svg_generated": {
+                        "tblock_svgs":{},
+                        "formboard_svgs":{},
+                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
+                        f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
+                        f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
+                        f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
+                        f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
+                        f"{partnumber("pn-rev")}.master.svg":"master svg"
+                    },
+                    f"{partnumber("pn-rev")}.flagnotes.json":"flagnotes json"
                 },
-                "formboard_data": {
-                    f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
-                    f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
+                "wireviz_outputs":{
+                    f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
+                    f"{partnumber("pn-rev")}.html":"wireviz html",
+                    f"{partnumber("pn-rev")}.png":"wireviz png",
+                    f"{partnumber("pn-rev")}.svg":"wireviz svg"
                 },
-                "svg_generated": {
-                    "tblock_svgs":{},
-                    "formboard_svgs":{},
-                    f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
-                    f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                    f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
-                    f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                    f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                    f"{partnumber("pn-rev")}.master.svg":"master svg"
+                "page_setup":{
+                    f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
                 },
-                f"{partnumber("pn-rev")}.flagnotes.json":"flagnotes json"
-            },
-            "wireviz_outputs":{
-                f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
-                f"{partnumber("pn-rev")}.html":"wireviz html",
-                f"{partnumber("pn-rev")}.png":"wireviz png",
-                f"{partnumber("pn-rev")}.svg":"wireviz svg"
-            },
-            "page_setup":{
-                f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
-            },
-            f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
-            f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
-            f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
-            f"{partnumber("pn-rev")}.yaml":"harness yaml",
-            f"{partnumber("pn-rev")}.harness_requirements.json":"harness requirements"
+                f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
+                f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
+                f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
+                f"{partnumber("pn-rev")}.yaml":"harness yaml",
+                f"{partnumber("pn-rev")}.harness_requirements.json":"harness requirements"
+            }
+    elif product_type == "part":
+        return {
+            f"{partnumber("pn-rev")}.drawing.svg":"drawing",
+            f"{partnumber("pn-rev")}.attributes.json":"attributes"
+        }
+    elif product_type == "flagnote":
+        return {
+            f"{partnumber("pn-rev")}.params.json":"params",
+            f"{partnumber("pn-rev")}.drawing.svg":"drawing",
+            f"{partnumber("pn-rev")}.attributes.json":"attributes"
+        }
+    elif product_type == "tblock":
+        return {
+            f"{partnumber("pn-rev")}.params.json":"params",
+            f"{partnumber("pn-rev")}.drawing.svg":"drawing",
+            f"{partnumber("pn-rev")}.attributes.json":"attributes"
         }
 
 def generate_structure():

@@ -144,13 +144,37 @@ def harness():
         #makes a PDF out of each svg in page setup
 
 def tblock():
+    # === Default Parameters ===
+    params = {
+        "page_size": [11 * 96, 8.5 * 96],
+        "outer_margin": 20,
+        "inner_margin": 40,
+        "tick_spacing": 96,
+        "tb_origin_offset": [398, 48],
+        "row_heights": [24, 24],
+        "column_widths": [
+            [264, 50, 84],
+            [73, 126, 139, 60]
+        ],
+        "label_offset": [2, 7],
+        "key_offset_y": 16,
+        "cell_texts": [
+            [("DESCRIPTION", "tblock-key-desc"), ("REV", "tblock-key-rev"), ("RELEASE TICKET", "tblock-key-releaseticket")],
+            [("SCALE", "tblock-key-scale"), ("PART NUMBER", "tblock-key-pn"),
+             ("DRAWN BY", "tblock-key-drawnby"), ("SHEET", "tblock-key-sheet")]
+        ]
+    }
+
     fileio.verify_revision_structure()
 
-    param_path = os.path.join(fileio.rev_directory(), f"{fileio.partnumber("pn-rev")}.params.json")
-    svg_path = os.path.join(fileio.rev_directory(), f"{fileio.partnumber("pn-rev")}.svg")
+    # === If param file doesn't exist, create it ===
+    if not os.path.exists(fileio.path("params")):
+        with open(fileio.path("params"), "w", encoding="utf-8") as f:
+            json.dump(params, f, indent=2)
+        #if it does exist, ignore it
 
     # === Load parameters from JSON ===
-    with open(param_path, "r", encoding="utf-8") as f:
+    with open(fileio.path("params"), "r", encoding="utf-8") as f:
         p = json.load(f)
 
     width, height = p["page_size"]
@@ -275,7 +299,7 @@ def tblock():
     ET.SubElement(svg, "g", {"id": "tblock-contents-end"})
     rough_string = ET.tostring(svg, encoding="utf-8")
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
-    with open(svg_path, "w", encoding="utf-8") as f:
+    with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
         f.write(pretty)
 def system():
     print("System-level rendering not yet implemented.")

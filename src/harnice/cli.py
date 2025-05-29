@@ -1,4 +1,7 @@
 import argparse
+from harnice import (
+    fileio
+)
 from harnice.commands import render, new
 
 def main():
@@ -9,36 +12,36 @@ def main():
     args = parser.parse_args()
 
     if args.render:
-        item_type = args.new
-        if item_type == "harness":
-            render.harness()
-        elif item_type == "system":
-            render.system()
-        elif item_type == "part":
-            render.undefined()
-        elif item_type == "tblock":
-            render.tblock()
-        elif item_type == "titleblock":
-            render.tblock()
-        elif item_type == "flagnote":
-            render.undefined()
+        render_type = args.render.lower()
+        fileio.set_product_type(render_type)
 
-    if args.new:
-        item_type = args.new
-        if item_type == "harness":
+        if render_type == "harness":
+            render.harness()
+        elif render_type == "system":
+            render.system()
+        elif render_type in {"part", "flagnote"}:
+            render.undefined()
+        elif render_type in {"tblock", "titleblock"}:
+            render.tblock()
+        else:
+            print(f"Unknown type for --render: {render_type}")
+
+    elif args.new:
+        new_type = args.new.lower()
+        fileio.set_product_type(new_type)
+
+        if new_type == "harness":
             new.create_harness()
-        if item_type == "system":
+        elif new_type == "system":
             new.create_system()
-        elif item_type == "part":
+        elif new_type == "part":
             new.create_part("")
-        elif item_type == "tblock":
+        elif new_type in {"tblock", "titleblock"}:
             new.create_titleblock()
-        elif item_type == "titleblock":
-            new.create_titleblock()
-        elif item_type == "flagnote":
+        elif new_type == "flagnote":
             new.create_flagnote()
         else:
-            print(f"Unknown type for --new: {item_type}")
+            print(f"Unknown type for --new: {new_type}")
 
 def prompt(text, default=None):
     p = f"{text}"
