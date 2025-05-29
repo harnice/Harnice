@@ -2,42 +2,39 @@ import os
 import json
 import xml.etree.ElementTree as ET
 from dotenv import load_dotenv, dotenv_values
+import os
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
 from harnice import(
     rev_history,
-    cli
+    cli,
+    fileio
 )
-"""
-def part(
-    library,
-    mfgmpn
-    ):
 
+def part(library, mfgmpn):
     load_dotenv()
 
     library_path = os.getenv(library)
     if not library_path:
-        raise ValueError(f"Environment variable '{library}' is not set.")
+        raise ValueError(
+            f"Environment variable '{library}' is not set. Add the path to this library from your harnice root directory."
+        )
 
     part_directory = os.path.join(library_path, "parts", mfgmpn)
 
     if os.path.exists(part_directory):
-        print("This part number already exists within this library.")
-        if os.path.exists()
-        response = cli.prompt("This part number already exists within this library. Make a new revision?", "y").lower()
-        if response == "y":
-            print("Making a new revision")
-            # TODO: new revision logic
+        if cli.prompt("File already exists. Do you want to remove it?", "no") == "no":
+            print("Exiting harnice")
+            exit()
         else:
-            print("Figure out what to do next")
-    else:
-        os.makedirs(part_directory)
-        print(f"Created new part directory at: {part_directory}")
+            import shutil
+            shutil.rmtree(part_directory)
+    
+    os.makedirs(part_directory)
 
-    pn = rev_history.pn_from_cwd()
-    rev = rev_history.rev_from_cwd()
-
-    if(rev_history.rev_history.) == False):
-        return
+    cwd = os.getcwd()
+    os.chdir(part_directory)
+    fileio.verify_revision_structure()
 
     #======== MAKE NEW PART JSON ===========
     attributes_blank_json = {
@@ -75,104 +72,52 @@ def part(
         ]
     }
 
-    attributes_blank_json_path = os.path.join(os.getcwd(), f"{pn}-attributes.json")
+    attributes_blank_json_path = os.path.join(fileio.rev_directory(), f"{mfgmpn}-attributes.json")
 
     if os.path.exists(attributes_blank_json_path):
         os.remove(attributes_blank_json_path)
 
-    # Write new file
     with open(attributes_blank_json_path, "w") as json_file:
         json.dump(attributes_blank_json, json_file, indent=4)
-"""
-# Function to create the root SVG element
-def make_new_part_svg():
-    #add_defs()
-    #add_named_view()
-    #add_content()
-    #save_svg()
 
-    width=500
-    height=500
-    svg = ET.Element("svg", {
-        "version": "1.1",
-        "id": "svg1",
+    #======== MAKE NEW PART SVG ===========
+    svg_width = 400
+    svg_height = 400
+
+    # === SVG Init ===
+    svg = ET.Element('svg', {
         "xmlns": "http://www.w3.org/2000/svg",
-        "xmlns:svg": "http://www.w3.org/2000/svg",
-        "xmlns:inkscape": "http://www.inkscape.org/namespaces/inkscape",
-        "xmlns:sodipodi": "http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+        "version": "1.1",
+        "width": str(svg_width),
+        "height": str(svg_height),
     })
 
-    #add a defs section with a rectangle and marker
-    defs = ET.SubElement(svg, "defs", {"id": "defs1"})
+    # === Group Start ===
+    contents_group = ET.SubElement(svg, "g", {"id": "tblock-contents-start"})
 
-    # Add rectangle
-    ET.SubElement(defs, "rect", {
-        "x": "197.53245",
-        "y": "17.037839",
-        "width": "138.96487",
-        "height": "107.55136",
-        "id": "rect1"
+    # === Rectangle ===
+    ET.SubElement(contents_group, "rect", {
+        "x": str(0),
+        "y": str(-48),
+        "width": str(96),
+        "height": str(96),
+        "fill": "#ccc",
+        "stroke": "black",
+        "stroke-width": "1"
     })
 
-    # Add marker
-    marker = ET.SubElement(defs, "marker", {
-        "style": "overflow:visible",
-        "id": "ConcaveTriangle-80",
-        "refX": "0",
-        "refY": "0",
-        "orient": "auto-start-reverse",
-        "markerWidth": "1",
-        "markerHeight": "1",
-        "viewBox": "0 0 1 1"
-    })
-    ET.SubElement(marker, "path", {
-        "transform": "scale(0.7)",
-        "d": "M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z",
-        "style": "fill:context-stroke;fill-rule:evenodd;stroke:none",
-        "id": "path7-4"
-    })
+    # === Group End ===
+    ET.SubElement(svg, "g", {"id": "tblock-contents-end"})
 
-    #add a named view
-    ET.SubElement(svg, "sodipodi:namedview", {
-        "id": "namedview1",
-        "pagecolor": "#ffffff",
-        "bordercolor": "#000000",
-        "borderopacity": "0.25",
-        "inkscape:showpageshadow": "2",
-        "inkscape:pageopacity": "0.0",
-        "inkscape:deskcolor": "#d1d1d1",
-    })
+    # === Write SVG ===
+    rough_string = ET.tostring(svg, encoding="utf-8")
+    pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
+    attributes_blank_json_path = os.path.join(fileio.rev_directory(), f"{mfgmpn}-drawing.svg")
 
-    #add content groups with parametrized buildnotes
-    contents = ET.SubElement(svg, "g", {"id": "connector-drawing-contents-start"})
+    with open(attributes_blank_json_path, "w", encoding="utf-8") as f:
+        f.write(pretty)
 
-    drawing_group = ET.SubElement(contents, "g", {"id": "connector-drawing"})
-    add_drawing = ET.SubElement(drawing_group, "g", {"id": "add-drawing-here"})
-
-    # Add placeholder circle
-    ET.SubElement(add_drawing, "circle", {
-        "style": "fill:#000000;stroke:#000000;stroke-width:0.015;stroke-dasharray:0.18, 0.18",
-        "id": "path1",
-        "cx": "0",
-        "cy": "0",
-        "r": "10",
-        "inkscape:label": "placeholder-deleteme"
-    })
-
-    contents = ET.SubElement(svg, "g", {"id": "connector-drawing-contents-end"})
-
-    #save the SVG to a file
-    tree = ET.ElementTree(svg)
-    # Convert the ElementTree to a string
-    rough_string = ET.tostring(tree.getroot(), encoding="UTF-8")
-    # Parse the string into a DOM object
-    parsed = xml.dom.minidom.parseString(rough_string)
-    # Pretty-print the DOM object
-    pretty_svg = parsed.toprettyxml(indent="  ")
-    # Write the formatted SVG to a file
-    with open(filename, "w", encoding="UTF-8") as file:
-        file.write(pretty_svg)
-
+    os.chdir(cwd)
 
 def tblock(
     library,

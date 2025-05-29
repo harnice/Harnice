@@ -4,23 +4,39 @@ from harnice.commands import render, new
 def main():
     parser = argparse.ArgumentParser(prog="harnice", description="Wire harness automation CLI")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-r", "--render", choices=["harness", "system"], help="Render harness or system")
-    group.add_argument("-n", "--new", nargs=2, metavar=("TYPE", "VALUE"), help="Create a new component (part, tblock, flagnote)")
+    group.add_argument("-r", "--render", help="Render harness or system")
+    group.add_argument("-n", "--new", help="Create a new component (part, tblock, flagnote)")
     args = parser.parse_args()
 
-    if args.render == "harness":
-        render.render_harness()
-    elif args.render == "system":
-        render.run_system()
+    if args.render:
+        item_type = args.new
+        if item_type == "harness":
+            render.render_harness()
+        elif item_type == "system":
+            render.run_system()
+        elif item_type == "part":
+            render.undefined()
+        elif item_type == "tblock":
+            render.undefined()
+        elif item_type == "titleblock":
+            render.undefined()
+        elif item_type == "flagnote":
+            render.undefined()
 
     if args.new:
-        item_type, value = args.new
-        if item_type == "part":
-            new.create_part(mfgmpn=value)
+        item_type = args.new
+        if item_type == "harness":
+            new.create_harness()
+        if item_type == "system":
+            new.create_system()
+        elif item_type == "part":
+            new.create_part("")
         elif item_type == "tblock":
-            new.create_titleblock(name=value)
+            new.create_titleblock()
+        elif item_type == "titleblock":
+            new.create_titleblock()
         elif item_type == "flagnote":
-            new.create_flagnote(description=value)
+            new.create_flagnote()
         else:
             print(f"Unknown type for --new: {item_type}")
 

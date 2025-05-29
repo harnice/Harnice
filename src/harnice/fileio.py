@@ -234,12 +234,6 @@ def name(target_value):
     return recursive_search(harnice_file_structure())
 
 def verify_revision_structure():
-    import os
-    import csv
-    import re
-    from harnice import cli, fileio, rev_history
-    from os.path import basename, dirname
-
     global mode
     global pn
     global rev
@@ -278,7 +272,7 @@ def verify_revision_structure():
 
     # === Mode: Unknown — Ask user ===
     if mode == "unknown":
-        print(f"Can't identify a part number from your cwd. Make a PN out of it? {cwd_name}")
+        print(f"Can't identify a part number from your cwd. Make a PN out of it? Curr working dir: {cwd_name}")
         if cli.prompt("Enter to proceed, any key to exit", default="") != "":
             exit()
         rev_input = cli.prompt("Revision number", default="1")
@@ -293,7 +287,7 @@ def verify_revision_structure():
     if not has_revision_history_file:
         rev_history.generate_revision_history_tsv()
 
-    with open(fileio.path("revision history"), 'r', encoding='utf-8') as file:
+    with open(path("revision history"), 'r', encoding='utf-8') as file:
         reader = csv.DictReader(file, delimiter='\t')
         revision_history_data = list(reader)
 
@@ -358,7 +352,7 @@ def verify_revision_structure():
             if status != "":
                 raise RuntimeError(f"Revision {rev} has status '{status}'. Harnice can only work on revs with a clear status.")
             break
-            
+
     # === Create revision folder if it doesn't exist
     rev_folder = os.path.join(part_path, f"{pn}-rev{rev}")
     if not os.path.exists(rev_folder):
