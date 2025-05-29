@@ -17,12 +17,16 @@ def create_part(mfgmpn):
 
 def create_titleblock():
     library = cli.prompt("Which library do you want this in?", "public")
-    name = cli.prompt("What would you like to call it?")
-    size = cli.prompt("Size (e.g. 11x17, A4)", "11x17")
+    
+    while True:
+        name = cli.prompt("What would you like to call it?")
+        if name:
+            break
+        print("Name can't be blank. Please enter a value.")
+
     newstuff.tblock(
         library,
-        name,
-        size
+        name
     )
 
 def create_flagnote():

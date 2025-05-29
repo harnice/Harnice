@@ -117,33 +117,83 @@ def part(library, mfgmpn):
     with open(attributes_blank_json_path, "w", encoding="utf-8") as f:
         f.write(pretty)
 
+    # === Write attributes file ===
+    periphery_json = {
+        "periphery_locs": {
+            "bom_loc": [tb_origin_x, tb_origin_y]  # same as bottom-left of titleblock
+        },
+        "page_size_in": [
+            round(p["page_size"][0] / 96, 3),
+            round(p["page_size"][1] / 96, 3)
+        ]
+    }
+
+    periphery_path = os.path.join(fileio.rev_directory(), f"{name}.attributes.json")
+    with open(periphery_path, "w", encoding="utf-8") as f:
+        json.dump(periphery_json, f, indent=2)
+
     os.chdir(cwd)
 
-def tblock(
-    library,
-    name,
-    size
-    ):
-    # === Parameters ===
-    page_size = [11 * 96, 8.5 * 96]
-    outer_margin = 20
-    inner_margin = 40
-    tick_spacing = 96
-    tb_origin_offset = (398, 48)
-    row_heights = [24, 24]
-    column_widths = [
-        [264, 50, 84],
-        [73, 126, 139, 60]
-    ]
-    label_offset = (2, 7)
-    key_offset_y = 16
-    cell_texts = [
-        [("DESCRIPTION", "tblock-key-desc"), ("REV", "tblock-key-rev"), ("RELEASE TICKET", "tblock-key-releaseticket")],
-        [("SCALE", "tblock-key-scale"), ("PART NUMBER", "tblock-key-pn"),
-         ("DRAWN BY", "tblock-key-drawnby"), ("SHEET", "tblock-key-sheet")]
-    ]
 
-    width, height = page_size
+def tblock(library, name):
+    load_dotenv()
+
+    library_path = os.getenv(library)
+    if not library_path:
+        raise ValueError(
+            f"Environment variable '{library}' is not set. Add the path to this library from your harnice root directory."
+        )
+
+    tblock_directory = os.path.join(library_path, "titleblocks", name)
+
+    if os.path.exists(tblock_directory):
+        if cli.prompt("File already exists. Do you want to remove it?", "no") == "no":
+            print("Exiting harnice")
+            exit()
+        else:
+            import shutil
+            shutil.rmtree(tblock_directory)
+    
+    os.makedirs(tblock_directory)
+
+    cwd = os.getcwd()
+    os.chdir(tblock_directory)
+    fileio.verify_revision_structure()
+
+    param_path = os.path.join(fileio.rev_directory(), f"{name}.params.json")
+    svg_path = os.path.join(fileio.rev_directory(), f"{name}.svg")
+
+    # === Default Parameters ===
+    params = {
+        "page_size": [11 * 96, 8.5 * 96],
+        "outer_margin": 20,
+        "inner_margin": 40,
+        "tick_spacing": 96,
+        "tb_origin_offset": [398, 48],
+        "row_heights": [24, 24],
+        "column_widths": [
+            [264, 50, 84],
+            [73, 126, 139, 60]
+        ],
+        "label_offset": [2, 7],
+        "key_offset_y": 16,
+        "cell_texts": [
+            [("DESCRIPTION", "tblock-key-desc"), ("REV", "tblock-key-rev"), ("RELEASE TICKET", "tblock-key-releaseticket")],
+            [("SCALE", "tblock-key-scale"), ("PART NUMBER", "tblock-key-pn"),
+             ("DRAWN BY", "tblock-key-drawnby"), ("SHEET", "tblock-key-sheet")]
+        ]
+    }
+
+    # === If param file doesn't exist, create it and exit ===
+    if not os.path.exists(param_path):
+        with open(param_path, "w", encoding="utf-8") as f:
+            json.dump(params, f, indent=2)
+
+    # === Load parameters from JSON ===
+    with open(param_path, "r", encoding="utf-8") as f:
+        p = json.load(f)
+
+    width, height = p["page_size"]
     svg = ET.Element('svg', {
         "xmlns": "http://www.w3.org/2000/svg",
         "version": "1.1",
@@ -181,78 +231,65 @@ def tblock(
     # === Border Group ===
     border_group = ET.SubElement(contents_group, "g", {"id": "border"})
 
-    x_ticks = int((width - 2 * inner_margin) // tick_spacing)
+    x_ticks = int((width - 2 * p["inner_margin"]) // p["tick_spacing"])
     for i in range(x_ticks):
-        x0 = inner_margin + i * tick_spacing
-        x1 = x0 + tick_spacing
-        x_center = (x0 + x1) / 2
-
+        x0 = p["inner_margin"] + i * p["tick_spacing"]
+        x_center = x0 + p["tick_spacing"] / 2
         ET.SubElement(border_group, "line", {
-            "x1": str(x0), "y1": str(outer_margin),
-            "x2": str(x0), "y2": str(height - outer_margin),
+            "x1": str(x0), "y1": str(p["outer_margin"]),
+            "x2": str(x0), "y2": str(height - p["outer_margin"]),
             "stroke": "black", "stroke-width": "0.5"
         })
-
-        label_y_top = (outer_margin + inner_margin) / 2
+        label_y_top = (p["outer_margin"] + p["inner_margin"]) / 2
         label_y_bot = height - label_y_top
         add_text(border_group, x_center, label_y_top, str(i + 1), anchor="middle")
         add_text(border_group, x_center, label_y_bot, str(i + 1), anchor="middle")
 
-    x_end = inner_margin + x_ticks * tick_spacing
+    x_end = p["inner_margin"] + x_ticks * p["tick_spacing"]
     ET.SubElement(border_group, "line", {
-        "x1": str(x_end), "y1": str(outer_margin),
-        "x2": str(x_end), "y2": str(height - outer_margin),
+        "x1": str(x_end), "y1": str(p["outer_margin"]),
+        "x2": str(x_end), "y2": str(height - p["outer_margin"]),
         "stroke": "black", "stroke-width": "0.5"
     })
 
-    y_ticks = int((height - 2 * inner_margin) // tick_spacing)
+    y_ticks = int((height - 2 * p["inner_margin"]) // p["tick_spacing"])
     for j in range(y_ticks):
-        y0 = inner_margin + j * tick_spacing
-        y1 = y0 + tick_spacing
-        y_center = (y0 + y1) / 2
-
+        y0 = p["inner_margin"] + j * p["tick_spacing"]
+        y_center = y0 + p["tick_spacing"] / 2
         ET.SubElement(border_group, "line", {
-            "x1": str(outer_margin), "y1": str(y0),
-            "x2": str(width - outer_margin), "y2": str(y0),
+            "x1": str(p["outer_margin"]), "y1": str(y0),
+            "x2": str(width - p["outer_margin"]), "y2": str(y0),
             "stroke": "black", "stroke-width": "0.5"
         })
-
         label = chr(ord('A') + j)
-        label_x_left = (outer_margin + inner_margin) / 2
+        label_x_left = (p["outer_margin"] + p["inner_margin"]) / 2
         label_x_right = width - label_x_left
         add_text(border_group, label_x_left, y_center + 4, label, anchor="middle")
         add_text(border_group, label_x_right, y_center + 4, label, anchor="middle")
 
-    y_end = inner_margin + y_ticks * tick_spacing
+    y_end = p["inner_margin"] + y_ticks * p["tick_spacing"]
     ET.SubElement(border_group, "line", {
-        "x1": str(outer_margin), "y1": str(y_end),
-        "x2": str(width - outer_margin), "y2": str(y_end),
+        "x1": str(p["outer_margin"]), "y1": str(y_end),
+        "x2": str(width - p["outer_margin"]), "y2": str(y_end),
         "stroke": "black", "stroke-width": "0.5"
     })
 
-    add_rect(border_group, outer_margin, outer_margin, width - 2 * outer_margin, height - 2 * outer_margin)
-    add_rect(border_group, inner_margin, inner_margin,
-             width - 2 * inner_margin, height - 2 * inner_margin,
-             stroke="black", fill="white", stroke_width=1)
+    add_rect(border_group, p["outer_margin"], p["outer_margin"], width - 2 * p["outer_margin"], height - 2 * p["outer_margin"])
+    add_rect(border_group, p["inner_margin"], p["inner_margin"], width - 2 * p["inner_margin"], height - 2 * p["inner_margin"], stroke="black", fill="white", stroke_width=1)
 
     # === Logo Group ===
-    tb_origin_x = width - inner_margin - tb_origin_offset[0]
-    tb_origin_y = height - inner_margin - tb_origin_offset[1]
+    tb_origin_x = width - p["inner_margin"] - p["tb_origin_offset"][0]
+    tb_origin_y = height - p["inner_margin"] - p["tb_origin_offset"][1]
     logo_width = 1.25 * 96
-    logo_height = sum(row_heights)
+    logo_height = sum(p["row_heights"])
     logo_group = ET.SubElement(contents_group, "g", {"id": "logo"})
-    add_rect(logo_group,
-             tb_origin_x - logo_width,
-             tb_origin_y,
-             logo_width,
-             logo_height,
-             stroke="black", fill="none")
+    add_rect(logo_group, tb_origin_x - logo_width, tb_origin_y, logo_width, logo_height)
 
     # === Titleblock Cell Groups ===
     y_cursor = tb_origin_y
-    for row_idx, row_height in enumerate(row_heights):
-        row_cols = column_widths[row_idx]
-        row_cells = cell_texts[row_idx]
+    for row_idx, row_height in enumerate(p["row_heights"]):
+        row_cols = p["column_widths"][row_idx]
+        row_cells = p["cell_texts"][row_idx]
         x_cursor = tb_origin_x
         for col_idx, col_width in enumerate(row_cols):
             label, key_id = row_cells[col_idx]
@@ -262,22 +299,21 @@ def tblock(
 
             if label:
                 add_text(cell_group,
-                         x_cursor + label_offset[0],
-                         y_cursor + label_offset[1],
+                         x_cursor + p["label_offset"][0],
+                         y_cursor + p["label_offset"][1],
                          label, size=7, bold=True)
             if key_id:
                 center_x = x_cursor + col_width / 2
                 add_text(cell_group,
                          center_x,
-                         y_cursor + key_offset_y,
+                         y_cursor + p["key_offset_y"],
                          key_id, size=7, anchor="middle", id=key_id)
 
             x_cursor += col_width
         y_cursor += row_height
 
-    # === Write SVG with indentation ===
     ET.SubElement(svg, "g", {"id": "tblock-contents-end"})
     rough_string = ET.tostring(svg, encoding="utf-8")
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
-    with open(os.path.join(os.getcwd(), filename), "w", encoding="utf-8") as f:
+    with open(svg_path, "w", encoding="utf-8") as f:
         f.write(pretty)
