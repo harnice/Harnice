@@ -397,6 +397,66 @@ def part():
     with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
         f.write(pretty)
 
+def flagnote():
+    params = {
+        "vertices": [
+            [-19.2, -19.2],
+            [ 19.2, -19.2],
+            [ 19.2,  19.2],
+            [-19.2,  19.2]
+        ],
+        "fill": 0xFFFFFF,
+        "border": 0x000000,
+        "text inside": "flagnote-text"
+    }
+
+    fileio.verify_revision_structure()
+
+    # === If param file doesn't exist, create it ===
+    if not os.path.exists(fileio.path("params")):
+        with open(fileio.path("params"), "w", encoding="utf-8") as f:
+            json.dump(params, f, indent=2)
+
+    # === Load parameters from JSON ===
+    with open(fileio.path("params"), "r", encoding="utf-8") as f:
+        p = json.load(f)
+
+    svg = ET.Element('svg', {
+        "xmlns": "http://www.w3.org/2000/svg",
+        "version": "1.1",
+        "width": str(6 * 96),
+        "height": str(6 * 96)
+    })
+
+    contents_group = ET.SubElement(svg, "g", {"id": "flagnote-contents-start"})
+
+    # === Add polygon from vertex list ===
+    if p["vertices"]:
+        points_str = " ".join(f"{x},{y}" for x, y in p["vertices"])
+        ET.SubElement(contents_group, "polygon", {
+            "points": points_str,
+            "fill": f"#{p['fill']:06X}",
+            "stroke": f"#{p['border']:06X}"
+        })
+
+    # === Add label at (0, 0) centered ===
+    style = "font-size:8px;font-family:Arial"
+    attrs = {
+        "x": "0",
+        "y": "0",
+        "style": style,
+        "text-anchor": "middle",
+        "dominant-baseline": "middle",
+        "id": "flagnote-text"
+    }
+    ET.SubElement(contents_group, "text", attrs).text = p.get("text inside", "")
+
+    ET.SubElement(svg, "g", {"id": "flagnote-contents-end"})
+
+    rough_string = ET.tostring(svg, encoding="utf-8")
+    pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
+    with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
+        f.write(pretty)
 
 def system():
     print("System-level rendering not yet implemented.")
