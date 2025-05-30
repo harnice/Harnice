@@ -12,7 +12,8 @@ from harnice import (
     rev_history,
     component_library,
     fileio,
-    svg_outputs
+    svg_outputs,
+    cli
 )
 
 def harness():
@@ -144,6 +145,10 @@ def harness():
         #makes a PDF out of each svg in page setup
 
 def tblock():
+    print("Warning: rendering a titleblock may clear user edits to its svg. Do you wish to proceed?")
+    if cli.prompt("Press enter to confirm or any key to exit") == "":
+        exit()
+
     # === Default Parameters ===
     params = {
         "page_size": [11 * 96, 8.5 * 96],
@@ -316,7 +321,12 @@ def tblock():
     with open(fileio.path("attributes"), "w", encoding="utf-8") as f:
         json.dump(periphery_json, f, indent=2)
 
+    print()
+    print(f"Titleblock '{fileio.partnumber("pn")}' updated")
+    print()
+
 def part():
+
     #======== MAKE NEW PART JSON ===========
     attributes_blank_json = {
         "plotting_info": {
@@ -397,7 +407,15 @@ def part():
     with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
         f.write(pretty)
 
+    print()
+    print(f"Part file '{fileio.partnumber("pn")}' updated")
+    print()
+
 def flagnote():
+    print("Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?")
+    if cli.prompt("Press enter to confirm or any key to exit") == "":
+        exit()
+
     params = {
         "vertices": [
             [-19.2, -19.2],
@@ -457,6 +475,10 @@ def flagnote():
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
     with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
         f.write(pretty)
+
+    print()
+    print(f"Flagnote '{fileio.partnumber("pn")}' updated")
+    print()
 
 def system():
     print("System-level rendering not yet implemented.")

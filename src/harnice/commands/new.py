@@ -78,5 +78,5 @@ def newstuff(product_type, library, name):
     os.chdir(cwd)
 
     print()
-    print(f"### New {product_type} {name} generated within library {library}!")
+    print(f"New {product_type} {name} generated within library {library}")
     print()
