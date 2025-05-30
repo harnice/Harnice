@@ -12,14 +12,14 @@ import shutil
 import filecmp
 from harnice import(
     fileio,
-    harnice_prechecker,
+    rev_history,
     instances_list,
     instances_list
 )
 
 def pull_parts():
     load_dotenv()
-    global drawing_instance_filenames
+    #global drawing_instance_filenames
     supported_library_components = ['connector', 'backshell']
     instances = instances_list.read_instance_rows()
 
