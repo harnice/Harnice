@@ -329,8 +329,8 @@ def tblock():
 def part():
     fileio.verify_revision_structure()
 
-    # === ATTRIBUTES JSON ===
-    attributes_blank_json = {
+    # === ATTRIBUTES JSON SETUP ===
+    default_attributes = {
         "plotting_info": {
             "csys_parent_prefs": [".node"],
             "component_translate_inches": {
@@ -348,11 +348,24 @@ def part():
     }
 
     attributes_path = fileio.path("attributes")
-    if os.path.exists(attributes_path):
-        os.remove(attributes_path)
+    merged_attributes = default_attributes.copy()
 
+    if os.path.exists(attributes_path):
+        try:
+            with open(attributes_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            # Merge top-level keys from existing into default
+            for key, val in existing.items():
+                if key in merged_attributes and isinstance(merged_attributes[key], dict) and isinstance(val, dict):
+                    merged_attributes[key].update(val)
+                else:
+                    merged_attributes[key] = val
+        except Exception as e:
+            print(f"[WARNING] Could not load existing attributes.json: {e}")
+
+    # Save final attributes
     with open(attributes_path, "w", encoding="utf-8") as f:
-        json.dump(attributes_blank_json, f, indent=4)
+        json.dump(merged_attributes, f, indent=4)
 
     # === SVG SETUP ===
     svg_path = fileio.path("drawing")
