@@ -395,7 +395,7 @@ def part():
         '  </g>',
     ]
 
-    lines.append(f'  <g id="{fileio.partnumber("pn")}-flagnote-viz">')
+    lines.append(f'  <g id="flagnote locations">')
 
     for i, entry in enumerate(flagnote_locations):
         try:
