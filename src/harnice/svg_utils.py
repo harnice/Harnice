@@ -118,6 +118,3 @@ def produce_multipage_harnice_output_pdf(page_setup_contents):
     # Optional cleanup
     for temp in temp_pdfs:
         os.remove(temp)
-
-
-

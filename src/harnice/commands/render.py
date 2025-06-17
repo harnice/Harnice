@@ -2,6 +2,7 @@ import os
 import json
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+import random
 from harnice import (
     run_wireviz,
     wirelist,
@@ -326,90 +327,86 @@ def tblock():
     print()
 
 def part():
+    fileio.verify_revision_structure()
 
-    #======== MAKE NEW PART JSON ===========
+    # === ATTRIBUTES JSON ===
     attributes_blank_json = {
         "plotting_info": {
-            "csys_parent_prefs": [
-                ".node"
-            ],
+            "csys_parent_prefs": [".node"],
             "component_translate_inches": {
                 "translate_x": 0,
                 "translate_y": 0,
                 "rotate_csys": 0
             }
         },
-        "tooling_info": {
-            "tools": []
-        },
+        "tooling_info": {"tools": []},
         "build_notes": [],
         "flagnote_locations": [
-            {"angle": 0, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 15, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -15, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 30, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -30, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 45, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -45, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 60, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -60, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -75, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 75, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -90, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 90, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -105, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 105, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -120, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": a, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1}
+            for a in [0, 15, -15, 30, -30, 45, -45, 60, -60, -75, 75, -90, 90, -105, 105, -120]
         ]
     }
 
-    fileio.verify_revision_structure()
+    attributes_path = fileio.path("attributes")
+    if os.path.exists(attributes_path):
+        os.remove(attributes_path)
 
-    if os.path.exists(fileio.path("attributes")):
-        os.remove(fileio.path("attributes"))
+    with open(attributes_path, "w", encoding="utf-8") as f:
+        json.dump(attributes_blank_json, f, indent=4)
 
-    with open(fileio.path("attributes"), "w") as json_file:
-        json.dump(attributes_blank_json, json_file, indent=4)
+    # === SVG SETUP ===
+    svg_path = fileio.path("drawing")
+    temp_svg_path = svg_path + ".tmp"
 
-    #======== MAKE NEW PART SVG ===========
     svg_width = 400
     svg_height = 400
+    group_name = f"{fileio.partnumber('pn')}-drawing"
 
-    # === SVG Init ===
-    svg = ET.Element('svg', {
-        "xmlns": "http://www.w3.org/2000/svg",
-        "version": "1.1",
-        "width": str(svg_width),
-        "height": str(svg_height),
-    })
+    # Default fallback rect (will get overridden later)
+    random_fill = "#{:06X}".format(random.randint(0, 0xFFFFFF))
+    fallback_rect = f'    <rect x="0" y="-48" width="96" height="96" fill="{random_fill}" stroke="black" stroke-width="1"/>'
 
-    # === Group Start ===
-    contents_group = ET.SubElement(svg, "g", {"id": "tblock-contents-start"})
+    # Build new SVG
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
+        f'  <g id="{group_name}-contents-start">',
+        fallback_rect,
+        '  </g>',
+        f'  <g id="{group_name}-contents-end">',
+        '  </g>',
+        '</svg>'
+    ]
 
-    # === Rectangle ===
-    ET.SubElement(contents_group, "rect", {
-        "x": str(0),
-        "y": str(-48),
-        "width": str(96),
-        "height": str(96),
-        "fill": "#ccc",
-        "stroke": "black",
-        "stroke-width": "1"
-    })
+    with open(temp_svg_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
 
-    # === Group End ===
-    ET.SubElement(svg, "g", {"id": "tblock-contents-end"})
+    if os.path.exists(svg_path):
+        try:
+            with open(svg_path, "r", encoding="utf-8") as f:
+                svg_text = f.read()
+        except Exception:
+            svg_text = ""
 
-    # === Write SVG ===
-    rough_string = ET.tostring(svg, encoding="utf-8")
-    pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
+        if f"{group_name}-contents-start" not in svg_text or f"{group_name}-contents-end" not in svg_text:
+            svg_utils.add_entire_svg_file_contents_to_group(svg_path, group_name)
 
-    with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
-        f.write(pretty)
+        svg_utils.find_and_replace_svg_group(
+            target_svg_filepath=temp_svg_path,
+            source_svg_filepath=svg_path,
+            source_group_name=group_name,
+            destination_group_name=group_name
+        )
+
+    # Finalize
+    if os.path.exists(svg_path):
+        os.remove(svg_path)
+    os.rename(temp_svg_path, svg_path)
 
     print()
-    print(f"Part file '{fileio.partnumber("pn")}' updated")
+    print(f"Part file '{fileio.partnumber('pn')}' updated")
     print()
+
 
 def flagnote():
     print("Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?")
@@ -446,7 +443,7 @@ def flagnote():
         "height": str(6 * 96)
     })
 
-    contents_group = ET.SubElement(svg, "g", {"id": "flagnote-contents-start"})
+    contents_group = ET.SubElement(svg, "g", {"id": "contents-start"})
 
     # === Add polygon from vertex list ===
     if p["vertices"]:
@@ -469,7 +466,7 @@ def flagnote():
     }
     ET.SubElement(contents_group, "text", attrs).text = p.get("text inside", "")
 
-    ET.SubElement(svg, "g", {"id": "flagnote-contents-end"})
+    ET.SubElement(svg, "g", {"id": "contents-end"})
 
     rough_string = ET.tostring(svg, encoding="utf-8")
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
