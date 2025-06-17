@@ -3,6 +3,7 @@ import json
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import random
+import math
 from harnice import (
     run_wireviz,
     wirelist,
@@ -354,7 +355,6 @@ def part():
         try:
             with open(attributes_path, "r", encoding="utf-8") as f:
                 existing = json.load(f)
-            # Merge top-level keys from existing into default
             for key, val in existing.items():
                 if key in merged_attributes and isinstance(merged_attributes[key], dict) and isinstance(val, dict):
                     merged_attributes[key].update(val)
@@ -363,7 +363,6 @@ def part():
         except Exception as e:
             print(f"[WARNING] Could not load existing attributes.json: {e}")
 
-    # Save final attributes
     with open(attributes_path, "w", encoding="utf-8") as f:
         json.dump(merged_attributes, f, indent=4)
 
@@ -375,11 +374,17 @@ def part():
     svg_height = 400
     group_name = f"{fileio.partnumber('pn')}-drawing"
 
-    # Default fallback rect (will get overridden later)
     random_fill = "#{:06X}".format(random.randint(0, 0xFFFFFF))
     fallback_rect = f'    <rect x="0" y="-48" width="96" height="96" fill="{random_fill}" stroke="black" stroke-width="1"/>'
 
-    # Build new SVG
+    try:
+        with open(attributes_path, "r", encoding="utf-8") as f:
+            attrs = json.load(f)
+        flagnote_locations = attrs.get("flagnote_locations", [])
+    except Exception as e:
+        print(f"[WARNING] Could not read flagnote_locations: {e}")
+        flagnote_locations = []
+
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
@@ -388,8 +393,53 @@ def part():
         '  </g>',
         f'  <g id="{group_name}-contents-end">',
         '  </g>',
-        '</svg>'
     ]
+
+    lines.append(f'  <g id="{fileio.partnumber("pn")}-flagnote-viz">')
+
+    for i, entry in enumerate(flagnote_locations):
+        try:
+            angle_deg = float(entry.get("angle", 0))
+            distance_in = float(entry.get("distance", 0))
+            angle_rad = math.radians(angle_deg)
+            dist_px = distance_in * 96
+            x = dist_px * math.cos(angle_rad)
+            y = -dist_px * math.sin(angle_rad)
+
+            arrow_angle_deg = float(entry.get("arrowhead_angle") or angle_deg)
+            arrow_dist_in = float(entry.get("arrowhead_distance", 1))
+            arrow_rad = math.radians(arrow_angle_deg)
+            arrow_dist_px = arrow_dist_in * 96
+            arrow_x = arrow_dist_px * math.cos(arrow_rad)
+            arrow_y = -arrow_dist_px * math.sin(arrow_rad)
+
+            lines.append(f'    <circle cx="{x:.2f}" cy="{y:.2f}" r="12" fill="#444" stroke="black" stroke-width="1"/>')
+            lines.append(f'    <text x="{x:.2f}" y="{y+4:.2f}" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">{i+1}</text>')
+            lines.append(f'    <line x1="{x:.2f}" y1="{y:.2f}" x2="{arrow_x:.2f}" y2="{arrow_y:.2f}" stroke="black" stroke-width="1"/>')
+
+            dx = arrow_x - x
+            dy = arrow_y - y
+            length = math.hypot(dx, dy)
+            if length == 0:
+                continue
+            ux = dx / length
+            uy = dy / length
+            px = -uy
+            py = ux
+            base_x = arrow_x - ux * 6
+            base_y = arrow_y - uy * 6
+            tip = (arrow_x, arrow_y)
+            left = (base_x + px * 2, base_y + py * 2)
+            right = (base_x - px * 2, base_y - py * 2)
+
+            lines.append(
+                f'    <polygon points="{tip[0]:.2f},{tip[1]:.2f} {left[0]:.2f},{left[1]:.2f} {right[0]:.2f},{right[1]:.2f}" fill="black"/>'
+            )
+        except Exception as e:
+            print(f"[WARNING] Failed to render flagnote {i}: {e}")
+
+    lines.append('  </g>')
+    lines.append('</svg>')
 
     with open(temp_svg_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
@@ -411,7 +461,6 @@ def part():
             destination_group_name=group_name
         )
 
-    # Finalize
     if os.path.exists(svg_path):
         os.remove(svg_path)
     os.rename(temp_svg_path, svg_path)
