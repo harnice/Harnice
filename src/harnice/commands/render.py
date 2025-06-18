@@ -105,6 +105,7 @@ def harness():
         #adds bom line numbers back to the instances list
 
     #=============== HANDLING FLAGNOTES #===============
+    """
     instances_list_data = instances_list.read_instance_rows()
     rev_history_data = rev_history.revision_info()
     buildnotes_data = ""
@@ -121,7 +122,7 @@ def harness():
     instances_list.add_flagnotes(
         flagnotes.read_flagnote_matrix_file()
     )
-
+    """
     #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()
 
