@@ -2,6 +2,8 @@ import os
 import json
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+import random
+import math
 from harnice import (
     run_wireviz,
     wirelist,
@@ -103,6 +105,7 @@ def harness():
         #adds bom line numbers back to the instances list
 
     #=============== HANDLING FLAGNOTES #===============
+    """
     instances_list_data = instances_list.read_instance_rows()
     rev_history_data = rev_history.revision_info()
     buildnotes_data = ""
@@ -119,7 +122,7 @@ def harness():
     instances_list.add_flagnotes(
         flagnotes.read_flagnote_matrix_file()
     )
-
+    """
     #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()
 
@@ -326,90 +329,147 @@ def tblock():
     print()
 
 def part():
+    fileio.verify_revision_structure()
 
-    #======== MAKE NEW PART JSON ===========
-    attributes_blank_json = {
+    # === ATTRIBUTES JSON SETUP ===
+    default_attributes = {
         "plotting_info": {
-            "csys_parent_prefs": [
-                ".node"
-            ],
+            "csys_parent_prefs": [".node"],
             "component_translate_inches": {
                 "translate_x": 0,
                 "translate_y": 0,
                 "rotate_csys": 0
             }
         },
-        "tooling_info": {
-            "tools": []
-        },
+        "tooling_info": {"tools": []},
         "build_notes": [],
         "flagnote_locations": [
-            {"angle": 0, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 15, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -15, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 30, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -30, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 45, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -45, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 60, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -60, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -75, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 75, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -90, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 90, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -105, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": 105, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
-            {"angle": -120, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1},
+            {"angle": a, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1}
+            for a in [0, 15, -15, 30, -30, 45, -45, 60, -60, -75, 75, -90, 90, -105, 105, -120]
         ]
     }
 
-    fileio.verify_revision_structure()
+    attributes_path = fileio.path("attributes")
+    merged_attributes = default_attributes.copy()
 
-    if os.path.exists(fileio.path("attributes")):
-        os.remove(fileio.path("attributes"))
+    if os.path.exists(attributes_path):
+        try:
+            with open(attributes_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            for key, val in existing.items():
+                if key in merged_attributes and isinstance(merged_attributes[key], dict) and isinstance(val, dict):
+                    merged_attributes[key].update(val)
+                else:
+                    merged_attributes[key] = val
+        except Exception as e:
+            print(f"[WARNING] Could not load existing attributes.json: {e}")
 
-    with open(fileio.path("attributes"), "w") as json_file:
-        json.dump(attributes_blank_json, json_file, indent=4)
+    with open(attributes_path, "w", encoding="utf-8") as f:
+        json.dump(merged_attributes, f, indent=4)
 
-    #======== MAKE NEW PART SVG ===========
+    # === SVG SETUP ===
+    svg_path = fileio.path("drawing")
+    temp_svg_path = svg_path + ".tmp"
+
     svg_width = 400
     svg_height = 400
+    group_name = f"{fileio.partnumber('pn')}-drawing"
 
-    # === SVG Init ===
-    svg = ET.Element('svg', {
-        "xmlns": "http://www.w3.org/2000/svg",
-        "version": "1.1",
-        "width": str(svg_width),
-        "height": str(svg_height),
-    })
+    random_fill = "#{:06X}".format(random.randint(0, 0xFFFFFF))
+    fallback_rect = f'    <rect x="0" y="-48" width="96" height="96" fill="{random_fill}" stroke="black" stroke-width="1"/>'
 
-    # === Group Start ===
-    contents_group = ET.SubElement(svg, "g", {"id": "tblock-contents-start"})
+    try:
+        with open(attributes_path, "r", encoding="utf-8") as f:
+            attrs = json.load(f)
+        flagnote_locations = attrs.get("flagnote_locations", [])
+    except Exception as e:
+        print(f"[WARNING] Could not read flagnote_locations: {e}")
+        flagnote_locations = []
 
-    # === Rectangle ===
-    ET.SubElement(contents_group, "rect", {
-        "x": str(0),
-        "y": str(-48),
-        "width": str(96),
-        "height": str(96),
-        "fill": "#ccc",
-        "stroke": "black",
-        "stroke-width": "1"
-    })
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
+        f'  <g id="{group_name}-contents-start">',
+        fallback_rect,
+        '  </g>',
+        f'  <g id="{group_name}-contents-end">',
+        '  </g>',
+    ]
 
-    # === Group End ===
-    ET.SubElement(svg, "g", {"id": "tblock-contents-end"})
+    lines.append(f'  <g id="flagnote locations">')
 
-    # === Write SVG ===
-    rough_string = ET.tostring(svg, encoding="utf-8")
-    pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
+    for i, entry in enumerate(flagnote_locations):
+        try:
+            angle_deg = float(entry.get("angle", 0))
+            distance_in = float(entry.get("distance", 0))
+            angle_rad = math.radians(angle_deg)
+            dist_px = distance_in * 96
+            x = dist_px * math.cos(angle_rad)
+            y = -dist_px * math.sin(angle_rad)
 
-    with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
-        f.write(pretty)
+            arrow_angle_deg = float(entry.get("arrowhead_angle") or angle_deg)
+            arrow_dist_in = float(entry.get("arrowhead_distance", 1))
+            arrow_rad = math.radians(arrow_angle_deg)
+            arrow_dist_px = arrow_dist_in * 96
+            arrow_x = arrow_dist_px * math.cos(arrow_rad)
+            arrow_y = -arrow_dist_px * math.sin(arrow_rad)
+
+            lines.append(f'    <circle cx="{x:.2f}" cy="{y:.2f}" r="12" fill="#444" stroke="black" stroke-width="1"/>')
+            lines.append(f'    <text x="{x:.2f}" y="{y+4:.2f}" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">{i+1}</text>')
+            lines.append(f'    <line x1="{x:.2f}" y1="{y:.2f}" x2="{arrow_x:.2f}" y2="{arrow_y:.2f}" stroke="black" stroke-width="1"/>')
+
+            dx = arrow_x - x
+            dy = arrow_y - y
+            length = math.hypot(dx, dy)
+            if length == 0:
+                continue
+            ux = dx / length
+            uy = dy / length
+            px = -uy
+            py = ux
+            base_x = arrow_x - ux * 6
+            base_y = arrow_y - uy * 6
+            tip = (arrow_x, arrow_y)
+            left = (base_x + px * 2, base_y + py * 2)
+            right = (base_x - px * 2, base_y - py * 2)
+
+            lines.append(
+                f'    <polygon points="{tip[0]:.2f},{tip[1]:.2f} {left[0]:.2f},{left[1]:.2f} {right[0]:.2f},{right[1]:.2f}" fill="black"/>'
+            )
+        except Exception as e:
+            print(f"[WARNING] Failed to render flagnote {i}: {e}")
+
+    lines.append('  </g>')
+    lines.append('</svg>')
+
+    with open(temp_svg_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+    if os.path.exists(svg_path):
+        try:
+            with open(svg_path, "r", encoding="utf-8") as f:
+                svg_text = f.read()
+        except Exception:
+            svg_text = ""
+
+        if f"{group_name}-contents-start" not in svg_text or f"{group_name}-contents-end" not in svg_text:
+            svg_utils.add_entire_svg_file_contents_to_group(svg_path, group_name)
+
+        svg_utils.find_and_replace_svg_group(
+            target_svg_filepath=temp_svg_path,
+            source_svg_filepath=svg_path,
+            source_group_name=group_name,
+            destination_group_name=group_name
+        )
+
+    if os.path.exists(svg_path):
+        os.remove(svg_path)
+    os.rename(temp_svg_path, svg_path)
 
     print()
-    print(f"Part file '{fileio.partnumber("pn")}' updated")
+    print(f"Part file '{fileio.partnumber('pn')}' updated")
     print()
+
 
 def flagnote():
     print("Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?")
@@ -446,7 +506,7 @@ def flagnote():
         "height": str(6 * 96)
     })
 
-    contents_group = ET.SubElement(svg, "g", {"id": "flagnote-contents-start"})
+    contents_group = ET.SubElement(svg, "g", {"id": "contents-start"})
 
     # === Add polygon from vertex list ===
     if p["vertices"]:
@@ -469,7 +529,7 @@ def flagnote():
     }
     ET.SubElement(contents_group, "text", attrs).text = p.get("text inside", "")
 
-    ET.SubElement(svg, "g", {"id": "flagnote-contents-end"})
+    ET.SubElement(svg, "g", {"id": "contents-end"})
 
     rough_string = ET.tostring(svg, encoding="utf-8")
     pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")

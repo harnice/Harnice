@@ -38,7 +38,7 @@ def pull_parts():
                         os.getenv(instance.get('supplier')),
                         "parts",
                         instance.get('mpn', ''),
-                        f"{instance.get('mpn', '')}-revision_history.tsv"
+                        f"{instance.get('mpn', '')}.revision_history.tsv"
                     ),
                     newline='', encoding='utf-8'
                 ) as f:
@@ -51,6 +51,8 @@ def pull_parts():
                                 highest_rev = str(rev_num)
             except FileNotFoundError:
                 print(f"Missing revision history document. Update your library and rerun.")
+
+            instances_list.add_lib_latest_rev(instance, highest_rev)
 
             #see if that library instance has already been imported
             exists_bool, exists_rev = exists_in_lib_used(instance.get('instance_name'), instance.get('mpn'))
@@ -147,8 +149,8 @@ def pull_parts():
                             with open(dst_file, 'r', encoding='utf-8') as file:
                                 content = file.read()
 
-                            content = content.replace(f"{instance.get("mpn")}-contents-start", f"{instance.get("instance_name")}-contents-start")
-                            content = content.replace(f"{instance.get("mpn")}-contents-end", f"{instance.get("instance_name")}-contents-end")
+                            content = content.replace(f"{instance.get("mpn")}-drawing-contents-start", f"{instance.get("instance_name")}-contents-start")
+                            content = content.replace(f"{instance.get("mpn")}-drawing-contents-end", f"{instance.get("instance_name")}-contents-end")
 
                             with open(dst_file, 'w', encoding='utf-8') as file:
                                 file.write(content)
@@ -177,6 +179,7 @@ def exists_in_lib_used(instance_name, mpn):
             if os.path.isdir(full_path) and name.startswith(mpn):
                 match = re.search(r'rev(\d+)', name, re.IGNORECASE)
                 if match:
+                    instances_list.add_lib_used_earliest_rev(instance_name, match.group(1))
                     return True, match.group(1)
     except FileNotFoundError:
         return False, ""

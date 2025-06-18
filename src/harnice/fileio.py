@@ -134,19 +134,19 @@ def harnice_file_structure():
             }
     elif product_type == "part":
         return {
-            f"{partnumber("pn-rev")}.drawing.svg":"drawing",
-            f"{partnumber("pn-rev")}.attributes.json":"attributes"
+            f"{partnumber("pn-rev")}-drawing.svg":"drawing",
+            f"{partnumber("pn-rev")}-attributes.json":"attributes"
         }
     elif product_type == "flagnote":
         return {
-            f"{partnumber("pn-rev")}.params.json":"params",
-            f"{partnumber("pn-rev")}.drawing.svg":"drawing",
+            f"{partnumber("pn-rev")}-params.json":"params",
+            f"{partnumber("pn-rev")}-drawing.svg":"drawing",
         }
     elif product_type in ("tblock", "titleblock"):
         return {
-            f"{partnumber("pn-rev")}.params.json":"params",
-            f"{partnumber("pn-rev")}.drawing.svg":"drawing",
-            f"{partnumber("pn-rev")}.attributes.json":"attributes"
+            f"{partnumber("pn-rev")}-params.json":"params",
+            f"{partnumber("pn-rev")}-drawing.svg":"drawing",
+            f"{partnumber("pn-rev")}-attributes.json":"attributes"
         }
 
 def generate_structure():

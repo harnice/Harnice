@@ -1,10 +1,19 @@
 import argparse
+import os
 from harnice import (
     fileio
 )
 from harnice.commands import render, new
 
 def main():
+    try:
+        _ = os.getcwd()
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Your command line is in a directory that doesn't exist."
+            "(maybe you were working on a file you just tried to delete?)"
+        )
+
     parser = argparse.ArgumentParser(prog="harnice", description="Wire harness automation CLI")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-r", "--render", help="Render harness or system")
