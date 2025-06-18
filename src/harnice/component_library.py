@@ -149,8 +149,8 @@ def pull_parts():
                             with open(dst_file, 'r', encoding='utf-8') as file:
                                 content = file.read()
 
-                            content = content.replace(f"{instance.get("mpn")}-contents-start", f"{instance.get("instance_name")}-contents-start")
-                            content = content.replace(f"{instance.get("mpn")}-contents-end", f"{instance.get("instance_name")}-contents-end")
+                            content = content.replace(f"{instance.get("mpn")}-drawing-contents-start", f"{instance.get("instance_name")}-contents-start")
+                            content = content.replace(f"{instance.get("mpn")}-drawing-contents-end", f"{instance.get("instance_name")}-contents-end")
 
                             with open(dst_file, 'w', encoding='utf-8') as file:
                                 file.write(content)
