@@ -470,75 +470,134 @@ def part():
     print(f"Part file '{fileio.partnumber('pn')}' updated")
     print()
 
+import os
+import json
+import math
+import random
+from harnice import cli, fileio
 
 def flagnote():
     print("Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?")
     if cli.prompt("Press enter to confirm or any key to exit") == "":
         exit()
 
-    params = {
-        "vertices": [
-            [-19.2, -19.2],
-            [ 19.2, -19.2],
-            [ 19.2,  19.2],
-            [-19.2,  19.2]
-        ],
-        "fill": 0xFFFFFF,
-        "border": 0x000000,
-        "text inside": "flagnote-text"
-    }
-
     fileio.verify_revision_structure()
+    params_path = fileio.path("params")
 
-    # === If param file doesn't exist, create it ===
-    if not os.path.exists(fileio.path("params")):
-        with open(fileio.path("params"), "w", encoding="utf-8") as f:
+    # Geometry generators
+    def regular_ngon(n, radius=19.2, rotation_deg=0):
+        angle_offset = math.radians(rotation_deg)
+        return [
+            [
+                round(radius * math.cos(2 * math.pi * i / n + angle_offset), 2),
+                round(radius * math.sin(2 * math.pi * i / n + angle_offset), 2)
+            ]
+            for i in range(n)
+        ]
+
+    def right_arrow():
+        return [[-24, -12], [0, -12], [0, -24], [24, 0], [0, 24], [0, 12], [-24, 12]]
+
+    def left_arrow():
+        return [[24, -12], [0, -12], [0, -24], [-24, 0], [0, 24], [0, 12], [24, 12]]
+
+    def flag_pennant():
+        return [[-24, -12], [24, 0], [-24, 12]]
+
+    # List of shape options with (label, generator)
+    shape_options = [
+        ("circle", None),
+        ("square", lambda: regular_ngon(4, rotation_deg=45)),
+        ("triangle", lambda: regular_ngon(3, rotation_deg=-90)),
+        ("upside down triangle", lambda: regular_ngon(3, rotation_deg=90)),
+        ("hexagon", lambda: regular_ngon(6)),
+        ("pentagon", lambda: regular_ngon(5)),
+        ("right arrow", right_arrow),
+        ("left arrow", left_arrow),
+        ("octagon", lambda: regular_ngon(8)),
+        ("diamond", lambda: regular_ngon(4, rotation_deg=0)),
+        ("flag / pennant", flag_pennant)
+    ]
+
+    # === Prompt shape if no params exist ===
+    if not os.path.exists(params_path):
+        print("No flagnote params found.")
+        print("Choose a shape for your flagnote:")
+        for i, (label, _) in enumerate(shape_options, 1):
+            print(f"  {i}) {label}")
+
+        while True:
+            response = cli.prompt("Enter the number of your choice").strip()
+            if response.isdigit():
+                index = int(response)
+                if 1 <= index <= len(shape_options):
+                    shape_label, shape_func = shape_options[index - 1]
+                    break
+            print("Invalid selection. Please enter a number from the list.")
+
+        params = {
+            "fill": 0xFFFFFF,
+            "border": 0x000000,
+            "text inside": "flagnote-text"
+        }
+
+        if shape_func:
+            params["vertices"] = shape_func()
+
+        with open(params_path, "w", encoding="utf-8") as f:
             json.dump(params, f, indent=2)
 
-    # === Load parameters from JSON ===
-    with open(fileio.path("params"), "r", encoding="utf-8") as f:
+    # === Load params ===
+    with open(params_path, "r", encoding="utf-8") as f:
         p = json.load(f)
 
-    svg = ET.Element('svg', {
-        "xmlns": "http://www.w3.org/2000/svg",
-        "version": "1.1",
-        "width": str(6 * 96),
-        "height": str(6 * 96)
-    })
+    svg_width = 6 * 96
+    svg_height = 6 * 96
+    group_name = "contents"
 
-    contents_group = ET.SubElement(svg, "g", {"id": "contents-start"})
+    fill = p.get("fill")
+    if not isinstance(fill, int):
+        fill = random.randint(0x000000, 0xFFFFFF)
 
-    # === Add polygon from vertex list ===
-    if p["vertices"]:
-        points_str = " ".join(f"{x},{y}" for x, y in p["vertices"])
-        ET.SubElement(contents_group, "polygon", {
-            "points": points_str,
-            "fill": f"#{p['fill']:06X}",
-            "stroke": f"#{p['border']:06X}"
-        })
+    border = p.get("border", 0x000000)
+    shape_svg = ""
 
-    # === Add label at (0, 0) centered ===
-    style = "font-size:8px;font-family:Arial"
-    attrs = {
-        "x": "0",
-        "y": "0",
-        "style": style,
-        "text-anchor": "middle",
-        "dominant-baseline": "middle",
-        "id": "flagnote-text"
-    }
-    ET.SubElement(contents_group, "text", attrs).text = p.get("text inside", "")
+    # === Shape element ===
+    if "vertices" in p:
+        if p["vertices"]:
+            points_str = " ".join(f"{x},{y}" for x, y in p["vertices"])
+            shape_svg = f'    <polygon points="{points_str}" fill="#{fill:06X}" stroke="#{border:06X}"/>\n'
+    else:
+        shape_svg = f'    <circle cx="0" cy="0" r="19.2" fill="#{fill:06X}" stroke="#{border:06X}"/>\n'
 
-    ET.SubElement(svg, "g", {"id": "contents-end"})
+    # === Text element ===
+    text_content = p.get("text inside", "")
+    text_svg = (
+        f'    <text x="0" y="0" '
+        f'style="font-size:8px;font-family:Arial" '
+        f'text-anchor="middle" dominant-baseline="middle" id="flagnote-text">{text_content}</text>\n'
+    )
 
-    rough_string = ET.tostring(svg, encoding="utf-8")
-    pretty = minidom.parseString(rough_string).toprettyxml(indent="  ")
+    contents = shape_svg + text_svg if shape_svg else ""
+
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
+        f'  <g id="{group_name}-contents-start">',
+        contents.rstrip(),
+        f'  </g>',
+        f'  <g id="{group_name}-contents-end">',
+        f'  </g>',
+        '</svg>'
+    ]
+
     with open(fileio.path("drawing"), "w", encoding="utf-8") as f:
-        f.write(pretty)
+        f.write("\n".join(lines) + "\n")
 
     print()
-    print(f"Flagnote '{fileio.partnumber("pn")}' updated")
+    print(f"Flagnote '{fileio.partnumber('pn')}' updated")
     print()
+
 
 def system():
     print("System-level rendering not yet implemented.")
