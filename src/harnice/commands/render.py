@@ -470,12 +470,6 @@ def part():
     print(f"Part file '{fileio.partnumber('pn')}' updated")
     print()
 
-import os
-import json
-import math
-import random
-from harnice import cli, fileio
-
 def flagnote():
     print("Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?")
     if cli.prompt("Press enter to confirm or any key to exit") == "":
@@ -583,10 +577,10 @@ def flagnote():
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
-        f'  <g id="{group_name}-contents-start">',
+        f'  <g id="flagnote-contents-start">',
         contents.rstrip(),
         f'  </g>',
-        f'  <g id="{group_name}-contents-end">',
+        f'  <g id="flagnote-contents-end">',
         f'  </g>',
         '</svg>'
     ]
