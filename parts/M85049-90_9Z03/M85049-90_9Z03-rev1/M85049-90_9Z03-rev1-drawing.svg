@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="400" height="400">
+  <g id="M85049-90_9Z03-drawing-contents-start">
+    <rect x="0" y="-48" width="96" height="96" fill="#B9B745" stroke="black" stroke-width="1"/>
+  </g>
+  <g id="M85049-90_9Z03-drawing-contents-end">
+  </g>
+  <g id="flagnote locations">
+    <circle cx="192.00" cy="-0.00" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="192.00" y="4.00" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">1</text>
+    <line x1="192.00" y1="-0.00" x2="96.00" y2="-0.00" stroke="black" stroke-width="1"/>
+    <polygon points="96.00,-0.00 102.00,-2.00 102.00,2.00" fill="black"/>
+    <circle cx="185.46" cy="-49.69" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="185.46" y="-45.69" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">2</text>
+    <line x1="185.46" y1="-49.69" x2="92.73" y2="-24.85" stroke="black" stroke-width="1"/>
+    <polygon points="92.73,-24.85 98.01,-28.33 99.04,-24.47" fill="black"/>
+    <circle cx="185.46" cy="49.69" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="185.46" y="53.69" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">3</text>
+    <line x1="185.46" y1="49.69" x2="92.73" y2="24.85" stroke="black" stroke-width="1"/>
+    <polygon points="92.73,24.85 99.04,24.47 98.01,28.33" fill="black"/>
+    <circle cx="166.28" cy="-96.00" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="166.28" y="-92.00" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">4</text>
+    <line x1="166.28" y1="-96.00" x2="83.14" y2="-48.00" stroke="black" stroke-width="1"/>
+    <polygon points="83.14,-48.00 87.33,-52.73 89.33,-49.27" fill="black"/>
+    <circle cx="166.28" cy="96.00" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="166.28" y="100.00" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">5</text>
+    <line x1="166.28" y1="96.00" x2="83.14" y2="48.00" stroke="black" stroke-width="1"/>
+    <polygon points="83.14,48.00 89.33,49.27 87.33,52.73" fill="black"/>
+    <circle cx="135.76" cy="-135.76" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="135.76" y="-131.76" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">6</text>
+    <line x1="135.76" y1="-135.76" x2="67.88" y2="-67.88" stroke="black" stroke-width="1"/>
+    <polygon points="67.88,-67.88 70.71,-73.54 73.54,-70.71" fill="black"/>
+    <circle cx="135.76" cy="135.76" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="135.76" y="139.76" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">7</text>
+    <line x1="135.76" y1="135.76" x2="67.88" y2="67.88" stroke="black" stroke-width="1"/>
+    <polygon points="67.88,67.88 73.54,70.71 70.71,73.54" fill="black"/>
+    <circle cx="96.00" cy="-166.28" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="96.00" y="-162.28" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">8</text>
+    <line x1="96.00" y1="-166.28" x2="48.00" y2="-83.14" stroke="black" stroke-width="1"/>
+    <polygon points="48.00,-83.14 49.27,-89.33 52.73,-87.33" fill="black"/>
+    <circle cx="96.00" cy="166.28" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="96.00" y="170.28" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">9</text>
+    <line x1="96.00" y1="166.28" x2="48.00" y2="83.14" stroke="black" stroke-width="1"/>
+    <polygon points="48.00,83.14 52.73,87.33 49.27,89.33" fill="black"/>
+    <circle cx="49.69" cy="185.46" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="49.69" y="189.46" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">10</text>
+    <line x1="49.69" y1="185.46" x2="24.85" y2="92.73" stroke="black" stroke-width="1"/>
+    <polygon points="24.85,92.73 28.33,98.01 24.47,99.04" fill="black"/>
+    <circle cx="49.69" cy="-185.46" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="49.69" y="-181.46" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">11</text>
+    <line x1="49.69" y1="-185.46" x2="24.85" y2="-92.73" stroke="black" stroke-width="1"/>
+    <polygon points="24.85,-92.73 24.47,-99.04 28.33,-98.01" fill="black"/>
+    <circle cx="0.00" cy="192.00" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="0.00" y="196.00" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">12</text>
+    <line x1="0.00" y1="192.00" x2="0.00" y2="96.00" stroke="black" stroke-width="1"/>
+    <polygon points="0.00,96.00 2.00,102.00 -2.00,102.00" fill="black"/>
+    <circle cx="0.00" cy="-192.00" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="0.00" y="-188.00" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">13</text>
+    <line x1="0.00" y1="-192.00" x2="0.00" y2="-96.00" stroke="black" stroke-width="1"/>
+    <polygon points="0.00,-96.00 -2.00,-102.00 2.00,-102.00" fill="black"/>
+    <circle cx="-49.69" cy="185.46" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="-49.69" y="189.46" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">14</text>
+    <line x1="-49.69" y1="185.46" x2="-24.85" y2="92.73" stroke="black" stroke-width="1"/>
+    <polygon points="-24.85,92.73 -24.47,99.04 -28.33,98.01" fill="black"/>
+    <circle cx="-49.69" cy="-185.46" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="-49.69" y="-181.46" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">15</text>
+    <line x1="-49.69" y1="-185.46" x2="-24.85" y2="-92.73" stroke="black" stroke-width="1"/>
+    <polygon points="-24.85,-92.73 -28.33,-98.01 -24.47,-99.04" fill="black"/>
+    <circle cx="-96.00" cy="166.28" r="12" fill="#444" stroke="black" stroke-width="1"/>
+    <text x="-96.00" y="170.28" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">16</text>
+    <line x1="-96.00" y1="166.28" x2="-48.00" y2="83.14" stroke="black" stroke-width="1"/>
+    <polygon points="-48.00,83.14 -49.27,89.33 -52.73,87.33" fill="black"/>
+  </g>
+</svg>
