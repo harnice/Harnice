@@ -17,148 +17,117 @@ from harnice import(
     instances_list
 )
 
+def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_directory, used_rev=None, item_name=None):
+    import os
+    import shutil
+    import csv
+
+    base_path = os.path.join(os.getenv(supplier), lib_subpath, mpn)
+    source_lib_path = os.path.join(base_path, f"{mpn}-rev{desired_rev}")
+    target_lib_path = os.path.join(destination_directory, "library_used_do_not_edit", f"{mpn}-rev{desired_rev}")
+
+    # === Find latest rev from .revision_history.tsv ===
+    latest_rev = ""
+    rev_file = os.path.join(base_path, f"{mpn}.revision_history.tsv")
+    try:
+        with open(rev_file, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                rev_str = row.get('rev', '').strip()
+                if rev_str.isdigit():
+                    rev_num = int(rev_str)
+                    if latest_rev == "" or rev_num > int(latest_rev):
+                        latest_rev = str(rev_num)
+    except FileNotFoundError:
+        print(f"Importing library '{item_name}': revision history missing.")
+        return None
+
+    # === Check source library folder exists ===
+    if not os.path.exists(source_lib_path):
+        print(f"Importing library '{item_name}': revision folder '{source_lib_path}' is missing.")
+        return latest_rev
+
+    # === Determine status ===
+    latest = int(latest_rev)
+    used = int(used_rev) if used_rev is not None else int(desired_rev)
+    status = ""
+
+    if not os.path.exists(target_lib_path):
+        shutil.copytree(source_lib_path, target_lib_path)
+        status = f"imported rev {desired_rev}"
+    elif latest > used:
+        status = f"newer rev available ({latest}); delete to re-import"
+    elif latest < used:
+        status = f"revision mismatch: used {used}, library {latest}"
+    else:
+        if not find_modifications(source_lib_path, target_lib_path):
+            status = "up to date"
+        else:
+            status = f"modified without rev bump; delete and re-import"
+
+    # === Copy all files (only if not already present) ===
+    for filename in os.listdir(source_lib_path):
+        src_file = os.path.join(source_lib_path, filename)
+        dst_file = os.path.join(destination_directory, filename)
+
+        if os.path.isfile(src_file) and not os.path.exists(dst_file):
+            shutil.copy2(src_file, dst_file)
+
+            # Patch contents group in SVG
+            if filename.endswith(".svg"):
+                with open(dst_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                content = content.replace(
+                    f"{mpn}-drawing-contents-start", f"{mpn}-contents-start"
+                ).replace(
+                    f"{mpn}-drawing-contents-end", f"{mpn}-contents-end"
+                )
+
+                with open(dst_file, 'w', encoding='utf-8') as f:
+                    f.write(content)
+
+    print(f"Importing library '{item_name}': {status}")
+    return latest_rev
+
 def pull_parts():
     load_dotenv()
-    #global drawing_instance_filenames
     supported_library_components = ['connector', 'backshell']
     instances = instances_list.read_instance_rows()
-
     updated_instances = []
-    print()
 
     for instance in instances:
-        #if the type of instance is supported by harnice library
-        if instance.get('item_type', '').lower() in supported_library_components:
-            
-            #find the highest rev in the library
-            highest_rev = ""  # default
-            try:
-                with open(
-                    os.path.join(
-                        os.getenv(instance.get('supplier')),
-                        "parts",
-                        instance.get('mpn', ''),
-                        f"{instance.get('mpn', '')}.revision_history.tsv"
-                    ),
-                    newline='', encoding='utf-8'
-                ) as f:
-                    reader = csv.DictReader(f, delimiter='\t')
-                    for rev_entry in reader:
-                        rev_str = rev_entry.get('rev', '').strip()
-                        if rev_str.isdigit():
-                            rev_num = int(rev_str)
-                            if highest_rev == "" or rev_num > int(highest_rev):
-                                highest_rev = str(rev_num)
-            except FileNotFoundError:
-                print(f"Missing revision history document. Update your library and rerun.")
+        item_type = instance.get('item_type', '').lower()
+        if item_type not in supported_library_components:
+            print(f"Library for '{instance.get('instance_name')}' with component type '{item_type}' either not needed or not supported")
+            updated_instances.append(instance)
+            continue
 
-            instances_list.add_lib_latest_rev(instance, highest_rev)
+        supplier = instance.get('supplier')
+        mpn = instance.get('mpn', '')
+        item_name = instance.get('instance_name')
+        destination_directory = os.path.join(fileio.dirpath("editable_component_data"), item_name)
 
-            #see if that library instance has already been imported
-            exists_bool, exists_rev = exists_in_lib_used(instance.get('instance_name'), instance.get('mpn'))
-            instance['lib_rev_used_here'] = exists_rev
+        # Determine if already imported
+        exists_bool, exists_rev = exists_in_lib_used(item_name, mpn)
+        used_rev = exists_rev if exists_bool else None
 
-            #find latest release in library
-            instance['lib_latest_rev'] = highest_rev
+        # === Pull from library ===
+        desired_rev = instance.get('lib_latest_rev')  # Already prepopulated before?
+        if not desired_rev:
+            print(f"Library for '{item_name}' has no known desired_rev")
+            updated_instances.append(instance)
+            continue
 
-            # build paths
-            mpn = instance.get('mpn')
-            mpn_rev = f"{mpn}-rev{highest_rev}"
-            source_lib_path = os.path.join(os.getenv(instance.get('supplier')), "parts", mpn, mpn_rev)
-            target_directory = os.path.join(fileio.dirpath("editable_component_data"), instance.get('instance_name'), "library_used_do_not_edit", mpn_rev)
-
-            # Check for outdated or modified libs
-            latest = instance.get('lib_latest_rev')
-            used = instance.get('lib_rev_used_here')
-
-            if not exists_bool:
-                shutil.copytree(source_lib_path, target_directory)
-                used = latest
-
-            if int(latest) > int(used):
-                print(f"There's a newer revision available for {instance.get("instance_name")}. If you want to update, delete 'support_do_not_edit' within the instance directory.")
-            elif int(latest) < int(used):
-                print(f"Somehow you've imported a revision of {instance.get("instance_name")} that's newer than what's in the library. You goin crazy!")
-                exit()
-            else:
-                if find_modifications(source_lib_path, target_directory) == False:
-                    print(f"Library for '{instance.get("instance_name")}' is up to date.")
-                else:
-                    raise RuntimeError(
-                        f"Either you've modified the {instance.get("instance_name")} library as-imported (not allowed for traceability purposes) or the library has changed without adding a new rev. Either choose a different rev or delete the libraries used from the part to re-import."
-                    )
-
-            #COPY IN EDITABLE FILE
-            # Patterns to match → new filename template (case-sensitive)
-            patterns = [
-                (re.compile(r'.*-attributes\.json$'), f"{instance.get('instance_name')}-attributes.json"),
-                (re.compile(r'.*-drawing\.svg$'), f"{instance.get('instance_name')}-drawing.svg"),
-            ]
-
-            """
-            For a given instance_name, copies editable files from:
-            drawing_instances/<instance_name>/library_used_do_not_edit/<mpn-rev>/
-            to:
-            drawing_instances/<instance_name>/
-
-            Files copied:
-            *-attributes.json → <instance_name>-attributes.json
-            *-drawing.svg     → <instance_name>-drawing.svg
-
-            Only copies if the destination file does not already exist.
-
-            Returns:
-                A list of dicts: [{source_filename: ..., destination_filename: ...}, ...]
-            """
-            copied_files = []
-
-            base_dir = fileio.dirpath("editable_component_data")
-            src_root = os.path.join(base_dir, instance.get('instance_name'), "library_used_do_not_edit")
-            dst_dir = os.path.join(base_dir, instance.get('instance_name'))
-
-            # Validate exactly one subfolder (mpn-rev)
-            try:
-                subfolders = [name for name in os.listdir(src_root)
-                            if os.path.isdir(os.path.join(src_root, name))]
-            except FileNotFoundError:
-                return copied_files  # library_used_do_not_edit does not exist
-
-            if len(subfolders) != 1:
-                raise RuntimeError(f"Expected exactly one mpn-rev folder in {src_root}, found: {subfolders}")
-
-            mpn_rev_folder = subfolders[0]
-            src_dir = os.path.join(src_root, mpn_rev_folder)
-
-            for filename in os.listdir(src_dir):
-                src_file = os.path.join(src_dir, filename)
-
-                if not os.path.isfile(src_file):
-                    continue
-
-                for pattern, dest_name in patterns:
-                    if pattern.match(filename):
-                        dst_file = os.path.join(dst_dir, dest_name)
-                        if not os.path.exists(dst_file):
-                            shutil.copy2(src_file, dst_file)
-                            copied_files.append({
-                                "source_filename": src_file,
-                                "destination_filename": dst_file
-                            })
-                            
-                            #FIND AND REPLACE CONTENTS GROUP WITH INSTANCE NAME GROUPS
-                            with open(dst_file, 'r', encoding='utf-8') as file:
-                                content = file.read()
-
-                            content = content.replace(f"{instance.get("mpn")}-drawing-contents-start", f"{instance.get("instance_name")}-contents-start")
-                            content = content.replace(f"{instance.get("mpn")}-drawing-contents-end", f"{instance.get("instance_name")}-contents-end")
-
-                            with open(dst_file, 'w', encoding='utf-8') as file:
-                                file.write(content)
-                        break
-
-
-        else:
-            print(f"Library for '{instance.get('instance_name')}' with component type '{instance.get('item_type')}' either not needed or not supported")
+        pull_item_from_library(
+            supplier=supplier,
+            lib_subpath="parts",
+            mpn=mpn,
+            desired_rev=desired_rev,
+            destination_directory=destination_directory,
+            used_rev=used_rev,
+            item_name=item_name
+        )
 
         updated_instances.append(instance)
 
@@ -167,7 +136,7 @@ def pull_parts():
     with open(fileio.path("instances list"), "w", newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
-        writer.writerows(updated_instances)  
+        writer.writerows(updated_instances)
 
 def exists_in_lib_used(instance_name, mpn):
     # Look for revision folders inside library_used/<instance_name>/
