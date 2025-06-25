@@ -13,7 +13,6 @@ import filecmp
 from harnice import(
     fileio,
     rev_history,
-    instances_list,
     instances_list
 )
 
@@ -103,7 +102,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_
                     f.write(content)
 
     print(f"{item_name:<24}  {status}")
-    return rev_to_use
+    return library_rev
 
 def pull_parts():
     print()
@@ -149,9 +148,5 @@ def pull_parts():
         if desired_rev == "latest" and used_rev is None:
             print(f"{item_name:<24}  no rev folder found; importing latest from library (rev{returned_rev})")
 
-        if returned_rev is not None:
-            instances_list.add_lib_latest_rev(item_name, returned_rev)
-            if desired_rev != "latest":
-                instances_list.add_lib_used_rev(item_name, desired_rev)
-            else:
-                instances_list.add_lib_used_rev(item_name, returned_rev)
+        instances_list.add_lib_latest_rev(item_name, returned_rev)
+        instances_list.add_lib_used_rev(item_name, used_rev)
