@@ -24,7 +24,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_
     base_path = os.path.join(os.getenv(supplier), lib_subpath, mpn)
     rev_file = os.path.join(base_path, f"{mpn}.revision_history.tsv")
 
-    # === Find latest rev from revision history ===
+    # === Find latest revision from library ===
     latest_rev = ""
     try:
         with open(rev_file, newline='', encoding='utf-8') as f:
@@ -36,123 +36,145 @@ def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_
                     if latest_rev == "" or rev_num > int(latest_rev):
                         latest_rev = str(rev_num)
     except FileNotFoundError:
-        print(f"Importing library '{item_name}': revision history missing.")
+        print(f"{item_name:<24}  revision history missing")
         return None
 
-    # === Resolve which revision to use ===
-    rev_to_use = latest_rev if desired_rev == "latest" else desired_rev
+    # === Handle "latest" rev logic ===
+    if desired_rev == "latest":
+        existing_revs = []
+        lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
+        if os.path.exists(lib_used_path):
+            for name in os.listdir(lib_used_path):
+                match = re.search(rf'{re.escape(mpn)}-rev(\d+)$', name)
+                if match:
+                    existing_revs.append(int(match.group(1)))
+
+        if existing_revs:
+            rev_to_use = str(max(existing_revs))
+            source_lib_path = os.path.join(base_path, f"{mpn}-rev{rev_to_use}")
+            target_lib_path = os.path.join(destination_directory, "library_used_do_not_edit", f"{mpn}-rev{rev_to_use}")
+
+            if not find_modifications(source_lib_path, target_lib_path):
+                print(f"{item_name:<24}  up to date with existing rev (rev{rev_to_use})")
+            else:
+                raise RuntimeError(f"{item_name}: local copy of rev {rev_to_use} was modified without a rev bump — delete and re-import")
+            return rev_to_use
+        else:
+            rev_to_use = latest_rev
+    else:
+        # === Validate requested revision exists ===
+        requested_path = os.path.join(base_path, f"{mpn}-rev{desired_rev}")
+        if not os.path.exists(requested_path):
+            print(f"{item_name:<24}  requested rev {desired_rev} does not exist")
+            return None
+
+        if int(latest_rev) > int(desired_rev):
+            print(f"{item_name:<24}  newer rev available (rev{latest_rev}), you currently have (rev{desired_rev})")
+            return latest_rev
+
+        rev_to_use = desired_rev
+
+    # === Paths for source and target ===
     source_lib_path = os.path.join(base_path, f"{mpn}-rev{rev_to_use}")
     target_lib_path = os.path.join(destination_directory, "library_used_do_not_edit", f"{mpn}-rev{rev_to_use}")
 
-    # === Verify source revision folder exists ===
-    if not os.path.exists(source_lib_path):
-        print(f"Importing library '{item_name}': revision folder '{source_lib_path}' is missing.")
-        return latest_rev
-
-    # === Determine revision status ===
-    latest = int(latest_rev)
-    used = int(used_rev) if used_rev is not None else int(rev_to_use)
-    status = ""
-
+    # === Import logic ===
     if not os.path.exists(target_lib_path):
         shutil.copytree(source_lib_path, target_lib_path)
         status = f"imported rev {rev_to_use}"
-    elif latest > used:
-        status = f"newer rev available ({latest}); delete to re-import"
-    elif latest < used:
-        status = f"revision mismatch: used {used}, library {latest}"
+
+        # === Copy selected editable files on fresh import only ===
+        rename_suffixes = [
+            "-drawing.svg",
+            "-params.json",
+            "-attributes.json"
+        ]
+
+        for filename in os.listdir(source_lib_path):
+            src_file = os.path.join(source_lib_path, filename)
+            if not os.path.isfile(src_file):
+                continue
+
+            # Determine destination name
+            new_name = filename
+            for suffix in rename_suffixes:
+                if filename.endswith(suffix):
+                    new_name = f"{item_name}{suffix}"
+                    break
+
+            dst_file = os.path.join(destination_directory, new_name)
+            shutil.copy2(src_file, dst_file)
+
+            # Patch group IDs in SVG
+            if new_name.endswith(".svg"):
+                with open(dst_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                content = content.replace(
+                    f"{mpn}-drawing-contents-start", f"{item_name}-contents-start"
+                ).replace(
+                    f"{mpn}-drawing-contents-end", f"{item_name}-contents-end"
+                )
+                with open(dst_file, 'w', encoding='utf-8') as f:
+                    f.write(content)
     else:
         if not find_modifications(source_lib_path, target_lib_path):
-            status = "up to date"
+            status = f"up to date (rev{rev_to_use})"
+            print(f"{item_name:<24}  {status}")
         else:
-            status = f"modified without rev bump; delete and re-import"
+            raise RuntimeError(f"{item_name}: local copy of rev {rev_to_use} was modified without a rev bump — delete and re-import")
 
-    # === Copy all files into destination and rename certain ones ===
-    rename_suffixes = [
-        "-drawing.svg",
-        "-params.json",
-        "-attributes.json"
-    ]
-
-    for filename in os.listdir(source_lib_path):
-        src_file = os.path.join(source_lib_path, filename)
-
-        if not os.path.isfile(src_file):
-            continue
-
-        # Determine new filename
-        new_name = filename  # default is to preserve original
-
-        for suffix in rename_suffixes:
-            if filename.endswith(suffix):
-                new_name = f"{item_name}{suffix}"
-                break  # only match the first suffix
-
-        dst_file = os.path.join(destination_directory, new_name)
-        shutil.copy2(src_file, dst_file)
-
-        # Patch group IDs in any SVG
-        if new_name.endswith(".svg"):
-            with open(dst_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-
-            content = content.replace(
-                f"{mpn}-drawing-contents-start", f"{item_name}-contents-start"
-            ).replace(
-                f"{mpn}-drawing-contents-end", f"{item_name}-contents-end"
-            )
-
-            with open(dst_file, 'w', encoding='utf-8') as f:
-                f.write(content)
-
-    print(f"Importing library '{item_name}': {status}")
-    return latest_rev
-
+    return rev_to_use
 
 def pull_parts():
+    print()
+    print("Importing from library")
+    print(f"{"ITEM NAME":<24}  STATUS")
     load_dotenv()
     supported_library_components = ['connector', 'backshell']
     instances = instances_list.read_instance_rows()
 
     for instance in instances:
         item_type = instance.get('item_type', '').lower()
+        item_name = instance.get('instance_name')
         if item_type not in supported_library_components:
-            print(f"Library for '{instance.get('instance_name')}' with component type '{item_type}' either not needed or not supported")
+            print(f"{item_name:<24}  item type '{item_type}' not in library")
             continue
 
         supplier = instance.get('supplier')
         mpn = instance.get('mpn', '')
-        item_name = instance.get('instance_name')
         destination_directory = os.path.join(fileio.dirpath("editable_component_data"), item_name)
 
-        desired_rev = instance.get('lib_latest_rev')
+        # Determine rev from existing folders
+        revs_found = []
+        lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
+        if os.path.exists(lib_used_path):
+            for entry in os.listdir(lib_used_path):
+                match = re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", entry)
+                if match:
+                    revs_found.append(int(match.group(1)))
 
-        if not desired_rev:
-            # Pull and let the function determine latest
-            latest_rev = pull_item_from_library(
-                supplier=supplier,
-                lib_subpath="parts",
-                mpn=mpn,
-                desired_rev="latest",
-                destination_directory=destination_directory,
-                used_rev=None,
-                item_name=item_name
-            )
-            if latest_rev:
-                instances_list.add_lib_used_rev(item_name, latest_rev)
-        else:
-            # Use known rev from TSV
-            pull_item_from_library(
-                supplier=supplier,
-                lib_subpath="parts",
-                mpn=mpn,
-                desired_rev=desired_rev,
-                destination_directory=destination_directory,
-                used_rev=desired_rev,
-                item_name=item_name
-            )
+        desired_rev = str(max(revs_found)) if revs_found else "latest"
+        used_rev = desired_rev if desired_rev != "latest" else None
 
-    # No need to rewrite instances list here — it's already updated inline
+        returned_rev = pull_item_from_library(
+            supplier=supplier,
+            lib_subpath="parts",
+            mpn=mpn,
+            desired_rev=desired_rev,
+            destination_directory=destination_directory,
+            used_rev=used_rev,
+            item_name=item_name
+        )
+        
+        if desired_rev == "latest" and used_rev is None:
+            print(f"{item_name:<24}  no rev folder found; importing latest from library (rev{returned_rev})")
+
+        if returned_rev is not None:
+            instances_list.add_lib_latest_rev(item_name, returned_rev)
+            if desired_rev != "latest":
+                instances_list.add_lib_used_rev(item_name, desired_rev)
+            else:
+                instances_list.add_lib_used_rev(item_name, returned_rev)
 
 def exists_in_lib_used(instance_name, mpn):
     # Look for revision folders inside library_used/<instance_name>/
