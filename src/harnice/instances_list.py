@@ -174,7 +174,7 @@ def add_lib_latest_rev(instance_name, rev):
         writer.writeheader()
         writer.writerows(rows)
 
-def add_lib_used_earliest_rev(instance_name, rev):
+def add_lib_used_rev(instance_name, rev):
     with open(fileio.path("instances list"), newline='') as f:
         reader = csv.DictReader(f, delimiter='\t')
         rows = list(reader)
