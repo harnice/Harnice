@@ -18,7 +18,6 @@ from harnice import(
 )
 
 import os
-import csv
 import shutil
 import re
 
@@ -27,88 +26,75 @@ def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_
         item_name = mpn
 
     base_path = os.path.join(os.getenv(supplier), lib_subpath, mpn)
-    rev_file = os.path.join(base_path, f"{mpn}.revision_history.tsv")
+    lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
 
-    # === Find latest revision from library ===
-    latest_rev = ""
-    try:
-        with open(rev_file, newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f, delimiter='\t')
-            for row in reader:
-                rev_str = row.get('rev', '').strip()
-                if rev_str.isdigit():
-                    rev_num = int(rev_str)
-                    if latest_rev == "" or rev_num > int(latest_rev):
-                        latest_rev = str(rev_num)
-    except FileNotFoundError:
-        print(f"{item_name:<24}  revision history missing")
+    # === Find highest local rev
+    revs_found = []
+    if os.path.exists(lib_used_path):
+        for name in os.listdir(lib_used_path):
+            match = re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", name)
+            if match:
+                revs_found.append(int(match.group(1)))
+    local_rev = str(max(revs_found)) if revs_found else None
+
+    # === Find highest rev in library
+    if not os.path.exists(base_path):
+        print(f"{item_name:<24}  library folder missing")
         return None
 
-    # === Handle "latest" rev logic ===
-    if desired_rev == "latest":
-        existing_revs = []
-        lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
-        if os.path.exists(lib_used_path):
-            for name in os.listdir(lib_used_path):
-                match = re.search(rf'{re.escape(mpn)}-rev(\d+)$', name)
-                if match:
-                    existing_revs.append(int(match.group(1)))
+    revision_folders = [
+        name for name in os.listdir(base_path)
+        if os.path.isdir(os.path.join(base_path, name)) and re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", name)
+    ]
+    if not revision_folders:
+        print(f"{item_name:<24}  no revisions found in library")
+        return None
 
-        if existing_revs:
-            rev_to_use = str(max(existing_revs))
-            print(f"{item_name:<24}  up to date with existing rev (rev{rev_to_use})")
-            # still validate it's unmodified
+    library_rev = str(max(int(re.search(r"rev(\d+)", name).group(1)) for name in revision_folders))
+
+    # === Decide which rev to use (from local presence)
+    if local_rev:
+        rev_to_use = local_rev
+        if int(library_rev) > int(local_rev):
+            status = f"newer rev available (rev{library_rev}), local is (rev{local_rev})"
         else:
-            rev_to_use = latest_rev
+            status = f"using local rev (rev{local_rev})"
     else:
-        # === Validate requested revision exists ===
-        requested_path = os.path.join(base_path, f"{mpn}-rev{desired_rev}")
-        if not os.path.exists(requested_path):
-            print(f"{item_name:<24}  requested rev {desired_rev} does not exist")
-            return None
+        rev_to_use = library_rev
+        status = f"imported latest (rev{rev_to_use})"
 
-        if int(latest_rev) > int(desired_rev):
-            print(f"{item_name:<24}  newer rev available (rev{latest_rev}), you currently have (rev{desired_rev})")
-            return latest_rev
-
-        rev_to_use = desired_rev
-
-    # === Paths for source and target ===
+    # === Import library contents freshly every time
     source_lib_path = os.path.join(base_path, f"{mpn}-rev{rev_to_use}")
-    target_lib_path = os.path.join(destination_directory, "library_used_do_not_edit", f"{mpn}-rev{rev_to_use}")
+    target_lib_path = os.path.join(lib_used_path, f"{mpn}-rev{rev_to_use}")
+    os.makedirs(lib_used_path, exist_ok=True)
 
-    # === Always validate that local copy was not modified
     if os.path.exists(target_lib_path):
-        find_modifications(source_lib_path, target_lib_path, label=item_name)
+        shutil.rmtree(target_lib_path)
 
-    # === Perform import only if needed
-    if not os.path.exists(target_lib_path):
-        shutil.copytree(source_lib_path, target_lib_path)
-        status = f"imported rev {rev_to_use}"
+    shutil.copytree(source_lib_path, target_lib_path)
 
-        # === Copy selected editable files on fresh import only ===
-        rename_suffixes = [
-            "-drawing.svg",
-            "-params.json",
-            "-attributes.json"
-        ]
+    # === Copy editable files only if not already present
+    rename_suffixes = [
+        "-drawing.svg",
+        "-params.json",
+        "-attributes.json"
+    ]
 
-        for filename in os.listdir(source_lib_path):
-            src_file = os.path.join(source_lib_path, filename)
-            if not os.path.isfile(src_file):
-                continue
+    for filename in os.listdir(source_lib_path):
+        src_file = os.path.join(source_lib_path, filename)
+        if not os.path.isfile(src_file):
+            continue
 
-            # Determine destination name
-            new_name = filename
-            for suffix in rename_suffixes:
-                if filename.endswith(suffix):
-                    new_name = f"{item_name}{suffix}"
-                    break
+        new_name = filename
+        for suffix in rename_suffixes:
+            if filename.endswith(suffix):
+                new_name = f"{item_name}{suffix}"
+                break
 
-            dst_file = os.path.join(destination_directory, new_name)
+        dst_file = os.path.join(destination_directory, new_name)
+        if not os.path.exists(dst_file):
             shutil.copy2(src_file, dst_file)
 
-            # Patch group IDs in SVG
             if new_name.endswith(".svg"):
                 with open(dst_file, 'r', encoding='utf-8') as f:
                     content = f.read()
@@ -120,10 +106,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_
                 with open(dst_file, 'w', encoding='utf-8') as f:
                     f.write(content)
 
-        print(f"{item_name:<24}  {status}")
-    else:
-        print(f"{item_name:<24}  up to date (rev{rev_to_use})")
-
+    print(f"{item_name:<24}  {status}")
     return rev_to_use
 
 
