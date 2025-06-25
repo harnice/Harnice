@@ -51,9 +51,9 @@ def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_
     if local_rev:
         rev_to_use = local_rev
         if int(library_rev) > int(local_rev):
-            status = f"newer rev available (rev{library_rev}), local is (rev{local_rev})"
+            status = f"newer rev exists   (rev{local_rev} used, rev{library_rev} available)"
         else:
-            status = f"using local rev (rev{local_rev})"
+            status = f"library up to date (rev{local_rev})"
     else:
         rev_to_use = library_rev
         status = f"imported latest (rev{rev_to_use})"
