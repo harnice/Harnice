@@ -17,10 +17,6 @@ from harnice import(
     instances_list
 )
 
-import os
-import shutil
-import re
-
 def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_directory, used_rev=None, item_name=None):
     if item_name == "":
         item_name = mpn
@@ -109,7 +105,6 @@ def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_
     print(f"{item_name:<24}  {status}")
     return rev_to_use
 
-
 def pull_parts():
     print()
     print("Importing from library")
@@ -160,43 +155,3 @@ def pull_parts():
                 instances_list.add_lib_used_rev(item_name, desired_rev)
             else:
                 instances_list.add_lib_used_rev(item_name, returned_rev)
-
-def exists_in_lib_used(instance_name, mpn):
-    # Look for revision folders inside library_used/<instance_name>/
-    base_path = os.path.join(fileio.dirpath("editable_component_data"), instance_name, "library_used_do_not_edit")
-
-    try:
-        for name in os.listdir(base_path):
-            full_path = os.path.join(base_path, name)
-            if os.path.isdir(full_path) and name.startswith(mpn):
-                match = re.search(r'rev(\d+)', name, re.IGNORECASE)
-                if match:
-                    instances_list.add_lib_used_earliest_rev(instance_name, match.group(1))
-                    return True, match.group(1)
-    except FileNotFoundError:
-        return False, ""
-
-    return False, ""
-
-def find_modifications(dir1, dir2, label=""):
-    dir_comparison = filecmp.dircmp(dir1, dir2)
-
-    if dir_comparison.left_only or dir_comparison.right_only or dir_comparison.funny_files:
-        raise RuntimeError(
-            f"You've modified a library ({label}) as-imported, which is not allowed to maintain traceability. "
-            f"Next time, make your changes in a different location. Please delete to re-import."
-        )
-
-    (_, mismatch, errors) = filecmp.cmpfiles(
-        dir1, dir2, dir_comparison.common_files, shallow=False
-    )
-    if mismatch or errors:
-        raise RuntimeError(
-            f"You've modified a library ({label}) as-imported, which is not allowed to maintain traceability. "
-            f"Next time, make your changes in a different location. Please delete to re-import."
-        )
-
-    for subdir in dir_comparison.common_dirs:
-        subdir1 = os.path.join(dir1, subdir)
-        subdir2 = os.path.join(dir2, subdir)
-        find_modifications(subdir1, subdir2, label)
