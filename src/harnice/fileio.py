@@ -33,20 +33,10 @@ mode = "unknown"
     #   "unknown" - structure is not recognized. when verify_revision_structure() is run, this is set to one of the other two
 
 def _part_directory():
-    if mode == "partfile":
-        return os.getcwd()
-    elif mode == "revisionfile":
-        return os.path.dirname(os.getcwd())
-    else:
-        raise ValueError(f"Unknown fileio mode: {mode}")
+    return os.path.dirname(os.getcwd())
 
 def _rev_directory():
-    if mode == "partfile":
-        return os.path.join(_part_directory(), f"{pn}-rev{rev}")
-    elif mode == "revisionfile":
-        return os.getcwd()
-    else:
-        raise ValueError(f"Unknown fileio mode: {mode}")
+    return os.getcwd()
 
 def set_product_type(x):
     global product_type
@@ -281,16 +271,16 @@ def verify_revision_structure():
             return list(csv.DictReader(f, delimiter='\t'))
 
     def prompt_new_part(part_dir, pn):
-        # generate TSV
-        rev_history.generate_revision_history_tsv()
-        tsv = os.path.join(part_dir, f"{pn}.revision_history.tsv")
-        # first rev
+        # ensure TSV exists before writing
+        tsv = ensure_tsv_exists(part_dir, pn)
+        # prompt for first rev
         rev_input = cli.prompt("Enter first revision number", default="1")
         if not rev_input.isdigit():
             raise RuntimeError("Invalid revision number")
         rev = int(rev_input)
+        # append to TSV
         rev_history.append_new_row(rev)
-        # make and cd into rev folder
+        # create and cd into rev folder
         folder = os.path.join(part_dir, f"{pn}-rev{rev}")
         os.makedirs(folder, exist_ok=True)
         os.chdir(folder)
@@ -330,4 +320,5 @@ def verify_revision_structure():
 
     print(f"Working on PN: {pn}, Rev: {rev}")
     return pn, rev
+
 
