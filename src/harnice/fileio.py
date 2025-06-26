@@ -31,16 +31,18 @@ mode = "unknown"
     #   "partfile" - cwd is in the higher-level part dir
     #   "revisionfile" - cwd is in the lower-level rev dir inside a part dir
     #   "unknown" - structure is not recognized. when verify_revision_structure() is run, this is set to one of the other two
-def part_directory():
+    
+def _part_directory():
     if mode == "partfile":
         return os.getcwd()
     elif mode == "revisionfile":
         return os.path.dirname(os.getcwd())
     else:
         raise ValueError(f"Unknown fileio mode: {mode}")
-def rev_directory():
+
+def _rev_directory():
     if mode == "partfile":
-        return os.path.join(part_directory(), f"{pn}-rev{rev}")
+        return os.path.join(_part_directory(), f"{pn}-rev{rev}")
     elif mode == "revisionfile":
         return os.getcwd()
     else:
@@ -61,7 +63,7 @@ def partnumber(format):
         #rev:       returns "revR"
         #R:         returns "R"
 
-    pn_rev = os.path.basename(rev_directory())
+    pn_rev = os.path.basename(_rev_directory())
 
     if format == "pn-rev":
         return pn_rev
@@ -176,7 +178,7 @@ def path(target_value):
         list: A list of container names leading to the element containing the target value, or None if not found.
     """
     if target_value == "revision history":
-        file_path = os.path.join(part_directory(), f"{partnumber("pn")}.revision_history.tsv")
+        file_path = os.path.join(_part_directory(), f"{partnumber("pn")}.revision_history.tsv")
         return file_path
 
     def recursive_search(data, path):
@@ -199,7 +201,7 @@ def path(target_value):
     path_value = recursive_search(harnice_file_structure(), [])
     if not path_value:
         raise TypeError(f"Could not find filepath of {target_value}.")
-    return os.path.join(rev_directory(),*path_value)
+    return os.path.join(_rev_directory(),*path_value)
 
 def dirpath(target_key):
     #returns the path of a directory you know the name of. use that directory name as the argument. 
@@ -222,7 +224,7 @@ def dirpath(target_key):
     path_key = recursive_search(harnice_file_structure(), [])
     if not path_key:
         raise TypeError(f"Could not find directory {target_key}.")
-    return os.path.join(rev_directory(),*path_key)
+    return os.path.join(_rev_directory(),*path_key)
 
 def name(target_value):
     #returns the filename of a filekey. 
