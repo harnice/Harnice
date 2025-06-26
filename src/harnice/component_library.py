@@ -106,7 +106,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_
 
 def pull_parts():
     print()
-    print("Importing from library")
+    print("Importing parts from library")
     print(f"{"ITEM NAME":<24}  STATUS")
     load_dotenv()
     supported_library_components = ['connector', 'backshell']

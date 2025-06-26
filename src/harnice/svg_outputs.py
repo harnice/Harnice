@@ -361,6 +361,7 @@ def prep_wirelist():
         f.write("\n".join(svg_lines))
 
 def prep_tblocks(page_setup_contents, revhistory_data):
+    print("Importing titleblocks from library")
     for page_name in page_setup_contents.get("pages", {}):
         tblock_data = page_setup_contents["pages"].get(page_name)
         if not tblock_data:
@@ -528,10 +529,9 @@ def update_harnice_output(page_setup_contents):
         titleblock_supplier = page_data.get("supplier")
         titleblock = page_data.get("titleblock", {})
         attr_library_path = os.path.join(
-            os.getenv(titleblock_supplier),
-            "titleblocks",
-            titleblock,
-            f"{titleblock}_attributes.json"
+            fileio.dirpath("tblock_svgs"),
+            page_name,
+            f"{page_name}-attributes.json"
         )
         with open(attr_library_path, "r", encoding="utf-8") as f:
             tblock_attributes = json.load(f)
@@ -556,10 +556,6 @@ def update_harnice_output(page_setup_contents):
             <g id="svg-master-contents-end"></g>
         </svg>
         """)
-    #for tblock_name in page_setup_contents.get("pages", {}):
-        #source_svg_name = f"{fileio.partnumber('pn-rev')}.{tblock_name}_master.svg"
-        #source_svg_path = os.path.join(fileio.dirpath("tblock_svgs"), source_svg_name)
-        #svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, tblock_name, tblock_name)
 
         #replace the master svg
         svg_utils.find_and_replace_svg_group(
@@ -572,7 +568,7 @@ def update_harnice_output(page_setup_contents):
         #replace the titleblock
         svg_utils.find_and_replace_svg_group(
             filepath, 
-            os.path.join(fileio.dirpath("tblock_svgs"), f"{fileio.partnumber('pn-rev')}.{page_name}_master.svg"),
+            os.path.join(fileio.dirpath("tblock_svgs"), page_name, f"{page_name}.svg"),
             page_name, 
             "tblock-svg"
         )
