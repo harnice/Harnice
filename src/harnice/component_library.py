@@ -16,7 +16,7 @@ from harnice import(
     instances_list
 )
 
-def pull_item_from_library(supplier, lib_subpath, mpn, desired_rev, destination_directory, used_rev=None, item_name=None):
+def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, used_rev=None, item_name=None):
     if item_name == "":
         item_name = mpn
 
@@ -116,7 +116,7 @@ def pull_parts():
         item_type = instance.get('item_type', '').lower()
         item_name = instance.get('instance_name')
         if item_type not in supported_library_components:
-            print(f"{item_name:<24}  item type '{item_type}' not in library")
+            print(f"{item_name:<24}  item type '{item_type}' not yet carried in library")
             continue
 
         supplier = instance.get('supplier')
@@ -139,14 +139,10 @@ def pull_parts():
             supplier=supplier,
             lib_subpath="parts",
             mpn=mpn,
-            desired_rev=desired_rev,
             destination_directory=destination_directory,
             used_rev=used_rev,
             item_name=item_name
         )
-        
-        if desired_rev == "latest" and used_rev is None:
-            print(f"{item_name:<24}  no rev folder found; importing latest from library (rev{returned_rev})")
 
         instances_list.add_lib_latest_rev(item_name, returned_rev)
         instances_list.add_lib_used_rev(item_name, used_rev)

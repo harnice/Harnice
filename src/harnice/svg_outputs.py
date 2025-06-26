@@ -382,7 +382,6 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             supplier=supplier_key,
             lib_subpath="titleblocks",
             mpn=titleblock,
-            desired_rev="latest",
             destination_directory=destination_directory,
             used_rev=None,
             item_name=titleblock
