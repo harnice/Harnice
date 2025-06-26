@@ -396,6 +396,10 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         with open(attr_path, "r", encoding="utf-8") as f:
             tblock_attributes = json.load(f)
 
+        # === Page size in pixels ===
+        page_size_in = tblock_attributes.get("page_size_in", [11, 8.5])
+        page_size_px = [int(page_size_in[0] * 96), int(page_size_in[1] * 96)]
+
         bom_loc = tblock_attributes.get("periphery_locs", {}).get("bom_loc", [0, 0])
         translate_bom = f'translate({bom_loc[0]},{bom_loc[1]})'
 
@@ -404,7 +408,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
 
         svg = [
             '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
-            '<svg xmlns="http://www.w3.org/2000/svg" version="1.1">',
+            f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="{page_size_px[0]}" height="{page_size_px[1]}">',
             f'  <g id="{page_name}-contents-start">',
             f'    <g id="tblock-contents-start"></g>',
             f'    <g id="tblock-contents-end"></g>',
@@ -421,8 +425,16 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             f.write("\n".join(svg))
 
         # === Import tblock and bom SVG contents ===
-        svg_utils.find_and_replace_svg_group(project_svg_path, os.path.join(fileio.dirpath("tblock_svgs"), page_name, f"{titleblock}-drawing.svg"), "tblock", "tblock")
-        svg_utils.find_and_replace_svg_group(project_svg_path, fileio.path("bom table master svg"), "bom", "bom")
+        svg_utils.find_and_replace_svg_group(
+            project_svg_path,
+            os.path.join(destination_directory, f"{titleblock}-drawing.svg"),
+            "tblock", "tblock"
+        )
+        svg_utils.find_and_replace_svg_group(
+            project_svg_path,
+            fileio.path("bom table master svg"),
+            "bom", "bom"
+        )
 
         # === Text replacements ===
         text_map = tblock_data.get("text_replacements", {})
