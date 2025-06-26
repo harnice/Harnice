@@ -388,7 +388,8 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         )
 
         # === Access pulled files ===
-        attr_path = os.path.join(destination_directory, f"{titleblock}-attributes.json")
+        attr_path = os.path.join(destination_directory, f"{page_name}-attributes.json")
+        os.rename(os.path.join(destination_directory,f"{titleblock}-attributes.json"), attr_path)
         svg_path = os.path.join(destination_directory, f"{titleblock}.svg")
 
         if not os.path.isfile(attr_path):
