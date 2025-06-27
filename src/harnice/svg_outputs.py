@@ -361,6 +361,12 @@ def prep_wirelist():
         f.write("\n".join(svg_lines))
 
 def prep_tblocks(page_setup_contents, revhistory_data):
+    # === Validate page name uniqueness ===
+    page_names = [p.get("name") for p in page_setup_contents.get("pages", [])]
+    duplicates = {name for name in page_names if page_names.count(name) > 1}
+    if duplicates:
+        raise ValueError(f"[ERROR] Duplicate page name(s) found: {', '.join(duplicates)}")
+
     print("Importing titleblocks from library")
     for page in page_setup_contents.get("pages", []):
         page_name = page.get("name")
