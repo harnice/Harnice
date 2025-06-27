@@ -451,9 +451,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
 
             if "scale" in old.lower():
                 scales_lookup = page_setup_contents.get("scales", {})
-                if new not in scales_lookup:
-                    raise KeyError(f"[ERROR] Scale key '{new}' not found in scales lookup")
-                new = f"{scales_lookup[new]:.3f}"
+                new = f"{scales_lookup.get(new, 0):.3f}" if new in scales_lookup else ""
 
             if old not in svg:
                 print(f"[WARN] Key '{old}' not found in titleblock SVG")
