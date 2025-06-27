@@ -454,10 +454,14 @@ def prep_tblocks(page_setup_contents, revhistory_data):
                 scales_lookup = page_setup_contents.get("scales", {})
                 new = f"{scales_lookup.get(new, 0):.3f}" if new in scales_lookup else ""
 
-            """if new == "autosheet":
-                num_pages = figure out how many pages are in page_setup_contents.get("pages", {})
-                page_num = figure out which page page_name is in page_setup_contents.get("pages", {})
-                new = f"{page_num} of {num_pages}"""
+            if new == "autosheet":
+                page_names = [p.get("name") for p in page_setup_contents.get("pages", [])]
+                try:
+                    page_num = page_names.index(page_name) + 1
+                except ValueError:
+                    raise ValueError(f"[ERROR] Page name '{page_name}' not found in pages list")
+                total_pages = len(page_names)
+                new = f"{page_num} of {total_pages}"
 
             if old not in svg:
                 print(f"[WARN] Key '{old}' not found in titleblock SVG")
