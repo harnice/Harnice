@@ -362,8 +362,9 @@ def prep_wirelist():
 
 def prep_tblocks(page_setup_contents, revhistory_data):
     print("Importing titleblocks from library")
-    for page_name in page_setup_contents.get("pages", {}):
-        tblock_data = page_setup_contents["pages"].get(page_name)
+    for page in page_setup_contents.get("pages", []):
+        page_name = page.get("name")
+        tblock_data = page  # each item in the list *is* the tblock_data
         if not tblock_data:
             raise KeyError(f"[ERROR] Titleblock '{page_name}' not found in harnice output contents")
 
@@ -456,7 +457,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             """if new == "autosheet":
                 num_pages = figure out how many pages are in page_setup_contents.get("pages", {})
                 page_num = figure out which page page_name is in page_setup_contents.get("pages", {})
-                new = f"{page_num} of {num_pages}""""
+                new = f"{page_num} of {num_pages}"""
 
             if old not in svg:
                 print(f"[WARN] Key '{old}' not found in titleblock SVG")
@@ -522,7 +523,8 @@ def prep_master(page_setup_contents):
     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")    
 
 def update_harnice_output(page_setup_contents):
-    for page_name, page_data in page_setup_contents.get("pages", {}).items():
+    for page_data in page_setup_contents.get("pages", []):
+        page_name = page_data.get("name")
         filename = f"{fileio.partnumber('pn-rev')}.{page_name}.svg"
         filepath = os.path.join(fileio.dirpath("page_setup"), filename)
 
