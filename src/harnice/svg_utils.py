@@ -95,7 +95,8 @@ def produce_multipage_harnice_output_pdf(page_setup_contents):
     temp_pdfs = []
     inkscape_bin = "/Applications/Inkscape.app/Contents/MacOS/inkscape"  # adjust if needed
 
-    for page_name in page_setup_contents.get("pages", {}):
+    for page in page_setup_contents.get("pages", []):
+        page_name = page.get("name")
         svg_filename = f"{partnumber}.{page_name}.svg"
         svg_path = os.path.join(svg_dir, svg_filename)
 
