@@ -1,7 +1,7 @@
 import os
 import os.path
 import json
-import time
+import datetime
 import subprocess
 import shutil
 from os.path import basename
@@ -293,7 +293,7 @@ def verify_revision_structure():
             print("Revision updates can't be blank!")
             revisionupdates = cli.prompt("Enter a description for this revision")
 
-        today = "I DON'T KNOW HOW TO FIND TODAYS DATE"
+        today = datetime.date.today().isoformat()
 
         rows.append({
             "pn": pn,
