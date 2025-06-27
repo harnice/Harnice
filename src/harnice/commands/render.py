@@ -147,6 +147,8 @@ def harness():
     svg_utils.produce_multipage_harnice_output_pdf(page_setup_contents)
         #makes a PDF out of each svg in page setup
 
+    rev_history.update_datemodified()
+
 def tblock():
     print("Warning: rendering a titleblock may clear user edits to its svg. Do you wish to proceed?")
     if cli.prompt("Press enter to confirm or any key to exit") == "":

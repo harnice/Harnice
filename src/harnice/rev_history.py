@@ -66,3 +66,21 @@ def initial_release_desc():
                     return row.get("desc")
     except:
         pass
+
+def update_datemodified():
+    pass()
+    """
+    with open(path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        rows = list(csv.DictReader(f, delimiter='\t'))
+        fieldnames = reader.fieldnames
+
+    for row in rows:
+        if row.get("rev") == fileio.partnumber("rev"):
+        #TODO: UPDATE THE MODIFIED KEY FOR THIS ROW
+    
+    with open(path, "w", newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
+    """
