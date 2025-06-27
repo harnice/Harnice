@@ -261,7 +261,7 @@ def verify_revision_structure():
         pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
         return any(pattern.fullmatch(d) for d in os.listdir(path))
 
-    def make_new_rev_tsv(pn, desc, rev, revisionupdates):
+    def make_new_rev_tsv(pn, rev):
         columns = rev_history.revision_history_columns()
         
         # Ensure file exists with header
@@ -269,32 +269,54 @@ def verify_revision_structure():
             with open(temp_tsv_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
                 writer.writeheader()
-        
+
+        append_row_to_tsv(temp_tsv_path, pn, rev)
+
+    def append_row_to_tsv(path, pn, rev):
+        with open(path, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            rows = list(csv.DictReader(f, delimiter='\t'))
+            fieldnames = reader.fieldnames
+
         # Build the row with required fields and blank others
-        row = {key: "" for key in columns}
-        row.update({
+        desc = rev_history.initial_release_desc()
+        if not desc:
+            desc = "HARNESS, DOES A, FOR B"
+        desc = cli.prompt("Enter a description of this part", default=desc)
+
+        revisionupdates = "INITIAL RELEASE"
+        if rev_history.initial_release_exists():
+            revisionupdates = ""
+        revisionupdates = cli.prompt("Enter a description for this revision", default=revisionupdates)
+        #TODO: CANT FIGURE OUT WHY THIS ISN'T WORKING
+        while str(revisionupdates) == '':
+            print("Revision updates can't be blank!")
+            revisionupdates = cli.prompt("Enter a description for this revision")
+
+        today = "I DON'T KNOW HOW TO FIND TODAYS DATE"
+
+        rows.append({
             "pn": pn,
+            "rev": rev,
             "desc": desc,
             "rev": rev,
+            "status": "",
+            "datestarted": today,
+            "datemodified": today,
             "revisionupdates": revisionupdates
         })
 
         # Append the row
-        with open(temp_tsv_path, 'a', newline='', encoding='utf-8') as f:
+        columns = rev_history.revision_history_columns()
+        with open(path, "w", newline='') as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
-            writer.writerow(row)
-
-    def read_history(temp_tsv_path):
-        with open(temp_tsv_path, 'r', encoding='utf-8') as f:
-            return list(csv.DictReader(f, delimiter='\t'))
+            writer.writeheader()
+            writer.writerows(rows)
 
     def prompt_new_part(part_dir, pn):
-        # prompt user for stuff
         rev = cli.prompt("Enter revision number", default="1")
-        desc = cli.prompt("Enter a description of this part", default="HARNESS, DOES A, FOR B")
-        revisionupdates = cli.prompt("Enter a description for this revision", default="INITIAL RELEASE")
         # append to TSV
-        make_new_rev_tsv(pn, desc, rev, revisionupdates)
+        make_new_rev_tsv(pn, rev)
         # create and cd into rev folder
         folder = os.path.join(part_dir, f"{pn}-rev{rev}")
         os.makedirs(folder, exist_ok=True)
@@ -320,17 +342,17 @@ def verify_revision_structure():
         pn = cwd_name
         rev = prompt_new_part(cwd, pn)
 
-    # — now we’re in a revision folder, with pn, rev, temp_tsv_path set —
+    # if everything looks good but the row isn't in the tsv file
+    try:
+        rev_history.revision_info()
+    except:
+        print("Couldn't find this rev in the revision history TSV. Please add some info first...")
+        append_row_to_tsv(path("revision history"), pn, rev)
 
-    history = read_history(temp_tsv_path)
-    for row in history:
-        if row.get("rev") == str(rev):
-            if row.get("status", ""):
-                raise RuntimeError(f"Revision {rev} has status '{row['status']}'. Only blank-status revs allowed.")
-            break
-    else:
-        # not found in TSV → append
-        rev_history.append_new_row(rev)
+     # — now we’re in a revision folder, with pn, rev, temp_tsv_path set —
+    if not rev_history.status(rev) == "":
+        raise RuntimeError(f"Revision {rev} status is not clear. Harnice will only let you render revs with a blank status.")
+
 
     print(f"Working on PN: {pn}, Rev: {rev}")
     return pn, rev
