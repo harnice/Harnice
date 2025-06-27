@@ -453,6 +453,11 @@ def prep_tblocks(page_setup_contents, revhistory_data):
                 scales_lookup = page_setup_contents.get("scales", {})
                 new = f"{scales_lookup.get(new, 0):.3f}" if new in scales_lookup else ""
 
+            """if new == "autosheet":
+                num_pages = figure out how many pages are in page_setup_contents.get("pages", {})
+                page_num = figure out which page page_name is in page_setup_contents.get("pages", {})
+                new = f"{page_num} of {num_pages}""""
+
             if old not in svg:
                 print(f"[WARN] Key '{old}' not found in titleblock SVG")
 
@@ -572,8 +577,9 @@ def update_harnice_output(page_setup_contents):
 def update_page_setup_json():
     # === Titleblock Defaults ===
     blank_setup = {
-        "pages": {
-            "page1": {
+        "pages": [
+            {
+                "name": "page1",
                 "supplier": "public",
                 "titleblock": "harnice_tblock-11x8.5",
                 "text_replacements": {
@@ -583,10 +589,10 @@ def update_page_setup_json():
                     "tblock-key-rev": "pull_from_revision_history(rev)",
                     "tblock-key-releaseticket": "",
                     "tblock-key-scale": "A",
-                    "tblock-key-sheet": "1 of 1"
+                    "tblock-key-sheet": "autosheet"
                 }
             }
-        },
+        ],
         "formboards": {
             "formboard1": {
                 "scale": "A",
