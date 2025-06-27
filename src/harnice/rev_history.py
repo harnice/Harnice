@@ -68,7 +68,7 @@ def initial_release_desc():
         pass
 
 def update_datemodified():
-    pass()
+    pass
     """
     with open(path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter='\t')
