@@ -261,18 +261,19 @@ def verify_revision_structure():
         pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
         return any(pattern.fullmatch(d) for d in os.listdir(path))
 
-    def make_new_rev_tsv(pn, rev):
+    def make_new_rev_tsv(path, pn, rev):
         columns = rev_history.revision_history_columns()
         
         # Ensure file exists with header
-        if not os.path.exists(temp_tsv_path):
-            with open(temp_tsv_path, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
-                writer.writeheader()
-
-        append_row_to_tsv(temp_tsv_path, pn, rev)
+        with open(path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
+            writer.writeheader()
+        append_row_to_tsv(path, pn, rev)
 
     def append_row_to_tsv(path, pn, rev):
+        if not os.path.exists(path):
+            return "file not found"
+
         with open(path, newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter='\t')
             rows = list(csv.DictReader(f, delimiter='\t'))
@@ -315,7 +316,7 @@ def verify_revision_structure():
     def prompt_new_part(part_dir, pn):
         rev = cli.prompt("Enter revision number", default="1")
         # append to TSV
-        make_new_rev_tsv(pn, rev)
+        make_new_rev_tsv(temp_tsv_path, pn, rev)
         # create and cd into rev folder
         folder = os.path.join(part_dir, f"{pn}-rev{rev}")
         os.makedirs(folder, exist_ok=True)
@@ -341,12 +342,12 @@ def verify_revision_structure():
         pn = cwd_name
         rev = prompt_new_part(cwd, pn)
 
-    # if everything looks good but the row isn't in the tsv file
-    try:
-        rev_history.revision_info()
-    except:
-        print("Couldn't find this rev in the revision history TSV. Please add some info first...")
+    # if everything looks good but the tsv isn't
+    x = rev_history.revision_info()
+    if x == "row not found":
         append_row_to_tsv(path("revision history"), pn, rev)
+    elif x == "file not found":
+        make_new_rev_tsv(path("revision history"), pn, rev)
 
      # — now we’re in a revision folder, with pn, rev, temp_tsv_path set —
     if not rev_history.status(rev) == "":

@@ -32,7 +32,7 @@ def revision_history_columns():
 def revision_info():
     rev_path = fileio.path("revision history")
     if not os.path.exists(rev_path):
-        raise FileNotFoundError(f"[ERROR] Revision history file not found: {rev_path}")
+        return "file not found"
 
     with open(rev_path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -40,7 +40,7 @@ def revision_info():
             if row.get("rev") == fileio.partnumber("R"):
                 return {k: (v or "").strip() for k, v in row.items()}
 
-    raise ValueError(f"[ERROR] No revision row found for rev '{fileio.partnumber('R')}' in revision history")
+    return "row not found"
 
 def status(rev):
     with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
@@ -50,11 +50,13 @@ def status(rev):
                 return row.get("status")
 
 def initial_release_exists():
-    with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if str(row.get("revisionupdates")) =="INITIAL RELEASE":
-                return True
+    try:
+        with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            for row in reader:
+                if str(row.get("revisionupdates")) =="INITIAL RELEASE":
+                    return True
+    except:
         return False
 
 def initial_release_desc():
