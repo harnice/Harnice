@@ -252,7 +252,7 @@ def verify_revision_structure():
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
-    tsv_path = os.path.join(os.getcwd(), f"{cwd_name}-revision_history.tsv")
+    temp_tsv_path = os.path.join(os.getcwd(), f"{cwd_name}-revision_history.tsv")
 
     def is_revision_folder(name, parent_name):
         return name.startswith(f"{parent_name}-rev") and name.split("-rev")[-1].isdigit()
@@ -265,8 +265,8 @@ def verify_revision_structure():
         columns = rev_history.revision_history_columns()
         
         # Ensure file exists with header
-        if not os.path.exists(tsv_path):
-            with open(tsv_path, 'w', newline='', encoding='utf-8') as f:
+        if not os.path.exists(temp_tsv_path):
+            with open(temp_tsv_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
                 writer.writeheader()
         
@@ -280,12 +280,12 @@ def verify_revision_structure():
         })
 
         # Append the row
-        with open(tsv_path, 'a', newline='', encoding='utf-8') as f:
+        with open(temp_tsv_path, 'a', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writerow(row)
 
-    def read_history(tsv_path):
-        with open(tsv_path, 'r', encoding='utf-8') as f:
+    def read_history(temp_tsv_path):
+        with open(temp_tsv_path, 'r', encoding='utf-8') as f:
             return list(csv.DictReader(f, delimiter='\t'))
 
     def prompt_new_part(part_dir, pn):
@@ -320,9 +320,9 @@ def verify_revision_structure():
         pn = cwd_name
         rev = prompt_new_part(cwd, pn)
 
-    # — now we’re in a revision folder, with pn, rev, tsv_path set —
+    # — now we’re in a revision folder, with pn, rev, temp_tsv_path set —
 
-    history = read_history(tsv_path)
+    history = read_history(temp_tsv_path)
     for row in history:
         if row.get("rev") == str(rev):
             if row.get("status", ""):
