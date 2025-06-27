@@ -445,10 +445,9 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         for old, new in text_map.items():
             if new.startswith("pull_from_revision_history(") and new.endswith(")"):
                 field_name = new[len("pull_from_revision_history("):-1]
-                value = revhistory_data.get(field_name, "").strip()
-                if not value:
-                    raise ValueError(f"[ERROR] Field '{field_name}' is missing or empty in revision history")
-                new = value
+                if field_name not in revhistory_data:
+                    raise ValueError(f"[ERROR] Field '{field_name}' is missing from revision history")
+                new = revhistory_data.get(field_name, "").strip()
 
             if "scale" in old.lower():
                 scales_lookup = page_setup_contents.get("scales", {})
@@ -580,9 +579,9 @@ def update_page_setup_json():
                 "supplier": "public",
                 "titleblock": "harnice_tblock-11x8.5",
                 "text_replacements": {
-                    "tblock-key-desc": "",
+                    "tblock-key-desc": "pull_from_revision_history(desc)",
                     "tblock-key-pn": "pull_from_revision_history(pn)",
-                    "tblock-key-drawnby": "",
+                    "tblock-key-drawnby": "pull_from_revision_history(drawnby)",
                     "tblock-key-rev": "pull_from_revision_history(rev)",
                     "tblock-key-releaseticket": "",
                     "tblock-key-scale": "A",
