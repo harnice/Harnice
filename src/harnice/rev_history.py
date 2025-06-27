@@ -26,6 +26,9 @@ REVISION_HISTORY_COLUMNS = [
     "affectedinstances"
 ]
 
+def revision_history_columns():
+    return REVISION_HISTORY_COLUMNS
+
 def read_revision_rows():
     with open(fileio.path("revision history"), newline='', encoding='utf-8') as f:
         return list(csv.DictReader(f, delimiter='\t'))
@@ -35,9 +38,6 @@ def write_revision_rows(rows):
         writer = csv.DictWriter(f, fieldnames=REVISION_HISTORY_COLUMNS, delimiter='\t')
         writer.writeheader()
         writer.writerows(rows)
-
-def generate_revision_history_tsv():
-    write_revision_rows([])
 
 def append_new_row(rev):
     """

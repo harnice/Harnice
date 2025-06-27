@@ -168,7 +168,7 @@ def path(target_value):
         list: A list of container names leading to the element containing the target value, or None if not found.
     """
     if target_value == "revision history":
-        file_path = os.path.join(_part_directory(), f"{partnumber("pn")}.revision_history.tsv")
+        file_path = os.path.join(_part_directory(), f"{partnumber("pn")}-revision_history.tsv")
         return file_path
 
     def recursive_search(data, path):
@@ -252,6 +252,7 @@ def verify_revision_structure():
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
+    tsv_path = os.path.join(os.getcwd(), f"{cwd_name}-revision_history.tsv")
 
     def is_revision_folder(name, parent_name):
         return name.startswith(f"{parent_name}-rev") and name.split("-rev")[-1].isdigit()
@@ -260,37 +261,50 @@ def verify_revision_structure():
         pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
         return any(pattern.fullmatch(d) for d in os.listdir(path))
 
-    def ensure_tsv_exists(part_dir, pn):
-        tsv = os.path.join(part_dir, f"{pn}.revision_history.tsv")
-        if not os.path.exists(tsv):
-            rev_history.generate_revision_history_tsv()
-        return tsv
+    def make_new_rev_tsv(pn, desc, rev, revisionupdates):
+        columns = rev_history.revision_history_columns()
+        
+        # Ensure file exists with header
+        if not os.path.exists(tsv_path):
+            with open(tsv_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
+                writer.writeheader()
+        
+        # Build the row with required fields and blank others
+        row = {key: "" for key in columns}
+        row.update({
+            "pn": pn,
+            "desc": desc,
+            "rev": rev,
+            "revisionupdates": revisionupdates
+        })
+
+        # Append the row
+        with open(tsv_path, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
+            writer.writerow(row)
 
     def read_history(tsv_path):
         with open(tsv_path, 'r', encoding='utf-8') as f:
             return list(csv.DictReader(f, delimiter='\t'))
 
     def prompt_new_part(part_dir, pn):
-        # ensure TSV exists before writing
-        tsv = ensure_tsv_exists(part_dir, pn)
-        # prompt for first rev
-        rev_input = cli.prompt("Enter first revision number", default="1")
-        if not rev_input.isdigit():
-            raise RuntimeError("Invalid revision number")
-        rev = int(rev_input)
+        # prompt user for stuff
+        rev = cli.prompt("Enter revision number", default="1")
+        desc = cli.prompt("Enter a description of this part", default="HARNESS, DOES A, FOR B")
+        revisionupdates = cli.prompt("Enter a description for this revision", default="INITIAL RELEASE")
         # append to TSV
-        rev_history.append_new_row(rev)
+        make_new_rev_tsv(pn, desc, rev, revisionupdates)
         # create and cd into rev folder
         folder = os.path.join(part_dir, f"{pn}-rev{rev}")
         os.makedirs(folder, exist_ok=True)
         os.chdir(folder)
-        return rev, tsv
+        return rev
 
     # 1) Already in a <PN>-revN folder?
     if is_revision_folder(cwd_name, parent):
         pn = parent
         rev = int(cwd_name.split("-rev")[-1])
-        tsv_path = ensure_tsv_exists(os.path.dirname(cwd), pn)
 
     # 2) In a part folder (has rev folders inside)?
     elif has_revision_folder_inside(cwd, cwd_name):
@@ -304,7 +318,7 @@ def verify_revision_structure():
         if answer.lower() not in ("y", "yes", ""):
             exit()
         pn = cwd_name
-        rev, tsv_path = prompt_new_part(cwd, pn)
+        rev = prompt_new_part(cwd, pn)
 
     # — now we’re in a revision folder, with pn, rev, tsv_path set —
 
