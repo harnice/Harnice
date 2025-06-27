@@ -25,7 +25,9 @@ def harness():
     fileio.verify_revision_structure()
         #reads file structure and revision history tsv if exists
         #writes a new revision history document if else
-    #TODO: make sure there's a yaml in the rev folder or generate a blank one?
+    
+    #=============== CHECK FOR PRESENCE OF YAML #===============
+    fileio.verify_yaml_exists()
 
     #=============== GENERATE FILE STRUCTURE #===============
     fileio.generate_structure()

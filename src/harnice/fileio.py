@@ -357,4 +357,9 @@ def verify_revision_structure():
     print(f"Working on PN: {pn}, Rev: {rev}")
     return pn, rev
 
-
+def verify_yaml_exists():
+    if not os.path.exists(path("harness yaml")):
+        print()
+        print("    No YAML harness definition file found.")
+        print()
+        exit()
