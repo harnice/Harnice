@@ -288,10 +288,9 @@ def verify_revision_structure():
         if rev_history.initial_release_exists():
             revisionupdates = ""
         revisionupdates = cli.prompt("Enter a description for this revision", default=revisionupdates)
-        #TODO: CANT FIGURE OUT WHY THIS ISN'T WORKING
-        while str(revisionupdates) == '':
-            print("Revision updates can't be blank!")
-            revisionupdates = cli.prompt("Enter a description for this revision")
+        while not revisionupdates or not revisionupdates.strip():
+                print("Revision updates can't be blank!")
+                revisionupdates = cli.prompt("Enter a description for this revision", default=None)
 
         today = datetime.date.today().isoformat()
 
