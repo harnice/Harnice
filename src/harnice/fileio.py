@@ -1,7 +1,7 @@
 import os
 import os.path
 import json
-import time
+import datetime
 import subprocess
 import shutil
 from os.path import basename
@@ -31,20 +31,12 @@ mode = "unknown"
     #   "partfile" - cwd is in the higher-level part dir
     #   "revisionfile" - cwd is in the lower-level rev dir inside a part dir
     #   "unknown" - structure is not recognized. when verify_revision_structure() is run, this is set to one of the other two
-def part_directory():
-    if mode == "partfile":
-        return os.getcwd()
-    elif mode == "revisionfile":
-        return os.path.dirname(os.getcwd())
-    else:
-        raise ValueError(f"Unknown fileio mode: {mode}")
-def rev_directory():
-    if mode == "partfile":
-        return os.path.join(part_directory(), f"{pn}-rev{rev}")
-    elif mode == "revisionfile":
-        return os.getcwd()
-    else:
-        raise ValueError(f"Unknown fileio mode: {mode}")
+
+def _part_directory():
+    return os.path.dirname(os.getcwd())
+
+def _rev_directory():
+    return os.getcwd()
 
 def set_product_type(x):
     global product_type
@@ -61,7 +53,7 @@ def partnumber(format):
         #rev:       returns "revR"
         #R:         returns "R"
 
-    pn_rev = os.path.basename(rev_directory())
+    pn_rev = os.path.basename(_rev_directory())
 
     if format == "pn-rev":
         return pn_rev
@@ -176,7 +168,7 @@ def path(target_value):
         list: A list of container names leading to the element containing the target value, or None if not found.
     """
     if target_value == "revision history":
-        file_path = os.path.join(part_directory(), f"{partnumber("pn")}.revision_history.tsv")
+        file_path = os.path.join(_part_directory(), f"{partnumber("pn")}-revision_history.tsv")
         return file_path
 
     def recursive_search(data, path):
@@ -199,7 +191,7 @@ def path(target_value):
     path_value = recursive_search(harnice_file_structure(), [])
     if not path_value:
         raise TypeError(f"Could not find filepath of {target_value}.")
-    return os.path.join(rev_directory(),*path_value)
+    return os.path.join(_rev_directory(),*path_value)
 
 def dirpath(target_key):
     #returns the path of a directory you know the name of. use that directory name as the argument. 
@@ -222,7 +214,7 @@ def dirpath(target_key):
     path_key = recursive_search(harnice_file_structure(), [])
     if not path_key:
         raise TypeError(f"Could not find directory {target_key}.")
-    return os.path.join(rev_directory(),*path_key)
+    return os.path.join(_rev_directory(),*path_key)
 
 def name(target_value):
     #returns the filename of a filekey. 
@@ -257,137 +249,117 @@ def name(target_value):
     return recursive_search(harnice_file_structure())
 
 def verify_revision_structure():
-    global mode
-    global pn
-    global rev
+    cwd = os.getcwd()
+    cwd_name = os.path.basename(cwd)
+    parent = os.path.basename(os.path.dirname(cwd))
+    temp_tsv_path = os.path.join(os.getcwd(), f"{cwd_name}-revision_history.tsv")
 
-    cwd_path = os.getcwd()
-    cwd_name = os.path.basename(cwd_path)
-    parent_dirpath = os.path.dirname(cwd_path)
-    parent_dirname = os.path.basename(parent_dirpath)
-    children_dir = os.listdir(cwd_path)
+    def is_revision_folder(name, parent_name):
+        return name.startswith(f"{parent_name}-rev") and name.split("-rev")[-1].isdigit()
 
-    part_path = ""
-    rev_path = ""
-    pn = ""
-    rev = None
-    mode = "unknown"
+    def has_revision_folder_inside(path, pn):
+        pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
+        return any(pattern.fullmatch(d) for d in os.listdir(path))
 
-    # === Mode: Partfile ===
-    has_rev_dir = any(d.startswith(f"{cwd_name}-rev") for d in children_dir)
-    has_revision_history_file = os.path.exists(os.path.join(cwd_path, f"{cwd_name}.revision_history.tsv"))
+    def make_new_rev_tsv(path, pn, rev):
+        columns = rev_history.revision_history_columns()
+        
+        # Ensure file exists with header
+        with open(path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
+            writer.writeheader()
+        append_row_to_tsv(path, pn, rev)
 
-    if has_rev_dir or has_revision_history_file:
-        mode = "partfile"
-        part_path = cwd_path
-        pn = cwd_name
+    def append_row_to_tsv(path, pn, rev):
+        if not os.path.exists(path):
+            return "file not found"
 
-    # === Mode: Revisionfile ===
-    elif cwd_name.startswith(f"{parent_dirname}-rev"):
-        mode = "revisionfile"
-        part_path = parent_dirpath
-        rev_path = cwd_path
-        pn = parent_dirname
-        try:
-            rev = int(cwd_name.split("-rev")[-1])
-        except ValueError:
-            rev = None
+        with open(path, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            rows = list(csv.DictReader(f, delimiter='\t'))
+            fieldnames = reader.fieldnames
 
-    # === Mode: Unknown — Ask user ===
-    if mode == "unknown":
-        print(f"Can't identify a part number from your cwd. Make a PN out of it? Curr working dir: {cwd_name}")
-        if cli.prompt("Enter to proceed, any key to exit", default="") != "":
+        # Build the row with required fields and blank others
+        desc = rev_history.initial_release_desc()
+        if not desc:
+            desc = "HARNESS, DOES A, FOR B"
+        desc = cli.prompt("Enter a description of this part", default=desc)
+
+        revisionupdates = "INITIAL RELEASE"
+        if rev_history.initial_release_exists():
+            revisionupdates = ""
+        revisionupdates = cli.prompt("Enter a description for this revision", default=revisionupdates)
+        while not revisionupdates or not revisionupdates.strip():
+                print("Revision updates can't be blank!")
+                revisionupdates = cli.prompt("Enter a description for this revision", default=None)
+
+        today = datetime.date.today().isoformat()
+
+        rows.append({
+            "pn": pn,
+            "rev": rev,
+            "desc": desc,
+            "rev": rev,
+            "status": "",
+            "datestarted": today,
+            "datemodified": today,
+            "revisionupdates": revisionupdates
+        })
+
+        # Append the row
+        columns = rev_history.revision_history_columns()
+        with open(path, "w", newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
+            writer.writeheader()
+            writer.writerows(rows)
+
+    def prompt_new_part(part_dir, pn):
+        rev = cli.prompt("Enter revision number", default="1")
+        # append to TSV
+        make_new_rev_tsv(temp_tsv_path, pn, rev)
+        # create and cd into rev folder
+        folder = os.path.join(part_dir, f"{pn}-rev{rev}")
+        os.makedirs(folder, exist_ok=True)
+        os.chdir(folder)
+        return rev
+
+    # 1) Already in a <PN>-revN folder?
+    if is_revision_folder(cwd_name, parent):
+        pn = parent
+        rev = int(cwd_name.split("-rev")[-1])
+
+    # 2) In a part folder (has rev folders inside)?
+    elif has_revision_folder_inside(cwd, cwd_name):
+        print(f"This is a part folder ({cwd_name}).")
+        print(f"Please `cd` into one of its revision subfolders (e.g. `{cwd_name}-rev1`) and rerun.")
+        exit()
+
+    # 3) Unknown – offer to initialize a new PN here
+    else:
+        answer = cli.prompt(f"No revision structure detected in '{cwd_name}'. Create new PN here?", default="y")
+        if answer.lower() not in ("y", "yes", ""):
             exit()
-        rev_input = cli.prompt("Revision number", default="1")
-        if not rev_input.isdigit():
-            exit()
-        rev = int(rev_input)
-        mode = "partfile"
-        part_path = cwd_path
         pn = cwd_name
+        rev = prompt_new_part(cwd, pn)
 
-    # === Ensure revision history exists
-    if not has_revision_history_file:
-        rev_history.generate_revision_history_tsv()
+    # if everything looks good but the tsv isn't
+    x = rev_history.revision_info()
+    if x == "row not found":
+        append_row_to_tsv(path("revision history"), pn, rev)
+    elif x == "file not found":
+        make_new_rev_tsv(path("revision history"), pn, rev)
 
-    with open(path("revision history"), 'r', encoding='utf-8') as file:
-        reader = csv.DictReader(file, delimiter='\t')
-        revision_history_data = list(reader)
+     # — now we’re in a revision folder, with pn, rev, temp_tsv_path set —
+    if not rev_history.status(rev) == "":
+        raise RuntimeError(f"Revision {rev} status is not clear. Harnice will only let you render revs with a blank status.")
 
-    # === Find revision folders
-    revs_in_dirs = []
-    for d in os.listdir(part_path):
-        match = re.fullmatch(rf"{re.escape(pn)}-rev(\d+)", d)
-        if match:
-            revs_in_dirs.append(int(match.group(1)))
-    revs_in_dirs.sort()
 
-    # === Find revisions from TSV
-    revs_in_tsv = []
-    for row in revision_history_data:
-        try:
-            revs_in_tsv.append(int(row.get('rev', '')))
-        except (ValueError, TypeError):
-            continue
-    revs_in_tsv.sort()
+    print(f"Working on PN: {pn}, Rev: {rev}")
+    return pn, rev
 
-    # === Choose revision
-    chosen_rev_message = ""
-    if rev is None:
-        # Preference 1: highest unreleased in TSV
-        highest_unreleased_rev = None
-        for row in revision_history_data:
-            try:
-                r = int(row['rev'])
-                if row.get('status', '') == "":
-                    highest_unreleased_rev = r
-            except (TypeError, ValueError):
-                continue
-
-        if highest_unreleased_rev is not None:
-            rev = highest_unreleased_rev
-            chosen_rev_message = f"rev {rev} is the highest unreleased rev in the tsv"
-
-        # Choosing not to select latest dir rev as an option because we don't know its status
-        else:
-            # Preference 2: ask user
-            existing_revs = []
-            for row in revision_history_data:
-                try:
-                    r = int(row['rev'])
-                    existing_revs.append(r)
-                except (TypeError, ValueError):
-                    continue
-
-            proposed_new_rev_number = max(existing_revs, default=0) + 1
-            print(f"Proposed revision is {proposed_new_rev_number} because all lower revs do not have a clear status.")
-            rev_input = cli.prompt("Choose revision", default=str(proposed_new_rev_number))
-            if rev_input.isdigit():
-                rev = int(rev_input)
-            else:
-                print("Invalid revision. Aborting.")
-                exit()
-
-    # === Abort if rev status is not clear
-    for row in revision_history_data:
-        if row.get('rev') == str(rev):
-            status = row.get('status', '')
-            if status != "":
-                raise RuntimeError(f"Revision {rev} has status '{status}'. Harnice can only work on revs with a clear status.")
-            break
-
-    # === Create revision folder if it doesn't exist
-    rev_folder = os.path.join(part_path, f"{pn}-rev{rev}")
-    if not os.path.exists(rev_folder):
-        os.makedirs(rev_folder)
-
-    # === Add revision to TSV if missing
-    if rev not in revs_in_tsv:
-        rev_history.append_new_row(rev)
-
-    print(f"You're working on...")
-    print(f"part number:    {pn}")
-    print(f"   revision:    {rev}           chosen because: {chosen_rev_message}")
-
-    return mode, pn, rev
-
+def verify_yaml_exists():
+    if not os.path.exists(path("harness yaml")):
+        print()
+        print("    No YAML harness definition file found.")
+        print()
+        exit()
