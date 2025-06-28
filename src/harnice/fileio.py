@@ -85,29 +85,36 @@ def harnice_file_structure():
 
     if product_type == "harness":
         return {
+                f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes manual",
+                f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
+                f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
+                f"{partnumber("pn-rev")}.yaml":"harness yaml",
                 "editable_component_data":{},
+                "page_setup":{
+                    f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
+                },
                 "support_do_not_edit": {
-                    "lists":{
-                        f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
-                        f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
-                        f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
-                        f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted"
-                    },
                     "formboard_data": {
                         f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
                         f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                     },
-                    "svg_generated": {
-                        "tblock_svgs":{},
-                        "formboard_svgs":{},
-                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
-                        f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                        f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
-                        f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                        f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                        f"{partnumber("pn-rev")}.master.svg":"master svg"
+                    "lists":{
+                        f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
+                        f"{partnumber("pn-rev")}.buildnotes_list.tsv":"harness bom",
+                        f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
+                        f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
+                        f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted"
                     },
-                    f"{partnumber("pn-rev")}.flagnotes.json":"flagnotes json"
+                    "svg_generated": {
+                        f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
+                        f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
+                        f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
+                        f"{partnumber("pn-rev")}.master.svg":"master svg",
+                        f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
+                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
+                        "formboard_svgs":{},
+                        "tblock_svgs":{}
+                    }
                 },
                 "wireviz_outputs":{
                     f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
@@ -115,13 +122,6 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.png":"wireviz png",
                     f"{partnumber("pn-rev")}.svg":"wireviz svg"
                 },
-                "page_setup":{
-                    f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
-                },
-                f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
-                f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
-                f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes tsv",
-                f"{partnumber("pn-rev")}.yaml":"harness yaml",
                 f"{partnumber("pn-rev")}.harness_requirements.json":"harness requirements"
             }
     elif product_type == "part":
