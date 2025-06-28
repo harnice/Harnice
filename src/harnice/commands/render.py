@@ -108,26 +108,15 @@ def harness():
 
     #=============== HANDLING FLAGNOTES #===============
     flagnotes.ensure_manual_list_exists()
+    
+    #makes notes of part name, bom, revision, etc
     flagnotes.compile_all_flagnotes()
+
+    #adds the above to instance list
     instances_list.add_flagnotes()
 
-    #instances_list_data = instances_list.read_instance_rows()
-    #rev_history_data = rev_history.revision_info()
-    #buildnotes_data = ""
-    """
-    flagnotes.create_flagnote_matrix_for_all_instances(instances_list_data)
-    
-    flagnotes.add_flagnote_content(
-        flagnotes.read_flagnote_matrix_file(),
-        instances_list_data,
-        rev_history_data,
-        buildnotes_data
-    )
+    flagnotes.make_note_drawings()
 
-    instances_list.add_flagnotes(
-        flagnotes.read_flagnote_matrix_file()
-    )
-    """
     #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()
 
