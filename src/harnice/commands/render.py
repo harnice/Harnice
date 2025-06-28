@@ -109,10 +109,11 @@ def harness():
     #=============== HANDLING FLAGNOTES #===============
     flagnotes.ensure_manual_list_exists()
     flagnotes.compile_all_flagnotes()
+    instances_list.add_flagnotes()
 
-    instances_list_data = instances_list.read_instance_rows()
-    rev_history_data = rev_history.revision_info()
-    buildnotes_data = ""
+    #instances_list_data = instances_list.read_instance_rows()
+    #rev_history_data = rev_history.revision_info()
+    #buildnotes_data = ""
     """
     flagnotes.create_flagnote_matrix_for_all_instances(instances_list_data)
     

@@ -33,15 +33,22 @@ def compile_all_flagnotes():
             reader = csv.DictReader(f_manual, delimiter='\t')
             manual_rows = list(reader)
 
-    # === Step 3: Placeholder to support future sources ===
-    compiled_rows = list(manual_rows)
+    # === Step 3: Expand rows with multiple affected instances ===
+    compiled_rows = []
+    for row in manual_rows:
+        affected = row.get('affectedinstances', '').strip()
+        instances = [i.strip() for i in affected.split(',') if i.strip()] or ['']
+        for instance in instances:
+            new_row = row.copy()
+            new_row['affectedinstances'] = instance
+            compiled_rows.append(new_row)
 
     # === Step 4: Write all compiled rows to flagnotes list ===
     with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_list:
         writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
         writer_list.writerows(compiled_rows)
 
-def create_flagnote_matrix_for_all_instances(instances_list_data):
+def add_notes_to_instances_list(instances_list_data):
     flagnotes_json = {}
     flagnotes_limit = 15
 

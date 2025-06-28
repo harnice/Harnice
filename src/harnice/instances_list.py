@@ -413,36 +413,87 @@ def add_absolute_angles_to_segments():
 
     write_instance_rows(instances)
 
-def add_flagnotes(flagnote_matrix_data):
-    instances = read_instance_rows()
-    flagnotes_limit = 15
+import math
+import os
+import json
 
-    for instance in instances:
-        instance_name = instance.get("instance_name")
-        if instance_name not in flagnote_matrix_data:
+def add_flagnotes():
+    # === Step 1: Load existing instance rows ===
+    existing_rows = read_instance_rows()
+
+    # === Step 2: Read flagnotes list ===
+    with open(fileio.path("flagnotes list"), newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        flagnote_rows = list(reader)
+
+    # === Step 3: Sort flagnotes by note_type then affectedinstances ===
+    note_priority = {
+        "part_name": 0,
+        "bom_item": 1,
+        "rev_change_callout": 2,
+        "engineering_note": 3,
+        "buildnote": 4,
+        "backshell_clock": 5
+    }
+
+    flagnote_rows.sort(key=lambda row: (
+        note_priority.get(row.get("note_type", "").strip(), 99),
+        row.get("affectedinstances", "").strip()
+    ))
+
+    # === Step 4: Add rows with per-instance note counters ===
+    note_counters = {}
+
+    for row in flagnote_rows:
+        affected = row.get("affectedinstances", "").strip()
+        if not affected:
             continue
 
-        flagnotes = flagnote_matrix_data[instance_name].get("flagnotes", [])
-        for flagnote_number in range(min(flagnotes_limit, len(flagnotes))):
-            flagnote = flagnotes[flagnote_number]
-            if flagnote.get("text", "") == "":
-                continue
+        # Increment counter per affected instance
+        note_num = note_counters.get(affected, 0)
+        note_counters[affected] = note_num + 1
 
-            angle, distance = flagnote.get("location", [0, 0])
-            translate_x = math.cos(angle) * distance
-            translate_y = math.sin(angle) * distance
+        instance_name = f"{affected}-flagnote-{note_num}"
 
-            append_instance_row({
-                "instance_name": f"{instance_name}-flagnote{flagnote_number}",
-                "item_type": "Flagnote",
-                "note_type": flagnote.get("note_type", ""),
-                "parent_instance": instance_name,
-                "parent_csys": instance_name,
-                "supplier": flagnote.get("supplier", ""),
-                "translate_x": f"{translate_x:.6f}",
-                "translate_y": f"{translate_y:.6f}",
-                "absolute_rotation": "0"
-            })
+        # Load flagnote location from affected instance JSON
+        attr_path = os.path.join(fileio.dirpath("editable_component_data"), affected, f"{affected}-attributes.json")
+        translate_x = ""
+        translate_y = ""
+
+        try:
+            with open(attr_path, 'r', encoding='utf-8') as f_json:
+                data = json.load(f_json)
+                locs = data.get("flagnote_locations", [])
+                if note_num < len(locs):
+                    loc = locs[note_num]
+                    angle_deg = loc.get("angle", 0)
+                    distance = loc.get("distance", 0)
+                    angle_rad = math.radians(angle_deg)
+                    translate_x = round(math.cos(angle_rad) * distance, 5)
+                    translate_y = round(math.sin(angle_rad) * distance, 5)
+        except Exception as e:
+            print(f"[WARN] Could not read location data for {instance_name}: {e}")
+
+        new_instance = {
+            "instance_name": instance_name,
+            "note_type": row.get("note_type", "").strip(),
+            "bom_line_number": "",
+            "mpn": "",
+            "item_type": "flagnote",
+            "parent_instance": affected,
+            "parent_csys": affected,
+            "supplier": row.get("shape_supplier", "").strip(),
+            "lib_latest_rev": "",
+            "lib_rev_used_here": "",
+            "length": "",
+            "diameter": "",
+            "translate_x": translate_x,
+            "translate_y": translate_y,
+            "rotate_csys": "",
+            "absolute_rotation": 0
+        }
+
+        append_instance_row(new_instance)
 
 """
 template instances list modifier:
