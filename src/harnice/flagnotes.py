@@ -7,11 +7,11 @@ from harnice import(
 
 # === Global Columns Definition ===
 FLAGNOTES_COLUMNS = [
-    "note_type",
+    "notetype",
     "note",
     "shape",
     "shape_supplier",
-    "bubble_text"
+    "bubble_text",
     "affectedinstances"
 ]
 
