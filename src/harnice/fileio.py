@@ -85,7 +85,7 @@ def harnice_file_structure():
 
     if product_type == "harness":
         return {
-                f"{partnumber("pn-rev")}.buildnotes.tsv":"buildnotes manual",
+                f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual",
                 f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
                 f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
                 f"{partnumber("pn-rev")}.yaml":"harness yaml",
@@ -100,14 +100,14 @@ def harnice_file_structure():
                     },
                     "lists":{
                         f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
-                        f"{partnumber("pn-rev")}.buildnotes_list.tsv":"harness bom",
+                        f"{partnumber("pn-rev")}.flagnotes_list.tsv":"flagnotes list",
                         f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
                         f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
                         f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted"
                     },
                     "svg_generated": {
                         f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                        f"{partnumber("pn-rev")}.buildnotes_master.svg":"buildnotes master svg",
+                        f"{partnumber("pn-rev")}.flagnotes_master.svg":"flagnotes master svg",
                         f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
                         f"{partnumber("pn-rev")}.master.svg":"master svg",
                         f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
