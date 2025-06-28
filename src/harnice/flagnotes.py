@@ -7,9 +7,10 @@ from harnice import(
 
 # === Global Columns Definition ===
 FLAGNOTES_COLUMNS = [
+    "note_type",
     "note",
     "shape",
-    "shape supplier",
+    "shape_supplier",
     "affectedinstances"
 ]
 
@@ -18,6 +19,27 @@ def ensure_manual_list_exists():
         with open(fileio.path('flagnotes manual'), 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
             writer.writeheader()
+
+def compile_all_flagnotes():
+    # === Step 1: Reset only "flagnotes list" TSV ===
+    with open(fileio.path('flagnotes list'), 'w', newline='', encoding='utf-8') as f_list:
+        writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
+        writer_list.writeheader()
+
+    # === Step 2: Read all manual rows ===
+    manual_rows = []
+    if os.path.exists(fileio.path('flagnotes manual')):
+        with open(fileio.path('flagnotes manual'), newline='', encoding='utf-8') as f_manual:
+            reader = csv.DictReader(f_manual, delimiter='\t')
+            manual_rows = list(reader)
+
+    # === Step 3: Placeholder to support future sources ===
+    compiled_rows = list(manual_rows)
+
+    # === Step 4: Write all compiled rows to flagnotes list ===
+    with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_list:
+        writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
+        writer_list.writerows(compiled_rows)
 
 def create_flagnote_matrix_for_all_instances(instances_list_data):
     flagnotes_json = {}
@@ -72,8 +94,8 @@ def create_flagnote_matrix_for_all_instances(instances_list_data):
             flagnote = {
                 "note_type": "",
                 "location": location,
-                "supplier": supplier,
-                "design": design,
+                "shape_supplier": supplier,
+                "shape": design,
                 "text": text
             }
 
