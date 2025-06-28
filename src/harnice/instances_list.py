@@ -413,10 +413,6 @@ def add_absolute_angles_to_segments():
 
     write_instance_rows(instances)
 
-import math
-import os
-import json
-
 def add_flagnotes():
     # === Step 1: Load existing instance rows ===
     existing_rows = read_instance_rows()
@@ -426,46 +422,31 @@ def add_flagnotes():
         reader = csv.DictReader(f, delimiter='\t')
         flagnote_rows = list(reader)
 
-    # === Step 3: Sort flagnotes by note_type then affectedinstances ===
-    note_priority = {
-        "part_name": 0,
-        "bom_item": 1,
-        "rev_change_callout": 2,
-        "engineering_note": 3,
-        "buildnote": 4,
-        "backshell_clock": 5
-    }
-
-    flagnote_rows.sort(key=lambda row: (
-        note_priority.get(row.get("note_type", "").strip(), 99),
-        row.get("affectedinstances", "").strip()
-    ))
-
-    # === Step 4: Add rows with per-instance note counters ===
-    note_counters = {}
-
+    # === Step 3: Process each flagnote row ===
     for row in flagnote_rows:
         affected = row.get("affectedinstances", "").strip()
         if not affected:
             continue
 
-        # Increment counter per affected instance
-        note_num = note_counters.get(affected, 0)
-        note_counters[affected] = note_num + 1
+        try:
+            note_num = int(row.get("bubble_text", "").strip())
+        except ValueError:
+            print(f"[WARN] Skipping row with invalid bubble_text: {row}")
+            continue
 
         instance_name = f"{affected}-flagnote-{note_num}"
 
-        # Load flagnote location from affected instance JSON
-        attr_path = os.path.join(fileio.dirpath("editable_component_data"), affected, f"{affected}-attributes.json")
+        # === Step 4: Load flagnote location ===
         translate_x = ""
         translate_y = ""
+        attr_path = os.path.join(fileio.dirpath("editable_component_data"), affected, f"{affected}-attributes.json")
 
         try:
             with open(attr_path, 'r', encoding='utf-8') as f_json:
                 data = json.load(f_json)
                 locs = data.get("flagnote_locations", [])
-                if note_num < len(locs):
-                    loc = locs[note_num]
+                if note_num - 1 < len(locs):
+                    loc = locs[note_num - 1]  # bubble_text starts from 1
                     angle_deg = loc.get("angle", 0)
                     distance = loc.get("distance", 0)
                     angle_rad = math.radians(angle_deg)
@@ -474,6 +455,7 @@ def add_flagnotes():
         except Exception as e:
             print(f"[WARN] Could not read location data for {instance_name}: {e}")
 
+        # === Step 5: Write new instance row ===
         new_instance = {
             "instance_name": instance_name,
             "note_type": row.get("note_type", "").strip(),
