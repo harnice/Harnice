@@ -1,5 +1,6 @@
 import os
 import json
+import csv
 from harnice import(
     fileio
 )
@@ -11,6 +12,12 @@ FLAGNOTES_COLUMNS = [
     "shape supplier",
     "affectedinstances"
 ]
+
+def ensure_manual_list_exists():
+    if not os.path.exists(fileio.path('flagnotes manual')):
+        with open(fileio.path('flagnotes manual'), 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
+            writer.writeheader()
 
 def create_flagnote_matrix_for_all_instances(instances_list_data):
     flagnotes_json = {}

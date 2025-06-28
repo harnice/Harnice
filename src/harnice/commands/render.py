@@ -107,6 +107,7 @@ def harness():
         #adds bom line numbers back to the instances list
 
     #=============== HANDLING FLAGNOTES #===============
+    flagnotes.ensure_manual_list_exists()
     """
     instances_list_data = instances_list.read_instance_rows()
     rev_history_data = rev_history.revision_info()
