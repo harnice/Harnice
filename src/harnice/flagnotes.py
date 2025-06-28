@@ -4,6 +4,14 @@ from harnice import(
     fileio
 )
 
+# === Global Columns Definition ===
+FLAGNOTES_COLUMNS = [
+    "note",
+    "shape",
+    "shape supplier",
+    "affectedinstances"
+]
+
 def create_flagnote_matrix_for_all_instances(instances_list_data):
     flagnotes_json = {}
     flagnotes_limit = 15
