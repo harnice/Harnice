@@ -1,9 +1,11 @@
 import os
 import json
 import csv
+from dotenv import load_dotenv, dotenv_values
 from harnice import(
     fileio,
-    instances_list
+    instances_list,
+    component_library
 )
 
 # === Global Columns Definition ===
@@ -124,4 +126,24 @@ def compile_all_flagnotes():
         writer_list.writerows(expanded_rows)
 
 def make_note_drawings():
-    pass
+    instances = instances_list.read_instance_rows()
+    
+    for instance in instances:
+        if instance.get("item_type", "").lower() != "flagnote":
+            continue
+
+        instance_name = instance.get("instance_name")
+        destination_directory=os.path.join(fileio.dirpath("editable_component_data"), instance_name)
+
+        # Ensure the destination directory exists
+        os.makedirs(destination_directory, exist_ok=True)
+
+        # Pull the item from the library
+        component_library.pull_item_from_library(
+            supplier=instance.get("supplier"),
+            lib_subpath="flagnotes",
+            mpn=instance.get("mpn"),
+            destination_directory=destination_directory,
+            used_rev=None,
+            item_name=instance_name
+        )
