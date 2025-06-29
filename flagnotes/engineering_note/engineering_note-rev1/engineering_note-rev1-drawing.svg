@@ -5,7 +5,6 @@
    height="576"
    id="svg1"
    sodipodi:docname="engineering_note-rev1-drawing.svg"
-   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -20,33 +19,24 @@
      inkscape:showpageshadow="2"
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="9.9173996"
-     inkscape:cx="31.056528"
-     inkscape:cy="5.0920606"
-     inkscape:window-width="1712"
-     inkscape:window-height="1040"
-     inkscape:window-x="0"
-     inkscape:window-y="44"
-     inkscape:window-maximized="0"
-     inkscape:current-layer="flagnote-contents-start" />
+     inkscape:deskcolor="#d1d1d1" />
   <g
-     id="flagnote-contents-start">
+     id="engineering_note-drawing-contents-start">
     <polygon
-       points="0.0,-19.2 16.63,9.6 -16.63,9.6"
+       points="16.63,9.6 -16.63,9.6 0,-19.2 "
        fill="#FFFFFF"
        stroke="#000000"
        id="polygon1"
        style="fill:none;fill-opacity:1;stroke:#fc0000;stroke-opacity:1" />
     <text
-       x="19.630222"
-       y="-3.1258194"
+       x="19.630219"
+       y="-3.1258202"
        style="font-size:8px;font-family:Arial;text-align:start;text-anchor:start;fill:#ff0000;fill-opacity:1"
        text-anchor="middle"
        dominant-baseline="middle"
        id="flagnote-text">flagnote-text</text>
     <text
-       x="0"
+       x="-7.9162419e-09"
        y="0"
        style="font-size:18.6667px;font-family:Arial;text-align:center;text-anchor:middle;fill:#ff0000;fill-opacity:1"
        text-anchor="middle"
@@ -54,5 +44,5 @@
        id="flagnote-text-8">!</text>
   </g>
   <g
-     id="flagnote-contents-end" />
+     id="engineering_note-drawing-contents-end" />
 </svg>
