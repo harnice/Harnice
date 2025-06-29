@@ -126,10 +126,6 @@ def compile_all_flagnotes():
         writer_list.writerows(expanded_rows)
 
 def make_note_drawings():
-    print()
-    print("Importing flagnotes from library")
-    print(f"{"ITEM NAME":<24}  STATUS")
-
     instances = instances_list.read_instance_rows()
     
     for instance in instances:

@@ -142,7 +142,6 @@ def harness():
         #makes a PDF out of each svg in page setup
 
     rev_history.update_datemodified()
-    print()
     print(f"Harnice: harness {fileio.partnumber("pn")} rendered successfully!")
     print()
 

@@ -367,7 +367,6 @@ def prep_tblocks(page_setup_contents, revhistory_data):
     if duplicates:
         raise ValueError(f"[ERROR] Duplicate page name(s) found: {', '.join(duplicates)}")
 
-    print("Importing titleblocks from library")
     for page in page_setup_contents.get("pages", []):
         page_name = page.get("name")
         tblock_data = page  # each item in the list *is* the tblock_data
