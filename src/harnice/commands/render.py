@@ -573,10 +573,10 @@ def flagnote():
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
-        f'  <g id="flagnote-contents-start">',
+        f'  <g id="{fileio.partnumber('pn')}-drawing-contents-start">',
         contents.rstrip(),
         f'  </g>',
-        f'  <g id="flagnote-contents-end">',
+        f'  <g id="{fileio.partnumber('pn')}-drawing-contents-end">',
         f'  </g>',
         '</svg>'
     ]
