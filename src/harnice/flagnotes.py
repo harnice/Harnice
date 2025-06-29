@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+import re
 from dotenv import load_dotenv, dotenv_values
 from harnice import(
     fileio,
@@ -127,18 +128,22 @@ def compile_all_flagnotes():
 
 def make_note_drawings():
     instances = instances_list.read_instance_rows()
-    
+
+    # === Load all rows from flagnotes list into memory ===
+    with open(fileio.path("flagnotes list"), newline='', encoding='utf-8') as f:
+        flagnotes_list = list(csv.DictReader(f, delimiter='\t'))
+
     for instance in instances:
         if instance.get("item_type", "").lower() != "flagnote":
             continue
 
         instance_name = instance.get("instance_name")
-        destination_directory=os.path.join(fileio.dirpath("uneditable_instance_data"), instance_name)
+        parent_instance = instance.get("parent_instance", "").strip()
 
-        # Ensure the destination directory exists
+        destination_directory = os.path.join(fileio.dirpath("uneditable_instance_data"), instance_name)
         os.makedirs(destination_directory, exist_ok=True)
 
-        # Pull the item from the library
+        # === Pull library item ===
         component_library.pull_item_from_library(
             supplier=instance.get("supplier"),
             lib_subpath="flagnotes",
@@ -147,3 +152,19 @@ def make_note_drawings():
             used_rev=None,
             item_name=instance_name
         )
+
+        # === Replace placeholder in SVG ===
+        drawing_path = os.path.join(destination_directory, f"{instance_name}-drawing.svg")
+        if not os.path.exists(drawing_path):
+            print(f"[WARN] Drawing not found: {drawing_path}")
+            continue
+
+        with open(drawing_path, 'r', encoding='utf-8') as f:
+            svg = f.read()
+
+        svg = re.sub(r'>flagnote-text<', f'>{instance.get("bubble_text")}<', svg)
+
+        with open(drawing_path, 'w', encoding='utf-8') as f:
+            f.write(svg)
+
+

@@ -23,7 +23,8 @@ INSTANCES_LIST_COLUMNS = [
     'translate_x',
     'translate_y',
     'rotate_csys',
-    'absolute_rotation'
+    'absolute_rotation',
+    'bubble_text'
 ]
 
 def load_yaml_data():
@@ -427,6 +428,7 @@ def add_flagnotes():
 
     for row in flagnote_rows:
         affected = row.get("affectedinstances", "").strip()
+        bubble_text = row.get("bubble_text", "").strip()
         if not affected:
             continue
 
@@ -491,7 +493,8 @@ def add_flagnotes():
             "translate_x": 0,
             "translate_y": 0,
             "rotate_csys": "",
-            "absolute_rotation": 0
+            "absolute_rotation": 0,
+            "bubble_text": bubble_text
         }
         append_instance_row(flagnote_instance)
 
