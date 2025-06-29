@@ -142,6 +142,9 @@ def harness():
         #makes a PDF out of each svg in page setup
 
     rev_history.update_datemodified()
+    print()
+    print(f"Harnice: harness {fileio.partnumber("pn")} rendered successfully!")
+    print()
 
 def tblock():
     print("Warning: rendering a titleblock may clear user edits to its svg. Do you wish to proceed?")
