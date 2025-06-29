@@ -2,12 +2,13 @@ import os
 import json
 import csv
 from harnice import(
-    fileio
+    fileio,
+    instances_list
 )
 
 # === Global Columns Definition ===
 FLAGNOTES_COLUMNS = [
-    "notetype",
+    "note_type",
     "note",
     "shape",
     "shape_supplier",
@@ -34,9 +35,35 @@ def compile_all_flagnotes():
             reader = csv.DictReader(f_manual, delimiter='\t')
             manual_rows = list(reader)
 
-    # === Step 3: Expand rows with multiple affected instances ===
+    # === Step 3: Add auto-generated flagnotes from instance list ===
+    auto_generated = []
+    instances = instances_list.read_instance_rows()
+    for instance in instances:
+        item_type = instance.get("item_type", "").strip()
+        instance_name = instance.get("instance_name", "").strip()
+        if item_type in {"Connector", "Backshell"}:
+            auto_generated.append({
+                "note_type": "part_name",
+                "note": "",
+                "shape": "part_name",
+                "shape_supplier": "public",
+                "bubble_text": instance_name,
+                "affectedinstances": instance_name
+            })
+            auto_generated.append({
+                "note_type": "bom_item",
+                "note": "",
+                "shape": "bom_item",
+                "shape_supplier": "public",
+                "bubble_text": "",
+                "affectedinstances": instance_name
+            })
+
+    all_rows = manual_rows + auto_generated
+
+    # === Step 4: Expand rows with multiple affected instances ===
     expanded_rows = []
-    for row in manual_rows:
+    for row in all_rows:
         affected = row.get('affectedinstances', '').strip()
         instances = [i.strip() for i in affected.split(',') if i.strip()] or ['']
         for instance in instances:
@@ -44,7 +71,7 @@ def compile_all_flagnotes():
             new_row['affectedinstances'] = instance
             expanded_rows.append(new_row)
 
-    # === Step 4: Sort by note_type priority and affectedinstances ===
+    # === Step 5: Sort by note_type priority and affectedinstances ===
     note_priority = {
         "part_name": 0,
         "bom_item": 1,
@@ -59,25 +86,21 @@ def compile_all_flagnotes():
         row.get("affectedinstances", "").strip()
     ))
 
-    # === Step 5: Assign bubble_text numbers where blank (per note_type + affectedinstances pair) ===
-    bubble_counters = {}  # key: (note_type, instance)
-
+    # === Step 6: Assign bubble_text where blank (per note_type + affectedinstances) ===
+    bubble_counters = {}
     for row in expanded_rows:
         note_type = row.get("note_type", "").strip()
         instance = row.get("affectedinstances", "").strip()
         bubble_text = row.get("bubble_text", "").strip()
 
         key = (note_type, instance)
-
         if not bubble_text:
-            # Only assign bubble_text if it's blank
             bubble_counters[key] = bubble_counters.get(key, 0) + 1
             row["bubble_text"] = str(bubble_counters[key])
         else:
-            # Preserve existing bubble_text
             row["bubble_text"] = bubble_text
 
-    # === Step 6: Write to flagnotes list ===
+    # === Step 7: Write all flagnotes to list ===
     with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_list:
         writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
         writer_list.writerows(expanded_rows)
