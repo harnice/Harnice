@@ -13,7 +13,6 @@ INSTANCES_LIST_COLUMNS = [
     'bom_line_number',
     'mpn',
     'item_type',
-    'note_type',
     'parent_instance',
     'parent_csys',
     'supplier',
@@ -422,21 +421,20 @@ def add_flagnotes():
         reader = csv.DictReader(f, delimiter='\t')
         flagnote_rows = list(reader)
 
-    # === Step 3: Process each flagnote row ===
+    # === Step 3: Group and number flagnotes per affected instance ===
+    note_counters = {}  # {affected: current_note_number}
+
     for row in flagnote_rows:
         affected = row.get("affectedinstances", "").strip()
         if not affected:
             continue
 
-        try:
-            note_num = int(row.get("bubble_text", "").strip())
-        except ValueError:
-            print(f"[WARN] Skipping row with invalid bubble_text: {row}")
-            continue
+        # Start counter at 0 for each new affected instance
+        note_number = note_counters.get(affected, 0)
+        note_counters[affected] = note_number + 1
+        instance_name = f"{affected}.flagnote{note_number}"
 
-        instance_name = f"{affected}-flagnote-{note_num}"
-
-        # === Step 4: Load flagnote location ===
+        # === Step 4: Try to load flagnote location if available ===
         translate_x = ""
         translate_y = ""
         attr_path = os.path.join(fileio.dirpath("editable_component_data"), affected, f"{affected}-attributes.json")
@@ -445,23 +443,22 @@ def add_flagnotes():
             with open(attr_path, 'r', encoding='utf-8') as f_json:
                 data = json.load(f_json)
                 locs = data.get("flagnote_locations", [])
-                if note_num - 1 < len(locs):
-                    loc = locs[note_num - 1]  # bubble_text starts from 1
-                    angle_deg = loc.get("angle", 0)
+                if note_number < len(locs):
+                    loc = locs[note_number]
+                    angle_rad = math.radians(loc.get("angle", 0))
                     distance = loc.get("distance", 0)
-                    angle_rad = math.radians(angle_deg)
                     translate_x = round(math.cos(angle_rad) * distance, 5)
                     translate_y = round(math.sin(angle_rad) * distance, 5)
         except Exception as e:
             print(f"[WARN] Could not read location data for {instance_name}: {e}")
 
-        # === Step 5: Write new instance row ===
+        # === Step 5: Append new instance row ===
         new_instance = {
             "instance_name": instance_name,
             "note_type": row.get("note_type", "").strip(),
             "bom_line_number": "",
-            "mpn": "",
-            "item_type": "flagnote",
+            "mpn": row.get("shape", "").strip(),
+            "item_type": "Flagnote",
             "parent_instance": affected,
             "parent_csys": affected,
             "supplier": row.get("shape_supplier", "").strip(),
