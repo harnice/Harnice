@@ -123,7 +123,7 @@ def pull_parts():
 
         supplier = instance.get('supplier')
         mpn = instance.get('mpn', '')
-        destination_directory = os.path.join(fileio.dirpath("editable_component_data"), item_name)
+        destination_directory = os.path.join(fileio.dirpath("editable_instance_data"), item_name)
 
         # Determine rev from existing folders
         revs_found = []

@@ -200,7 +200,7 @@ def update_parent_csys():
 
         # Build the path to the attributes JSON file
         attributes_path = os.path.join(
-            fileio.dirpath("editable_component_data"),
+            fileio.dirpath("editable_instance_data"),
             instance_name,
             f"{instance_name}-attributes.json"
         )
@@ -237,7 +237,7 @@ def update_component_translate():
             continue
 
         attributes_path = os.path.join(
-            fileio.dirpath("editable_component_data"),
+            fileio.dirpath("editable_instance_data"),
             instance_name,
             f"{instance_name}-attributes.json"
         )
@@ -440,7 +440,7 @@ def add_flagnotes():
         # === Step 4: Try to load flagnote location from JSON ===
         translate_x = ""
         translate_y = ""
-        attr_path = os.path.join(fileio.dirpath("editable_component_data"), affected, f"{affected}-attributes.json")
+        attr_path = os.path.join(fileio.dirpath("editable_instance_data"), affected, f"{affected}-attributes.json")
 
         try:
             with open(attr_path, 'r', encoding='utf-8') as f_json:

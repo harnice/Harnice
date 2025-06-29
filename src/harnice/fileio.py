@@ -89,11 +89,12 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
                 f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
                 f"{partnumber("pn-rev")}.yaml":"harness yaml",
-                "editable_component_data":{},
+                "editable_instance_data":{},
                 "page_setup":{
                     f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
                 },
                 "support_do_not_edit": {
+                    "uneditable_instance_data":{},
                     "formboard_data": {
                         f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
                         f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
@@ -146,8 +147,9 @@ def generate_structure():
     if os.path.exists(dirpath("support_do_not_edit")):
         shutil.rmtree(dirpath("support_do_not_edit"))
 
-    os.makedirs(dirpath("editable_component_data"), exist_ok=True)
+    os.makedirs(dirpath("editable_instance_data"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
+    os.makedirs(dirpath("uneditable_instance_data"), exist_ok=True)
     os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
     os.makedirs(dirpath("svg_generated"), exist_ok=True)

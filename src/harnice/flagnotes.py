@@ -133,7 +133,7 @@ def make_note_drawings():
             continue
 
         instance_name = instance.get("instance_name")
-        destination_directory=os.path.join(fileio.dirpath("editable_component_data"), instance_name)
+        destination_directory=os.path.join(fileio.dirpath("uneditable_instance_data"), instance_name)
 
         # Ensure the destination directory exists
         os.makedirs(destination_directory, exist_ok=True)

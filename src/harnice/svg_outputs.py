@@ -113,7 +113,7 @@ def prep_formboard_drawings(page_setup_contents):
                     <g id="{instance.get("instance_name")}-contents-end"></g>
                 </svg>
                 '''
-                segment_dir = os.path.join(fileio.dirpath("editable_component_data"), segment_name)
+                segment_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), segment_name)
                 os.makedirs(segment_dir, exist_ok=True)
 
                 output_filename = os.path.join(segment_dir, f"{segment_name}-drawing.svg")
@@ -200,12 +200,17 @@ def prep_formboard_drawings(page_setup_contents):
         for instance in instances:
             item_type = instance.get("item_type", "").strip()
             if item_type and item_type not in excluded_item_types:
+                if item_type in {"Connector", "Backshell"}:
+                    instance_data_dir = fileio.dirpath("editable_instance_data")
+                else:
+                    instance_data_dir = fileio.dirpath("uneditable_instance_data")
+
                 svg_utils.find_and_replace_svg_group(
                     #target_svg_filepath
                     filepath,
                     #source_svg_filepath
                     os.path.join(
-                        fileio.dirpath("editable_component_data"), 
+                        instance_data_dir, 
                         instance.get("instance_name"),
                         f"{instance.get("instance_name")}-drawing.svg"
                     ),
