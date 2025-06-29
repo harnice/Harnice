@@ -414,7 +414,8 @@ def add_absolute_angles_to_segments():
 
 def add_flagnotes():
     # === Step 1: Load existing instance rows ===
-    existing_rows = read_instance_rows()
+    instances = read_instance_rows()
+    instance_lookup = {inst.get("instance_name", "").strip(): inst for inst in instances}
 
     # === Step 2: Read flagnotes list ===
     with open(fileio.path("flagnotes list"), newline='', encoding='utf-8') as f:
@@ -429,12 +430,14 @@ def add_flagnotes():
         if not affected:
             continue
 
-        # Start counter at 0 for each new affected instance
         note_number = note_counters.get(affected, 0)
         note_counters[affected] = note_number + 1
-        instance_name = f"{affected}.flagnote{note_number}"
+        instance_name = f"{affected}-flagnote{note_number}"
 
-        # === Step 4: Try to load flagnote location if available ===
+        # Determine parent_csys from the original instance
+        parent_csys = instance_lookup.get(affected, {}).get("parent_csys", "")
+
+        # === Step 4: Try to load flagnote location from JSON ===
         translate_x = ""
         translate_y = ""
         attr_path = os.path.join(fileio.dirpath("editable_component_data"), affected, f"{affected}-attributes.json")
@@ -452,14 +455,14 @@ def add_flagnotes():
         except Exception as e:
             print(f"[WARN] Could not read location data for {instance_name}: {e}")
 
-        # === Step 5: Append new instance location row ===
-        new_instance = {
+        # === Step 5: Append location instance ===
+        location_instance = {
             "instance_name": f"{instance_name}-location",
             "bom_line_number": "",
             "mpn": "",
             "item_type": "Flagnote location",
             "parent_instance": affected,
-            "parent_csys": affected,
+            "parent_csys": parent_csys,
             "supplier": "",
             "lib_latest_rev": "",
             "lib_rev_used_here": "",
@@ -470,11 +473,10 @@ def add_flagnotes():
             "rotate_csys": "",
             "absolute_rotation": ""
         }
+        append_instance_row(location_instance)
 
-        append_instance_row(new_instance)
-
-        # === Step 6: Append new instance row ===
-        new_instance = {
+        # === Step 6: Append flagnote instance ===
+        flagnote_instance = {
             "instance_name": instance_name,
             "bom_line_number": "",
             "mpn": row.get("shape", "").strip(),
@@ -491,8 +493,7 @@ def add_flagnotes():
             "rotate_csys": "",
             "absolute_rotation": 0
         }
-
-        append_instance_row(new_instance)
+        append_instance_row(flagnote_instance)
 
 """
 template instances list modifier:
