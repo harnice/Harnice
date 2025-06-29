@@ -452,22 +452,42 @@ def add_flagnotes():
         except Exception as e:
             print(f"[WARN] Could not read location data for {instance_name}: {e}")
 
-        # === Step 5: Append new instance row ===
+        # === Step 5: Append new instance location row ===
         new_instance = {
-            "instance_name": instance_name,
-            "note_type": row.get("note_type", "").strip(),
+            "instance_name": f"{instance_name}-location",
             "bom_line_number": "",
-            "mpn": row.get("shape", "").strip(),
-            "item_type": "Flagnote",
+            "mpn": "",
+            "item_type": "Flagnote location",
             "parent_instance": affected,
             "parent_csys": affected,
-            "supplier": row.get("shape_supplier", "").strip(),
+            "supplier": "",
             "lib_latest_rev": "",
             "lib_rev_used_here": "",
             "length": "",
             "diameter": "",
             "translate_x": translate_x,
             "translate_y": translate_y,
+            "rotate_csys": "",
+            "absolute_rotation": ""
+        }
+
+        append_instance_row(new_instance)
+
+        # === Step 6: Append new instance row ===
+        new_instance = {
+            "instance_name": instance_name,
+            "bom_line_number": "",
+            "mpn": row.get("shape", "").strip(),
+            "item_type": "Flagnote",
+            "parent_instance": affected,
+            "parent_csys": f"{instance_name}-location",
+            "supplier": row.get("shape_supplier", "").strip(),
+            "lib_latest_rev": "",
+            "lib_rev_used_here": "",
+            "length": "",
+            "diameter": "",
+            "translate_x": 0,
+            "translate_y": 0,
             "rotate_csys": "",
             "absolute_rotation": 0
         }
