@@ -76,7 +76,7 @@ def compile_all_flagnotes():
                 "note": "",
                 "shape": "bom_item",
                 "shape_supplier": "public",
-                "bubble_text": "",
+                "bubble_text": instance.get("bom_line_number", "").strip(),
                 "affectedinstances": instance_name
             })
 
