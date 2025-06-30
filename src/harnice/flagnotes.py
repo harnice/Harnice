@@ -11,7 +11,8 @@ from harnice import(
 )
 
 # === Global Columns Definition ===
-FLAGNOTES_COLUMNS = [
+MANUAL_FLAGNOTES_COLUMNS = [
+    "action",
     "note_type",
     "note",
     "shape",
@@ -20,26 +21,59 @@ FLAGNOTES_COLUMNS = [
     "affectedinstances"
 ]
 
+AUTO_FLAGNOTES_COLUMNS = [
+    "note_type",
+    "note",
+    "shape",
+    "shape_supplier",
+    "bubble_text",
+    "affectedinstances"
+]
+
+BUILDNOTES_COLUMNS = [
+    "buildnote_number",
+    "note",
+    "has_shape",
+    "shape",
+    "shape_supplier"
+]
+
 def ensure_manual_list_exists():
     if not os.path.exists(fileio.path('flagnotes manual')):
         with open(fileio.path('flagnotes manual'), 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
+            writer = csv.DictWriter(f, fieldnames=MANUAL_FLAGNOTES_COLUMNS, delimiter='\t')
             writer.writeheader()
 
 def compile_all_flagnotes():
-    # === Step 1: Reset only "flagnotes list" TSV ===
-    with open(fileio.path('flagnotes list'), 'w', newline='', encoding='utf-8') as f_list:
-        writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
-        writer_list.writeheader()
+    # === Step 1: Reset "flagnotes list" ===
+    with open(fileio.path('flagnotes list'), 'w', newline='', encoding='utf-8') as f_flag:
+        writer = csv.DictWriter(f_flag, fieldnames=AUTO_FLAGNOTES_COLUMNS, delimiter='\t')
+        writer.writeheader()
 
-    # === Step 2: Read all manual rows ===
+    # === Step 2: Read and normalize manual flagnote rows ===
     manual_rows = []
+    buildnote_counter = 1
+
     if os.path.exists(fileio.path('flagnotes manual')):
         with open(fileio.path('flagnotes manual'), newline='', encoding='utf-8') as f_manual:
             reader = csv.DictReader(f_manual, delimiter='\t')
-            manual_rows = list(reader)
+            for row in reader:
+                normalized_row = {column: row.get(column, "").strip() for column in AUTO_FLAGNOTES_COLUMNS}
+                note_type = normalized_row.get("note_type", "")
 
-    # === Step 3: Read revision history rows and construct flagnotes ===
+                if note_type == "buildnote":
+                    if not normalized_row.get("bubble_text"):
+                        normalized_row["bubble_text"] = str(buildnote_counter)
+                        buildnote_counter += 1
+                    else:
+                        try:
+                            int(normalized_row["bubble_text"])
+                        except ValueError:
+                            raise ValueError(f"Non-numeric bubble_text: {normalized_row['bubble_text']}")
+
+                manual_rows.append(normalized_row)
+
+    # === Step 3: Generate revision flagnote rows from revision history ===
     revision_rows = []
     with open(fileio.path('revision history'), newline='', encoding='utf-8') as f_rev:
         reader = csv.DictReader(f_rev, delimiter='\t')
@@ -57,14 +91,14 @@ def compile_all_flagnotes():
                         "affectedinstances": instance
                     })
 
-    # === Step 4: Add auto-generated flagnotes from instance list ===
-    auto_generated = []
+    # === Step 4: Generate auto flagnote rows from instance list ===
+    auto_generated_rows = []
     instances = instances_list.read_instance_rows()
     for instance in instances:
         item_type = instance.get("item_type", "").strip()
         instance_name = instance.get("instance_name", "").strip()
         if item_type in {"Connector", "Backshell"}:
-            auto_generated.append({
+            auto_generated_rows.append({
                 "note_type": "part_name",
                 "note": "",
                 "shape": "part_name",
@@ -72,7 +106,7 @@ def compile_all_flagnotes():
                 "bubble_text": instance_name,
                 "affectedinstances": instance_name
             })
-            auto_generated.append({
+            auto_generated_rows.append({
                 "note_type": "bom_item",
                 "note": "",
                 "shape": "bom_item",
@@ -81,19 +115,20 @@ def compile_all_flagnotes():
                 "affectedinstances": instance_name
             })
 
-    all_rows = manual_rows + revision_rows + auto_generated
+    # === Step 5: Combine all flagnote rows ===
+    all_rows = manual_rows + revision_rows + auto_generated_rows
 
-    # === Step 5: Expand rows with multiple affected instances ===
+    # === Step 6: Expand rows with multiple affected instances ===
     expanded_rows = []
     for row in all_rows:
-        affected = row.get('affectedinstances', '').strip()
-        instances = [i.strip() for i in affected.split(',') if i.strip()] or ['']
-        for instance in instances:
+        affected_field = row.get('affectedinstances', '').strip()
+        affected_instances = [i.strip() for i in affected_field.split(',') if i.strip()] or ['']
+        for instance in affected_instances:
             new_row = row.copy()
             new_row['affectedinstances'] = instance
             expanded_rows.append(new_row)
 
-    # === Step 6: Sort by note_type priority and affectedinstances ===
+    # === Step 7: Sort rows by note_type priority and affected instance ===
     note_priority = {
         "part_name": 0,
         "bom_item": 1,
@@ -108,24 +143,58 @@ def compile_all_flagnotes():
         row.get("affectedinstances", "").strip()
     ))
 
-    # === Step 7: Assign bubble_text where blank (per note_type + affectedinstances) ===
+    # === Step 8: Assign bubble_text for non-buildnotes if still missing ===
     bubble_counters = {}
     for row in expanded_rows:
         note_type = row.get("note_type", "").strip()
+        if note_type == "buildnote":
+            continue  # already assigned during manual row processing
+
         instance = row.get("affectedinstances", "").strip()
         bubble_text = row.get("bubble_text", "").strip()
+        fallback_scope = row.get("note", "").strip()
+        key = (note_type, instance or fallback_scope)
 
-        key = (note_type, instance)
         if not bubble_text:
-            bubble_counters[key] = bubble_counters.get(key, 0) + 1
+            bubble_counters[key] = bubble_counters.get(key, 0)
             row["bubble_text"] = str(bubble_counters[key])
-        else:
-            row["bubble_text"] = bubble_text
+            bubble_counters[key] += 1
 
-    # === Step 8: Write all flagnotes to list ===
-    with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_list:
-        writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
-        writer_list.writerows(expanded_rows)
+    # === Step 9: Write all rows to flagnotes list ===
+    with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_flag:
+        writer = csv.DictWriter(f_flag, fieldnames=AUTO_FLAGNOTES_COLUMNS, delimiter='\t')
+        writer.writerows(expanded_rows)
+
+    # === Step 10: Derive buildnotes list from final flagnotes list ===
+    buildnote_seen = {}
+    buildnote_rows = []
+
+    with open(fileio.path('flagnotes list'), newline='', encoding='utf-8') as f_flag:
+        reader = csv.DictReader(f_flag, delimiter='\t')
+        for row in reader:
+            if row.get("note_type", "").strip() != "buildnote":
+                continue
+
+            buildnote_number = row.get("bubble_text", "").strip()
+            if buildnote_number in buildnote_seen:
+                continue
+
+            buildnote_seen[buildnote_number] = True
+
+            buildnote_rows.append({
+                "buildnote_number": buildnote_number,
+                "note": row.get("note", "").strip(),
+                "has_shape": "True" if row.get("shape", "").strip() else "False",
+                "shape": row.get("shape", "").strip(),
+                "shape_supplier": row.get("shape_supplier", "").strip(),
+            })
+
+    buildnote_rows.sort(key=lambda row: int(row.get("buildnote_number", 0)))
+
+    with open(fileio.path('buildnotes list'), 'w', newline='', encoding='utf-8') as f_build:
+        writer = csv.DictWriter(f_build, fieldnames=BUILDNOTES_COLUMNS, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(buildnote_rows)
 
 def make_note_drawings():
     instances = instances_list.read_instance_rows()

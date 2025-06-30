@@ -122,15 +122,18 @@ def harness():
     run_wireviz.generate_esch()
 
     #=============== REBUILDING OUTPUT SVG #===============
+    #ensure page setup is defined, if not, make a basic one
     page_setup_contents = svg_outputs.update_page_setup_json()
-        #ensure page setup is defined, if not, make a basic one
+
     revinfo = rev_history.revision_info()
 
     #prepare the building blocks as svgs
     svg_outputs.prep_formboard_drawings(page_setup_contents)
     svg_outputs.prep_wirelist()
     svg_outputs.prep_bom()
+    svg_outputs.prep_buildnotes_table()
     #esch done under run_wireviz.generate_esch()
+
     svg_outputs.prep_tblocks(page_setup_contents, revinfo)
 
     svg_outputs.prep_master(page_setup_contents)
@@ -312,7 +315,8 @@ def tblock():
     # === Write attributes file ===
     periphery_json = {
         "periphery_locs": {
-            "bom_loc": [tb_origin_x, tb_origin_y]  # same as bottom-left of titleblock
+            "bom_loc": [tb_origin_x, tb_origin_y],  # same as bottom-left of titleblock
+            "buildnotes_loc": [0, 0]  # same as bottom-left of titleblock
         },
         "page_size_in": [
             round(p["page_size"][0] / 96, 3),
