@@ -94,7 +94,6 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
                 },
                 "support_do_not_edit": {
-                    "uneditable_instance_data":{},
                     "formboard_data": {
                         f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
                         f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
@@ -114,7 +113,8 @@ def harnice_file_structure():
                         f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
                         f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
                         "formboard_svgs":{},
-                        "tblock_svgs":{}
+                        "tblock_svgs":{},
+                        "uneditable_instance_data":{}
                     }
                 },
                 "wireviz_outputs":{
@@ -149,12 +149,12 @@ def generate_structure():
 
     os.makedirs(dirpath("editable_instance_data"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
-    os.makedirs(dirpath("uneditable_instance_data"), exist_ok=True)
     os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
     os.makedirs(dirpath("svg_generated"), exist_ok=True)
     os.makedirs(dirpath("tblock_svgs"), exist_ok=True)
     os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
+    os.makedirs(dirpath("uneditable_instance_data"), exist_ok=True)
     os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
     os.makedirs(dirpath("page_setup"), exist_ok=True)
 
