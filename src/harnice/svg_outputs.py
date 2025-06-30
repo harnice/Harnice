@@ -699,7 +699,7 @@ def prep_buildnotes_table():
         f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
         f'font-family="{font_family}" font-size="{font_size}">',
         '<g id="buildnotes-table-contents-start">',
-        f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="white"/>'
+        f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none"/>'
     ]
 
     # Column positions
