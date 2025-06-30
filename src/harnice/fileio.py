@@ -99,6 +99,7 @@ def harnice_file_structure():
                         f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
                     },
                     "lists":{
+                        f"{partnumber("pn-rev")}.buildnotes_list.tsv":"buildnotes list",
                         f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
                         f"{partnumber("pn-rev")}.flagnotes_list.tsv":"flagnotes list",
                         f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
