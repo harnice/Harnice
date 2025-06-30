@@ -116,6 +116,7 @@ def harness():
     instances_list.add_flagnotes()
 
     flagnotes.make_note_drawings()
+    flagnotes.make_leader_drawings()
 
     #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()

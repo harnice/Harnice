@@ -2,6 +2,7 @@ import os
 import json
 import csv
 import re
+import math
 from dotenv import load_dotenv, dotenv_values
 from harnice import(
     fileio,
@@ -167,21 +168,50 @@ def make_note_drawings():
         with open(drawing_path, 'w', encoding='utf-8') as f:
             f.write(svg)
 
-        """
-        # === Add arrowheads ===
-        instance_data_dir = ""
-        if item_type and item_type not in excluded_item_types:
-            if item_type in {"Connector", "Backshell"}:
-                instance_data_dir = fileio.dirpath("editable_instance_data")
+def make_leader_drawings():
+    instances = instances_list.read_instance_rows()
+    for instance in instances:
+        if instance.get("item_type") == "Flagnote leader":
+
+            leader_parent = instance.get("parent_instance")
+            flagnote_number = int(instance.get("note_number", "0"))
+            parent_attributes_file = ""
+
+            # Find the instance that matches `leader_parent`
+            parent_type = ""
+            for instance2 in instances:
+                if instance2.get("instance_name") == leader_parent:
+                    parent_type = instance2.get("item_type", "")
+                    break
+
+            # Then decide path based on its type
+            if parent_type in instances_list.editable_component_types():
+                parent_attributes_file = os.path.join(fileio.dirpath("editable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
             else:
-                instance_data_dir = fileio.dirpath("uneditable_instance_data")
+                parent_attributes_file = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
 
-        part_attributes_file = os.path.join(instance_data_dir, f"{instance}-attributes.json")
+            if not os.path.exists(parent_attributes_file):
+                print(f"[WARN] Missing attributes for parent: {parent_attributes_file}")
+                continue
 
-        arrowhead_from = flagnote_locations[flagnote_number].angle,flagnote_locations[flagnote_number].distance
-        arrowhead_to = flagnote_locations[flagnote_number].arrowhead_angle,flagnote_locations[flagnote_number].arrowhead_distance
+            with open(parent_attributes_file, encoding='utf-8') as f:
+                attr_data = json.load(f)
 
-        if arrowhead_to[0] == "":
-            arrowhead_to[0] = arrowhead_from[1]
-        """
+            flagnote_locations = attr_data.get("flagnote_locations", [])
+            if flagnote_number >= len(flagnote_locations):
+                print(f"[WARN] flagnote_number {flagnote_number} out of range for {parent_instance}")
+                continue
 
+            loc = flagnote_locations[flagnote_number]
+            angle = float(loc.get("angle"))
+            distance = float(loc.get("distance"))
+            if loc.get("arrowhead_angle") == "":
+                arrowhead_angle = angle
+            else:
+                arrowhead_angle = float(loc.get("arrowhead_angle"))
+            arrowhead_distance = float(loc.get("arrowhead_distance"))
+
+            from_x = math.cos(angle) * distance
+            from_y = math.sin(angle) * distance
+            to_x = math.cos(arrowhead_angle) * arrowhead_distance
+            to_y = math.sin(arrowhead_angle) * arrowhead_distance

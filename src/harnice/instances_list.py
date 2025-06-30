@@ -28,6 +28,9 @@ INSTANCES_LIST_COLUMNS = [
     'bubble_text'
 ]
 
+def editable_component_types():
+    return {"Backshell", "Connector"}
+
 def load_yaml_data():
     with open(fileio.path('harness yaml'), 'r') as file:
         return yaml.safe_load(file)
@@ -518,7 +521,7 @@ def add_flagnotes():
             "translate_y": "",
             "rotate_csys": "",
             "absolute_rotation": "",
-            "note_number": "",
+            "note_number": note_number,
             "bubble_text": ""
         }
         append_instance_row(flagnote_instance)
