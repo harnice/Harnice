@@ -23,6 +23,7 @@ MANUAL_FLAGNOTES_COLUMNS = [
 
 AUTO_FLAGNOTES_COLUMNS = [
     "note_type",
+    "note",
     "shape",
     "shape_supplier",
     "bubble_text",
@@ -36,9 +37,9 @@ def ensure_manual_list_exists():
             writer.writeheader()
 
 def compile_all_flagnotes():
-    # === Step 1: Reset only "flagnotes list" TSV with header columns ===
-    with open(fileio.path('flagnotes list'), 'w', newline='', encoding='utf-8') as f_list:
-        writer = csv.DictWriter(f_list, fieldnames=AUTO_FLAGNOTES_COLUMNS, delimiter='\t')
+    # === Step 1: Reset flagnotes list file ===
+    with open(fileio.path('flagnotes list'), 'w', newline='', encoding='utf-8') as f_flag:
+        writer = csv.DictWriter(f_flag, fieldnames=AUTO_FLAGNOTES_COLUMNS, delimiter='\t')
         writer.writeheader()
 
     # === Step 2: Read and normalize all manual flagnote rows ===
@@ -61,13 +62,14 @@ def compile_all_flagnotes():
                 for instance in instances:
                     revision_rows.append({
                         "note_type": "rev_change_callout",
+                        "note": "",
                         "shape": "rev_change_callout",
                         "shape_supplier": "public",
                         "bubble_text": fileio.partnumber("rev"),
                         "affectedinstances": instance
                     })
 
-    # === Step 4: Generate auto flagnote rows based on instance list ===
+    # === Step 4: Generate auto flagnote rows from instance list ===
     auto_generated_rows = []
     instances = instances_list.read_instance_rows()
     for instance in instances:
@@ -76,6 +78,7 @@ def compile_all_flagnotes():
         if item_type in {"Connector", "Backshell"}:
             auto_generated_rows.append({
                 "note_type": "part_name",
+                "note": "",
                 "shape": "part_name",
                 "shape_supplier": "public",
                 "bubble_text": instance_name,
@@ -83,6 +86,7 @@ def compile_all_flagnotes():
             })
             auto_generated_rows.append({
                 "note_type": "bom_item",
+                "note": "",
                 "shape": "bom_item",
                 "shape_supplier": "public",
                 "bubble_text": instance.get("bom_line_number", "").strip(),
@@ -92,7 +96,7 @@ def compile_all_flagnotes():
     # === Step 5: Combine all flagnote rows ===
     all_rows = manual_rows + revision_rows + auto_generated_rows
 
-    # === Step 6: Expand any rows with multiple affected instances ===
+    # === Step 6: Expand rows with multiple affected instances ===
     expanded_rows = []
     for row in all_rows:
         affected_field = row.get('affectedinstances', '').strip()
@@ -126,14 +130,20 @@ def compile_all_flagnotes():
 
         key = (note_type, instance)
         if not bubble_text:
-            bubble_counters[key] = bubble_counters.get(key, 0) + 1
+            start = 1 if note_type == "buildnote" else 0
+            bubble_counters[key] = bubble_counters.get(key, start)
             row["bubble_text"] = str(bubble_counters[key])
+            bubble_counters[key] += 1
         else:
-            row["bubble_text"] = bubble_text
+            try:
+                existing_num = int(bubble_text)
+                bubble_counters[key] = max(bubble_counters.get(key, 0), existing_num + 1)
+            except ValueError:
+                pass  # ignore non-numeric bubble_texts
 
-    # === Step 9: Write all rows to "flagnotes list" TSV ===
-    with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_list:
-        writer = csv.DictWriter(f_list, fieldnames=AUTO_FLAGNOTES_COLUMNS, delimiter='\t')
+    # === Step 9: Write all rows to flagnotes list ===
+    with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_flag:
+        writer = csv.DictWriter(f_flag, fieldnames=AUTO_FLAGNOTES_COLUMNS, delimiter='\t')
         writer.writerows(expanded_rows)
 
 def make_note_drawings():

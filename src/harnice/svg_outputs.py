@@ -639,3 +639,6 @@ def update_page_setup_json():
         json.dump(tblock_data, f, indent=4)
 
     return tblock_data
+
+def prep_buildnotes_list():
+    pass

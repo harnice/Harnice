@@ -122,15 +122,18 @@ def harness():
     run_wireviz.generate_esch()
 
     #=============== REBUILDING OUTPUT SVG #===============
+    #ensure page setup is defined, if not, make a basic one
     page_setup_contents = svg_outputs.update_page_setup_json()
-        #ensure page setup is defined, if not, make a basic one
+
     revinfo = rev_history.revision_info()
 
     #prepare the building blocks as svgs
     svg_outputs.prep_formboard_drawings(page_setup_contents)
     svg_outputs.prep_wirelist()
     svg_outputs.prep_bom()
+    svg_outputs.prep_buildnotes_list()
     #esch done under run_wireviz.generate_esch()
+
     svg_outputs.prep_tblocks(page_setup_contents, revinfo)
 
     svg_outputs.prep_master(page_setup_contents)
