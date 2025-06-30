@@ -130,7 +130,7 @@ def prep_formboard_drawings(page_setup_contents):
         filepath = os.path.join(fileio.dirpath("formboard_svgs"),filename)
 
         instances = instances_list.read_instance_rows()
-        printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
+        printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote", "Flagnote leader"}
 
         rotation = page_setup_contents["formboards"].get(formboard_name, {}).get("rotation", 0)
         if rotation == "":

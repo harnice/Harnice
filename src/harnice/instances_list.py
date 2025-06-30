@@ -482,7 +482,29 @@ def add_flagnotes():
         }
         append_instance_row(location_instance)
 
-        # === Step 6: Append flagnote instance ===
+        # === Step 6: Append leader instance ===
+        flagnote_instance = {
+            "instance_name": f"{instance_name}-leader",
+            "bom_line_number": "",
+            "mpn": "",
+            "item_type": "Flagnote leader",
+            "parent_instance": affected,
+            "parent_csys": parent_csys,
+            "supplier": "",
+            "lib_latest_rev": "",
+            "lib_rev_used_here": "",
+            "length": "",
+            "diameter": "",
+            "translate_x": "",
+            "translate_y": "",
+            "rotate_csys": "",
+            "absolute_rotation": "",
+            "note_number": note_number,
+            "bubble_text": ""
+        }
+        append_instance_row(flagnote_instance)
+
+        # === Step 7: Append flagnote instance ===
         flagnote_instance = {
             "instance_name": instance_name,
             "bom_line_number": "",
@@ -501,28 +523,6 @@ def add_flagnotes():
             "absolute_rotation": 0,
             "note_number": note_number,
             "bubble_text": bubble_text
-        }
-        append_instance_row(flagnote_instance)
-
-        # === Step 7: Append leader instance ===
-        flagnote_instance = {
-            "instance_name": f"{instance_name}-leader",
-            "bom_line_number": "",
-            "mpn": "",
-            "item_type": "Flagnote leader",
-            "parent_instance": affected,
-            "parent_csys": f"{instance_name}-location",
-            "supplier": "",
-            "lib_latest_rev": "",
-            "lib_rev_used_here": "",
-            "length": "",
-            "diameter": "",
-            "translate_x": "",
-            "translate_y": "",
-            "rotate_csys": "",
-            "absolute_rotation": "",
-            "note_number": note_number,
-            "bubble_text": ""
         }
         append_instance_row(flagnote_instance)
 

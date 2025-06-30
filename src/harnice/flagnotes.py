@@ -173,6 +173,7 @@ def make_leader_drawings():
     for instance in instances:
         if instance.get("item_type") == "Flagnote leader":
 
+            leader_name = instance.get("instance_name")
             leader_parent = instance.get("parent_instance")
             flagnote_number = int(instance.get("note_number", "0"))
             parent_attributes_file = ""
@@ -203,15 +204,53 @@ def make_leader_drawings():
                 continue
 
             loc = flagnote_locations[flagnote_number]
-            angle = float(loc.get("angle"))
+            angle = math.radians(float(loc.get("angle")))
             distance = float(loc.get("distance"))
-            if loc.get("arrowhead_angle") == "":
-                arrowhead_angle = angle
-            else:
-                arrowhead_angle = float(loc.get("arrowhead_angle"))
+
+            arrowhead_angle_raw = loc.get("arrowhead_angle")
+            arrowhead_angle = angle if arrowhead_angle_raw == "" else math.radians(float(arrowhead_angle_raw))
             arrowhead_distance = float(loc.get("arrowhead_distance"))
 
-            from_x = math.cos(angle) * distance
-            from_y = math.sin(angle) * distance
-            to_x = math.cos(arrowhead_angle) * arrowhead_distance
-            to_y = math.sin(arrowhead_angle) * arrowhead_distance
+            # === Convert from inches to pixels (96 dpi) ===
+            from_x = math.cos(angle) * distance * 96
+            from_y = -math.sin(angle) * distance * 96
+            to_x = math.cos(arrowhead_angle) * arrowhead_distance * 96
+            to_y = -math.sin(arrowhead_angle) * arrowhead_distance * 96
+
+            # === Arrowhead geometry (manual triangle) ===
+            arrow_len = 6  # px
+            arrow_width = 4  # px
+
+            dx = to_x - from_x
+            dy = to_y - from_y
+            mag = math.hypot(dx, dy)
+            ux, uy = dx / mag, dy / mag
+            px, py = -uy, ux  # perpendicular to direction
+
+            tip = (to_x, to_y)
+            base1 = (to_x - arrow_len * ux + arrow_width * px / 2,
+                    to_y - arrow_len * uy + arrow_width * py / 2)
+            base2 = (to_x - arrow_len * ux - arrow_width * px / 2,
+                    to_y - arrow_len * uy - arrow_width * py / 2)
+
+            arrow_points = f"{tip[0]:.2f},{tip[1]:.2f} {base1[0]:.2f},{base1[1]:.2f} {base2[0]:.2f},{base2[1]:.2f}"
+
+            # === SVG content ===
+            svg_content = f'''
+            <svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384">
+                <g id="{instance.get("instance_name")}-contents-start">
+                    <line x1="{from_x:.2f}" y1="{from_y:.2f}" x2="{to_x:.2f}" y2="{to_y:.2f}" stroke="black" stroke-width="1" />
+                    <polygon points="{arrow_points}" fill="black" />
+                </g>
+                <g id="{instance.get("instance_name")}-contents-end"></g>
+            </svg>
+            '''
+
+            # Output path (replace with your actual logic)
+            leader_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_name)
+            os.makedirs(leader_dir, exist_ok=True)
+
+            output_filename = os.path.join(leader_dir, f"{leader_name}-drawing.svg")
+            with open(output_filename, 'w') as svg_file:
+                svg_file.write(svg_content)
+
