@@ -315,7 +315,8 @@ def tblock():
     # === Write attributes file ===
     periphery_json = {
         "periphery_locs": {
-            "bom_loc": [tb_origin_x, tb_origin_y]  # same as bottom-left of titleblock
+            "bom_loc": [tb_origin_x, tb_origin_y],  # same as bottom-left of titleblock
+            "buildnotes_loc": [0, 0]  # same as bottom-left of titleblock
         },
         "page_size_in": [
             round(p["page_size"][0] / 96, 3),
