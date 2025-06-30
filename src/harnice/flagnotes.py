@@ -11,9 +11,18 @@ from harnice import(
 )
 
 # === Global Columns Definition ===
-FLAGNOTES_COLUMNS = [
+MANUAL_FLAGNOTES_COLUMNS = [
+    "action",
     "note_type",
     "note",
+    "shape",
+    "shape_supplier",
+    "bubble_text",
+    "affectedinstances"
+]
+
+AUTO_FLAGNOTES_COLUMNS = [
+    "note_type",
     "shape",
     "shape_supplier",
     "bubble_text",
@@ -23,23 +32,25 @@ FLAGNOTES_COLUMNS = [
 def ensure_manual_list_exists():
     if not os.path.exists(fileio.path('flagnotes manual')):
         with open(fileio.path('flagnotes manual'), 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
+            writer = csv.DictWriter(f, fieldnames=MANUAL_FLAGNOTES_COLUMNS, delimiter='\t')
             writer.writeheader()
 
 def compile_all_flagnotes():
-    # === Step 1: Reset only "flagnotes list" TSV ===
+    # === Step 1: Reset only "flagnotes list" TSV with header columns ===
     with open(fileio.path('flagnotes list'), 'w', newline='', encoding='utf-8') as f_list:
-        writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
-        writer_list.writeheader()
+        writer = csv.DictWriter(f_list, fieldnames=AUTO_FLAGNOTES_COLUMNS, delimiter='\t')
+        writer.writeheader()
 
-    # === Step 2: Read all manual rows ===
+    # === Step 2: Read and normalize all manual flagnote rows ===
     manual_rows = []
     if os.path.exists(fileio.path('flagnotes manual')):
         with open(fileio.path('flagnotes manual'), newline='', encoding='utf-8') as f_manual:
             reader = csv.DictReader(f_manual, delimiter='\t')
-            manual_rows = list(reader)
+            for row in reader:
+                normalized_row = {column: row.get(column, "").strip() for column in AUTO_FLAGNOTES_COLUMNS}
+                manual_rows.append(normalized_row)
 
-    # === Step 3: Read revision history rows and construct flagnotes ===
+    # === Step 3: Generate revision flagnote rows from revision history ===
     revision_rows = []
     with open(fileio.path('revision history'), newline='', encoding='utf-8') as f_rev:
         reader = csv.DictReader(f_rev, delimiter='\t')
@@ -50,50 +61,48 @@ def compile_all_flagnotes():
                 for instance in instances:
                     revision_rows.append({
                         "note_type": "rev_change_callout",
-                        "note": "",
                         "shape": "rev_change_callout",
                         "shape_supplier": "public",
                         "bubble_text": fileio.partnumber("rev"),
                         "affectedinstances": instance
                     })
 
-    # === Step 4: Add auto-generated flagnotes from instance list ===
-    auto_generated = []
+    # === Step 4: Generate auto flagnote rows based on instance list ===
+    auto_generated_rows = []
     instances = instances_list.read_instance_rows()
     for instance in instances:
         item_type = instance.get("item_type", "").strip()
         instance_name = instance.get("instance_name", "").strip()
         if item_type in {"Connector", "Backshell"}:
-            auto_generated.append({
+            auto_generated_rows.append({
                 "note_type": "part_name",
-                "note": "",
                 "shape": "part_name",
                 "shape_supplier": "public",
                 "bubble_text": instance_name,
                 "affectedinstances": instance_name
             })
-            auto_generated.append({
+            auto_generated_rows.append({
                 "note_type": "bom_item",
-                "note": "",
                 "shape": "bom_item",
                 "shape_supplier": "public",
                 "bubble_text": instance.get("bom_line_number", "").strip(),
                 "affectedinstances": instance_name
             })
 
-    all_rows = manual_rows + revision_rows + auto_generated
+    # === Step 5: Combine all flagnote rows ===
+    all_rows = manual_rows + revision_rows + auto_generated_rows
 
-    # === Step 5: Expand rows with multiple affected instances ===
+    # === Step 6: Expand any rows with multiple affected instances ===
     expanded_rows = []
     for row in all_rows:
-        affected = row.get('affectedinstances', '').strip()
-        instances = [i.strip() for i in affected.split(',') if i.strip()] or ['']
-        for instance in instances:
+        affected_field = row.get('affectedinstances', '').strip()
+        affected_instances = [i.strip() for i in affected_field.split(',') if i.strip()] or ['']
+        for instance in affected_instances:
             new_row = row.copy()
             new_row['affectedinstances'] = instance
             expanded_rows.append(new_row)
 
-    # === Step 6: Sort by note_type priority and affectedinstances ===
+    # === Step 7: Sort rows by note_type priority and affected instance ===
     note_priority = {
         "part_name": 0,
         "bom_item": 1,
@@ -108,7 +117,7 @@ def compile_all_flagnotes():
         row.get("affectedinstances", "").strip()
     ))
 
-    # === Step 7: Assign bubble_text where blank (per note_type + affectedinstances) ===
+    # === Step 8: Assign bubble_text if missing, scoped by (note_type, instance) ===
     bubble_counters = {}
     for row in expanded_rows:
         note_type = row.get("note_type", "").strip()
@@ -122,10 +131,10 @@ def compile_all_flagnotes():
         else:
             row["bubble_text"] = bubble_text
 
-    # === Step 8: Write all flagnotes to list ===
+    # === Step 9: Write all rows to "flagnotes list" TSV ===
     with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_list:
-        writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
-        writer_list.writerows(expanded_rows)
+        writer = csv.DictWriter(f_list, fieldnames=AUTO_FLAGNOTES_COLUMNS, delimiter='\t')
+        writer.writerows(expanded_rows)
 
 def make_note_drawings():
     instances = instances_list.read_instance_rows()
