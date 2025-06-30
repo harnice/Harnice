@@ -415,6 +415,9 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         bom_loc = tblock_attributes.get("periphery_locs", {}).get("bom_loc", [0, 0])
         translate_bom = f'translate({bom_loc[0]},{bom_loc[1]})'
 
+        buildnotes_loc = tblock_attributes.get("periphery_locs", {}).get("buildnotes_loc", [0, 0])
+        translate_buildnotes = f'translate({buildnotes_loc[0]},{buildnotes_loc[1]})'
+
         # === Prepare destination SVG ===
         project_svg_path = os.path.join(destination_directory, f"{page_name}.svg")
 
@@ -427,6 +430,10 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             f'    <g id="bom" transform="{translate_bom}">',
             f'      <g id="bom-contents-start"></g>',
             f'      <g id="bom-contents-end"></g>',
+            f'    </g>',
+            f'    <g id="buildnotes" transform="{translate_buildnotes}">',
+            f'      <g id="buildnotes-table-contents-start"></g>',
+            f'      <g id="buildnotes-table-contents-end"></g>',
             f'    </g>',
             f'  </g>',
             f'  <g id="{page_name}-contents-end"></g>',
@@ -446,6 +453,11 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             project_svg_path,
             fileio.path("bom table master svg"),
             "bom", "bom"
+        )
+        svg_utils.find_and_replace_svg_group(
+            project_svg_path,
+            fileio.path("buildnotes table svg"),
+            "buildnotes-table", "buildnotes-table"
         )
 
         # === Text replacements ===
@@ -686,7 +698,7 @@ def prep_buildnotes_table():
     svg_lines = [
         f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
         f'font-family="{font_family}" font-size="{font_size}">',
-        '<g id="buildnote-table-contents-start">',
+        '<g id="buildnotes-table-contents-start">',
         f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="white"/>'
     ]
 
@@ -736,7 +748,7 @@ def prep_buildnotes_table():
         )
 
     svg_lines.append('</g>')
-    svg_lines.append('<g id="buildnote-table-contents-end"/>')
+    svg_lines.append('<g id="buildnotes-table-contents-end"/>')
     svg_lines.append('</svg>')
 
     # === Write SVG Output ===
