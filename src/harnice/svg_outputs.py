@@ -130,7 +130,7 @@ def prep_formboard_drawings(page_setup_contents):
         filepath = os.path.join(fileio.dirpath("formboard_svgs"),filename)
 
         instances = instances_list.read_instance_rows()
-        excluded_item_types = {"Cable", "Node", "Flagnote location"}
+        printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
 
         rotation = page_setup_contents["formboards"].get(formboard_name, {}).get("rotation", 0)
         if rotation == "":
@@ -144,7 +144,7 @@ def prep_formboard_drawings(page_setup_contents):
         grouped_instances = defaultdict(list)
         for instance in instances:
             item_type = instance.get("item_type", "").strip()
-            if item_type and item_type not in excluded_item_types:
+            if item_type and item_type in printable_item_types:
                 grouped_instances[item_type].append(instance)
 
         # Prepare lines for SVG content
@@ -199,7 +199,7 @@ def prep_formboard_drawings(page_setup_contents):
         #now that the SVG has been written, copy the connector content in:
         for instance in instances:
             item_type = instance.get("item_type", "").strip()
-            if item_type and item_type not in excluded_item_types:
+            if item_type and item_type in printable_item_types:
                 if item_type in {"Connector", "Backshell"}:
                     instance_data_dir = fileio.dirpath("editable_instance_data")
                 else:
