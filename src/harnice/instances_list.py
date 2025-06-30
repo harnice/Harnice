@@ -24,6 +24,7 @@ INSTANCES_LIST_COLUMNS = [
     'translate_y',
     'rotate_csys',
     'absolute_rotation',
+    'note_number',
     'bubble_text'
 ]
 
@@ -473,6 +474,7 @@ def add_flagnotes():
             "translate_x": translate_x,
             "translate_y": translate_y,
             "rotate_csys": "",
+            "note_number": note_number,
             "absolute_rotation": ""
         }
         append_instance_row(location_instance)
@@ -494,6 +496,7 @@ def add_flagnotes():
             "translate_y": 0,
             "rotate_csys": "",
             "absolute_rotation": 0,
+            "note_number": note_number,
             "bubble_text": bubble_text
         }
         append_instance_row(flagnote_instance)

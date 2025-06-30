@@ -167,4 +167,21 @@ def make_note_drawings():
         with open(drawing_path, 'w', encoding='utf-8') as f:
             f.write(svg)
 
+        """
+        # === Add arrowheads ===
+        instance_data_dir = ""
+        if item_type and item_type not in excluded_item_types:
+            if item_type in {"Connector", "Backshell"}:
+                instance_data_dir = fileio.dirpath("editable_instance_data")
+            else:
+                instance_data_dir = fileio.dirpath("uneditable_instance_data")
+
+        part_attributes_file = os.path.join(instance_data_dir, f"{instance}-attributes.json")
+
+        arrowhead_from = flagnote_locations[flagnote_number].angle,flagnote_locations[flagnote_number].distance
+        arrowhead_to = flagnote_locations[flagnote_number].arrowhead_angle,flagnote_locations[flagnote_number].arrowhead_distance
+
+        if arrowhead_to[0] == "":
+            arrowhead_to[0] = arrowhead_from[1]
+        """
 
