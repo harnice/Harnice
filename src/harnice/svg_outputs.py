@@ -658,21 +658,27 @@ def prep_buildnotes_table():
         reader = csv.DictReader(tsv_file, delimiter="\t")
         data_rows = []
         for row in reader:
-            bubble_text = row.get("bubble_text", "").strip()
+            buildnote_number = row.get("buildnote_number", "").strip()
             note = row.get("note", "").strip()
+            has_shape = row.get("has_shape", "").strip().lower() == "true"
             shape = row.get("shape", "").strip()
             supplier = row.get("shape_supplier", "").strip()
 
-            if shape and supplier:
-                pull_item_from_library(
+            if has_shape and shape and supplier:
+                component_library.pull_item_from_library(
                     supplier=supplier,
                     lib_subpath=shape,
                     mpn=shape,
                     destination_directory=fileio.dirpath("buildnote_table_bubbles"),
+                    item_name=f"{buildnote_number}-bubble",
                     quiet=True
                 )
 
-            data_rows.append([bubble_text, note])
+            data_rows.append({
+                "buildnote_number": buildnote_number,
+                "note": note,
+                "has_shape": has_shape
+            })
 
     num_rows = len(data_rows) + 1  # +1 for header row
     svg_width = sum(column_widths)
@@ -699,21 +705,29 @@ def prep_buildnotes_table():
     )
 
     # === Data Rows ===
-    for row_index, (bubble_text, note_text) in enumerate(data_rows):
+    for row_index, row in enumerate(data_rows):
         y = (row_index + 1) * row_height  # below header
 
-        # Draw circle
+        buildnote_number = row["buildnote_number"]
+        note_text = row["note"]
+        has_shape = row["has_shape"]
+
         cx = bubble_x + column_widths[0] / 2
         cy = y + row_height / 2
-        radius = min(column_widths[0], row_height) / 2 - 2
-        svg_lines.append(
-            f'<circle cx="{cx}" cy="{cy}" r="{radius}" '
-            f'style="fill:none;stroke:black;stroke-width:0.5"/>'
-        )
+
+        if has_shape:
+            svg_lines.append(f'<g id="{buildnote_number}-bubble-contents-start" transform="translate({cx},{cy})"/>')
+            svg_lines.append(f'<g id="{buildnote_number}-bubble-contents-end"/>')
+        else:
+            svg_lines.append(
+                f'<text x="{cx}" y="{cy}" text-anchor="middle" '
+                f'style="fill:black;dominant-baseline:middle;'
+                f'font-family:{font_family};font-size:{font_size}">{buildnote_number}.</text>'
+            )
 
         # Draw note text
         text_x = note_x + 5
-        text_y = y + row_height / 2
+        text_y = cy
         svg_lines.append(
             f'<text x="{text_x}" y="{text_y}" text-anchor="start" '
             f'style="fill:black;dominant-baseline:middle;'
