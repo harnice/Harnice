@@ -640,5 +640,90 @@ def update_page_setup_json():
 
     return tblock_data
 
-def prep_buildnotes_list():
-    pass
+def prep_buildnotes_table():
+    import os
+
+    # === Configuration ===
+    column_widths = [0.375 * 96, 3.375 * 96]  # bubble, then note
+    row_height = 0.16 * 96
+    font_size = 8
+    font_family = "Arial, Helvetica, sans-serif"
+
+    # === Output directories ===
+    os.makedirs(fileio.dirpath("buildnotes_table"), exist_ok=True)
+    os.makedirs(fileio.dirpath("buildnote_table_bubbles"), exist_ok=True)
+
+    # === Read "buildnotes list" TSV ===
+    with open(fileio.path("buildnotes list"), "r", newline="", encoding="utf-8") as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter="\t")
+        data_rows = []
+        for row in reader:
+            bubble_text = row.get("bubble_text", "").strip()
+            note = row.get("note", "").strip()
+            shape = row.get("shape", "").strip()
+            supplier = row.get("shape_supplier", "").strip()
+
+            if shape and supplier:
+                pull_item_from_library(
+                    supplier=supplier,
+                    lib_subpath=shape,
+                    mpn=shape,
+                    destination_directory=fileio.dirpath("buildnote_table_bubbles"),
+                    quiet=True
+                )
+
+            data_rows.append([bubble_text, note])
+
+    num_rows = len(data_rows) + 1  # +1 for header row
+    svg_width = sum(column_widths)
+    svg_height = num_rows * row_height
+
+    # === Begin SVG Output ===
+    svg_lines = [
+        f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
+        f'font-family="{font_family}" font-size="{font_size}">',
+        '<g id="buildnotes-contents-start">'
+    ]
+
+    # Column positions
+    bubble_x = 0
+    note_x = column_widths[0]
+
+    # === Header Row ===
+    header_text_x = bubble_x  # left-aligned to bubble column
+    header_text_y = row_height / 2
+    svg_lines.append(
+        f'<text x="{header_text_x}" y="{header_text_y}" text-anchor="start" '
+        f'style="fill:black;dominant-baseline:middle;font-weight:bold;'
+        f'font-family:{font_family};font-size:{font_size}">BUILD NOTES</text>'
+    )
+
+    # === Data Rows ===
+    for row_index, (bubble_text, note_text) in enumerate(data_rows):
+        y = (row_index + 1) * row_height  # below header
+
+        # Draw circle
+        cx = bubble_x + column_widths[0] / 2
+        cy = y + row_height / 2
+        radius = min(column_widths[0], row_height) / 2 - 2
+        svg_lines.append(
+            f'<circle cx="{cx}" cy="{cy}" r="{radius}" '
+            f'style="fill:none;stroke:black;stroke-width:0.5"/>'
+        )
+
+        # Draw note text
+        text_x = note_x + 5
+        text_y = y + row_height / 2
+        svg_lines.append(
+            f'<text x="{text_x}" y="{text_y}" text-anchor="start" '
+            f'style="fill:black;dominant-baseline:middle;'
+            f'font-family:{font_family};font-size:{font_size}">{note_text}</text>'
+        )
+
+    svg_lines.append('</g>')
+    svg_lines.append('<g id="buildnotes-contents-end"/>')
+    svg_lines.append('</svg>')
+
+    # === Write SVG Output ===
+    with open(fileio.path("buildnotes table svg"), "w", encoding="utf-8") as svg_file:
+        svg_file.write("\n".join(svg_lines))

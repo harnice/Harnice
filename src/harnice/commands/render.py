@@ -131,7 +131,7 @@ def harness():
     svg_outputs.prep_formboard_drawings(page_setup_contents)
     svg_outputs.prep_wirelist()
     svg_outputs.prep_bom()
-    svg_outputs.prep_buildnotes_list()
+    svg_outputs.prep_buildnotes_table()
     #esch done under run_wireviz.generate_esch()
 
     svg_outputs.prep_tblocks(page_setup_contents, revinfo)
