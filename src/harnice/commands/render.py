@@ -107,24 +107,17 @@ def harness():
         #adds bom line numbers back to the instances list
 
     #=============== HANDLING FLAGNOTES #===============
-    """
-    instances_list_data = instances_list.read_instance_rows()
-    rev_history_data = rev_history.revision_info()
-    buildnotes_data = ""
+    flagnotes.ensure_manual_list_exists()
+    
+    #makes notes of part name, bom, revision, etc
+    flagnotes.compile_all_flagnotes()
 
-    flagnotes.create_flagnote_matrix_for_all_instances(instances_list_data)
+    #adds the above to instance list
+    instances_list.add_flagnotes()
 
-    flagnotes.add_flagnote_content(
-        flagnotes.read_flagnote_matrix_file(),
-        instances_list_data,
-        rev_history_data,
-        buildnotes_data
-    )
+    flagnotes.make_note_drawings()
+    flagnotes.make_leader_drawings()
 
-    instances_list.add_flagnotes(
-        flagnotes.read_flagnote_matrix_file()
-    )
-    """
     #=============== RUNNING WIREVIZ #===============
     run_wireviz.generate_esch()
 
@@ -150,6 +143,8 @@ def harness():
         #makes a PDF out of each svg in page setup
 
     rev_history.update_datemodified()
+    print(f"Harnice: harness {fileio.partnumber("pn")} rendered successfully!")
+    print()
 
 def tblock():
     print("Warning: rendering a titleblock may clear user edits to its svg. Do you wish to proceed?")
@@ -581,10 +576,10 @@ def flagnote():
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
-        f'  <g id="flagnote-contents-start">',
+        f'  <g id="{fileio.partnumber('pn')}-drawing-contents-start">',
         contents.rstrip(),
         f'  </g>',
-        f'  <g id="flagnote-contents-end">',
+        f'  <g id="{fileio.partnumber('pn')}-drawing-contents-end">',
         f'  </g>',
         '</svg>'
     ]

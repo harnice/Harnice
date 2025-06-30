@@ -1,104 +1,256 @@
 import os
 import json
+import csv
+import re
+import math
+from dotenv import load_dotenv, dotenv_values
 from harnice import(
-    fileio
+    fileio,
+    instances_list,
+    component_library
 )
 
-def create_flagnote_matrix_for_all_instances(instances_list_data):
-    flagnotes_json = {}
-    flagnotes_limit = 15
+# === Global Columns Definition ===
+FLAGNOTES_COLUMNS = [
+    "note_type",
+    "note",
+    "shape",
+    "shape_supplier",
+    "bubble_text",
+    "affectedinstances"
+]
 
-    for instance in instances_list_data:
+def ensure_manual_list_exists():
+    if not os.path.exists(fileio.path('flagnotes manual')):
+        with open(fileio.path('flagnotes manual'), 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
+            writer.writeheader()
+
+def compile_all_flagnotes():
+    # === Step 1: Reset only "flagnotes list" TSV ===
+    with open(fileio.path('flagnotes list'), 'w', newline='', encoding='utf-8') as f_list:
+        writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
+        writer_list.writeheader()
+
+    # === Step 2: Read all manual rows ===
+    manual_rows = []
+    if os.path.exists(fileio.path('flagnotes manual')):
+        with open(fileio.path('flagnotes manual'), newline='', encoding='utf-8') as f_manual:
+            reader = csv.DictReader(f_manual, delimiter='\t')
+            manual_rows = list(reader)
+
+    # === Step 3: Read revision history rows and construct flagnotes ===
+    revision_rows = []
+    with open(fileio.path('revision history'), newline='', encoding='utf-8') as f_rev:
+        reader = csv.DictReader(f_rev, delimiter='\t')
+        for rev_row in reader:
+            affected = rev_row.get("affectedinstances", "").strip()
+            if affected:
+                instances = [i.strip() for i in affected.split(',') if i.strip()]
+                for instance in instances:
+                    revision_rows.append({
+                        "note_type": "rev_change_callout",
+                        "note": "",
+                        "shape": "rev_change_callout",
+                        "shape_supplier": "public",
+                        "bubble_text": fileio.partnumber("rev"),
+                        "affectedinstances": instance
+                    })
+
+    # === Step 4: Add auto-generated flagnotes from instance list ===
+    auto_generated = []
+    instances = instances_list.read_instance_rows()
+    for instance in instances:
+        item_type = instance.get("item_type", "").strip()
+        instance_name = instance.get("instance_name", "").strip()
+        if item_type in {"Connector", "Backshell"}:
+            auto_generated.append({
+                "note_type": "part_name",
+                "note": "",
+                "shape": "part_name",
+                "shape_supplier": "public",
+                "bubble_text": instance_name,
+                "affectedinstances": instance_name
+            })
+            auto_generated.append({
+                "note_type": "bom_item",
+                "note": "",
+                "shape": "bom_item",
+                "shape_supplier": "public",
+                "bubble_text": instance.get("bom_line_number", "").strip(),
+                "affectedinstances": instance_name
+            })
+
+    all_rows = manual_rows + revision_rows + auto_generated
+
+    # === Step 5: Expand rows with multiple affected instances ===
+    expanded_rows = []
+    for row in all_rows:
+        affected = row.get('affectedinstances', '').strip()
+        instances = [i.strip() for i in affected.split(',') if i.strip()] or ['']
+        for instance in instances:
+            new_row = row.copy()
+            new_row['affectedinstances'] = instance
+            expanded_rows.append(new_row)
+
+    # === Step 6: Sort by note_type priority and affectedinstances ===
+    note_priority = {
+        "part_name": 0,
+        "bom_item": 1,
+        "rev_change_callout": 2,
+        "engineering_note": 3,
+        "buildnote": 4,
+        "backshell_clock": 5
+    }
+
+    expanded_rows.sort(key=lambda row: (
+        note_priority.get(row.get("note_type", "").strip(), 99),
+        row.get("affectedinstances", "").strip()
+    ))
+
+    # === Step 7: Assign bubble_text where blank (per note_type + affectedinstances) ===
+    bubble_counters = {}
+    for row in expanded_rows:
+        note_type = row.get("note_type", "").strip()
+        instance = row.get("affectedinstances", "").strip()
+        bubble_text = row.get("bubble_text", "").strip()
+
+        key = (note_type, instance)
+        if not bubble_text:
+            bubble_counters[key] = bubble_counters.get(key, 0) + 1
+            row["bubble_text"] = str(bubble_counters[key])
+        else:
+            row["bubble_text"] = bubble_text
+
+    # === Step 8: Write all flagnotes to list ===
+    with open(fileio.path('flagnotes list'), 'a', newline='', encoding='utf-8') as f_list:
+        writer_list = csv.DictWriter(f_list, fieldnames=FLAGNOTES_COLUMNS, delimiter='\t')
+        writer_list.writerows(expanded_rows)
+
+def make_note_drawings():
+    instances = instances_list.read_instance_rows()
+
+    # === Load all rows from flagnotes list into memory ===
+    with open(fileio.path("flagnotes list"), newline='', encoding='utf-8') as f:
+        flagnotes_list = list(csv.DictReader(f, delimiter='\t'))
+
+    for instance in instances:
+        if instance.get("item_type", "").lower() != "flagnote":
+            continue
+
         instance_name = instance.get("instance_name")
-        item_type = instance.get("item_type")
-        flagnotes_json[instance_name] = {"flagnotes": []}
+        parent_instance = instance.get("parent_instance", "").strip()
 
-        # open up the instance attributes json file only if it's expected / needed
-        flagnote_locations = []
-        if item_type not in {"Cable", "Node", "Segment"}:
-            attr_path = os.path.join(
-                fileio.dirpath("editable_component_data"),
-                instance_name,
-                f"{instance_name}-attributes.json"
-            )
-            with open(attr_path, 'r', encoding='utf-8') as f:
-                instance_data = json.load(f)
-                flagnote_locations = instance_data.get("flagnote_locations", [])
+        destination_directory = os.path.join(fileio.dirpath("uneditable_instance_data"), instance_name)
+        os.makedirs(destination_directory, exist_ok=True)
 
-        for flagnote_number in range(flagnotes_limit):
-            if item_type == "Cable":
-                location = [0, 0]
-                supplier = "public"
-                design = ""
-                text = ""
+        # === Pull library item ===
+        component_library.pull_item_from_library(
+            supplier=instance.get("supplier"),
+            lib_subpath="flagnotes",
+            mpn=instance.get("mpn"),
+            destination_directory=destination_directory,
+            used_rev=None,
+            item_name=instance_name
+        )
 
-            elif item_type == "Node":
-                location = [0, 0]
-                supplier = "public"
-                design = ""
-                text = ""
+        # === Replace placeholder in SVG ===
+        drawing_path = os.path.join(destination_directory, f"{instance_name}-drawing.svg")
+        if not os.path.exists(drawing_path):
+            print(f"[WARN] Drawing not found: {drawing_path}")
+            continue
 
-            elif item_type == "Segment":
-                location = [0, 0]
-                supplier = "public"
-                design = ""
-                text = ""
+        with open(drawing_path, 'r', encoding='utf-8') as f:
+            svg = f.read()
 
+        svg = re.sub(r'>flagnote-text<', f'>{instance.get("bubble_text")}<', svg)
+
+        with open(drawing_path, 'w', encoding='utf-8') as f:
+            f.write(svg)
+
+def make_leader_drawings():
+    instances = instances_list.read_instance_rows()
+    for instance in instances:
+        if instance.get("item_type") == "Flagnote leader":
+
+            leader_name = instance.get("instance_name")
+            leader_parent = instance.get("parent_instance")
+            flagnote_number = int(instance.get("note_number", "0"))
+            parent_attributes_file = ""
+
+            # Find the instance that matches `leader_parent`
+            parent_type = ""
+            for instance2 in instances:
+                if instance2.get("instance_name") == leader_parent:
+                    parent_type = instance2.get("item_type", "")
+                    break
+
+            # Then decide path based on its type
+            if parent_type in instances_list.editable_component_types():
+                parent_attributes_file = os.path.join(fileio.dirpath("editable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
             else:
-                if flagnote_number < len(flagnote_locations):
-                    loc = flagnote_locations[flagnote_number]
-                    location = [loc.get("angle"), loc.get("distance")]
-                else:
-                    location = [None, None]
-                supplier = "public"
-                design = ""
-                text = ""
+                parent_attributes_file = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
 
-            flagnote = {
-                "note_type": "",
-                "location": location,
-                "supplier": supplier,
-                "design": design,
-                "text": text
-            }
+            if not os.path.exists(parent_attributes_file):
+                print(f"[WARN] Missing attributes for parent: {parent_attributes_file}")
+                continue
 
-            flagnotes_json[instance_name]["flagnotes"].append(flagnote)
+            with open(parent_attributes_file, encoding='utf-8') as f:
+                attr_data = json.load(f)
 
-    with open(fileio.path("flagnotes json"), 'w', encoding='utf-8') as f:
-        json.dump(flagnotes_json, f, indent=2)
+            flagnote_locations = attr_data.get("flagnote_locations", [])
+            if flagnote_number >= len(flagnote_locations):
+                print(f"[WARN] flagnote_number {flagnote_number} out of range for {parent_instance}")
+                continue
 
-def add_flagnote_content(flagnote_matrix_data, instances_list_data, rev_history_data, buildnotes_data):
-    for instance in instances_list_data:
-        instance_name = instance.get("instance_name")
-        if not instance_name:
-            continue  # skip instances without a valid name
+            loc = flagnote_locations[flagnote_number]
+            angle = math.radians(float(loc.get("angle")))
+            distance = float(loc.get("distance"))
 
-        flagnotes = flagnote_matrix_data.get(instance_name, {}).get("flagnotes", [])
-        flagnote_number = 0
+            arrowhead_angle_raw = loc.get("arrowhead_angle")
+            arrowhead_angle = angle if arrowhead_angle_raw == "" else math.radians(float(arrowhead_angle_raw))
+            arrowhead_distance = float(loc.get("arrowhead_distance"))
 
-        # Add instance name as flagnote with "Rectangle" design
-        if instance_name.strip():
-            if flagnote_number < len(flagnotes):
-                flagnotes[flagnote_number]["note_type"] = "instance_name"
-                flagnotes[flagnote_number]["design"] = "Rectangle"
-                flagnotes[flagnote_number]["text"] = instance_name
-                flagnote_number += 1
+            # === Convert from inches to pixels (96 dpi) ===
+            from_x = math.cos(angle) * distance * 96
+            from_y = -math.sin(angle) * distance * 96
+            to_x = math.cos(arrowhead_angle) * arrowhead_distance * 96
+            to_y = -math.sin(arrowhead_angle) * arrowhead_distance * 96
 
-        # Add BOM item number as flagnote with "Circle" design
-        bom_line_number = instance.get("bom_line_number", "").strip()
-        if bom_line_number:
-            if flagnote_number < len(flagnotes):
-                flagnotes[flagnote_number]["note_type"] = "bom_line_number"
-                flagnotes[flagnote_number]["design"] = "Circle"
-                flagnotes[flagnote_number]["text"] = bom_line_number
-                flagnote_number += 1
+            # === Arrowhead geometry (manual triangle) ===
+            arrow_len = 6  # px
+            arrow_width = 4  # px
 
-    # === Save updated flagnote matrix ===
-    output_path = fileio.path("flagnotes json")
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(flagnote_matrix_data, f, indent=2)
+            dx = to_x - from_x
+            dy = to_y - from_y
+            mag = math.hypot(dx, dy)
+            ux, uy = dx / mag, dy / mag
+            px, py = -uy, ux  # perpendicular to direction
 
-def read_flagnote_matrix_file():
-    with open(fileio.path("flagnotes json"), 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    return data
+            tip = (to_x, to_y)
+            base1 = (to_x - arrow_len * ux + arrow_width * px / 2,
+                    to_y - arrow_len * uy + arrow_width * py / 2)
+            base2 = (to_x - arrow_len * ux - arrow_width * px / 2,
+                    to_y - arrow_len * uy - arrow_width * py / 2)
+
+            arrow_points = f"{tip[0]:.2f},{tip[1]:.2f} {base1[0]:.2f},{base1[1]:.2f} {base2[0]:.2f},{base2[1]:.2f}"
+
+            # === SVG content ===
+            svg_content = f'''
+            <svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384">
+                <g id="{instance.get("instance_name")}-contents-start">
+                    <line x1="{from_x:.2f}" y1="{from_y:.2f}" x2="{to_x:.2f}" y2="{to_y:.2f}" stroke="black" stroke-width="1" />
+                    <polygon points="{arrow_points}" fill="black" />
+                </g>
+                <g id="{instance.get("instance_name")}-contents-end"></g>
+            </svg>
+            '''
+
+            # Output path (replace with your actual logic)
+            leader_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_name)
+            os.makedirs(leader_dir, exist_ok=True)
+
+            output_filename = os.path.join(leader_dir, f"{leader_name}-drawing.svg")
+            with open(output_filename, 'w') as svg_file:
+                svg_file.write(svg_content)
+

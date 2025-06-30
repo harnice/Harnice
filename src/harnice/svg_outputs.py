@@ -113,7 +113,7 @@ def prep_formboard_drawings(page_setup_contents):
                     <g id="{instance.get("instance_name")}-contents-end"></g>
                 </svg>
                 '''
-                segment_dir = os.path.join(fileio.dirpath("editable_component_data"), segment_name)
+                segment_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), segment_name)
                 os.makedirs(segment_dir, exist_ok=True)
 
                 output_filename = os.path.join(segment_dir, f"{segment_name}-drawing.svg")
@@ -130,7 +130,7 @@ def prep_formboard_drawings(page_setup_contents):
         filepath = os.path.join(fileio.dirpath("formboard_svgs"),filename)
 
         instances = instances_list.read_instance_rows()
-        excluded_item_types = {"Cable", "Node", "Flagnote"}
+        printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote", "Flagnote leader"}
 
         rotation = page_setup_contents["formboards"].get(formboard_name, {}).get("rotation", 0)
         if rotation == "":
@@ -144,7 +144,7 @@ def prep_formboard_drawings(page_setup_contents):
         grouped_instances = defaultdict(list)
         for instance in instances:
             item_type = instance.get("item_type", "").strip()
-            if item_type and item_type not in excluded_item_types:
+            if item_type and item_type in printable_item_types:
                 grouped_instances[item_type].append(instance)
 
         # Prepare lines for SVG content
@@ -199,13 +199,18 @@ def prep_formboard_drawings(page_setup_contents):
         #now that the SVG has been written, copy the connector content in:
         for instance in instances:
             item_type = instance.get("item_type", "").strip()
-            if item_type and item_type not in excluded_item_types:
+            if item_type and item_type in printable_item_types:
+                if item_type in {"Connector", "Backshell"}:
+                    instance_data_dir = fileio.dirpath("editable_instance_data")
+                else:
+                    instance_data_dir = fileio.dirpath("uneditable_instance_data")
+
                 svg_utils.find_and_replace_svg_group(
                     #target_svg_filepath
                     filepath,
                     #source_svg_filepath
                     os.path.join(
-                        fileio.dirpath("editable_component_data"), 
+                        instance_data_dir, 
                         instance.get("instance_name"),
                         f"{instance.get("instance_name")}-drawing.svg"
                     ),
@@ -367,7 +372,6 @@ def prep_tblocks(page_setup_contents, revhistory_data):
     if duplicates:
         raise ValueError(f"[ERROR] Duplicate page name(s) found: {', '.join(duplicates)}")
 
-    print("Importing titleblocks from library")
     for page in page_setup_contents.get("pages", []):
         page_name = page.get("name")
         tblock_data = page  # each item in the list *is* the tblock_data

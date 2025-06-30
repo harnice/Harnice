@@ -13,7 +13,6 @@ INSTANCES_LIST_COLUMNS = [
     'bom_line_number',
     'mpn',
     'item_type',
-    'note_type',
     'parent_instance',
     'parent_csys',
     'supplier',
@@ -24,8 +23,13 @@ INSTANCES_LIST_COLUMNS = [
     'translate_x',
     'translate_y',
     'rotate_csys',
-    'absolute_rotation'
+    'absolute_rotation',
+    'note_number',
+    'bubble_text'
 ]
+
+def editable_component_types():
+    return {"Backshell", "Connector"}
 
 def load_yaml_data():
     with open(fileio.path('harness yaml'), 'r') as file:
@@ -201,7 +205,7 @@ def update_parent_csys():
 
         # Build the path to the attributes JSON file
         attributes_path = os.path.join(
-            fileio.dirpath("editable_component_data"),
+            fileio.dirpath("editable_instance_data"),
             instance_name,
             f"{instance_name}-attributes.json"
         )
@@ -238,7 +242,7 @@ def update_component_translate():
             continue
 
         attributes_path = os.path.join(
-            fileio.dirpath("editable_component_data"),
+            fileio.dirpath("editable_instance_data"),
             instance_name,
             f"{instance_name}-attributes.json"
         )
@@ -413,36 +417,114 @@ def add_absolute_angles_to_segments():
 
     write_instance_rows(instances)
 
-def add_flagnotes(flagnote_matrix_data):
+def add_flagnotes():
+    # === Step 1: Load existing instance rows ===
     instances = read_instance_rows()
-    flagnotes_limit = 15
+    instance_lookup = {inst.get("instance_name", "").strip(): inst for inst in instances}
 
-    for instance in instances:
-        instance_name = instance.get("instance_name")
-        if instance_name not in flagnote_matrix_data:
+    # === Step 2: Read flagnotes list ===
+    with open(fileio.path("flagnotes list"), newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        flagnote_rows = list(reader)
+
+    # === Step 3: Group and number flagnotes per affected instance ===
+    note_counters = {}  # {affected: current_note_number}
+
+    for row in flagnote_rows:
+        affected = row.get("affectedinstances", "").strip()
+        bubble_text = row.get("bubble_text", "").strip()
+        if not affected:
             continue
 
-        flagnotes = flagnote_matrix_data[instance_name].get("flagnotes", [])
-        for flagnote_number in range(min(flagnotes_limit, len(flagnotes))):
-            flagnote = flagnotes[flagnote_number]
-            if flagnote.get("text", "") == "":
-                continue
+        note_number = note_counters.get(affected, 0)
+        note_counters[affected] = note_number + 1
+        instance_name = f"{affected}-flagnote{note_number}"
 
-            angle, distance = flagnote.get("location", [0, 0])
-            translate_x = math.cos(angle) * distance
-            translate_y = math.sin(angle) * distance
+        # Determine parent_csys from the original instance
+        parent_csys = instance_lookup.get(affected, {}).get("parent_csys", "")
 
-            append_instance_row({
-                "instance_name": f"{instance_name}-flagnote{flagnote_number}",
-                "item_type": "Flagnote",
-                "note_type": flagnote.get("note_type", ""),
-                "parent_instance": instance_name,
-                "parent_csys": instance_name,
-                "supplier": flagnote.get("supplier", ""),
-                "translate_x": f"{translate_x:.6f}",
-                "translate_y": f"{translate_y:.6f}",
-                "absolute_rotation": "0"
-            })
+        # === Step 4: Try to load flagnote location from JSON ===
+        translate_x = ""
+        translate_y = ""
+        attr_path = os.path.join(fileio.dirpath("editable_instance_data"), affected, f"{affected}-attributes.json")
+
+        try:
+            with open(attr_path, 'r', encoding='utf-8') as f_json:
+                data = json.load(f_json)
+                locs = data.get("flagnote_locations", [])
+                if note_number < len(locs):
+                    loc = locs[note_number]
+                    angle_rad = math.radians(loc.get("angle", 0))
+                    distance = loc.get("distance", 0)
+                    translate_x = round(math.cos(angle_rad) * distance, 5)
+                    translate_y = round(math.sin(angle_rad) * distance, 5)
+        except Exception as e:
+            print(f"[WARN] Could not read location data for {instance_name}: {e}")
+
+        # === Step 5: Append location instance ===
+        location_instance = {
+            "instance_name": f"{instance_name}-location",
+            "bom_line_number": "",
+            "mpn": "",
+            "item_type": "Flagnote location",
+            "parent_instance": affected,
+            "parent_csys": parent_csys,
+            "supplier": "",
+            "lib_latest_rev": "",
+            "lib_rev_used_here": "",
+            "length": "",
+            "diameter": "",
+            "translate_x": translate_x,
+            "translate_y": translate_y,
+            "rotate_csys": "",
+            "note_number": note_number,
+            "absolute_rotation": ""
+        }
+        append_instance_row(location_instance)
+
+        # === Step 6: Append leader instance ===
+        flagnote_instance = {
+            "instance_name": f"{instance_name}-leader",
+            "bom_line_number": "",
+            "mpn": "",
+            "item_type": "Flagnote leader",
+            "parent_instance": affected,
+            "parent_csys": parent_csys,
+            "supplier": "",
+            "lib_latest_rev": "",
+            "lib_rev_used_here": "",
+            "length": "",
+            "diameter": "",
+            "translate_x": "",
+            "translate_y": "",
+            "rotate_csys": "",
+            "absolute_rotation": "",
+            "note_number": note_number,
+            "bubble_text": ""
+        }
+        append_instance_row(flagnote_instance)
+
+        # === Step 7: Append flagnote instance ===
+        flagnote_instance = {
+            "instance_name": instance_name,
+            "bom_line_number": "",
+            "mpn": row.get("shape", "").strip(),
+            "item_type": "Flagnote",
+            "parent_instance": affected,
+            "parent_csys": f"{instance_name}-location",
+            "supplier": row.get("shape_supplier", "").strip(),
+            "lib_latest_rev": "",
+            "lib_rev_used_here": "",
+            "length": "",
+            "diameter": "",
+            "translate_x": 0,
+            "translate_y": 0,
+            "rotate_csys": "",
+            "absolute_rotation": 0,
+            "note_number": note_number,
+            "bubble_text": bubble_text
+        }
+        append_instance_row(flagnote_instance)
 
 """
 template instances list modifier:

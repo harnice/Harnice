@@ -16,7 +16,7 @@ from harnice import(
     instances_list
 )
 
-def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, used_rev=None, item_name=None):
+def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, used_rev=None, item_name=None, quiet=True):
     if item_name == "":
         item_name = mpn
 
@@ -101,7 +101,9 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
                 with open(dst_file, 'w', encoding='utf-8') as f:
                     f.write(content)
 
-    print(f"{item_name:<24}  {status}")
+    if not quiet == True:
+        print(f"{item_name:<24}  {status}")
+
     return library_rev
 
 def pull_parts():
@@ -121,7 +123,7 @@ def pull_parts():
 
         supplier = instance.get('supplier')
         mpn = instance.get('mpn', '')
-        destination_directory = os.path.join(fileio.dirpath("editable_component_data"), item_name)
+        destination_directory = os.path.join(fileio.dirpath("editable_instance_data"), item_name)
 
         # Determine rev from existing folders
         revs_found = []
@@ -141,7 +143,8 @@ def pull_parts():
             mpn=mpn,
             destination_directory=destination_directory,
             used_rev=used_rev,
-            item_name=item_name
+            item_name=item_name,
+            quiet=False
         )
 
         instances_list.add_lib_latest_rev(item_name, returned_rev)
