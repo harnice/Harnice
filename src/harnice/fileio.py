@@ -156,15 +156,19 @@ def generate_structure():
         shutil.rmtree(dirpath("support_do_not_edit"))
 
     os.makedirs(dirpath("editable_instance_data"), exist_ok=True)
+    os.makedirs(dirpath("page_setup"), exist_ok=True)
     os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
-    os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("formboard_data"), exist_ok=True)
+    os.makedirs(dirpath("lists"), exist_ok=True)
     os.makedirs(dirpath("svg_generated"), exist_ok=True)
-    os.makedirs(dirpath("tblock_svgs"), exist_ok=True)
+    os.makedirs(dirpath("buildnotes_table"), exist_ok=True)
+    os.makedirs(dirpath("buildnote_table_bubbles"), exist_ok=True)
+    os.makedirs(dirpath("revhistory_table"), exist_ok=True)
+    os.makedirs(dirpath("revision_table_bubbles"), exist_ok=True)
     os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
+    os.makedirs(dirpath("tblock_svgs"), exist_ok=True)
     os.makedirs(dirpath("uneditable_instance_data"), exist_ok=True)
     os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
-    os.makedirs(dirpath("page_setup"), exist_ok=True)
 
 def path(target_value):
     #returns the filepath/filename of a filekey. 

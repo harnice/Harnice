@@ -567,7 +567,7 @@ def flagnote():
             points_str = " ".join(f"{x},{y}" for x, y in p["vertices"])
             shape_svg = f'    <polygon points="{points_str}" fill="#{fill:06X}" stroke="#{border:06X}"/>\n'
     else:
-        shape_svg = f'    <circle cx="0" cy="0" r="19.2" fill="#{fill:06X}" stroke="#{border:06X}"/>\n'
+        shape_svg = f'    <circle cx="0" cy="0" r="10" fill="#{fill:06X}" stroke="#{border:06X}"/>\n'
 
     # === Text element ===
     text_content = p.get("text inside", "")
