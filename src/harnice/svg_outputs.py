@@ -202,6 +202,8 @@ def prep_formboard_drawings(page_setup_contents):
             if item_type and item_type in printable_item_types:
                 if item_type in {"Connector", "Backshell"}:
                     instance_data_dir = fileio.dirpath("editable_instance_data")
+                elif item_type == "Flagnote leader":
+                    instance_data_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), formboard_name)
                 else:
                     instance_data_dir = fileio.dirpath("uneditable_instance_data")
 
