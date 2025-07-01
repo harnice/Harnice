@@ -297,8 +297,8 @@ def make_leader_drawings():
                 to_y = -math.sin(arrowhead_angle) * arrowhead_distance * 96
 
                 # === Arrowhead geometry (manual triangle) ===
-                arrow_len = 6  # px
-                arrow_width = 4  # px
+                arrow_len = 6 / scale # px
+                arrow_width = 4 / scale # px
 
                 dx = to_x - from_x
                 dy = to_y - from_y
@@ -318,7 +318,7 @@ def make_leader_drawings():
                 svg_content = f'''
                 <svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384">
                     <g id="{instance.get("instance_name")}-contents-start">
-                        <line x1="{from_x:.2f}" y1="{from_y:.2f}" x2="{to_x:.2f}" y2="{to_y:.2f}" stroke="black" stroke-width="1" />
+                        <line x1="{from_x:.2f}" y1="{from_y:.2f}" x2="{to_x:.2f}" y2="{to_y:.2f}" stroke="black" stroke-width="{1/scale:.2f}" />
                         <polygon points="{arrow_points}" fill="black" />
                     </g>
                     <g id="{instance.get("instance_name")}-contents-end"></g>
