@@ -87,7 +87,7 @@ def compile_all_flagnotes():
                         "note": "",
                         "shape": "rev_change_callout",
                         "shape_supplier": "public",
-                        "bubble_text": fileio.partnumber("rev"),
+                        "bubble_text": rev_row.get("rev", "").strip(),
                         "affectedinstances": instance
                     })
 

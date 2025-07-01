@@ -432,6 +432,9 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         buildnotes_loc = tblock_attributes.get("periphery_locs", {}).get("buildnotes_loc", [0, 0])
         translate_buildnotes = f'translate({buildnotes_loc[0]},{buildnotes_loc[1]})'
 
+        revhistory_loc = tblock_attributes.get("periphery_locs", {}).get("revhistory_loc", [0, 0])
+        translate_revhistory = f'translate({revhistory_loc[0]},{revhistory_loc[1]})'
+
         # === Prepare destination SVG ===
         project_svg_path = os.path.join(destination_directory, f"{page_name}.svg")
 
@@ -444,6 +447,10 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             f'    <g id="bom" transform="{translate_bom}">',
             f'      <g id="bom-contents-start"></g>',
             f'      <g id="bom-contents-end"></g>',
+            f'    </g>',
+            f'    <g id="revhistory" transform="{translate_revhistory}">',
+            f'      <g id="revhistory-table-contents-start"></g>',
+            f'      <g id="revhistory-table-contents-end"></g>',
             f'    </g>',
             f'    <g id="buildnotes" transform="{translate_buildnotes}">',
             f'      <g id="buildnotes-table-contents-start"></g>',
@@ -472,6 +479,11 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             project_svg_path,
             fileio.path("buildnotes table svg"),
             "buildnotes-table", "buildnotes-table"
+        )
+        svg_utils.find_and_replace_svg_group(
+            project_svg_path,
+            fileio.path("revhistory master svg"),
+            "revhistory-table", "revhistory-table"
         )
 
         # === Text replacements ===
@@ -669,7 +681,7 @@ def update_page_setup_json():
 def prep_buildnotes_table():
     # === Configuration ===
     column_widths = [0.5 * 96, 3.375 * 96]  # bubble, then note
-    row_height = 0.35 * 96
+    row_height = 0.25 * 96
     font_size = 8
     font_family = "Arial, Helvetica, sans-serif"
 
@@ -713,7 +725,7 @@ def prep_buildnotes_table():
         f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
         f'font-family="{font_family}" font-size="{font_size}">',
         '<g id="buildnotes-table-contents-start">',
-        f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="white"/>'
+        f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none"/>'
     ]
 
     # Column positions
@@ -796,4 +808,127 @@ def prep_buildnotes_table():
             source_group_name=group_name,
             destination_group_name=group_name
         )
+
+def prep_revision_table():
+    # === Configuration ===
+    column_headers = ["", "Checked By", "Drawn By", "Modified", "Started", "Status", "Rev"]
+    column_keys = ["", "checkedby", "drawnby", "datemodified", "datestarted", "status", "rev"]
+    column_widths = [0.5 * -96, 0.6 * -96, 0.6 * -96, 0.6 * -96, 0.6 * -96, 0.4 * -96, 0.4 * -96]
+    row_height = 0.2 * 96
+    font_size = 8
+    font_family = "Arial, Helvetica, sans-serif"
+    line_width = 0.008 * 96
+
+    # === Read "revision history" TSV ===
+    with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_file:
+        reader = csv.DictReader(tsv_file, delimiter="\t")
+        data_rows = []
+        for row in reader:
+            rev = row.get("rev", "").strip()
+            has_bubble = bool(row.get("affectedinstances", "").strip())
+            if has_bubble:
+                component_library.pull_item_from_library(
+                    supplier="public",
+                    lib_subpath="flagnotes",
+                    mpn="rev_change_callout",
+                    destination_directory=fileio.dirpath("revision_table_bubbles"),
+                    item_name=f"bubble{rev}",
+                    quiet=True
+                )
+            row["has_bubble"] = has_bubble
+            data_rows.append(row)
+
+    num_rows = len(data_rows) + 1  # header
+    svg_width = sum(column_widths)
+    svg_height = num_rows * row_height
+
+    svg_lines = [
+        f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
+        f'font-family="{font_family}" font-size="{font_size}">',
+        '<g id="revhistory-table-contents-start">',
+        f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none"/>'
+    ]
+
+    # Header
+    for col_index, header in enumerate(column_headers):
+        x = sum(column_widths[:col_index])
+        y = row_height / 2
+        svg_lines.append(
+            f'<text x="{x}" y="{y}" text-anchor="start" '
+            f'style="fill:black;dominant-baseline:middle;font-weight:bold;'
+            f'font-family:{font_family};font-size:{font_size}">{header}</text>'
+        )
+
+    # Data Rows
+    for row_index, row in enumerate(data_rows):
+        y = (row_index + 1) * row_height
+        cy = y + row_height / 2
+
+        is_header_row = (row_index == 0)
+        rect_fill = "#e0e0e0" if is_header_row else "white"
+        font_weight = "bold" if is_header_row else "normal"
+
+        for col_index, key in enumerate(column_keys):
+            x = sum(column_widths[:col_index])
+            text = row.get(key, "").strip()
+
+            svg_lines.append(
+                f'<rect x="{x}" y="{y}" width="{column_widths[col_index]}" height="{row_height}" '
+                f'style="fill:{rect_fill};stroke:black;stroke-width:{line_width}"/>'
+            )
+            if key == "rev" and row["has_bubble"]:
+                svg_lines.append(f'<g id="bubble{row["rev"]}" transform="translate({x+2},{cy})">')
+                svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-start">')
+                svg_lines.append(f'  </g>')
+                svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-end"/>')
+                svg_lines.append(f'</g>')
+            else:
+                svg_lines.append(
+                    f'<text x="{x}" y="{cy}" text-anchor="start" '
+                    f'style="fill:black;dominant-baseline:middle;'
+                    f'font-family:{font_family};font-size:{font_size}">{text}</text>'
+                )
+
+    svg_lines.append('</g>')
+    svg_lines.append('<g id="revhistory-table-contents-end"/>')
+    svg_lines.append('</svg>')
+
+    # Write base SVG
+    target_svg = fileio.path("revhistory master svg")
+    with open(target_svg, "w", encoding="utf-8") as f:
+        f.write("\n".join(svg_lines))
+
+    # === Inject bubble SVGs into the written file ===
+    for row in data_rows:
+        if not row.get("has_bubble", False):
+            continue
+        affected = row.get("affectedinstances", "").strip()
+        has_bubble = bool(affected)
+        if not has_bubble:
+            continue
+        rev_text = row.get("rev", "").strip()
+        source_svg_filepath = os.path.join(
+            fileio.dirpath("revision_table_bubbles"),
+            f"bubble{rev_text}-drawing.svg"
+        )
+        target_svg_filepath = fileio.path("revhistory master svg")
+        group_name = f"bubble{rev_text}"
+
+        # Replace text placeholder "flagnote-text" → rev_text
+        with open(source_svg_filepath, "r", encoding="utf-8") as f:
+            svg_text = f.read()
+
+        updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{rev_text}<', svg_text)
+
+        with open(source_svg_filepath, "w", encoding="utf-8") as f:
+            f.write(updated_text)
+
+        # Inject the bubble SVG
+        svg_utils.find_and_replace_svg_group(
+            target_svg_filepath=target_svg_filepath,
+            source_svg_filepath=source_svg_filepath,
+            source_group_name=group_name,
+            destination_group_name=group_name
+        )
+
 

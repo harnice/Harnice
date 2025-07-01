@@ -132,6 +132,7 @@ def harness():
     svg_outputs.prep_wirelist()
     svg_outputs.prep_bom()
     svg_outputs.prep_buildnotes_table()
+    svg_outputs.prep_revision_table()
     #esch done under run_wireviz.generate_esch()
 
     svg_outputs.prep_tblocks(page_setup_contents, revinfo)
@@ -316,7 +317,8 @@ def tblock():
     periphery_json = {
         "periphery_locs": {
             "bom_loc": [tb_origin_x, tb_origin_y],  # same as bottom-left of titleblock
-            "buildnotes_loc": [0, 0]  # same as bottom-left of titleblock
+            "buildnotes_loc": [0, 0],  # same as bottom-left of titleblock
+            "revhistory_loc": [0, 0]  # same as bottom-left of titleblock
         },
         "page_size_in": [
             round(p["page_size"][0] / 96, 3),
@@ -565,7 +567,7 @@ def flagnote():
             points_str = " ".join(f"{x},{y}" for x, y in p["vertices"])
             shape_svg = f'    <polygon points="{points_str}" fill="#{fill:06X}" stroke="#{border:06X}"/>\n'
     else:
-        shape_svg = f'    <circle cx="0" cy="0" r="19.2" fill="#{fill:06X}" stroke="#{border:06X}"/>\n'
+        shape_svg = f'    <circle cx="0" cy="0" r="10" fill="#{fill:06X}" stroke="#{border:06X}"/>\n'
 
     # === Text element ===
     text_content = p.get("text inside", "")
