@@ -681,7 +681,7 @@ def update_page_setup_json():
 def prep_buildnotes_table():
     # === Configuration ===
     column_widths = [0.5 * 96, 3.375 * 96]  # bubble, then note
-    row_height = 0.35 * 96
+    row_height = 0.25 * 96
     font_size = 8
     font_family = "Arial, Helvetica, sans-serif"
 
@@ -876,7 +876,6 @@ def prep_revision_table():
                 f'<rect x="{x}" y="{y}" width="{column_widths[col_index]}" height="{row_height}" '
                 f'style="fill:{rect_fill};stroke:black;stroke-width:{line_width}"/>'
             )
-
             if key == "rev" and row["has_bubble"]:
                 svg_lines.append(f'<g id="bubble{row["rev"]}" transform="translate({x+2},{cy})">')
                 svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-start">')
@@ -907,19 +906,19 @@ def prep_revision_table():
         has_bubble = bool(affected)
         if not has_bubble:
             continue
-        rev = row.get("rev", "").strip()
+        rev_text = row.get("rev", "").strip()
         source_svg_filepath = os.path.join(
             fileio.dirpath("revision_table_bubbles"),
-            f"bubble{rev}-drawing.svg"
+            f"bubble{rev_text}-drawing.svg"
         )
         target_svg_filepath = fileio.path("revhistory master svg")
-        group_name = f"bubble{rev}"
+        group_name = f"bubble{rev_text}"
 
-        # Replace text placeholder "flagnote-text" → rev
+        # Replace text placeholder "flagnote-text" → rev_text
         with open(source_svg_filepath, "r", encoding="utf-8") as f:
             svg_text = f.read()
 
-        updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{rev}<', svg_text)
+        updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{rev_text}<', svg_text)
 
         with open(source_svg_filepath, "w", encoding="utf-8") as f:
             f.write(updated_text)
