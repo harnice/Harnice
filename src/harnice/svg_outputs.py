@@ -814,9 +814,10 @@ def prep_revision_table():
     column_headers = ["", "Checked By", "Drawn By", "Modified", "Started", "Status", "Rev"]
     column_keys = ["", "checkedby", "drawnby", "datemodified", "datestarted", "status", "rev"]
     column_widths = [0.5 * -96, 0.6 * -96, 0.6 * -96, 0.6 * -96, 0.6 * -96, 0.4 * -96, 0.4 * -96]
-    row_height = 0.16 * 96
+    row_height = 0.2 * 96
     font_size = 8
     font_family = "Arial, Helvetica, sans-serif"
+    line_width = 0.008 * 96
 
     # === Read "revision history" TSV ===
     with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_file:
@@ -863,13 +864,21 @@ def prep_revision_table():
         y = (row_index + 1) * row_height
         cy = y + row_height / 2
 
+        is_header_row = (row_index == 0)
+        rect_fill = "#e0e0e0" if is_header_row else "white"
+        font_weight = "bold" if is_header_row else "normal"
+
         for col_index, key in enumerate(column_keys):
             x = sum(column_widths[:col_index])
-            cx = x + column_widths[col_index] / 2
             text = row.get(key, "").strip()
 
+            svg_lines.append(
+                f'<rect x="{x}" y="{y}" width="{column_widths[col_index]}" height="{row_height}" '
+                f'style="fill:{rect_fill};stroke:black;stroke-width:{line_width}"/>'
+            )
+
             if key == "rev" and row["has_bubble"]:
-                svg_lines.append(f'<g id="bubble{row["rev"]}" transform="translate({cx},{cy})">')
+                svg_lines.append(f'<g id="bubble{row["rev"]}" transform="translate({x+2},{cy})">')
                 svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-start">')
                 svg_lines.append(f'  </g>')
                 svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-end"/>')
@@ -892,31 +901,28 @@ def prep_revision_table():
 
     # === Inject bubble SVGs into the written file ===
     for row in data_rows:
-        if not row.get("has_shape", False):
+        if not row.get("has_bubble", False):
             continue
-
         affected = row.get("affectedinstances", "").strip()
         has_bubble = bool(affected)
         if not has_bubble:
             continue
-
-        buildnote_number = row.get("buildnote_number", "").strip()
+        rev = row.get("rev", "").strip()
         source_svg_filepath = os.path.join(
-            fileio.dirpath("buildnote_table_bubbles"),
-            f"bubble{buildnote_number}-drawing.svg"
+            fileio.dirpath("revision_table_bubbles"),
+            f"bubble{rev}-drawing.svg"
         )
-        target_svg_filepath = fileio.path("buildnotes table svg")
-        group_name = f"bubble{buildnote_number}"
+        target_svg_filepath = fileio.path("revhistory master svg")
+        group_name = f"bubble{rev}"
 
-        # Replace text placeholder "flagnote-text" → buildnote_number
-        if os.path.exists(source_svg_filepath):
-            with open(source_svg_filepath, "r", encoding="utf-8") as f:
-                svg_text = f.read()
+        # Replace text placeholder "flagnote-text" → rev
+        with open(source_svg_filepath, "r", encoding="utf-8") as f:
+            svg_text = f.read()
 
-            updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{buildnote_number}<', svg_text)
+        updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{rev}<', svg_text)
 
-            with open(source_svg_filepath, "w", encoding="utf-8") as f:
-                f.write(updated_text)
+        with open(source_svg_filepath, "w", encoding="utf-8") as f:
+            f.write(updated_text)
 
         # Inject the bubble SVG
         svg_utils.find_and_replace_svg_group(
