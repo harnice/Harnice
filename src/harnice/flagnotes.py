@@ -239,87 +239,95 @@ def make_note_drawings():
 
 def make_leader_drawings():
     instances = instances_list.read_instance_rows()
-    for instance in instances:
-        if instance.get("item_type") == "Flagnote leader":
 
-            leader_name = instance.get("instance_name")
-            leader_parent = instance.get("parent_instance")
-            flagnote_number = int(instance.get("note_number", "0"))
-            parent_attributes_file = ""
+    formboards = []
+    with open(fileio.path("harnice output contents"), 'r') as f:
+        page_setup = json.load(f)
+        formboards = page_setup.get("formboards", [])
 
-            # Find the instance that matches `leader_parent`
-            parent_type = ""
-            for instance2 in instances:
-                if instance2.get("instance_name") == leader_parent:
-                    parent_type = instance2.get("item_type", "")
-                    break
+    for formboard in formboards:
+        scale_name = page_setup.get("formboards", []).get(formboard, []).get('scale', "")
+        scale = page_setup.get("scales", []).get(scale_name, "")
 
-            # Then decide path based on its type
-            if parent_type in instances_list.editable_component_types():
-                parent_attributes_file = os.path.join(fileio.dirpath("editable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
-            else:
-                parent_attributes_file = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
+        for instance in instances:
+            if instance.get("item_type") == "Flagnote leader":
 
-            if not os.path.exists(parent_attributes_file):
-                print(f"[WARN] Missing attributes for parent: {parent_attributes_file}")
-                continue
+                leader_name = instance.get("instance_name")
+                leader_parent = instance.get("parent_instance")
+                flagnote_number = int(instance.get("note_number", "0"))
+                parent_attributes_file = ""
 
-            with open(parent_attributes_file, encoding='utf-8') as f:
-                attr_data = json.load(f)
+                # Find the instance that matches `leader_parent`
+                parent_type = ""
+                for instance2 in instances:
+                    if instance2.get("instance_name") == leader_parent:
+                        parent_type = instance2.get("item_type", "")
+                        break
 
-            flagnote_locations = attr_data.get("flagnote_locations", [])
-            if flagnote_number >= len(flagnote_locations):
-                print(f"[WARN] flagnote_number {flagnote_number} out of range for {parent_instance}")
-                continue
+                # Then decide path based on its type
+                if parent_type in instances_list.editable_component_types():
+                    parent_attributes_file = os.path.join(fileio.dirpath("editable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
+                else:
+                    parent_attributes_file = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
 
-            loc = flagnote_locations[flagnote_number]
-            angle = math.radians(float(loc.get("angle")))
-            distance = float(loc.get("distance"))
+                if not os.path.exists(parent_attributes_file):
+                    print(f"[WARN] Missing attributes for parent: {parent_attributes_file}")
+                    continue
 
-            arrowhead_angle_raw = loc.get("arrowhead_angle")
-            arrowhead_angle = angle if arrowhead_angle_raw == "" else math.radians(float(arrowhead_angle_raw))
-            arrowhead_distance = float(loc.get("arrowhead_distance"))
+                with open(parent_attributes_file, encoding='utf-8') as f:
+                    attr_data = json.load(f)
 
-            # === Convert from inches to pixels (96 dpi) ===
-            from_x = math.cos(angle) * distance * 96
-            from_y = -math.sin(angle) * distance * 96
-            to_x = math.cos(arrowhead_angle) * arrowhead_distance * 96
-            to_y = -math.sin(arrowhead_angle) * arrowhead_distance * 96
+                flagnote_locations = attr_data.get("flagnote_locations", [])
+                if flagnote_number >= len(flagnote_locations):
+                    print(f"[WARN] flagnote_number {flagnote_number} out of range for {parent_instance}")
+                    continue
 
-            # === Arrowhead geometry (manual triangle) ===
-            arrow_len = 6  # px
-            arrow_width = 4  # px
+                loc = flagnote_locations[flagnote_number]
+                angle = math.radians(float(loc.get("angle")))
+                distance = float(loc.get("distance"))
 
-            dx = to_x - from_x
-            dy = to_y - from_y
-            mag = math.hypot(dx, dy)
-            ux, uy = dx / mag, dy / mag
-            px, py = -uy, ux  # perpendicular to direction
+                arrowhead_angle_raw = loc.get("arrowhead_angle")
+                arrowhead_angle = angle if arrowhead_angle_raw == "" else math.radians(float(arrowhead_angle_raw))
+                arrowhead_distance = float(loc.get("arrowhead_distance"))
 
-            tip = (to_x, to_y)
-            base1 = (to_x - arrow_len * ux + arrow_width * px / 2,
-                    to_y - arrow_len * uy + arrow_width * py / 2)
-            base2 = (to_x - arrow_len * ux - arrow_width * px / 2,
-                    to_y - arrow_len * uy - arrow_width * py / 2)
+                # === Convert from inches to pixels (96 dpi) ===
+                from_x = math.cos(angle) * distance * 96
+                from_y = -math.sin(angle) * distance * 96
+                to_x = math.cos(arrowhead_angle) * arrowhead_distance * 96
+                to_y = -math.sin(arrowhead_angle) * arrowhead_distance * 96
 
-            arrow_points = f"{tip[0]:.2f},{tip[1]:.2f} {base1[0]:.2f},{base1[1]:.2f} {base2[0]:.2f},{base2[1]:.2f}"
+                # === Arrowhead geometry (manual triangle) ===
+                arrow_len = 6 / scale # px
+                arrow_width = 4 / scale # px
 
-            # === SVG content ===
-            svg_content = f'''
-            <svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384">
-                <g id="{instance.get("instance_name")}-contents-start">
-                    <line x1="{from_x:.2f}" y1="{from_y:.2f}" x2="{to_x:.2f}" y2="{to_y:.2f}" stroke="black" stroke-width="1" />
-                    <polygon points="{arrow_points}" fill="black" />
-                </g>
-                <g id="{instance.get("instance_name")}-contents-end"></g>
-            </svg>
-            '''
+                dx = to_x - from_x
+                dy = to_y - from_y
+                mag = math.hypot(dx, dy)
+                ux, uy = dx / mag, dy / mag
+                px, py = -uy, ux  # perpendicular to direction
 
-            # Output path (replace with your actual logic)
-            leader_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_name)
-            os.makedirs(leader_dir, exist_ok=True)
+                tip = (to_x, to_y)
+                base1 = (to_x - arrow_len * ux + arrow_width * px / 2,
+                        to_y - arrow_len * uy + arrow_width * py / 2)
+                base2 = (to_x - arrow_len * ux - arrow_width * px / 2,
+                        to_y - arrow_len * uy - arrow_width * py / 2)
 
-            output_filename = os.path.join(leader_dir, f"{leader_name}-drawing.svg")
-            with open(output_filename, 'w') as svg_file:
-                svg_file.write(svg_content)
+                arrow_points = f"{tip[0]:.2f},{tip[1]:.2f} {base1[0]:.2f},{base1[1]:.2f} {base2[0]:.2f},{base2[1]:.2f}"
 
+                # === SVG content ===
+                svg_content = f'''
+                <svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384">
+                    <g id="{instance.get("instance_name")}-contents-start">
+                        <line x1="{from_x:.2f}" y1="{from_y:.2f}" x2="{to_x:.2f}" y2="{to_y:.2f}" stroke="black" stroke-width="{1/scale:.2f}" />
+                        <polygon points="{arrow_points}" fill="black" />
+                    </g>
+                    <g id="{instance.get("instance_name")}-contents-end"></g>
+                </svg>
+                '''
+
+                leader_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), formboard, leader_name)
+                os.makedirs(leader_dir, exist_ok=True)
+
+                output_filename = os.path.join(leader_dir, f"{leader_name}-drawing.svg")
+                with open(output_filename, 'w') as svg_file:
+                    svg_file.write(svg_content)

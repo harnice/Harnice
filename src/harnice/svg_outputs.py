@@ -177,10 +177,22 @@ def prep_formboard_drawings(page_setup_contents):
                 svg_px_y = -1 * px_y
                 svg_angle = -1 * angle
 
-                content_lines.append(f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
-                )
-                content_lines.append('      </g>')
-                content_lines.append(f'      <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
+                if not item_type == "Flagnote":
+                    content_lines.append(f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
+                    )
+                    content_lines.append('      </g>')
+                    content_lines.append(f'      <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
+
+                else:
+                    content_lines.append(f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">')
+                    content_lines.append(f'        <g id="{instance_name}-scale" transform="scale({1 / scale})">')
+                    content_lines.append(f'          <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">'
+                    )
+                    content_lines.append(f'          </g>')
+                    content_lines.append(f'          <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
+                    content_lines.append(f'        </g>')
+                    content_lines.append(f'      </g>')
+
             content_lines.append('    </g>')
 
         # Write full SVG
@@ -202,6 +214,8 @@ def prep_formboard_drawings(page_setup_contents):
             if item_type and item_type in printable_item_types:
                 if item_type in {"Connector", "Backshell"}:
                     instance_data_dir = fileio.dirpath("editable_instance_data")
+                elif item_type == "Flagnote leader":
+                    instance_data_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), formboard_name)
                 else:
                     instance_data_dir = fileio.dirpath("uneditable_instance_data")
 
