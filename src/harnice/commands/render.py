@@ -132,6 +132,7 @@ def harness():
     svg_outputs.prep_wirelist()
     svg_outputs.prep_bom()
     svg_outputs.prep_buildnotes_table()
+    svg_outputs.prep_revision_table()
     #esch done under run_wireviz.generate_esch()
 
     svg_outputs.prep_tblocks(page_setup_contents, revinfo)
@@ -316,7 +317,8 @@ def tblock():
     periphery_json = {
         "periphery_locs": {
             "bom_loc": [tb_origin_x, tb_origin_y],  # same as bottom-left of titleblock
-            "buildnotes_loc": [0, 0]  # same as bottom-left of titleblock
+            "buildnotes_loc": [0, 0],  # same as bottom-left of titleblock
+            "revhistory_loc": [0, 0]  # same as bottom-left of titleblock
         },
         "page_size_in": [
             round(p["page_size"][0] / 96, 3),
