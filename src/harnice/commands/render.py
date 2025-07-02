@@ -107,6 +107,9 @@ def harness():
         #adds bom line numbers back to the instances list
 
     #=============== HANDLING FLAGNOTES #===============
+    #ensure page setup is defined, if not, make a basic one. flagnotes depends on this
+    page_setup_contents = svg_outputs.update_page_setup_json()
+
     flagnotes.ensure_manual_list_exists()
     
     #makes notes of part name, bom, revision, etc
@@ -122,10 +125,10 @@ def harness():
     run_wireviz.generate_esch()
 
     #=============== REBUILDING OUTPUT SVG #===============
-    #ensure page setup is defined, if not, make a basic one
-    page_setup_contents = svg_outputs.update_page_setup_json()
-
     revinfo = rev_history.revision_info()
+
+    #add parent types to make filtering easier
+    instances_list.add_parent_instance_type()
 
     #prepare the building blocks as svgs
     svg_outputs.prep_formboard_drawings(page_setup_contents)
