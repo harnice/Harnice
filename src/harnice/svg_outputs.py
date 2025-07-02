@@ -17,7 +17,6 @@ from harnice import (
 )
 
 def prep_formboard_drawings(page_setup_contents):
-    
     def calculate_formboard_location(instance_name, origin):
         """
         Given an instance_name, recursively trace up the parent_csys chain 
@@ -52,7 +51,7 @@ def prep_formboard_drawings(page_setup_contents):
         # Skip the last element (the starting instance)
         for name in reversed(chain[1:]):
             row = instances_lookup.get(name, {})
-            
+
             translate_x = row.get('translate_x', '').strip()
             translate_y = row.get('translate_y', '').strip()
             rotate_csys = row.get('rotate_csys', '').strip()
@@ -61,7 +60,7 @@ def prep_formboard_drawings(page_setup_contents):
                 translate_x = float(translate_x) if translate_x else 0.0
             except ValueError:
                 translate_x = 0.0
-            
+
             try:
                 translate_y = float(translate_y) if translate_y else 0.0
             except ValueError:
@@ -78,7 +77,6 @@ def prep_formboard_drawings(page_setup_contents):
             y_pos += math.sin(rad) * translate_x + math.cos(rad) * translate_y
             angle += rotate_csys
 
-            #print(f"After {name}: {x_pos}, {y_pos}, {angle}")
         return x_pos, y_pos, angle
 
     #=================================================
@@ -92,7 +90,6 @@ def prep_formboard_drawings(page_setup_contents):
                 continue
 
             try:
-                # Get length and diameter in inches and convert to pixels
                 length_in = float(instance.get("length", 0))
                 diameter_in = float(instance.get("diameter", 1))
                 length = 96 * length_in
@@ -100,7 +97,6 @@ def prep_formboard_drawings(page_setup_contents):
 
                 outline_thickness = 0.05 * 96
                 centerline_thickness = 0.015 * 96
-
                 half_diameter = diameter / 2
 
                 svg_content = f'''
@@ -117,17 +113,16 @@ def prep_formboard_drawings(page_setup_contents):
                 os.makedirs(segment_dir, exist_ok=True)
 
                 output_filename = os.path.join(segment_dir, f"{segment_name}-drawing.svg")
-
                 with open(output_filename, 'w') as svg_file:
                     svg_file.write(svg_content)
-                    
+
             except Exception as e:
                 print(f"Error processing segment {segment_name}: {e}")
- 
+
     #==========================
     for formboard_name in page_setup_contents.get("formboards", {}):
         filename = f"{fileio.partnumber("pn-rev")}.{formboard_name}.svg"
-        filepath = os.path.join(fileio.dirpath("formboard_svgs"),filename)
+        filepath = os.path.join(fileio.dirpath("formboard_svgs"), filename)
 
         instances = instances_list.read_instance_rows()
         printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote", "Flagnote leader"}
@@ -149,11 +144,19 @@ def prep_formboard_drawings(page_setup_contents):
 
         # Prepare lines for SVG content
         content_lines = []
+        formboard = page_setup_contents["formboards"].get(formboard_name, {})
+        hide_filters = formboard.get("hide_instances", {})
+
         for item_type, items in grouped_instances.items():
             content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
             for instance in items:
-                #cancel if hidden
-                if instance.get("instance_name") in page_setup_contents["formboards"].get(formboard_name, {}).get("hide_instances", []):
+                # === Cancel if instance matches any hide filter ===
+                should_hide = False
+                for filter_conditions in hide_filters.values():
+                    if all(instance.get(k) == v for k, v in filter_conditions.items()):
+                        should_hide = True
+                        break
+                if should_hide:
                     continue
 
                 instance_name = instance.get("instance_name", "")
@@ -168,26 +171,21 @@ def prep_formboard_drawings(page_setup_contents):
                 if instance.get("absolute_rotation") != "":
                     angle = float(instance.get("absolute_rotation"))
 
-                #segments are positioned using absolute rotation and are the only items that must be corrected for changes in origin orientation
                 if instance.get("item_type") == "Segment":
                     angle += origin[2]
 
-                #transform harnice csys (right-hand rule, ccw is positive angle, up is +), to svg csys (cw is positive angle, up is -)
                 svg_px_x = px_x
                 svg_px_y = -1 * px_y
                 svg_angle = -1 * angle
 
                 if not item_type == "Flagnote":
-                    content_lines.append(f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">'
-                    )
+                    content_lines.append(f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">')
                     content_lines.append('      </g>')
                     content_lines.append(f'      <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
-
                 else:
                     content_lines.append(f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">')
                     content_lines.append(f'        <g id="{instance_name}-scale" transform="scale({1 / scale})">')
-                    content_lines.append(f'          <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">'
-                    )
+                    content_lines.append(f'          <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">')
                     content_lines.append(f'          </g>')
                     content_lines.append(f'          <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
                     content_lines.append(f'        </g>')
@@ -212,6 +210,16 @@ def prep_formboard_drawings(page_setup_contents):
         for instance in instances:
             item_type = instance.get("item_type", "").strip()
             if item_type and item_type in printable_item_types:
+                
+                # === Cancel if instance matches any hide filter ===
+                should_hide = False
+                for filter_conditions in hide_filters.values():
+                    if all(instance.get(k) == v for k, v in filter_conditions.items()):
+                        should_hide = True
+                        break
+                if should_hide:
+                    continue
+
                 if item_type in {"Connector", "Backshell"}:
                     instance_data_dir = fileio.dirpath("editable_instance_data")
                 elif item_type == "Flagnote leader":
@@ -220,20 +228,16 @@ def prep_formboard_drawings(page_setup_contents):
                     instance_data_dir = fileio.dirpath("uneditable_instance_data")
 
                 svg_utils.find_and_replace_svg_group(
-                    #target_svg_filepath
                     filepath,
-                    #source_svg_filepath
                     os.path.join(
                         instance_data_dir, 
                         instance.get("instance_name"),
                         f"{instance.get("instance_name")}-drawing.svg"
                     ),
-                    #source_group_name
                     instance.get("instance_name"),
-                    #destination_group_name
                     instance.get("instance_name")
                 )
-      
+
 def prep_bom():
     # === Configuration ===
     selected_columns = ["bom_line_number", "qty", "total_length_exact", "mpn"]
@@ -659,7 +663,7 @@ def update_page_setup_json():
             "formboard1": {
                 "scale": "A",
                 "rotation": 0,
-                "hide_instances": []
+                "hide_instances": {}
             }
         },
         "scales": {
