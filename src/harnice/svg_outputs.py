@@ -470,21 +470,24 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             os.path.join(destination_directory, f"{titleblock}-drawing.svg"),
             "tblock", "tblock"
         )
-        svg_utils.find_and_replace_svg_group(
-            project_svg_path,
-            fileio.path("bom table master svg"),
-            "bom", "bom"
-        )
-        svg_utils.find_and_replace_svg_group(
-            project_svg_path,
-            fileio.path("buildnotes table svg"),
-            "buildnotes-table", "buildnotes-table"
-        )
-        svg_utils.find_and_replace_svg_group(
-            project_svg_path,
-            fileio.path("revhistory master svg"),
-            "revhistory-table", "revhistory-table"
-        )
+        if "bom" in page.get("show_items"):
+            svg_utils.find_and_replace_svg_group(
+                project_svg_path,
+                fileio.path("bom table master svg"),
+                "bom", "bom"
+            )
+        if "buildnotes" in page.get("show_items"):
+            svg_utils.find_and_replace_svg_group(
+                project_svg_path,
+                fileio.path("buildnotes table svg"),
+                "buildnotes-table", "buildnotes-table"
+            )
+        if "revhistory" in page.get("show_items"):
+            svg_utils.find_and_replace_svg_group(
+                project_svg_path,
+                fileio.path("revhistory master svg"),
+                "revhistory-table", "revhistory-table"
+            )
 
         # === Text replacements ===
         text_map = tblock_data.get("text_replacements", {})
@@ -644,7 +647,12 @@ def update_page_setup_json():
                     "tblock-key-releaseticket": "",
                     "tblock-key-scale": "A",
                     "tblock-key-sheet": "autosheet"
-                }
+                },
+                "show_items": [
+                    "bom",
+                    "buildnotes",
+                    "revhistory"
+                ]
             }
         ],
         "formboards": {
@@ -656,7 +664,12 @@ def update_page_setup_json():
         },
         "scales": {
             "A": 1
-        }
+        },
+        "show_items_example_options":[
+            "bom",
+            "buildnotes",
+            "revhistory"
+        ]
     }
 
     # === Load or Initialize Titleblock Setup ===
