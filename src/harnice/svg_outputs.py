@@ -152,10 +152,11 @@ def prep_formboard_drawings(page_setup_contents):
             for instance in items:
                 # === Cancel if instance matches any hide filter ===
                 should_hide = False
-                for filter_conditions in hide_filters.values():
-                    if all(instance.get(k) == v for k, v in filter_conditions.items()):
-                        should_hide = True
-                        break
+                if not hide_filters == []:
+                    for filter_conditions in hide_filters.values():
+                        if all(instance.get(k) == v for k, v in filter_conditions.items()):
+                            should_hide = True
+                            break
                 if should_hide:
                     continue
 
@@ -213,10 +214,11 @@ def prep_formboard_drawings(page_setup_contents):
                 
                 # === Cancel if instance matches any hide filter ===
                 should_hide = False
-                for filter_conditions in hide_filters.values():
-                    if all(instance.get(k) == v for k, v in filter_conditions.items()):
-                        should_hide = True
-                        break
+                if not hide_filters == []:
+                    for filter_conditions in hide_filters.values():
+                        if all(instance.get(k) == v for k, v in filter_conditions.items()):
+                            should_hide = True
+                            break
                 if should_hide:
                     continue
 

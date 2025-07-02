@@ -127,6 +127,9 @@ def harness():
     #=============== REBUILDING OUTPUT SVG #===============
     revinfo = rev_history.revision_info()
 
+    #add parent types to make filtering easier
+    instances_list.add_parent_instance_type()
+
     #prepare the building blocks as svgs
     svg_outputs.prep_formboard_drawings(page_setup_contents)
     svg_outputs.prep_wirelist()

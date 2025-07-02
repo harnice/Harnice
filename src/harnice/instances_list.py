@@ -24,8 +24,10 @@ INSTANCES_LIST_COLUMNS = [
     'translate_y',
     'rotate_csys',
     'absolute_rotation',
+    'note_type',
     'note_number',
-    'bubble_text'
+    'bubble_text',
+    'parent_item_type'
 ]
 
 def editable_component_types():
@@ -439,6 +441,7 @@ def add_flagnotes():
         note_number = note_counters.get(affected, 0)
         note_counters[affected] = note_number + 1
         instance_name = f"{affected}-flagnote{note_number}"
+        note_type = row.get("note_type","").strip()
 
         # Determine parent_csys from the original instance
         parent_csys = instance_lookup.get(affected, {}).get("parent_csys", "")
@@ -478,7 +481,8 @@ def add_flagnotes():
             "translate_y": translate_y,
             "rotate_csys": "",
             "note_number": note_number,
-            "absolute_rotation": ""
+            "absolute_rotation": "",
+            "note_type": note_type
         }
         append_instance_row(location_instance)
 
@@ -500,7 +504,8 @@ def add_flagnotes():
             "rotate_csys": "",
             "absolute_rotation": "",
             "note_number": note_number,
-            "bubble_text": ""
+            "bubble_text": "",
+            "note_type": note_type
         }
         append_instance_row(flagnote_instance)
 
@@ -522,9 +527,23 @@ def add_flagnotes():
             "rotate_csys": "",
             "absolute_rotation": 0,
             "note_number": note_number,
-            "bubble_text": bubble_text
+            "bubble_text": bubble_text,
+            "note_type": note_type
         }
         append_instance_row(flagnote_instance)
+
+def add_parent_instance_type():
+    instances = read_instance_rows()
+    instance_lookup = {inst.get("instance_name"): inst for inst in instances}
+
+    for instance in instances:
+        parent = instance.get("parent_instance", "").strip()
+        parent_item_type = ""
+        if parent in instance_lookup:
+            parent_item_type = instance_lookup[parent].get("item_type", "").strip()
+        instance["parent_item_type"] = parent_item_type
+
+    write_instance_rows(instances)
 
 """
 template instances list modifier:
