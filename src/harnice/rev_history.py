@@ -69,7 +69,6 @@ def initial_release_desc():
     except:
         pass
 
-
 def update_datemodified():
     today_str = datetime.date.today().isoformat()
     target_rev = fileio.partnumber("R")
@@ -81,7 +80,6 @@ def update_datemodified():
 
     # Modify matching row(s)
     for row in rows:
-        print(f"!!!!{row.get("rev", "").strip()}...{target_rev}")
         if row.get("rev", "").strip() == target_rev:
             row["datemodified"] = today_str
 
