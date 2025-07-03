@@ -157,5 +157,4 @@ def pull_parts():
             quiet=False
         )
 
-        instances_list.add_lib_latest_rev(item_name, returned_rev)
-        instances_list.add_lib_used_rev(item_name, used_rev)
+        instances_list.add_revhistory_of_imported_part(item_name, revhistory_row)
