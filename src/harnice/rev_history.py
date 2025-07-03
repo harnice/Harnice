@@ -69,20 +69,24 @@ def initial_release_desc():
     except:
         pass
 
-def update_datemodified():
-    pass
-    """
-    with open(path, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        rows = list(csv.DictReader(f, delimiter='\t'))
-        fieldnames = reader.fieldnames
 
+def update_datemodified():
+    today_str = datetime.date.today().isoformat()
+    target_rev = fileio.partnumber("R")
+
+    # Read all rows
+    with open(fileio.path("revision history"), newline='', encoding='utf-8') as f_in:
+        reader = csv.DictReader(f_in, delimiter='\t')
+        rows = list(reader)
+
+    # Modify matching row(s)
     for row in rows:
-        if row.get("rev") == fileio.partnumber("rev"):
-        #TODO: UPDATE THE MODIFIED KEY FOR THIS ROW
-    
-    with open(path, "w", newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        print(f"!!!!{row.get("rev", "").strip()}...{target_rev}")
+        if row.get("rev", "").strip() == target_rev:
+            row["datemodified"] = today_str
+
+    # Write back
+    with open(fileio.path("revision history"), 'w', newline='', encoding='utf-8') as f_out:
+        writer = csv.DictWriter(f_out, fieldnames=REVISION_HISTORY_COLUMNS, delimiter='\t')
         writer.writeheader()
         writer.writerows(rows)
-    """
