@@ -126,6 +126,7 @@ def harness():
 
     #=============== REBUILDING OUTPUT SVG #===============
     revinfo = rev_history.revision_info()
+    rev_history.update_datemodified()
 
     #add parent types to make filtering easier
     instances_list.add_parent_instance_type()
@@ -149,7 +150,6 @@ def harness():
     svg_utils.produce_multipage_harnice_output_pdf(page_setup_contents)
         #makes a PDF out of each svg in page setup
 
-    rev_history.update_datemodified()
     print(f"Harnice: harness {fileio.partnumber("pn")} rendered successfully!")
     print()
 

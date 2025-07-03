@@ -307,16 +307,14 @@ def verify_revision_structure():
                 print("Revision updates can't be blank!")
                 revisionupdates = cli.prompt("Enter a description for this revision", default=None)
 
-        today = datetime.date.today().isoformat()
-
         rows.append({
             "pn": pn,
             "rev": rev,
             "desc": desc,
             "rev": rev,
             "status": "",
-            "datestarted": today,
-            "datemodified": today,
+            "datestarted": fileio.today(),
+            "datemodified": fileio.today(),
             "revisionupdates": revisionupdates
         })
 
@@ -377,3 +375,6 @@ def verify_yaml_exists():
         print("    No YAML harness definition file found.")
         print()
         exit()
+
+def today():
+    return datetime.date.today().strftime("%-m/%-d/%y")

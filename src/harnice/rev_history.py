@@ -70,7 +70,6 @@ def initial_release_desc():
         pass
 
 def update_datemodified():
-    today_str = datetime.date.today().isoformat()
     target_rev = fileio.partnumber("R")
 
     # Read all rows
@@ -81,7 +80,7 @@ def update_datemodified():
     # Modify matching row(s)
     for row in rows:
         if row.get("rev", "").strip() == target_rev:
-            row["datemodified"] = today_str
+            row["datemodified"] = fileio.today()
 
     # Write back
     with open(fileio.path("revision history"), 'w', newline='', encoding='utf-8') as f_out:
