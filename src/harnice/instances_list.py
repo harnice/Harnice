@@ -16,8 +16,6 @@ INSTANCES_LIST_COLUMNS = [
     'parent_instance',
     'parent_csys',
     'supplier',
-    'lib_latest_rev',
-    'lib_rev_used_here',
     'length',
     'diameter',
     'translate_x',
@@ -27,7 +25,13 @@ INSTANCES_LIST_COLUMNS = [
     'note_type',
     'note_number',
     'bubble_text',
-    'parent_item_type'
+    'parent_item_type',
+    'lib_latest_rev',
+    'lib_rev_used_here',
+    'lib_status',
+    'lib_datemodified',
+    'lib_datereleased',
+    'lib_drawnby'
 ]
 
 def editable_component_types():
@@ -164,7 +168,8 @@ def add_nodes():
             'parent_instance': node
         })
 
-def add_lib_latest_rev(instance_name, rev):
+def add_revhistory_of_imported_part(instance_name, rev_data):
+    # Expected rev_data is a dict with keys from REVISION_HISTORY_COLUMNS
     with open(fileio.path("instances list"), newline='') as f:
         reader = csv.DictReader(f, delimiter='\t')
         rows = list(reader)
@@ -172,24 +177,13 @@ def add_lib_latest_rev(instance_name, rev):
 
     for row in rows:
         if row.get("instance_name") == instance_name:
-            row["lib_latest_rev"] = str(rev)
-            break  # assume instance_name is unique
-
-    with open(fileio.path("instances list"), "w", newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
-        writer.writeheader()
-        writer.writerows(rows)
-
-def add_lib_used_rev(instance_name, rev):
-    with open(fileio.path("instances list"), newline='') as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        rows = list(reader)
-        fieldnames = reader.fieldnames
-
-    for row in rows:
-        if row.get("instance_name") == instance_name:
-            row["lib_rev_used_here"] = str(rev)
-            break  # assume instance_name is unique
+            row["lib_latest_rev"] = str(rev_data.get("rev", ""))
+            row["lib_rev_used_here"] = str(rev_data.get("rev", ""))
+            row["lib_status"] = rev_data.get("status", "")
+            row["lib_datemodified"] = rev_data.get("datemodified", "")
+            row["lib_datereleased"] = rev_data.get("datereleased", "")
+            row["lib_drawnby"] = rev_data.get("drawnby", "")
+            break  # instance_name is unique
 
     with open(fileio.path("instances list"), "w", newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
