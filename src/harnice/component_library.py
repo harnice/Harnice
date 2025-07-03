@@ -35,7 +35,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     # === Find highest rev in library
     if not os.path.exists(base_path):
         print(f"{item_name:<24}  library folder missing")
-        return None
+        return None, None
 
     revision_folders = [
         name for name in os.listdir(base_path)
@@ -43,7 +43,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     ]
     if not revision_folders:
         print(f"{item_name:<24}  no revisions found in library")
-        return None
+        return None, None
 
     library_rev = str(max(int(re.search(r"rev(\d+)", name).group(1)) for name in revision_folders))
 
@@ -104,7 +104,17 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     if not quiet == True:
         print(f"{item_name:<24}  {status}")
 
-    return library_rev
+    # === Load revision row from revision history TSV in source library ===
+    revhistory_row = None
+    revhistory_path = os.path.join(base_path, f"{mpn}-revision_history.tsv")
+    with open(revhistory_path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        for row in reader:
+            if row.get("rev", "").strip() == library_rev:
+                revhistory_row = row
+                break
+
+    return library_rev, revhistory_row
 
 def pull_parts():
     print()
@@ -137,7 +147,7 @@ def pull_parts():
         desired_rev = str(max(revs_found)) if revs_found else "latest"
         used_rev = desired_rev if desired_rev != "latest" else None
 
-        returned_rev = pull_item_from_library(
+        returned_rev, revhistory_row = pull_item_from_library(
             supplier=supplier,
             lib_subpath="parts",
             mpn=mpn,
