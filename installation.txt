@@ -1,0 +1,49 @@
+***********
+    0: running git: 
+
+    1. install homebrew: https://brew.sh/
+    2. install git: https://git-scm.com/downloads
+    3. git clone: https://github.com/kenyonshutt/harnice
+
+***********
+1. update your environment variables to point Harnice towards your libararies. here's an example:
+    :
+        public=~/github/harnice-library-public
+        user=~/Projects/harnice-library-user
+    :
+    add whatever other library you need here. pull components from that library by referencing them by "supplier" in your yaml. 
+    you can use git or dropbox or whatever to control your libraries in a repo separate from harnice. 
+
+*************
+2. install python however you want
+
+*************
+3. install the following packages: (for example, install by "pip3 install x")
+    pip3 install wireviz
+    pip3 install dotenv
+    pip install xlwt
+    pip install lxml
+    pip3 install PyPDF2
+    brew install graphviz
+    brew install poppler  # for pdfunite
+
+3a. if you get errors installing graphviz related to path issues, do this:
+    1. in the same shell that you're running python from (bash or zsh), run:
+        echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.bash_profile
+    2. then apply the change:
+        source ~/.bash_profile
+    3. test it by comparing:
+        which dot
+    4. should have returned
+        /opt/homebrew/bin/dot
+    5. against
+        python3 -c "import shutil; print(shutil.which('dot'))"
+    6. should also have returned
+        /opt/homebrew/bin/dot
+
+***********
+4. make sure you have real apps installed that interface with files that Harnice reads and writes:
+    text editor to edit the yaml
+    SVG editor (inkscape?)
+    TSV editor (excel?)
+    Kicad

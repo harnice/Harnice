@@ -1,0 +1,28 @@
+[project]
+name = "harnice"
+version = "0.0.1"
+authors = [
+  { name="Kenyon Shutt", email="kenyonshutt@gmail.com" },
+]
+description = "End-to-end harness generator"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/kenyonshutt/harnice"
+Issues = "https://github.com/kenyonshutt/harnice/issues"
+
+[project.scripts]
+harnice = "harnice.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
