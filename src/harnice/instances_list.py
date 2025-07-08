@@ -15,17 +15,19 @@ INSTANCES_LIST_COLUMNS = [
     'item_type',
     'parent_instance',
     'parent_csys',
+    #connects to
+    #connects from
     'supplier',
     'length',
-    'diameter',
+    'diameter', #<---------- change to print_diameter
     'translate_x',
     'translate_y',
     'rotate_csys',
     'absolute_rotation',
     'note_type',
-    'note_number',
+    'note_number', #<--------- merge with parent_csys and import instances of child csys?
     'bubble_text',
-    'parent_item_type',
+    'parent_item_type', #<----- redundant, delete
     'lib_latest_rev',
     'lib_rev_used_here',
     'lib_status',
