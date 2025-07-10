@@ -13,10 +13,12 @@ INSTANCES_LIST_COLUMNS = [
     'bom_line_number',
     'mpn',
     'item_type',
-    'parent_instance',
-    'parent_csys',
-    #connects to
-    #connects from
+    'parent_instance', #<--------- change to container_parent
+    'parent_csys', #<----------- change to location_parent
+    'parent_node', #<----------- add
+    'parent_segment', #<----------- add
+    'connects_to', #<---------- add
+    'connects_from', #<---------- add
     'supplier',
     'length',
     'diameter', #<---------- change to print_diameter
