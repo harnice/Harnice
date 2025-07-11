@@ -25,6 +25,8 @@ def harness():
 
     # === Step 1: Verify revision structure at the top level ===
     fileio.verify_revision_structure()
+    fileio.verify_yaml_exists()
+    fileio.generate_structure()
 
     # === Step 2: Ensure feature_tree.py exists ===
     feature_tree_path = fileio.path("feature tree")
@@ -35,6 +37,7 @@ def harness():
     runpy.run_path(feature_tree_path, run_name="__main__")
 
     print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!\n")
+    print()
 
 def tblock():
     print("Warning: rendering a titleblock may clear user edits to its svg. Do you wish to proceed?")
