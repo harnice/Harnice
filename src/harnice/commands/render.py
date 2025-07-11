@@ -36,7 +36,7 @@ def harness():
     # === Step 3: Run the project-specific feature_tree.py ===
     runpy.run_path(feature_tree_path, run_name="__main__")
 
-    print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!\n")
+    print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!")
     print()
 
 def tblock():
