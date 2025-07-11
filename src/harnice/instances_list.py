@@ -13,19 +13,23 @@ INSTANCES_LIST_COLUMNS = [
     'bom_line_number',
     'mpn',
     'item_type',
-    'parent_instance',
-    'parent_csys',
+    'parent_instance', #<--------- change to container_parent
+    'parent_csys', #<----------- change to location_parent
+    'parent_node', #<----------- add
+    'parent_segment', #<----------- add
+    'connects_to', #<---------- add
+    'connects_from', #<---------- add
     'supplier',
     'length',
-    'diameter',
+    'diameter', #<---------- change to print_diameter
     'translate_x',
     'translate_y',
     'rotate_csys',
     'absolute_rotation',
     'note_type',
-    'note_number',
+    'note_number', #<--------- merge with parent_csys and import instances of child csys?
     'bubble_text',
-    'parent_item_type',
+    'parent_item_type', #<----- redundant, delete
     'lib_latest_rev',
     'lib_rev_used_here',
     'lib_status',
