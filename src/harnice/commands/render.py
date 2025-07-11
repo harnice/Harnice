@@ -23,7 +23,7 @@ from harnice import (
 def harness():
     print("Thanks for using Harnice!")
 
-    # === Step 1: Verify revision structure at the top level ===
+    # === Step 1: Verify revision and file structure at the top level ===
     fileio.verify_revision_structure()
     fileio.verify_yaml_exists()
     fileio.generate_structure()
