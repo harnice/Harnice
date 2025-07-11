@@ -85,6 +85,7 @@ def harnice_file_structure():
 
     if product_type == "harness":
         return {
+                f"{partnumber("pn-rev")}.feature_tree.py":"feature tree",
                 f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual",
                 f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
                 f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
@@ -313,8 +314,8 @@ def verify_revision_structure():
             "desc": desc,
             "rev": rev,
             "status": "",
-            "datestarted": fileio.today(),
-            "datemodified": fileio.today(),
+            "datestarted": today(),
+            "datemodified": today(),
             "revisionupdates": revisionupdates
         })
 
