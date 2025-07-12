@@ -8,6 +8,14 @@ from harnice import (
     fileio
 )
 
+RECOGNIZED_ITEM_TYPES = {
+    "Segment",
+    "Node",
+    "Flagnote",
+    "Flagnote leader",
+    "Location"
+}
+
 INSTANCES_LIST_COLUMNS = [
     'instance_name',
     'bom_line_number',
@@ -37,9 +45,6 @@ INSTANCES_LIST_COLUMNS = [
     'lib_datereleased',
     'lib_drawnby'
 ]
-
-def editable_component_types():
-    return {"Backshell", "Connector"}
 
 def load_yaml_data():
     with open(fileio.path('harness yaml'), 'r') as file:
