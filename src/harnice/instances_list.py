@@ -64,6 +64,27 @@ def append_instance_row(data_dict):
     with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
         writer.writerow({key: data_dict.get(key, '') for key in INSTANCES_LIST_COLUMNS})
+        
+def add_instance(instance_attributes):
+    """
+    Adds a new instance to the instances list TSV.
+
+    - Raises ValueError if an instance with the same instance_name already exists
+    - Only writes fields defined in INSTANCES_LIST_COLUMNS
+    - Missing fields are written as empty strings
+    """
+    instances = instances_list.read_instance_rows()
+    name = instance_attributes.get("instance_name")
+
+    if not name:
+        raise ValueError("Missing required field: 'instance_name'")
+
+    if any(row.get("instance_name") == name for row in instances):
+        raise ValueError(f"Instance already exists: '{name}'")
+
+    with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
+        writer.writerow({key: instance_attributes.get(key, '') for key in INSTANCES_LIST_COLUMNS})
 
 def make_new_list():
     write_instance_rows([])
