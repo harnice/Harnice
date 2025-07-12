@@ -124,13 +124,13 @@ def harnice_file_structure():
                         "formboard_svgs":{},
                         "tblock_svgs":{},
                         "uneditable_instance_data":{}
+                    },
+                    "wireviz_outputs":{
+                        f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
+                        f"{partnumber("pn-rev")}.html":"wireviz html",
+                        f"{partnumber("pn-rev")}.png":"wireviz png",
+                        f"{partnumber("pn-rev")}.svg":"wireviz svg"
                     }
-                },
-                "wireviz_outputs":{
-                    f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
-                    f"{partnumber("pn-rev")}.html":"wireviz html",
-                    f"{partnumber("pn-rev")}.png":"wireviz png",
-                    f"{partnumber("pn-rev")}.svg":"wireviz svg"
                 },
                 f"{partnumber("pn-rev")}.harness_requirements.json":"harness requirements"
             }
