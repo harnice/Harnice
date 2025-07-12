@@ -8,13 +8,13 @@ from harnice import (
     fileio
 )
 
-RECOGNIZED_ITEM_TYPES = [
-    'Segment',
-    'Node',
-    'Flagnote',
-    'Flagnote leader',
-    'Location'
-]
+RECOGNIZED_ITEM_TYPES = {
+    "Segment",
+    "Node",
+    "Flagnote",
+    "Flagnote leader",
+    "Location"
+}
 
 INSTANCES_LIST_COLUMNS = [
     'instance_name',
