@@ -265,7 +265,7 @@ def make_leader_drawings():
                         break
 
                 # Then decide path based on its type
-                if parent_type in instances_list.editable_component_types():
+                if parent_type not in instances_list.RECOGNIZED_ITEM_TYPES:
                     parent_attributes_file = os.path.join(fileio.dirpath("editable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
                 else:
                     parent_attributes_file = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")

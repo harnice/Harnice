@@ -46,9 +46,6 @@ INSTANCES_LIST_COLUMNS = [
     'lib_drawnby'
 ]
 
-def editable_component_types():
-    return {"Backshell", "Connector"}
-
 def load_yaml_data():
     with open(fileio.path('harness yaml'), 'r') as file:
         return yaml.safe_load(file)
