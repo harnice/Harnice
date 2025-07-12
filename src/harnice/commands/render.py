@@ -17,7 +17,8 @@ from harnice import (
     fileio,
     svg_outputs,
     cli,
-    feature_tree
+    feature_tree,
+    esch_yaml
 )
 
 def harness():
@@ -27,6 +28,7 @@ def harness():
     fileio.verify_revision_structure()
     fileio.verify_yaml_exists()
     fileio.generate_structure()
+    esch_yaml.process_esch()
 
     # === Step 2: Ensure feature_tree.py exists ===
     feature_tree_path = fileio.path("feature tree")
