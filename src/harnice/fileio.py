@@ -89,7 +89,7 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual",
                 f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
                 f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
-                f"{partnumber("pn-rev")}.yaml":"harness yaml",
+                f"{partnumber("pn-rev")}-esch.yaml":"harness yaml",
                 "editable_instance_data":{},
                 "page_setup":{
                     f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
@@ -126,10 +126,10 @@ def harnice_file_structure():
                         "uneditable_instance_data":{}
                     },
                     "wireviz_outputs":{
-                        f"{partnumber("pn-rev")}.bom.tsv":"wireviz bom",
-                        f"{partnumber("pn-rev")}.html":"wireviz html",
-                        f"{partnumber("pn-rev")}.png":"wireviz png",
-                        f"{partnumber("pn-rev")}.svg":"wireviz svg"
+                        f"{partnumber("pn-rev")}-esch.bom.tsv":"wireviz bom",
+                        f"{partnumber("pn-rev")}-esch.html":"wireviz html",
+                        f"{partnumber("pn-rev")}-esch.png":"wireviz png",
+                        f"{partnumber("pn-rev")}-esch.svg":"wireviz svg"
                     }
                 },
                 f"{partnumber("pn-rev")}.harness_requirements.json":"harness requirements"
