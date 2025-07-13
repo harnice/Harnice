@@ -42,43 +42,60 @@ Each instance is written immediately to the instance list if not already present
 """
 harness_yaml = harness_yaml.load()
 
+# For each electrical circuit (or net) in your system
+# Circuit name is a string, ports is a dictionary that contains all the stuff on that circuit
 for circuit_name, ports in harness_yaml.items():
-    contact_counter = 1
+    contact_counter = 1  # This helps automatically number contact points like contact1, contact2, etc.
 
+    # Go through each port in this circuit
+    # Port label is the port, value is either a string or a dictionary
     for port_label, value in ports.items():
 
         if port_label == "contact":
+            # Automatically name the contact with the circuit name and a number
             instance_name = f"{circuit_name}.contact{contact_counter}"
             contact_counter += 1
+
+            # Add this contact to the system with its part number (mpn)
             instances_list.add_instance_unless_exists({
                 "instance_name": instance_name,
-                "item_type": "Contact",
+                "item_type": "Contact",  # This tells the software what kind of part this is
                 "mpn": value,
                 "parent_instance": port_label
             })
 
         else:
-            if re.match(r"X\d+", port_label):
+            # Check the label of the port to decide what kind of part it is.
+            # By default, anything starting with "X" or "W" is treated as a Connector.
+            if re.match(r"X[^.]+", port_label):
                 item_type = "Connector"
-            elif re.match(r"W\d+", port_label):
+            elif re.match(r"W[^.]+", port_label):
                 item_type = "Connector"
             else:
-                item_type = ""  # or some other default
+                item_type = ""  # If we don't know what this is, leave it blank.
+
+            # Add the connector (or unknown type) to the system
             instances_list.add_instance_unless_exists({
                 "instance_name": port_label,
                 "item_type": item_type
-                })
+            })
 
-            if isinstance(value, dict):
+            # If the port contains more detailed information (like cavity or conductor),
+            # the value will be a dictionary with extra fields
+            if type(value) is dict:
                 for subkey, subval in value.items():
+
+                    # If the field is "cavity", add a cavity under this connector
                     if subkey == "cavity":
                         instance_name = f"{port_label}.cavity{subval}"
                         instances_list.add_instance_unless_exists({
                             "instance_name": instance_name,
                             "item_type": "Connector cavity",
-                            "mpn": "N/A",
+                            "mpn": "N/A",  # Not applicable here, so we fill in "N/A"
                             "parent_instance": port_label
-                            })
+                        })
+
+                    # If the field is "conductor", add a conductor under this wire
                     elif subkey == "conductor":
                         instance_name = f"{port_label}.conductor{subval}"
                         instances_list.add_instance_unless_exists({
@@ -86,16 +103,21 @@ for circuit_name, ports in harness_yaml.items():
                             "item_type": "Conductor",
                             "mpn": "N/A",
                             "parent_instance": port_label
-                            })
+                        })
+
+                    # If the field is something else (like "shield" or "tag"), we still include it
                     else:
-                        # Optional: handle custom subkeys like "shield", "tag", etc.
                         instance_name = f"{port_label}.{subkey}{subval}"
-                        instances_list.add_instance_unless_exists({"instance_name": instance_name})
+                        instances_list.add_instance_unless_exists({
+                            "instance_name": instance_name
+                        })
 
             else:
-                # Scalar fallback, e.g. "portX: 6" → "portX.6"
+                # If the port is just a single value (not a dictionary), we still add it as a sub-instance
                 instance_name = f"{port_label}.{value}"
-                instances_list.add_instance_unless_exists({"instance_name": instance_name})
+                instances_list.add_instance_unless_exists({
+                    "instance_name": instance_name
+                })
 
 instances_list.add_connectors()
     # adds connectors from the yaml to that document
