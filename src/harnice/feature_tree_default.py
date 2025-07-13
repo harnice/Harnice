@@ -183,10 +183,19 @@ for instance in instances_list.read_instance_rows():
 print()
 
 #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
-instances_list.generate_nodes_from_connectors()
-    # makes at least one node per connector, named the same as connectors for now
 
-instances_list.update_parent_csys()
+#generate nodes (locations on a formboard where parts live)
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Connector":
+        connector_name = instance.get("instance_name")
+        instances_list.add(f"{connector_name}.node",{
+            "item_type": "Node",
+            "parent_instance": connector_name
+        })
+
+#now that there are nodes, backshells, connectors, other parts you may have added, 
+#assign their relative positions based on library preferences
+formboard.update_parent_csys()
     # updates parent csys of each connector based on its definition json
 
 instances_list.update_component_translate()

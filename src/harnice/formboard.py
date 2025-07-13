@@ -468,3 +468,43 @@ def detect_dead_segments():
         raise Exception(f"The following segments do not contain cables: {missing_list}. Remove that segment from formboard definition and rerun.")
 
     print("-All segments in formboard definition are used by one or more cables.")
+
+def update_parent_csys():
+    instances = instances_list.read_instance_rows()
+    instance_lookup = {inst.get('instance_name'): inst for inst in instances}
+
+    for instance in instances:
+        instance_name = instance.get('instance_name', '').strip()
+        if not instance_name:
+            continue
+
+        # Build the path to the attributes JSON file
+        attributes_path = os.path.join(
+            fileio.dirpath("editable_instance_data"),
+            instance_name,
+            f"{instance_name}-attributes.json"
+        )
+
+        # Skip if the attributes file does not exist
+        if not os.path.exists(attributes_path):
+            continue
+
+        # Load the attributes JSON
+        try:
+            with open(attributes_path, 'r', encoding='utf-8') as f:
+                attributes_data = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            continue  # Skip invalid or missing JSON
+
+        # Get csys_parent_prefs from attributes
+        csys_parent_prefs = attributes_data.get("plotting_info", {}).get("csys_parent_prefs", [])
+
+        # Iterate through parent preferences
+        for pref in csys_parent_prefs:
+            candidate_name = f"{instance.get("parent_instance")}{pref}"
+            if candidate_name in instance_lookup:
+                instance['parent_csys'] = candidate_name
+                break  # Found a match, exit early
+        # If no match, do nothing (parent_csys remains unchanged)
+
+    instances_list.write_instance_rows(instances)
