@@ -16,7 +16,6 @@ Terminology:
 
 #=============== INITIALIZE INSTANCES LIST #===============
 # make a list of every single instance in the project
-
 instances_list.make_new_list()
     # makes blank document
 
@@ -114,26 +113,6 @@ for instance in instances_list.read_instance_rows():
             })
 
 #================ NAME CONNECTORS #===============
-for instance in instances_list.read_instance_rows():
-    instance_name = instance.get("instance_name")
-    if instance_name == "X1":
-        instances_list.modify(instance_name,{
-            "print_name": "P1"
-        })
-    elif instance_name == "X2":
-        instances_list.modify(instance_name,{
-            "print_name": "P2"
-        })
-    elif instance_name == "X3":
-        instances_list.modify(instance_name,{
-            "print_name": "P3"
-        })
-    elif instance_name == "X4":
-        instances_list.modify(instance_name,{
-            "print_name": "J1"
-        })
-
-#================ OTHER STUFF #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
     if instance_name == "X1":
