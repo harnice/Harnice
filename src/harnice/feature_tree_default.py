@@ -1,75 +1,77 @@
-from harnice import (
-    fileio, instances_list, component_library, wirelist,
-    svg_outputs, flagnotes, formboard, run_wireviz, rev_history, svg_utils
-)
 import os
 import yaml
+from harnice import (
+    fileio, instances_list, component_library, wirelist,
+    svg_outputs, flagnotes, formboard, run_wireviz, rev_history, svg_utils,
+    harness_yaml
+)
 
-
-def import_circuit_definitions(yaml_data):
-    """
-    Imports a YAML structure describing electrical circuits.
-
-    Terminology:
-    - A "circuit" is a logical group of ports that are electrically connected.
-    - A "port" is a named electrical interface, such as a pin, terminal, or wire end.
-    - The "nets" connecting ports are implied by being in the same circuit; they are not explicitly listed.
-
-    Expected YAML example:
-    -----------------------
-    circuit1:
-      portA:
-        cavity: 7
-      contact: testpoint
-      portB:
-        conductor: 1
-
-    From this input, the following instance names will be generated and written:
-    - portA
-    - portA.cavity7
-    - circuit1.contact1         (contact items are numbered within the circuit)
-    - portB
-    - portB.conductor1
-
-    Each instance is written immediately to the instance list if not already present.
-    """
-    for circuit_name, ports in yaml_data.items():
-        contact_counter = 1
-
-        for port_label, value in ports.items():
-
-            if port_label == "contact":
-                instance_name = f"{circuit_name}.contact{contact_counter}"
-                contact_counter += 1
-                instances_list.add_instance({"instance_name": instance_name})
-
-            else:
-                instances_list.add_instance({"instance_name": port_label})
-
-                if isinstance(value, dict):
-                    for subkey, subval in value.items():
-                        if subkey == "cavity":
-                            instance_name = f"{port_label}.cavity{subval}"
-                            instances_list.add_instance({"instance_name": instance_name})
-                        elif subkey == "conductor":
-                            instance_name = f"{port_label}.conductor{subval}"
-                            instances_list.add_instance({"instance_name": instance_name})
-                        else:
-                            # Optional: handle custom subkeys like "shield", "tag", etc.
-                            instance_name = f"{port_label}.{subkey}{subval}"
-                            instances_list.add_instance({"instance_name": instance_name})
-
-                else:
-                    # Scalar fallback, e.g. "portX: 6" → "portX.6"
-                    instance_name = f"{port_label}.{value}"
-                    instances_list.add_instance({"instance_name": instance_name})
-
+"""
+Terminology:
+- A "circuit" is a logical group of ports that are electrically connected.
+- A "port" is a named electrical interface, such as a pin, terminal, or wire end.
+- The "nets" connecting ports are implied by being in the same circuit; they are not explicitly listed.
+"""
 
 #=============== INITIALIZE INSTANCES LIST #===============
 # make a list of every single instance in the project
 
 instances_list.make_new_list()
     # makes blank document
+
+#=============== GENERATE INSTANCES FROM ESCH #===============
+"""
+Expected YAML example:
+-----------------------
+circuit1:
+    portA:
+    cavity: 7
+    contact: testpoint
+    portB:
+    conductor: 1
+
+From this input, the following instance names will be generated and written:
+- portA
+- portA.cavity7
+- circuit1.contact1         (contact items are numbered within the circuit)
+- portB
+- portB.conductor1
+
+Each instance is written immediately to the instance list if not already present.
+"""
+harness_yaml = harness_yaml.load()
+
+for circuit_name, ports in harness_yaml.items():
+    contact_counter = 1
+
+    for port_label, value in ports.items():
+
+        if port_label == "contact":
+            instance_name = f"{circuit_name}.contact{contact_counter}"
+            contact_counter += 1
+            instances_list.add_instance_unless_exists({"instance_name": instance_name})
+
+        else:
+            instances_list.add_instance_unless_exists({"instance_name": port_label})
+
+            if isinstance(value, dict):
+                for subkey, subval in value.items():
+                    if subkey == "cavity":
+                        instance_name = f"{port_label}.cavity{subval}"
+                        instances_list.add_instance_unless_exists({"instance_name": instance_name})
+                    elif subkey == "conductor":
+                        instance_name = f"{port_label}.conductor{subval}"
+                        instances_list.add_instance_unless_exists({"instance_name": instance_name})
+                    else:
+                        # Optional: handle custom subkeys like "shield", "tag", etc.
+                        instance_name = f"{port_label}.{subkey}{subval}"
+                        instances_list.add_instance_unless_exists({"instance_name": instance_name})
+
+            else:
+                # Scalar fallback, e.g. "portX: 6" → "portX.6"
+                instance_name = f"{port_label}.{value}"
+                instances_list.add_instance_unless_exists({"instance_name": instance_name})
+
 instances_list.add_connectors()
     # adds connectors from the yaml to that document
 instances_list.add_cables()
@@ -100,6 +102,7 @@ if not os.path.exists(fileio.name("formboard graph definition")):
     with open(fileio.name("formboard graph definition"), 'w') as f:
         pass  # Creates an empty file
 
+exit()
 formboard.validate_nodes()
 instances_list.add_nodes_from_formboard()
 instances_list.add_segments_from_formboard()
