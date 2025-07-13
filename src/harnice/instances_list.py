@@ -66,42 +66,61 @@ def append_instance_row(data_dict):
         writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
         writer.writerow({key: data_dict.get(key, '') for key in INSTANCES_LIST_COLUMNS})
 
-def add_instance(instance_attributes):
+def add(instance_name, instance_data):
     """
     Adds a new instance to the instances list TSV.
 
-    - Raises ValueError if an instance with the same instance_name already exists
-    - Only writes fields defined in INSTANCES_LIST_COLUMNS
-    - Missing fields are written as empty strings
+    Args:
+        instance_name (str): The name of the instance to add.
+        instance_data (dict): Dictionary of instance attributes. May include "instance_name".
+
+    Raises:
+        ValueError: If instance_name is missing, already exists, or conflicts with instance_data["instance_name"].
+    
+    Behavior:
+        - Raises ValueError if an instance with the same instance_name already exists.
+        - Raises ValueError if instance_name and instance_data["instance_name"] disagree.
+        - Only writes fields defined in INSTANCES_LIST_COLUMNS.
+        - Missing fields are written as empty strings.
     """
+    if not instance_name:
+        raise ValueError("Missing required argument: 'instance_name'")
+
+    if "instance_name" in instance_data and instance_data["instance_name"] != instance_name:
+        raise ValueError(f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'")
+
+    instance_data["instance_name"] = instance_name  # Ensure the dict includes the name
+
     instances = read_instance_rows()
-    name = instance_attributes.get("instance_name")
-
-    if not name:
-        raise ValueError("Missing required field: 'instance_name'")
-
-    if any(row.get("instance_name") == name for row in instances):
-        raise ValueError(f"Instance already exists: '{name}'")
+    if any(row.get("instance_name") == instance_name for row in instances):
+        raise ValueError(f"Instance already exists: '{instance_name}'")
 
     with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
-        writer.writerow({key: instance_attributes.get(key, '') for key in INSTANCES_LIST_COLUMNS})
+        writer.writerow({key: instance_data.get(key, '') for key in INSTANCES_LIST_COLUMNS})
 
-def add_instance_unless_exists(instance_attributes):
+def add_unless_exists(instance_name, instance_data):
     """
     Adds an instance to the instances list unless an instance with the same name already exists.
 
     Args:
-        instance_attributes (dict): A dictionary representing the instance to add.
-                                    Must include the key "instance_name".
+        instance_name (str): The name of the instance to add.
+        instance_data (dict): Dictionary of instance attributes. May include "instance_name".
+
+    Raises:
+        ValueError: If instance_name is missing, or if instance_name and instance_data["instance_name"] disagree.
     """
-    instance_name = instance_attributes.get("instance_name")
     if not instance_name:
-        raise ValueError("Missing required key: 'instance_name'")
+        raise ValueError("Missing required argument: 'instance_name'")
+
+    if "instance_name" in instance_data and instance_data["instance_name"] != instance_name:
+        raise ValueError(f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'")
+
+    instance_data["instance_name"] = instance_name  # Ensure consistency
 
     instances = read_instance_rows()
     if not any(inst.get("instance_name") == instance_name for inst in instances):
-        add_instance(instance_attributes)
+        add(instance_name, instance_data)
 
 def modify(instance_name, instance_data):
     """
