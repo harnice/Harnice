@@ -21,25 +21,7 @@ instances_list.make_new_list()
     # makes blank document
 
 #=============== GENERATE INSTANCES FROM ESCH #===============
-"""
-Expected YAML example:
------------------------
-circuit1:
-    portA:
-    cavity: 7
-    contact: testpoint
-    portB:
-    conductor: 1
-
-From this input, the following instance names will be generated and written:
-- portA
-- portA.cavity7
-- circuit1.contact1         (contact items are numbered within the circuit)
-- portB
-- portB.conductor1
-
-Each instance is written immediately to the instance list if not already present.
-"""
+# load harness yaml
 harness_yaml = harness_yaml.load()
 
 # For each electrical circuit (or net) in your system
@@ -57,11 +39,9 @@ for circuit_name, ports in harness_yaml.items():
             contact_counter += 1
 
             # Add this contact to the system with its part number (mpn)
-            instances_list.add_instance_unless_exists({
-                "instance_name": instance_name,
+            instances_list.add_unless_exists(instance_name, {
                 "item_type": "Contact",  # This tells the software what kind of part this is
-                "mpn": value,
-                "parent_instance": port_label
+                "mpn": value
             })
 
         else:
@@ -69,15 +49,15 @@ for circuit_name, ports in harness_yaml.items():
             # By default, anything starting with "X" or "W" is treated as a Connector.
             if re.match(r"X[^.]+", port_label):
                 item_type = "Connector"
-            elif re.match(r"W[^.]+", port_label):
-                item_type = "Connector"
+            elif re.match(r"C[^.]+", port_label):
+                item_type = "Cable"
             else:
                 item_type = ""  # If we don't know what this is, leave it blank.
 
             # Add the connector (or unknown type) to the system
-            instances_list.add_instance_unless_exists({
-                "instance_name": port_label,
-                "item_type": item_type
+            instances_list.add_unless_exists(port_label,{
+                "item_type": item_type,
+                "parent_instance": port_label
             })
 
             # If the port contains more detailed information (like cavity or conductor),
@@ -88,8 +68,7 @@ for circuit_name, ports in harness_yaml.items():
                     # If the field is "cavity", add a cavity under this connector
                     if subkey == "cavity":
                         instance_name = f"{port_label}.cavity{subval}"
-                        instances_list.add_instance_unless_exists({
-                            "instance_name": instance_name,
+                        instances_list.add_unless_exists(instance_name,{
                             "item_type": "Connector cavity",
                             "mpn": "N/A",  # Not applicable here, so we fill in "N/A"
                             "parent_instance": port_label
@@ -98,8 +77,7 @@ for circuit_name, ports in harness_yaml.items():
                     # If the field is "conductor", add a conductor under this wire
                     elif subkey == "conductor":
                         instance_name = f"{port_label}.conductor{subval}"
-                        instances_list.add_instance_unless_exists({
-                            "instance_name": instance_name,
+                        instances_list.add_unless_exists(instance_name,{
                             "item_type": "Conductor",
                             "mpn": "N/A",
                             "parent_instance": port_label
@@ -108,21 +86,65 @@ for circuit_name, ports in harness_yaml.items():
                     # If the field is something else (like "shield" or "tag"), we still include it
                     else:
                         instance_name = f"{port_label}.{subkey}{subval}"
-                        instances_list.add_instance_unless_exists({
-                            "instance_name": instance_name
-                        })
+                        instances_list.add_instance_unless_exists(instance_name,{})
 
             else:
                 # If the port is just a single value (not a dictionary), we still add it as a sub-instance
                 instance_name = f"{port_label}.{value}"
-                instances_list.add_instance_unless_exists({
-                    "instance_name": instance_name
+                instances_list.add_instance_unless_exists(instance_name,{})
+
+#================ DEFINE CONNECTORS #===============
+for instance in instances_list.read_instance_rows():
+    instance_name = instance.get("instance_name")
+    if instance.get("item_type") == "Connector":
+        if instance_name == "X1":
+            instances_list.modify(instance_name,{
+                "mpn": "D38999_26ZB98PN",
+                "supplier": "public"
+            })
+        else:
+            instances_list.modify(instance_name,{
+                "mpn": "D38999_26ZA98PN",
+                "supplier": "public"
+            })
+
+#================ NAME CONNECTORS #===============
+for instance in instances_list.read_instance_rows():
+    instance_name = instance.get("instance_name")
+    if instance_name == "X1":
+        instances_list.modify(instance_name,{
+            "print_name": "P1"
+        })
+    elif instance_name == "X2":
+        instances_list.modify(instance_name,{
+            "print_name": "P2"
+        })
+    elif instance_name == "X3":
+        instances_list.modify(instance_name,{
+            "print_name": "P3"
+        })
+    elif instance_name == "X4":
+        instances_list.modify(instance_name,{
+            "print_name": "J1"
+        })
+
+#================ ASSIGN BACKSHELLS #===============
+for instance in instances_list.read_instance_rows():
+    instance_name = instance.get("instance_name")
+    if instance.get("item_type") == "Connector":
+        mpn = instance.get("mpn")
+        if re.fullmatch(r"D38999_26ZA.+", mpn):
+            if instance.get("print_name") not in ["P3", "J1"]:
+                instances_list.add(f"{instance_name}.bs",{
+                    "mpn": "M85049_88-9Z03",
+                    "supplier": "public",
+                    "item_type": "Backshell",
+                    "parent_instance": instance.get("instance_name")
                 })
 
-instances_list.add_connectors()
-    # adds connectors from the yaml to that document
-instances_list.add_cables()
-    # adds cables from the yaml to that document
+#================ ASSIGN CABLES #===============
+#TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
+
 wirelist.newlist()
     # makes a new wirelist
 

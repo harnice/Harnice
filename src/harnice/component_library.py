@@ -18,13 +18,13 @@ from harnice import(
 
 def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, used_rev=None, item_name=None, quiet=True):
     if not isinstance(supplier, str) or not supplier.strip():
-        raise ValueError(f"'supplier' must be a non-empty string. Got: {supplier}")
+        raise ValueError(f"when importing {mpn} 'supplier' must be a non-empty string. Got: {supplier}")
     if not isinstance(lib_subpath, str) or not lib_subpath.strip():
-        raise ValueError(f"'lib_subpath' must be a non-empty string. Got: {lib_subpath}")
+        raise ValueError(f"when importing {mpn} 'lib_subpath' must be a non-empty string. Got: {lib_subpath}")
     if not isinstance(mpn, str) or not mpn.strip():
         raise ValueError(f"'mpn' must be a non-empty string. Got: {mpn}")
     if not isinstance(destination_directory, str) or not destination_directory.strip():
-        raise ValueError(f"'destination_directory' must be a non-empty string. Got: {destination_directory}")
+        raise ValueError(f"when importing {mpn} 'destination_directory' must be a non-empty string. Got: {destination_directory}")
 
     if item_name == "":
         item_name = mpn

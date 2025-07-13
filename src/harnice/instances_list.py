@@ -18,6 +18,7 @@ RECOGNIZED_ITEM_TYPES = {
 
 INSTANCES_LIST_COLUMNS = [
     'instance_name',
+    'print_name',
     'bom_line_number',
     'mpn',
     'item_type',
@@ -65,67 +66,105 @@ def append_instance_row(data_dict):
         writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
         writer.writerow({key: data_dict.get(key, '') for key in INSTANCES_LIST_COLUMNS})
 
-def add_instance(instance_attributes):
+def add(instance_name, instance_data):
     """
     Adds a new instance to the instances list TSV.
 
-    - Raises ValueError if an instance with the same instance_name already exists
-    - Only writes fields defined in INSTANCES_LIST_COLUMNS
-    - Missing fields are written as empty strings
+    Args:
+        instance_name (str): The name of the instance to add.
+        instance_data (dict): Dictionary of instance attributes. May include "instance_name".
+
+    Raises:
+        ValueError: If instance_name is missing, already exists, or conflicts with instance_data["instance_name"].
+    
+    Behavior:
+        - Raises ValueError if an instance with the same instance_name already exists.
+        - Raises ValueError if instance_name and instance_data["instance_name"] disagree.
+        - Only writes fields defined in INSTANCES_LIST_COLUMNS.
+        - Missing fields are written as empty strings.
     """
+    if not instance_name:
+        raise ValueError("Missing required argument: 'instance_name'")
+
+    if "instance_name" in instance_data and instance_data["instance_name"] != instance_name:
+        raise ValueError(f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'")
+
+    instance_data["instance_name"] = instance_name  # Ensure the dict includes the name
+
     instances = read_instance_rows()
-    name = instance_attributes.get("instance_name")
-
-    if not name:
-        raise ValueError("Missing required field: 'instance_name'")
-
-    if any(row.get("instance_name") == name for row in instances):
-        raise ValueError(f"Instance already exists: '{name}'")
+    if any(row.get("instance_name") == instance_name for row in instances):
+        raise ValueError(f"Instance already exists: '{instance_name}'")
 
     with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
-        writer.writerow({key: instance_attributes.get(key, '') for key in INSTANCES_LIST_COLUMNS})
+        writer.writerow({key: instance_data.get(key, '') for key in INSTANCES_LIST_COLUMNS})
 
-def add_instance_unless_exists(instance_attributes):
+def add_unless_exists(instance_name, instance_data):
     """
     Adds an instance to the instances list unless an instance with the same name already exists.
 
     Args:
-        instance_attributes (dict): A dictionary representing the instance to add.
-                                    Must include the key "instance_name".
+        instance_name (str): The name of the instance to add.
+        instance_data (dict): Dictionary of instance attributes. May include "instance_name".
+
+    Raises:
+        ValueError: If instance_name is missing, or if instance_name and instance_data["instance_name"] disagree.
     """
-    instance_name = instance_attributes.get("instance_name")
     if not instance_name:
-        raise ValueError("Missing required key: 'instance_name'")
+        raise ValueError("Missing required argument: 'instance_name'")
+
+    if "instance_name" in instance_data and instance_data["instance_name"] != instance_name:
+        raise ValueError(f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'")
+
+    instance_data["instance_name"] = instance_name  # Ensure consistency
 
     instances = read_instance_rows()
     if not any(inst.get("instance_name") == instance_name for inst in instances):
-        add_instance(instance_attributes)
+        add(instance_name, instance_data)
+
+def modify(instance_name, instance_data):
+    """
+    Modifies an existing instance in the instances list TSV.
+
+    Args:
+        instance_name (str): The name of the instance to modify.
+        instance_data (dict): A dictionary of fieldnames and new values to update.
+
+    Raises:
+        ValueError: If the instance is not found, or if instance_name conflicts with instance_data["instance_name"].
+    """
+    # Sanity check: ensure instance_name is consistent
+    if "instance_name" in instance_data:
+        if instance_data["instance_name"] != instance_name:
+            raise ValueError(f"Mismatch between argument instance_name ('{instance_name}') "
+                             f"and instance_data['instance_name'] ('{instance_data['instance_name']}').")
+    else:
+        instance_data["instance_name"] = instance_name
+
+    path = fileio.path("instances list")
+
+    with open(path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames
+
+    modified = False
+    for row in rows:
+        if row.get("instance_name") == instance_name:
+            row.update(instance_data)
+            modified = True
+            break
+
+    if not modified:
+        raise ValueError(f"Instance '{instance_name}' not found in the instances list.")
+
+    with open(path, "w", newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
 
 def make_new_list():
     write_instance_rows([])
-
-def add_connectors():
-    yaml_data = load_yaml_data()
-    for instance_name, connector in yaml_data.get('connectors', {}).items():
-        for component in connector.get('additional_components', []):
-            suffix = 'bs' if component.get('type', '').lower() == 'backshell' else component.get('type', '').lower()
-            component_instance = f"{instance_name}.{suffix}"
-            append_instance_row({
-                'instance_name': component_instance,
-                'mpn': component.get('mpn', ''),
-                'item_type': component.get('type', ''),
-                'parent_instance': instance_name,
-                'supplier': component.get('supplier', '')
-            })
-
-        append_instance_row({
-            'instance_name': instance_name,
-            'mpn': connector.get('mpn', ''),
-            'item_type': 'Connector',
-            'parent_instance': instance_name, #needed to find parent csys
-            'supplier': connector.get('supplier', '')
-        })
 
 def add_cables():
     yaml_data = load_yaml_data()
