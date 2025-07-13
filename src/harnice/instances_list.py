@@ -275,41 +275,6 @@ def add_revhistory_of_imported_part(instance_name, rev_data):
         writer.writeheader()
         writer.writerows(rows)
 
-def update_component_translate():
-    instances = read_instance_rows()
-    for instance in instances:
-        instance_name = instance.get('instance_name', '').strip()
-        if not instance_name:
-            continue
-
-        attributes_path = os.path.join(
-            fileio.dirpath("editable_instance_data"),
-            instance_name,
-            f"{instance_name}-attributes.json"
-        )
-
-        if not os.path.exists(attributes_path):
-            continue
-
-        try:
-            with open(attributes_path, "r", encoding="utf-8") as f:
-                attributes_data = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            continue
-
-        component_translate = (
-            attributes_data
-            .get("plotting_info", {})
-            .get("component_translate_inches", {})
-        )
-
-        if component_translate:
-            instance['translate_x'] = str(component_translate.get('translate_x', ''))
-            instance['translate_y'] = str(component_translate.get('translate_y', ''))
-            instance['rotate_csys'] = str(component_translate.get('rotate_csys', ''))
-
-    write_instance_rows(instances)
-
 def add_nodes_from_formboard():
     instances = read_instance_rows()
 
