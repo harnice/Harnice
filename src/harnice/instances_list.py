@@ -18,6 +18,7 @@ RECOGNIZED_ITEM_TYPES = {
 
 INSTANCES_LIST_COLUMNS = [
     'instance_name',
+    'print_name',
     'bom_line_number',
     'mpn',
     'item_type',
@@ -102,30 +103,49 @@ def add_instance_unless_exists(instance_attributes):
     if not any(inst.get("instance_name") == instance_name for inst in instances):
         add_instance(instance_attributes)
 
+def modify(instance_name, instance_data):
+    """
+    Modifies an existing instance in the instances list TSV.
+
+    Args:
+        instance_name (str): The name of the instance to modify.
+        instance_data (dict): A dictionary of fieldnames and new values to update.
+
+    Raises:
+        ValueError: If the instance is not found, or if instance_name conflicts with instance_data["instance_name"].
+    """
+    # Sanity check: ensure instance_name is consistent
+    if "instance_name" in instance_data:
+        if instance_data["instance_name"] != instance_name:
+            raise ValueError(f"Mismatch between argument instance_name ('{instance_name}') "
+                             f"and instance_data['instance_name'] ('{instance_data['instance_name']}').")
+    else:
+        instance_data["instance_name"] = instance_name
+
+    path = fileio.path("instances list")
+
+    with open(path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        rows = list(reader)
+        fieldnames = reader.fieldnames
+
+    modified = False
+    for row in rows:
+        if row.get("instance_name") == instance_name:
+            row.update(instance_data)
+            modified = True
+            break
+
+    if not modified:
+        raise ValueError(f"Instance '{instance_name}' not found in the instances list.")
+
+    with open(path, "w", newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
+
 def make_new_list():
     write_instance_rows([])
-
-def add_connectors():
-    yaml_data = load_yaml_data()
-    for instance_name, connector in yaml_data.get('connectors', {}).items():
-        for component in connector.get('additional_components', []):
-            suffix = 'bs' if component.get('type', '').lower() == 'backshell' else component.get('type', '').lower()
-            component_instance = f"{instance_name}.{suffix}"
-            append_instance_row({
-                'instance_name': component_instance,
-                'mpn': component.get('mpn', ''),
-                'item_type': component.get('type', ''),
-                'parent_instance': instance_name,
-                'supplier': component.get('supplier', '')
-            })
-
-        append_instance_row({
-            'instance_name': instance_name,
-            'mpn': connector.get('mpn', ''),
-            'item_type': 'Connector',
-            'parent_instance': instance_name, #needed to find parent csys
-            'supplier': connector.get('supplier', '')
-        })
 
 def add_cables():
     yaml_data = load_yaml_data()
