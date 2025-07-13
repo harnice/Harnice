@@ -16,22 +16,29 @@ from harnice import (
     component_library,
     fileio,
     svg_outputs,
-    cli,
-    feature_tree
+    cli
 )
 
 def harness():
+    #TEMPORARY- TODO: DELETE THIS LINE AFTER DEVELOPING FEATURE_TREE_DEFAULT:
+    os.remove(fileio.path("feature tree"))
+
     print("Thanks for using Harnice!")
 
     # === Step 1: Verify revision and file structure at the top level ===
     fileio.verify_revision_structure()
-    fileio.verify_yaml_exists()
+    fileio.verify_harness_yaml_exists()
     fileio.generate_structure()
 
     # === Step 2: Ensure feature_tree.py exists ===
     feature_tree_path = fileio.path("feature tree")
     if not os.path.exists(feature_tree_path):
-        feature_tree.generate_default_feature_tree()
+        default_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "feature_tree_default.py")
+        os.makedirs(os.path.dirname(feature_tree_path), exist_ok=True)
+        with open(default_path, "r", encoding="utf-8") as src, \
+             open(feature_tree_path, "w", encoding="utf-8") as dst:
+            dst.write(src.read())
+        print(f"Created feature_tree.py from default template")
 
     # === Step 3: Run the project-specific feature_tree.py ===
     runpy.run_path(feature_tree_path, run_name="__main__")
