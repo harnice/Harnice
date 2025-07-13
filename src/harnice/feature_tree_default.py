@@ -142,8 +142,9 @@ for instance in instances_list.read_instance_rows():
                     "parent_instance": instance.get("instance_name")
                 })
 
-instances_list.add_cables()
-    # adds cables from the yaml to that document
+#================ ASSIGN CABLES #===============
+#TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
+
 wirelist.newlist()
     # makes a new wirelist
 
