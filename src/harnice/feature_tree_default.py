@@ -21,25 +21,7 @@ instances_list.make_new_list()
     # makes blank document
 
 #=============== GENERATE INSTANCES FROM ESCH #===============
-"""
-Expected YAML example:
------------------------
-circuit1:
-    portA:
-    cavity: 7
-    contact: testpoint
-    portB:
-    conductor: 1
-
-From this input, the following instance names will be generated and written:
-- portA
-- portA.cavity7
-- circuit1.contact1         (contact items are numbered within the circuit)
-- portB
-- portB.conductor1
-
-Each instance is written immediately to the instance list if not already present.
-"""
+# load harness yaml
 harness_yaml = harness_yaml.load()
 
 # For each electrical circuit (or net) in your system
