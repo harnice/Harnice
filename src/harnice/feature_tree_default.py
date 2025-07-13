@@ -1,5 +1,6 @@
 import os
 import yaml
+import re
 from harnice import (
     fileio, instances_list, component_library, wirelist,
     svg_outputs, flagnotes, formboard, run_wireviz, rev_history, svg_utils,
@@ -49,19 +50,43 @@ for circuit_name, ports in harness_yaml.items():
         if port_label == "contact":
             instance_name = f"{circuit_name}.contact{contact_counter}"
             contact_counter += 1
-            instances_list.add_instance_unless_exists({"instance_name": instance_name})
+            instances_list.add_instance_unless_exists({
+                "instance_name": instance_name,
+                "item_type": "Contact",
+                "mpn": value,
+                "parent_instance": port_label
+            })
 
         else:
-            instances_list.add_instance_unless_exists({"instance_name": port_label})
+            if re.match(r"X\d+", port_label):
+                item_type = "Connector"
+            elif re.match(r"W\d+", port_label):
+                item_type = "Connector"
+            else:
+                item_type = ""  # or some other default
+            instances_list.add_instance_unless_exists({
+                "instance_name": port_label,
+                "item_type": item_type
+                })
 
             if isinstance(value, dict):
                 for subkey, subval in value.items():
                     if subkey == "cavity":
                         instance_name = f"{port_label}.cavity{subval}"
-                        instances_list.add_instance_unless_exists({"instance_name": instance_name})
+                        instances_list.add_instance_unless_exists({
+                            "instance_name": instance_name,
+                            "item_type": "Connector cavity",
+                            "mpn": "N/A",
+                            "parent_instance": port_label
+                            })
                     elif subkey == "conductor":
                         instance_name = f"{port_label}.conductor{subval}"
-                        instances_list.add_instance_unless_exists({"instance_name": instance_name})
+                        instances_list.add_instance_unless_exists({
+                            "instance_name": instance_name,
+                            "item_type": "Conductor",
+                            "mpn": "N/A",
+                            "parent_instance": port_label
+                            })
                     else:
                         # Optional: handle custom subkeys like "shield", "tag", etc.
                         instance_name = f"{port_label}.{subkey}{subval}"

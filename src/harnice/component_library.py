@@ -17,10 +17,23 @@ from harnice import(
 )
 
 def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, used_rev=None, item_name=None, quiet=True):
+    if not isinstance(supplier, str) or not supplier.strip():
+        raise ValueError(f"'supplier' must be a non-empty string. Got: {supplier}")
+    if not isinstance(lib_subpath, str) or not lib_subpath.strip():
+        raise ValueError(f"'lib_subpath' must be a non-empty string. Got: {lib_subpath}")
+    if not isinstance(mpn, str) or not mpn.strip():
+        raise ValueError(f"'mpn' must be a non-empty string. Got: {mpn}")
+    if not isinstance(destination_directory, str) or not destination_directory.strip():
+        raise ValueError(f"'destination_directory' must be a non-empty string. Got: {destination_directory}")
+
     if item_name == "":
         item_name = mpn
 
-    base_path = os.path.join(os.getenv(supplier), lib_subpath, mpn)
+    supplier_root = os.getenv(supplier)
+    if supplier_root is None:
+        raise ValueError(f"Environment variable '{supplier}' is not set. Expected to find path for library root.")
+
+    base_path = os.path.join(supplier_root, lib_subpath, mpn)
     lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
 
     # === Find highest local rev
@@ -34,16 +47,14 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
 
     # === Find highest rev in library
     if not os.path.exists(base_path):
-        print(f"{item_name:<24}  library folder missing")
-        return None, None
+        raise FileNotFoundError(f"Library folder not found: {base_path}")
 
     revision_folders = [
         name for name in os.listdir(base_path)
         if os.path.isdir(os.path.join(base_path, name)) and re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", name)
     ]
     if not revision_folders:
-        print(f"{item_name:<24}  no revisions found in library")
-        return None, None
+        raise FileNotFoundError(f"No revision folders found for {mpn} in {base_path}")
 
     library_rev = str(max(int(re.search(r"rev(\d+)", name).group(1)) for name in revision_folders))
 
@@ -63,17 +74,16 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     target_lib_path = os.path.join(lib_used_path, f"{mpn}-rev{rev_to_use}")
     os.makedirs(lib_used_path, exist_ok=True)
 
+    if not os.path.exists(source_lib_path):
+        raise FileNotFoundError(f"Revision folder not found: {source_lib_path}")
+
     if os.path.exists(target_lib_path):
         shutil.rmtree(target_lib_path)
 
     shutil.copytree(source_lib_path, target_lib_path)
 
     # === Copy editable files only if not already present
-    rename_suffixes = [
-        "-drawing.svg",
-        "-params.json",
-        "-attributes.json"
-    ]
+    rename_suffixes = ["-drawing.svg", "-params.json", "-attributes.json"]
 
     for filename in os.listdir(source_lib_path):
         src_file = os.path.join(source_lib_path, filename)
@@ -101,12 +111,15 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
                 with open(dst_file, 'w', encoding='utf-8') as f:
                     f.write(content)
 
-    if not quiet == True:
+    if not quiet:
         print(f"{item_name:<24}  {status}")
 
     # === Load revision row from revision history TSV in source library ===
     revhistory_row = None
     revhistory_path = os.path.join(base_path, f"{mpn}-revision_history.tsv")
+    if not os.path.exists(revhistory_path):
+        raise FileNotFoundError(f"Expected revision history TSV at: {revhistory_path}")
+
     with open(revhistory_path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter='\t')
         for row in reader:
