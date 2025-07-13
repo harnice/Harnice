@@ -39,9 +39,14 @@ for circuit_name, ports in harness_yaml.items():
             contact_counter += 1
 
             # Add this contact to the system with its part number (mpn)
+
+            if value == "TXPA20":
+                supplier = "public"
+
             instances_list.add_unless_exists(instance_name, {
                 "item_type": "Contact",  # This tells the software what kind of part this is
-                "mpn": value
+                "mpn": value,
+                "supplier": supplier
             })
 
         else:
@@ -128,6 +133,26 @@ for instance in instances_list.read_instance_rows():
             "print_name": "J1"
         })
 
+#================ OTHER STUFF #===============
+for instance in instances_list.read_instance_rows():
+    instance_name = instance.get("instance_name")
+    if instance_name == "X1":
+        instances_list.modify(instance_name,{
+            "print_name": "P1"
+        })
+    elif instance_name == "X2":
+        instances_list.modify(instance_name,{
+            "print_name": "P2"
+        })
+    elif instance_name == "X3":
+        instances_list.modify(instance_name,{
+            "print_name": "P3"
+        })
+    elif instance_name == "X4":
+        instances_list.modify(instance_name,{
+            "print_name": "J1"
+        })
+
 #================ ASSIGN BACKSHELLS #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
@@ -136,7 +161,7 @@ for instance in instances_list.read_instance_rows():
         if re.fullmatch(r"D38999_26ZA.+", mpn):
             if instance.get("print_name") not in ["P3", "J1"]:
                 instances_list.add(f"{instance_name}.bs",{
-                    "mpn": "M85049_88-9Z03",
+                    "mpn": "M85049-88_9Z03",
                     "supplier": "public",
                     "item_type": "Backshell",
                     "parent_instance": instance.get("instance_name")
@@ -145,16 +170,38 @@ for instance in instances_list.read_instance_rows():
 #================ ASSIGN CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
 
+#================ GENERATE A WIRELIST BASED ON EXISTING DATA IN INSTANCES_LIST #===============
 wirelist.newlist()
-    # makes a new wirelist
 
-#=============== CHECKING COMPONENTS AGAINST LIBRARY #===============
-component_library.pull_parts()
-    # compares existing imported library files against library
-    # imports new files if they don't exist
-    # if they do exist,
-    # checks for updates against the library
-    # checks for modifications against the library
+#=============== IMPORTING PARTS FROM LIBRARY #===============
+print()
+print("Importing parts from library")
+print(f'{"ITEM NAME":<24}  STATUS')
+
+for instance in instances_list.read_instance_rows():
+    instance_name = instance.get("instance_name")
+    mpn = instance.get("mpn")
+
+    if instance.get("item_type") in [  # item types to include in import
+        "Connector",
+        "Backshell"
+        ]:
+
+        if instance_name not in [  # items to exclude from import
+            "X100"
+            ]:
+
+            if mpn not in [  # mpns to exclude from import
+                "TXPA20"
+                ]:
+
+                component_library.pull_part(instance_name)
+                # compares existing imported library files against library
+                # imports new files if they don't exist
+                # if they do exist,
+                # checks for updates against the library
+                # checks for modifications against the library
+print()
 
 #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
 instances_list.generate_nodes_from_connectors()
