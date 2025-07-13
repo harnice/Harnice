@@ -10,6 +10,11 @@ from harnice import (
 )
 
 def validate_nodes():
+    # make a formboard definition file from scratch if it doesn't exist
+    if not os.path.exists(fileio.name("formboard graph definition")):
+        with open(fileio.name("formboard graph definition"), 'w') as f:
+            pass  # Creates an empty file
+
     instances = instances_list.read_instance_rows()
     instance_lookup = {instance.get('instance_name'): instance for instance in instances if instance.get('instance_name')}
     new_instance_rows = []  # <--- Track new nodes to add

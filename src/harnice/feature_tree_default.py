@@ -183,7 +183,7 @@ for instance in instances_list.read_instance_rows():
 print()
 
 #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
-#generate nodes (locations on a formboard where parts live)
+#generate nodes from connectors (locations on a formboard where parts live)
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Connector":
         connector_name = instance.get("instance_name")
@@ -192,47 +192,22 @@ for instance in instances_list.read_instance_rows():
             "parent_instance": connector_name
         })
 
-#now that there are nodes, backshells, connectors, other parts you may have added, 
-#assign their relative positions based on library preferences
+print()
+print("Validating your formboard graph is structured properly...")
 formboard.update_parent_csys()
-formboard.update_component_translate() #translate w/r/t parent csys
-
-# make a formboard definition file from scratch if it doesn't exist
-if not os.path.exists(fileio.name("formboard graph definition")):
-    with open(fileio.name("formboard graph definition"), 'w') as f:
-        pass  # Creates an empty file
-
-exit()
+formboard.update_component_translate()
 formboard.validate_nodes()
 instances_list.add_nodes_from_formboard()
 instances_list.add_segments_from_formboard()
-    # validates all nodes exist
-    # generates segments if they don't exist
-    # adds nodes and segments into the instances list
-
-print()
-print("Validating your formboard graph is structured properly...")
 formboard.map_cables_to_segments()
 formboard.detect_loops()
 formboard.detect_dead_segments()
-    # validates segments are structured correctly
-
 formboard.generate_node_coordinates()
-    # starting from one node, recursively find lengths and angles of related segments to produce locations of each node
-
 instances_list.add_cable_lengths()
 wirelist.add_lengths()
-    # add cable lengths to instances and wirelists
-
 wirelist.tsv_to_xls()
-    # now that wirelist is complete, make it pretty
-
 instances_list.add_absolute_angles_to_segments()
-    # add absolute angles to segments only such that they show up correctly on formboard
-    # segments only, because every other instance angle is associated with its parent node
-    # segments have by defintiion more than one node, so there's no easy way to resolve segment angle from that
 instances_list.add_angles_to_nodes()
-    # add angles to nodes to base the rotation of each node child instance
 
 #=============== GENERATING A BOM #===============
 instances_list.convert_to_bom()
