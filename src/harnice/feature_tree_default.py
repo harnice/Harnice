@@ -119,8 +119,21 @@ for circuit_name, ports in harness_yaml.items():
                     "instance_name": instance_name
                 })
 
-instances_list.add_connectors()
-    # adds connectors from the yaml to that document
+#================ DEFINE CONNECTORS #===============
+for instance in instances_list.read_instance_rows():
+    instance_name = instance.get("instance_name")
+    if instance.get("item_type") == "Connector":
+        if instance_name == "X1":
+            instances_list.modify(instance_name,{
+                "mpn": "D38999_26ZB98PN",
+                "supplier": "public"
+            })
+        else:
+            instances_list.modify(instance_name,{
+                "mpn": "D38999_26ZA98PN",
+                "supplier": "public"
+            })
+
 instances_list.add_cables()
     # adds cables from the yaml to that document
 wirelist.newlist()
