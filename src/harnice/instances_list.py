@@ -23,7 +23,7 @@ INSTANCES_LIST_COLUMNS = [
     'mpn',
     'item_type',
     'parent_instance', #<--------- change to functional_parent
-    'parent_csys_instance',
+    'parent_csys', #<----------- change to parent_csys_instance
     'parent_csys_name', #<----------- add
     'connects_to', #<---------- add
     'connects_from', #<---------- add
