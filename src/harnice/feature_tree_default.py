@@ -20,12 +20,9 @@ instances_list.make_new_list()
     # makes blank document
 
 #=============== GENERATE INSTANCES FROM ESCH #===============
-# load harness yaml
-harness_yaml = harness_yaml.load()
-
 # For each electrical circuit (or net) in your system
 # Circuit name is a string, ports is a dictionary that contains all the stuff on that circuit
-for circuit_name, ports in harness_yaml.items():
+for circuit_name, ports in harness_yaml.load().items():
     contact_counter = 1  # This helps automatically number contact points like contact1, contact2, etc.
 
     # Go through each port in this circuit
@@ -166,7 +163,7 @@ for instance in instances_list.read_instance_rows():
         "Backshell"
         ]:
 
-        if instance_name not in [  # items to exclude from import
+        if instance_name not in [  # instance names to exclude from import
             "X100"
             ]:
 
