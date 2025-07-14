@@ -20,15 +20,14 @@ from harnice import (
 )
 
 def harness():
-    #TEMPORARY- TODO: DELETE THIS LINE AFTER DEVELOPING FEATURE_TREE_DEFAULT:
-    os.remove(fileio.path("feature tree"))
-
     print("Thanks for using Harnice!")
 
     # === Step 1: Verify revision and file structure at the top level ===
     fileio.verify_revision_structure()
     fileio.verify_harness_yaml_exists()
     fileio.generate_structure()
+    #TEMPORARY- TODO: DELETE THIS LINE AFTER DEVELOPING FEATURE_TREE_DEFAULT:
+    os.remove(fileio.path("feature tree"))
 
     # === Step 2: Ensure feature_tree.py exists ===
     feature_tree_path = fileio.path("feature tree")

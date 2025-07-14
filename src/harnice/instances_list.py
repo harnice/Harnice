@@ -22,10 +22,9 @@ INSTANCES_LIST_COLUMNS = [
     'bom_line_number',
     'mpn',
     'item_type',
-    'parent_instance', #<--------- change to container_parent
-    'parent_csys', #<----------- change to location_parent
-    'parent_node', #<----------- add
-    'parent_segment', #<----------- add
+    'parent_instance', #<--------- change to functional_parent
+    'parent_csys_instance',
+    'parent_csys_name', #<----------- add
     'connects_to', #<---------- add
     'connects_from', #<---------- add
     'supplier',
