@@ -27,6 +27,7 @@ INSTANCES_LIST_COLUMNS = [
     'parent_csys', #<----------- change to parent_csys_instance
     'parent_csys_name', #<----------- add
     'circuit_id',
+    'circuit_id_port',
     'supplier',
     'length',
     'diameter', #<---------- change to print_diameter
@@ -522,6 +523,46 @@ def add_parent_instance_type():
         instance["parent_item_type"] = parent_item_type
 
     write_instance_rows(instances)
+
+def adjacent_node_based_port(target_instance):
+    for instance in read_instance_rows():
+        if instance.get("instance_name") == target_instance:
+            #assign parents to contacts based on the assumption that one of the two adjacent items in the circuit will be a node-item
+            if instance.get("circuit_id") == "" or instance.get("circuit_id_port") == "":
+                raise ValueError(f"Circuit order unspecified for {target_instance}")
+
+            circuit_id = instance.get("circuit_id")
+            circuit_id_port = int(instance.get("circuit_id_port"))
+
+            #find the adjacent port
+            prev_port = ""
+            prev_port_location_is_node_or_segment = ""
+            next_port = ""
+            next_port_location_is_node_or_segment = ""
+
+            for instance2 in read_instance_rows():
+                if instance2.get("circuit_id") == circuit_id:
+                    if int(instance2.get("circuit_id_port")) == circuit_id_port - 1:
+                        prev_port = instance2.get("instance_name")
+                        prev_port_location_is_node_or_segment = instance2.get("location_is_node_or_segment")
+                    if int(instance2.get("circuit_id_port")) == circuit_id_port + 1:
+                        next_port = instance2.get("instance_name")
+                        next_port_location_is_node_or_segment = instance2.get("location_is_node_or_segment")
+            
+            #learn wich adjacent port is node-based
+            node_based_adjacent_port = ""
+            if prev_port_location_is_node_or_segment == "Node":
+                if next_port_location_is_node_or_segment == "Segment":
+                    node_based_adjacent_port = prev_port
+                else:
+                    raise ValueError(f"Both adjacent ports to {instance.get("instance_name")} are nodes!")
+            elif prev_port_location_is_node_or_segment == "Segment":
+                if next_port_location_is_node_or_segment == "Node":
+                    node_based_adjacent_port = next_port
+                else:
+                    raise ValueError(f"Neither adjacent ports to {instance.get("instance_name")} are nodes!")
+
+            return node_based_adjacent_port
 
 """
 template instances list modifier:

@@ -45,7 +45,8 @@ for circuit_name, ports in harness_yaml.load().items():
                 "mpn": value,
                 "supplier": supplier,
                 "location_is_node_or_segment": "Node",
-                'circuit_id': f"{circuit_name}.port{port_counter}"
+                'circuit_id': circuit_name,
+                'circuit_id_port': port_counter
             })
 
         else:
@@ -79,7 +80,8 @@ for circuit_name, ports in harness_yaml.load().items():
                             "mpn": "N/A",  # Not applicable here, so we fill in "N/A"
                             "parent_instance": port_label,
                             "location_is_node_or_segment": "Node",
-                            'circuit_id': f"{circuit_name}.port{port_counter}"
+                            'circuit_id': circuit_name,
+                            'circuit_id_port': port_counter
                         })
 
                     # If the field is "conductor", add a conductor under this wire
@@ -90,7 +92,8 @@ for circuit_name, ports in harness_yaml.load().items():
                             "mpn": "N/A",
                             "parent_instance": port_label,
                             "location_is_node_or_segment": "Segment",
-                            'circuit_id': f"{circuit_name}.port{port_counter}"
+                            'circuit_id': circuit_name,
+                            'circuit_id_port': port_counter
                         })
 
                     # If the field is something else (like "shield" or "tag"), we still include it
@@ -154,6 +157,15 @@ for instance in instances_list.read_instance_rows():
                     "parent_instance": instance.get("instance_name"),
                     "location_is_node_or_segment": "Node"
                 })
+
+#=============== ASSIGN PARENTS TO WEIRD PARTS LIKE CONTACTS #===============
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Contact":
+        instance_name = instance.get("instance_name")
+        node_based_adjacent_port = instances_list.adjacent_node_based_port(instance_name)
+        instances_list.modify(instance_name,{
+            "parent_instance": node_based_adjacent_port,
+        })
 
 #================ ASSIGN CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
