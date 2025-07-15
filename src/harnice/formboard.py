@@ -133,6 +133,8 @@ def validate_nodes():
 
     instances_list.add_nodes_from_formboard()
     instances_list.add_segments_from_formboard()
+    formboard.detect_loops()
+    formboard.detect_dead_segments()
 
 def generate_node_coordinates():
     # === Step 1: Read formboard graph definition ===
