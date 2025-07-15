@@ -96,7 +96,6 @@ def segment_attribute_of(segment_id, key):
             return row.get(key)
     return None
 
-
 def validate_nodes():
     # Ensure TSV exists
     if not os.path.exists(fileio.name("formboard graph definition")):
