@@ -42,7 +42,8 @@ for circuit_name, ports in harness_yaml.load().items():
             instances_list.add_unless_exists(instance_name, {
                 "item_type": "Contact",  # This tells the software what kind of part this is
                 "mpn": value,
-                "supplier": supplier
+                "supplier": supplier,
+                "location_is_node_or_segment": "Node"
             })
 
         else:
@@ -50,15 +51,18 @@ for circuit_name, ports in harness_yaml.load().items():
             # By default, anything starting with "X" or "W" is treated as a Connector.
             if re.match(r"X[^.]+", port_label):
                 item_type = "Connector"
+                location_is_node_or_segment = "Node"
             elif re.match(r"C[^.]+", port_label):
                 item_type = "Cable"
+                location_is_node_or_segment = "Segment"
             else:
                 item_type = ""  # If we don't know what this is, leave it blank.
 
             # Add the connector (or unknown type) to the system
             instances_list.add_unless_exists(port_label,{
                 "item_type": item_type,
-                "parent_instance": port_label
+                "parent_instance": port_label,
+                "location_is_node_or_segment": location_is_node_or_segment
             })
 
             # If the port contains more detailed information (like cavity or conductor),
@@ -72,7 +76,8 @@ for circuit_name, ports in harness_yaml.load().items():
                         instances_list.add_unless_exists(instance_name,{
                             "item_type": "Connector cavity",
                             "mpn": "N/A",  # Not applicable here, so we fill in "N/A"
-                            "parent_instance": port_label
+                            "parent_instance": port_label,
+                            "location_is_node_or_segment": "Node"
                         })
 
                     # If the field is "conductor", add a conductor under this wire
@@ -81,7 +86,8 @@ for circuit_name, ports in harness_yaml.load().items():
                         instances_list.add_unless_exists(instance_name,{
                             "item_type": "Conductor",
                             "mpn": "N/A",
-                            "parent_instance": port_label
+                            "parent_instance": port_label,
+                            "location_is_node_or_segment": "Segment"
                         })
 
                     # If the field is something else (like "shield" or "tag"), we still include it
@@ -140,7 +146,8 @@ for instance in instances_list.read_instance_rows():
                     "mpn": "M85049-88_9Z03",
                     "supplier": "public",
                     "item_type": "Backshell",
-                    "parent_instance": instance.get("instance_name")
+                    "parent_instance": instance.get("instance_name"),
+                    "location_is_node_or_segment": "Node"
                 })
 
 #================ ASSIGN CABLES #===============
@@ -177,7 +184,6 @@ for instance in instances_list.read_instance_rows():
                 # if they do exist,
                 # checks for updates against the library
                 # checks for modifications against the library
-print()
 
 #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
 #generate nodes from connectors (locations on a formboard where parts live)
@@ -186,7 +192,8 @@ for instance in instances_list.read_instance_rows():
         connector_name = instance.get("instance_name")
         instances_list.add(f"{connector_name}.node",{
             "item_type": "Node",
-            "parent_instance": connector_name
+            "parent_instance": connector_name,
+            'location_is_node_or_segment': 'Node'
         })
 
 print()

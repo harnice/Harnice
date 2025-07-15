@@ -23,6 +23,7 @@ INSTANCES_LIST_COLUMNS = [
     'mpn',
     'item_type',
     'parent_instance', #<--------- change to functional_parent
+    'location_is_node_or_segment',
     'parent_csys', #<----------- change to parent_csys_instance
     'parent_csys_name', #<----------- add
     'connects_to', #<---------- add
@@ -237,21 +238,6 @@ def add_bom_line_numbers():
     write_instance_rows(rows)
     return fileio.path('instances list')
 
-def add_nodes():
-    with open(fileio.path('formboard graph definition'), 'r') as f:
-        graph = yaml.safe_load(f)
-
-    node_set = set()
-    for seg in graph.values():
-        node_set.update([seg.get('segment_end_a'), seg.get('segment_end_b')])
-
-    for node in sorted(filter(None, node_set)):
-        append_instance_row({
-            'instance_name': node,
-            'item_type': 'Node',
-            'parent_instance': node
-        })
-
 def add_revhistory_of_imported_part(instance_name, rev_data):
     # Expected rev_data is a dict with keys from REVISION_HISTORY_COLUMNS
     with open(fileio.path("instances list"), newline='') as f:
@@ -300,6 +286,7 @@ def add_nodes_from_formboard():
             instances.append({
                 'instance_name': node_name,
                 'item_type': 'Node',
+                'location_is_node_or_segment': 'Node'
             })
 
     write_instance_rows(instances)
@@ -326,6 +313,7 @@ def add_segments_from_formboard():
                 'length': str(segment.get('length', '')),
                 'diameter': str(segment.get('diameter', '')),
                 'parent_csys': str(segment.get('segment_end_a', '')),
+                'location_is_node_or_segment': 'Segment'
             })
 
     write_instance_rows(instances)
