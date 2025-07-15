@@ -16,7 +16,6 @@ def validate_nodes():
             pass  # Creates an empty file
 
     instances = instances_list.read_instance_rows()
-    instance_lookup = {instance.get('instance_name'): instance for instance in instances if instance.get('instance_name')}
     new_instance_rows = []  # <--- Track new nodes to add
 
     # Collect connector names directly
@@ -53,7 +52,7 @@ def validate_nodes():
         if num_connectors > 2:
             origin_node = "node1"
             node_counter = 0
-            for instance in instances:
+            for instance in instances_list.read_instance_rows():
                 if instance.get("item_type") == "Node":
                     segment_name = instance.get("parent_instance") + "_leg"
                     formboard_data[segment_name] = {
@@ -69,7 +68,7 @@ def validate_nodes():
             segment_name = "segment"
             segment_end = []
 
-            for instance in instances:
+            for instance in instances_list.read_instance_rows():
                 if instance.get("item_type") == "Node":
                     segment_end.append(instance.get("instance_name"))
 
@@ -96,13 +95,13 @@ def validate_nodes():
 
         if num_connectors > 2:
             addon_new_seg_from_node = ""
-            for instance in instances:
+            for instance in instances_list.read_instance_rows():
                 if instance.get('item_type') == "Node" and instance.get('parent_instance') == "":
                     addon_new_seg_from_node = instance.get('instance_name')
                     break
 
             if addon_new_seg_from_node == "":
-                for instance in instances:
+                for instance in instances_list.read_instance_rows():
                     if instance.get('item_type') == "Node":
                         addon_new_seg_from_node = instance.get('instance_name')
                         break
