@@ -262,65 +262,6 @@ def add_revhistory_of_imported_part(instance_name, rev_data):
         writer.writeheader()
         writer.writerows(rows)
 
-def add_nodes_from_formboard():
-    instances = read_instance_rows()
-
-    try:
-        with open(fileio.path("formboard graph definition"), "r") as f:
-            formboard_data = json.load(f)
-    except FileNotFoundError:
-        print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
-        formboard_data = {}
-
-    # Find all nodes already defined in formboard
-    nodes_in_formboard = set()
-    for segment in formboard_data.values():
-        nodes_in_formboard.add(segment.get('segment_end_a', ''))
-        nodes_in_formboard.add(segment.get('segment_end_b', ''))
-    nodes_in_formboard.discard('')
-
-    # Collect all known instance names for lookup
-    existing_instance_names = {instance.get('instance_name', '') for instance in instances}
-
-    # Add any node from formboard that's missing in instances list
-    for node_name in nodes_in_formboard:
-        if node_name and node_name not in existing_instance_names:
-            instances.append({
-                'instance_name': node_name,
-                'item_type': 'Node',
-                'location_is_node_or_segment': 'Node'
-            })
-
-    write_instance_rows(instances)
-
-def add_segments_from_formboard():
-    instances = read_instance_rows()
-
-    try:
-        with open(fileio.path("formboard graph definition"), "r") as f:
-            formboard_data = json.load(f)
-    except FileNotFoundError:
-        print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
-        formboard_data = {}
-
-    # Gather all existing instance names to avoid duplicates
-    existing_instance_names = {inst.get('instance_name', '') for inst in instances}
-
-    # Append segments that are missing in the instances list
-    for segment_name, segment in formboard_data.items():
-        if segment_name not in existing_instance_names:
-            instances.append({
-                'instance_name': segment_name,
-                'item_type': 'Segment',
-                'length': str(segment.get('length', '')),
-                'diameter': str(segment.get('diameter', '')),
-                'parent_csys': str(segment.get('segment_end_a', '')),
-                'location_is_node_or_segment': 'Segment'
-            })
-
-    write_instance_rows(instances)
-
-
 def parent(instance_name):
     instances = read_instance_rows()
     for instance in instances:

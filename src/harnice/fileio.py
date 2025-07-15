@@ -87,7 +87,7 @@ def harnice_file_structure():
         return {
                 f"{partnumber("pn-rev")}.feature_tree.py":"feature tree",
                 f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual",
-                f"{partnumber("pn-rev")}.formboard_graph_definition.json":"formboard graph definition",
+                f"{partnumber("pn-rev")}.formboard_graph_definition.tsv":"formboard graph definition",
                 f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
                 f"{partnumber("pn-rev")}-esch.yaml":"harness yaml",
                 "editable_instance_data":{},

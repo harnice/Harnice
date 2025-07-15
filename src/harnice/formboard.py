@@ -9,6 +9,94 @@ from harnice import (
     fileio
 )
 
+FORMBOARD_TSV_COLUMNS = [
+    "segment_id",
+    "node_at_end_a",
+    "node_at_end_b",
+    "length",
+    "angle",
+    "diameter"
+]
+
+import csv
+from harnice import fileio
+
+def read_segment_rows():
+    """
+    Reads all rows from the formboard graph definition TSV.
+
+    Returns:
+        List[dict]: Each row as a dictionary with keys from FORMBOARD_TSV_COLUMNS.
+    """
+    with open(fileio.path('formboard graph definition'), newline='', encoding='utf-8') as f:
+        return list(csv.DictReader(f, delimiter='\t'))
+
+def write_segment_rows(rows):
+    """
+    Overwrites the formboard graph definition TSV with the provided rows.
+
+    Args:
+        rows (List[dict]): List of dictionaries matching FORMBOARD_TSV_COLUMNS.
+    """
+    with open(fileio.path('formboard graph definition'), 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter='\t')
+        writer.writeheader()
+        writer.writerows(rows)
+
+def append_segment_row(data_dict):
+    """
+    Appends a single row to the formboard graph definition TSV.
+
+    Args:
+        data_dict (dict): Dictionary of segment data.
+                          Missing fields will be written as empty strings.
+    """
+    with open(fileio.path('formboard graph definition'), 'a', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter='\t')
+        writer.writerow({key: data_dict.get(key, '') for key in FORMBOARD_TSV_COLUMNS})
+
+def add_segment(segment_id, segment_data):
+    """
+    Adds a new segment to the formboard graph definition TSV.
+
+    Args:
+        segment_id (str): Unique segment identifier.
+        segment_data (dict): Dictionary of segment attributes. May include "segment_id".
+
+    Raises:
+        ValueError: If segment_id is missing, already exists, or conflicts with segment_data["segment_id"].
+    """
+    if not segment_id:
+        raise ValueError("Missing required argument: 'segment_id'")
+
+    if "segment_id" in segment_data and segment_data["segment_id"] != segment_id:
+        raise ValueError(f"Inconsistent segment_id: argument='{segment_id}' vs data['segment_id']='{segment_data['segment_id']}'")
+
+    segment_data["segment_id"] = segment_id  # Ensure it is included
+
+    existing = read_segment_rows()
+    if any(row.get("segment_id") == segment_id for row in existing):
+        raise ValueError(f"Segment already exists: '{segment_id}'")
+
+    append_segment_row(segment_data)
+
+def segment_attribute_of(segment_id, key):
+    """
+    Returns the value of the specified attribute for the given segment.
+
+    Args:
+        segment_id (str): The ID of the segment to look up.
+        key (str): The attribute name to retrieve.
+
+    Returns:
+        str or None: The value of the attribute, or None if not found.
+    """
+    for row in read_segment_rows():
+        if row.get("segment_id") == segment_id:
+            return row.get(key)
+    return None
+
+
 def validate_nodes():
     # make a formboard definition file from scratch if it doesn't exist
     if not os.path.exists(fileio.name("formboard graph definition")):
@@ -395,88 +483,6 @@ def map_cables_to_segments():
 
     instances_list.write_instance_rows(instances)
     print("-All cables have valid paths from start connector to end connector via segments.")
-
-def detect_loops():
-    # Step 1: Read the formboard graph definition
-    try:
-        with open(fileio.path("formboard graph definition"), 'r') as file:
-            graph_definition = json.load(file)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Formboard graph definition not found: {fileio.name('formboard graph definition')}")
-    except json.JSONDecodeError:
-        raise ValueError(f"Invalid JSON in formboard graph definition: {fileio.name('formboard graph definition')}")
-
-    # Step 2: Build adjacency list
-    adjacency = defaultdict(list)
-    for segment in graph_definition.values():
-        node_a = segment.get('segment_end_a')
-        node_b = segment.get('segment_end_b')
-        if node_a and node_b:
-            adjacency[node_a].append(node_b)
-            adjacency[node_b].append(node_a)
-
-    # Step 3: DFS to detect cycles
-    visited = set()
-
-    def dfs(node, parent):
-        visited.add(node)
-        for neighbor in adjacency[node]:
-            if neighbor not in visited:
-                if dfs(neighbor, node):
-                    return True
-            elif neighbor != parent:
-                return True
-        return False
-
-    # Step 4: Check each connected component
-    for node in adjacency:
-        if node not in visited:
-            if dfs(node, None):
-                raise Exception("Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet. ")
-
-    print("-No loops found in formboard graph definition.")
-    # No loops detected; function ends silently
-
-def detect_dead_segments():
-    """
-    Checks that every segment in the instances list is referenced in the connections_to_graph.
-    Raises an exception listing missing segments if any are not connected to a cable.
-    """
-    # Step 1: Read connections_to_graph
-    try:
-        with open(fileio.path("connections to graph"), "r") as file:
-            connections_data = json.load(file)
-    except FileNotFoundError:
-        raise Exception(f"Connections to graph file not found: {fileio.name('connections to graph')}")
-    except json.JSONDecodeError:
-        raise Exception(f"Invalid JSON in file: {fileio.name('connections to graph')}")
-
-    connected_segments = set()
-    for cable_info in connections_data.values():
-        for segment in cable_info.get("segments", []):
-            if segment:
-                connected_segments.add(segment)
-
-    # Step 2: Read instances list
-    with open(fileio.path("instances list"), "r", newline='') as file:
-        reader = csv.DictReader(file, delimiter="\t")
-        instance_rows = list(reader)
-
-    instance_segments = set()
-    for instance in instance_rows:
-        if instance.get('item_type', '').strip() == "Segment":
-            segment_name = instance.get('instance_name', '').strip()
-            if segment_name:
-                instance_segments.add(segment_name)
-
-    # Step 3: Compare
-    missing_segments = instance_segments - connected_segments
-
-    if missing_segments:
-        missing_list = ", ".join(sorted(missing_segments))
-        raise Exception(f"The following segments do not contain cables: {missing_list}. Remove that segment from formboard definition and rerun.")
-
-    print("-All segments in formboard definition are used by one or more cables.")
 
 def update_parent_csys():
     instances = instances_list.read_instance_rows()
