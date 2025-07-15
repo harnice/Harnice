@@ -23,7 +23,8 @@ instances_list.make_new_list()
 # For each electrical circuit (or net) in your system
 # Circuit name is a string, ports is a dictionary that contains all the stuff on that circuit
 for circuit_name, ports in harness_yaml.load().items():
-    contact_counter = 1  # This helps automatically number contact points like contact1, contact2, etc.
+    port_counter = 0
+    contact_counter = 0  # This helps automatically number contact points like contact1, contact2, etc.
 
     # Go through each port in this circuit
     # Port label is the port, value is either a string or a dictionary
@@ -42,24 +43,29 @@ for circuit_name, ports in harness_yaml.load().items():
             instances_list.add_unless_exists(instance_name, {
                 "item_type": "Contact",  # This tells the software what kind of part this is
                 "mpn": value,
-                "supplier": supplier
+                "supplier": supplier,
+                "location_is_node_or_segment": "Node",
+                'circuit_id': circuit_name,
+                'circuit_id_port': port_counter
             })
 
         else:
             # Check the label of the port to decide what kind of part it is.
             # By default, anything starting with "X" or "W" is treated as a Connector.
             if re.match(r"X[^.]+", port_label):
-                item_type = "Connector"
+                instances_list.add_unless_exists(port_label,{
+                    "item_type": "Connector",
+                    "parent_instance": port_label,
+                    "location_is_node_or_segment": "Node",
+                })
             elif re.match(r"C[^.]+", port_label):
-                item_type = "Cable"
+                instances_list.add_unless_exists(port_label,{
+                    "item_type": "Cable",
+                    "parent_instance": port_label,
+                    "location_is_node_or_segment": "Segment",
+                })
             else:
-                item_type = ""  # If we don't know what this is, leave it blank.
-
-            # Add the connector (or unknown type) to the system
-            instances_list.add_unless_exists(port_label,{
-                "item_type": item_type,
-                "parent_instance": port_label
-            })
+                raise ValueError(f"Please define item {port_label}!")
 
             # If the port contains more detailed information (like cavity or conductor),
             # the value will be a dictionary with extra fields
@@ -72,7 +78,10 @@ for circuit_name, ports in harness_yaml.load().items():
                         instances_list.add_unless_exists(instance_name,{
                             "item_type": "Connector cavity",
                             "mpn": "N/A",  # Not applicable here, so we fill in "N/A"
-                            "parent_instance": port_label
+                            "parent_instance": port_label,
+                            "location_is_node_or_segment": "Node",
+                            'circuit_id': circuit_name,
+                            'circuit_id_port': port_counter
                         })
 
                     # If the field is "conductor", add a conductor under this wire
@@ -81,7 +90,10 @@ for circuit_name, ports in harness_yaml.load().items():
                         instances_list.add_unless_exists(instance_name,{
                             "item_type": "Conductor",
                             "mpn": "N/A",
-                            "parent_instance": port_label
+                            "parent_instance": port_label,
+                            "location_is_node_or_segment": "Segment",
+                            'circuit_id': circuit_name,
+                            'circuit_id_port': port_counter
                         })
 
                     # If the field is something else (like "shield" or "tag"), we still include it
@@ -93,6 +105,8 @@ for circuit_name, ports in harness_yaml.load().items():
                 # If the port is just a single value (not a dictionary), we still add it as a sub-instance
                 instance_name = f"{port_label}.{value}"
                 instances_list.add_instance_unless_exists(instance_name,{})
+        
+        port_counter += 1
 
 #================ DEFINE CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
@@ -140,8 +154,18 @@ for instance in instances_list.read_instance_rows():
                     "mpn": "M85049-88_9Z03",
                     "supplier": "public",
                     "item_type": "Backshell",
-                    "parent_instance": instance.get("instance_name")
+                    "parent_instance": instance.get("instance_name"),
+                    "location_is_node_or_segment": "Node"
                 })
+
+#=============== ASSIGN PARENTS TO WEIRD PARTS LIKE CONTACTS #===============
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Contact":
+        instance_name = instance.get("instance_name")
+        node_based_adjacent_port = instances_list.adjacent_node_based_port(instance_name)
+        instances_list.modify(instance_name,{
+            "parent_instance": node_based_adjacent_port,
+        })
 
 #================ ASSIGN CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
@@ -177,7 +201,6 @@ for instance in instances_list.read_instance_rows():
                 # if they do exist,
                 # checks for updates against the library
                 # checks for modifications against the library
-print()
 
 #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
 #generate nodes from connectors (locations on a formboard where parts live)
@@ -186,7 +209,8 @@ for instance in instances_list.read_instance_rows():
         connector_name = instance.get("instance_name")
         instances_list.add(f"{connector_name}.node",{
             "item_type": "Node",
-            "parent_instance": connector_name
+            "parent_instance": connector_name,
+            'location_is_node_or_segment': 'Node'
         })
 
 print()

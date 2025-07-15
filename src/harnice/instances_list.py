@@ -23,10 +23,11 @@ INSTANCES_LIST_COLUMNS = [
     'mpn',
     'item_type',
     'parent_instance', #<--------- change to functional_parent
+    'location_is_node_or_segment',
     'parent_csys', #<----------- change to parent_csys_instance
     'parent_csys_name', #<----------- add
-    'connects_to', #<---------- add
-    'connects_from', #<---------- add
+    'circuit_id',
+    'circuit_id_port',
     'supplier',
     'length',
     'diameter', #<---------- change to print_diameter
@@ -237,21 +238,6 @@ def add_bom_line_numbers():
     write_instance_rows(rows)
     return fileio.path('instances list')
 
-def add_nodes():
-    with open(fileio.path('formboard graph definition'), 'r') as f:
-        graph = yaml.safe_load(f)
-
-    node_set = set()
-    for seg in graph.values():
-        node_set.update([seg.get('segment_end_a'), seg.get('segment_end_b')])
-
-    for node in sorted(filter(None, node_set)):
-        append_instance_row({
-            'instance_name': node,
-            'item_type': 'Node',
-            'parent_instance': node
-        })
-
 def add_revhistory_of_imported_part(instance_name, rev_data):
     # Expected rev_data is a dict with keys from REVISION_HISTORY_COLUMNS
     with open(fileio.path("instances list"), newline='') as f:
@@ -300,6 +286,7 @@ def add_nodes_from_formboard():
             instances.append({
                 'instance_name': node_name,
                 'item_type': 'Node',
+                'location_is_node_or_segment': 'Node'
             })
 
     write_instance_rows(instances)
@@ -326,6 +313,7 @@ def add_segments_from_formboard():
                 'length': str(segment.get('length', '')),
                 'diameter': str(segment.get('diameter', '')),
                 'parent_csys': str(segment.get('segment_end_a', '')),
+                'location_is_node_or_segment': 'Segment'
             })
 
     write_instance_rows(instances)
@@ -535,6 +523,46 @@ def add_parent_instance_type():
         instance["parent_item_type"] = parent_item_type
 
     write_instance_rows(instances)
+
+def adjacent_node_based_port(target_instance):
+    for instance in read_instance_rows():
+        if instance.get("instance_name") == target_instance:
+            #assign parents to contacts based on the assumption that one of the two adjacent items in the circuit will be a node-item
+            if instance.get("circuit_id") == "" or instance.get("circuit_id_port") == "":
+                raise ValueError(f"Circuit order unspecified for {target_instance}")
+
+            circuit_id = instance.get("circuit_id")
+            circuit_id_port = int(instance.get("circuit_id_port"))
+
+            #find the adjacent port
+            prev_port = ""
+            prev_port_location_is_node_or_segment = ""
+            next_port = ""
+            next_port_location_is_node_or_segment = ""
+
+            for instance2 in read_instance_rows():
+                if instance2.get("circuit_id") == circuit_id:
+                    if int(instance2.get("circuit_id_port")) == circuit_id_port - 1:
+                        prev_port = instance2.get("instance_name")
+                        prev_port_location_is_node_or_segment = instance2.get("location_is_node_or_segment")
+                    if int(instance2.get("circuit_id_port")) == circuit_id_port + 1:
+                        next_port = instance2.get("instance_name")
+                        next_port_location_is_node_or_segment = instance2.get("location_is_node_or_segment")
+            
+            #learn wich adjacent port is node-based
+            node_based_adjacent_port = ""
+            if prev_port_location_is_node_or_segment == "Node":
+                if next_port_location_is_node_or_segment == "Segment":
+                    node_based_adjacent_port = prev_port
+                else:
+                    raise ValueError(f"Both adjacent ports to {instance.get("instance_name")} are nodes!")
+            elif prev_port_location_is_node_or_segment == "Segment":
+                if next_port_location_is_node_or_segment == "Node":
+                    node_based_adjacent_port = next_port
+                else:
+                    raise ValueError(f"Neither adjacent ports to {instance.get("instance_name")} are nodes!")
+
+            return node_based_adjacent_port
 
 """
 template instances list modifier:
