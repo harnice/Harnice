@@ -22,10 +22,9 @@ INSTANCES_LIST_COLUMNS = [
     'bom_line_number',
     'mpn',
     'item_type',
-    'parent_instance', #<--------- change to container_parent
-    'parent_csys', #<----------- change to location_parent
-    'parent_node', #<----------- add
-    'parent_segment', #<----------- add
+    'parent_instance', #<--------- change to functional_parent
+    'parent_csys', #<----------- change to parent_csys_instance
+    'parent_csys_name', #<----------- add
     'connects_to', #<---------- add
     'connects_from', #<---------- add
     'supplier',
@@ -274,93 +273,6 @@ def add_revhistory_of_imported_part(instance_name, rev_data):
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
         writer.writerows(rows)
-
-def update_parent_csys():
-    instances = read_instance_rows()
-    instance_lookup = {inst.get('instance_name'): inst for inst in instances}
-
-    for instance in instances:
-        instance_name = instance.get('instance_name', '').strip()
-        if not instance_name:
-            continue
-
-        # Build the path to the attributes JSON file
-        attributes_path = os.path.join(
-            fileio.dirpath("editable_instance_data"),
-            instance_name,
-            f"{instance_name}-attributes.json"
-        )
-
-        # Skip if the attributes file does not exist
-        if not os.path.exists(attributes_path):
-            continue
-
-        # Load the attributes JSON
-        try:
-            with open(attributes_path, 'r', encoding='utf-8') as f:
-                attributes_data = json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            continue  # Skip invalid or missing JSON
-
-        # Get csys_parent_prefs from attributes
-        csys_parent_prefs = attributes_data.get("plotting_info", {}).get("csys_parent_prefs", [])
-
-        # Iterate through parent preferences
-        for pref in csys_parent_prefs:
-            candidate_name = f"{instance.get("parent_instance")}{pref}"
-            if candidate_name in instance_lookup:
-                instance['parent_csys'] = candidate_name
-                break  # Found a match, exit early
-        # If no match, do nothing (parent_csys remains unchanged)
-
-    write_instance_rows(instances)
-
-def update_component_translate():
-    instances = read_instance_rows()
-    for instance in instances:
-        instance_name = instance.get('instance_name', '').strip()
-        if not instance_name:
-            continue
-
-        attributes_path = os.path.join(
-            fileio.dirpath("editable_instance_data"),
-            instance_name,
-            f"{instance_name}-attributes.json"
-        )
-
-        if not os.path.exists(attributes_path):
-            continue
-
-        try:
-            with open(attributes_path, "r", encoding="utf-8") as f:
-                attributes_data = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            continue
-
-        component_translate = (
-            attributes_data
-            .get("plotting_info", {})
-            .get("component_translate_inches", {})
-        )
-
-        if component_translate:
-            instance['translate_x'] = str(component_translate.get('translate_x', ''))
-            instance['translate_y'] = str(component_translate.get('translate_y', ''))
-            instance['rotate_csys'] = str(component_translate.get('rotate_csys', ''))
-
-    write_instance_rows(instances)
-
-def generate_nodes_from_connectors():
-    instances = read_instance_rows()
-
-    #Append a new '.node' child row
-    for instance in instances:
-        if instance.get('item_type') == "Connector":
-            append_instance_row({
-                'instance_name': instance.get('instance_name') + ".node",
-                'item_type': 'Node',
-                'parent_instance': instance.get('instance_name'),
-            })
 
 def add_nodes_from_formboard():
     instances = read_instance_rows()

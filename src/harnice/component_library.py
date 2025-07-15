@@ -129,21 +129,17 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
 
     return library_rev, revhistory_row
 
-def pull_parts():
-    print()
-    print("Importing parts from library")
-    print(f"{"ITEM NAME":<24}  STATUS")
+def pull_part(instance_name):
     load_dotenv()
     supported_library_components = ['connector', 'backshell']
     instances = instances_list.read_instance_rows()
 
     for instance in instances:
-        item_type = instance.get('item_type', '').lower()
         item_name = instance.get('instance_name')
-        if item_type not in supported_library_components:
-            print(f"{item_name:<24}  item type '{item_type}' not yet carried in library")
+        if not item_name == instance_name:
             continue
 
+        item_type = instance.get('item_type', '').lower()
         supplier = instance.get('supplier')
         mpn = instance.get('mpn', '')
         destination_directory = os.path.join(fileio.dirpath("editable_instance_data"), item_name)
