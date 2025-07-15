@@ -162,10 +162,19 @@ for instance in instances_list.read_instance_rows():
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Contact":
         instance_name = instance.get("instance_name")
-        node_based_adjacent_port = instances_list.adjacent_node_based_port(instance_name)
-        instances_list.modify(instance_name,{
-            "parent_instance": node_based_adjacent_port,
-        })
+        prev_port, next_port = instances_list.instance_names_of_adjacent_ports(instance_name)
+        prev_port_location_is_node_or_segment = instances_list.attribute_of(prev_port, "location_is_node_or_segment")
+        next_port_location_is_node_or_segment = instances_list.attribute_of(next_port, "location_is_node_or_segment")
+        if prev_port_location_is_node_or_segment == "Node" and next_port_location_is_node_or_segment == "Segment":
+            instances_list.modify(instance_name,{
+                "parent_instance": prev_port,
+            })
+        elif prev_port_location_is_node_or_segment == "Segment" and next_port_location_is_node_or_segment == "Node":
+            instances_list.modify(instance_name,{
+                "parent_instance": next_port,
+            })
+        else:
+            raise ValueError(f"Because adjacent ports are both port-based or both segment-based, I don't know what parent to assign to {instance_name}")
 
 #================ ASSIGN CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
