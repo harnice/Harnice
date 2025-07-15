@@ -131,6 +131,9 @@ def validate_nodes():
     if new_instance_rows:
         instances_list.append_instance_rows(new_instance_rows)
 
+    instances_list.add_nodes_from_formboard()
+    instances_list.add_segments_from_formboard()
+
 def generate_node_coordinates():
     # === Step 1: Read formboard graph definition ===
     try:

@@ -28,7 +28,8 @@ INSTANCES_LIST_COLUMNS = [
     'parent_csys_name', #<----------- add
     'circuit_id',
     'circuit_id_port',
-    'supplier',
+    'node_end_a',
+    'node_end_b',
     'length',
     'diameter', #<---------- change to print_diameter
     'translate_x',
@@ -39,6 +40,7 @@ INSTANCES_LIST_COLUMNS = [
     'note_number', #<--------- merge with parent_csys and import instances of child csys?
     'bubble_text',
     'parent_item_type', #<----- redundant, delete
+    'supplier',
     'lib_latest_rev',
     'lib_rev_used_here',
     'lib_status',
