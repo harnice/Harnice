@@ -26,8 +26,7 @@ INSTANCES_LIST_COLUMNS = [
     'location_is_node_or_segment',
     'parent_csys', #<----------- change to parent_csys_instance
     'parent_csys_name', #<----------- add
-    'connects_to', #<---------- add
-    'connects_from', #<---------- add
+    'circuit_id',
     'supplier',
     'length',
     'diameter', #<---------- change to print_diameter
