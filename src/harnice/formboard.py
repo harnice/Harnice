@@ -198,27 +198,18 @@ def validate_nodes():
             'location_is_node_or_segment': "Node",
         })
 
-    """
-    # === Detect loops ===
-    # Step 1: Read the formboard graph definition
-    try:
-        with open(fileio.path("formboard graph definition"), 'r') as file:
-            graph_definition = json.load(file)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Formboard graph definition not found: {fileio.name('formboard graph definition')}")
-    except json.JSONDecodeError:
-        raise ValueError(f"Invalid JSON in formboard graph definition: {fileio.name('formboard graph definition')}")
-
-    # Step 2: Build adjacency list
+    # === Detect loops (from instances list) ===
+    # Build adjacency from segments in instances list
     adjacency = defaultdict(list)
-    for segment in graph_definition.values():
-        node_a = segment.get('segment_end_a')
-        node_b = segment.get('segment_end_b')
-        if node_a and node_b:
-            adjacency[node_a].append(node_b)
-            adjacency[node_b].append(node_a)
+    for instance in instances_list.read_instance_rows():
+        if instance.get("item_type") == "Segment":
+            node_a = instance.get("node_at_end_a")
+            node_b = instance.get("node_at_end_b")
+            if node_a and node_b:
+                adjacency[node_a].append(node_b)
+                adjacency[node_b].append(node_a)
 
-    # Step 3: DFS to detect cycles
+    # DFS to detect cycles
     visited = set()
 
     def dfs(node, parent):
@@ -231,54 +222,10 @@ def validate_nodes():
                 return True
         return False
 
-    # Step 4: Check each connected component
     for node in adjacency:
         if node not in visited:
             if dfs(node, None):
-                raise Exception("Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet. ")
-
-    print("-No loops found in formboard graph definition.")
-    # No loops detected; function ends silently
-
-    #=== Detect dead segments ===
-    #Checks that every segment in the instances list is referenced in the connections_to_graph.
-    #Raises an exception listing missing segments if any are not connected to a cable.
-    # Step 1: Read connections_to_graph
-    try:
-        with open(fileio.path("connections to graph"), "r") as file:
-            connections_data = json.load(file)
-    except FileNotFoundError:
-        raise Exception(f"Connections to graph file not found: {fileio.name('connections to graph')}")
-    except json.JSONDecodeError:
-        raise Exception(f"Invalid JSON in file: {fileio.name('connections to graph')}")
-
-    connected_segments = set()
-    for cable_info in connections_data.values():
-        for segment in cable_info.get("segments", []):
-            if segment:
-                connected_segments.add(segment)
-
-    # Step 2: Read instances list
-    with open(fileio.path("instances list"), "r", newline='') as file:
-        reader = csv.DictReader(file, delimiter="\t")
-        instance_rows = list(reader)
-
-    instance_segments = set()
-    for instance in instance_rows:
-        if instance.get('item_type', '').strip() == "Segment":
-            segment_name = instance.get('instance_name', '').strip()
-            if segment_name:
-                instance_segments.add(segment_name)
-
-    # Step 3: Compare
-    missing_segments = instance_segments - connected_segments
-
-    if missing_segments:
-        missing_list = ", ".join(sorted(missing_segments))
-        raise Exception(f"The following segments do not contain cables: {missing_list}. Remove that segment from formboard definition and rerun.")
-
-    print("-All segments in formboard definition are used by one or more cables.")
-    """
+                raise Exception("Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet.")
 
 def generate_node_coordinates():
     # === Step 1: Read formboard graph definition ===
