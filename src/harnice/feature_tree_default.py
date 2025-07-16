@@ -249,10 +249,7 @@ for instance in instances_list.read_instance_rows():
             "length": cable_length
         })
 
-exit()
-
 formboard.generate_node_coordinates()
-instances_list.add_cable_lengths()
 wirelist.add_lengths()
 wirelist.tsv_to_xls()
 instances_list.add_absolute_angles_to_segments()

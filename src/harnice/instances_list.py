@@ -168,27 +168,6 @@ def modify(instance_name, instance_data):
 def make_new_list():
     write_instance_rows([])
 
-def add_cables():
-    yaml_data = load_yaml_data()
-    for cable_name, cable in yaml_data.get('cables', {}).items():
-        append_instance_row({
-            'instance_name': cable_name,
-            'mpn': cable.get('mpn', ''),
-            'item_type': 'Cable',
-            'supplier': cable.get('supplier', '')
-        })
-
-def add_cable_lengths():
-    with open(fileio.path('connections to graph'), 'r') as json_file:
-        graph_data = json.load(json_file)
-
-    instances = read_instance_rows()
-    for instance in instances:
-        if instance.get('item_type', '').lower() == 'cable':
-            instance['length'] = graph_data.get(instance['instance_name'], {}).get('total_length', '')
-
-    write_instance_rows(instances)
-
 def convert_to_bom():
     rows = read_instance_rows()
     mpn_groups = defaultdict(lambda: {'qty': 0, 'item_type': '', 'supplier': '', 'total_length': 0.0})

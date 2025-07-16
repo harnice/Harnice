@@ -228,26 +228,19 @@ def validate_nodes():
                 raise Exception("Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet.")
 
 def generate_node_coordinates():
-    # === Step 1: Read formboard graph definition ===
-    try:
-        with open(fileio.path("formboard graph definition"), "r") as file:
-            segment_data = json.load(file)
-    except FileNotFoundError:
-        print(f"File not found: {fileio.name('formboard graph definition')}")
-        return
-    except json.JSONDecodeError:
-        print(f"Invalid JSON in file: {fileio.name('formboard graph definition')}")
-        return
-
-    # === Step 2: Read instances list ===
+    # === Step 1: Load segments and nodes from instances_list ===
     instances = instances_list.read_instance_rows()
     instance_lookup = {inst.get('instance_name', ''): inst for inst in instances}
 
-    # === Step 3: Set origin node ===
+    segments = [inst for inst in instances if inst.get("item_type") == "Segment"]
+    nodes = [inst for inst in instances if inst.get("item_type") == "Node"]
+
+    # === Step 2: Determine origin node ===
     origin_node = ''
-    for segment in segment_data.values():
-        origin_node = segment.get("segment_end_a")
-        break
+    for seg in segments:
+        origin_node = seg.get("node_at_end_a")
+        if origin_node:
+            break
 
     if not origin_node:
         print("No node found to initialize coordinates.")
@@ -255,16 +248,16 @@ def generate_node_coordinates():
 
     print(f"-Origin node: '{origin_node}'")
 
-    # === Step 4: Build graph structure ===
+    # === Step 3: Build graph from segments ===
     graph = {}
-    for segment in segment_data.values():
-        a = segment.get("segment_end_a")
-        b = segment.get("segment_end_b")
+    for seg in segments:
+        a = seg.get("node_at_end_a")
+        b = seg.get("node_at_end_b")
         if a and b:
-            graph.setdefault(a, []).append((b, segment))
-            graph.setdefault(b, []).append((a, segment))
+            graph.setdefault(a, []).append((b, seg))
+            graph.setdefault(b, []).append((a, seg))
 
-    # === Step 5: Propagate node coordinates ===
+    # === Step 4: Propagate coordinates ===
     node_coordinates = {origin_node: (0.0, 0.0)}
     queue = deque([origin_node])
 
@@ -276,8 +269,13 @@ def generate_node_coordinates():
             if neighbor in node_coordinates:
                 continue
 
-            radians = math.radians(segment.get("angle"))
-            length = segment.get("length", 0)
+            try:
+                angle_deg = float(segment.get("absolute_rotation", 0))
+                length = float(segment.get("length", 0))
+            except ValueError:
+                continue
+
+            radians = math.radians(angle_deg)
             dx = length * math.cos(radians)
             dy = length * math.sin(radians)
 
@@ -286,14 +284,14 @@ def generate_node_coordinates():
             node_coordinates[neighbor] = (new_x, new_y)
             queue.append(neighbor)
 
-    # === Step 6: Update instances list with node coordinates ===
+    # === Step 5: Update each node in instances_list ===
     for node_name, (x, y) in node_coordinates.items():
-        instance = instance_lookup.get(node_name)
-        if instance:
-            instance['translate_x'] = str(x)
-            instance['translate_y'] = str(y)
+        instances_list.modify(node_name, {
+            "translate_x": str(x),
+            "translate_y": str(y)
+        })
 
-    # === Step 7: Prepare SVG visualization ===
+    # === Step 6: Prepare SVG visualization ===
     output_file_path = fileio.path("formboard graph definition svg")
 
     padding = 50
@@ -301,11 +299,17 @@ def generate_node_coordinates():
     font_size = 12
     scale = 96  # 96 pixels per inch
 
-    # Collect node coordinates for SVG
+    # Refresh to get updated coordinates
+    instances = instances_list.read_instance_rows()
     node_coordinates_svg = {
-        inst_name: (float(inst.get('translate_x', '')), float(inst.get('translate_y', '')))
-        for inst_name, inst in instance_lookup.items()
-        if inst.get('item_type') == 'Node' and inst.get('translate_x') and inst.get('translate_y')
+        inst.get("instance_name"): (
+            float(inst.get("translate_x", "0")),
+            float(inst.get("translate_y", "0"))
+        )
+        for inst in instances
+        if inst.get("item_type") == "Node"
+        and inst.get("translate_x")
+        and inst.get("translate_y")
     }
 
     if not node_coordinates_svg:
@@ -325,26 +329,23 @@ def generate_node_coordinates():
     svg_elements = []
     segment_midpoints = {}
 
-    # Draw segments
-    for segment_id, segment in segment_data.items():
-        end_a_name = segment.get('segment_end_a', '')
-        end_b_name = segment.get('segment_end_b', '')
-
-        coord_a = node_coordinates_svg.get(end_a_name)
-        coord_b = node_coordinates_svg.get(end_b_name)
+    for seg in segments:
+        a = seg.get("node_at_end_a")
+        b = seg.get("node_at_end_b")
+        coord_a = node_coordinates_svg.get(a)
+        coord_b = node_coordinates_svg.get(b)
 
         if coord_a and coord_b:
             start_x, start_y = map_coordinates(*coord_a)
             end_x, end_y = map_coordinates(*coord_b)
 
-            # Midpoint in SVG units
             mid_x_svg = (start_x + end_x) / 2
             mid_y_svg = (start_y + end_y) / 2
 
-            # Convert midpoint back to logical inches
             mid_x_logical = (mid_x_svg + min_x - padding) / scale
             mid_y_logical = (height - mid_y_svg + min_y - padding) / scale
 
+            segment_id = seg.get("instance_name", "")
             segment_midpoints[segment_id] = (round(mid_x_logical, 2), round(mid_y_logical, 2))
 
             svg_elements.append(
@@ -356,7 +357,6 @@ def generate_node_coordinates():
                 f'text-anchor="middle" fill="blue">{segment_id}</text>'
             )
 
-    # Draw nodes
     for node_name, (x_logical, y_logical) in node_coordinates_svg.items():
         x, y = map_coordinates(x_logical, y_logical)
         label = node_name.removesuffix(".node")
@@ -366,7 +366,6 @@ def generate_node_coordinates():
             f'text-anchor="middle" fill="black">{label}</text>'
         )
 
-    # Write SVG file
     svg_content = (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}">'
@@ -375,9 +374,6 @@ def generate_node_coordinates():
     )
     with open(output_file_path, "w") as output_file:
         output_file.write(svg_content)
-
-    # === Step 8: Write all modified instances back ===
-    instances_list.write_instance_rows(instances)
 
 def map_instance_to_segments(instance_name):
     # Ensure you're trying to map an instance that is segment-based.
