@@ -30,6 +30,8 @@ INSTANCES_LIST_COLUMNS = [
     'circuit_id_port',
     'length',
     'diameter', #<---------- change to print_diameter
+    'node_at_end_a',
+    'node_at_end_b',
     'translate_x',
     'translate_y',
     'rotate_csys',

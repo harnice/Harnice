@@ -186,6 +186,8 @@ def validate_nodes():
             'location_is_node_or_segment': "Segment",
             'length': segment.get('length'),
             'diameter': segment.get('diameter'),
+            'node_at_end_a': segment.get('node_at_end_a'),
+            'node_at_end_b': segment.get('node_at_end_b'),
             'absolute_rotation': segment.get('angle')
         })
     
@@ -439,6 +441,15 @@ def map_instance_to_segments(instance_name):
     prev_instance, next_instance = instances_list.instance_names_of_adjacent_ports(instance_name)
     node_of_prev_instance = instances_list.recursive_parent_search(prev_instance, "parent_instance", "item_type", "Node")
     node_of_next_instance = instances_list.recursive_parent_search(next_instance, "parent_instance", "item_type", "Node")
+
+"""
+    print("!!!!!!!!!")
+    print(node_of_prev_instance)
+    print(instance_name)
+    print(node_of_next_instance)
+    print()
+"""
+
 
 def update_parent_csys():
     instances = instances_list.read_instance_rows()
