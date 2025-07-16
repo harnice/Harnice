@@ -380,23 +380,70 @@ def generate_node_coordinates():
     instances_list.write_instance_rows(instances)
 
 def map_instance_to_segments(instance_name):
-    #ensure you're trying to map an instance that is segment-based.
+    # Ensure you're trying to map an instance that is segment-based.
     if not instances_list.attribute_of(instance_name, "location_is_node_or_segment") == "Segment":
         raise ValueError(f"You're trying to map a non segment-based instance {instance_name} across segments.")
 
-    #find the start node
+    # Find terminal nodes from the ports
     prev_instance, next_instance = instances_list.instance_names_of_adjacent_ports(instance_name)
     node_of_prev_instance = instances_list.recursive_parent_search(prev_instance, "parent_instance", "item_type", "Node")
     node_of_next_instance = instances_list.recursive_parent_search(next_instance, "parent_instance", "item_type", "Node")
 
-"""
-    print("!!!!!!!!!")
-    print(node_of_prev_instance)
-    print(instance_name)
-    print(node_of_next_instance)
-    print()
-"""
+    # Build graph of segments
+    segments = [
+        inst for inst in instances_list.read_instance_rows()
+        if inst.get("item_type") == "Segment"
+    ]
 
+    graph = {}
+    segment_lookup = {}  # frozenset({A, B}) -> instance_name
+
+    for seg in segments:
+        a = seg.get("node_at_end_a")
+        b = seg.get("node_at_end_b")
+        seg_name = seg.get("instance_name")
+        if not a or not b:
+            continue
+        graph.setdefault(a, set()).add(b)
+        graph.setdefault(b, set()).add(a)
+        segment_lookup[frozenset([a, b])] = seg_name
+
+    # BFS to find a node path
+    from collections import deque
+    queue = deque([(node_of_prev_instance, [node_of_prev_instance])])
+    visited = set()
+
+    while queue:
+        current, path = queue.popleft()
+        if current in visited:
+            continue
+        visited.add(current)
+
+        if current == node_of_next_instance:
+            # Convert node path to segment names
+            segment_path = []
+            for i in range(len(path) - 1):
+                a, b = path[i], path[i + 1]
+                seg = segment_lookup.get(frozenset([a, b]))
+                if seg:
+                    segment_path.append(seg)
+            break
+        for neighbor in graph.get(current, []):
+            if neighbor not in visited:
+                queue.append((neighbor, path + [neighbor]))
+    else:
+        raise ValueError(f"No segment path found between {node_of_prev_instance} and {node_of_next_instance}")
+
+    # Add a new instance for each connected segment
+    for seg_name in segment_path:
+        instances_list.add_unless_exists(f"{instance_name}.{seg_name}", {
+            "item_type": "Hardware segment",
+            "parent_instance": instance_name,
+            "parent_csys": seg_name,
+            "mpn": "N/A",
+            "location_is_node_or_segment": "Segment",
+            "length": instances_list.attribute_of(seg_name, 'length')
+        })
 
 def update_parent_csys():
     instances = instances_list.read_instance_rows()
