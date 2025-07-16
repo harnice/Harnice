@@ -14,12 +14,7 @@ Terminology:
 - The "nets" connecting ports are implied by being in the same circuit; they are not explicitly listed.
 """
 
-#=============== INITIALIZE INSTANCES LIST #===============
-# make a list of every single instance in the project
-instances_list.make_new_list()
-    # makes blank document
-
-#=============== GENERATE INSTANCES FROM ESCH #===============
+#=============== START POPULATING INSTANCES FROM ESCH #===============
 # For each electrical circuit (or net) in your system
 # Circuit name is a string, ports is a dictionary that contains all the stuff on that circuit
 for circuit_name, ports in harness_yaml.load().items():
@@ -55,13 +50,17 @@ for circuit_name, ports in harness_yaml.load().items():
             if re.match(r"X[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{
                     "item_type": "Connector",
-                    "parent_instance": port_label,
+                    "parent_instance": f"{port_label}.node",
                     "location_is_node_or_segment": "Node",
+                })
+                instances_list.add_unless_exists(f"{port_label}.node",{
+                    "item_type": "Node",
+                    "location_is_node_or_segment": "Node",
+                    "mpn": "N/A"
                 })
             elif re.match(r"C[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{
                     "item_type": "Cable",
-                    "parent_instance": port_label,
                     "location_is_node_or_segment": "Segment",
                 })
             else:
@@ -180,7 +179,8 @@ for instance in instances_list.read_instance_rows():
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
 
 #================ GENERATE A WIRELIST BASED ON EXISTING DATA IN INSTANCES_LIST #===============
-wirelist.newlist()
+#TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/199
+#wirelist.newlist()
 
 #=============== IMPORTING PARTS FROM LIBRARY #===============
 print()
@@ -211,33 +211,49 @@ for instance in instances_list.read_instance_rows():
                 # checks for updates against the library
                 # checks for modifications against the library
 
-#=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
-#generate nodes from connectors (locations on a formboard where parts live)
+#=============== LOOK UP PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
+#TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
 for instance in instances_list.read_instance_rows():
-    if instance.get("item_type") == "Connector":
-        connector_name = instance.get("instance_name")
-        instances_list.add(f"{connector_name}.node",{
-            "item_type": "Node",
-            "parent_instance": connector_name,
-            'location_is_node_or_segment': 'Node'
-        })
+    if instance.get("item_type") in ["Connector"]:
+        formboard.update_parent_csys(instance.get("instance_name"))
 
-print()
-print("Validating your formboard graph is structured properly...")
-formboard.update_parent_csys()
+
+#=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
 formboard.update_component_translate()
 formboard.validate_nodes()
-instances_list.add_nodes_from_formboard()
-instances_list.add_segments_from_formboard()
-formboard.map_cables_to_segments()
-formboard.detect_loops()
-formboard.detect_dead_segments()
+
+# map conductors to segments
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Conductor":
+        formboard.map_instance_to_segments(instance.get("instance_name"))
+
+# get lengths of conductors
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Conductor":
+        conductor_length = 0
+        for instance2 in instances_list.read_instance_rows():
+            if instance2.get("parent_instance") == instance.get("instance_name"):
+                conductor_length += int(instance2.get("length", "").strip()) if instance2.get("length", "").strip() else 0
+        instances_list.modify(instance.get("instance_name"), {
+            "length": conductor_length
+        })
+
+# get lengths of cables (take the length of the longest contained conductor)
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Cable":
+        cable_length = 0
+        for instance2 in instances_list.read_instance_rows():
+            if instance2.get("parent_instance") == instance.get("instance_name"):
+                child_length = int(instance2.get("length", "").strip())
+                if child_length > cable_length:
+                    cable_length = child_length
+        instances_list.modify(instance.get("instance_name"), {
+            "length": cable_length
+        })
+
 formboard.generate_node_coordinates()
-instances_list.add_cable_lengths()
 wirelist.add_lengths()
 wirelist.tsv_to_xls()
-instances_list.add_absolute_angles_to_segments()
-instances_list.add_angles_to_nodes()
 
 #=============== GENERATING A BOM #===============
 instances_list.convert_to_bom()

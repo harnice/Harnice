@@ -28,9 +28,10 @@ INSTANCES_LIST_COLUMNS = [
     'parent_csys_name', #<----------- add
     'circuit_id',
     'circuit_id_port',
-    'supplier',
     'length',
     'diameter', #<---------- change to print_diameter
+    'node_at_end_a',
+    'node_at_end_b',
     'translate_x',
     'translate_y',
     'rotate_csys',
@@ -38,7 +39,7 @@ INSTANCES_LIST_COLUMNS = [
     'note_type',
     'note_number', #<--------- merge with parent_csys and import instances of child csys?
     'bubble_text',
-    'parent_item_type', #<----- redundant, delete
+    'supplier',
     'lib_latest_rev',
     'lib_rev_used_here',
     'lib_status',
@@ -166,27 +167,6 @@ def modify(instance_name, instance_data):
 def make_new_list():
     write_instance_rows([])
 
-def add_cables():
-    yaml_data = load_yaml_data()
-    for cable_name, cable in yaml_data.get('cables', {}).items():
-        append_instance_row({
-            'instance_name': cable_name,
-            'mpn': cable.get('mpn', ''),
-            'item_type': 'Cable',
-            'supplier': cable.get('supplier', '')
-        })
-
-def add_cable_lengths():
-    with open(fileio.path('connections to graph'), 'r') as json_file:
-        graph_data = json.load(json_file)
-
-    instances = read_instance_rows()
-    for instance in instances:
-        if instance.get('item_type', '').lower() == 'cable':
-            instance['length'] = graph_data.get(instance['instance_name'], {}).get('total_length', '')
-
-    write_instance_rows(instances)
-
 def convert_to_bom():
     rows = read_instance_rows()
     mpn_groups = defaultdict(lambda: {'qty': 0, 'item_type': '', 'supplier': '', 'total_length': 0.0})
@@ -259,144 +239,6 @@ def add_revhistory_of_imported_part(instance_name, rev_data):
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
         writer.writerows(rows)
-
-def add_nodes_from_formboard():
-    instances = read_instance_rows()
-
-    try:
-        with open(fileio.path("formboard graph definition"), "r") as f:
-            formboard_data = json.load(f)
-    except FileNotFoundError:
-        print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
-        formboard_data = {}
-
-    # Find all nodes already defined in formboard
-    nodes_in_formboard = set()
-    for segment in formboard_data.values():
-        nodes_in_formboard.add(segment.get('segment_end_a', ''))
-        nodes_in_formboard.add(segment.get('segment_end_b', ''))
-    nodes_in_formboard.discard('')
-
-    # Collect all known instance names for lookup
-    existing_instance_names = {instance.get('instance_name', '') for instance in instances}
-
-    # Add any node from formboard that's missing in instances list
-    for node_name in nodes_in_formboard:
-        if node_name and node_name not in existing_instance_names:
-            instances.append({
-                'instance_name': node_name,
-                'item_type': 'Node',
-                'location_is_node_or_segment': 'Node'
-            })
-
-    write_instance_rows(instances)
-
-def add_segments_from_formboard():
-    instances = read_instance_rows()
-
-    try:
-        with open(fileio.path("formboard graph definition"), "r") as f:
-            formboard_data = json.load(f)
-    except FileNotFoundError:
-        print(f"Warning: Formboard definition file not found at {fileio.name('formboard graph definition')}")
-        formboard_data = {}
-
-    # Gather all existing instance names to avoid duplicates
-    existing_instance_names = {inst.get('instance_name', '') for inst in instances}
-
-    # Append segments that are missing in the instances list
-    for segment_name, segment in formboard_data.items():
-        if segment_name not in existing_instance_names:
-            instances.append({
-                'instance_name': segment_name,
-                'item_type': 'Segment',
-                'length': str(segment.get('length', '')),
-                'diameter': str(segment.get('diameter', '')),
-                'parent_csys': str(segment.get('segment_end_a', '')),
-                'location_is_node_or_segment': 'Segment'
-            })
-
-    write_instance_rows(instances)
-
-
-def parent(instance_name):
-    instances = read_instance_rows()
-    for instance in instances:
-        if instance.get('instance_name') == instance_name:
-            print(f" for known child: {instance.get('instance_name')}")
-            print(f"returning parent: {instance.get('parent_instance')}")
-            return instance.get('parent_instance')
-
-def add_angles_to_nodes():
-    #open formboard definition file
-    #for each instance in instances list:
-        #if item type == Node:
-            #average_angle = 0
-            #angle_counter = 0
-            #for each time instance_name is found as a node of a segment within formboard definition:
-                #average_angle += angle of segment
-                #angle_counter += 1
-            #average_angle = average_angle / angle_counter
-            #store average_angle into field 'rotate_csys' of instances list
-
-    #write instances list
-
-    # Load formboard graph definition
-    with open(fileio.path("formboard graph definition"), "r") as f:
-        formboard_data = json.load(f)
-
-    # Read instances list
-    instances = read_instance_rows()
-    instance_lookup = {row['instance_name']: row for row in instances}
-
-    # For each Node, compute average angle
-    for instance in instances:
-        if instance.get("item_type") != "Node":
-            continue
-
-        instance_name = instance.get("instance_name", "")
-        total_angle = 0
-        count = 0
-
-        for segment in formboard_data.values():
-            if segment.get("segment_end_a") == instance_name or segment.get("segment_end_b") == instance_name:
-                angle = segment.get("angle")
-                if segment.get("segment_end_a") == instance_name:
-                    angle += 180
-                if isinstance(angle, (int, float)):
-                    total_angle += angle 
-                    count += 1
-                #flip influences from the A side of each segment
-
-        if count > 0:
-            average_angle = round(total_angle / count, 2)
-            instance["rotate_csys"] = str(average_angle)
-        else:
-            instance["rotate_csys"] = ""
-
-        #keep it to 360 deg
-        while total_angle >= 360:
-            total_angle -= 360
-
-    write_instance_rows(instances)
-
-def add_absolute_angles_to_segments():
-    # Load formboard graph definition
-    with open(fileio.path("formboard graph definition"), "r") as f:
-        formboard_data = json.load(f)
-
-    # Read instances list
-    instances = read_instance_rows()
-
-    # For each Segment instance, add the angle to the instances list
-    for instance in instances:
-        if instance.get("item_type") == "Segment":
-            instance_name = instance.get("instance_name", "")
-            segment_data = formboard_data.get(instance_name, {})
-            angle = segment_data.get("angle", "")
-            instance["absolute_rotation"] = str(angle) if angle != "" else ""
-
-    write_instance_rows(instances)
 
 def add_flagnotes():
     # === Step 1: Load existing instance rows ===
@@ -511,19 +353,6 @@ def add_flagnotes():
         }
         append_instance_row(flagnote_instance)
 
-def add_parent_instance_type():
-    instances = read_instance_rows()
-    instance_lookup = {inst.get("instance_name"): inst for inst in instances}
-
-    for instance in instances:
-        parent = instance.get("parent_instance", "").strip()
-        parent_item_type = ""
-        if parent in instance_lookup:
-            parent_item_type = instance_lookup[parent].get("item_type", "").strip()
-        instance["parent_item_type"] = parent_item_type
-
-    write_instance_rows(instances)
-
 def instance_names_of_adjacent_ports(target_instance):
     for instance in read_instance_rows():
         if instance.get("instance_name") == target_instance:
@@ -551,6 +380,18 @@ def attribute_of(target_instance, attribute):
     for instance in read_instance_rows():
         if instance.get("instance_name") == target_instance:
             return instance.get(attribute)
+
+def recursive_parent_search(start_instance, parent_type, attribute_name, wanted_attribute_value):
+    wanted_instance = start_instance
+
+    while not attribute_of(wanted_instance, attribute_name) == wanted_attribute_value:
+        wanted_instance = attribute_of(wanted_instance, parent_type)
+        if wanted_instance == "" or wanted_instance == None:
+            raise ValueError(
+                f"Instance with '{attribute_name}' equal to '{wanted_attribute_value}' not found in the {parent_type} lineage of instance {start_instance}"
+            )
+
+    return wanted_instance
 
 """
 template instances list modifier:
