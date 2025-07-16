@@ -55,8 +55,13 @@ for circuit_name, ports in harness_yaml.load().items():
             if re.match(r"X[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{
                     "item_type": "Connector",
-                    "parent_instance": port_label,
+                    "parent_instance": f"{port_label}.node",
                     "location_is_node_or_segment": "Node",
+                })
+                instances_list.add_unless_exists(f"{port_label}.node",{
+                    "item_type": "Node",
+                    "location_is_node_or_segment": "Node",
+                    "mpn": "N/A"
                 })
             elif re.match(r"C[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{
@@ -212,22 +217,18 @@ for instance in instances_list.read_instance_rows():
                 # checks for modifications against the library
 
 #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
-#generate nodes from connectors (locations on a formboard where parts live)
-for instance in instances_list.read_instance_rows():
-    if instance.get("item_type") == "Connector":
-        connector_name = instance.get("instance_name")
-        instances_list.add(f"{connector_name}.node",{
-            "item_type": "Node",
-            "parent_instance": connector_name,
-            'location_is_node_or_segment': 'Node'
-        })
 
 print()
 print("Validating your formboard graph is structured properly...")
 formboard.update_parent_csys()
 formboard.update_component_translate()
 formboard.validate_nodes()
-formboard.map_cables_to_segments()
+
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Conductor":
+        formboard.map_instance_to_segments(instance.get("instance_name"))
+exit()
+
 formboard.generate_node_coordinates()
 instances_list.add_cable_lengths()
 wirelist.add_lengths()

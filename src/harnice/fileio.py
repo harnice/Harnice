@@ -90,6 +90,7 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.formboard_graph_definition.tsv":"formboard graph definition",
                 f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
                 f"{partnumber("pn-rev")}-esch.yaml":"harness yaml",
+                f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
                 "editable_instance_data":{},
                 "page_setup":{
                     f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
@@ -103,7 +104,6 @@ def harnice_file_structure():
                         f"{partnumber("pn-rev")}.buildnotes_list.tsv":"buildnotes list",
                         f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
                         f"{partnumber("pn-rev")}.flagnotes_list.tsv":"flagnotes list",
-                        f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
                         f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
                         f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted"
                     },

@@ -28,8 +28,6 @@ INSTANCES_LIST_COLUMNS = [
     'parent_csys_name', #<----------- add
     'circuit_id',
     'circuit_id_port',
-    'node_end_a',
-    'node_end_b',
     'length',
     'diameter', #<---------- change to print_diameter
     'translate_x',
@@ -266,8 +264,6 @@ def parent(instance_name):
     instances = read_instance_rows()
     for instance in instances:
         if instance.get('instance_name') == instance_name:
-            print(f" for known child: {instance.get('instance_name')}")
-            print(f"returning parent: {instance.get('parent_instance')}")
             return instance.get('parent_instance')
 
 def add_angles_to_nodes():
@@ -494,6 +490,18 @@ def attribute_of(target_instance, attribute):
     for instance in read_instance_rows():
         if instance.get("instance_name") == target_instance:
             return instance.get(attribute)
+
+def recursive_parent_search(start_instance, parent_type, attribute_name, wanted_attribute_value):
+    wanted_instance = start_instance
+
+    while not attribute_of(wanted_instance, attribute_name) == wanted_attribute_value:
+        wanted_instance = attribute_of(wanted_instance, parent_type)
+        if wanted_instance == "" or wanted_instance == None:
+            raise ValueError(
+                f"Instance with '{attribute_name}' equal to '{wanted_attribute_value}' not found in the {parent_type} lineage of instance {start_instance}"
+            )
+
+    return wanted_instance
 
 """
 template instances list modifier:

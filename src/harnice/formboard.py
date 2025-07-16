@@ -18,9 +18,6 @@ FORMBOARD_TSV_COLUMNS = [
     "diameter"
 ]
 
-import csv
-from harnice import fileio
-
 def read_segment_rows():
     """
     Reads all rows from the formboard graph definition TSV.
@@ -55,17 +52,7 @@ def append_segment_row(data_dict):
         writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter='\t')
         writer.writerow({key: data_dict.get(key, '') for key in FORMBOARD_TSV_COLUMNS})
 
-def add_segment(segment_id, segment_data):
-    """
-    Adds a new segment to the formboard graph definition TSV.
-
-    Args:
-        segment_id (str): Unique segment identifier.
-        segment_data (dict): Dictionary of segment attributes. May include "segment_id".
-
-    Raises:
-        ValueError: If segment_id is missing, already exists, or conflicts with segment_data["segment_id"].
-    """
+def add_segment_to_formboard_def(segment_id, segment_data):
     if not segment_id:
         raise ValueError("Missing required argument: 'segment_id'")
 
@@ -103,13 +90,10 @@ def validate_nodes():
             writer = csv.DictWriter(f, delimiter='\t', fieldnames=FORMBOARD_TSV_COLUMNS)
             writer.writeheader()
 
-    instances = instances_list.read_instance_rows()
-    new_instance_rows = []
-
     # Collect node names from the instance list
     nodes_from_instances_list = {
         instance.get("instance_name")
-        for instance in instances
+        for instance in instances_list.read_instance_rows()
         if instance.get("item_type") == "Node"
     }
 
@@ -120,111 +104,99 @@ def validate_nodes():
         nodes_from_formboard_definition.add(row.get("node_at_end_b", ""))
     nodes_from_formboard_definition.discard("")
 
-    # --- Case 1: No segments yet ---
+    # --- Case 1: No segments exist in formboard definition yet, build from scratch ---
     if not read_segment_rows():
+        #if there are 3 or more nodes already defined by the instances list (probably by a connector or something)
         if len(nodes_from_instances_list) > 2:
+            #add a center origin node
             origin_node = "node1"
             node_counter = 0
+            #add one segment per node connecting to the origin node
             for instance in instances_list.read_instance_rows():
                 if instance.get("item_type") == "Node":
-                    segment_id = instance.get("parent_instance") + "_leg"
-                    segment_data = {
-                        "segment_id": segment_id,
+                    segment_id = instance.get("instance_name") + "_leg"
+                    add_segment_to_formboard_def(segment_id, {
                         "node_at_end_a": instance.get("instance_name") if node_counter == 0 else origin_node,
                         "node_at_end_b": origin_node if node_counter == 0 else instance.get("instance_name"),
                         "length": str(random.randint(6, 18)),
                         "angle": str(0 if node_counter == 0 else random.randint(0, 359)),
                         "diameter": "0.1"
-                    }
-                    add_segment(segment_id, segment_data)
+                    })
                     node_counter += 1
+
+        #else, if there are only two nodes already defined by the instances list (two connectors)
         elif len(nodes_from_instances_list) == 2:
+            #make one segment
             segment_id = "segment"
+
+            #that has two ends of the two nodes in the instances list
             segment_ends = []
             for instance in instances_list.read_instance_rows():
                 if instance.get("item_type") == "Node":
                     segment_ends.append(instance.get("instance_name"))
 
-            if len(segment_ends) != 2:
-                raise ValueError("Expected exactly two nodes to connect, but found different number.")
-
-            segment_data = {
-                "segment_id": segment_id,
+            add_segment(segment_id, {
                 "node_at_end_a": segment_ends[0],
                 "node_at_end_b": segment_ends[1],
                 "length": str(random.randint(6, 18)),
-                "angle": "0",
+                "angle": str(0 if node_counter == 0 else random.randint(0, 359)),
                 "diameter": "0.1"
-            }
-            add_segment(segment_id, segment_data)
+            })
+
         else:
             raise ValueError("Fewer than two nodes defined, cannot build segments.")
-
-    # --- Case 2: Segments already exist ---
+    
+    # --- Case 2: Some nodes exist in the formboard definition tsv but not all of them---
     else:
-        missing_nodes = nodes_from_instances_list - nodes_from_formboard_definition
+        nodes_from_instances_list_not_in_formboard_def = nodes_from_instances_list - nodes_from_formboard_definition
 
-        if not missing_nodes:
-            return  # All nodes already connected
-
-        if len(nodes_from_instances_list) > 2:
-            addon_node = ""
-            for instance in instances_list.read_instance_rows():
-                if instance.get("item_type") == "Node" and instance.get("parent_instance") == "":
-                    addon_node = instance.get("instance_name")
-                    break
-            if not addon_node:
+        if nodes_from_instances_list_not_in_formboard_def:
+            if len(nodes_from_instances_list) > 2:
+                addon_node = ""
                 for instance in instances_list.read_instance_rows():
-                    if instance.get("item_type") == "Node":
+                    if instance.get("item_type") == "Node" and instance.get("parent_instance") == "":
                         addon_node = instance.get("instance_name")
                         break
+                if not addon_node:
+                    for instance in instances_list.read_instance_rows():
+                        if instance.get("item_type") == "Node":
+                            addon_node = instance.get("instance_name")
+                            break
 
-            for missing_node in missing_nodes:
-                segment_id = f"{missing_node}_leg"
-                if segment_attribute_of(segment_id, "segment_id") is not None:
-                    continue
+                for missing_node in nodes_from_instances_list_not_in_formboard_def:
+                    instances_list.add_unless_exists(missing_node,{
+                        "instance_name": missing_node,
+                        "mpn": "N/A",
+                        "item_type": "Node",
+                        "location_is_node_or_segment": "Node"
+                    })
 
-                segment_data = {
-                    "segment_id": segment_id,
-                    "node_at_end_a": addon_node,
-                    "node_at_end_b": missing_node,
-                    "length": str(random.randint(6, 18)),
-                    "angle": str(random.randint(0, 359)),
-                    "diameter": "0.1"
-                }
-                add_segment(segment_id, segment_data)
-        else:
-            raise ValueError("Unexpected condition: Missing nodes but <= 2 total nodes.")
+                    segment_id = f"{missing_node}_leg"
 
-    if new_instance_rows:
-        instances_list.append_instance_rows(new_instance_rows)
-
-    # === Inlined: add_nodes_from_formboard ===
-    existing_instance_names = {instance.get("instance_name", "") for instance in instances}
-    for row in read_segment_rows():
-        for node_name in (row.get("node_at_end_a", ""), row.get("node_at_end_b", "")):
-            if node_name and node_name not in existing_instance_names:
-                instances.append({
-                    "instance_name": node_name,
-                    "item_type": "Node",
-                    "location_is_node_or_segment": "Node"
-                })
+                    whatever_node_to_attach_new_leg_to = ""
+                    for instance in instances_list.read_instance_rows():
+                        if instance.get("item_type") == "Node":
+                            whatever_node_to_attach_new_leg_to = instance.get("instance_name")
+                            continue
     
-    # === Inlined: add_segments_from_formboard ===
-    for row in read_segment_rows():
-        segment_id = row.get("segment_id", "")
-        if segment_id and segment_id not in existing_instance_names:
-            instances.append({
-                "instance_name": segment_id,
-                "item_type": "Segment",
-                "length": row.get("length", ""),
-                "diameter": row.get("diameter", ""),
-                "parent_csys": row.get("node_at_end_a", ""),
-                "location_is_node_or_segment": "Segment"
-            })
+    for segment in read_segment_rows():
+        instances_list.add_unless_exists(segment.get('segment_id'),{
+            "mpn": "N/A",
+            'item_type': 'Segment',
+            'location_is_node_or_segment': "Segment",
+            'length': segment.get('length'),
+            'diameter': segment.get('diameter'),
+            'absolute_rotation': segment.get('angle')
+        })
     
-    instances_list.write_instance_rows(instances)
+    for node in nodes_from_formboard_definition:
+        instances_list.add_unless_exists(node,{
+            "mpn": "N/A",
+            'item_type': 'Node',
+            'location_is_node_or_segment': "Node",
+        })
 
+    """
     # === Detect loops ===
     # Step 1: Read the formboard graph definition
     try:
@@ -267,10 +239,8 @@ def validate_nodes():
     # No loops detected; function ends silently
 
     #=== Detect dead segments ===
-    """
-    Checks that every segment in the instances list is referenced in the connections_to_graph.
-    Raises an exception listing missing segments if any are not connected to a cable.
-    """
+    #Checks that every segment in the instances list is referenced in the connections_to_graph.
+    #Raises an exception listing missing segments if any are not connected to a cable.
     # Step 1: Read connections_to_graph
     try:
         with open(fileio.path("connections to graph"), "r") as file:
@@ -306,6 +276,7 @@ def validate_nodes():
         raise Exception(f"The following segments do not contain cables: {missing_list}. Remove that segment from formboard definition and rerun.")
 
     print("-All segments in formboard definition are used by one or more cables.")
+    """
 
 def generate_node_coordinates():
     # === Step 1: Read formboard graph definition ===
@@ -459,114 +430,15 @@ def generate_node_coordinates():
     # === Step 8: Write all modified instances back ===
     instances_list.write_instance_rows(instances)
 
-def map_cables_to_segments():
-    from collections import defaultdict, deque
+def map_instance_to_segments(instance_name):
+    #ensure you're trying to map an instance that is segment-based.
+    if not instances_list.attribute_of(instance_name, "location_is_node_or_segment") == "Segment":
+        raise ValueError(f"You're trying to map a non segment-based instance {instance_name} across segments.")
 
-    instances = instances_list.read_instance_rows()
-
-    wirelist = []
-    with open(fileio.path("wirelist no formats"), 'r', newline='') as file:
-        reader = csv.DictReader(file, delimiter='\t')
-        for row in reader:
-            wirelist.append({k: v for k, v in row.items()})
-
-    try:
-        with open(fileio.path("formboard graph definition"), 'r') as file:
-            formboard_graph_definition = json.load(file)
-    except FileNotFoundError:
-        print(f"Graph definition file not found: {fileio.name('formboard graph definition')}")
-        return
-
-    graph = defaultdict(set)
-    segment_map = {}
-    for segment_id, details in formboard_graph_definition.items():
-        node_a = details.get('segment_end_a', '')
-        node_b = details.get('segment_end_b', '')
-        length = details.get('length', 0)
-
-        if not node_a or not node_b:
-            continue
-
-        graph[node_a].add(node_b)
-        graph[node_b].add(node_a)
-
-        segment_map[frozenset([node_a, node_b])] = {
-            'segment': segment_id,
-            'length': length
-        }
-
-    def find_path_with_segments(source_node, destination_node):
-        if source_node not in graph or destination_node not in graph:
-            return [], 0
-        queue = deque([(source_node, [], 0)])
-        visited = set()
-        while queue:
-            current, segment_path, total_length = queue.popleft()
-            if current == destination_node:
-                return segment_path, total_length
-            if current in visited:
-                continue
-            visited.add(current)
-            for neighbor in graph[current]:
-                if neighbor not in visited:
-                    seg_info = segment_map.get(frozenset([current, neighbor]), {})
-                    seg_id = seg_info.get('segment')
-                    seg_length = seg_info.get('length', 0)
-                    queue.append((neighbor, segment_path + [seg_id], total_length + seg_length))
-        return [], 0
-
-    connections_to_graph = {}
-
-    for instance in instances:
-        if instance.get('item_type') != 'Cable':
-            continue
-
-        cable_name = instance.get('instance_name')
-        if not cable_name:
-            continue
-
-        matching_rows = [row for row in wirelist if row.get('Wire', '') == cable_name]
-
-        if not matching_rows:
-            continue
-
-        total_segments = []
-        total_cable_length = 0
-
-        for row in matching_rows:
-            source_connector = row.get('Source', '').strip()
-            destination_connector = row.get('Destination', '').strip()
-
-            if not source_connector or not destination_connector:
-                continue
-
-            source_node = f"{source_connector}.node"
-            destination_node = f"{destination_connector}.node"
-
-            segment_path, path_length = find_path_with_segments(source_node, destination_node)
-
-            if not segment_path:
-                raise ValueError(
-                    f"Path not found between {source_node} and {destination_node} for cable '{cable_name}'."
-                )
-
-            total_segments.extend(segment_path)
-            total_cable_length += path_length
-
-        if not total_segments:
-            continue
-
-        connections_to_graph[cable_name] = {
-            "segments": total_segments,
-            "total_length": total_cable_length
-        }
-
-    output_path = fileio.path("connections to graph")
-    with open(output_path, 'w') as file:
-        json.dump(connections_to_graph, file, indent=4)
-
-    instances_list.write_instance_rows(instances)
-    print("-All cables have valid paths from start connector to end connector via segments.")
+    #find the start node
+    prev_instance, next_instance = instances_list.instance_names_of_adjacent_ports(instance_name)
+    node_of_prev_instance = instances_list.recursive_parent_search(prev_instance, "parent_instance", "item_type", "Node")
+    node_of_next_instance = instances_list.recursive_parent_search(next_instance, "parent_instance", "item_type", "Node")
 
 def update_parent_csys():
     instances = instances_list.read_instance_rows()
