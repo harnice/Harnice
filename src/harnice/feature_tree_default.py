@@ -66,7 +66,6 @@ for circuit_name, ports in harness_yaml.load().items():
             elif re.match(r"C[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{
                     "item_type": "Cable",
-                    "parent_instance": port_label,
                     "location_is_node_or_segment": "Segment",
                 })
             else:
@@ -217,16 +216,39 @@ for instance in instances_list.read_instance_rows():
                 # checks for modifications against the library
 
 #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
-
-print()
-print("Validating your formboard graph is structured properly...")
 formboard.update_parent_csys()
 formboard.update_component_translate()
 formboard.validate_nodes()
 
+# map conductors to segments
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Conductor":
         formboard.map_instance_to_segments(instance.get("instance_name"))
+
+# get lengths of conductors
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Conductor":
+        conductor_length = 0
+        for instance2 in instances_list.read_instance_rows():
+            if instance2.get("parent_instance") == instance.get("instance_name"):
+                conductor_length += int(instance2.get("length", "").strip()) if instance2.get("length", "").strip() else 0
+        instances_list.modify(instance.get("instance_name"), {
+            "length": conductor_length
+        })
+
+# get lengths of cables (take the length of the longest contained conductor)
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Cable":
+        cable_length = 0
+        for instance2 in instances_list.read_instance_rows():
+            if instance2.get("parent_instance") == instance.get("instance_name"):
+                child_length = int(instance2.get("length", "").strip())
+                if child_length > cable_length:
+                    cable_length = child_length
+        instances_list.modify(instance.get("instance_name"), {
+            "length": cable_length
+        })
+
 exit()
 
 formboard.generate_node_coordinates()
