@@ -14,12 +14,7 @@ Terminology:
 - The "nets" connecting ports are implied by being in the same circuit; they are not explicitly listed.
 """
 
-#=============== INITIALIZE INSTANCES LIST #===============
-# make a list of every single instance in the project
-instances_list.make_new_list()
-    # makes blank document
-
-#=============== GENERATE INSTANCES FROM ESCH #===============
+#=============== START POPULATING INSTANCES FROM ESCH #===============
 # For each electrical circuit (or net) in your system
 # Circuit name is a string, ports is a dictionary that contains all the stuff on that circuit
 for circuit_name, ports in harness_yaml.load().items():
@@ -184,7 +179,8 @@ for instance in instances_list.read_instance_rows():
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
 
 #================ GENERATE A WIRELIST BASED ON EXISTING DATA IN INSTANCES_LIST #===============
-wirelist.newlist()
+#TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/199
+#wirelist.newlist()
 
 #=============== IMPORTING PARTS FROM LIBRARY #===============
 print()
@@ -252,7 +248,6 @@ for instance in instances_list.read_instance_rows():
 formboard.generate_node_coordinates()
 wirelist.add_lengths()
 wirelist.tsv_to_xls()
-instances_list.add_angles_to_nodes()
 
 #=============== GENERATING A BOM #===============
 instances_list.convert_to_bom()

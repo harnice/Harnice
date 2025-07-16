@@ -39,7 +39,6 @@ INSTANCES_LIST_COLUMNS = [
     'note_type',
     'note_number', #<--------- merge with parent_csys and import instances of child csys?
     'bubble_text',
-    'parent_item_type', #<----- redundant, delete
     'supplier',
     'lib_latest_rev',
     'lib_rev_used_here',
@@ -241,65 +240,6 @@ def add_revhistory_of_imported_part(instance_name, rev_data):
         writer.writeheader()
         writer.writerows(rows)
 
-def parent(instance_name):
-    instances = read_instance_rows()
-    for instance in instances:
-        if instance.get('instance_name') == instance_name:
-            return instance.get('parent_instance')
-
-def add_angles_to_nodes():
-    #open formboard definition file
-    #for each instance in instances list:
-        #if item type == Node:
-            #average_angle = 0
-            #angle_counter = 0
-            #for each time instance_name is found as a node of a segment within formboard definition:
-                #average_angle += angle of segment
-                #angle_counter += 1
-            #average_angle = average_angle / angle_counter
-            #store average_angle into field 'rotate_csys' of instances list
-
-    #write instances list
-
-    # Load formboard graph definition
-    with open(fileio.path("formboard graph definition"), "r") as f:
-        formboard_data = json.load(f)
-
-    # Read instances list
-    instances = read_instance_rows()
-    instance_lookup = {row['instance_name']: row for row in instances}
-
-    # For each Node, compute average angle
-    for instance in instances:
-        if instance.get("item_type") != "Node":
-            continue
-
-        instance_name = instance.get("instance_name", "")
-        total_angle = 0
-        count = 0
-
-        for segment in formboard_data.values():
-            if segment.get("segment_end_a") == instance_name or segment.get("segment_end_b") == instance_name:
-                angle = segment.get("angle")
-                if segment.get("segment_end_a") == instance_name:
-                    angle += 180
-                if isinstance(angle, (int, float)):
-                    total_angle += angle 
-                    count += 1
-                #flip influences from the A side of each segment
-
-        if count > 0:
-            average_angle = round(total_angle / count, 2)
-            instance["rotate_csys"] = str(average_angle)
-        else:
-            instance["rotate_csys"] = ""
-
-        #keep it to 360 deg
-        while total_angle >= 360:
-            total_angle -= 360
-
-    write_instance_rows(instances)
-
 def add_flagnotes():
     # === Step 1: Load existing instance rows ===
     instances = read_instance_rows()
@@ -412,19 +352,6 @@ def add_flagnotes():
             "note_type": note_type
         }
         append_instance_row(flagnote_instance)
-
-def add_parent_instance_type():
-    instances = read_instance_rows()
-    instance_lookup = {inst.get("instance_name"): inst for inst in instances}
-
-    for instance in instances:
-        parent = instance.get("parent_instance", "").strip()
-        parent_item_type = ""
-        if parent in instance_lookup:
-            parent_item_type = instance_lookup[parent].get("item_type", "").strip()
-        instance["parent_item_type"] = parent_item_type
-
-    write_instance_rows(instances)
 
 def instance_names_of_adjacent_ports(target_instance):
     for instance in read_instance_rows():

@@ -38,6 +38,9 @@ def harness():
              open(feature_tree_path, "w", encoding="utf-8") as dst:
             dst.write(src.read())
         print(f"Created feature_tree.py from default template")
+    
+    # initialize instances list
+    instances_list.make_new_list()
 
     # === Step 3: Run the project-specific feature_tree.py ===
     runpy.run_path(feature_tree_path, run_name="__main__")
