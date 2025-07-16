@@ -284,14 +284,34 @@ def generate_node_coordinates():
             node_coordinates[neighbor] = (new_x, new_y)
             queue.append(neighbor)
 
-    # === Step 5: Update each node in instances_list ===
-    for node_name, (x, y) in node_coordinates.items():
+    # === Step 5: Compute and assign average node angles ===
+    for node in nodes:
+        node_name = node.get("instance_name")
+        total_angle = 0
+        count = 0
+
+        for seg in segments:
+            if seg.get("node_at_end_a") == node_name or seg.get("node_at_end_b") == node_name:
+                angle_raw = seg.get("absolute_rotation", "")
+                angle = float(angle_raw)
+
+                # Flip angle if node is at segment_end_a
+                if seg.get("node_at_end_a") == node_name:
+                    angle = (angle + 180) % 360
+
+                total_angle += angle
+                count += 1
+
+        average_angle = round(total_angle / count, 2) if count else ""
+        translate_x, translate_y = node_coordinates.get(node_name, ("", ""))
+
         instances_list.modify(node_name, {
-            "translate_x": str(x),
-            "translate_y": str(y)
+            "translate_x": str(translate_x),
+            "translate_y": str(translate_y),
+            "absolute_rotation": average_angle
         })
 
-    # === Step 6: Prepare SVG visualization ===
+    # === Step 6: Generate SVG ===
     output_file_path = fileio.path("formboard graph definition svg")
 
     padding = 50
@@ -299,7 +319,6 @@ def generate_node_coordinates():
     font_size = 12
     scale = 96  # 96 pixels per inch
 
-    # Refresh to get updated coordinates
     instances = instances_list.read_instance_rows()
     node_coordinates_svg = {
         inst.get("instance_name"): (
@@ -359,11 +378,10 @@ def generate_node_coordinates():
 
     for node_name, (x_logical, y_logical) in node_coordinates_svg.items():
         x, y = map_coordinates(x_logical, y_logical)
-        label = node_name.removesuffix(".node")
         svg_elements.append(f'<circle cx="{x}" cy="{y}" r="{radius}" fill="red" />')
         svg_elements.append(
             f'<text x="{x}" y="{y - 10}" font-size="{font_size}" '
-            f'text-anchor="middle" fill="black">{label}</text>'
+            f'text-anchor="middle" fill="black">{node_name}</text>'
         )
 
     svg_content = (

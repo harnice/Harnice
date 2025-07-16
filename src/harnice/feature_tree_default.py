@@ -252,7 +252,6 @@ for instance in instances_list.read_instance_rows():
 formboard.generate_node_coordinates()
 wirelist.add_lengths()
 wirelist.tsv_to_xls()
-instances_list.add_absolute_angles_to_segments()
 instances_list.add_angles_to_nodes()
 
 #=============== GENERATING A BOM #===============

@@ -300,24 +300,6 @@ def add_angles_to_nodes():
 
     write_instance_rows(instances)
 
-def add_absolute_angles_to_segments():
-    # Load formboard graph definition
-    with open(fileio.path("formboard graph definition"), "r") as f:
-        formboard_data = json.load(f)
-
-    # Read instances list
-    instances = read_instance_rows()
-
-    # For each Segment instance, add the angle to the instances list
-    for instance in instances:
-        if instance.get("item_type") == "Segment":
-            instance_name = instance.get("instance_name", "")
-            segment_data = formboard_data.get(instance_name, {})
-            angle = segment_data.get("angle", "")
-            instance["absolute_rotation"] = str(angle) if angle != "" else ""
-
-    write_instance_rows(instances)
-
 def add_flagnotes():
     # === Step 1: Load existing instance rows ===
     instances = read_instance_rows()
