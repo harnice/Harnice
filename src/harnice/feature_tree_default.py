@@ -211,8 +211,14 @@ for instance in instances_list.read_instance_rows():
                 # checks for updates against the library
                 # checks for modifications against the library
 
+#=============== LOOK UP PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
+#TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") in ["Connector"]:
+        formboard.update_parent_csys(instance.get("instance_name"))
+
+
 #=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
-formboard.update_parent_csys()
 formboard.update_component_translate()
 formboard.validate_nodes()
 
