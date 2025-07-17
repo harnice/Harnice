@@ -7,18 +7,12 @@ from harnice import (
     harness_yaml
 )
 
-"""
-Terminology:
-- A "circuit" is a logical group of ports that are electrically connected.
-- A "port" is a named electrical interface, such as a pin, terminal, or wire end.
-- The "nets" connecting ports are implied by being in the same circuit; they are not explicitly listed.
-"""
-
 #===========================================================================
 #===========================================================================
 #             BUILD HARNESS SOURCE OF TRUTH (INSTANCES LIST)
 #===========================================================================
 #===========================================================================
+
 
 #=============== CREATE BASE INSTANCES FROM ESCH #===============
 # For each electrical circuit (or net) in your system
@@ -116,6 +110,7 @@ for circuit_name, ports in harness_yaml.load().items():
         
         port_counter += 1
 
+
 #================ ASSIGN MPNS TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
@@ -132,6 +127,7 @@ for instance in instances_list.read_instance_rows():
                 "mpn": "D38999_26ZA98PN",
                 "supplier": "public"
             })
+
 
 #================ ASSIGN PRINT NAMES TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
@@ -159,6 +155,7 @@ for instance in instances_list.read_instance_rows():
     elif instance.get("item_type") == "Connector":
         raise ValueError(f"Connector {instance.get("instance_name")} defined but does not have a print name assigned.")
 
+
 #================ ASSIGN BACKSHELLS AND ACCESSORIES TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
@@ -174,6 +171,7 @@ for instance in instances_list.read_instance_rows():
                     "parent_instance": instance.get("instance_name"),
                     "location_is_node_or_segment": "Node"
                 })
+
 
 #=============== ASSIGN PARENTS TO WEIRD PARTS LIKE CONTACTS #===============
 for instance in instances_list.read_instance_rows():
@@ -192,6 +190,7 @@ for instance in instances_list.read_instance_rows():
             })
         else:
             raise ValueError(f"Because adjacent ports are both port-based or both segment-based, I don't know what parent to assign to {instance_name}")
+
 
 #================ ASSIGN MPNS TO CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
@@ -231,7 +230,8 @@ for instance in instances_list.read_instance_rows():
                 # checks for updates against the library
                 # checks for modifications against the library
 
-#=============== LOOK UP PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
+
+#=============== LOOK INSIDE PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
 #TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") in ["Connector"]:
@@ -272,8 +272,25 @@ for instance in instances_list.read_instance_rows():
 
 formboard.generate_node_coordinates()
 
+
 #=============== ASSIGN BOM LINE NUMBERS #===============
 instances_list.assign_bom_line_numbers()
+# bom line numbers will only be assigned to instances that have "bom_line_number" == "True"
+# it will replace "True" with a number
+
+
+#=============== ASSIGN FLAGNOTES #===============
+# ensure page setup is defined, if not, make a basic one. flagnotes depends on this
+page_setup_contents = svg_outputs.update_page_setup_json()
+
+flagnotes.ensure_manual_list_exists()
+
+# makes notes of part name, bom, revision, etc
+flagnotes.compile_all_flagnotes()
+
+# adds the above to instance list
+instances_list.add_flagnotes()
+
 
 #===========================================================================
 #===========================================================================
@@ -360,6 +377,7 @@ for instance in instances_list.read_instance_rows():
             "To_connector_cavity": instances_list.attribute_of(to_connector_cavity, "print_name"),
         })
 
+#=============== MAKE A PRETTY WIRELIST #===============
 wirelist.tsv_to_xls()
 
 #=============== MAKE A BOM #===============
@@ -367,22 +385,7 @@ instances_list.export_bom(12) # arg: cable margin per cut
 
 exit()
 
-#=============== HANDLING FLAGNOTES #===============
-# ensure page setup is defined, if not, make a basic one. flagnotes depends on this
-page_setup_contents = svg_outputs.update_page_setup_json()
-
-flagnotes.ensure_manual_list_exists()
-
-# makes notes of part name, bom, revision, etc
-flagnotes.compile_all_flagnotes()
-
-# adds the above to instance list
-instances_list.add_flagnotes()
-
-flagnotes.make_note_drawings()
-flagnotes.make_leader_drawings()
-
-#=============== RUNNING WIREVIZ #===============
+#=============== RUN WIREVIZ #===============
 run_wireviz.generate_esch()
 
 #=============== REBUILDING OUTPUT SVG #===============
@@ -392,7 +395,8 @@ rev_history.update_datemodified()
 # add parent types to make filtering easier
 instances_list.add_parent_instance_type()
 
-# prepare the building blocks as svgs
+# prepare the building blocks as svgsflagnotes.make_note_drawings()
+flagnotes.make_leader_drawings()
 svg_outputs.prep_formboard_drawings(page_setup_contents)
 svg_outputs.prep_bom()
 svg_outputs.prep_buildnotes_table()
