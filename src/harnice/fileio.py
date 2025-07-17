@@ -89,12 +89,7 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.feature_tree.py":"feature tree",
                 f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
                 "artifacts":{
-                    "formboard_drawing":{
-                        f"{partnumber("pn-rev")}-formboard.pdf":"harnice output",
-                        "page_setup":{
-                            f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
-                        },
-                    },
+                    f"{partnumber("pn-rev")}-formboard.pdf":"harnice output",
                     f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
                     f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg",
                     f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
@@ -128,6 +123,11 @@ def harnice_file_structure():
                 },
                 "interactive_files":{
                     "editable_instance_data":{},
+                    "formboard_drawing":{
+                        "page_setup":{
+                            f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
+                        },
+                    },
                     f"{partnumber("pn-rev")}.formboard_graph_definition.tsv":"formboard graph definition",
                     f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual"
                 },
