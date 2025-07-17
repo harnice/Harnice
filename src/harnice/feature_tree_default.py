@@ -195,6 +195,12 @@ for instance in instances_list.read_instance_rows():
 
 #================ ASSIGN MPNS TO CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Cable":
+        instances_list.modify(instance.get("instance_name"),{
+            "mpn": "test",
+            "bom_line_number": "True"
+        })
 
 #=============== IMPORT PARTS FROM LIBRARY #===============
 print()
@@ -356,12 +362,9 @@ for instance in instances_list.read_instance_rows():
 
 wirelist.tsv_to_xls()
 
-exit()
 #=============== MAKE A BOM #===============
 instances_list.convert_to_bom()
     # condenses an instance list down into a bom
-instances_list.add_bom_line_numbers()
-    # adds bom line numbers back to the instances list
 
 exit()
 

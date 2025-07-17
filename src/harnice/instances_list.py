@@ -206,18 +206,6 @@ def convert_to_bom():
 
     return fileio.path('harness bom')
 
-def add_bom_line_numbers():
-    with open(fileio.path('harness bom'), newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        mpn_map = {row['mpn']: row['bom_line_number'] for row in reader if row.get('mpn')}
-
-    rows = read_instance_rows()
-    for row in rows:
-        row['bom_line_number'] = mpn_map.get(row.get('mpn', ''), '')
-
-    write_instance_rows(rows)
-    return fileio.path('instances list')
-
 def assign_bom_line_numbers():
     bom = []
     for instance in read_instance_rows():
