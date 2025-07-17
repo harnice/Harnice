@@ -232,17 +232,9 @@ for instance in instances_list.read_instance_rows():
         formboard.update_parent_csys(instance.get("instance_name"))
 
 
-#===========================================================================
-#===========================================================================
-#                      CONSTRUCT HARNESS ARTIFACTS
-#===========================================================================
-#===========================================================================
-
-
-#=============== MAKE A FORMBOARD DRAWING #===============
+#=============== UPDATE FORMBOARD DEFINITION TSV, UPDATE PART PLACEMENT DATA #===============
 formboard.update_component_translate()
 formboard.validate_nodes()
-
 # map conductors to segments
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Conductor":
@@ -273,6 +265,14 @@ for instance in instances_list.read_instance_rows():
         })
 
 formboard.generate_node_coordinates()
+
+
+#===========================================================================
+#===========================================================================
+#                      CONSTRUCT HARNESS ARTIFACTS
+#===========================================================================
+#===========================================================================
+
 
 #=============== MAKE A WIRELIST #===============
 wirelist.newlist(
