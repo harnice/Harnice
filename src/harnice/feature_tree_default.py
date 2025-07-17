@@ -45,7 +45,8 @@ for circuit_name, ports in harness_yaml.load().items():
                 supplier = "public"
 
             instances_list.add_unless_exists(instance_name, {
-                "item_type": "Contact",  # This tells the software what kind of part this is
+                "item_type": "Contact",
+                "bom_line_number": True,
                 "mpn": value,
                 "supplier": supplier,
                 "location_is_node_or_segment": "Node",
@@ -115,22 +116,24 @@ for circuit_name, ports in harness_yaml.load().items():
         
         port_counter += 1
 
-#================ DEFINE CONNECTORS #===============
+#================ ASSIGN MPNS TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
     if instance.get("item_type") == "Connector":
         if instance_name == "X1":
             instances_list.modify(instance_name,{
+                "bom_line_number": "True",
                 "mpn": "D38999_26ZB98PN",
                 "supplier": "public"
             })
         else:
             instances_list.modify(instance_name,{
+                "bom_line_number": "True",
                 "mpn": "D38999_26ZA98PN",
                 "supplier": "public"
             })
 
-#================ NAME CONNECTORS #===============
+#================ ASSIGN PRINT NAMES TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
     if instance_name == "X1":
@@ -156,7 +159,7 @@ for instance in instances_list.read_instance_rows():
     elif instance.get("item_type") == "Connector":
         raise ValueError(f"Connector {instance.get("instance_name")} defined but does not have a print name assigned.")
 
-#================ ASSIGN BACKSHELLS #===============
+#================ ASSIGN BACKSHELLS AND ACCESSORIES TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
     if instance.get("item_type") == "Connector":
@@ -165,6 +168,7 @@ for instance in instances_list.read_instance_rows():
             if instance.get("print_name") not in ["P3", "J1"]:
                 instances_list.add(f"{instance_name}.bs",{
                     "mpn": "M85049-88_9Z03",
+                    "bom_line_number": "True",
                     "supplier": "public",
                     "item_type": "Backshell",
                     "parent_instance": instance.get("instance_name"),
@@ -189,7 +193,7 @@ for instance in instances_list.read_instance_rows():
         else:
             raise ValueError(f"Because adjacent ports are both port-based or both segment-based, I don't know what parent to assign to {instance_name}")
 
-#================ ASSIGN CABLES #===============
+#================ ASSIGN MPNS TO CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
 
 #=============== IMPORT PARTS FROM LIBRARY #===============
@@ -262,6 +266,8 @@ for instance in instances_list.read_instance_rows():
 
 formboard.generate_node_coordinates()
 
+#=============== ASSIGN BOM LINE NUMBERS #===============
+instances_list.assign_bom_line_numbers()
 
 #===========================================================================
 #===========================================================================
@@ -350,6 +356,7 @@ for instance in instances_list.read_instance_rows():
 
 wirelist.tsv_to_xls()
 
+exit()
 #=============== MAKE A BOM #===============
 instances_list.convert_to_bom()
     # condenses an instance list down into a bom

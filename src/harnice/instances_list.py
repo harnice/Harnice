@@ -218,6 +218,24 @@ def add_bom_line_numbers():
     write_instance_rows(rows)
     return fileio.path('instances list')
 
+def assign_bom_line_numbers():
+    bom = []
+    for instance in read_instance_rows():
+        if instance.get("bom_line_number") == "True":
+            if instance.get("mpn") == "":
+                raise ValueError(f"You've chosen to add {instance.get("instance_name")} to the bom, but haven't specified an MPN")
+            if not instance.get("mpn") in bom:
+                bom.append(instance.get("mpn"))
+
+    bom_line_number = 1
+    for bom_item in bom:
+        for instance in read_instance_rows():
+            if instance.get("mpn") == bom_item:
+                modify(instance.get("instance_name"), {
+                    "bom_line_number": bom_line_number
+                })
+        bom_line_number += 1
+
 def add_revhistory_of_imported_part(instance_name, rev_data):
     # Expected rev_data is a dict with keys from REVISION_HISTORY_COLUMNS
     with open(fileio.path("instances list"), newline='') as f:
