@@ -231,7 +231,6 @@ def export_bom(cable_margin):
             'total_length_plus_margin': total_length_plus_margin
         })
 
-
 def assign_bom_line_numbers():
     bom = []
     for instance in read_instance_rows():
