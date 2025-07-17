@@ -86,27 +86,30 @@ def harnice_file_structure():
     if product_type == "harness":
         return {
                 f"{partnumber("pn-rev")}.feature_tree.py":"feature tree",
-                f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual",
-                f"{partnumber("pn-rev")}.formboard_graph_definition.tsv":"formboard graph definition",
-                f"{partnumber("pn-rev")}.harnice_output.pdf":"harnice output",
-                f"{partnumber("pn-rev")}-esch.yaml":"harness yaml",
-                f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
-                "editable_instance_data":{},
-                "page_setup":{
-                    f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
-                },
-                "support_do_not_edit": {
-                    "formboard_data": {
-                        f"{partnumber("pn-rev")}.connections_to_graph.json":"connections to graph",
-                        f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg"
+                "artifacts":{
+                    "formboard_drawing":{
+                        f"{partnumber("pn-rev")}-formboard.pdf":"harnice output",
+                        "page_setup":{
+                            f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
+                        },
                     },
-                    "lists":{
-                        f"{partnumber("pn-rev")}.buildnotes_list.tsv":"buildnotes list",
-                        f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
-                        f"{partnumber("pn-rev")}.flagnotes_list.tsv":"flagnotes list",
+                    f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
+                    f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
+                    f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg",
                         f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
                         f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted"
-                    },
+                },
+                "interactive_files":{
+                    "editable_instance_data":{},
+                    f"{partnumber("pn-rev")}-esch.yaml":"harness yaml",
+                    f"{partnumber("pn-rev")}.formboard_graph_definition.tsv":"formboard graph definition",
+                    f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual"
+                },
+                "delete_soon": {
+                        f"{partnumber("pn-rev")}.buildnotes_list.tsv":"buildnotes list", 
+                        f"{partnumber("pn-rev")}.flagnotes_list.tsv":"flagnotes list",
+                },
+                "temp": {
                     "svg_generated": {
                         f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
                         "buildnotes_table":{
@@ -131,8 +134,7 @@ def harnice_file_structure():
                         f"{partnumber("pn-rev")}-esch.png":"wireviz png",
                         f"{partnumber("pn-rev")}-esch.svg":"wireviz svg"
                     }
-                },
-                f"{partnumber("pn-rev")}.harness_requirements.json":"harness requirements"
+                }
             }
     elif product_type == "part":
         return {
@@ -156,11 +158,13 @@ def generate_structure():
     if os.path.exists(dirpath("support_do_not_edit")):
         shutil.rmtree(dirpath("support_do_not_edit"))
 
-    os.makedirs(dirpath("editable_instance_data"), exist_ok=True)
+    os.makedirs(dirpath("artifacts"), exist_ok=True)
+    os.makedirs(dirpath("formboard_drawing"), exist_ok=True)
     os.makedirs(dirpath("page_setup"), exist_ok=True)
-    os.makedirs(dirpath("support_do_not_edit"), exist_ok=True)
-    os.makedirs(dirpath("formboard_data"), exist_ok=True)
-    os.makedirs(dirpath("lists"), exist_ok=True)
+    os.makedirs(dirpath("interactive_files"), exist_ok=True)
+    os.makedirs(dirpath("editable_instance_data"), exist_ok=True)
+    os.makedirs(dirpath("delete_soon"), exist_ok=True)
+    os.makedirs(dirpath("temp"), exist_ok=True)
     os.makedirs(dirpath("svg_generated"), exist_ok=True)
     os.makedirs(dirpath("buildnotes_table"), exist_ok=True)
     os.makedirs(dirpath("buildnote_table_bubbles"), exist_ok=True)
