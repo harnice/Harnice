@@ -14,10 +14,20 @@ Terminology:
 - The "nets" connecting ports are implied by being in the same circuit; they are not explicitly listed.
 """
 
-#=============== START POPULATING INSTANCES FROM ESCH #===============
+#===========================================================================
+#===========================================================================
+#             BUILD HARNESS SOURCE OF TRUTH (INSTANCES LIST)
+#===========================================================================
+#===========================================================================
+
+#=============== CREATE BASE INSTANCES FROM ESCH #===============
 # For each electrical circuit (or net) in your system
 # Circuit name is a string, ports is a dictionary that contains all the stuff on that circuit
 for circuit_name, ports in harness_yaml.load().items():
+    instances_list.add(circuit_name,{
+        "item_type": "Circuit",
+        "mpn": "N/A"
+    })
     port_counter = 0
     contact_counter = 0  # This helps automatically number contact points like contact1, contact2, etc.
 
@@ -87,6 +97,7 @@ for circuit_name, ports in harness_yaml.load().items():
                     elif subkey == "conductor":
                         instance_name = f"{port_label}.conductor{subval}"
                         instances_list.add_unless_exists(instance_name,{
+                            "print_name": subval,
                             "item_type": "Conductor",
                             "mpn": "N/A",
                             "parent_instance": port_label,
@@ -178,11 +189,7 @@ for instance in instances_list.read_instance_rows():
 #================ ASSIGN CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
 
-#================ GENERATE A WIRELIST BASED ON EXISTING DATA IN INSTANCES_LIST #===============
-#TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/199
-#wirelist.newlist()
-
-#=============== IMPORTING PARTS FROM LIBRARY #===============
+#=============== IMPORT PARTS FROM LIBRARY #===============
 print()
 print("Importing parts from library")
 print(f'{"ITEM NAME":<24}  STATUS')
@@ -218,7 +225,14 @@ for instance in instances_list.read_instance_rows():
         formboard.update_parent_csys(instance.get("instance_name"))
 
 
-#=============== PRODUCING A FORMBOARD BASED ON DEFINED ESCH #===============
+#===========================================================================
+#===========================================================================
+#                      CONSTRUCT HARNESS ARTIFACTS
+#===========================================================================
+#===========================================================================
+
+
+#=============== MAKE A FORMBOARD DRAWING #===============
 formboard.update_component_translate()
 formboard.validate_nodes()
 
@@ -252,8 +266,78 @@ for instance in instances_list.read_instance_rows():
         })
 
 formboard.generate_node_coordinates()
-wirelist.add_lengths()
-wirelist.tsv_to_xls()
+
+#=============== MAKE A WIRELIST #===============
+wirelist.make([
+    "Circuit name",
+    "From connector",
+    "From connector cavity",
+    "From special contact",
+    "Conductor identifier",
+    "Cable",
+    "To special contact",
+    "To connector",
+    "To connector cavity"
+])
+
+# search through all the circuits in the instances list
+for instance in instances_list.read_instance_rows():
+    circuit_name = ""
+    from_connector = ""
+    from_connector_cavity = ""
+    from_special_contact = ""
+    conductor_identifier = ""
+    cable = ""
+    to_special_contact = ""
+    to_connector = ""
+    to_connector_cavity = ""
+
+    if instance.get("item_type") == "Circuit":
+        circuit_name = instance.get("instance_name")
+
+        # look for "From" and "To" connectors and cavities via cavities
+        connector_cavity_counter = 0
+        for instance3 in instances_list.read_instance_rows():
+            if instance3.get("circuit_id") == circuit_name:
+                if instance3.get("item_type") == "Connector cavity":
+                    if connector_cavity_counter == 0:
+                        from_connector_cavity = instance3.get("item_name")
+                        from_connector = instances_list.attribute_of(from_connector_cavity, "parent_instance")
+                    elif connector_cavity_counter == 1:
+                        to_connector_cavity = instance3.get("item_name")
+                        to_connector = instances_list.attribute_of(to_connector_cavity, "parent_instance")
+                    else:
+                        raise ValueError(f"There are 3 or more cavities specified in circuit {circuit_name} but expected two (to, from) when building wirelist.")
+                    connector_cavity_counter += 1
+
+        # look for cavities that have parents that match a to or from connector
+        for instance4 in instances_list.read_instance_rows():
+            if instance4.get("circuit_id") == circuit_name:
+                if instance4.get("item_type") == "Contact":
+                    if instance4.get("parent_instance") == from_connector:
+                        from_special_contact = instance4.get("instance_name")
+                    elif instance4.get("parent_instance") == to_connector:
+                        to_special_contact = instance4.get("instance_name")
+
+        # find conductor and cable
+        for instance5 in instances_list.read_instance_rows():
+            if instance5.get("circuit_id") == circuit_name:
+                if instance5.get("item_type") == "Conductor":
+                    conductor_identifier = instance5.get("print_name")
+                    cable = instance5.get("parent_instance")
+
+    wirelist.add(circuit_name, {
+        "From connector": from_connector,
+        "From connector cavity": from_connector_cavity,
+        "From special contact": from_special_contact,
+        "Conductor identifier": conductor_identifier,
+        "Cable": cable,
+        "To special contact": to_special_contact,
+        "To connector": to_connector,
+        "To connector cavity": to_connector_cavity
+    })
+
+exit()
 
 #=============== GENERATING A BOM #===============
 instances_list.convert_to_bom()
@@ -288,7 +372,6 @@ instances_list.add_parent_instance_type()
 
 # prepare the building blocks as svgs
 svg_outputs.prep_formboard_drawings(page_setup_contents)
-svg_outputs.prep_wirelist()
 svg_outputs.prep_bom()
 svg_outputs.prep_buildnotes_table()
 svg_outputs.prep_revision_table()
