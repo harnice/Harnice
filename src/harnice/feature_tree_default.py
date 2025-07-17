@@ -25,8 +25,7 @@ Terminology:
 # Circuit name is a string, ports is a dictionary that contains all the stuff on that circuit
 for circuit_name, ports in harness_yaml.load().items():
     instances_list.add(circuit_name,{
-        "item_type": "Circuit",
-        "mpn": "N/A"
+        "item_type": "Circuit"
     })
     port_counter = 0
     contact_counter = 0  # This helps automatically number contact points like contact1, contact2, etc.
@@ -65,8 +64,7 @@ for circuit_name, ports in harness_yaml.load().items():
                 })
                 instances_list.add_unless_exists(f"{port_label}.node",{
                     "item_type": "Node",
-                    "location_is_node_or_segment": "Node",
-                    "mpn": "N/A"
+                    "location_is_node_or_segment": "Node"
                 })
             elif re.match(r"C[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{
@@ -87,7 +85,6 @@ for circuit_name, ports in harness_yaml.load().items():
                         instances_list.add_unless_exists(instance_name,{
                             "print_name": subval,
                             "item_type": "Connector cavity",
-                            "mpn": "N/A",  # Not applicable here, so we fill in "N/A"
                             "parent_instance": port_label,
                             "location_is_node_or_segment": "Node",
                             'circuit_id': circuit_name,
@@ -100,7 +97,6 @@ for circuit_name, ports in harness_yaml.load().items():
                         instances_list.add_unless_exists(instance_name,{
                             "print_name": subval,
                             "item_type": "Conductor",
-                            "mpn": "N/A",
                             "parent_instance": port_label,
                             "location_is_node_or_segment": "Segment",
                             'circuit_id': circuit_name,
@@ -353,13 +349,14 @@ for instance in instances_list.read_instance_rows():
         })
 
 wirelist.tsv_to_xls()
-exit()
 
-#=============== GENERATING A BOM #===============
+#=============== MAKE A BOM #===============
 instances_list.convert_to_bom()
     # condenses an instance list down into a bom
 instances_list.add_bom_line_numbers()
     # adds bom line numbers back to the instances list
+
+exit()
 
 #=============== HANDLING FLAGNOTES #===============
 # ensure page setup is defined, if not, make a basic one. flagnotes depends on this
