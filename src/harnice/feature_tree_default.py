@@ -85,6 +85,7 @@ for circuit_name, ports in harness_yaml.load().items():
                     if subkey == "cavity":
                         instance_name = f"{port_label}.cavity{subval}"
                         instances_list.add_unless_exists(instance_name,{
+                            "print_name": subval,
                             "item_type": "Connector cavity",
                             "mpn": "N/A",  # Not applicable here, so we fill in "N/A"
                             "parent_instance": port_label,
@@ -268,20 +269,22 @@ for instance in instances_list.read_instance_rows():
 formboard.generate_node_coordinates()
 
 #=============== MAKE A WIRELIST #===============
-wirelist.make({
-    {"name": "Circuit name", "fill": "black", "font": "white"},
-    {"name": "Length", "fill": "black", "font": "white"},
-    {"name": "Cable", "fill": "black", "font": "white"},
-    {"name": "Conductor identifier", "fill": "black", "font": "white"},
+wirelist.newlist(
+    [
+        {"name": "Circuit_name", "fill": "black", "font": "white"},
+        {"name": "Length", "fill": "black", "font": "white"},
+        {"name": "Cable", "fill": "black", "font": "white"},
+        {"name": "Conductor_identifier", "fill": "black", "font": "white"},
 
-    {"name": "From connector", "fill": "green", "font": "white"},
-    {"name": "From connector cavity", "fill": "green", "font": "white"},
-    {"name": "From special contact", "fill": "green", "font": "white"}
+        {"name": "From_connector", "fill": "green", "font": "white"},
+        {"name": "From_connector_cavity", "fill": "green", "font": "white"},
+        {"name": "From_special_contact", "fill": "green", "font": "white"},
 
-    {"name": "To special contact", "fill": "red", "font": "white"},
-    {"name": "To connector", "fill": "red", "font": "white"},
-    {"name": "To connector cavity", "fill": "red", "font": "white"}
-})
+        {"name": "To_special_contact", "fill": "red", "font": "white"},
+        {"name": "To_connector", "fill": "red", "font": "white"},
+        {"name": "To_connector_cavity", "fill": "red", "font": "white"}
+    ]
+)
 
 # search through all the circuits in the instances list
 for instance in instances_list.read_instance_rows():
@@ -304,11 +307,13 @@ for instance in instances_list.read_instance_rows():
             if instance3.get("circuit_id") == circuit_name:
                 if instance3.get("item_type") == "Connector cavity":
                     if connector_cavity_counter == 0:
-                        from_connector_cavity = instance3.get("item_name")
-                        from_connector = instances_list.attribute_of(from_connector_cavity, "parent_instance")
+                        from_connector_cavity_instance_name = instance3.get("instance_name")
+                        from_connector_cavity = instance3.get("print_name")
+                        from_connector = instances_list.attribute_of(from_connector_cavity_instance_name, "parent_instance")
                     elif connector_cavity_counter == 1:
-                        to_connector_cavity = instance3.get("item_name")
-                        to_connector = instances_list.attribute_of(to_connector_cavity, "parent_instance")
+                        to_connector_cavity_instance_name = instance3.get("instance_name")
+                        to_connector_cavity = instance3.get("print_name")
+                        to_connector = instances_list.attribute_of(to_connector_cavity_instance_name, "parent_instance")
                     else:
                         raise ValueError(f"There are 3 or more cavities specified in circuit {circuit_name} but expected two (to, from) when building wirelist.")
                     connector_cavity_counter += 1
@@ -329,19 +334,21 @@ for instance in instances_list.read_instance_rows():
                     conductor_identifier = instance5.get("print_name")
                     cable = instance5.get("parent_instance")
                     length = instance5.get("length")
+                    
+        wirelist.add({
+            "Circuit_name": circuit_name,
+            "Length": length,
+            "Cable": cable,
+            "Conductor_identifier": conductor_identifier,
+            "From_connector": from_connector,
+            "From_connector_cavity": from_connector_cavity,
+            "From_special_contact": from_special_contact,
+            "To_special_contact": to_special_contact,
+            "To_connector": to_connector,
+            "To_connector_cavity": to_connector_cavity
+        })
 
-    wirelist.add(circuit_name, {
-        "Length": length
-        "Cable": cable,
-        "Conductor identifier": conductor_identifier,
-        "From connector": from_connector,
-        "From connector cavity": from_connector_cavity,
-        "From special contact": from_special_contact,
-        "To special contact": to_special_contact,
-        "To connector": to_connector,
-        "To connector cavity": to_connector_cavity
-    })
-
+wirelist.tsv_to_xls()
 exit()
 
 #=============== GENERATING A BOM #===============

@@ -8,106 +8,21 @@ from harnice import (
     fileio
 )
 
-# Unified column definition with styling
-WIRELIST_COLUMNS = [
-    {"name": "Wire", "fill": "black", "font": "white"},
-    {"name": "Length (in)", "fill": "black", "font": "white"},
-    {"name": "Subwire", "fill": "black", "font": "white"},
-    {"name": "Subwire Color", "fill": "black", "font": "white"},
+WIRELIST_COLUMNS = []
 
-    {"name": "Source", "fill": "green", "font": "white"},
-    {"name": "Source Pin", "fill": "green", "font": "white"},
-    {"name": "WireLabel at Source", "fill": "green", "font": "white"},
-    {"name": "SubwireLabel at Source", "fill": "green", "font": "white"},
-
-    {"name": "Destination", "fill": "red", "font": "white"},
-    {"name": "Destination Pin", "fill": "red", "font": "white"},
-    {"name": "WireLabel at Destination", "fill": "red", "font": "white"},
-    {"name": "SubwireLabel at Destination", "fill": "red", "font": "white"}
-]
-
-def column_styles():
-    return WIRELIST_COLUMNS
-
-def newlist():
-    try:
-        with open(fileio.path("harness yaml"), 'r') as file:
-            yaml_data = yaml.safe_load(file)
-    except FileNotFoundError:
-        print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error: {fileio.name('harness yaml')} not found in the current directory.")
-        exit(1)
-
-    connections = yaml_data.get("connections", [])
-    wirelist = []
-
-    for group in connections:
-        components = {list(item.keys())[0]: list(item.values())[0] for item in group}
-        wire = None
-        targets = []
-
-        for component, pins in components.items():
-            if component.startswith("W"):
-                wire = (component, pins)
-            elif component.startswith("X"):
-                targets.append((component, pins))
-
-        if wire and len(targets) == 2:
-            wire_name, wire_pins = wire
-            src_component, src_pins = targets[0]
-            dst_component, dst_pins = targets[1]
-
-            for i in range(len(wire_pins)):
-                wire_pin = wire_pins[i]
-                src_pin = src_pins[i] if isinstance(src_pins, list) else src_pins
-                dst_pin = dst_pins[i] if isinstance(dst_pins, list) else dst_pins
-
-                wirelist.append([
-                    wire_name, '', wire_pin, '',
-                    src_component, src_pin, '', '',
-                    dst_component, dst_pin, '', ''
-                ])
-
+def newlist(wirelist_columns_input):
+    global WIRELIST_COLUMNS
+    WIRELIST_COLUMNS = wirelist_columns_input
     with open(fileio.path("wirelist no formats"), 'w', newline='') as file:
         writer = csv.writer(file, delimiter='\t')
         writer.writerow([col["name"] for col in WIRELIST_COLUMNS])
-        writer.writerows(wirelist)
+        writer.writerows([])
 
-def add_lengths():
-    with open(fileio.path("instances list"), newline='', encoding='utf-8-sig') as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        cable_instances = {
-            row["instance_name"].strip(): row["length"]
-            for row in reader
-            if row.get("item_type", "").strip().lower() == "cable"
-        }
-
-    with open(fileio.path("wirelist no formats"), newline='', encoding='utf-8-sig') as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        wirelist_rows = list(reader)
-        original_fieldnames = reader.fieldnames or []
-
-    if "Length (in)" not in original_fieldnames:
-        fieldnames = []
-        for name in original_fieldnames:
-            fieldnames.append(name)
-            if name == "Wire":
-                fieldnames.append("Length (in)")
-    else:
-        fieldnames = original_fieldnames
-
-    for row in wirelist_rows:
-        wire_name = row.get("Wire", "").strip()
-        if wire_name in cable_instances:
-            row["Length (in)"] = cable_instances[wire_name]
-        else:
-            row["Length (in)"] = row.get("Length (in)", "")
-
-    with open(fileio.path("wirelist no formats"), 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
-        writer.writeheader()
-        writer.writerows(wirelist_rows)
-
-    return fileio.path("wirelist no formats")
+def add(row_data):
+    column_names = [col["name"] for col in WIRELIST_COLUMNS]
+    with open(fileio.path('wirelist no formats'), 'a', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=column_names, delimiter='\t')
+        writer.writerow({key: row_data.get(key, '') for key in column_names})
 
 def tsv_to_xls():
     workbook = xlwt.Workbook()
