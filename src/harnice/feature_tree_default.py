@@ -363,8 +363,7 @@ for instance in instances_list.read_instance_rows():
 wirelist.tsv_to_xls()
 
 #=============== MAKE A BOM #===============
-instances_list.convert_to_bom()
-    # condenses an instance list down into a bom
+instances_list.export_bom(12) # arg: cable margin per cut
 
 exit()
 

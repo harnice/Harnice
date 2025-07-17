@@ -167,44 +167,70 @@ def modify(instance_name, instance_data):
 def make_new_list():
     write_instance_rows([])
 
-def convert_to_bom():
-    rows = read_instance_rows()
-    mpn_groups = defaultdict(lambda: {'qty': 0, 'item_type': '', 'supplier': '', 'total_length': 0.0})
+def export_bom(cable_margin):
+    BOM_COLUMNS = [
+        'bom_line_number', 
+        'mpn', 
+        'item_type', 
+        'qty', 
+        'supplier', 
+        'total_length_exact',
+        'total_length_plus_margin'
+    ]
 
-    for row in rows:
-        mpn = row.get('mpn', '').strip()
-        if not mpn:
-            continue
-        group = mpn_groups[mpn]
-        group['qty'] += 1
-        group['item_type'] = row.get('item_type', '')
-        group['supplier'] = row.get('supplier', '')
-        if group['item_type'].lower() == 'cable':
-            try:
-                group['total_length'] += float(row.get('length', '') or 0)
-            except ValueError:
-                pass
+    # make a new file
+    with open(fileio.path('harness bom'), 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter='\t')
+        writer.writeheader()
+        writer.writerows([])
 
-    output = []
-    for i, (mpn, group) in enumerate(mpn_groups.items(), 1):
-        row = {
+    # how to add stuff to the bom file
+    def add_line_to_bom(line_data):
+        with open(fileio.path('harness bom'), 'a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter='\t')
+            writer.writerow({key: line_data.get(key, '') for key in BOM_COLUMNS})
+
+    # what is the highest bom number in the instances list
+    highest_bom_number = 0
+    for instance in read_instance_rows():
+        if not instance.get("bom_line_number") == "":
+            if int(instance.get("bom_line_number")) > highest_bom_number:
+                highest_bom_number = int(instance.get("bom_line_number"))
+
+    # count the quantities used
+    qty_counter = 0
+    for i in range(1, highest_bom_number + 1):
+        mpn = ""
+        item_type = ""
+        qty = 0
+        supplier = ""
+        total_length_exact = 0
+        total_length_plus_margin = 0
+
+        for instance in read_instance_rows():
+            if not instance.get("bom_line_number") == "":
+                if int(instance.get("bom_line_number")) == i:
+                    mpn = instance.get("mpn")
+                    item_type = instance.get("item_type")
+                    qty += 1
+                    supplier = instance.get("supplier")
+                    if not instance.get("length") == "":
+                        total_length_exact += int(instance.get("length"))
+                        total_length_plus_margin += int(instance.get("length")) + cable_margin
+                    else:
+                        total_length_exact = ""
+                        total_length_plus_margin = ""
+
+        add_line_to_bom({
             'bom_line_number': i,
             'mpn': mpn,
-            'item_type': group['item_type'],
-            'qty': group['qty'],
-            'supplier': group['supplier']
-        }
-        if group['item_type'].lower() == 'cable':
-            row['total_length_exact'] = f"{group['total_length']:.2f}"
-        output.append(row)
+            'item_type': item_type,
+            'qty': qty,
+            'supplier': supplier,
+            'total_length_exact': total_length_exact,
+            'total_length_plus_margin': total_length_plus_margin
+        })
 
-    fieldnames = ['bom_line_number', 'mpn', 'item_type', 'qty', 'supplier', 'total_length_exact']
-    with open(fileio.path('harness bom'), 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t', extrasaction='ignore')
-        writer.writeheader()
-        writer.writerows(output)
-
-    return fileio.path('harness bom')
 
 def assign_bom_line_numbers():
     bom = []
