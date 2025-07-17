@@ -153,6 +153,12 @@ for instance in instances_list.read_instance_rows():
         instances_list.modify(instance_name,{
             "print_name": "J1"
         })
+    elif instance_name == "X500":
+        instances_list.modify(instance_name,{
+            "print_name": "J2"
+        })
+    elif instance.get("item_type") == "Connector":
+        raise ValueError(f"Connector {instance.get("instance_name")} defined but does not have a print name assigned.")
 
 #================ ASSIGN BACKSHELLS #===============
 for instance in instances_list.read_instance_rows():
