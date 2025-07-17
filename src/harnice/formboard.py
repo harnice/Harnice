@@ -166,7 +166,6 @@ def validate_nodes():
                 for missing_node in nodes_from_instances_list_not_in_formboard_def:
                     instances_list.add_unless_exists(missing_node,{
                         "instance_name": missing_node,
-                        "mpn": "N/A",
                         "item_type": "Node",
                         "location_is_node_or_segment": "Node"
                     })
@@ -181,7 +180,6 @@ def validate_nodes():
     
     for segment in read_segment_rows():
         instances_list.add_unless_exists(segment.get('segment_id'),{
-            "mpn": "N/A",
             'item_type': 'Segment',
             'location_is_node_or_segment': "Segment",
             'length': segment.get('length'),
@@ -193,7 +191,6 @@ def validate_nodes():
     
     for node in nodes_from_formboard_definition:
         instances_list.add_unless_exists(node,{
-            "mpn": "N/A",
             'item_type': 'Node',
             'location_is_node_or_segment': "Node",
         })
@@ -454,7 +451,6 @@ def map_instance_to_segments(instance_name):
             "item_type": "Hardware segment",
             "parent_instance": instance_name,
             "parent_csys": seg_name,
-            "mpn": "N/A",
             "location_is_node_or_segment": "Segment",
             "length": instances_list.attribute_of(seg_name, 'length')
         })
