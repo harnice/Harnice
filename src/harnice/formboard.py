@@ -85,8 +85,8 @@ def segment_attribute_of(segment_id, key):
 
 def validate_nodes():
     # Ensure TSV exists
-    if not os.path.exists(fileio.name("formboard graph definition")):
-        with open(fileio.name("formboard graph definition"), 'w', newline='', encoding='utf-8') as f:
+    if not os.path.exists(fileio.path("formboard graph definition")):
+        with open(fileio.path("formboard graph definition"), 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, delimiter='\t', fieldnames=FORMBOARD_TSV_COLUMNS)
             writer.writeheader()
 
