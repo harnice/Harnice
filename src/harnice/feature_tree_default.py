@@ -268,26 +268,29 @@ for instance in instances_list.read_instance_rows():
 formboard.generate_node_coordinates()
 
 #=============== MAKE A WIRELIST #===============
-wirelist.make([
-    "Circuit name",
-    "From connector",
-    "From connector cavity",
-    "From special contact",
-    "Conductor identifier",
-    "Cable",
-    "To special contact",
-    "To connector",
-    "To connector cavity"
-])
+wirelist.make({
+    {"name": "Circuit name", "fill": "black", "font": "white"},
+    {"name": "Length", "fill": "black", "font": "white"},
+    {"name": "Cable", "fill": "black", "font": "white"},
+    {"name": "Conductor identifier", "fill": "black", "font": "white"},
+
+    {"name": "From connector", "fill": "green", "font": "white"},
+    {"name": "From connector cavity", "fill": "green", "font": "white"},
+    {"name": "From special contact", "fill": "green", "font": "white"}
+
+    {"name": "To special contact", "fill": "red", "font": "white"},
+    {"name": "To connector", "fill": "red", "font": "white"},
+    {"name": "To connector cavity", "fill": "red", "font": "white"}
+})
 
 # search through all the circuits in the instances list
 for instance in instances_list.read_instance_rows():
-    circuit_name = ""
+    length = ""
+    cable = ""
+    conductor_identifier = ""
     from_connector = ""
     from_connector_cavity = ""
     from_special_contact = ""
-    conductor_identifier = ""
-    cable = ""
     to_special_contact = ""
     to_connector = ""
     to_connector_cavity = ""
@@ -295,7 +298,7 @@ for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Circuit":
         circuit_name = instance.get("instance_name")
 
-        # look for "From" and "To" connectors and cavities via cavities
+        # look for "From" and "To" connectors and cavities by cavity
         connector_cavity_counter = 0
         for instance3 in instances_list.read_instance_rows():
             if instance3.get("circuit_id") == circuit_name:
@@ -325,13 +328,15 @@ for instance in instances_list.read_instance_rows():
                 if instance5.get("item_type") == "Conductor":
                     conductor_identifier = instance5.get("print_name")
                     cable = instance5.get("parent_instance")
+                    length = instance5.get("length")
 
     wirelist.add(circuit_name, {
+        "Length": length
+        "Cable": cable,
+        "Conductor identifier": conductor_identifier,
         "From connector": from_connector,
         "From connector cavity": from_connector_cavity,
         "From special contact": from_special_contact,
-        "Conductor identifier": conductor_identifier,
-        "Cable": cable,
         "To special contact": to_special_contact,
         "To connector": to_connector,
         "To connector cavity": to_connector_cavity
