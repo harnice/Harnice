@@ -153,6 +153,12 @@ for instance in instances_list.read_instance_rows():
         instances_list.modify(instance_name,{
             "print_name": "J1"
         })
+    elif instance_name == "X500":
+        instances_list.modify(instance_name,{
+            "print_name": "J2"
+        })
+    elif instance.get("item_type") == "Connector":
+        raise ValueError(f"Connector {instance.get("instance_name")} defined but does not have a print name assigned.")
 
 #================ ASSIGN BACKSHELLS #===============
 for instance in instances_list.read_instance_rows():
@@ -307,13 +313,11 @@ for instance in instances_list.read_instance_rows():
             if instance3.get("circuit_id") == circuit_name:
                 if instance3.get("item_type") == "Connector cavity":
                     if connector_cavity_counter == 0:
-                        from_connector_cavity_instance_name = instance3.get("instance_name")
-                        from_connector_cavity = instance3.get("print_name")
-                        from_connector = instances_list.attribute_of(from_connector_cavity_instance_name, "parent_instance")
+                        from_connector_cavity = instance3.get("instance_name")
+                        from_connector = instances_list.attribute_of(from_connector_cavity, "parent_instance")
                     elif connector_cavity_counter == 1:
-                        to_connector_cavity_instance_name = instance3.get("instance_name")
-                        to_connector_cavity = instance3.get("print_name")
-                        to_connector = instances_list.attribute_of(to_connector_cavity_instance_name, "parent_instance")
+                        to_connector_cavity = instance3.get("instance_name")
+                        to_connector = instances_list.attribute_of(to_connector_cavity, "parent_instance")
                     else:
                         raise ValueError(f"There are 3 or more cavities specified in circuit {circuit_name} but expected two (to, from) when building wirelist.")
                     connector_cavity_counter += 1
@@ -340,12 +344,12 @@ for instance in instances_list.read_instance_rows():
             "Length": length,
             "Cable": cable,
             "Conductor_identifier": conductor_identifier,
-            "From_connector": from_connector,
-            "From_connector_cavity": from_connector_cavity,
+            "From_connector": instances_list.attribute_of(from_connector, "print_name"),
+            "From_connector_cavity": instances_list.attribute_of(from_connector_cavity, "print_name"),
             "From_special_contact": from_special_contact,
             "To_special_contact": to_special_contact,
-            "To_connector": to_connector,
-            "To_connector_cavity": to_connector_cavity
+            "To_connector": instances_list.attribute_of(to_connector, "print_name"),
+            "To_connector_cavity": instances_list.attribute_of(to_connector_cavity, "print_name"),
         })
 
 wirelist.tsv_to_xls()
