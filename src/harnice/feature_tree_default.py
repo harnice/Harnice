@@ -280,9 +280,7 @@ instances_list.assign_bom_line_numbers()
 
 
 #=============== ASSIGN FLAGNOTES #===============
-# ensure page setup is defined, if not, make a basic one. flagnotes depends on this
-page_setup_contents = svg_outputs.update_page_setup_json()
-
+# make a manual flagnote input file if it doesn't already exist
 flagnotes.ensure_manual_list_exists()
 
 # makes notes of part name, bom, revision, etc
@@ -389,6 +387,9 @@ exit()
 run_wireviz.generate_esch()
 
 #=============== REBUILDING OUTPUT SVG #===============
+# ensure page setup is defined, if not, make a basic one
+page_setup_contents = svg_outputs.update_page_setup_json()
+
 revinfo = rev_history.revision_info()
 rev_history.update_datemodified()
 
