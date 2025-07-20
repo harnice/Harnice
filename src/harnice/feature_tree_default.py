@@ -283,174 +283,80 @@ instances_list.assign_bom_line_numbers()
 # make a manual flagnote input file if it doesn't already exist
 flagnotes.ensure_manual_list_exists()
 
-note_counters = []
+flagnote_counter = 0
 buildnote_counter = 1
 
-for row in flagnotes.read_manual_list():
-    affected_string = row.get("affectedinstances", "").strip()
-    affected_list = affected_string.split(",")
-    note_type = row.get("note_type", "").strip()
-    bubble_text = row.get("bubble_text", "").strip()
-    note = row.get("note", "").strip()
-    shape = row.get("shape", "").strip()
-    shape_supplier = row.get("shape_supplier", "").strip()
+# assign manual flagnotes
+for manual_note in flagnotes.read_manual_list():
+    affected_list = manual_note.get("affectedinstances", "").strip().split(",")
 
-    if note_type == "buildnote" and bubble_text == "":
-        bubble_text = str(buildnote_counter)
+    for affected in affected_list:
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": manual_note.get("note_type"),
+            "mpn": manual_note.get("shape"),
+            "supplier": manual_note.get("shape_supplier"),
+            "bubble_text": buildnote_counter,
+            "parent_instance": affected,
+            "parent_csys": affected,
+            "note_type": manual_note.get("note_type")
+        })
+        flagnote_counter += 1
+    
+    if manual_note.get("note_type") == "buildnote":
         buildnote_counter += 1
 
-    for affected in affected_list:
-        affected = affected.strip()
-        note_number = len(note_counters)
-        note_counters.append(affected)
-        flagnote_name = affected + "-flagnote" + str(note_number)
-        translate_x, translate_y = flagnotes.flagnote_location(affected, note_number)
-
-        parent_csys = ""
-        for inst in instances:
-            if inst.get("instance_name", "") == affected:
-                parent_csys = inst.get("parent_csys", "")
-                break
-
-        instances_list.add_unless_exists(f"{flagnote_name}-location", {
-            "item_type": "Flagnote location",
-            "parent_instance": affected,
-            "parent_csys": parent_csys,
-            "translate_x": translate_x,
-            "translate_y": translate_y,
-            "note_number": note_number,
-            "note_type": note_type
-        })
-
-        instances_list.add_unless_exists(f"{flagnote_name}-leader", {
-            "item_type": "Flagnote leader",
-            "parent_instance": affected,
-            "parent_csys": parent_csys,
-            "note_number": note_number,
-            "note_type": note_type
-        })
-
-        instances_list.add_unless_exists(flagnote_name, {
-            "item_type": "Flagnote",
-            "parent_instance": affected,
-            "parent_csys": flagnote_name + "-location",
-            "mpn": shape,
-            "supplier": shape_supplier,
-            "translate_x": 0,
-            "translate_y": 0,
-            "absolute_rotation": 0,
-            "note_number": note_number,
-            "bubble_text": bubble_text,
-            "note_type": note_type
-        })
-
-        if note_type == "buildnote":
-            instances_list.add_unless_exists({
-                "instance_name": "buildnote-" + bubble_text,
-                "item_type": "buildnote master",
-                "print_name": note
-            })
-
-for row in flagnotes.read_revhistory():
-    rev = row.get("rev", "").strip()
-    affected_string = row.get("affectedinstances", "").strip()
-    affected_list = affected_string.split(",")
+# assign revision history flagnotes
+for rev_row in flagnotes.read_revhistory():
+    affected_list = manual_note.get("affectedinstances", "").strip().split(",")
 
     for affected in affected_list:
-        affected = affected.strip()
-        note_type = "rev_change_callout"
-        bubble_text = rev
-        shape = "rev_change_callout"
-        shape_supplier = "public"
-        note_number = len(note_counters)
-        note_counters.append(affected)
-        flagnote_name = affected + "-flagnote" + str(note_number)
-        translate_x, translate_y = flagnotes.flagnote_location(affected, note_number)
-
-        parent_csys = ""
-        for instance in instances_list.read_instance_rows():
-            if instance.get("instance_name", "") == affected:
-                parent_csys = inst.get("parent_csys", "")
-                break
-
-        instances_list.add_unless_exists(f"{flagnote_name}-location", {
-            "item_type": "Flagnote location",
-            "parent_instance": affected,
-            "parent_csys": parent_csys,
-            "translate_x": translate_x,
-            "translate_y": translate_y,
-            "note_number": note_number,
-            "note_type": note_type
-        })
-
-        instances_list.add_unless_exists(f"{flagnote_name}-leader", {
-            "item_type": "Flagnote leader",
-            "parent_instance": affected,
-            "parent_csys": parent_csys,
-            "note_number": note_number,
-            "note_type": note_type
-        })
-
-        instances_list.add_unless_exists(flagnote_name, {
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
             "item_type": "Flagnote",
+            "note_type": "rev_change_callout",
+            "mpn": "rev_change_callout",
+            "supplier": "public",
+            "bubble_text": rev_row.get("rev"),
             "parent_instance": affected,
-            "parent_csys": flagnote_name + "-location",
-            "mpn": shape,
-            "supplier": shape_supplier,
-            "translate_x": 0,
-            "translate_y": 0,
-            "absolute_rotation": 0,
-            "note_number": note_number,
-            "bubble_text": bubble_text,
-            "note_type": note_type
+            "parent_csys": affected
         })
+        flagnote_counter += 1
 
+# assign bom line number flagnotes
 for instance in instances_list.read_instance_rows():
-    item_type = instance.get("item_type", "").strip()
-    if item_type == "Connector" or item_type == "Backshell":
-        affected = instance.get("instance_name", "").strip()
-        parent_csys = instance.get("parent_csys", "")
-        for note_type, shape, bubble_text in [
-            ("part_name", "part_name", affected),
-            ("bom_item", "bom_item", instance.get("bom_line_number", "").strip())
-        ]:
-            note_number = len(note_counters)
-            note_counters.append(affected)
-            flagnote_name = affected + "-flagnote" + str(note_number)
-            translate_x, translate_y = flagnotes.flagnote_location(affected, note_number)
+    if not instance.get("bom_line_number") == "":
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": "bom_item",
+            "mpn": "bom_item",
+            "supplier": "public",
+            "bubble_text": instance.get("bom_line_number"),
+            "parent_instance": instance.get("instance_name"),
+            "parent_csys": affected
+        })
+        flagnote_counter += 1
 
-            instances_list.add_unless_exists(f"{flagnote_name}-location", {
-                "item_type": "Flagnote location",
-                "parent_instance": affected,
-                "parent_csys": parent_csys,
-                "translate_x": translate_x,
-                "translate_y": translate_y,
-                "note_number": note_number,
-                "note_type": note_type
-            })
+# assign part name flagnotes
+for instance in instances_list.read_instance_rows():
+    # most instance types don't need part name flagnotes
+    if instance.get("item_type") in ["Connector", "Backshell"]:
+        # if there's text in "print_name", prefer that over "instance_name"
+        bubble_text = ""
+        if instance.get("print_name") == "":
+            bubble_text = instance.get("instance_name")
+        else:
+            bubble_text = instance.get("print_name")
 
-            instances_list.add_unless_exists(f"{flagnote_name}-leader", {
-                "item_type": "Flagnote leader",
-                "parent_instance": affected,
-                "parent_csys": parent_csys,
-                "note_number": note_number,
-                "note_type": note_type
-            })
-
-            instances_list.add_unless_exists(flagnote_name, {
-                "item_type": "Flagnote",
-                "parent_instance": affected,
-                "parent_csys": flagnote_name + "-location",
-                "mpn": shape,
-                "supplier": "public",
-                "translate_x": 0,
-                "translate_y": 0,
-                "absolute_rotation": 0,
-                "note_number": note_number,
-                "bubble_text": bubble_text,
-                "note_type": note_type
-            })
-
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": "part_name",
+            "mpn": "part_name",
+            "supplier": "public",
+            "bubble_text": bubble_text,
+            "parent_instance": instance.get("instance_name"),
+            "parent_csys": affected
+        })
+        flagnote_counter += 1
 
 #===========================================================================
 #===========================================================================
