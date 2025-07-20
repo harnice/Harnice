@@ -280,13 +280,11 @@ instances_list.assign_bom_line_numbers()
 
 
 #=============== ASSIGN FLAGNOTES #===============
-# make a manual flagnote input file if it doesn't already exist
-flagnotes.ensure_manual_list_exists()
-
-flagnote_counter = 0
+flagnote_counter = 0 # assign a unique ID to each note first
 buildnote_counter = 1
 
 # assign manual flagnotes
+flagnotes.ensure_manual_list_exists()
 for manual_note in flagnotes.read_manual_list():
     affected_list = manual_note.get("affectedinstances", "").strip().split(",")
 
