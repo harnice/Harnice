@@ -12,30 +12,12 @@ from harnice import(
 
 # === Global Columns Definition ===
 MANUAL_FLAGNOTES_COLUMNS = [
-    "action",
     "note_type",
     "note",
     "shape",
     "shape_supplier",
     "bubble_text",
     "affectedinstances"
-]
-
-AUTO_FLAGNOTES_COLUMNS = [
-    "note_type",
-    "note",
-    "shape",
-    "shape_supplier",
-    "bubble_text",
-    "affectedinstances"
-]
-
-BUILDNOTES_COLUMNS = [
-    "buildnote_number",
-    "note",
-    "has_shape",
-    "shape",
-    "shape_supplier"
 ]
 
 def ensure_manual_list_exists():
@@ -85,7 +67,7 @@ def flagnote_location(affected_instance_name, note_number):
     x = round(math.cos(radians) * distance, 5)
     y = round(math.sin(radians) * distance, 5)
     return x, y
-    
+
 def make_note_drawings():
     instances = instances_list.read_instance_rows()
 

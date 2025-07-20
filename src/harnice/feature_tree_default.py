@@ -296,7 +296,7 @@ for manual_note in flagnotes.read_manual_list():
             "note_type": manual_note.get("note_type"),
             "mpn": manual_note.get("shape"),
             "supplier": manual_note.get("shape_supplier"),
-            "bubble_text": buildnote_counter,
+            "bubble_text": buildnote_counter, #doesn't matter what you write in bubble_text in the manual file
             "parent_instance": affected,
             "parent_csys": affected,
             "note_type": manual_note.get("note_type")
@@ -308,7 +308,7 @@ for manual_note in flagnotes.read_manual_list():
 
 # assign revision history flagnotes
 for rev_row in flagnotes.read_revhistory():
-    affected_list = manual_note.get("affectedinstances", "").strip().split(",")
+    affected_list = rev_row.get("affectedinstances", "").strip().split(",")
 
     for affected in affected_list:
         instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
