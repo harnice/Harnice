@@ -68,6 +68,7 @@ def flagnote_location(affected_instance_name, note_number):
     y = round(math.sin(radians) * distance, 5)
     return x, y
 
+#TODO: move this into the formboard artifact processor
 def make_note_drawings():
     instances = instances_list.read_instance_rows()
 
@@ -109,6 +110,7 @@ def make_note_drawings():
         with open(drawing_path, 'w', encoding='utf-8') as f:
             f.write(svg)
 
+#TODO: move this into the formboard artifact processor
 def make_leader_drawings():
     instances = instances_list.read_instance_rows()
 
