@@ -280,8 +280,8 @@ instances_list.assign_bom_line_numbers()
 
 
 #=============== ASSIGN FLAGNOTES #===============
-flagnote_counter = 0 # assign a unique ID to each note first
-buildnote_counter = 1
+flagnote_counter = 0 # assign a unique ID to each note
+buildnote_counter = 1 # buildnotes start at 1
 
 # assign manual flagnotes
 flagnotes.ensure_manual_list_exists()
@@ -356,7 +356,7 @@ for instance in instances_list.read_instance_rows():
         })
         flagnote_counter += 1
 
-#======== add funky flagnote rules here
+#======== add funky flagnote rules
 # do not add bom bubbles for contacts, but instead a buildnote
 contact_flagnote_conversion_happened = False
 for instance in instances_list.read_instance_rows():
@@ -383,24 +383,8 @@ for instance in instances_list.read_instance_rows():
 if contact_flagnote_conversion_happened == True:
     buildnote_counter += 1
 
-# add buildnote itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
-for instance in instances_list.read_instance_rows():
-    if instance.get("item_type") == "Flagnote" and instance.get("note_type") == "buildnote":
-        buildnote_text = instance.get("note_text")
-
-        # does this buildnote exist as an instance yet?
-        already_exists = False
-        for instance2 in instances_list.read_instance_rows():
-            if instance2.get("item_type") == "Buildnote" and instance2.get("note_text") == buildnote_text:
-                already_exists = True
-        
-        # if not, make it
-        if already_exists == False:
-            instances_list.add_unless_exists(f"buildnote-{instance.get("bubble_text")}", {
-                "item_type": "Buildnote",
-                "note_text": buildnote_text
-            })
-        
+flagnotes.compile_buildnotes():
+    # add buildnote itemtypes to list, intended to make buildnote list unique
 
 
 #===========================================================================

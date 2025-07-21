@@ -203,3 +203,22 @@ def make_leader_drawings():
                 output_filename = os.path.join(leader_dir, f"{leader_name}-drawing.svg")
                 with open(output_filename, 'w') as svg_file:
                     svg_file.write(svg_content)
+
+def compile_buildnotes():
+    # add buildnote itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
+    for instance in instances_list.read_instance_rows():
+        if instance.get("item_type") == "Flagnote" and instance.get("note_type") == "buildnote":
+            buildnote_text = instance.get("note_text")
+
+            # does this buildnote exist as an instance yet?
+            already_exists = False
+            for instance2 in instances_list.read_instance_rows():
+                if instance2.get("item_type") == "Buildnote" and instance2.get("note_text") == buildnote_text:
+                    already_exists = True
+            
+            # if not, make it
+            if already_exists == False:
+                instances_list.add_unless_exists(f"buildnote-{instance.get("bubble_text")}", {
+                    "item_type": "Buildnote",
+                    "note_text": buildnote_text
+                })
