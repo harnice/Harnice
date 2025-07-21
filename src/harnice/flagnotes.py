@@ -13,7 +13,7 @@ from harnice import(
 # === Global Columns Definition ===
 MANUAL_FLAGNOTES_COLUMNS = [
     "note_type",
-    "note",
+    "note_text",
     "shape",
     "shape_supplier",
     "bubble_text",

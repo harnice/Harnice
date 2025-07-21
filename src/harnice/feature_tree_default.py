@@ -297,7 +297,7 @@ for manual_note in flagnotes.read_manual_list():
             "bubble_text": buildnote_counter, #doesn't matter what you write in bubble_text in the manual file
             "parent_instance": affected,
             "parent_csys": affected,
-            "note_type": manual_note.get("note_type")
+            "note_text": manual_note.get("note_text")
         })
         flagnote_counter += 1
     
@@ -355,6 +355,53 @@ for instance in instances_list.read_instance_rows():
             "parent_csys": affected
         })
         flagnote_counter += 1
+
+#======== add funky flagnote rules here
+# do not add bom bubbles for contacts, but instead a buildnote
+contact_flagnote_conversion_happened = False
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Flagnote":
+        if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
+            #TODO: DELETE AN INSTANCE FROM INSTANCES LIST
+            #instances_list.delete_instance(instance.get("instance_name"))
+            instances_list.modify(instance.get("instance_name"), {
+                "item_type": "DELETEME"
+            })
+
+            instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+                "item_type": "Flagnote",
+                "note_type": "buildnote",
+                "mpn": "buildnote",
+                "supplier": "public",
+                "bubble_text": buildnote_counter,
+                "parent_instance": instance.get("parent_instance"),
+                "parent_csys": instance.get("parent_instance"),
+                "note_text": "Special contacts used in this connector. Refer to wirelist for details"
+            })
+            flagnote_counter += 1
+            contact_flagnote_conversion_happened = True
+if contact_flagnote_conversion_happened == True:
+    buildnote_counter += 1
+
+# add buildnote itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Flagnote" and instance.get("note_type") == "buildnote":
+        buildnote_text = instance.get("note_text")
+
+        # does this buildnote exist as an instance yet?
+        already_exists = False
+        for instance2 in instances_list.read_instance_rows():
+            if instance2.get("item_type") == "Buildnote" and instance2.get("note_text") == buildnote_text:
+                already_exists = True
+        
+        # if not, make it
+        if already_exists == False:
+            instances_list.add_unless_exists(f"buildnote-{instance.get("bubble_text")}", {
+                "item_type": "Buildnote",
+                "note_text": buildnote_text
+            })
+        
+
 
 #===========================================================================
 #===========================================================================
