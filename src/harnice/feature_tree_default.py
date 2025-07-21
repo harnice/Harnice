@@ -363,6 +363,7 @@ for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Flagnote":
         if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
             #TODO: DELETE AN INSTANCE FROM INSTANCES LIST
+            #https://github.com/kenyonshutt/harnice/issues/224
             #instances_list.delete_instance(instance.get("instance_name"))
             instances_list.modify(instance.get("instance_name"), {
                 "item_type": "DELETEME"
