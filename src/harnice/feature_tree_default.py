@@ -1,27 +1,3 @@
-import os
-import yaml
-import re
-from harnice import (
-    fileio, instances_list, component_library, wirelist,
-    svg_outputs, flagnotes, formboard, run_wireviz, rev_history, svg_utils,
-    harness_yaml
-)
-
-#===========================================================================
-#===========================================================================
-#             BUILD HARNESS SOURCE OF TRUTH (INSTANCES LIST)
-#===========================================================================
-#===========================================================================
-
-
-
-
-#===========================================================================
-#===========================================================================
-#                  PROCESS BASIC HARNESS BUILD RULES
-#===========================================================================
-#===========================================================================
-
 #=============== IMPORT PARTS FROM LIBRARY #===============
 print()
 print("Importing parts from library")
@@ -209,9 +185,3 @@ flagnotes.compile_buildnotes():
     # add separate buildnote itemtypes to list based on affectedinstance flagnotes, intended to make one list of unique buildnotes
 
 #TODO: add buildnote locations per https://github.com/kenyonshutt/harnice/issues/181
-
-#===========================================================================
-#===========================================================================
-#                      CONSTRUCT HARNESS ARTIFACTS
-#===========================================================================
-#===========================================================================

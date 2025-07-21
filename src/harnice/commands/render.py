@@ -21,7 +21,7 @@ from harnice import (
 
 def harness():
     print("Thanks for using Harnice!")
-
+    
     # === Step 1: Verify revision and file structure at the top level ===
     fileio.verify_revision_structure()
     fileio.verify_harness_yaml_exists()
@@ -30,14 +30,7 @@ def harness():
     os.remove(fileio.path("feature tree"))
 
     # === Step 2: Ensure feature_tree.py exists ===
-    feature_tree_path = fileio.path("feature tree")
-    if not os.path.exists(feature_tree_path):
-        default_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "feature_tree_default.py")
-        os.makedirs(os.path.dirname(feature_tree_path), exist_ok=True)
-        with open(default_path, "r", encoding="utf-8") as src, \
-             open(feature_tree_path, "w", encoding="utf-8") as dst:
-            dst.write(src.read())
-        print(f"Created feature_tree.py from default template")
+    verify_feature_tree_exists(prebuilder, artifact_builder_list)
     
     # initialize instances list
     instances_list.make_new_list()

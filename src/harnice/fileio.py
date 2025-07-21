@@ -375,3 +375,47 @@ def verify_harness_yaml_exists():
 
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
+
+def verify_feature_tree_exists(prebuilder, artifact_builder_list):
+    feature_tree_path = fileio.path("feature tree")
+    if not os.path.exists(feature_tree_path):
+        default_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "feature_tree_default.py")
+        os.makedirs(os.path.dirname(feature_tree_path), exist_ok=True)
+        with open(default_path, "r", encoding="utf-8") as src, \f
+             open(feature_tree_path, "w", encoding="utf-8") as dst:
+            dst.write(src.read())
+        
+    skeleton = 
+'''
+import os
+import yaml
+import re
+from harnice import (
+    fileio, instances_list, component_library, wirelist,
+    svg_outputs, flagnotes, formboard, run_wireviz, rev_history, svg_utils,
+    harness_yaml
+)
+
+#===========================================================================
+#===========================================================================
+#             BUILD HARNESS SOURCE OF TRUTH (INSTANCES LIST)
+#===========================================================================
+#===========================================================================
+'''
+prebuilder
+'''
+#===========================================================================
+#===========================================================================
+#                  PROCESS BASIC HARNESS BUILD RULES
+#===========================================================================
+#===========================================================================
+'''
+feature_tree_default.py
+'''
+#===========================================================================
+#===========================================================================
+#                      CONSTRUCT HARNESS ARTIFACTS
+#===========================================================================
+#===========================================================================
+'''
+artifact_builder
