@@ -386,6 +386,7 @@ if contact_flagnote_conversion_happened == True:
 flagnotes.compile_buildnotes():
     # add buildnote itemtypes to list, intended to make buildnote list unique
 
+#TODO: add buildnote locations per https://github.com/kenyonshutt/harnice/issues/181
 
 #===========================================================================
 #===========================================================================
