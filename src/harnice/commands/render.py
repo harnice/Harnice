@@ -26,6 +26,7 @@ def harness():
     fileio.verify_revision_structure()
     fileio.verify_harness_yaml_exists()
     fileio.generate_structure()
+    rev_history.update_datemodified()
     #TEMPORARY- TODO: DELETE THIS LINE AFTER DEVELOPING FEATURE_TREE_DEFAULT:
     os.remove(fileio.path("feature tree"))
 
