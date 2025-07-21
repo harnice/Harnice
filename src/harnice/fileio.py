@@ -376,16 +376,67 @@ def verify_harness_yaml_exists():
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
 
-def verify_feature_tree_exists(prebuilder, artifact_builder_list):
-    feature_tree_path = fileio.path("feature tree")
-    if not os.path.exists(feature_tree_path):
-        default_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "feature_tree_default.py")
-        os.makedirs(os.path.dirname(feature_tree_path), exist_ok=True)
-        with open(default_path, "r", encoding="utf-8") as src, \f
-             open(feature_tree_path, "w", encoding="utf-8") as dst:
-            dst.write(src.read())
+def verify_feature_tree_exists(prebuilder = "", artifact_builder_list = []):
+    if not os.path.exists(fileio.path("feature tree")):
+        if prebuilder == "":
+            # feature tree does not exist and a prebuilder is not specified
+            print("Do you want to use a prebuilder to help build this harness from scratch?")
+            print("  ''         Enter nothing for the standard Harnice esch prebuilder")
+            print("  'none'     Enter 'none' to build your harness entirely out of rules in feature tree (you're hardcore)")
+            print("  'wireviz'  Entire 'wireviz' to use the wireviz-yaml-to-instances-list prebuilder")
+            print("             For something else, enter the path to your desired prebuilder")
+            prebuilder = cli.prompt("")
+
+        if prebuilder == "":
+            prebuilder_path = os.path.join(os.getenv("public"), "prebuilders", "harnice_esch_prebuilder.py")
+        elif prebuilder == "wireviz":
+            prebuilder_path = os.path.join(os.getenv("public"), "prebuilders", "wireviz_yaml_prebuilder.py")
+
+        if prebuilder = "None":
+            prebuilder_contents = ""
+        else:
+            with open(prebuilder_path, "r", encoding="utf-8") as contents, \f:
+                prebuilder_contents = contents.read()
         
-    skeleton = 
+        feature_tree_default_srcpath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "feature_tree_default.py")
+        with open(feature_tree_default_srcpath, "r", encoding="utf-8") as src, \f:
+            feature_tree_default_rules = src.read()
+
+        if artifact_builder_list == []:
+            artifact_builder_list = [
+                "bom_exporter",
+                "standard_harnice_formboard",
+                "wirelist_exporter",
+                "wireviz_builder"
+            ]
+
+        artifact_builder_contents = ""
+
+        if "bom_exporter" in artifact_builder_list:
+            artifact_builder_path = os.path.join(os.getenv("public"), "artifact_builders", "bom_exporter.py")
+            with open(artifact_builder_path, "r", encoding="utf-8") as contents, \f:
+                artifact_builder_contents = artifact_builder_contents.append(contents.read())
+                artifact_builder_contents = artifact_builder_contents.append('\n')
+        
+        if "standard_harnice_formboard" in artifact_builder_list:
+            artifact_builder_path = os.path.join(os.getenv("public"), "artifact_builders", "standard_harnice_formboard.py")
+            with open(artifact_builder_path, "r", encoding="utf-8") as contents, \f:
+                artifact_builder_contents = artifact_builder_contents.append(contents.read())
+                artifact_builder_contents = artifact_builder_contents.append('\n')
+
+        if "wirelist_exporter" in artifact_builder_list:
+            artifact_builder_path = os.path.join(os.getenv("public"), "artifact_builders", "wirelist_exporter.py")
+            with open(artifact_builder_path, "r", encoding="utf-8") as contents, \f:
+                artifact_builder_contents = artifact_builder_contents.append(contents.read())
+                artifact_builder_contents = artifact_builder_contents.append('\n')
+
+        if "wireviz_builder" in artifact_builder_list:
+            artifact_builder_path = os.path.join(os.getenv("public"), "artifact_builders", "wireviz_builder.py")
+            with open(artifact_builder_path, "r", encoding="utf-8") as contents, \f:
+                artifact_builder_contents = artifact_builder_contents.append(contents.read())
+                artifact_builder_contents = artifact_builder_contents.append('\n')
+        
+        feature_tree = 
 '''
 import os
 import yaml
@@ -402,7 +453,8 @@ from harnice import (
 #===========================================================================
 #===========================================================================
 '''
-prebuilder
+        feature_tree = feature_tree.append(prebuilder_contents)
+        feature_tree = feature_tree.append(
 '''
 #===========================================================================
 #===========================================================================
@@ -410,7 +462,9 @@ prebuilder
 #===========================================================================
 #===========================================================================
 '''
-feature_tree_default.py
+        )
+        feature_tree = feature_tree.append(feature_tree_default_rules)
+        feature_tree = feature_tree.append(
 '''
 #===========================================================================
 #===========================================================================
@@ -418,4 +472,7 @@ feature_tree_default.py
 #===========================================================================
 #===========================================================================
 '''
-artifact_builder
+        )
+        feature_tree = feature_tree.append(artifact_builder_contents)
+        with open(fileio.path("feature tree"), "w", encoding="utf-8") as dst:
+            dst.write(feature_tree)
