@@ -14,6 +14,14 @@ from harnice import (
 #===========================================================================
 
 
+
+
+#===========================================================================
+#===========================================================================
+#                  PROCESS BASIC HARNESS BUILD RULES
+#===========================================================================
+#===========================================================================
+
 #=============== IMPORT PARTS FROM LIBRARY #===============
 print()
 print("Importing parts from library")
@@ -198,7 +206,7 @@ if contact_flagnote_conversion_happened == True:
     buildnote_counter += 1
 
 flagnotes.compile_buildnotes():
-    # add buildnote itemtypes to list, intended to make buildnote list unique
+    # add separate buildnote itemtypes to list based on affectedinstance flagnotes, intended to make one list of unique buildnotes
 
 #TODO: add buildnote locations per https://github.com/kenyonshutt/harnice/issues/181
 
