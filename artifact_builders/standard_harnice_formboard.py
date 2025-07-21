@@ -3,7 +3,6 @@
 page_setup_contents = svg_outputs.update_page_setup_json()
 
 revinfo = rev_history.revision_info()
-rev_history.update_datemodified()
 
 # add parent types to make filtering easier
 instances_list.add_parent_instance_type()
