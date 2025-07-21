@@ -24,20 +24,20 @@ def harness():
     
     # === Step 1: Verify revision and file structure at the top level ===
     fileio.verify_revision_structure()
-    fileio.verify_harness_yaml_exists()
     fileio.generate_structure()
     rev_history.update_datemodified()
     #TEMPORARY- TODO: DELETE THIS LINE AFTER DEVELOPING FEATURE_TREE_DEFAULT:
-    os.remove(fileio.path("feature tree"))
+    if os.path.exists(fileio.path("feature tree")):
+        os.remove(fileio.path("feature tree"))
 
     # === Step 2: Ensure feature_tree.py exists ===
-    verify_feature_tree_exists(prebuilder, artifact_builder_list)
+    fileio.verify_feature_tree_exists()
     
     # initialize instances list
     instances_list.make_new_list()
 
     # === Step 3: Run the project-specific feature_tree.py ===
-    runpy.run_path(feature_tree_path, run_name="__main__")
+    runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
     print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!")
     print()
