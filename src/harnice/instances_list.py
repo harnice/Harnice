@@ -39,6 +39,7 @@ INSTANCES_LIST_COLUMNS = [
     'note_type',
     'note_number', #<--------- merge with parent_csys and import instances of child csys?
     'bubble_text',
+    'note_text',
     'supplier',
     'lib_latest_rev',
     'lib_rev_used_here',

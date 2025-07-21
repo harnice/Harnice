@@ -89,51 +89,45 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}.feature_tree.py":"feature tree",
                 f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
                 "artifacts":{
-                    "formboard_drawing":{
-                        f"{partnumber("pn-rev")}-formboard.pdf":"harnice output",
-                        "page_setup":{
-                            f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
-                        },
-                    },
+                    f"{partnumber("pn-rev")}-formboard.pdf":"harnice output",
                     f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
                     f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg",
                     f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
                     f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted",
-                    "support_do_not_edit": {
-                        "svg_generated": {
-                            f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                            "buildnotes_table":{
-                                f"{partnumber("pn-rev")}.buildnotes_table_master.svg":"buildnotes table svg",
-                                "buildnote_table_bubbles":{},
-                            },
-                            f"{partnumber("pn-rev")}.flagnotes_master.svg":"flagnotes master svg",
-                            f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                            f"{partnumber("pn-rev")}.master.svg":"master svg",
-                            "revhistory_table":{
-                                f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                                "revision_table_bubbles":{},
-                            },
-                            f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
-                            "formboard_svgs":{},
-                            "tblock_svgs":{},
-                            "uneditable_instance_data":{}
+                    "svg_generated": {
+                        f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
+                        "buildnotes_table":{
+                            f"{partnumber("pn-rev")}.buildnotes_table_master.svg":"buildnotes table svg",
+                            "buildnote_table_bubbles":{},
                         },
-                        "wireviz_outputs":{
-                            f"{partnumber("pn-rev")}-esch.bom.tsv":"wireviz bom",
-                            f"{partnumber("pn-rev")}-esch.html":"wireviz html",
-                            f"{partnumber("pn-rev")}-esch.png":"wireviz png",
-                            f"{partnumber("pn-rev")}-esch.svg":"wireviz svg"
-                        }
+                        f"{partnumber("pn-rev")}.flagnotes_master.svg":"flagnotes master svg",
+                        f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
+                        f"{partnumber("pn-rev")}.master.svg":"master svg",
+                        "revhistory_table":{
+                            f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
+                            "revision_table_bubbles":{},
+                        },
+                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
+                        "formboard_svgs":{},
+                        "tblock_svgs":{},
+                        "uneditable_instance_data":{}
+                    },
+                    "wireviz_outputs":{
+                        f"{partnumber("pn-rev")}-esch.bom.tsv":"wireviz bom",
+                        f"{partnumber("pn-rev")}-esch.html":"wireviz html",
+                        f"{partnumber("pn-rev")}-esch.png":"wireviz png",
+                        f"{partnumber("pn-rev")}-esch.svg":"wireviz svg"
                     }
                 },
                 "interactive_files":{
                     "editable_instance_data":{},
+                    "formboard_drawing":{
+                        "page_setup":{
+                            f"{partnumber("pn-rev")}.harnice_output_contents.json":"harnice output contents"
+                        },
+                    },
                     f"{partnumber("pn-rev")}.formboard_graph_definition.tsv":"formboard graph definition",
                     f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual"
-                },
-                "delete_soon": {
-                        f"{partnumber("pn-rev")}.buildnotes_list.tsv":"buildnotes list", 
-                        f"{partnumber("pn-rev")}.flagnotes_list.tsv":"flagnotes list",
                 }
             }
     elif product_type == "part":
@@ -163,7 +157,6 @@ def generate_structure():
     os.makedirs(dirpath("page_setup"), exist_ok=True)
     os.makedirs(dirpath("interactive_files"), exist_ok=True)
     os.makedirs(dirpath("editable_instance_data"), exist_ok=True)
-    os.makedirs(dirpath("delete_soon"), exist_ok=True)
     os.makedirs(dirpath("svg_generated"), exist_ok=True)
     os.makedirs(dirpath("buildnotes_table"), exist_ok=True)
     os.makedirs(dirpath("buildnote_table_bubbles"), exist_ok=True)

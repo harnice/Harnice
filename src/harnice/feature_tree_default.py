@@ -7,18 +7,12 @@ from harnice import (
     harness_yaml
 )
 
-"""
-Terminology:
-- A "circuit" is a logical group of ports that are electrically connected.
-- A "port" is a named electrical interface, such as a pin, terminal, or wire end.
-- The "nets" connecting ports are implied by being in the same circuit; they are not explicitly listed.
-"""
-
 #===========================================================================
 #===========================================================================
 #             BUILD HARNESS SOURCE OF TRUTH (INSTANCES LIST)
 #===========================================================================
 #===========================================================================
+
 
 #=============== CREATE BASE INSTANCES FROM ESCH #===============
 # For each electrical circuit (or net) in your system
@@ -116,6 +110,7 @@ for circuit_name, ports in harness_yaml.load().items():
         
         port_counter += 1
 
+
 #================ ASSIGN MPNS TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
@@ -132,6 +127,7 @@ for instance in instances_list.read_instance_rows():
                 "mpn": "D38999_26ZA98PN",
                 "supplier": "public"
             })
+
 
 #================ ASSIGN PRINT NAMES TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
@@ -159,6 +155,7 @@ for instance in instances_list.read_instance_rows():
     elif instance.get("item_type") == "Connector":
         raise ValueError(f"Connector {instance.get("instance_name")} defined but does not have a print name assigned.")
 
+
 #================ ASSIGN BACKSHELLS AND ACCESSORIES TO CONNECTORS #===============
 for instance in instances_list.read_instance_rows():
     instance_name = instance.get("instance_name")
@@ -174,6 +171,7 @@ for instance in instances_list.read_instance_rows():
                     "parent_instance": instance.get("instance_name"),
                     "location_is_node_or_segment": "Node"
                 })
+
 
 #=============== ASSIGN PARENTS TO WEIRD PARTS LIKE CONTACTS #===============
 for instance in instances_list.read_instance_rows():
@@ -192,6 +190,7 @@ for instance in instances_list.read_instance_rows():
             })
         else:
             raise ValueError(f"Because adjacent ports are both port-based or both segment-based, I don't know what parent to assign to {instance_name}")
+
 
 #================ ASSIGN MPNS TO CABLES #===============
 #TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
@@ -231,7 +230,8 @@ for instance in instances_list.read_instance_rows():
                 # checks for updates against the library
                 # checks for modifications against the library
 
-#=============== LOOK UP PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
+
+#=============== LOOK INSIDE PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
 #TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") in ["Connector"]:
@@ -272,8 +272,121 @@ for instance in instances_list.read_instance_rows():
 
 formboard.generate_node_coordinates()
 
+
 #=============== ASSIGN BOM LINE NUMBERS #===============
 instances_list.assign_bom_line_numbers()
+# bom line numbers will only be assigned to instances that have "bom_line_number" == "True"
+# it will replace "True" with a number
+
+
+#=============== ASSIGN FLAGNOTES #===============
+flagnote_counter = 0 # assign a unique ID to each note
+buildnote_counter = 1 # buildnotes start at 1
+
+# assign manual flagnotes
+flagnotes.ensure_manual_list_exists()
+for manual_note in flagnotes.read_manual_list():
+    affected_list = manual_note.get("affectedinstances", "").strip().split(",")
+
+    for affected in affected_list:
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": manual_note.get("note_type"),
+            "mpn": manual_note.get("shape"),
+            "supplier": manual_note.get("shape_supplier"),
+            "bubble_text": buildnote_counter, #doesn't matter what you write in bubble_text in the manual file
+            "parent_instance": affected,
+            "parent_csys": affected,
+            "note_text": manual_note.get("note_text")
+        })
+        flagnote_counter += 1
+    
+    if manual_note.get("note_type") == "buildnote":
+        buildnote_counter += 1
+
+# assign revision history flagnotes
+for rev_row in flagnotes.read_revhistory():
+    affected_list = rev_row.get("affectedinstances", "").strip().split(",")
+
+    for affected in affected_list:
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": "rev_change_callout",
+            "mpn": "rev_change_callout",
+            "supplier": "public",
+            "bubble_text": rev_row.get("rev"),
+            "parent_instance": affected,
+            "parent_csys": affected
+        })
+        flagnote_counter += 1
+
+# assign bom line number flagnotes
+for instance in instances_list.read_instance_rows():
+    if not instance.get("bom_line_number") == "":
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": "bom_item",
+            "mpn": "bom_item",
+            "supplier": "public",
+            "bubble_text": instance.get("bom_line_number"),
+            "parent_instance": instance.get("instance_name"),
+            "parent_csys": affected
+        })
+        flagnote_counter += 1
+
+# assign part name flagnotes
+for instance in instances_list.read_instance_rows():
+    # most instance types don't need part name flagnotes
+    if instance.get("item_type") in ["Connector", "Backshell"]:
+        # if there's text in "print_name", prefer that over "instance_name"
+        bubble_text = ""
+        if instance.get("print_name") == "":
+            bubble_text = instance.get("instance_name")
+        else:
+            bubble_text = instance.get("print_name")
+
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": "part_name",
+            "mpn": "part_name",
+            "supplier": "public",
+            "bubble_text": bubble_text,
+            "parent_instance": instance.get("instance_name"),
+            "parent_csys": affected
+        })
+        flagnote_counter += 1
+
+#======== add funky flagnote rules
+# do not add bom bubbles for contacts, but instead a buildnote
+contact_flagnote_conversion_happened = False
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Flagnote":
+        if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
+            #TODO: DELETE AN INSTANCE FROM INSTANCES LIST
+            #instances_list.delete_instance(instance.get("instance_name"))
+            instances_list.modify(instance.get("instance_name"), {
+                "item_type": "DELETEME"
+            })
+
+            instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+                "item_type": "Flagnote",
+                "note_type": "buildnote",
+                "mpn": "buildnote",
+                "supplier": "public",
+                "bubble_text": buildnote_counter,
+                "parent_instance": instance.get("parent_instance"),
+                "parent_csys": instance.get("parent_instance"),
+                "note_text": "Special contacts used in this connector. Refer to wirelist for details"
+            })
+            flagnote_counter += 1
+            contact_flagnote_conversion_happened = True
+if contact_flagnote_conversion_happened == True:
+    buildnote_counter += 1
+
+flagnotes.compile_buildnotes():
+    # add buildnote itemtypes to list, intended to make buildnote list unique
+
+#TODO: add buildnote locations per https://github.com/kenyonshutt/harnice/issues/181
 
 #===========================================================================
 #===========================================================================
@@ -360,6 +473,7 @@ for instance in instances_list.read_instance_rows():
             "To_connector_cavity": instances_list.attribute_of(to_connector_cavity, "print_name"),
         })
 
+#=============== MAKE A PRETTY WIRELIST #===============
 wirelist.tsv_to_xls()
 
 #=============== MAKE A BOM #===============
@@ -367,32 +481,21 @@ instances_list.export_bom(12) # arg: cable margin per cut
 
 exit()
 
-#=============== HANDLING FLAGNOTES #===============
-# ensure page setup is defined, if not, make a basic one. flagnotes depends on this
-page_setup_contents = svg_outputs.update_page_setup_json()
-
-flagnotes.ensure_manual_list_exists()
-
-# makes notes of part name, bom, revision, etc
-flagnotes.compile_all_flagnotes()
-
-# adds the above to instance list
-instances_list.add_flagnotes()
-
-flagnotes.make_note_drawings()
-flagnotes.make_leader_drawings()
-
-#=============== RUNNING WIREVIZ #===============
+#=============== RUN WIREVIZ #===============
 run_wireviz.generate_esch()
 
 #=============== REBUILDING OUTPUT SVG #===============
+# ensure page setup is defined, if not, make a basic one
+page_setup_contents = svg_outputs.update_page_setup_json()
+
 revinfo = rev_history.revision_info()
 rev_history.update_datemodified()
 
 # add parent types to make filtering easier
 instances_list.add_parent_instance_type()
 
-# prepare the building blocks as svgs
+# prepare the building blocks as svgsflagnotes.make_note_drawings()
+flagnotes.make_leader_drawings()
 svg_outputs.prep_formboard_drawings(page_setup_contents)
 svg_outputs.prep_bom()
 svg_outputs.prep_buildnotes_table()
