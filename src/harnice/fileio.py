@@ -383,12 +383,15 @@ def verify_feature_tree_exists(prebuilder = "", artifact_builder_list = []):
             print("Do you want to use a prebuilder to help build this harness from scratch?")
             print("  ''         Enter nothing for the standard Harnice esch prebuilder")
             print("  'none'     Enter 'none' to build your harness entirely out of rules in feature tree (you're hardcore)")
-            print("  'wireviz'  Entire 'wireviz' to use the wireviz-yaml-to-instances-list prebuilder")
+            print("  'system'   Enter 'system' if this harness is pulling data from a system instances list")
+            print("  'wireviz'  Enter 'wireviz' to use the wireviz-yaml-to-instances-list prebuilder")
             print("             For something else, enter the path to your desired prebuilder")
             prebuilder = cli.prompt("")
 
         if prebuilder == "":
             prebuilder_path = os.path.join(os.getenv("public"), "prebuilders", "harnice_esch_prebuilder.py")
+        elif prebuilder == "system":
+            prebuilder_path = os.path.join(os.getenv("public"), "prebuilders", "harnice_system_harness_prebuilder.py")
         elif prebuilder == "wireviz":
             prebuilder_path = os.path.join(os.getenv("public"), "prebuilders", "wireviz_yaml_prebuilder.py")
 
