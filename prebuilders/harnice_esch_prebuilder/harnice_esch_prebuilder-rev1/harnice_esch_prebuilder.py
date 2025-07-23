@@ -1,13 +1,19 @@
+import re  # for regex matching like re.match and re.fullmatch
+import yaml
+from harnice import instances_list, fileio  # assuming your project structure provides these
 
 #=============== CREATE BASE INSTANCES FROM ESCH #===============
-# For each electrical circuit (or net) in your system
-# Circuit name is a string, ports is a dictionary that contains all the stuff on that circuit
-for circuit_name, ports in harness_yaml.load().items():
-    instances_list.add(circuit_name,{
+# Load the YAML file once and parse it
+with open(fileio.path("harness yaml"), "r", encoding="utf-8") as f:
+    harness_yaml = yaml.safe_load(f)
+
+# Iterate over the circuits and their associated ports
+for circuit_name, ports in harness_yaml.items():
+    instances_list.add(circuit_name, {
         "item_type": "Circuit"
     })
     port_counter = 0
-    contact_counter = 0  # This helps automatically number contact points like contact1, contact2, etc.
+    contact_counter = 0  # Automatically number contacts like contact1, contact2, etc.
 
     # Go through each port in this circuit
     # Port label is the port, value is either a string or a dictionary
