@@ -87,9 +87,10 @@ def harnice_file_structure():
     if product_type == "harness":
         return {
                 f"{partnumber("pn-rev")}-esch.yaml":"harness yaml",
-                f"{partnumber("pn-rev")}.feature_tree.py":"feature tree",
-                f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
+                f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
+                f"{partnumber("pn-rev")}-instances_list.tsv":"instances list",
                 "artifacts":{
+                    f"{partnumber("pn-rev")}-formboard_graph_definition.svg":"formboard graph definition svg",
                     "svg_generated": {
                         f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
                         "buildnotes_table":{
@@ -412,61 +413,72 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
                 used_rev=None,
                 item_name="wireviz_yaml_prebuilder"
             )
+        
+        MAKE A NEW FILEIO SCRIPT THAT SAYS FILEIO.RUNPREBUILDER(NAME, SUPPLIER)
+            #this should make a directory of the name within artifacts
+            #then import from library that artifact
+            #then make the config files in that directory
+            #then runpy it
 
         prebuilder_contents = f'runpy.run_path(os.path.join("{destination_directory}", f"{prebuilder}.py"), run_name="__main__")\n'
 
-    # Read default feature tree logic
-    feature_tree_default_srcpath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "harnice", "feature_tree_default.py")
-    with open(feature_tree_default_srcpath, "r", encoding="utf-8") as f:
-        feature_tree_default_rules = f.read()
+        # Read default feature tree logic
+        feature_tree_default_srcpath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "harnice", "feature_tree_default.py")
+        with open(feature_tree_default_srcpath, "r", encoding="utf-8") as f:
+            feature_tree_default_rules = f.read()
 
-    # Artifact builder fallback
-    if artifact_builder_list is None:
-        artifact_builder_list = [
-            ["bom_exporter", "public"],
-            ["standard_harnice_formboard", "public"],
-            ["wirelist_exporter", "public"],
-            ["wireviz_builder", "public"]
-            ]
+        # Artifact builder fallback
+        if artifact_builder_list is None:
+            artifact_builder_list = [
+                ["bom_exporter", "public"],
+                ["standard_harnice_formboard", "public"],
+                ["wirelist_exporter", "public"],
+                ["wireviz_builder", "public"]
+                ]
 
-    # Append all selected artifact builders
-    artifact_builder_contents = ""
-    for builder in artifact_builder_list:
-        destination_directory = os.path.join(dirpath("artifacts"), builder[0])
-        component_library.pull_item_from_library(
-            supplier=builder[1],
-            lib_subpath="artifact_builders",
-            mpn=builder[0],
-            destination_directory=destination_directory,
-            used_rev=None,
-            item_name=builder[0]
+        # Append all selected artifact builders
+        artifact_builder_contents = ""
+        for builder in artifact_builder_list:
+            destination_directory = os.path.join(dirpath("artifacts"), builder[0])
+            component_library.pull_item_from_library(
+                supplier=builder[1],
+                lib_subpath="artifact_builders",
+                mpn=builder[0],
+                destination_directory=destination_directory,
+                used_rev=None,
+                item_name=builder[0]
+            )
+
+            MAKE A NEW FILEIO FUNCTION THAT SAYS FILEIO.ARTIFACTBUILDER(NAME, SUPPLIER)
+                #this should make a directory of the name within artifacts
+                #then import from library that artifact
+                #then make the config files in that directory
+                #then runpy it
+            artifact_builder_contents += (
+                f'runpy.run_path(os.path.join("{destination_directory}", f"{builder[0]}.py"), run_name="__main__")\n'
+            )
+
+        # Build final feature_tree content
+        feature_tree = (
+            '''import os\nimport yaml\nimport re\nimport runpy\nfrom harnice import (\n    fileio, instances_list, component_library, wirelist,\n    svg_outputs, flagnotes, formboard, run_wireviz, rev_history, svg_utils\n)\n\n'''
+            "#===========================================================================\n"
+            "#                   PREBUILDER SCRIPTING\n"
+            "#===========================================================================\n"
         )
-        artifact_builder_contents += (
-            f'runpy.run_path(os.path.join("{destination_directory}", f"{builder[0]}.py"), run_name="__main__")\n'
+        feature_tree += prebuilder_contents
+        feature_tree += (
+            "\n#===========================================================================\n"
+            "#                  HARNESS BUILD RULES\n"
+            "#===========================================================================\n"
         )
+        feature_tree += feature_tree_default_rules
+        feature_tree += (
+            "\n#===========================================================================\n"
+            "#                  CONSTRUCT HARNESS ARTIFACTS\n"
+            "#===========================================================================\n"
+        )
+        feature_tree += artifact_builder_contents
 
-    # Build final feature_tree content
-    feature_tree = (
-        '''import os\nimport yaml\nimport re\nimport runpy\nfrom harnice import (\n    fileio, instances_list, component_library, wirelist,\n    svg_outputs, flagnotes, formboard, run_wireviz, rev_history, svg_utils,\n    harness_yaml\n)\n\n'''
-        "#===========================================================================\n"
-        "#                   PREBUILDER SCRIPTING\n"
-        "#===========================================================================\n"
-    )
-    feature_tree += prebuilder_contents
-    feature_tree += (
-        "\n#===========================================================================\n"
-        "#                  HARNESS BUILD RULES\n"
-        "#===========================================================================\n"
-    )
-    feature_tree += feature_tree_default_rules
-    feature_tree += (
-        "\n#===========================================================================\n"
-        "#                  CONSTRUCT HARNESS ARTIFACTS\n"
-        "#===========================================================================\n"
-    )
-    feature_tree += artifact_builder_contents
-
-    # Write to file
-    print("!!!!!!!!!!")
-    with open(path("feature tree"), "w", encoding="utf-8") as dst:
-        dst.write(feature_tree)
+        # Write to file
+        with open(path("feature tree"), "w", encoding="utf-8") as dst:
+            dst.write(feature_tree)
