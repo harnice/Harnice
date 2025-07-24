@@ -374,53 +374,22 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
         if prebuilder == "":
             # Prompt user for prebuilder type
             print("Do you want to use a prebuilder to help build this harness from scratch?")
-            print("  ''         Enter nothing for the standard Harnice esch prebuilder")
-            print("  'none'     Enter 'none' to build your harness entirely out of rules in feature tree (you're hardcore)")
-            print("  'system'   Enter 'system' if this harness is pulling data from a system instances list")
-            print("  'wireviz'  Enter 'wireviz' to use the wireviz-yaml-to-instances-list prebuilder")
-            print("             For something else, enter the path to your desired prebuilder")
+            print("  ''    Enter nothing for the standard Harnice esch prebuilder")
+            print("  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)")
+            print("  's'   Enter 's' for systemif this harness is pulling data from a system instances list")
+            print("  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list prebuilder")
+            print("        For something else, enter the path to your desired prebuilder")
             prebuilder = cli.prompt("")
 
         destination_directory = ""
         if prebuilder == None:
-            prebuilder = "harnice_esch_prebuilder"
-            destination_directory=os.path.join(dirpath("prebuilders"), "harnice_esch_prebuilder")
-            component_library.pull_item_from_library(
-                supplier="public",
-                lib_subpath="prebuilders",
-                mpn="harnice_esch_prebuilder",
-                destination_directory=destination_directory,
-                used_rev=None,
-                item_name="harnice_esch_prebuilder"
-            )
-        elif prebuilder == "system":
-            destination_directory=os.path.join(dirpath("prebuilders"), "harnice_system_harness_prebuilder")
-            component_library.pull_item_from_library(
-                supplier="public",
-                lib_subpath="prebuilders",
-                mpn="harnice_system_harness_prebuilder",
-                destination_directory=destination_directory,
-                used_rev=None,
-                item_name="harnice_system_harness_prebuilder"
-            )
-        elif prebuilder == "wireviz":
-            destination_directory=os.path.join(dirpath("prebuilders"), "wireviz_yaml_prebuilder")
-            component_library.pull_item_from_library(
-                supplier="public",
-                lib_subpath="prebuilders",
-                mpn="wireviz_yaml_prebuilder",
-                destination_directory=destination_directory,
-                used_rev=None,
-                item_name="wireviz_yaml_prebuilder"
-            )
-        
-        MAKE A NEW FILEIO SCRIPT THAT SAYS FILEIO.RUNPREBUILDER(NAME, SUPPLIER)
-            #this should make a directory of the name within artifacts
-            #then import from library that artifact
-            #then make the config files in that directory
-            #then runpy it
+            prebuilder_name = "harnice_esch_prebuilder"
+        elif prebuilder == "s":
+            prebuilder_name = "harnice_system_harness_prebuilder"
+        elif prebuilder == "w":
+            prebuilder_name = "wireviz_yaml_prebuilder"
 
-        prebuilder_contents = f'runpy.run_path(os.path.join("{destination_directory}", f"{prebuilder}.py"), run_name="__main__")\n'
+        prebuilder_contents = f'fileio.runprebuilder("{prebuilder_name}", "public")'
 
         # Read default feature tree logic
         feature_tree_default_srcpath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "harnice", "feature_tree_default.py")
@@ -439,23 +408,9 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
         # Append all selected artifact builders
         artifact_builder_contents = ""
         for builder in artifact_builder_list:
-            destination_directory = os.path.join(dirpath("artifacts"), builder[0])
-            component_library.pull_item_from_library(
-                supplier=builder[1],
-                lib_subpath="artifact_builders",
-                mpn=builder[0],
-                destination_directory=destination_directory,
-                used_rev=None,
-                item_name=builder[0]
-            )
 
-            MAKE A NEW FILEIO FUNCTION THAT SAYS FILEIO.ARTIFACTBUILDER(NAME, SUPPLIER)
-                #this should make a directory of the name within artifacts
-                #then import from library that artifact
-                #then make the config files in that directory
-                #then runpy it
             artifact_builder_contents += (
-                f'runpy.run_path(os.path.join("{destination_directory}", f"{builder[0]}.py"), run_name="__main__")\n'
+                "featuretree.runattributebuilder(builder[0], builder[1])"
             )
 
         # Build final feature_tree content
