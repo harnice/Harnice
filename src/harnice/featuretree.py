@@ -18,7 +18,7 @@ def runprebuilder(prebuilder_name, supplier):
 
     runpy.run_path(os.path.join("{destination_directory}", f"{prebuilder_name}.py"), run_name="__main__")
 
-def runattributebuilder(artifact_builder_name, supplier):
+def runartifactbuilder(artifact_builder_name, supplier):
     destination_directory=os.path.join(fileio.dirpath("artifact builders"), artifact_builder_name)
     os.makedirs(destination_directory, exist_ok=True)
     component_library.pull_item_from_library(

@@ -389,7 +389,7 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
         elif prebuilder == "w":
             prebuilder_name = "wireviz_yaml_prebuilder"
 
-        prebuilder_contents = f'fileio.runprebuilder("{prebuilder_name}", "public")'
+        prebuilder_contents = f'featuretree.runprebuilder("{prebuilder_name}", "public")'
 
         # Read default feature tree logic
         feature_tree_default_srcpath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "harnice", "feature_tree_default.py")
@@ -410,25 +410,28 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
         for builder in artifact_builder_list:
 
             artifact_builder_contents += (
-                "featuretree.runattributebuilder(builder[0], builder[1])"
+                f"featuretree.runartifactbuilder({builder[0]}, {builder[1]})\n"
             )
 
         # Build final feature_tree content
         feature_tree = (
-            '''import os\nimport yaml\nimport re\nimport runpy\nfrom harnice import (\n    fileio, instances_list, component_library, wirelist,\n    svg_outputs, flagnotes, formboard, run_wireviz, rev_history, svg_utils\n)\n\n'''
+            "import os\nimport yaml\nimport re\nimport runpy\nfrom harnice import (\n"
+            "    fileio, instances_list, component_library, wirelist, svg_outputs, \n"
+            "    flagnotes, formboard, run_wireviz, rev_history, svg_utils, featuretree\n"
+            ")\n\n"
             "#===========================================================================\n"
             "#                   PREBUILDER SCRIPTING\n"
             "#===========================================================================\n"
         )
         feature_tree += prebuilder_contents
         feature_tree += (
-            "\n#===========================================================================\n"
+            "\n\n\n#===========================================================================\n"
             "#                  HARNESS BUILD RULES\n"
             "#===========================================================================\n"
         )
         feature_tree += feature_tree_default_rules
         feature_tree += (
-            "\n#===========================================================================\n"
+            "\n\n\n#===========================================================================\n"
             "#                  CONSTRUCT HARNESS ARTIFACTS\n"
             "#===========================================================================\n"
         )
