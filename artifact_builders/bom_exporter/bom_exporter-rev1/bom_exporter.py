@@ -15,7 +15,7 @@ BOM_COLUMNS = [
 ]
 
 # make a new file
-output_path = os.path.join(fileio.dirpath('artifacts'), f'{fileio.partnumber("pn-rev")}-bom.tsv')
+output_path = os.path.join(fileio.dirpath('artifacts'), "bom_exporter", f'{fileio.partnumber("pn-rev")}-bom.tsv')
 
 with open(output_path, 'w', newline='', encoding='utf-8') as f:
     writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter='\t')
