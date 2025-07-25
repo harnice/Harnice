@@ -12,7 +12,8 @@ import csv
 from dotenv import load_dotenv, dotenv_values
 from harnice import(
     rev_history,
-    cli
+    cli,
+    component_library
 )
 
 #standard punctuation:
@@ -86,14 +87,10 @@ def harnice_file_structure():
     if product_type == "harness":
         return {
                 f"{partnumber("pn-rev")}-esch.yaml":"harness yaml",
-                f"{partnumber("pn-rev")}.feature_tree.py":"feature tree",
-                f"{partnumber("pn-rev")}.instances_list.tsv":"instances list",
+                f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
+                f"{partnumber("pn-rev")}-instances_list.tsv":"instances list",
                 "artifacts":{
-                    f"{partnumber("pn-rev")}-formboard.pdf":"harnice output",
-                    f"{partnumber("pn-rev")}.harness_bom.tsv":"harness bom",
-                    f"{partnumber("pn-rev")}.formboard_graph_definition.svg":"formboard graph definition svg",
-                    f"{partnumber("pn-rev")}.wirelist.tsv":"wirelist no formats",
-                    f"{partnumber("pn-rev")}.wirelist.xls":"wirelist formatted",
+                    f"{partnumber("pn-rev")}-formboard_graph_definition.svg":"formboard graph definition svg",
                     "svg_generated": {
                         f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
                         "buildnotes_table":{
@@ -111,12 +108,6 @@ def harnice_file_structure():
                         "formboard_svgs":{},
                         "tblock_svgs":{},
                         "uneditable_instance_data":{}
-                    },
-                    "wireviz_outputs":{
-                        f"{partnumber("pn-rev")}-esch.bom.tsv":"wireviz bom",
-                        f"{partnumber("pn-rev")}-esch.html":"wireviz html",
-                        f"{partnumber("pn-rev")}-esch.png":"wireviz png",
-                        f"{partnumber("pn-rev")}-esch.svg":"wireviz svg"
                     }
                 },
                 "interactive_files":{
@@ -128,7 +119,8 @@ def harnice_file_structure():
                     },
                     f"{partnumber("pn-rev")}.formboard_graph_definition.tsv":"formboard graph definition",
                     f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual"
-                }
+                },
+                "prebuilders":{}
             }
     elif product_type == "part":
         return {
@@ -165,7 +157,7 @@ def generate_structure():
     os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
     os.makedirs(dirpath("tblock_svgs"), exist_ok=True)
     os.makedirs(dirpath("uneditable_instance_data"), exist_ok=True)
-    os.makedirs(dirpath("wireviz_outputs"), exist_ok=True)
+    os.makedirs(dirpath("prebuilders"), exist_ok=True)
 
 def path(target_value):
     #returns the filepath/filename of a filekey. 
@@ -375,3 +367,77 @@ def verify_harness_yaml_exists():
 
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
+
+def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
+    load_dotenv()
+    if not os.path.exists(path("feature tree")):
+        if prebuilder == "":
+            # Prompt user for prebuilder type
+            print("Do you want to use a prebuilder to help build this harness from scratch?")
+            print("  ''    Enter nothing for the standard Harnice esch prebuilder")
+            print("  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)")
+            print("  's'   Enter 's' for systemif this harness is pulling data from a system instances list")
+            print("  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list prebuilder")
+            print("        For something else, enter the path to your desired prebuilder")
+            prebuilder = cli.prompt("")
+
+        destination_directory = ""
+        if prebuilder == None:
+            prebuilder_name = "harnice_esch_prebuilder"
+        elif prebuilder == "s":
+            prebuilder_name = "harnice_system_harness_prebuilder"
+        elif prebuilder == "w":
+            prebuilder_name = "wireviz_yaml_prebuilder"
+
+        prebuilder_contents = f'featuretree.runprebuilder("{prebuilder_name}", "public")'
+
+        # Read default feature tree logic
+        feature_tree_default_srcpath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "harnice", "feature_tree_default.py")
+        with open(feature_tree_default_srcpath, "r", encoding="utf-8") as f:
+            feature_tree_default_rules = f.read()
+
+        # Artifact builder fallback
+        if artifact_builder_list is None:
+            artifact_builder_list = [
+                ["bom_exporter", "public"],
+                ["standard_harnice_formboard", "public"],
+                ["wirelist_exporter", "public"]
+                #TODO: MAKE WIREVIZ ATTRIBUTE BUILDER WORK https://github.com/kenyonshutt/harnice/issues/228
+                #["wireviz_builder", "public"]
+                ]
+
+        # Append all selected artifact builders
+        artifact_builder_contents = ""
+        for builder in artifact_builder_list:
+
+            artifact_builder_contents += (
+                f'''featuretree.runartifactbuilder(\"{builder[0]}\", \"{builder[1]}\")\n'''
+            )
+
+        # Build final feature_tree content
+        feature_tree = (
+            "import os\nimport yaml\nimport re\nimport runpy\nfrom harnice import (\n"
+            "    fileio, instances_list, component_library, svg_outputs, \n"
+            "    flagnotes, formboard, run_wireviz, rev_history, svg_utils, featuretree\n"
+            ")\n\n"
+            "#===========================================================================\n"
+            "#                   PREBUILDER SCRIPTING\n"
+            "#===========================================================================\n"
+        )
+        feature_tree += prebuilder_contents
+        feature_tree += (
+            "\n\n\n#===========================================================================\n"
+            "#                  HARNESS BUILD RULES\n"
+            "#===========================================================================\n"
+        )
+        feature_tree += feature_tree_default_rules
+        feature_tree += (
+            "\n\n\n#===========================================================================\n"
+            "#                  CONSTRUCT HARNESS ARTIFACTS\n"
+            "#===========================================================================\n"
+        )
+        feature_tree += artifact_builder_contents
+
+        # Write to file
+        with open(path("feature tree"), "w", encoding="utf-8") as dst:
+            dst.write(feature_tree)

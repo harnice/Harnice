@@ -10,7 +10,6 @@ from collections import defaultdict
 from dotenv import load_dotenv
 from harnice import (
     fileio,
-    wirelist,
     svg_utils,
     instances_list,
     component_library
