@@ -401,8 +401,9 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
             artifact_builder_list = [
                 ["bom_exporter", "public"],
                 ["standard_harnice_formboard", "public"],
-                ["wirelist_exporter", "public"],
-                ["wireviz_builder", "public"]
+                ["wirelist_exporter", "public"]
+                #TODO: MAKE WIREVIZ ATTRIBUTE BUILDER WORK https://github.com/kenyonshutt/harnice/issues/228
+                #["wireviz_builder", "public"]
                 ]
 
         # Append all selected artifact builders
@@ -410,13 +411,13 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
         for builder in artifact_builder_list:
 
             artifact_builder_contents += (
-                f"featuretree.runartifactbuilder({builder[0]}, {builder[1]})\n"
+                f'''featuretree.runartifactbuilder(\"{builder[0]}\", \"{builder[1]}\")\n'''
             )
 
         # Build final feature_tree content
         feature_tree = (
             "import os\nimport yaml\nimport re\nimport runpy\nfrom harnice import (\n"
-            "    fileio, instances_list, component_library, wirelist, svg_outputs, \n"
+            "    fileio, instances_list, component_library, svg_outputs, \n"
             "    flagnotes, formboard, run_wireviz, rev_history, svg_utils, featuretree\n"
             ")\n\n"
             "#===========================================================================\n"

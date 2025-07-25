@@ -7,7 +7,6 @@ import math
 import runpy
 from harnice import (
     run_wireviz,
-    wirelist,
     instances_list,
     svg_utils,
     flagnotes,
