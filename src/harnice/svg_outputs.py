@@ -238,7 +238,7 @@ def prep_formboard_drawings(page_setup_contents):
                     instance.get("instance_name"),
                     instance.get("instance_name")
                 )
-                
+
 def prep_tblocks(page_setup_contents, revhistory_data):
     # === Validate page name uniqueness ===
     page_names = [p.get("name") for p in page_setup_contents.get("pages", [])]
@@ -490,66 +490,6 @@ def update_harnice_output(page_setup_contents):
             page_name, 
             "tblock-svg"
         )
-
-def update_page_setup_json():
-    # === Titleblock Defaults ===
-    blank_setup = {
-        "pages": [
-            {
-                "name": "page1",
-                "supplier": "public",
-                "titleblock": "harnice_tblock-11x8.5",
-                "text_replacements": {
-                    "tblock-key-desc": "pull_from_revision_history(desc)",
-                    "tblock-key-pn": "pull_from_revision_history(pn)",
-                    "tblock-key-drawnby": "pull_from_revision_history(drawnby)",
-                    "tblock-key-rev": "pull_from_revision_history(rev)",
-                    "tblock-key-releaseticket": "",
-                    "tblock-key-scale": "A",
-                    "tblock-key-sheet": "autosheet"
-                },
-                "show_items": [
-                    "bom",
-                    "buildnotes",
-                    "revhistory"
-                ]
-            }
-        ],
-        "formboards": {
-            "formboard1": {
-                "scale": "A",
-                "rotation": 0,
-                "hide_instances": {}
-            }
-        },
-        "scales": {
-            "A": 1
-        },
-        "show_items_example_options":[
-            "bom",
-            "buildnotes",
-            "revhistory"
-        ]
-    }
-
-    # === Load or Initialize Titleblock Setup ===
-    if not os.path.exists(fileio.path("harnice output contents")) or os.path.getsize(fileio.path("harnice output contents")) == 0:
-        with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
-            json.dump(blank_setup, f, indent=4)
-        tblock_data = blank_setup
-    else:
-        try:
-            with open(fileio.path("harnice output contents"), "r", encoding="utf-8") as f:
-                tblock_data = json.load(f)
-        except json.JSONDecodeError:
-            with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
-                json.dump(blank_setup, f, indent=4)
-            tblock_data = blank_setup
-
-    with open(fileio.path("harnice output contents"), "w", encoding="utf-8") as f:
-        json.dump(tblock_data, f, indent=4)
-
-    return tblock_data
 
 def prep_buildnotes_table():
     # === Configuration ===

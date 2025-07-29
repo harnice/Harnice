@@ -19,9 +19,11 @@ def runprebuilder(prebuilder_name, supplier):
 
     runpy.run_path(os.path.join(destination_directory, f"{prebuilder_name}.py"), run_name="__main__")
 
-def runartifactbuilder(artifact_builder_name, supplier):
-    destination_directory=os.path.join(fileio.dirpath("artifacts"), artifact_builder_name)
+
+def runartifactbuilder(artifact_builder_name, supplier, artifact_id, scale=None, scales=None):
+    destination_directory = os.path.join(fileio.dirpath("artifacts"), artifact_builder_name, artifact_id)
     os.makedirs(destination_directory, exist_ok=True)
+
     component_library.pull_item_from_library(
         supplier=supplier,
         lib_subpath="artifact_builders",
@@ -31,4 +33,13 @@ def runartifactbuilder(artifact_builder_name, supplier):
         item_name=artifact_builder_name
     )
 
-    runpy.run_path(os.path.join(destination_directory, f"{artifact_builder_name}.py"), run_name="__main__")
+    script_path = os.path.join(destination_directory, f"{artifact_builder_name}.py")
+
+    # Variables to pass into the executed script
+    init_globals = {
+        "scale": scale,
+        "scales": scales,
+        "artifact_id": artifact_id
+    }
+
+    runpy.run_path(script_path, run_name="__main__", init_globals=init_globals)

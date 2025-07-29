@@ -140,8 +140,6 @@ def generate_structure():
         shutil.rmtree(dirpath("artifacts"))
 
     os.makedirs(dirpath("artifacts"), exist_ok=True)
-    os.makedirs(dirpath("formboard_drawing"), exist_ok=True)
-    os.makedirs(dirpath("page_setup"), exist_ok=True)
     os.makedirs(dirpath("interactive_files"), exist_ok=True)
     os.makedirs(dirpath("editable_instance_data"), exist_ok=True)
     os.makedirs(dirpath("svg_generated"), exist_ok=True)
@@ -363,7 +361,7 @@ def verify_harness_yaml_exists():
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
 
-def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
+def verify_feature_tree_exists(prebuilder="", artifact_builder_dict=None):
     load_dotenv()
     if not os.path.exists(path("feature tree")):
         if prebuilder == "":
@@ -384,8 +382,7 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
         elif prebuilder == "w":
             prebuilder_name = "wireviz_yaml_prebuilder"
         else:
-            # Custom path entered
-            prebuilder_name = prebuilder
+            prebuilder_name = prebuilder  # Custom path entered
 
         # Prebuilder call string
         prebuilder_contents = f'featuretree.runprebuilder("{prebuilder_name}", "public")\n'
@@ -399,19 +396,28 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_list=None):
         with open(feature_tree_default_srcpath, "r", encoding="utf-8") as f:
             feature_tree_default_rules = f.read()
 
-        # Default artifact builder list
-        if artifact_builder_list is None:
-            artifact_builder_list = [
-                ["bom_exporter", "public"],
-                ["standard_harnice_formboard", "public"],
-                ["wirelist_exporter", "public"],
-                # ["wireviz_builder", "public"]  # TODO: pending fix
-            ]
+        # Default artifact builder dictionary
+        if artifact_builder_dict is None:
+            artifact_builder_dict = {
+                "bom_exporter": {
+                    "supplier": "public", 
+                    "artifact_id": "bom1"
+                },
+                "standard_harnice_formboard": {
+                    "supplier": "public", 
+                    "artifact_id": "formboard1"
+                },
+                "wirelist_exporter": {
+                    "supplier": "public", 
+                    "artifact_id": "wirelist1"
+                },
+                # "wireviz_builder": {"supplier": "public", "artifact_id": "wireviz1"}  # TODO: pending fix
+            }
 
         # Append all selected artifact builders
         artifact_builder_contents = "".join(
-            f'featuretree.runartifactbuilder("{builder[0]}", "{builder[1]}")\n'
-            for builder in artifact_builder_list
+            f'featuretree.runartifactbuilder("{name}", "{info["supplier"]}", artifact_id="{info["artifact_id"]}")\n'
+            for name, info in artifact_builder_dict.items()
         )
 
         # Build final feature_tree script
