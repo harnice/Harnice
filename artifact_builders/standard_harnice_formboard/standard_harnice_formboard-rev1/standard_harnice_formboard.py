@@ -94,6 +94,3 @@ flagnotes.make_leader_drawings()
 
 svg_outputs.update_harnice_output(page_setup_contents)
     # adds the above to the user-editable svgs in page setup, one per page
-
-svg_utils.produce_multipage_harnice_output_pdf(page_setup_contents)
-    # makes a PDF out of each svg in page setup
