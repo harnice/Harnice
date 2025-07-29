@@ -2,6 +2,19 @@ import os
 import csv
 from harnice import instances_list, fileio, svg_outputs
 
+#=============== PATHS ===============
+def path(target_value):
+    artifact_path = os.path.join(fileio.dirpath("artifacts"), "bom_exporter")
+    os.makedirs(artifact_path, exist_ok=True)
+    artifact_id_path = os.path.join(artifact_path, artifact_id)
+    os.makedirs(artifact_id_path, exist_ok=True)
+    if target_value == "bom tsv":
+        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-bom.tsv")
+    if target_value == "bom svg":
+        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-bom-master.svg")
+    else:
+        raise KeyError(f"Filename {target_value} not found in bom_exporter file tree")
+
 CABLE_MARGIN = 12
 BOM_COLUMNS = [
     'bom_line_number', 
@@ -13,20 +26,13 @@ BOM_COLUMNS = [
     'total_length_plus_margin'
 ]
 
-output_dir = os.path.join(fileio.dirpath('artifacts'), "bom_exporter")
-os.makedirs(output_dir, exist_ok=True)
-
-partnum = fileio.partnumber("pn-rev")
-output_tsv_path = os.path.join(output_dir, f"{partnum}-bom.tsv")
-output_svg_path = os.path.join(output_dir, f"{partnum}-bom-master.svg")
-
-with open(output_tsv_path, 'w', newline='', encoding='utf-8') as f:
+with open(path("bom tsv"), 'w', newline='', encoding='utf-8') as f:
     writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter='\t')
     writer.writeheader()
     writer.writerows([])
 
 def add_line_to_bom(line_data):
-    with open(output_tsv_path, 'a', newline='', encoding='utf-8') as f:
+    with open(path("bom tsv"), 'a', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter='\t')
         writer.writerow({key: line_data.get(key, '') for key in BOM_COLUMNS})
 
@@ -77,7 +83,7 @@ font_size = 8
 font_family = "Arial, Helvetica, sans-serif"
 line_width = 0.008 * 96
 
-with open(output_tsv_path, "r", newline="", encoding="utf-8") as tsv_file:
+with open(path("bom tsv"), "r", newline="", encoding="utf-8") as tsv_file:
     reader = csv.DictReader(tsv_file, delimiter="\t")
     data_rows = [
         [row.get(col, "") for col in selected_columns]
@@ -147,5 +153,5 @@ svg_lines.append('</g>')
 svg_lines.append('<g id="bom-contents-end"/>')
 svg_lines.append('</svg>')
 
-with open(output_svg_path, "w", encoding="utf-8") as svg_file:
+with open(path("bom svg"), "w", encoding="utf-8") as svg_file:
     svg_file.write("\n".join(svg_lines))

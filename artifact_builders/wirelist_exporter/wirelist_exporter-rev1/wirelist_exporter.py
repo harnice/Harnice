@@ -5,13 +5,19 @@ import xlwt
 from harnice import fileio, instances_list
 
 #=============== PATHS ===============
-output_dir = os.path.join(fileio.dirpath('artifacts'), "wirelist_exporter")
-os.makedirs(output_dir, exist_ok=True)
-
-partnum = fileio.partnumber("pn-rev")
-wirelist_noformats_path = os.path.join(output_dir, f"{partnum}-wirelist.tsv")
-wirelist_path = os.path.join(output_dir, f"{partnum}-wirelist.xls")
-wirelist_svg_path = os.path.join(output_dir, f"{partnum}-wirelist-master.svg")
+def path(target_value):
+    artifact_path = os.path.join(fileio.dirpath("artifacts"), "wirelist_exporter")
+    os.makedirs(artifact_path, exist_ok=True)
+    artifact_id_path = os.path.join(artifact_path, artifact_id)
+    os.makedirs(artifact_id_path, exist_ok=True)
+    if target_value == "wirelist no formats":
+        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-wirelist.tsv")
+    if target_value == "wirelist pretty":
+        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-wirelist.xls")
+    if target_value == "wirelist svg":
+        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-wirelist-master.svg")
+    else:
+        raise KeyError(f"Filename {target_value} not found in wirelist_exporter file tree")
 
 #=============== WIRELIST COLUMNS ===============
 WIRELIST_COLUMNS = [
@@ -28,14 +34,14 @@ WIRELIST_COLUMNS = [
 ]
 
 #=============== CREATE TSV ===============
-with open(wirelist_noformats_path, 'w', newline='') as file:
+with open(path("wirelist no formats"), 'w', newline='') as file:
     writer = csv.writer(file, delimiter='\t')
     writer.writerow([col["name"] for col in WIRELIST_COLUMNS])
 
 column_names = [col["name"] for col in WIRELIST_COLUMNS]
 
 def add(row_data):
-    with open(wirelist_noformats_path, 'a', newline='', encoding='utf-8') as f:
+    with open(path("wirelist no formats"), 'a', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=column_names, delimiter='\t')
         writer.writerow({key: row_data.get(key, '') for key in column_names})
 
@@ -105,7 +111,7 @@ for instance in instances_list.read_instance_rows():
 workbook = xlwt.Workbook()
 sheet = workbook.add_sheet('Sheet1')
 
-with open(wirelist_noformats_path, newline='', encoding='utf-8') as tsv_file:
+with open(path("wirelist no formats"), newline='', encoding='utf-8') as tsv_file:
     reader = csv.reader(tsv_file, delimiter='\t')
     headers = next(reader)
 
@@ -141,7 +147,7 @@ with open(wirelist_noformats_path, newline='', encoding='utf-8') as tsv_file:
             else:
                 sheet.write(row_idx, col_idx, cell)
 
-workbook.save(wirelist_path)
+workbook.save(path("wirelist pretty"))
 
 #=============== CREATE SVG ===============
 col_width = 76
@@ -151,7 +157,7 @@ font_family = "Arial"
 start_x = 0
 start_y = 0
 
-with open(wirelist_noformats_path, "r", encoding="utf-8") as f:
+with open(wirelist_noformatspath("wirelist no formats"), "r", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
     data_rows = list(reader)
 
@@ -181,5 +187,5 @@ svg_lines.append('</g>')
 svg_lines.append('<g id="wirelist-contents-end"/>')
 svg_lines.append('</svg>')
 
-with open(wirelist_svg_path, "w", encoding="utf-8") as f:
+with open(path("wirelist svg"), "w", encoding="utf-8") as f:
     f.write("\n".join(svg_lines))
