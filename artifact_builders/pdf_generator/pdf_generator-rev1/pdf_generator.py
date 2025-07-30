@@ -205,10 +205,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
 
         with open(project_svg_path, "w", encoding="utf-8") as f:
             f.write(svg)
-
-import os
-from harnice import fileio  # assuming you already have this in scope
-
+            
 def prep_master(page_setup_contents):
     translate = [0, -3200]
     delta_x_translate = 1600
@@ -216,13 +213,26 @@ def prep_master(page_setup_contents):
 
     # === Discover all master SVGs in artifacts ===
     artifacts_dir = fileio.dirpath("artifacts")
+    part_prefix = fileio.partnumber("pn-rev")
+
     for root, _, files in os.walk(artifacts_dir):
         for filename in files:
             if filename.endswith("-master.svg"):
-                master_name = filename.replace("-master.svg", "")
-                masters.append(master_name)
+                # Remove the "-master.svg" suffix
+                base_name = filename.replace("-master.svg", "")
 
-    masters.sort()  # optional: keep consistent ordering
+                # Remove partnumber prefix with optional dash
+                if base_name.startswith(part_prefix + "-"):
+                    master_name = base_name[len(part_prefix) + 1 :]
+                elif base_name.startswith(part_prefix):
+                    master_name = base_name[len(part_prefix) :]
+                else:
+                    master_name = base_name
+
+                source_svg_path = os.path.join(root, filename)
+                masters.append((master_name, source_svg_path))
+
+    masters.sort(key=lambda x: x[0])  # sort alphabetically by master_name
 
     # === Build basic SVG contents ===
     svg = [
@@ -231,7 +241,7 @@ def prep_master(page_setup_contents):
         '  <g id="svg-master-contents-start">'
     ]
 
-    for master_name in masters:
+    for master_name, _ in masters:
         translate_str = f"translate({translate[0]},{translate[1]})"
         svg += [
             f'    <g id="{master_name}" transform="{translate_str}">',
@@ -241,12 +251,6 @@ def prep_master(page_setup_contents):
         ]
         translate[0] += delta_x_translate
 
-        # === Abnormal rules to be added later ===
-        # if master_name == "esch":
-        #     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("esch master svg"), "esch-master", "esch-master")
-        # elif master_name == "wirelist":
-        #     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")
-
     # Close out the SVG
     svg += [
         '  </g>',  # Close svg-master-contents-start
@@ -254,11 +258,19 @@ def prep_master(page_setup_contents):
         '</svg>'
     ]
 
-    # === Write SVG ===
-    with open(path("master contents"), "w", encoding="utf-8") as f:
+    # === Write SVG skeleton ===
+    master_svg_path = path("master contents")
+    with open(master_svg_path, "w", encoding="utf-8") as f:
         f.write("\n".join(svg))
 
-    return masters
+    # === Replace each master group AFTER saving ===
+    for master_name, source_svg_path in masters:
+        svg_utils.find_and_replace_svg_group(
+            master_svg_path,
+            source_svg_path,
+            master_name,
+            master_name
+        )
 
 def update_harnice_output(page_setup_contents):
     for page_data in page_setup_contents.get("pages", []):
