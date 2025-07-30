@@ -1,71 +1,20 @@
 import os
 import json
+import math
+from collections import defaultdict
 from harnice import svg_outputs, flagnotes, rev_history, svg_utils, instances_list, fileio
+
+artifact_mpn = "standard_harnice_formboard"
 
 #=============== PATHS ===============
 def path(target_value):
-    base_path = os.path.join(fileio.dirpath("artifacts"), "standard_harnice_formboard", artifact_id)
+    base_path = os.path.join(fileio.dirpath("artifacts"), artifact_mpn, artifact_id)
     if target_value == "output svg":
         return os.path.join(base_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-master.svg")
     if target_value == "show hide":
         return os.path.join(base_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-showhide.json")
     else:
-        raise KeyError(f"Filename {target_value} not found in standard_harnice_formboard file tree")
-
-def update_harnice_output(page_setup_contents):
-    for page_data in page_setup_contents.get("pages", []):
-        page_name = page_data.get("name")
-        filename = f"{fileio.partnumber('pn-rev')}.{page_name}.svg"
-        filepath = os.path.join(fileio.dirpath("page_setup"), filename)
-
-        #pull PDF size from json in library
-        titleblock_supplier = page_data.get("supplier")
-        titleblock = page_data.get("titleblock", {})
-        attr_library_path = os.path.join(
-            fileio.dirpath("tblock_svgs"),
-            page_name,
-            f"{page_name}-attributes.json"
-        )
-        with open(attr_library_path, "r", encoding="utf-8") as f:
-            tblock_attributes = json.load(f)
-        page_size_in = tblock_attributes.get("page_size_in", {})
-        page_size_px = [page_size_in[0] * 96, page_size_in[1] * 96]
-        
-        if not os.path.exists(filepath):
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(
-                    #<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-                    f"""
-        <svg xmlns="http://www.w3.org/2000/svg"
-            xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-            version="1.1"
-            width="{page_size_px[0]}"
-            height="{page_size_px[1]}">
-            <g id="tblock-svg-contents-start">
-            </g>
-            <g id="tblock-svg-contents-end"></g>
-            <g id="svg-master-contents-start">
-            </g>
-            <g id="svg-master-contents-end"></g>
-        </svg>
-        """)
-
-        #replace the master svg
-        svg_utils.find_and_replace_svg_group(
-            filepath, 
-            fileio.path("master svg"), 
-            "svg-master", 
-            "svg-master"
-        )
-
-        #replace the titleblock
-        svg_utils.find_and_replace_svg_group(
-            filepath, 
-            os.path.join(fileio.dirpath("tblock_svgs"), page_name, f"{page_name}.svg"),
-            page_name, 
-            "tblock-svg"
-        )
-
+        raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
 
 def update_showhide():
     # === Titleblock Defaults ===
@@ -74,48 +23,228 @@ def update_showhide():
         "hide_item_types":{}
     }
 
-    # === Load or Initialize Titleblock Setup ===
-    if not os.path.exists(path("output svg")) or os.path.getsize(path("output svg")) == 0:
-        with open(path("output svg"), "w", encoding="utf-8") as f:
-            json.dump(blank_setup, f, indent=4)
-        tblock_data = blank_setup
-    else:
+    return blank_setup
+
+def calculate_formboard_location(instance_name, origin):
+    """
+    Given an instance_name, recursively trace up the parent_csys chain 
+    until reaching an instance with no parent_csys defined.
+
+    After tracing, iterate back down the chain, performing the translate/rotate algorithm,
+    but excluding the last instance (the input instance itself) from movement calculations.
+
+    Returns:
+        (component_x_pos, component_y_pos, component_angle)
+    """
+    instances = instances_list.read_instance_rows()
+    instances_lookup = {row['instance_name']: row for row in instances}
+
+    chain = []
+    current = instance_name
+
+    while current:
+        chain.append(current)
+        row = instances_lookup.get(current)
+        if not row:
+            break
+        parent = row.get('parent_csys', '').strip()
+        if not parent:
+            break
+        current = parent
+
+    x_pos = origin[0]
+    y_pos = origin[1]
+    angle = origin[2]  # degrees
+
+    # Skip the last element (the starting instance)
+    for name in reversed(chain[1:]):
+        row = instances_lookup.get(name, {})
+
+        translate_x = row.get('translate_x', '').strip()
+        translate_y = row.get('translate_y', '').strip()
+        rotate_csys = row.get('rotate_csys', '').strip()
+
         try:
-            with open(path("output svg"), "r", encoding="utf-8") as f:
-                tblock_data = json.load(f)
-        except json.JSONDecodeError:
-            with open(path("output svg"), "w", encoding="utf-8") as f:
-                json.dump(blank_setup, f, indent=4)
-            tblock_data = blank_setup
+            translate_x = float(translate_x) if translate_x else 0.0
+        except ValueError:
+            translate_x = 0.0
 
-    with open(path("output svg"), "w", encoding="utf-8") as f:
-        json.dump(tblock_data, f, indent=4)
+        try:
+            translate_y = float(translate_y) if translate_y else 0.0
+        except ValueError:
+            translate_y = 0.0
 
-    return tblock_data
+        try:
+            rotate_csys = float(rotate_csys) if rotate_csys else 0.0
+        except ValueError:
+            rotate_csys = 0.0
 
+        rad = math.radians(angle)
 
-#=============== REBUILDING OUTPUT SVG #===============
-# ensure page setup is defined, if not, make a basic one
-showhide = ()
+        x_pos += math.cos(rad) * translate_x - math.sin(rad) * translate_y
+        y_pos += math.sin(rad) * translate_x + math.cos(rad) * translate_y
+        angle += rotate_csys
 
-revinfo = rev_history.revision_info()
+    return x_pos, y_pos, angle
 
-# prepare the building blocks as svgsflagnotes.make_note_drawings()
-#TODO: uncomment this per https://github.com/kenyonshutt/harnice/issues/217
-#flagnotes.make_leader_drawings()
+#=================================================
+#FIRST, UPDATE SEGMENT INSTANCES
+instances = instances_list.read_instance_rows()
 
-#TODO: uncomment this per https://github.com/kenyonshutt/harnice/issues/217
-#svg_outputs.prep_formboard_drawings(page_setup_contents)
-#svg_outputs.prep_buildnotes_table()
+for instance in instances:
+    if instance.get("item_type") == "Segment":
+        segment_name = instance.get("instance_name", "").strip()
+        if not segment_name:
+            continue
 
-#TODO: add bom processor to svgoutputs https://github.com/kenyonshutt/harnice/issues/226
-#svg_outputs.prep_bom()
-#svg_outputs.prep_revision_table()
+        try:
+            length_in = float(instance.get("length", 0))
+            diameter_in = float(instance.get("diameter", 1))
+            length = 96 * length_in
+            diameter = 96 * diameter_in
 
-#svg_outputs.prep_tblocks(page_setup_contents, revinfo)
+            outline_thickness = 0.05 * 96
+            centerline_thickness = 0.015 * 96
+            half_diameter = diameter / 2
 
-#svg_outputs.prep_master(page_setup_contents)
-    # merges all building blocks into one main support_do_not_edit master svg file
+            svg_content = f'''
+            <svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="0 {-half_diameter} {length} {diameter}">
+                <g id="{instance.get("instance_name")}-contents-start">
+                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" stroke-width="{diameter}" />
+                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
+                    <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
+                </g>
+                <g id="{instance.get("instance_name")}-contents-end"></g>
+            </svg>
+            '''
+            segment_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), segment_name)
+            os.makedirs(segment_dir, exist_ok=True)
 
-update_harnice_output(page_setup_contents)
-    # adds the above to the user-editable svgs in page setup, one per page
+            output_filename = os.path.join(segment_dir, f"{segment_name}-drawing.svg")
+            with open(output_filename, 'w') as svg_file:
+                svg_file.write(svg_content)
+
+        except Exception as e:
+            print(f"Error processing segment {segment_name}: {e}")
+
+#==========================
+instances = instances_list.read_instance_rows()
+printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote", "Flagnote leader"}
+
+rotation = 0 #TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
+if rotation == "":
+    raise KeyError(f"[ERROR] Rotation '{rotation}' not found in harnice output contents")
+origin = [0, 0, rotation]
+
+#TODO: figure out scales
+#scale_name = page_setup_contents["formboards"].get(formboard_name, {}).get("scale", "A")
+scale = 1 # page_setup_contents["scales"].get(scale_name)
+
+# Group instances by item_type
+grouped_instances = defaultdict(list)
+for instance in instances:
+    item_type = instance.get("item_type", "").strip()
+    if item_type and item_type in printable_item_types:
+        grouped_instances[item_type].append(instance)
+
+# Prepare lines for SVG content
+content_lines = []
+#TODO: fix hide stuff
+#formboard = page_setup_contents["formboards"].get(formboard_name, {})
+hide_filters = {} #formboard.get("hide_instances", {})
+
+for item_type, items in grouped_instances.items():
+    content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
+    for instance in items:
+        # === Cancel if instance matches any hide filter ===
+        should_hide = False
+        if not hide_filters == []:
+            for filter_conditions in hide_filters.values():
+                if all(instance.get(k) == v for k, v in filter_conditions.items()):
+                    should_hide = True
+                    break
+        if should_hide:
+            continue
+
+        instance_name = instance.get("instance_name", "")
+        if not instance_name:
+            continue
+
+        x, y, angle = calculate_formboard_location(instance_name, origin)
+
+        px_x = x * 96
+        px_y = y * 96
+
+        if instance.get("absolute_rotation") != "":
+            angle = float(instance.get("absolute_rotation"))
+
+        if instance.get("item_type") == "Segment":
+            angle += origin[2]
+
+        svg_px_x = px_x
+        svg_px_y = -1 * px_y
+        svg_angle = -1 * angle
+
+        if not item_type == "Flagnote":
+            content_lines.append(f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">')
+            content_lines.append('      </g>')
+            content_lines.append(f'      <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
+        else:
+            content_lines.append(f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">')
+            content_lines.append(f'        <g id="{instance_name}-scale" transform="scale({1 / scale})">')
+            content_lines.append(f'          <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">')
+            content_lines.append(f'          </g>')
+            content_lines.append(f'          <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
+            content_lines.append(f'        </g>')
+            content_lines.append(f'      </g>')
+
+    content_lines.append('    </g>')
+
+# Write full SVG
+with open(path("output svg"), 'w') as f:
+    f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
+    f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')
+    f.write(f'  <g id="{artifact_mpn}-contents-start">\n')
+    f.write(f'    <g id="{artifact_mpn}-scale_group" transform="scale({scale})">\n')
+    f.writelines(line + '\n' for line in content_lines)
+    f.write('    </g>\n')
+    f.write('  </g>\n')
+    f.write(f'  <g id="{artifact_mpn}-contents-end">\n')
+    f.write('  </g>\n')
+    f.write('</svg>\n')
+
+#now that the SVG has been written, copy the connector content in:
+for instance in instances:
+    item_type = instance.get("item_type", "").strip()
+    if item_type and item_type in printable_item_types:
+        
+        # === Cancel if instance matches any hide filter ===
+        should_hide = False
+        if not hide_filters == []:
+            for filter_conditions in hide_filters.values():
+                if all(instance.get(k) == v for k, v in filter_conditions.items()):
+                    should_hide = True
+                    break
+        if should_hide:
+            continue
+
+        if item_type in {"Connector", "Backshell"}:
+            instance_data_dir = fileio.dirpath("editable_instance_data")
+        elif item_type == "Flagnote leader":
+            instance_data_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), formboard_name)
+        else:
+            instance_data_dir = fileio.dirpath("uneditable_instance_data")
+
+        #TODO: fix flagnotes first before uncommenting
+        """
+        svg_utils.find_and_replace_svg_group(
+            path("output svg"),
+            os.path.join(
+                instance_data_dir, 
+                instance.get("instance_name"),
+                f"{instance.get("instance_name")}-drawing.svg"
+            ),
+            instance.get("instance_name"),
+            instance.get("instance_name")
+        )
+        """
