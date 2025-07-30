@@ -6,9 +6,9 @@ from harnice import instances_list, fileio, svg_outputs
 def path(target_value):
     #artifact_path gets passed in as a global from the caller
     if target_value == "bom tsv":
-        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-bom.tsv")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-bom.tsv")
     if target_value == "bom svg":
-        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-bom-master.svg")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-bom-master.svg")
     else:
         raise KeyError(f"Filename {target_value} not found in bom_exporter file tree")
 
@@ -98,7 +98,7 @@ svg_height = num_rows * row_height
 svg_lines = [
     f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
     f'font-family="{font_family}" font-size="{font_size}">',
-    '<g id="bom-contents-start">'
+    f'<g id="{artifact_id}-bom-contents-start">'
 ]
 
 column_x_positions = []
@@ -147,7 +147,7 @@ for row_index, row in enumerate(reversed(table_rows)):
             )
 
 svg_lines.append('</g>')
-svg_lines.append('<g id="bom-contents-end"/>')
+svg_lines.append(f'<g id="{artifact_id}-bom-contents-end"/>')
 svg_lines.append('</svg>')
 
 with open(path("bom svg"), "w", encoding="utf-8") as svg_file:

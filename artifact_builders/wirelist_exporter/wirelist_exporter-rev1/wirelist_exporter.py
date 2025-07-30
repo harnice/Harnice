@@ -10,11 +10,11 @@ artifact_mpn = "wirelist_exporter"
 def path(target_value):
     #artifact_path gets passed in as a global from the caller
     if target_value == "wirelist no formats":
-        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-wirelist.tsv")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-wirelist.tsv")
     if target_value == "wirelist pretty":
-        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-wirelist.xls")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-wirelist.xls")
     if target_value == "wirelist svg":
-        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-wirelist-master.svg")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-wirelist-master.svg")
     else:
         raise KeyError(f"Filename {target_value} not found in wirelist_exporter file tree")
 
@@ -163,7 +163,7 @@ with open(path("wirelist no formats"), "r", encoding="utf-8") as f:
 svg_lines = [
     f'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
         <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
-        <g id="wirelist-contents-start">'''
+        <g id="{artifact_id}-wirelist-contents-start">'''
 ]
 
 for col_idx, col in enumerate(WIRELIST_COLUMNS):
@@ -183,7 +183,7 @@ for row_idx, row in enumerate(data_rows):
 <text x="{x + col_width/2}" y="{y + row_height/2}" fill="black" text-anchor="middle" dominant-baseline="middle" font-family="{font_family}" font-size="{font_size}">{text}</text>''')
 
 svg_lines.append('</g>')
-svg_lines.append('<g id="wirelist-contents-end"/>')
+svg_lines.append(f'<g id="{artifact_id}-wirelist-contents-end"/>')
 svg_lines.append('</svg>')
 
 with open(path("wirelist svg"), "w", encoding="utf-8") as f:

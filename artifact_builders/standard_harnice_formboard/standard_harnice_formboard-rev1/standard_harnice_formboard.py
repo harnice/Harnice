@@ -201,7 +201,8 @@ for item_type, items in grouped_instances.items():
     content_lines.append('    </g>')
 
 # Write full SVG
-with open(path("output svg"), 'w') as f:
+#TODO: uncomment when working on this
+"""with open(path("output svg"), 'w') as f:
     f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
     f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')
     f.write(f'  <g id="{artifact_mpn}-contents-start">\n')
@@ -211,7 +212,7 @@ with open(path("output svg"), 'w') as f:
     f.write('  </g>\n')
     f.write(f'  <g id="{artifact_mpn}-contents-end">\n')
     f.write('  </g>\n')
-    f.write('</svg>\n')
+    f.write('</svg>\n')"""
 
 #now that the SVG has been written, copy the connector content in:
 for instance in instances:
