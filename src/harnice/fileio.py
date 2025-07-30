@@ -106,7 +106,6 @@ def harnice_file_structure():
                         },
                         f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
                         "formboard_svgs":{},
-                        "tblock_svgs":{},
                         "uneditable_instance_data":{}
                     }
                 },
@@ -135,10 +134,6 @@ def harnice_file_structure():
         }
 
 def generate_structure():
-    #rebuild all from this directory if exists
-    if os.path.exists(dirpath("artifacts")):
-        shutil.rmtree(dirpath("artifacts"))
-
     os.makedirs(dirpath("artifacts"), exist_ok=True)
     os.makedirs(dirpath("interactive_files"), exist_ok=True)
     os.makedirs(dirpath("editable_instance_data"), exist_ok=True)
@@ -148,7 +143,6 @@ def generate_structure():
     os.makedirs(dirpath("revhistory_table"), exist_ok=True)
     os.makedirs(dirpath("revision_table_bubbles"), exist_ok=True)
     os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
-    os.makedirs(dirpath("tblock_svgs"), exist_ok=True)
     os.makedirs(dirpath("uneditable_instance_data"), exist_ok=True)
     os.makedirs(dirpath("prebuilders"), exist_ok=True)
 
@@ -398,27 +392,18 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_dict=None):
 
         # Default artifact builder dictionary
         if artifact_builder_dict is None:
-            artifact_builder_dict = {
-                "bom_exporter": {
-                    "supplier": "public", 
-                    "artifact_id": "bom1"
-                },
-                "standard_harnice_formboard": {
-                    "supplier": "public", 
-                    "artifact_id": "formboard1"
-                },
-                "wirelist_exporter": {
-                    "supplier": "public", 
-                    "artifact_id": "wirelist1"
-                },
-                # "wireviz_builder": {"supplier": "public", "artifact_id": "wireviz1"}  # TODO: pending fix
-            }
-
-        # Append all selected artifact builders
-        artifact_builder_contents = "".join(
-            f'featuretree.runartifactbuilder("{name}", "{info["supplier"]}", artifact_id="{info["artifact_id"]}")\n'
-            for name, info in artifact_builder_dict.items()
-        )
+            artifact_builder_contents = (
+                'featuretree.runartifactbuilder("bom_exporter", "public", artifact_id="bom1")\n'
+                'featuretree.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))\n'
+                'featuretree.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")\n'
+                f'featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)\n'
+                # 'featuretree.runartifactbuilder("wireviz_builder", "public", artifact_id="wireviz1")\n'  # TODO: pending fix
+            )
+        else:
+            # artifact_builder_dict is now expected to be an iterable of complete lines
+            artifact_builder_contents = "".join(
+                f"{line}\n" for line in artifact_builder_dict
+            )
 
         # Build final feature_tree script
         feature_tree = (
