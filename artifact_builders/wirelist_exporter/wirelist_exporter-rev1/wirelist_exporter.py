@@ -8,16 +8,13 @@ artifact_mpn = "wirelist_exporter"
 
 #=============== PATHS ===============
 def path(target_value):
-    artifact_path = os.path.join(fileio.dirpath("artifacts"), "wirelist_exporter")
-    os.makedirs(artifact_path, exist_ok=True)
-    artifact_id_path = os.path.join(artifact_path, artifact_id)
-    os.makedirs(artifact_id_path, exist_ok=True)
+    #artifact_path gets passed in as a global from the caller
     if target_value == "wirelist no formats":
-        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-wirelist.tsv")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-wirelist.tsv")
     if target_value == "wirelist pretty":
-        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-wirelist.xls")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-wirelist.xls")
     if target_value == "wirelist svg":
-        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-wirelist-master.svg")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-wirelist-master.svg")
     else:
         raise KeyError(f"Filename {target_value} not found in wirelist_exporter file tree")
 

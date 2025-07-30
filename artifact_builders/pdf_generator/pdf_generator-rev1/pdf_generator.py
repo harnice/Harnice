@@ -7,17 +7,17 @@ artifact_mpn = "pdf_generator"
 
 #=============== PATHS ===============
 def path(target_value):
-    artifact_path = os.path.join(fileio.dirpath("artifacts"), "pdf_generator")
-    os.makedirs(artifact_path, exist_ok=True)
-    artifact_id_path = os.path.join(artifact_path, artifact_id)
-    os.makedirs(artifact_id_path, exist_ok=True)
+    #artifact_path gets passed in as a global from the caller
     if target_value == "page setup":
-        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-page_setup.json")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-page_setup.json")
     if target_value == "output pdf":
-        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-output.pdf")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-output.pdf")
     if target_value == "page svgs":
-        os.makedirs(os.path.join(artifact_id_path, "page_svgs"), exist_ok=True)
-        return os.path.join(artifact_id_path, "page_svgs")
+        os.makedirs(os.path.join(artifact_path, "page_svgs"), exist_ok=True)
+        return os.path.join(artifact_path, "page_svgs")
+    if target_value == "tblock svgs":
+        os.makedirs(os.path.join(artifact_path, "tblock_svgs"), exist_ok=True)
+        return os.path.join(artifact_path, "tblock_svgs")
     else:
         raise KeyError(f"Filename {target_value} not found in pdf_generator file tree")
 
@@ -82,7 +82,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         titleblock = tblock_data.get("titleblock")
 
         # === Prepare destination directory for used files ===
-        destination_directory = os.path.join(fileio.dirpath("tblock_svgs"), page_name)
+        destination_directory = os.path.join(path("tblock svgs"), page_name)
 
         # === Pull from library ===
         component_library.pull_item_from_library(
@@ -270,7 +270,7 @@ def update_harnice_output(page_setup_contents):
         titleblock_supplier = page_data.get("supplier")
         titleblock = page_data.get("titleblock", {})
         attr_library_path = os.path.join(
-            fileio.dirpath("tblock_svgs"),
+            path("tblock svgs"),
             page_name,
             f"{page_name}-attributes.json"
         )
@@ -309,10 +309,39 @@ def update_harnice_output(page_setup_contents):
         #replace the titleblock
         svg_utils.find_and_replace_svg_group(
             filepath, 
-            os.path.join(fileio.dirpath("tblock_svgs"), page_name, f"{page_name}.svg"),
+            os.path.join(path("tblock svgs"), page_name, f"{page_name}.svg"),
             page_name, 
             "tblock-svg"
         )
+
+def produce_multipage_pdf(page_setup_contents):
+    temp_pdfs = []
+    inkscape_bin = "/Applications/Inkscape.app/Contents/MacOS/inkscape"  # adjust if needed
+
+    for page in page_setup_contents.get("pages", []):
+        page_name = page.get("name")
+        svg_filename = f"{fileio.partnumber("pn-rev")}-{artifact_id}-{page_name}.svg"
+        svg_path = os.path.join(path("page svgs"), svg_filename)
+        if not os.path.exists(svg_path):
+            raise FileNotFoundError(f"[ERROR] SVG not found: {svg_path}")
+
+        pdf_path = svg_path.replace(".svg", ".temp.pdf")
+
+        subprocess.run([
+            inkscape_bin, svg_path,
+            "--export-type=pdf",
+            f"--export-filename={pdf_path}"
+        ], check=True)
+
+        temp_pdfs.append(pdf_path)
+
+    # Merge all PDFs
+    subprocess.run(["pdfunite"] + temp_pdfs + [path("output pdf")], check=True)
+
+    # Optional cleanup
+    for temp in temp_pdfs:
+        os.remove(temp)
+
 
 page_setup_contents = update_page_setup_json()
 
@@ -324,30 +353,4 @@ prep_master(page_setup_contents)
 update_harnice_output(page_setup_contents)
         #adds the above to the user-editable svgs in page setup, one per page
 
-#============= PRODUCE MULTIPAGE PDF ===================
-temp_pdfs = []
-inkscape_bin = "/Applications/Inkscape.app/Contents/MacOS/inkscape"  # adjust if needed
-
-for page in page_setup_contents.get("pages", []):
-    page_name = page.get("name")
-    svg_filename = f"{fileio.partnumber("pn-rev")}-{artifact_id}-{page_name}.svg"
-    svg_path = os.path.join(path("page svgs"), svg_filename)
-    if not os.path.exists(svg_path):
-        raise FileNotFoundError(f"[ERROR] SVG not found: {svg_path}")
-
-    pdf_path = svg_path.replace(".svg", ".temp.pdf")
-
-    subprocess.run([
-        inkscape_bin, svg_path,
-        "--export-type=pdf",
-        f"--export-filename={pdf_path}"
-    ], check=True)
-
-    temp_pdfs.append(pdf_path)
-
-# Merge all PDFs
-subprocess.run(["pdfunite"] + temp_pdfs + [path("output pdf")], check=True)
-
-# Optional cleanup
-for temp in temp_pdfs:
-    os.remove(temp)
+produce_multipage_pdf(page_setup_contents)

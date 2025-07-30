@@ -8,11 +8,11 @@ artifact_mpn = "standard_harnice_formboard"
 
 #=============== PATHS ===============
 def path(target_value):
-    base_path = os.path.join(fileio.dirpath("artifacts"), artifact_mpn, artifact_id)
+    #artifact_path gets passed in as a global from the caller
     if target_value == "output svg":
-        return os.path.join(base_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-master.svg")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-master.svg")
     if target_value == "show hide":
-        return os.path.join(base_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-showhide.json")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-showhide.json")
     else:
         raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
 

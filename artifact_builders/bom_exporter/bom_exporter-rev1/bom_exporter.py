@@ -4,14 +4,11 @@ from harnice import instances_list, fileio, svg_outputs
 
 #=============== PATHS ===============
 def path(target_value):
-    artifact_path = os.path.join(fileio.dirpath("artifacts"), "bom_exporter")
-    os.makedirs(artifact_path, exist_ok=True)
-    artifact_id_path = os.path.join(artifact_path, artifact_id)
-    os.makedirs(artifact_id_path, exist_ok=True)
+    #artifact_path gets passed in as a global from the caller
     if target_value == "bom tsv":
-        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-bom.tsv")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-bom.tsv")
     if target_value == "bom svg":
-        return os.path.join(artifact_id_path, f"{fileio.partnumber("pn-rev")}-bom-master.svg")
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-bom-master.svg")
     else:
         raise KeyError(f"Filename {target_value} not found in bom_exporter file tree")
 
