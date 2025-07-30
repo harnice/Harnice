@@ -12,6 +12,8 @@ def path(target_value):
         return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-page_setup.json")
     if target_value == "output pdf":
         return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-output.pdf")
+    if target_value == "master contents":
+        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-mastercontents.svg")
     if target_value == "page svgs":
         os.makedirs(os.path.join(artifact_path, "page_svgs"), exist_ok=True)
         return os.path.join(artifact_path, "page_svgs")
@@ -204,9 +206,24 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         with open(project_svg_path, "w", encoding="utf-8") as f:
             f.write(svg)
 
+import os
+from harnice import fileio  # assuming you already have this in scope
+
 def prep_master(page_setup_contents):
     translate = [0, -3200]
     delta_x_translate = 1600
+    masters = []
+
+    # === Discover all master SVGs in artifacts ===
+    artifacts_dir = fileio.dirpath("artifacts")
+    for root, _, files in os.walk(artifacts_dir):
+        for filename in files:
+            if filename.endswith("-master.svg"):
+                master_name = filename.replace("-master.svg", "")
+                masters.append(master_name)
+
+    masters.sort()  # optional: keep consistent ordering
+
     # === Build basic SVG contents ===
     svg = [
         '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
@@ -214,51 +231,34 @@ def prep_master(page_setup_contents):
         '  <g id="svg-master-contents-start">'
     ]
 
-    # Add formboard placeholders
-    for formboard_name in page_setup_contents.get("formboards", {}):
+    for master_name in masters:
         translate_str = f"translate({translate[0]},{translate[1]})"
         svg += [
-            f'    <g id="{formboard_name}" transform="{translate_str}">',
-            f'      <g id="{formboard_name}-contents-start"></g>',
-            f'      <g id="{formboard_name}-contents-end"></g>',
+            f'    <g id="{master_name}" transform="{translate_str}">',
+            f'      <g id="{master_name}-contents-start"></g>',
+            f'      <g id="{master_name}-contents-end"></g>',
             f'    </g>'
         ]
         translate[0] += delta_x_translate
 
-    # Add other master group placeholders
-    translate_str = f"translate({translate[0]},{translate[1]})"
+        # === Abnormal rules to be added later ===
+        # if master_name == "esch":
+        #     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("esch master svg"), "esch-master", "esch-master")
+        # elif master_name == "wirelist":
+        #     svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")
+
+    # Close out the SVG
     svg += [
-        f'    <g id="esch" transform="{translate_str}">',
-        f'      <g id="esch-master-contents-start"></g>',
-        f'      <g id="esch-master-contents-end"></g>',
-        f'    </g>'
-    ]
-    translate[0] += delta_x_translate
-    translate_str = f"translate({translate[0]},{translate[1]})"
-    svg += [
-        f'    <g id="wirelist" transform="{translate_str}">',
-        f'      <g id="wirelist-contents-start"></g>',
-        f'      <g id="wirelist-contents-end"></g>',
-        f'    </g>'
         '  </g>',  # Close svg-master-contents-start
-        '  <g id="svg-master-contents-end"></g>'
+        '  <g id="svg-master-contents-end"></g>',
         '</svg>'
     ]
 
     # === Write SVG ===
-    with open(fileio.path("master svg"), "w", encoding="utf-8") as f:
+    with open(path("master contents"), "w", encoding="utf-8") as f:
         f.write("\n".join(svg))
 
-
-    # === Import stuff ===
-    # TODO: go through this per https://github.com/kenyonshutt/harnice/issues/231
-    """for formboard_name in page_setup_contents.get("formboards", {}):
-        source_svg_name = f"{fileio.partnumber("pn-rev")}.{formboard_name}.svg"
-        source_svg_path = os.path.join(fileio.dirpath("formboard_svgs"), source_svg_name)
-        svg_utils.find_and_replace_svg_group(fileio.path("master svg"), source_svg_path, formboard_name, formboard_name)
-    
-    svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("esch master svg"), "esch-master", "esch-master")
-    svg_utils.find_and_replace_svg_group(fileio.path("master svg"), fileio.path("wirelist master svg"), "wirelist", "wirelist")"""
+    return masters
 
 def update_harnice_output(page_setup_contents):
     for page_data in page_setup_contents.get("pages", []):
@@ -301,7 +301,7 @@ def update_harnice_output(page_setup_contents):
         #replace the master svg
         svg_utils.find_and_replace_svg_group(
             filepath, 
-            fileio.path("master svg"), 
+            path("master contents"), 
             "svg-master", 
             "svg-master"
         )
