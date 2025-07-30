@@ -4,6 +4,8 @@ import yaml
 import xlwt
 from harnice import fileio, instances_list
 
+artifact_mpn = "wirelist_exporter"
+
 #=============== PATHS ===============
 def path(target_value):
     artifact_path = os.path.join(fileio.dirpath("artifacts"), "wirelist_exporter")
@@ -157,7 +159,7 @@ font_family = "Arial"
 start_x = 0
 start_y = 0
 
-with open(wirelist_noformatspath("wirelist no formats"), "r", encoding="utf-8") as f:
+with open(path("wirelist no formats"), "r", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
     data_rows = list(reader)
 
