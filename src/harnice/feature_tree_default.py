@@ -68,7 +68,7 @@ for instance in instances_list.read_instance_rows():
         })
 
 formboard.generate_node_coordinates()
-
+formboard.make_segment_drawings()
 
 #=============== ASSIGN BOM LINE NUMBERS #===============
 instances_list.assign_bom_line_numbers()
@@ -183,5 +183,7 @@ if contact_flagnote_conversion_happened == True:
 
 flagnotes.compile_buildnotes()
     # add separate buildnote itemtypes to list based on affectedinstance flagnotes, intended to make one list of unique buildnotes
+
+flagnotes.make_note_drawings()
 
 #TODO: add buildnote locations per https://github.com/kenyonshutt/harnice/issues/181
