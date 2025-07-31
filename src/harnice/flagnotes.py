@@ -42,7 +42,7 @@ def flagnote_location(affected_instance_name, note_number):
     Returns empty strings if unavailable.
     """
     path = os.path.join(
-        fileio.dirpath("editable_instance_data"),
+        fileio.dirpath("imported_instances"),
         affected_instance_name,
         affected_instance_name + "-attributes.json"
     )

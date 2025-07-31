@@ -238,7 +238,7 @@ def add_flagnotes():
         # === Step 4: Try to load flagnote location from JSON ===
         translate_x = ""
         translate_y = ""
-        attr_path = os.path.join(fileio.dirpath("editable_instance_data"), affected, f"{affected}-attributes.json")
+        attr_path = os.path.join(fileio.dirpath("imported_instances"), affected, f"{affected}-attributes.json")
 
         try:
             with open(attr_path, 'r', encoding='utf-8') as f_json:
