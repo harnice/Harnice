@@ -462,7 +462,7 @@ def update_parent_csys(instance_name):
 
     # Build the path to the attributes JSON file
     attributes_path = os.path.join(
-        fileio.dirpath("editable_instance_data"),
+        fileio.dirpath("imported_instances"),
         instance_name,
         f"{instance_name}-attributes.json"
     )
@@ -503,7 +503,7 @@ def update_component_translate():
             continue
 
         attributes_path = os.path.join(
-            fileio.dirpath("editable_instance_data"),
+            fileio.dirpath("imported_instances"),
             instance_name,
             f"{instance_name}-attributes.json"
         )

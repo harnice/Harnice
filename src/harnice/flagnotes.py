@@ -42,7 +42,7 @@ def flagnote_location(affected_instance_name, note_number):
     Returns empty strings if unavailable.
     """
     path = os.path.join(
-        fileio.dirpath("editable_instance_data"),
+        fileio.dirpath("imported_instances"),
         affected_instance_name,
         affected_instance_name + "-attributes.json"
     )
@@ -83,7 +83,7 @@ def make_note_drawings():
         instance_name = instance.get("instance_name")
         parent_instance = instance.get("parent_instance", "").strip()
 
-        destination_directory = os.path.join(fileio.dirpath("uneditable_instance_data"), instance_name)
+        destination_directory = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), instance_name)
         os.makedirs(destination_directory, exist_ok=True)
 
         # === Pull library item ===
@@ -140,9 +140,9 @@ def make_leader_drawings():
 
                 # Then decide path based on its type
                 if parent_type not in instances_list.RECOGNIZED_ITEM_TYPES:
-                    parent_attributes_file = os.path.join(fileio.dirpath("editable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
+                    parent_attributes_file = os.path.join(fileio.dirpath("imported_instances"), leader_parent, f"{leader_parent}-attributes.json")
                 else:
-                    parent_attributes_file = os.path.join(fileio.dirpath("uneditable_instance_data"), leader_parent, f"{leader_parent}-attributes.json")
+                    parent_attributes_file = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), leader_parent, f"{leader_parent}-attributes.json")
 
                 if not os.path.exists(parent_attributes_file):
                     print(f"[WARN] Missing attributes for parent: {parent_attributes_file}")
@@ -199,7 +199,7 @@ def make_leader_drawings():
                 </svg>
                 '''
 
-                leader_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), formboard, leader_name)
+                leader_dir = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), formboard, leader_name)
                 os.makedirs(leader_dir, exist_ok=True)
 
                 output_filename = os.path.join(leader_dir, f"{leader_name}-drawing.svg")
