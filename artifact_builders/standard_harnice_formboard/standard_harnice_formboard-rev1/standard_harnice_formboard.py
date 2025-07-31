@@ -117,7 +117,7 @@ for instance in instances:
                 <g id="{instance.get("instance_name")}-contents-end"></g>
             </svg>
             '''
-            segment_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), segment_name)
+            segment_dir = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), segment_name)
             os.makedirs(segment_dir, exist_ok=True)
 
             output_filename = os.path.join(segment_dir, f"{segment_name}-drawing.svg")
@@ -230,11 +230,11 @@ for instance in instances:
             continue
 
         if item_type in {"Connector", "Backshell"}:
-            instance_data_dir = fileio.dirpath("editable_instance_data")
+            instance_data_dir = fileio.dirpath("imported_instances")
         elif item_type == "Flagnote leader":
-            instance_data_dir = os.path.join(fileio.dirpath("uneditable_instance_data"), formboard_name)
+            instance_data_dir = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), formboard_name)
         else:
-            instance_data_dir = fileio.dirpath("uneditable_instance_data")
+            instance_data_dir = fileio.dirpath("generated_instances_do_not_edit")
 
         #TODO: fix flagnotes first before uncommenting
         """
