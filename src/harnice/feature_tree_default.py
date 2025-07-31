@@ -31,8 +31,22 @@ for instance in instances_list.read_instance_rows():
 #=============== LOOK INSIDE PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
 #TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
 for instance in instances_list.read_instance_rows():
-    if instance.get("item_type") in ["Connector"]:
-        formboard.update_parent_csys(instance.get("instance_name"))
+    if instance.get("instance_name") == "X2":
+        instances_list.modify("X2",{
+            "parent_csys": "X2.bs"}
+        )
+    elif instance.get("instance_name") == "X500":
+        instances_list.modify("X500",{
+            "parent_csys": "X500.bs"}
+        )
+    elif instance.get("item_type") == "Connector":
+        instances_list.modify(instance.get("instance_name"),{
+            "parent_csys": f"{instance.get("instance_name")}.node"}
+        )
+    elif instance.get("item_type") == "Backshell":
+        instances_list.modify(instance.get("instance_name"),{
+            "parent_csys": f"{instance.get("parent_instance")}.node"}
+        )
 
 
 #=============== UPDATE FORMBOARD DEFINITION TSV, UPDATE PART PLACEMENT DATA #===============

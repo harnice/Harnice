@@ -455,46 +455,6 @@ def map_instance_to_segments(instance_name):
             "length": instances_list.attribute_of(seg_name, 'length')
         })
 
-def update_parent_csys(instance_name):
-    instance_name = instance_name.strip()
-    if not instance_name:
-        return
-
-    # Build the path to the attributes JSON file
-    attributes_path = os.path.join(
-        fileio.dirpath("imported_instances"),
-        instance_name,
-        f"{instance_name}-attributes.json"
-    )
-
-    if not os.path.exists(attributes_path):
-        return
-
-    try:
-        with open(attributes_path, 'r', encoding='utf-8') as f:
-            attributes_data = json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
-        return
-
-    csys_parent_prefs = attributes_data.get("plotting_info", {}).get("csys_parent_prefs", [])
-    if not csys_parent_prefs:
-        return
-
-    parent_instance = instances_list.attribute_of(instance_name, "parent_instance")
-    if not parent_instance:
-        return
-
-    all_instance_names = {
-        inst.get("instance_name", "")
-        for inst in instances_list.read_instance_rows()
-    }
-
-    for pref in csys_parent_prefs:
-        candidate_name = f"{parent_instance}{pref}"
-        if candidate_name in all_instance_names:
-            instances_list.modify(instance_name, {"parent_csys": candidate_name})
-            break
-
 def update_component_translate():
     instances = instances_list.read_instance_rows()
     for instance in instances:
