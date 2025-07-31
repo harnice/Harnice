@@ -68,7 +68,7 @@ for instance in instances_list.read_instance_rows():
         })
 
 formboard.generate_node_coordinates()
-
+formboard.make_segment_drawings()
 
 #=============== ASSIGN BOM LINE NUMBERS #===============
 instances_list.assign_bom_line_numbers()
