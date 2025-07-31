@@ -142,7 +142,7 @@ def pull_part(instance_name):
         item_type = instance.get('item_type', '').lower()
         supplier = instance.get('supplier')
         mpn = instance.get('mpn', '')
-        destination_directory = os.path.join(fileio.dirpath("editable_instance_data"), item_name)
+        destination_directory = os.path.join(fileio.dirpath("imported_instances"), item_name)
 
         # Determine rev from existing folders
         revs_found = []
