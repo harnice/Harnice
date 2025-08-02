@@ -270,7 +270,6 @@ def part():
         ]
     }
 
-
     attributes_path = fileio.path("attributes")
     merged_attributes = default_attributes.copy()
 
@@ -303,10 +302,10 @@ def part():
     try:
         with open(attributes_path, "r", encoding="utf-8") as f:
             attrs = json.load(f)
-        flagnote_locations = attrs.get("flagnote_locations", [])
+        csys_children = attrs.get("csys_children", [])
     except Exception as e:
-        print(f"[WARNING] Could not read flagnote_locations: {e}")
-        flagnote_locations = []
+        print(f"[WARNING] Could not read csys_children: {e}")
+        csys_children = []
 
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -318,52 +317,81 @@ def part():
         '  </g>',
     ]
 
-    lines.append(f'  <g id="flagnote locations">')
+    # === Render Output Csys Locations ===
+    lines.append(f'  <g id="output csys locations">')
 
-    for i, entry in enumerate(flagnote_locations):
+    arrow_len = 24   # axis arrow length (px)
+    dot_radius = 4   # origin dot radius
+    arrow_size = 6   # arrowhead size (px)
+
+    for i, csys in enumerate(csys_children):
         try:
-            angle_deg = float(entry.get("angle", 0))
-            distance_in = float(entry.get("distance", 0))
+            csys_name = csys.get("name", f"csys-{i}")
+
+            # Step 1: move in X and Y (right-handed: +Y is up)
+            x = float(csys.get("x", 0)) * 96
+            y = float(csys.get("y", 0)) * 96  # positive up
+
+            # Step 2: move by angle/distance (CCW positive)
+            angle_deg = float(csys.get("angle", 0))
+            distance_in = float(csys.get("distance", 0))
             angle_rad = math.radians(angle_deg)
             dist_px = distance_in * 96
-            x = dist_px * math.cos(angle_rad)
-            y = -dist_px * math.sin(angle_rad)
+            x += dist_px * math.cos(angle_rad)
+            y += dist_px * math.sin(angle_rad)
 
-            arrow_angle_deg = float(entry.get("arrowhead_angle") or angle_deg)
-            arrow_dist_in = float(entry.get("arrowhead_distance", 1))
-            arrow_rad = math.radians(arrow_angle_deg)
-            arrow_dist_px = arrow_dist_in * 96
-            arrow_x = arrow_dist_px * math.cos(arrow_rad)
-            arrow_y = -arrow_dist_px * math.sin(arrow_rad)
+            # Step 3: apply rotation for local axes (CCW positive)
+            rotation_deg = float(csys.get("rotation", 0))
+            rotation_rad = math.radians(rotation_deg)
+            cos_r, sin_r = math.cos(rotation_rad), math.sin(rotation_rad)
 
-            lines.append(f'    <circle cx="{x:.2f}" cy="{y:.2f}" r="12" fill="#444" stroke="black" stroke-width="1"/>')
-            lines.append(f'    <text x="{x:.2f}" y="{y+4:.2f}" fill="white" font-size="12" font-family="sans-serif" text-anchor="middle">{i+1}</text>')
-            lines.append(f'    <line x1="{x:.2f}" y1="{y:.2f}" x2="{arrow_x:.2f}" y2="{arrow_y:.2f}" stroke="black" stroke-width="1"/>')
+            # Local axis vectors
+            dx_x, dy_x = arrow_len * cos_r, arrow_len * sin_r   # +X axis
+            dx_y, dy_y = -arrow_len * sin_r, arrow_len * cos_r  # +Y axis
 
-            dx = arrow_x - x
-            dy = arrow_y - y
-            length = math.hypot(dx, dy)
-            if length == 0:
-                continue
-            ux = dx / length
-            uy = dy / length
-            px = -uy
-            py = ux
-            base_x = arrow_x - ux * 6
-            base_y = arrow_y - uy * 6
-            tip = (arrow_x, arrow_y)
-            left = (base_x + px * 2, base_y + py * 2)
-            right = (base_x - px * 2, base_y - py * 2)
+            # Begin group for this csys
+            lines.append(f'    <g id="{csys_name}">')
 
-            lines.append(
-                f'    <polygon points="{tip[0]:.2f},{tip[1]:.2f} {left[0]:.2f},{left[1]:.2f} {right[0]:.2f},{right[1]:.2f}" fill="black"/>'
-            )
+            # Origin dot
+            lines.append(f'      <circle cx="{x:.2f}" cy="{-y:.2f}" r="{dot_radius}" fill="black"/>')
+
+            # Helper to draw an arrow with arrowhead
+            def draw_arrow(x1, y1, dx, dy, color):
+                x2, y2 = x1 + dx, y1 + dy
+                # Flip Y for SVG
+                lines.append(f'      <line x1="{x1:.2f}" y1="{-y1:.2f}" '
+                             f'x2="{x2:.2f}" y2="{-y2:.2f}" stroke="{color}" stroke-width="2"/>')
+
+                length = math.hypot(dx, dy)
+                if length == 0:
+                    return
+                ux, uy = dx / length, dy / length
+                px, py = -uy, ux
+                base_x = x2 - ux * arrow_size
+                base_y = y2 - uy * arrow_size
+                tip = (x2, y2)
+                left = (base_x + px * (arrow_size/2), base_y + py * (arrow_size/2))
+                right = (base_x - px * (arrow_size/2), base_y - py * (arrow_size/2))
+
+                lines.append(
+                    f'      <polygon points="{tip[0]:.2f},{-tip[1]:.2f} '
+                    f'{left[0]:.2f},{-left[1]:.2f} {right[0]:.2f},{-right[1]:.2f}" fill="{color}"/>'
+                )
+
+            # Draw +X (red) and +Y (green)
+            draw_arrow(x, y, dx_x, dy_x, "red")
+            draw_arrow(x, y, dx_y, dy_y, "green")
+
+            # End group
+            lines.append(f'    </g>')
+
         except Exception as e:
-            print(f"[WARNING] Failed to render flagnote {i}: {e}")
+            print(f"[WARNING] Failed to render csys {csys.get("name", i)}: {e}")
 
     lines.append('  </g>')
     lines.append('</svg>')
 
+    # === Preserve existing group contents if needed ===
     with open(temp_svg_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
@@ -391,6 +419,7 @@ def part():
     print()
     print(f"Part file '{fileio.partnumber('pn')}' updated")
     print()
+
 
 def flagnote():
     print("Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?")
