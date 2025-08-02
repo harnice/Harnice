@@ -20,22 +20,23 @@ INSTANCES_LIST_COLUMNS = [
     'instance_name',
     'print_name',
     'bom_line_number',
-    'mpn',
-    'item_type',
-    'parent_instance', #<--------- change to functional_parent
-    'location_is_node_or_segment',
-    'parent_csys', #<----------- change to parent_csys_instance
-    'parent_csys_name', #<----------- add
-    'circuit_id',
-    'circuit_id_port',
-    'length',
-    'diameter', #<---------- change to print_diameter
-    'node_at_end_a',
-    'node_at_end_b',
-    'translate_x',
-    'translate_y',
-    'rotate_csys',
-    'absolute_rotation',
+    'mpn', #unique part identifier (manufacturer + part number concatenated)
+    'item_type', #connector, backshell, whatever
+    'parent_instance', #general purpose reference
+    'location_is_node_or_segment', #each instance is either better represented by one or ther other
+    'cluster', #a group of co-located parts (connectors, backshells, nodes)
+    'parent_csys', #the other instance upon which this instance's location is based
+    'parent_csys_name', #the specific output coordinate system of the parent that this instance's location is based
+    'circuit_id', #which signal this component is electrically connected to
+    'circuit_id_port', #the sequential id of this item in its signal chain
+    'length', #derived from formboard definition, the length of a segment
+    'diameter', #apparent diameter of a segment <---------- change to print_diameter
+    'node_at_end_a', #derived from formboard definition
+    'node_at_end_b', #derived from formboard definition
+    'translate_x', #manual add, not nominally used
+    'translate_y', #manual add, not nominally used
+    'rotate_csys', #manual add, not nominally used
+    'absolute_rotation', #manual add, not nominally used unless it's a flagnote
     'note_type',
     'note_number', #<--------- merge with parent_csys and import instances of child csys?
     'bubble_text',
