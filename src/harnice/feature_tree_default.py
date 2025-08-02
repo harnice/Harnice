@@ -28,13 +28,25 @@ for instance in instances_list.read_instance_rows():
                 # checks for modifications against the library
 
 
-#=============== LOOK INSIDE PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
+#=============== LOCATE PARTS PER COORDINATE SYSTEMS #===============
 #TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
 for instance in instances_list.read_instance_rows():
-    if instance.get("instance_name") == "X2":
-        instances_list.modify("X2",{
-            "parent_csys": "X2.bs"}
-        )
+    if instance.get("item_type") == "Connector":
+        #if there's a backshell specified with the same group:
+        group = instance.get("group")
+        backshell_exists = False
+        backshell_name_guess = f"group.{bs}"
+        for instance2 in instances_list.read_instance_rows():
+            if instance.get("instance_name") == backshell_name_guess:
+                backshell_exists = True
+                continue
+
+        if backshell_exists == True:
+            instances_list.modify(instance.get("instance_name"),{
+                "parent_csys_component": backshell_name_guess,
+                "translate_x": 
+            })
+
     elif instance.get("instance_name") == "X500":
         instances_list.modify("X500",{
             "parent_csys": "X500.bs"}
