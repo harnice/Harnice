@@ -226,21 +226,50 @@ def part():
 
     # === ATTRIBUTES JSON SETUP ===
     default_attributes = {
-        "plotting_info": {
-            "csys_parent_prefs": [".node"],
-            "component_translate_inches": {
-                "translate_x": 0,
-                "translate_y": 0,
-                "rotate_csys": 0
-            }
-        },
+        "csys_parent_prefs": [
+            ".node"
+        ],
         "tooling_info": {"tools": []},
         "build_notes": [],
-        "flagnote_locations": [
-            {"angle": a, "distance": 2, "arrowhead_angle": "", "arrowhead_distance": 1}
-            for a in [0, 15, -15, 30, -30, 45, -45, 60, -60, -75, 75, -90, 90, -105, 105, -120]
+        "csys_children": [
+            {"name": "accessory-1", "x": 3, "y": 2, "angle": 0, "rotation": 0},
+            {"name": "accessory-2", "x": 2, "y": 3, "angle": 0, "rotation": 0},
+
+            {"name": "flagnote-1", "angle": 0, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-1", "angle": 0, "distance": 1, "rotation": 0},
+            {"name": "flagnote-2", "angle": 15, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-2", "angle": 15, "distance": 1, "rotation": 0},
+            {"name": "flagnote-3", "angle": -15, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-3", "angle": -15, "distance": 1, "rotation": 0},
+            {"name": "flagnote-4", "angle": 30, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-4", "angle": 30, "distance": 1, "rotation": 0},
+            {"name": "flagnote-5", "angle": -30, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-5", "angle": -30, "distance": 1, "rotation": 0},
+            {"name": "flagnote-6", "angle": 45, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-6", "angle": 45, "distance": 1, "rotation": 0},
+            {"name": "flagnote-7", "angle": -45, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-7", "angle": -45, "distance": 1, "rotation": 0},
+            {"name": "flagnote-8", "angle": 60, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-8", "angle": 60, "distance": 1, "rotation": 0},
+            {"name": "flagnote-9", "angle": -60, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-9", "angle": -60, "distance": 1, "rotation": 0},
+            {"name": "flagnote-10", "angle": -75, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-10", "angle": -75, "distance": 1, "rotation": 0},
+            {"name": "flagnote-11", "angle": 75, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-11", "angle": 75, "distance": 1, "rotation": 0},
+            {"name": "flagnote-12", "angle": -90, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-12", "angle": -90, "distance": 1, "rotation": 0},
+            {"name": "flagnote-13", "angle": 90, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-13", "angle": 90, "distance": 1, "rotation": 0},
+            {"name": "flagnote-14", "angle": -105, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-14", "angle": -105, "distance": 1, "rotation": 0},
+            {"name": "flagnote-15", "angle": 105, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-15", "angle": 105, "distance": 1, "rotation": 0},
+            {"name": "flagnote-16", "angle": -120, "distance": 2, "rotation": 0},
+            {"name": "flagnote-leader-16", "angle": -120, "distance": 1, "rotation": 0}
         ]
     }
+
 
     attributes_path = fileio.path("attributes")
     merged_attributes = default_attributes.copy()
