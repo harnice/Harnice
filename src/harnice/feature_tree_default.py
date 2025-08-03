@@ -29,32 +29,34 @@ for instance in instances_list.read_instance_rows():
 
 
 #=============== LOCATE PARTS PER COORDINATE SYSTEMS #===============
-#TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
 for instance in instances_list.read_instance_rows():
-    parent_csys = ""
-    parent_csys_outputcsys_name = ""
+    parent_csys = None
+    parent_csys_outputcsys_name = None
 
     if instance.get("item_type") == "Connector":
         parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".bs")
         parent_csys_outputcsys_name = "connector"
-        if parent_csys == None:
+
+        if parent_csys is None:
             parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
             parent_csys_outputcsys_name = "origin"
-        
+
     elif instance.get("item_type") == "Backshell":
         parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
-    
-    else:
-        # only modify instances we've explicitly outlined
-        continue
+        parent_csys_outputcsys_name = "origin"
 
+    else:
+        continue  # skip items we’re not modifying
+
+    # Save metadata back to instance
     instances_list.modify(instance.get("instance_name"), {
         "parent_csys_instance_name": parent_csys,
         "parent_csys_outputcsys_name": parent_csys_outputcsys_name
     })
 
+featuretree.update_translate_content() #takes your specified csys and makes it explicit in the translate fields
+
 #=============== UPDATE FORMBOARD DEFINITION TSV, UPDATE PART PLACEMENT DATA #===============
-formboard.update_component_translate()
 formboard.validate_nodes()
 # map conductors to segments
 for instance in instances_list.read_instance_rows():
