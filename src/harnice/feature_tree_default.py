@@ -32,22 +32,26 @@ for instance in instances_list.read_instance_rows():
 #TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
 for instance in instances_list.read_instance_rows():
     parent_csys = ""
-    parent_csys_name = ""
+    parent_csys_outputcsys_name = ""
 
     if instance.get("item_type") == "Connector":
         parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".bs")
-        parent_csys_name = "connector"
+        parent_csys_outputcsys_name = "connector"
         if parent_csys == None:
             parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
-            parent_csys_name = "origin"
+            parent_csys_outputcsys_name = "origin"
+        
     elif instance.get("item_type") == "Backshell":
         parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+    
+    else:
+        # only modify instances we've explicitly outlined
+        continue
 
-    instances_list.modify(instance_name, {
-        "parent_csys": parent_csys,
-        "parent_csys_name": parent_csys_name
+    instances_list.modify(instance.get("instance_name"), {
+        "parent_csys_instance_name": parent_csys,
+        "parent_csys_outputcsys_name": parent_csys_outputcsys_name
     })
-
 
 #=============== UPDATE FORMBOARD DEFINITION TSV, UPDATE PART PLACEMENT DATA #===============
 formboard.update_component_translate()
