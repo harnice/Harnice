@@ -7,7 +7,7 @@
     },
     "build_notes": {},
     "csys_children": {
-        "accessory-1": {
+        "connector": {
             "x": 2,
             "y": 1.5,
             "angle": 0,

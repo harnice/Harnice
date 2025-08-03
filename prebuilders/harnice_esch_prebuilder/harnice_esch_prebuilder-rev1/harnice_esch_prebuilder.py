@@ -51,7 +51,9 @@ for circuit_name, ports in harness_yaml.items():
                 instances_list.add_unless_exists(f"{port_label}.node",{
                     "item_type": "Node",
                     "cluster": port_label,
-                    "location_is_node_or_segment": "Node"
+                    "location_is_node_or_segment": "Node",
+                    "parent_csys_instance_name": "origin",
+                    "parent_csys_outputcsys_name": "origin"
                 })
             elif re.match(r"C[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{

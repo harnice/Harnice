@@ -36,12 +36,15 @@ def calculate_formboard_location(instance_name, origin):
     Returns:
         (component_x_pos, component_y_pos, component_angle)
     """
+    import math
+
     instances = instances_list.read_instance_rows()
     instances_lookup = {row['instance_name']: row for row in instances}
 
     chain = []
     current = instance_name
 
+    # === Build chain of parents ===
     while current:
         chain.append(current)
         row = instances_lookup.get(current)
@@ -52,40 +55,27 @@ def calculate_formboard_location(instance_name, origin):
             break
         current = parent
 
-    x_pos = origin[0]
-    y_pos = origin[1]
-    angle = origin[2]  # degrees
+    x_pos, y_pos, angle = origin  # unpack origin
 
-    # Skip the last element (the starting instance)
-    for name in reversed(chain[1:]):
+    # Walk down the chain (excluding the instance itself)
+    for name in reversed(chain):
         row = instances_lookup.get(name, {})
 
-        translate_x = row.get('translate_x', '').strip()
-        translate_y = row.get('translate_y', '').strip()
-        rotate_csys = row.get('rotate_csys', '').strip()
+        translate_x = float(row.get('translate_x', 0) or 0)
+        translate_y = float(row.get('translate_y', 0) or 0)
+        rotate_csys = float(row.get('rotate_csys', 0) or 0)
 
-        try:
-            translate_x = float(translate_x) if translate_x else 0.0
-        except ValueError:
-            translate_x = 0.0
-
-        try:
-            translate_y = float(translate_y) if translate_y else 0.0
-        except ValueError:
-            translate_y = 0.0
-
-        try:
-            rotate_csys = float(rotate_csys) if rotate_csys else 0.0
-        except ValueError:
-            rotate_csys = 0.0
-
+        # Apply translation in the parent's local coordinates
         rad = math.radians(angle)
+        dx = math.cos(rad) * translate_x - math.sin(rad) * translate_y
+        dy = math.sin(rad) * translate_x + math.cos(rad) * translate_y
 
-        x_pos += math.cos(rad) * translate_x - math.sin(rad) * translate_y
-        y_pos += math.sin(rad) * translate_x + math.cos(rad) * translate_y
-        angle += rotate_csys
+        x_pos += dx
+        y_pos += dy
+        angle += rotate_csys  # update orientation after translation
 
     return x_pos, y_pos, angle
+
 
 #==========================
 instances = instances_list.read_instance_rows()
@@ -95,10 +85,6 @@ rotation = 0 #TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
 if rotation == "":
     raise KeyError(f"[ERROR] Rotation '{rotation}' not found in harnice output contents")
 origin = [0, 0, rotation]
-
-#TODO: figure out scales
-#scale_name = page_setup_contents["formboards"].get(formboard_name, {}).get("scale", "A")
-scale = 1 # page_setup_contents["scales"].get(scale_name)
 
 # Group instances by item_type
 grouped_instances = defaultdict(list)
@@ -163,13 +149,17 @@ for item_type, items in grouped_instances.items():
 # Write full SVG
 with open(path("output svg"), 'w') as f:
     f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-    f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')
-    f.write(f'  <g id="{artifact_mpn}-contents-start">\n')
-    f.write(f'    <g id="{artifact_mpn}-scale_group" transform="scale({scale})">\n')
+    f.write(
+        '<svg xmlns="http://www.w3.org/2000/svg" '
+        'xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" '
+        'version="1.1" width="1000" height="1000">\n'
+    )
+    f.write(f'  <g id="{artifact_id}-contents-start">\n')
+    f.write(f'    <g id="{artifact_id}-scale_group" transform="scale({scale})">\n')
     f.writelines(line + '\n' for line in content_lines)
     f.write('    </g>\n')
     f.write('  </g>\n')
-    f.write(f'  <g id="{artifact_mpn}-contents-end">\n')
+    f.write(f'  <g id="{artifact_id}-contents-end">\n')
     f.write('  </g>\n')
     f.write('</svg>\n')
 
