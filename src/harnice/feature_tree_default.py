@@ -33,9 +33,8 @@ for instance in instances_list.read_instance_rows():
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Connector":
         #if there's a backshell specified with the same group:
-        group = instance.get("group")
         backshell_exists = False
-        backshell_name_guess = f"group.{bs}"
+        backshell_name_guess = f"{instance.get("cluster")}.bs"
         for instance2 in instances_list.read_instance_rows():
             if instance.get("instance_name") == backshell_name_guess:
                 backshell_exists = True
@@ -43,8 +42,8 @@ for instance in instances_list.read_instance_rows():
 
         if backshell_exists == True:
             instances_list.modify(instance.get("instance_name"),{
-                "parent_csys_component": backshell_name_guess,
-                "translate_x": 
+                "parent_csys": backshell_name_guess,
+                "parent_csys_name": "connector"
             })
 
     elif instance.get("instance_name") == "X500":

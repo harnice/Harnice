@@ -33,9 +33,9 @@ INSTANCES_LIST_COLUMNS = [
     'diameter', #apparent diameter of a segment <---------- change to print_diameter
     'node_at_end_a', #derived from formboard definition
     'node_at_end_b', #derived from formboard definition
-    'translate_x', #manual add, not nominally used
-    'translate_y', #manual add, not nominally used
-    'rotate_csys', #manual add, not nominally used
+    'translate_x', #derived from parent_csys and parent_csys_name
+    'translate_y', #derived from parent_csys and parent_csys_name
+    'rotate_csys', #derived from parent_csys and parent_csys_name
     'absolute_rotation', #manual add, not nominally used unless it's a flagnote
     'note_type',
     'note_number', #<--------- merge with parent_csys and import instances of child csys?
@@ -361,6 +361,24 @@ def recursive_parent_search(start_instance, parent_type, attribute_name, wanted_
             )
 
     return wanted_instance
+
+def instance_in_cluster_with_suffix(cluster, suffix):
+    match = None
+    for instance in read_instance_rows():
+        if instance.get("cluster") == cluster:
+            instance_name = instance.get("instance_name", "")
+            if instance_name.endswith(suffix):
+                if match is not None:
+                    raise ValueError(
+                        f"We found multiple instances in cluster '{cluster}' with the suffix '{suffix}'."
+                    )
+                match = instance_name
+
+    if match is None:
+        raise ValueError(
+            f"No instance found in cluster '{cluster}' with the suffix '{suffix}'."
+        )
+    return match
 
 """
 template instances list modifier:

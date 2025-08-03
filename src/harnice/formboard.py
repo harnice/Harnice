@@ -397,8 +397,8 @@ def map_instance_to_segments(instance_name):
 
     # Find terminal nodes from the ports
     prev_instance, next_instance = instances_list.instance_names_of_adjacent_ports(instance_name)
-    node_of_prev_instance = instances_list.recursive_parent_search(prev_instance, "parent_instance", "item_type", "Node")
-    node_of_next_instance = instances_list.recursive_parent_search(next_instance, "parent_instance", "item_type", "Node")
+    node_of_prev_instance = instances_list.instance_in_cluster_with_suffix(instances_list.attribute_of(prev_instance, "cluster"), ".node")
+    node_of_next_instance = instances_list.instance_in_cluster_with_suffix(instances_list.attribute_of(next_instance, "cluster"), ".node")
 
     # Build graph of segments
     segments = [
