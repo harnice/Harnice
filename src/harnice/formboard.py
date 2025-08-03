@@ -167,7 +167,9 @@ def validate_nodes():
                     instances_list.add_unless_exists(missing_node,{
                         "instance_name": missing_node,
                         "item_type": "Node",
-                        "location_is_node_or_segment": "Node"
+                        "location_is_node_or_segment": "Node",
+                        "parent_csys_instance_name": "origin",
+                        "parent_csys_outputcsys_name": "origin"
                     })
 
                     segment_id = f"{missing_node}_leg"
@@ -184,6 +186,8 @@ def validate_nodes():
             'location_is_node_or_segment': "Segment",
             'length': segment.get('length'),
             'diameter': segment.get('diameter'),
+            'parent_csys_instance_name': segment.get('node_at_end_a'),
+            'parent_csys_outputcsys_name': "origin",
             'node_at_end_a': segment.get('node_at_end_a'),
             'node_at_end_b': segment.get('node_at_end_b'),
             'absolute_rotation': segment.get('angle')
@@ -193,6 +197,8 @@ def validate_nodes():
         instances_list.add_unless_exists(node,{
             'item_type': 'Node',
             'location_is_node_or_segment': "Node",
+            "parent_csys_instance_name": "origin",
+            "parent_csys_outputcsys_name": "origin"
         })
 
     # === Detect loops (from instances list) ===
@@ -238,10 +244,6 @@ def generate_node_coordinates():
         origin_node = seg.get("node_at_end_a")
         if origin_node:
             break
-
-    if not origin_node:
-        print("No node found to initialize coordinates.")
-        return
 
     print(f"-Origin node: '{origin_node}'")
 
@@ -364,10 +366,13 @@ def generate_node_coordinates():
             segment_id = seg.get("instance_name", "")
             segment_midpoints[segment_id] = (round(mid_x_logical, 2), round(mid_y_logical, 2))
 
+            # Draw the segment line with arrowhead from A to B
             svg_elements.append(
                 f'<line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}" '
-                f'stroke="black" stroke-width="2" />'
+                f'stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />'
             )
+
+            # Label the segment ID at midpoint
             svg_elements.append(
                 f'<text x="{mid_x_svg}" y="{mid_y_svg}" font-size="{font_size}" '
                 f'text-anchor="middle" fill="blue">{segment_id}</text>'
@@ -381,12 +386,27 @@ def generate_node_coordinates():
             f'text-anchor="middle" fill="black">{node_name}</text>'
         )
 
+    # Legend text at bottom left
+    legend_x, legend_y = padding, height - padding / 2
+    svg_elements.append(
+        f'<text x="{legend_x}" y="{legend_y}" font-size="{font_size}" '
+        f'fill="black">Arrows point from End A to End B</text>'
+    )
+
+    # Wrap with <svg> and include arrowhead definition
     svg_content = (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}">'
+        f'<defs>'
+        f'  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" '
+        f'orient="auto">'
+        f'    <polygon points="0 0, 10 3.5, 0 7" fill="black" />'
+        f'  </marker>'
+        f'</defs>'
         + "".join(svg_elements)
         + "</svg>"
     )
+
     with open(output_file_path, "w") as output_file:
         output_file.write(svg_content)
 
@@ -397,8 +417,8 @@ def map_instance_to_segments(instance_name):
 
     # Find terminal nodes from the ports
     prev_instance, next_instance = instances_list.instance_names_of_adjacent_ports(instance_name)
-    node_of_prev_instance = instances_list.recursive_parent_search(prev_instance, "parent_instance", "item_type", "Node")
-    node_of_next_instance = instances_list.recursive_parent_search(next_instance, "parent_instance", "item_type", "Node")
+    node_of_prev_instance = instances_list.instance_in_cluster_with_suffix(instances_list.attribute_of(prev_instance, "cluster"), ".node")
+    node_of_next_instance = instances_list.instance_in_cluster_with_suffix(instances_list.attribute_of(next_instance, "cluster"), ".node")
 
     # Build graph of segments
     segments = [
@@ -454,41 +474,6 @@ def map_instance_to_segments(instance_name):
             "location_is_node_or_segment": "Segment",
             "length": instances_list.attribute_of(seg_name, 'length')
         })
-
-def update_component_translate():
-    instances = instances_list.read_instance_rows()
-    for instance in instances:
-        instance_name = instance.get('instance_name', '').strip()
-        if not instance_name:
-            continue
-
-        attributes_path = os.path.join(
-            fileio.dirpath("imported_instances"),
-            instance_name,
-            f"{instance_name}-attributes.json"
-        )
-
-        if not os.path.exists(attributes_path):
-            continue
-
-        try:
-            with open(attributes_path, "r", encoding="utf-8") as f:
-                attributes_data = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            continue
-
-        component_translate = (
-            attributes_data
-            .get("plotting_info", {})
-            .get("component_translate_inches", {})
-        )
-
-        if component_translate:
-            instance['translate_x'] = str(component_translate.get('translate_x', ''))
-            instance['translate_y'] = str(component_translate.get('translate_y', ''))
-            instance['rotate_csys'] = str(component_translate.get('rotate_csys', ''))
-
-    instances_list.write_instance_rows(instances)
 
 def make_segment_drawings():
     #=================================================

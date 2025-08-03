@@ -28,29 +28,36 @@ for instance in instances_list.read_instance_rows():
                 # checks for modifications against the library
 
 
-#=============== LOOK INSIDE PART LIBRARIES FOR PREFERRED CSYS PARENTS #===============
-#TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
+#=============== LOCATE PARTS PER COORDINATE SYSTEMS #===============
 for instance in instances_list.read_instance_rows():
-    if instance.get("instance_name") == "X2":
-        instances_list.modify("X2",{
-            "parent_csys": "X2.bs"}
-        )
-    elif instance.get("instance_name") == "X500":
-        instances_list.modify("X500",{
-            "parent_csys": "X500.bs"}
-        )
-    elif instance.get("item_type") == "Connector":
-        instances_list.modify(instance.get("instance_name"),{
-            "parent_csys": f"{instance.get("instance_name")}.node"}
-        )
-    elif instance.get("item_type") == "Backshell":
-        instances_list.modify(instance.get("instance_name"),{
-            "parent_csys": f"{instance.get("parent_instance")}.node"}
-        )
+    parent_csys = None
+    parent_csys_outputcsys_name = None
 
+    if instance.get("item_type") == "Connector":
+        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".bs")
+        parent_csys_outputcsys_name = "connector"
+
+        if parent_csys is None:
+            parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+            parent_csys_outputcsys_name = "origin"
+
+    elif instance.get("item_type") == "Backshell":
+        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+        parent_csys_outputcsys_name = "origin"
+
+    else:
+        continue  # skip items we’re not modifying
+
+    # Save metadata back to instance
+    instances_list.modify(instance.get("instance_name"), {
+        "parent_csys_instance_name": parent_csys,
+        "parent_csys_outputcsys_name": parent_csys_outputcsys_name
+    })
+
+ #takes already specified csys and makes it explicit in the translate fields
+featuretree.update_translate_content()
 
 #=============== UPDATE FORMBOARD DEFINITION TSV, UPDATE PART PLACEMENT DATA #===============
-formboard.update_component_translate()
 formboard.validate_nodes()
 # map conductors to segments
 for instance in instances_list.read_instance_rows():
@@ -201,3 +208,10 @@ flagnotes.compile_buildnotes()
 flagnotes.make_note_drawings()
 
 #TODO: add buildnote locations per https://github.com/kenyonshutt/harnice/issues/181
+
+#if there's an absolute rotation specified for any reason, make downstream csys children reflect it
+for instance in instances_list.read_instance_rows():
+    if not instance.get("absolute_rotation") in ["", None]:
+        instances_list.modify(instance.get("instance_name"),{
+            "rotate_csys": instance.get("absolute_rotation")
+        })

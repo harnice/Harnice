@@ -20,22 +20,23 @@ INSTANCES_LIST_COLUMNS = [
     'instance_name',
     'print_name',
     'bom_line_number',
-    'mpn',
-    'item_type',
-    'parent_instance', #<--------- change to functional_parent
-    'location_is_node_or_segment',
-    'parent_csys', #<----------- change to parent_csys_instance
-    'parent_csys_name', #<----------- add
-    'circuit_id',
-    'circuit_id_port',
-    'length',
-    'diameter', #<---------- change to print_diameter
-    'node_at_end_a',
-    'node_at_end_b',
-    'translate_x',
-    'translate_y',
-    'rotate_csys',
-    'absolute_rotation',
+    'mpn', #unique part identifier (manufacturer + part number concatenated)
+    'item_type', #connector, backshell, whatever
+    'parent_instance', #general purpose reference
+    'location_is_node_or_segment', #each instance is either better represented by one or ther other
+    'cluster', #a group of co-located parts (connectors, backshells, nodes)
+    'parent_csys_instance_name', #the other instance upon which this instance's location is based
+    'parent_csys_outputcsys_name', #the specific output coordinate system of the parent that this instance's location is based
+    'circuit_id', #which signal this component is electrically connected to
+    'circuit_id_port', #the sequential id of this item in its signal chain
+    'length', #derived from formboard definition, the length of a segment
+    'diameter', #apparent diameter of a segment <---------- change to print_diameter
+    'node_at_end_a', #derived from formboard definition
+    'node_at_end_b', #derived from formboard definition
+    'translate_x', #derived from parent_csys and parent_csys_name
+    'translate_y', #derived from parent_csys and parent_csys_name
+    'rotate_csys', #derived from parent_csys and parent_csys_name
+    'absolute_rotation', #manual add, not nominally used unless it's a flagnote
     'note_type',
     'note_number', #<--------- merge with parent_csys and import instances of child csys?
     'bubble_text',
@@ -360,6 +361,19 @@ def recursive_parent_search(start_instance, parent_type, attribute_name, wanted_
             )
 
     return wanted_instance
+
+def instance_in_cluster_with_suffix(cluster, suffix):
+    match = None
+    for instance in read_instance_rows():
+        if instance.get("cluster") == cluster:
+            instance_name = instance.get("instance_name", "")
+            if instance_name.endswith(suffix):
+                if match is not None:
+                    raise ValueError(
+                        f"We found multiple instances in cluster '{cluster}' with the suffix '{suffix}'."
+                    )
+                match = instance_name
+    return match
 
 """
 template instances list modifier:
