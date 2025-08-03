@@ -31,33 +31,22 @@ for instance in instances_list.read_instance_rows():
 #=============== LOCATE PARTS PER COORDINATE SYSTEMS #===============
 #TODO: UPDATE PER https://github.com/kenyonshutt/harnice/issues/181
 for instance in instances_list.read_instance_rows():
+    parent_csys = ""
+    parent_csys_name = ""
+
     if instance.get("item_type") == "Connector":
-        #if there's a backshell specified with the same group:
-        backshell_exists = False
-        backshell_name_guess = f"{instance.get("cluster")}.bs"
-        for instance2 in instances_list.read_instance_rows():
-            if instance.get("instance_name") == backshell_name_guess:
-                backshell_exists = True
-                continue
-
-        if backshell_exists == True:
-            instances_list.modify(instance.get("instance_name"),{
-                "parent_csys": backshell_name_guess,
-                "parent_csys_name": "connector"
-            })
-
-    elif instance.get("instance_name") == "X500":
-        instances_list.modify("X500",{
-            "parent_csys": "X500.bs"}
-        )
-    elif instance.get("item_type") == "Connector":
-        instances_list.modify(instance.get("instance_name"),{
-            "parent_csys": f"{instance.get("instance_name")}.node"}
-        )
+        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".bs")
+        parent_csys_name = "connector"
+        if parent_csys == None:
+            parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+            parent_csys_name = "origin"
     elif instance.get("item_type") == "Backshell":
-        instances_list.modify(instance.get("instance_name"),{
-            "parent_csys": f"{instance.get("parent_instance")}.node"}
-        )
+        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+
+    instances_list.modify(instance_name, {
+        "parent_csys": parent_csys,
+        "parent_csys_name": parent_csys_name
+    })
 
 
 #=============== UPDATE FORMBOARD DEFINITION TSV, UPDATE PART PLACEMENT DATA #===============

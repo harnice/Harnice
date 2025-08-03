@@ -373,11 +373,6 @@ def instance_in_cluster_with_suffix(cluster, suffix):
                         f"We found multiple instances in cluster '{cluster}' with the suffix '{suffix}'."
                     )
                 match = instance_name
-
-    if match is None:
-        raise ValueError(
-            f"No instance found in cluster '{cluster}' with the suffix '{suffix}'."
-        )
     return match
 
 """
