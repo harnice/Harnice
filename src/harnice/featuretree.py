@@ -94,6 +94,9 @@ def update_translate_content():
         if instance.get("parent_csys_instance_name") in ["", None]:
             continue # skip if there isn't a parent defined
 
+        if instance.get("item_type") == "Node":
+            continue # these are automatically assigned at start
+
         parent_csys_outputcsys_name = instance.get("parent_csys_outputcsys_name")
 
         if not parent_csys_outputcsys_name:

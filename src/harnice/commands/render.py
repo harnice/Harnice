@@ -31,6 +31,11 @@ def harness():
     
     # initialize instances list
     instances_list.make_new_list()
+    instances_list.add_unless_exists("origin", {
+        "instance_name": "origin",
+        "item_type": "Node",
+        "location_is_node_or_segment": "Node"
+    })
 
     # === Step 3: Run the project-specific feature_tree.py ===
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")

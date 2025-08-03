@@ -54,7 +54,8 @@ for instance in instances_list.read_instance_rows():
         "parent_csys_outputcsys_name": parent_csys_outputcsys_name
     })
 
-featuretree.update_translate_content() #takes your specified csys and makes it explicit in the translate fields
+ #takes already specified csys and makes it explicit in the translate fields
+featuretree.update_translate_content()
 
 #=============== UPDATE FORMBOARD DEFINITION TSV, UPDATE PART PLACEMENT DATA #===============
 formboard.validate_nodes()
@@ -207,3 +208,10 @@ flagnotes.compile_buildnotes()
 flagnotes.make_note_drawings()
 
 #TODO: add buildnote locations per https://github.com/kenyonshutt/harnice/issues/181
+
+#if there's an absolute rotation specified for any reason, make downstream csys children reflect it
+for instance in instances_list.read_instance_rows():
+    if not instance.get("absolute_rotation") in ["", None]:
+        instances_list.modify(instance.get("instance_name"),{
+            "rotate_csys": instance.get("absolute_rotation")
+        })
