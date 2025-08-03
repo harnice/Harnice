@@ -47,7 +47,7 @@ def calculate_formboard_location(instance_name, origin):
         row = instances_lookup.get(current)
         if not row:
             break
-        parent = row.get('parent_csys', '').strip()
+        parent = row.get('parent_csys_instance_name', '').strip()
         if not parent:
             break
         current = parent
@@ -161,8 +161,7 @@ for item_type, items in grouped_instances.items():
     content_lines.append('    </g>')
 
 # Write full SVG
-#TODO: uncomment when working on this
-"""with open(path("output svg"), 'w') as f:
+with open(path("output svg"), 'w') as f:
     f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
     f.write('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1000" height="1000">\n')
     f.write(f'  <g id="{artifact_mpn}-contents-start">\n')
@@ -172,7 +171,7 @@ for item_type, items in grouped_instances.items():
     f.write('  </g>\n')
     f.write(f'  <g id="{artifact_mpn}-contents-end">\n')
     f.write('  </g>\n')
-    f.write('</svg>\n')"""
+    f.write('</svg>\n')
 
 #now that the SVG has been written, copy the connector content in:
 for instance in instances:
@@ -196,8 +195,6 @@ for instance in instances:
         else:
             instance_data_dir = fileio.dirpath("generated_instances_do_not_edit")
 
-        #TODO: fix flagnotes first before uncommenting
-        """
         svg_utils.find_and_replace_svg_group(
             path("output svg"),
             os.path.join(
@@ -208,4 +205,3 @@ for instance in instances:
             instance.get("instance_name"),
             instance.get("instance_name")
         )
-        """
