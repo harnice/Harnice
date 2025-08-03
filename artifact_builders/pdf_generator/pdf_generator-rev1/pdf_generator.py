@@ -186,8 +186,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
                 new = revhistory_data.get(field_name, "").strip()
 
             if "scale" in old.lower():
-                scales_lookup = page_setup_contents.get("scales", {})
-                new = f"{scales_lookup.get(new, 0):.3f}" if new in scales_lookup else ""
+                new = f"{scales.get(new, 0):.3f}" if new in scales else ""
 
             if new == "autosheet":
                 page_names = [p.get("name") for p in page_setup_contents.get("pages", [])]
