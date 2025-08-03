@@ -45,17 +45,20 @@ for circuit_name, ports in harness_yaml.items():
             if re.match(r"X[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{
                     "item_type": "Connector",
-                    "parent_instance": f"{port_label}.node",
-                    "location_is_node_or_segment": "Node",
+                    "cluster": port_label,
+                    "location_is_node_or_segment": "Node"
                 })
                 instances_list.add_unless_exists(f"{port_label}.node",{
                     "item_type": "Node",
-                    "location_is_node_or_segment": "Node"
+                    "cluster": port_label,
+                    "location_is_node_or_segment": "Node",
+                    "parent_csys_instance_name": "origin",
+                    "parent_csys_outputcsys_name": "origin"
                 })
             elif re.match(r"C[^.]+", port_label):
                 instances_list.add_unless_exists(port_label,{
                     "item_type": "Cable",
-                    "location_is_node_or_segment": "Segment",
+                    "location_is_node_or_segment": "Segment"
                 })
             else:
                 raise ValueError(f"Please define item {port_label}!")
@@ -72,6 +75,7 @@ for circuit_name, ports in harness_yaml.items():
                             "print_name": subval,
                             "item_type": "Connector cavity",
                             "parent_instance": port_label,
+                            "cluster": port_label,
                             "location_is_node_or_segment": "Node",
                             'circuit_id': circuit_name,
                             'circuit_id_port': port_counter
@@ -160,6 +164,7 @@ for instance in instances_list.read_instance_rows():
                     "supplier": "public",
                     "item_type": "Backshell",
                     "parent_instance": instance.get("instance_name"),
+                    "cluster": instance_name,
                     "location_is_node_or_segment": "Node"
                 })
 
@@ -174,10 +179,12 @@ for instance in instances_list.read_instance_rows():
         if prev_port_location_is_node_or_segment == "Node" and next_port_location_is_node_or_segment == "Segment":
             instances_list.modify(instance_name,{
                 "parent_instance": prev_port,
+                "cluster": instances_list.attribute_of(prev_port, "cluster")
             })
         elif prev_port_location_is_node_or_segment == "Segment" and next_port_location_is_node_or_segment == "Node":
             instances_list.modify(instance_name,{
                 "parent_instance": next_port,
+                "cluster": instances_list.attribute_of(prev_port, "cluster")
             })
         else:
             raise ValueError(f"Because adjacent ports are both port-based or both segment-based, I don't know what parent to assign to {instance_name}")
