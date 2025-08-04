@@ -114,6 +114,7 @@ for manual_note in flagnotes.read_manual_list():
             "supplier": manual_note.get("shape_supplier"),
             "bubble_text": buildnote_counter, #doesn't matter what you write in bubble_text in the manual file
             "parent_instance": affected,
+            "cluster": instances_list.attribute_of(affected, "cluster"),
             "parent_csys": affected,
             "note_text": manual_note.get("note_text")
         })
@@ -134,12 +135,16 @@ for rev_row in flagnotes.read_revhistory():
             "supplier": "public",
             "bubble_text": rev_row.get("rev"),
             "parent_instance": affected,
+            "cluster": instances_list.attribute_of(affected, "cluster"),
             "parent_csys": affected
         })
         flagnote_counter += 1
 
 # assign bom line number flagnotes
 for instance in instances_list.read_instance_rows():
+    #don't print bom bubbles for these components
+    if instance.get("item_type") in ["Contact"]:
+        continue
     if not instance.get("bom_line_number") == "":
         instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
             "item_type": "Flagnote",
@@ -148,6 +153,7 @@ for instance in instances_list.read_instance_rows():
             "supplier": "public",
             "bubble_text": instance.get("bom_line_number"),
             "parent_instance": instance.get("instance_name"),
+            "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
             "parent_csys": affected
         })
         flagnote_counter += 1
@@ -170,6 +176,7 @@ for instance in instances_list.read_instance_rows():
             "supplier": "public",
             "bubble_text": bubble_text,
             "parent_instance": instance.get("instance_name"),
+            "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
             "parent_csys": affected
         })
         flagnote_counter += 1
@@ -180,13 +187,6 @@ contact_flagnote_conversion_happened = False
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Flagnote":
         if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
-            #TODO: DELETE AN INSTANCE FROM INSTANCES LIST
-            #https://github.com/kenyonshutt/harnice/issues/224
-            #instances_list.delete_instance(instance.get("instance_name"))
-            instances_list.modify(instance.get("instance_name"), {
-                "item_type": "DELETEME"
-            })
-
             instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
                 "item_type": "Flagnote",
                 "note_type": "buildnote",
