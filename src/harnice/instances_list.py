@@ -4,6 +4,7 @@ import csv
 from collections import defaultdict
 import os
 import math
+import inspect
 from harnice import (
     fileio
 )
@@ -47,27 +48,14 @@ INSTANCES_LIST_COLUMNS = [
     'lib_status',
     'lib_datemodified',
     'lib_datereleased',
-    'lib_drawnby'
+    'lib_drawnby',
+    'debug',
+    'debug_cutoff'
 ]
-
-def load_yaml_data():
-    with open(fileio.path('harness yaml'), 'r') as file:
-        return yaml.safe_load(file)
 
 def read_instance_rows():
     with open(fileio.path('instances list'), newline='', encoding='utf-8') as f:
         return list(csv.DictReader(f, delimiter='\t'))
-
-def write_instance_rows(rows):
-    with open(fileio.path('instances list'), 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
-        writer.writeheader()
-        writer.writerows(rows)
-
-def append_instance_row(data_dict):
-    with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
-        writer.writerow({key: data_dict.get(key, '') for key in INSTANCES_LIST_COLUMNS})
 
 def add(instance_name, instance_data):
     """
@@ -98,6 +86,10 @@ def add(instance_name, instance_data):
     if any(row.get("instance_name") == instance_name for row in instances):
         raise ValueError(f"Instance already exists: '{instance_name}'")
 
+    # Add debug call chain
+    instance_data["debug"] = get_call_chain_str()
+    instance_data["debug_cutoff"] = " "
+
     with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
         writer.writerow({key: instance_data.get(key, '') for key in INSTANCES_LIST_COLUMNS})
@@ -117,9 +109,15 @@ def add_unless_exists(instance_name, instance_data):
         raise ValueError("Missing required argument: 'instance_name'")
 
     if "instance_name" in instance_data and instance_data["instance_name"] != instance_name:
-        raise ValueError(f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'")
+        raise ValueError(
+            f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'"
+        )
 
     instance_data["instance_name"] = instance_name  # Ensure consistency
+
+    # Add debug call chain
+    instance_data["debug"] = get_call_chain_str()
+    instance_data["debug_cutoff"] = " "
 
     instances = read_instance_rows()
     if not any(inst.get("instance_name") == instance_name for inst in instances):
@@ -160,6 +158,10 @@ def modify(instance_name, instance_data):
 
     if not modified:
         raise ValueError(f"Instance '{instance_name}' not found in the instances list.")
+    
+    # Add debug call chain
+    instance_data["debug"] = get_call_chain_str()
+    instance_data["debug_cutoff"] = " "
 
     with open(path, "w", newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter='\t')
@@ -167,7 +169,10 @@ def modify(instance_name, instance_data):
         writer.writerows(rows)
 
 def make_new_list():
-    write_instance_rows([])
+    with open(fileio.path('instances list'), 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
+        writer.writeheader()
+        writer.writerows([])
 
 def assign_bom_line_numbers():
     bom = []
@@ -209,119 +214,6 @@ def add_revhistory_of_imported_part(instance_name, rev_data):
         writer.writeheader()
         writer.writerows(rows)
 
-def add_flagnotes():
-    # === Step 1: Load existing instance rows ===
-    instances = read_instance_rows()
-    instance_lookup = {inst.get("instance_name", "").strip(): inst for inst in instances}
-
-    # === Step 2: Read flagnotes list ===
-    with open(fileio.path("flagnotes list"), newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        flagnote_rows = list(reader)
-
-    # === Step 3: Group and number flagnotes per affected instance ===
-    note_counters = {}  # {affected: current_note_number}
-
-    for row in flagnote_rows:
-        affected = row.get("affectedinstances", "").strip()
-        bubble_text = row.get("bubble_text", "").strip()
-        if not affected:
-            continue
-
-        note_number = note_counters.get(affected, 0)
-        note_counters[affected] = note_number + 1
-        instance_name = f"{affected}-flagnote{note_number}"
-        note_type = row.get("note_type","").strip()
-
-        # Determine parent_csys from the original instance
-        parent_csys = instance_lookup.get(affected, {}).get("parent_csys", "")
-
-        # === Step 4: Try to load flagnote location from JSON ===
-        translate_x = ""
-        translate_y = ""
-        attr_path = os.path.join(fileio.dirpath("imported_instances"), affected, f"{affected}-attributes.json")
-
-        try:
-            with open(attr_path, 'r', encoding='utf-8') as f_json:
-                data = json.load(f_json)
-                locs = data.get("flagnote_locations", [])
-                if note_number < len(locs):
-                    loc = locs[note_number]
-                    angle_rad = math.radians(loc.get("angle", 0))
-                    distance = loc.get("distance", 0)
-                    translate_x = round(math.cos(angle_rad) * distance, 5)
-                    translate_y = round(math.sin(angle_rad) * distance, 5)
-        except Exception as e:
-            print(f"[WARN] Could not read location data for {instance_name}: {e}")
-
-        # === Step 5: Append location instance ===
-        location_instance = {
-            "instance_name": f"{instance_name}-location",
-            "bom_line_number": "",
-            "mpn": "",
-            "item_type": "Flagnote location",
-            "parent_instance": affected,
-            "parent_csys": parent_csys,
-            "supplier": "",
-            "lib_latest_rev": "",
-            "lib_rev_used_here": "",
-            "length": "",
-            "diameter": "",
-            "translate_x": translate_x,
-            "translate_y": translate_y,
-            "rotate_csys": "",
-            "note_number": note_number,
-            "absolute_rotation": "",
-            "note_type": note_type
-        }
-        append_instance_row(location_instance)
-
-        # === Step 6: Append leader instance ===
-        flagnote_instance = {
-            "instance_name": f"{instance_name}-leader",
-            "bom_line_number": "",
-            "mpn": "",
-            "item_type": "Flagnote leader",
-            "parent_instance": affected,
-            "parent_csys": parent_csys,
-            "supplier": "",
-            "lib_latest_rev": "",
-            "lib_rev_used_here": "",
-            "length": "",
-            "diameter": "",
-            "translate_x": "",
-            "translate_y": "",
-            "rotate_csys": "",
-            "absolute_rotation": "",
-            "note_number": note_number,
-            "bubble_text": "",
-            "note_type": note_type
-        }
-        append_instance_row(flagnote_instance)
-
-        # === Step 7: Append flagnote instance ===
-        flagnote_instance = {
-            "instance_name": instance_name,
-            "bom_line_number": "",
-            "mpn": row.get("shape", "").strip(),
-            "item_type": "Flagnote",
-            "parent_instance": affected,
-            "parent_csys": f"{instance_name}-location",
-            "supplier": row.get("shape_supplier", "").strip(),
-            "lib_latest_rev": "",
-            "lib_rev_used_here": "",
-            "length": "",
-            "diameter": "",
-            "translate_x": 0,
-            "translate_y": 0,
-            "rotate_csys": "",
-            "absolute_rotation": 0,
-            "note_number": note_number,
-            "bubble_text": bubble_text,
-            "note_type": note_type
-        }
-        append_instance_row(flagnote_instance)
-
 def instance_names_of_adjacent_ports(target_instance):
     for instance in read_instance_rows():
         if instance.get("instance_name") == target_instance:
@@ -350,18 +242,6 @@ def attribute_of(target_instance, attribute):
         if instance.get("instance_name") == target_instance:
             return instance.get(attribute)
 
-def recursive_parent_search(start_instance, parent_type, attribute_name, wanted_attribute_value):
-    wanted_instance = start_instance
-
-    while not attribute_of(wanted_instance, attribute_name) == wanted_attribute_value:
-        wanted_instance = attribute_of(wanted_instance, parent_type)
-        if wanted_instance == "" or wanted_instance == None:
-            raise ValueError(
-                f"Instance with '{attribute_name}' equal to '{wanted_attribute_value}' not found in the {parent_type} lineage of instance {start_instance}"
-            )
-
-    return wanted_instance
-
 def instance_in_cluster_with_suffix(cluster, suffix):
     match = None
     for instance in read_instance_rows():
@@ -375,12 +255,16 @@ def instance_in_cluster_with_suffix(cluster, suffix):
                 match = instance_name
     return match
 
-"""
-template instances list modifier:
-def example_instances_list_function():
-    instances = read_instance_rows()
-    for instance in instances:
-        # do stuff
-        # instance.get()
-    write_instance_rows(instances)
-"""
+def get_call_chain_str():
+    """
+    Returns the call chain as a readable string:
+    filename:line in function -> filename:line in function ...
+    """
+    stack = inspect.stack()
+    chain_parts = []
+    for frame_info in reversed(stack[1:]):  # skip this function itself
+        filename = os.path.basename(frame_info.filename)
+        lineno = frame_info.lineno
+        function = frame_info.function
+        chain_parts.append(f"{filename}:{lineno} in {function}()")
+    return " -> ".join(chain_parts)
