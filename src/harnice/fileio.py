@@ -138,6 +138,7 @@ def generate_structure():
     os.makedirs(dirpath("artifacts"), exist_ok=True)
     os.makedirs(dirpath("instance_data"), exist_ok=True)
     os.makedirs(dirpath("imported_instances"), exist_ok=True)
+    silentremove(dirpath("generated_instances_do_not_edit"))
     os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
     os.makedirs(dirpath("interactive_files"), exist_ok=True)
     os.makedirs(dirpath("svg_generated"), exist_ok=True)
@@ -147,6 +148,13 @@ def generate_structure():
     os.makedirs(dirpath("revision_table_bubbles"), exist_ok=True)
     os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
     os.makedirs(dirpath("prebuilders"), exist_ok=True)
+
+def silentremove(filepath):
+    if os.path.exists(filepath):
+        if os.path.isfile(filepath) or os.path.islink(filepath):
+            os.remove(filepath)  # remove file or symlink
+        elif os.path.isdir(filepath):
+            shutil.rmtree(filepath)  # remove directory and contents
 
 def path(target_value):
     #returns the filepath/filename of a filekey. 
