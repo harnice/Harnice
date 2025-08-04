@@ -123,27 +123,31 @@ for manual_note in flagnotes.read_manual_list():
     if manual_note.get("note_type") == "buildnote":
         buildnote_counter += 1
 
-# assign revision history flagnotes
 for rev_row in flagnotes.read_revhistory():
-    affected_list = rev_row.get("affectedinstances", "").strip().split(",")
+    # assign revision history flagnotes
+    affected_raw = rev_row.get("affectedinstances", "").strip()
 
-    for affected in affected_list:
-        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
-            "item_type": "Flagnote",
-            "note_type": "rev_change_callout",
-            "mpn": "rev_change_callout",
-            "supplier": "public",
-            "bubble_text": rev_row.get("rev"),
-            "parent_instance": affected,
-            "cluster": instances_list.attribute_of(affected, "cluster"),
-            "parent_csys_instance_name": affected
-        })
-        flagnote_counter += 1
+    # Skip this revision row if no affected instances
+    if affected_raw:
+        affected_list = [a.strip() for a in affected_raw.split(",") if a.strip()]
+        
+        for affected in affected_list:
+            instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+                "item_type": "Flagnote",
+                "note_type": "rev_change_callout",
+                "mpn": "rev_change_callout",
+                "supplier": "public",
+                "bubble_text": rev_row.get("rev"),
+                "parent_instance": affected,
+                "cluster": instances_list.attribute_of(affected, "cluster"),
+                "parent_csys_instance_name": affected
+            })
+            flagnote_counter += 1
 
 # assign bom line number flagnotes
 for instance in instances_list.read_instance_rows():
     #don't print bom bubbles for these components
-    if instance.get("item_type") in ["Contact"]:
+    if instance.get("item_type") in ["Contact", "Cable"]:
         continue
     if not instance.get("bom_line_number") == "":
         instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
@@ -154,7 +158,7 @@ for instance in instances_list.read_instance_rows():
             "bubble_text": instance.get("bom_line_number"),
             "parent_instance": instance.get("instance_name"),
             "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
-            "parent_csys_instance_name": affected
+            "parent_csys_instance_name": instance.get("instance_name")
         })
         flagnote_counter += 1
 
@@ -177,7 +181,7 @@ for instance in instances_list.read_instance_rows():
             "bubble_text": bubble_text,
             "parent_instance": instance.get("instance_name"),
             "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
-            "parent_csys_instance_name": affected
+            "parent_csys_instance_name": instance.get("instance_name")
         })
         flagnote_counter += 1
 
