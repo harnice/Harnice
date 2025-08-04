@@ -98,7 +98,7 @@ instances_list.assign_bom_line_numbers()
 
 
 #=============== ASSIGN FLAGNOTES #===============
-flagnote_counter = 0 # assign a unique ID to each note
+flagnote_counter = 1 # assign a unique ID to each note
 buildnote_counter = 1 # buildnotes start at 1
 
 # assign manual flagnotes
@@ -114,7 +114,8 @@ for manual_note in flagnotes.read_manual_list():
             "supplier": manual_note.get("shape_supplier"),
             "bubble_text": buildnote_counter, #doesn't matter what you write in bubble_text in the manual file
             "parent_instance": affected,
-            "parent_csys": affected,
+            "cluster": instances_list.attribute_of(affected, "cluster"),
+            "parent_csys_instance_name": affected,
             "note_text": manual_note.get("note_text")
         })
         flagnote_counter += 1
@@ -122,24 +123,32 @@ for manual_note in flagnotes.read_manual_list():
     if manual_note.get("note_type") == "buildnote":
         buildnote_counter += 1
 
-# assign revision history flagnotes
 for rev_row in flagnotes.read_revhistory():
-    affected_list = rev_row.get("affectedinstances", "").strip().split(",")
+    # assign revision history flagnotes
+    affected_raw = rev_row.get("affectedinstances", "").strip()
 
-    for affected in affected_list:
-        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
-            "item_type": "Flagnote",
-            "note_type": "rev_change_callout",
-            "mpn": "rev_change_callout",
-            "supplier": "public",
-            "bubble_text": rev_row.get("rev"),
-            "parent_instance": affected,
-            "parent_csys": affected
-        })
-        flagnote_counter += 1
+    # Skip this revision row if no affected instances
+    if affected_raw:
+        affected_list = [a.strip() for a in affected_raw.split(",") if a.strip()]
+        
+        for affected in affected_list:
+            instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+                "item_type": "Flagnote",
+                "note_type": "rev_change_callout",
+                "mpn": "rev_change_callout",
+                "supplier": "public",
+                "bubble_text": rev_row.get("rev"),
+                "parent_instance": affected,
+                "cluster": instances_list.attribute_of(affected, "cluster"),
+                "parent_csys_instance_name": affected
+            })
+            flagnote_counter += 1
 
 # assign bom line number flagnotes
 for instance in instances_list.read_instance_rows():
+    #don't print bom bubbles for these components
+    if instance.get("item_type") in ["Contact", "Cable"]:
+        continue
     if not instance.get("bom_line_number") == "":
         instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
             "item_type": "Flagnote",
@@ -148,7 +157,8 @@ for instance in instances_list.read_instance_rows():
             "supplier": "public",
             "bubble_text": instance.get("bom_line_number"),
             "parent_instance": instance.get("instance_name"),
-            "parent_csys": affected
+            "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
+            "parent_csys_instance_name": instance.get("instance_name")
         })
         flagnote_counter += 1
 
@@ -170,7 +180,8 @@ for instance in instances_list.read_instance_rows():
             "supplier": "public",
             "bubble_text": bubble_text,
             "parent_instance": instance.get("instance_name"),
-            "parent_csys": affected
+            "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
+            "parent_csys_instance_name": instance.get("instance_name")
         })
         flagnote_counter += 1
 
@@ -180,13 +191,6 @@ contact_flagnote_conversion_happened = False
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Flagnote":
         if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
-            #TODO: DELETE AN INSTANCE FROM INSTANCES LIST
-            #https://github.com/kenyonshutt/harnice/issues/224
-            #instances_list.delete_instance(instance.get("instance_name"))
-            instances_list.modify(instance.get("instance_name"), {
-                "item_type": "DELETEME"
-            })
-
             instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
                 "item_type": "Flagnote",
                 "note_type": "buildnote",
@@ -194,7 +198,7 @@ for instance in instances_list.read_instance_rows():
                 "supplier": "public",
                 "bubble_text": buildnote_counter,
                 "parent_instance": instance.get("parent_instance"),
-                "parent_csys": instance.get("parent_instance"),
+                "parent_csys_instance_name": instance.get("parent_instance"),
                 "note_text": "Special contacts used in this connector. Refer to wirelist for details"
             })
             flagnote_counter += 1
@@ -202,12 +206,13 @@ for instance in instances_list.read_instance_rows():
 if contact_flagnote_conversion_happened == True:
     buildnote_counter += 1
 
+flagnotes.assign_output_csys()
+featuretree.update_translate_content()
+
 flagnotes.compile_buildnotes()
     # add separate buildnote itemtypes to list based on affectedinstance flagnotes, intended to make one list of unique buildnotes
 
 flagnotes.make_note_drawings()
-
-#TODO: add buildnote locations per https://github.com/kenyonshutt/harnice/issues/181
 
 #if there's an absolute rotation specified for any reason, make downstream csys children reflect it
 for instance in instances_list.read_instance_rows():

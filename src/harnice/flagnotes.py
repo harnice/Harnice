@@ -36,38 +36,6 @@ def read_revhistory():
         for row in reader:
             yield row
 
-def flagnote_location(affected_instance_name, note_number):
-    """
-    Returns (translate_x, translate_y) from flagnote_locations in the instance's attributes file.
-    Returns empty strings if unavailable.
-    """
-    path = os.path.join(
-        fileio.dirpath("imported_instances"),
-        affected_instance_name,
-        affected_instance_name + "-attributes.json"
-    )
-
-    if not os.path.exists(path):
-        return "", ""
-
-    with open(path, "r", encoding="utf-8") as f:
-        try:
-            data = json.load(f)
-        except json.JSONDecodeError:
-            return "", ""
-
-    locations = data.get("flagnote_locations", [])
-    if note_number >= len(locations):
-        return "", ""
-
-    location = locations[note_number]
-    angle = location.get("angle", 0)
-    distance = location.get("distance", 0)
-    radians = math.radians(angle)
-    x = round(math.cos(radians) * distance, 5)
-    y = round(math.sin(radians) * distance, 5)
-    return x, y
-
 def make_note_drawings():
     instances = instances_list.read_instance_rows()
 
@@ -123,3 +91,23 @@ def compile_buildnotes():
                     "item_type": "Buildnote",
                     "note_text": buildnote_text
                 })
+
+def assign_output_csys():
+    for current_affected_instance_candidate in instances_list.read_instance_rows():
+        processed_affected_instances = []
+        current_affected_instance = None
+        if current_affected_instance_candidate.get("item_type") == "Flagnote":
+            if current_affected_instance_candidate.get("parent_instance") not in processed_affected_instances:
+                current_affected_instance = current_affected_instance_candidate.get("parent_instance")
+
+        #now that you have a not-yet traversed affected instance
+        flagnote_counter = 1
+        for instance in instances_list.read_instance_rows():
+            if instance.get("item_type") == "Flagnote":
+                if instance.get("parent_instance") == current_affected_instance:
+                    instances_list.modify(instance.get("instance_name"),{
+                        "parent_csys_instance_name": current_affected_instance,
+                        "parent_csys_outputcsys_name": f"flagnote-{flagnote_counter}",
+                        "absolute_rotation": 0
+                    })
+                    flagnote_counter += 1
