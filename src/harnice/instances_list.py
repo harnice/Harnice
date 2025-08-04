@@ -4,6 +4,7 @@ import csv
 from collections import defaultdict
 import os
 import math
+import inspect
 from harnice import (
     fileio
 )
@@ -47,7 +48,9 @@ INSTANCES_LIST_COLUMNS = [
     'lib_status',
     'lib_datemodified',
     'lib_datereleased',
-    'lib_drawnby'
+    'lib_drawnby',
+    'debug',
+    'debug_cutoff'
 ]
 
 def load_yaml_data():
@@ -117,9 +120,15 @@ def add_unless_exists(instance_name, instance_data):
         raise ValueError("Missing required argument: 'instance_name'")
 
     if "instance_name" in instance_data and instance_data["instance_name"] != instance_name:
-        raise ValueError(f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'")
+        raise ValueError(
+            f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'"
+        )
 
     instance_data["instance_name"] = instance_name  # Ensure consistency
+
+    # Add debug call chain
+    instance_data["debug"] = get_call_chain_str()
+    instance_data["debug_cutoff"] = " "
 
     instances = read_instance_rows()
     if not any(inst.get("instance_name") == instance_name for inst in instances):
@@ -374,6 +383,20 @@ def instance_in_cluster_with_suffix(cluster, suffix):
                     )
                 match = instance_name
     return match
+
+def get_call_chain_str():
+    """
+    Returns the call chain as a readable string:
+    filename:line in function -> filename:line in function ...
+    """
+    stack = inspect.stack()
+    chain_parts = []
+    for frame_info in reversed(stack[1:]):  # skip this function itself
+        filename = os.path.basename(frame_info.filename)
+        lineno = frame_info.lineno
+        function = frame_info.function
+        chain_parts.append(f"{filename}:{lineno} in {function}()")
+    return " -> ".join(chain_parts)
 
 """
 template instances list modifier:
