@@ -1,10 +1,19 @@
 import re  # for regex matching like re.match and re.fullmatch
 import yaml
+import os
 from harnice import instances_list, fileio  # assuming your project structure provides these
+
+prebuilder_mpn = "harnice_esch_prebuilder"
+
+def path(target_value):
+    if target_value == "harness yaml":
+        return os.path.join(os.getcwd(), f"{fileio.partnumber("pn-rev")}-esch.yaml")
+    else:
+        raise KeyError(f"Filename {target_value} not found in {prebuilder_mpn} file tree")
 
 #=============== CREATE BASE INSTANCES FROM ESCH #===============
 # Load the YAML file once and parse it
-with open(fileio.path("harness yaml"), "r", encoding="utf-8") as f:
+with open(path("harness yaml"), "r", encoding="utf-8") as f:
     harness_yaml = yaml.safe_load(f)
 
 # Iterate over the circuits and their associated ports
