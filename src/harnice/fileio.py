@@ -86,7 +86,6 @@ def harnice_file_structure():
 
     if product_type == "harness":
         return {
-                f"{partnumber("pn-rev")}-esch.yaml":"harness yaml",
                 f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
                 f"{partnumber("pn-rev")}-instances_list.tsv":"instances list",
                 "artifacts":{
@@ -354,13 +353,6 @@ def verify_revision_structure():
 
     print(f"Working on PN: {pn}, Rev: {rev}")
     return pn, rev
-
-def verify_harness_yaml_exists():
-    if not os.path.exists(path("harness yaml")):
-        print()
-        print("    No YAML harness definition file found.")
-        print()
-        exit()
 
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
