@@ -77,7 +77,14 @@ def compile_buildnotes():
     # add buildnote itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
     for instance in instances_list.read_instance_rows():
         if instance.get("item_type") == "Flagnote" and instance.get("note_type") == "buildnote":
+            instances_list.modify(instance.get("instance_name"),{
+                "note_number": instance.get("bubble_text")
+            })
+
+    for instance in instances_list.read_instance_rows():
+        if instance.get("item_type") == "Flagnote" and instance.get("note_type") == "buildnote":
             buildnote_text = instance.get("note_text")
+            note_number = instance.get("note_number")
 
             # does this buildnote exist as an instance yet?
             already_exists = False
@@ -89,8 +96,16 @@ def compile_buildnotes():
             if already_exists == False:
                 instances_list.add_unless_exists(f"buildnote-{instance.get("bubble_text")}", {
                     "item_type": "Buildnote",
-                    "note_text": buildnote_text
+                    "note_text": buildnote_text,
+                    "note_number": note_number,
                 })
+                if instance.get("supplier") not in [None, ""]:
+                    if instance.get("parent_instance") not in [None, ""]:
+                        instances_list.modify(f"buildnote-{instance.get("bubble_text")}", {
+                            "mpn": instance.get("mpn"),
+                            "supplier": instance.get("supplier"),
+                        })
+
 
 def assign_output_csys():
     for current_affected_instance_candidate in instances_list.read_instance_rows():
