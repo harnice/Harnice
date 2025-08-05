@@ -374,7 +374,7 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_dict=None):
         # Default artifact builder dictionary
         if artifact_builder_dict is None:
             artifact_builder_contents = (
-                'featuretree.runartifactbuilder("bom_exporter", "public", artifact_id="bom1")\n'
+                'featuretree.runartifactbuilder("bom_exporter_bottom_up", "public", artifact_id="bom1")\n'
                 'featuretree.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))\n'
                 'featuretree.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")\n'
                 f'featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)\n'
