@@ -21,7 +21,7 @@ def path(target_value):
         os.makedirs(os.path.join(artifact_path, "tblock_svgs"), exist_ok=True)
         return os.path.join(artifact_path, "tblock_svgs")
     else:
-        raise KeyError(f"Filename {target_value} not found in pdf_generator file tree")
+        raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
 
 def update_page_setup_json():
     """Ensure page setup JSON exists and return its contents."""
