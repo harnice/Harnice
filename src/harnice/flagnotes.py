@@ -110,4 +110,13 @@ def assign_output_csys():
                         "parent_csys_outputcsys_name": f"flagnote-{flagnote_counter}",
                         "absolute_rotation": 0
                     })
+                    instances_list.add_unless_exists(f"{instance.get("instance_name")}.leader",{
+                        "parent_csys_instance_name": current_affected_instance,
+                        "parent_instance": instance.get("instance_name"),
+                        "item_type": "flagnote-leader",
+                        "location_is_node_or_segment": "Node",
+                        "parent_csys_outputcsys_name": f"flagnote-leader-{flagnote_counter}",
+                        "absolute_rotation": 0,
+                        "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster")
+                    })
                     flagnote_counter += 1
