@@ -90,21 +90,6 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}-instances_list.tsv":"instances list",
                 "artifacts":{
                     f"{partnumber("pn-rev")}-formboard_graph_definition.svg":"formboard graph definition svg",
-                    "svg_generated": {
-                        f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                        "buildnotes_table":{
-                            f"{partnumber("pn-rev")}.buildnotes_table_master.svg":"buildnotes table svg",
-                            "buildnote_table_bubbles":{},
-                        },
-                        f"{partnumber("pn-rev")}.flagnotes_master.svg":"flagnotes master svg",
-                        f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                        "revhistory_table":{
-                            f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                            "revision_table_bubbles":{},
-                        },
-                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
-                        "formboard_svgs":{}
-                    }
                 },
                 "instance_data":{
                     "imported_instances":{},
@@ -140,12 +125,6 @@ def generate_structure():
     silentremove(dirpath("generated_instances_do_not_edit"))
     os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
     os.makedirs(dirpath("interactive_files"), exist_ok=True)
-    os.makedirs(dirpath("svg_generated"), exist_ok=True)
-    os.makedirs(dirpath("buildnotes_table"), exist_ok=True)
-    os.makedirs(dirpath("buildnote_table_bubbles"), exist_ok=True)
-    os.makedirs(dirpath("revhistory_table"), exist_ok=True)
-    os.makedirs(dirpath("revision_table_bubbles"), exist_ok=True)
-    os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
     os.makedirs(dirpath("prebuilders"), exist_ok=True)
 
 def silentremove(filepath):
