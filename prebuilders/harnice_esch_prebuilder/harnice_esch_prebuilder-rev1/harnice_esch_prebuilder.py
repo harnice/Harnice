@@ -160,6 +160,7 @@ for instance in instances_list.read_instance_rows():
             if instance.get("print_name") not in ["P3", "J1"]:
                 instances_list.add(f"{instance_name}.bs",{
                     "mpn": "M85049-88_9Z03",
+                    "print_name": f"{instances_list.attribute_of(instance_name, "print_name")}.bs",
                     "bom_line_number": "True",
                     "supplier": "public",
                     "item_type": "Backshell",

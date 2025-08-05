@@ -13,6 +13,8 @@ def path(target_value):
         return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-master.svg")
     if target_value == "show hide":
         return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-showhide.json")
+    if target_value == "flagnotes":
+        return os.path.join(artifact_path, f"{artifact_id}-flagnotes")
     else:
         raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
 
@@ -26,18 +28,6 @@ def update_showhide():
     return blank_setup
 
 def calculate_formboard_location(instance_name, origin):
-    """
-    Given an instance_name, recursively trace up the parent_csys chain 
-    until reaching an instance with no parent_csys defined.
-
-    After tracing, iterate back down the chain, performing the translate/rotate algorithm,
-    but excluding the last instance (the input instance itself) from movement calculations.
-
-    Returns:
-        (component_x_pos, component_y_pos, component_angle)
-    """
-    import math
-
     instances = instances_list.read_instance_rows()
     instances_lookup = {row['instance_name']: row for row in instances}
 
@@ -78,8 +68,12 @@ def calculate_formboard_location(instance_name, origin):
 
 
 #==========================
+fileio.silentremove(path("flagnotes"))
 instances = instances_list.read_instance_rows()
-printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote", "Flagnote leader"}
+printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
+
+if "Flagnote" in printable_item_types:
+    flagnotes.make_note_drawings(path("flagnotes"))
 
 rotation = 0 #TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
 if rotation == "":
@@ -121,6 +115,9 @@ for item_type, items in grouped_instances.items():
         px_x = x * 96
         px_y = y * 96
 
+        if instance.get("item_type") == "Segment":
+            angle += origin[2]
+
         if instance.get("absolute_rotation") != "":
             angle = float(instance.get("absolute_rotation"))
 
@@ -131,18 +128,49 @@ for item_type, items in grouped_instances.items():
         svg_px_y = -1 * px_y
         svg_angle = -1 * angle
 
-        if not item_type == "Flagnote":
-            content_lines.append(f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">')
-            content_lines.append('      </g>')
-            content_lines.append(f'      <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
-        else:
-            content_lines.append(f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y}) rotate({svg_angle})">')
-            content_lines.append(f'        <g id="{instance_name}-scale" transform="scale({1 / scale})">')
-            content_lines.append(f'          <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">')
+        if item_type == "Flagnote":
+            # Unpack both positions
+            x_note, y_note, flagnote_orientation = calculate_formboard_location(instance_name, origin)
+            x_leader, y_leader, angle_leader = calculate_formboard_location(f"{instance_name}.leader", origin)
+
+            # Compute offset vector in SVG coordinates
+            leader_dx = (x_leader - x_note) * 96
+            leader_dy = (y_leader - y_note) * -96 #change polarity of y offset (svg coordinate transform)
+
+            # Arrowhead geometry
+            arrow_length = 8    # length of the arrowhead in pixels
+            arrow_width = 6     # width of the arrowhead in pixels
+            line_len = math.hypot(leader_dx, leader_dy)
+            if line_len == 0:
+                line_len = 1  # prevent divide-by-zero
+            ux = leader_dx / line_len
+            uy = leader_dy / line_len
+
+            # Tip of arrow
+            tip_x = leader_dx * scale
+            tip_y = leader_dy * scale
+
+            # Base corners of arrowhead
+            left_x  = tip_x - arrow_length * ux + arrow_width * uy / 2
+            left_y  = tip_y - arrow_length * uy - arrow_width * ux / 2
+            right_x = tip_x - arrow_length * ux - arrow_width * uy / 2
+            right_y = tip_y - arrow_length * uy + arrow_width * ux / 2
+
+            content_lines.append(f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y})">')
+            content_lines.append(f'        <line x1="0" y1="0" x2="{tip_x}" y2="{tip_y}" stroke="black" stroke-width="1"/>')
+            content_lines.append(f'        <polygon points="{tip_x},{tip_y} {left_x},{left_y} {right_x},{right_y}" fill="black"/>')
+            content_lines.append(f'        <g id="{instance_name}-rotate" transform="rotate({-1*angle})">')
+            content_lines.append(f'          <g id="{instance_name}-scale" transform="scale({1 / scale})">')
+            content_lines.append(f'            <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">')
+            content_lines.append(f'            </g>')
+            content_lines.append(f'            <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
             content_lines.append(f'          </g>')
-            content_lines.append(f'          <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
             content_lines.append(f'        </g>')
             content_lines.append(f'      </g>')
+        else:
+            content_lines.append(f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({-1*angle})">')
+            content_lines.append('      </g>')
+            content_lines.append(f'      <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>')
 
     content_lines.append('    </g>')
 
@@ -178,20 +206,28 @@ for instance in instances:
         if should_hide:
             continue
 
-        if item_type in {"Connector", "Backshell"}:
-            instance_data_dir = fileio.dirpath("imported_instances")
-        elif item_type == "Flagnote leader":
-            instance_data_dir = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), formboard_name)
+        if item_type == "Flagnote":
+            instance_data_dir = os.path.join(
+                path("flagnotes"), 
+                instance.get("instance_name"),
+                f"{instance.get("instance_name")}-drawing.svg"
+            )
+        elif item_type == "Segment":
+            instance_data_dir = os.path.join(
+                fileio.dirpath("generated_instances_do_not_edit"),
+                instance.get("instance_name"),
+                f"{instance.get("instance_name")}-drawing.svg"
+            )
         else:
-            instance_data_dir = fileio.dirpath("generated_instances_do_not_edit")
+            instance_data_dir = os.path.join(
+                fileio.dirpath("imported_instances"),
+                instance.get("instance_name"),
+                f"{instance.get("instance_name")}-drawing.svg"
+            )
 
         svg_utils.find_and_replace_svg_group(
             path("output svg"),
-            os.path.join(
-                instance_data_dir, 
-                instance.get("instance_name"),
-                f"{instance.get("instance_name")}-drawing.svg"
-            ),
+            instance_data_dir,
             instance.get("instance_name"),
             instance.get("instance_name")
         )
