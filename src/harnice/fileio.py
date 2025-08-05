@@ -378,6 +378,7 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_dict=None):
                 'featuretree.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))\n'
                 'featuretree.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")\n'
                 f'featuretree.runartifactbuilder("revision_history_table", "public", artifact_id="revhistory1")\n'
+                f'featuretree.runartifactbuilder("buildnotes_table", "public", artifact_id="buildnotestable1")\n'
                 # 'featuretree.runartifactbuilder("wireviz_builder", "public", artifact_id="wireviz1")\n'  # TODO: pending fix
                 f'featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)\n'
             )
