@@ -90,21 +90,6 @@ def harnice_file_structure():
                 f"{partnumber("pn-rev")}-instances_list.tsv":"instances list",
                 "artifacts":{
                     f"{partnumber("pn-rev")}-formboard_graph_definition.svg":"formboard graph definition svg",
-                    "svg_generated": {
-                        f"{partnumber("pn-rev")}.bom_table_master.svg":"bom table master svg",
-                        "buildnotes_table":{
-                            f"{partnumber("pn-rev")}.buildnotes_table_master.svg":"buildnotes table svg",
-                            "buildnote_table_bubbles":{},
-                        },
-                        f"{partnumber("pn-rev")}.flagnotes_master.svg":"flagnotes master svg",
-                        f"{partnumber("pn-rev")}.esch_master.svg":"esch master svg",
-                        "revhistory_table":{
-                            f"{partnumber("pn-rev")}.revhistory_master.svg":"revhistory master svg",
-                            "revision_table_bubbles":{},
-                        },
-                        f"{partnumber("pn-rev")}.wirelist_master.svg":"wirelist master svg",
-                        "formboard_svgs":{}
-                    }
                 },
                 "instance_data":{
                     "imported_instances":{},
@@ -140,12 +125,6 @@ def generate_structure():
     silentremove(dirpath("generated_instances_do_not_edit"))
     os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
     os.makedirs(dirpath("interactive_files"), exist_ok=True)
-    os.makedirs(dirpath("svg_generated"), exist_ok=True)
-    os.makedirs(dirpath("buildnotes_table"), exist_ok=True)
-    os.makedirs(dirpath("buildnote_table_bubbles"), exist_ok=True)
-    os.makedirs(dirpath("revhistory_table"), exist_ok=True)
-    os.makedirs(dirpath("revision_table_bubbles"), exist_ok=True)
-    os.makedirs(dirpath("formboard_svgs"), exist_ok=True)
     os.makedirs(dirpath("prebuilders"), exist_ok=True)
 
 def silentremove(filepath):
@@ -395,11 +374,12 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_dict=None):
         # Default artifact builder dictionary
         if artifact_builder_dict is None:
             artifact_builder_contents = (
-                'featuretree.runartifactbuilder("bom_exporter", "public", artifact_id="bom1")\n'
+                'featuretree.runartifactbuilder("bom_exporter_bottom_up", "public", artifact_id="bom1")\n'
                 'featuretree.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))\n'
                 'featuretree.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")\n'
-                f'featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)\n'
+                f'featuretree.runartifactbuilder("revision_history_table", "public", artifact_id="revhistory1")\n'
                 # 'featuretree.runartifactbuilder("wireviz_builder", "public", artifact_id="wireviz1")\n'  # TODO: pending fix
+                f'featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)\n'
             )
         else:
             # artifact_builder_dict is now expected to be an iterable of complete lines
