@@ -26,14 +26,14 @@ INSTANCES_LIST_COLUMNS = [
     'parent_instance', #general purpose reference
     'location_is_node_or_segment', #each instance is either better represented by one or ther other
     'cluster', #a group of co-located parts (connectors, backshells, nodes)
-    'parent_csys_instance_name', #the other instance upon which this instance's location is based
-    'parent_csys_outputcsys_name', #the specific output coordinate system of the parent that this instance's location is based
     'circuit_id', #which signal this component is electrically connected to
     'circuit_id_port', #the sequential id of this item in its signal chain
     'length', #derived from formboard definition, the length of a segment
     'diameter', #apparent diameter of a segment <---------- change to print_diameter
     'node_at_end_a', #derived from formboard definition
     'node_at_end_b', #derived from formboard definition
+    'parent_csys_instance_name', #the other instance upon which this instance's location is based
+    'parent_csys_outputcsys_name', #the specific output coordinate system of the parent that this instance's location is based
     'translate_x', #derived from parent_csys and parent_csys_name
     'translate_y', #derived from parent_csys and parent_csys_name
     'rotate_csys', #derived from parent_csys and parent_csys_name
