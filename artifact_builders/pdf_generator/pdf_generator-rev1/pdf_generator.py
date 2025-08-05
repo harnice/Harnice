@@ -21,7 +21,7 @@ def path(target_value):
         os.makedirs(os.path.join(artifact_path, "tblock_svgs"), exist_ok=True)
         return os.path.join(artifact_path, "tblock_svgs")
     else:
-        raise KeyError(f"Filename {target_value} not found in pdf_generator file tree")
+        raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
 
 def update_page_setup_json():
     """Ensure page setup JSON exists and return its contents."""
@@ -110,15 +110,6 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         page_size_in = tblock_attributes.get("page_size_in", [11, 8.5])
         page_size_px = [int(page_size_in[0] * 96), int(page_size_in[1] * 96)]
 
-        bom_loc = tblock_attributes.get("periphery_locs", {}).get("bom_loc", [0, 0])
-        translate_bom = f'translate({bom_loc[0]},{bom_loc[1]})'
-
-        buildnotes_loc = tblock_attributes.get("periphery_locs", {}).get("buildnotes_loc", [0, 0])
-        translate_buildnotes = f'translate({buildnotes_loc[0]},{buildnotes_loc[1]})'
-
-        revhistory_loc = tblock_attributes.get("periphery_locs", {}).get("revhistory_loc", [0, 0])
-        translate_revhistory = f'translate({revhistory_loc[0]},{revhistory_loc[1]})'
-
         # === Prepare destination SVG ===
         project_svg_path = os.path.join(destination_directory, f"{page_name}.svg")
 
@@ -128,18 +119,6 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             f'  <g id="{page_name}-contents-start">',
             f'    <g id="tblock-contents-start"></g>',
             f'    <g id="tblock-contents-end"></g>',
-            f'    <g id="bom" transform="{translate_bom}">',
-            f'      <g id="bom-contents-start"></g>',
-            f'      <g id="bom-contents-end"></g>',
-            f'    </g>',
-            f'    <g id="revhistory" transform="{translate_revhistory}">',
-            f'      <g id="revhistory-table-contents-start"></g>',
-            f'      <g id="revhistory-table-contents-end"></g>',
-            f'    </g>',
-            f'    <g id="buildnotes" transform="{translate_buildnotes}">',
-            f'      <g id="buildnotes-table-contents-start"></g>',
-            f'      <g id="buildnotes-table-contents-end"></g>',
-            f'    </g>',
             f'  </g>',
             f'  <g id="{page_name}-contents-end"></g>',
             '</svg>'
