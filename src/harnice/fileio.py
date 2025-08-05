@@ -436,7 +436,8 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_dict=None):
             "scales = {\n"
             "    \"A\": 1\n"
             "}\n"
-            f"{artifact_builder_contents}"
+            f"{artifact_builder_contents}\n\n"
+            "featuretree.copy_pdfs_to_cwd()"
         )
 
         # Write to file

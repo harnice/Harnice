@@ -2,6 +2,7 @@ import os
 import runpy
 import math
 import json
+import shutil
 from harnice import fileio, component_library, instances_list
 
 def runprebuilder(prebuilder_name, supplier):
@@ -109,3 +110,18 @@ def update_translate_content():
             "translate_y": y,
             "rotate_csys": rotation
         })
+
+def copy_pdfs_to_cwd():
+    artifacts_dir = fileio.dirpath("artifacts")
+    cwd = os.getcwd()
+
+    for root, _, files in os.walk(artifacts_dir):
+        for filename in files:
+            if filename.lower().endswith(".pdf"):
+                source_path = os.path.join(root, filename)
+                dest_path = os.path.join(cwd, filename)
+
+                try:
+                    shutil.copy2(source_path, dest_path)  # preserves metadata
+                except Exception as e:
+                    print(f"[ERROR] Could not copy {source_path}: {e}")
