@@ -13,6 +13,8 @@ def path(target_value):
         return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-master.svg")
     if target_value == "show hide":
         return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-showhide.json")
+    if target_value == "flagnotes":
+        return os.path.join(artifact_path, f"{artifact_id}-flagnotes")
     else:
         raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
 
@@ -78,8 +80,12 @@ def calculate_formboard_location(instance_name, origin):
 
 
 #==========================
+fileio.silentremove(path("flagnotes"))
 instances = instances_list.read_instance_rows()
-printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote", "Flagnote leader"}
+printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
+
+if "Flagnote" in printable_item_types:
+    flagnotes.make_note_drawings(path("flagnotes"))
 
 rotation = 0 #TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
 if rotation == "":
@@ -178,20 +184,28 @@ for instance in instances:
         if should_hide:
             continue
 
-        if item_type in {"Connector", "Backshell"}:
-            instance_data_dir = fileio.dirpath("imported_instances")
-        elif item_type == "Flagnote leader":
-            instance_data_dir = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), formboard_name)
+        if item_type == "Flagnote":
+            instance_data_dir = os.path.join(
+                path("flagnotes"), 
+                instance.get("instance_name"),
+                f"{instance.get("instance_name")}-drawing.svg"
+            )
+        elif item_type == "Segment":
+            instance_data_dir = os.path.join(
+                fileio.dirpath("generated_instances_do_not_edit"),
+                instance.get("instance_name"),
+                f"{instance.get("instance_name")}-drawing.svg"
+            )
         else:
-            instance_data_dir = fileio.dirpath("generated_instances_do_not_edit")
+            instance_data_dir = os.path.join(
+                fileio.dirpath("imported_instances"),
+                instance.get("instance_name"),
+                f"{instance.get("instance_name")}-drawing.svg"
+            )
 
         svg_utils.find_and_replace_svg_group(
             path("output svg"),
-            os.path.join(
-                instance_data_dir, 
-                instance.get("instance_name"),
-                f"{instance.get("instance_name")}-drawing.svg"
-            ),
+            instance_data_dir,
             instance.get("instance_name"),
             instance.get("instance_name")
         )
