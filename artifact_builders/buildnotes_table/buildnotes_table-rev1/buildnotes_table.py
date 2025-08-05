@@ -37,18 +37,22 @@ data_rows = [{
 
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Buildnote":
-        buildnote_number = instance.get("bubble_text", "").strip()
-        note = instance.get("note_text", "").strip()
-        has_shape = instance.get("mpn", "").strip().lower() == "true"
-        shape = instance.get("mpn", "").strip()
-        supplier = instance.get("supplier", "").strip()
+        buildnote_number = instance.get("note_number")
+        note = instance.get("note_text")
+
+        has_shape = False
+        if instance.get("mpn") not in ["", None]:
+            has_shape = True
+        if has_shape:
+            shape = instance.get("mpn")
+            supplier = instance.get("supplier")
 
         if has_shape and shape and supplier:
             component_library.pull_item_from_library(
                 supplier=supplier,
                 lib_subpath="flagnotes",
                 mpn=shape,
-                destination_directory=path("buildnotes table bubbles"),  # ✅ fixed
+                destination_directory=path("buildnotes table bubbles"),
                 item_name=f"bubble{buildnote_number}",
                 quiet=True
             )
@@ -130,8 +134,8 @@ for row in data_rows:
         continue
 
     buildnote_number = row["buildnote_number"]
-    source_svg_filepath = os.path.join(fileio.dirpath("buildnotes table bubbles"), f"bubble{buildnote_number}-drawing.svg")
-    target_svg_filepath = fileio.path("buildnotes table svg")
+    source_svg_filepath = os.path.join(path("buildnotes table bubbles"), f"bubble{buildnote_number}-drawing.svg")
+    target_svg_filepath = path("buildnotes table svg")
     group_name = f"bubble{buildnote_number}"
 
     # Replace text placeholder "flagnote-text" → buildnote_number

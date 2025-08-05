@@ -129,6 +129,9 @@ for item_type, items in grouped_instances.items():
         svg_angle = -1 * angle
 
         if item_type == "Flagnote":
+            if instance.get("parent_instance") in ["", None]:
+                continue
+
             # Unpack both positions
             x_note, y_note, flagnote_orientation = calculate_formboard_location(instance_name, origin)
             x_leader, y_leader, angle_leader = calculate_formboard_location(f"{instance_name}.leader", origin)
@@ -207,6 +210,8 @@ for instance in instances:
             continue
 
         if item_type == "Flagnote":
+            if instance.get("parent_instance") in ["", None]:
+                continue
             instance_data_dir = os.path.join(
                 path("flagnotes"), 
                 instance.get("instance_name"),
