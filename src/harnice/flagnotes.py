@@ -36,7 +36,7 @@ def read_revhistory():
         for row in reader:
             yield row
 
-def make_note_drawings():
+def make_note_drawings(formboard_dir):
     instances = instances_list.read_instance_rows()
 
     for instance in instances:
@@ -46,7 +46,7 @@ def make_note_drawings():
         instance_name = instance.get("instance_name")
         parent_instance = instance.get("parent_instance", "").strip()
 
-        destination_directory = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), instance_name)
+        destination_directory = os.path.join(formboard_dir, instance.get("instance_name"))
         os.makedirs(destination_directory, exist_ok=True)
 
         # === Pull library item ===

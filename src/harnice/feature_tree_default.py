@@ -212,8 +212,6 @@ featuretree.update_translate_content()
 flagnotes.compile_buildnotes()
     # add separate buildnote itemtypes to list based on affectedinstance flagnotes, intended to make one list of unique buildnotes
 
-flagnotes.make_note_drawings()
-
 #if there's an absolute rotation specified for any reason, make downstream csys children reflect it
 for instance in instances_list.read_instance_rows():
     if not instance.get("absolute_rotation") in ["", None]:
