@@ -20,10 +20,10 @@ def path(target_value):
 os.makedirs(path("revision table bubbles"), exist_ok=True)
 
 # === Configuration ===
-column_headers = ["REVISION", "CHANGES", "STATUS", "DRAWN BY", "CHECKED BY", "STARTED", "MODIFIED"]
+column_headers = ["Revision", "Revision Update", "Status", "Drawn By", "Checked By", "Started", "Modified"]
 column_keys = ["rev", "revisionupdates", "status", "drawnby", "checkedby", "datestarted", "datemodified"]
 column_widths = [0.5 * 96, 1.5 * 96, 0.6 * 96, 0.75 * 96, 0.75 * 96, 0.4 * 96, 0.4 * 96]
-header_row_height = 0.2 * 96  # Height for the header row
+header_row_height = 0.3 * 96  # Height for the header row
 normal_row_height = 0.2 * 96  # Default height for rows without bubbles
 bubble_row_height = 0.4 * 96  # Height for rows with bubbles
 font_size = 8
@@ -41,7 +41,7 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
             component_library.pull_item_from_library(
                 supplier="public",
                 lib_subpath="flagnotes",
-                mpn="rev_change_callout",
+                mpn="rev_change_callout",  # Assumed the bubble shape for all rows
                 destination_directory=path("revision table bubbles"),
                 item_name=f"bubble{rev}",
                 quiet=True
@@ -61,7 +61,7 @@ svg_lines = [
     f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none"/>'
 ]
 
-# Header (draw borders for header cells as well)
+# Header Row
 current_y = 0  # Start from the top of the SVG for the header
 for col_index, header in enumerate(column_headers):
     x = sum(column_widths[:col_index])
@@ -69,7 +69,7 @@ for col_index, header in enumerate(column_headers):
     # Draw the rectangle for the header cell
     svg_lines.append(
         f'<rect x="{x}" y="{current_y}" width="{column_widths[col_index]}" height="{header_row_height}" '
-        f'style="fill:#d3d3d3;stroke:black;stroke-width:{line_width}"/>'
+        f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
     )
     # Center the text inside each header cell
     svg_lines.append(
@@ -81,7 +81,7 @@ for col_index, header in enumerate(column_headers):
 # Update current_y to move down after the header
 current_y += header_row_height
 
-# Data Rows (draw borders for data cells as well)
+# Data Rows (Draw borders for data cells as well)
 for row_index, row in enumerate(data_rows):
     # Adjust row height based on whether there is a bubble
     row_height = bubble_row_height if row["has_bubble"] else normal_row_height
@@ -95,7 +95,7 @@ for row_index, row in enumerate(data_rows):
         # Draw rectangle for the cell (border for all cells)
         svg_lines.append(
             f'<rect x="{x}" y="{y}" width="{column_widths[col_index]}" height="{row_height}" '
-            f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
+            f'style="fill:#d3d3d3;stroke:black;stroke-width:{line_width}"/>'
         )
 
         # Add text inside each cell (centered)
@@ -105,18 +105,29 @@ for row_index, row in enumerate(data_rows):
             f'font-family:{font_family};font-size:{font_size}">{text}</text>'
         )
 
-        # If there is a bubble, add the bubble SVG
-        if key == "rev" and row["has_bubble"]:
-            # Center the bubble within the cell
-            bubble_x = x + column_widths[col_index] / 2  # Horizontally center the bubble
-            bubble_y = cy - 3  # Vertically center the bubble plus an offset
-            svg_lines.append(f'<g id="bubble{row["rev"]}" transform="translate({bubble_x},{bubble_y})">')
-            svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-start">')
-            svg_lines.append(f'    <polygon points="0.0,19.2 -16.63,-9.6 16.63,-9.6" fill="#FFFFFF" stroke="#000000"/>')
-            svg_lines.append(f'    <text x="0" y="0" style="font-size:8px;font-family:Arial" text-anchor="middle" dominant-baseline="middle">{row["rev"]}</text>')
-            svg_lines.append(f'  </g>')
-            svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-end"/>')
-            svg_lines.append(f'</g>')
+    # If the row has a bubble, pull and place the bubble
+    if row["has_bubble"]:
+        # Pull the bubble from the library
+        rev = row["rev"]
+        bubble_name = f"bubble{rev}"
+        component_library.pull_item_from_library(
+            supplier="public",
+            lib_subpath="flagnotes",
+            mpn="rev_change_callout",  # Assumed the bubble shape for all rows
+            destination_directory=path("revision table bubbles"),
+            item_name=bubble_name,
+            quiet=True
+        )
+
+        # Inject the bubble into the SVG at the correct position
+        bubble_x = sum(column_widths[:column_keys.index("rev")]) + column_widths[column_keys.index("rev")] / 2  # Center of the "rev" column
+        bubble_y = cy  # Vertically centered
+
+        svg_lines.append(f'<g id="{bubble_name}" transform="translate({bubble_x},{bubble_y})">')
+        svg_lines.append(f'  <g id="{bubble_name}-contents-start">')
+        svg_lines.append(f'  </g>')
+        svg_lines.append(f'  <g id="{bubble_name}-contents-end"/>')
+        svg_lines.append(f'</g>')
 
     # Move the current_y position for the next row
     current_y += row_height
@@ -132,13 +143,10 @@ with open(target_svg, "w", encoding="utf-8") as f:
 
 # === Inject bubble SVGs into the written file ===
 for row in data_rows:
-    if not row.get("has_bubble", False):
+    if not row["has_bubble"]:
         continue
-    affected = row.get("affectedinstances", "").strip()
-    has_bubble = bool(affected)
-    if not has_bubble:
-        continue
-    rev_text = row.get("rev", "").strip()
+
+    rev_text = row["rev"]
     source_svg_filepath = os.path.join(
         path("revision table bubbles"),
         f"bubble{rev_text}-drawing.svg"
@@ -147,13 +155,14 @@ for row in data_rows:
     group_name = f"bubble{rev_text}"
 
     # Replace text placeholder "flagnote-text" → rev_text
-    with open(source_svg_filepath, "r", encoding="utf-8") as f:
-        svg_text = f.read()
+    if os.path.exists(source_svg_filepath):
+        with open(source_svg_filepath, "r", encoding="utf-8") as f:
+            svg_text = f.read()
 
-    updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{rev_text}<', svg_text)
+        updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{rev_text}<', svg_text)
 
-    with open(source_svg_filepath, "w", encoding="utf-8") as f:
-        f.write(updated_text)
+        with open(source_svg_filepath, "w", encoding="utf-8") as f:
+            f.write(updated_text)
 
     # Inject the bubble SVG
     svg_utils.find_and_replace_svg_group(
