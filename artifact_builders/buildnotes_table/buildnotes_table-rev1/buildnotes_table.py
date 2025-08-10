@@ -91,7 +91,7 @@ svg_lines.append(
     f'style="fill:#e0e0e0;stroke:black;stroke-width:{line_width}"/>'
 )
 
-# Add text inside the merged header cell
+# Add text inside the merged header cell (center-justified)
 svg_lines.append(
     f'<text x="{merged_header_x + merged_header_width / 2}" y="{header_text_y}" text-anchor="middle" '
     f'style="fill:black;dominant-baseline:middle;font-weight:bold;'
@@ -119,12 +119,21 @@ for row_index, row in enumerate(data_rows):
             f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
         )
 
-        # Add text inside each cell (centered)
-        svg_lines.append(
-            f'<text x="{x + column_widths[col_index] / 2}" y="{cy}" text-anchor="middle" '
-            f'style="fill:black;dominant-baseline:middle;'
-            f'font-family:{font_family};font-size:{font_size}">{text}</text>'
-        )
+        # For the note column, left justify the text
+        if key == "note":
+            text_x = x + 5  # Add a small margin to the left for note text
+            svg_lines.append(
+                f'<text x="{text_x}" y="{cy}" text-anchor="start" '
+                f'style="fill:black;dominant-baseline:middle;'
+                f'font-family:{font_family};font-size:{font_size}">{text}</text>'
+            )
+        else:
+            # Center the text for the buildnote number column
+            svg_lines.append(
+                f'<text x="{x + column_widths[col_index] / 2}" y="{cy}" text-anchor="middle" '
+                f'style="fill:black;dominant-baseline:middle;'
+                f'font-family:{font_family};font-size:{font_size}">{text}</text>'
+            )
 
     # If row has a shape (bubble), add the bubble
     if row["has_shape"]:
