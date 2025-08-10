@@ -20,11 +20,11 @@ def path(target_value):
 os.makedirs(path("revision table bubbles"), exist_ok=True)
 
 # === Configuration ===
-column_headers = ["Revision", "Revision Update", "Status", "Drawn By", "Checked By", "Started", "Modified"]
+column_headers = ["REVISION", "UPDATE", "STATUS", "DRAWN BY", "CHECKED BY", "STARTED", "MODIFIED"]
 column_keys = ["rev", "revisionupdates", "status", "drawnby", "checkedby", "datestarted", "datemodified"]
 column_widths = [0.5 * 96, 1.5 * 96, 0.6 * 96, 0.75 * 96, 0.75 * 96, 0.4 * 96, 0.4 * 96]
-header_row_height = 0.3 * 96  # Height for the header row
-normal_row_height = 0.2 * 96  # Default height for rows without bubbles
+header_row_height = 0.16 * 96  # Height for the header row
+normal_row_height = 0.16 * 96  # Default height for rows without bubbles
 bubble_row_height = 0.4 * 96  # Height for rows with bubbles
 font_size = 8
 font_family = "Arial, Helvetica, sans-serif"
@@ -69,7 +69,7 @@ for col_index, header in enumerate(column_headers):
     # Draw the rectangle for the header cell
     svg_lines.append(
         f'<rect x="{x}" y="{current_y}" width="{column_widths[col_index]}" height="{header_row_height}" '
-        f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
+        f'style="fill:#e0e0e0;stroke:black;stroke-width:{line_width}"/>'
     )
     # Center the text inside each header cell
     svg_lines.append(
@@ -95,7 +95,7 @@ for row_index, row in enumerate(data_rows):
         # Draw rectangle for the cell (border for all cells)
         svg_lines.append(
             f'<rect x="{x}" y="{y}" width="{column_widths[col_index]}" height="{row_height}" '
-            f'style="fill:#d3d3d3;stroke:black;stroke-width:{line_width}"/>'
+            f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
         )
 
         # Add text inside each cell (centered)

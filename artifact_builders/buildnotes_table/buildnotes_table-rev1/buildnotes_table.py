@@ -24,7 +24,7 @@ os.makedirs(path("buildnotes table bubbles"), exist_ok=True)
 
 # === Configuration ===
 column_widths = [0.5 * 96, 3.375 * 96]  # bubble, then note
-row_height = 0.25 * 96
+row_height = 0.16 * 96
 font_size = 8
 font_family = "Arial, Helvetica, sans-serif"
 line_width = 0.008 * 96  # Define line_width before it is used
@@ -79,20 +79,21 @@ svg_lines = [
 bubble_x = 0
 note_x = column_widths[0]
 
-# === Header Row ===
-header_text_x = 10
+# === Merged Header Row ===
+# Create a merged header cell that spans both columns
+merged_header_x = 0
+merged_header_width = sum(column_widths)  # Span the entire width of the columns
 header_text_y = row_height / 2
+
+# Draw the merged header cell (spanning across both columns)
 svg_lines.append(
-    f'<rect x="0" y="0" width="{column_widths[0]}" height="{row_height}" '
-    f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
-)
-svg_lines.append(
-    f'<rect x="{column_widths[0]}" y="0" width="{column_widths[1]}" height="{row_height}" '
-    f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
+    f'<rect x="{merged_header_x}" y="0" width="{merged_header_width}" height="{row_height}" '
+    f'style="fill:#e0e0e0;stroke:black;stroke-width:{line_width}"/>'
 )
 
+# Add text inside the merged header cell
 svg_lines.append(
-    f'<text x="{header_text_x}" y="{header_text_y}" text-anchor="start" '
+    f'<text x="{merged_header_x + merged_header_width / 2}" y="{header_text_y}" text-anchor="middle" '
     f'style="fill:black;dominant-baseline:middle;font-weight:bold;'
     f'font-family:{font_family};font-size:{font_size}">BUILD NOTES</text>'
 )
@@ -115,7 +116,7 @@ for row_index, row in enumerate(data_rows):
         # Draw rectangle for the cell (border for all cells)
         svg_lines.append(
             f'<rect x="{x}" y="{y}" width="{column_widths[col_index]}" height="{row_height_adjusted}" '
-            f'style="fill:#d3d3d3;stroke:black;stroke-width:{line_width}"/>'
+            f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
         )
 
         # Add text inside each cell (centered)
