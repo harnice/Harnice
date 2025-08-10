@@ -1,7 +1,7 @@
 import os
 import csv
 import re
-from harnice import(
+from harnice import (
     fileio,
     component_library,
     svg_utils
@@ -20,10 +20,12 @@ def path(target_value):
 os.makedirs(path("revision table bubbles"), exist_ok=True)
 
 # === Configuration ===
-column_headers = ["", "Checked By", "Drawn By", "Modified", "Started", "Status", "Rev"]
-column_keys = ["", "checkedby", "drawnby", "datemodified", "datestarted", "status", "rev"]
-column_widths = [0.5 * -96, 0.6 * -96, 0.6 * -96, 0.6 * -96, 0.6 * -96, 0.4 * -96, 0.4 * -96]
-row_height = 0.2 * 96
+column_headers = ["REVISION", "CHANGES", "STATUS", "DRAWN BY", "CHECKED BY", "STARTED", "MODIFIED"]
+column_keys = ["rev", "revisionupdates", "status", "drawnby", "checkedby", "datestarted", "datemodified"]
+column_widths = [0.5 * 96, 1.5 * 96, 0.6 * 96, 0.75 * 96, 0.75 * 96, 0.4 * 96, 0.4 * 96]
+header_row_height = 0.2 * 96  # Height for the header row
+normal_row_height = 0.2 * 96  # Default height for rows without bubbles
+bubble_row_height = 0.4 * 96  # Height for rows with bubbles
 font_size = 8
 font_family = "Arial, Helvetica, sans-serif"
 line_width = 0.008 * 96
@@ -47,9 +49,10 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
         row["has_bubble"] = has_bubble
         data_rows.append(row)
 
-num_rows = len(data_rows) + 1  # header
+# Calculate SVG height based on the number of rows
+num_rows = len(data_rows) + 1  # Include header row
 svg_width = sum(column_widths)
-svg_height = num_rows * row_height
+svg_height = header_row_height + sum(bubble_row_height if row["has_bubble"] else normal_row_height for row in data_rows)
 
 svg_lines = [
     f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
@@ -58,51 +61,71 @@ svg_lines = [
     f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none"/>'
 ]
 
-# Header
+# Header (draw borders for header cells as well)
+current_y = 0  # Start from the top of the SVG for the header
 for col_index, header in enumerate(column_headers):
     x = sum(column_widths[:col_index])
-    y = row_height / 2
+    y = current_y + header_row_height / 2  # Center the header text vertically
+    # Draw the rectangle for the header cell
     svg_lines.append(
-        f'<text x="{x}" y="{y}" text-anchor="start" '
+        f'<rect x="{x}" y="{current_y}" width="{column_widths[col_index]}" height="{header_row_height}" '
+        f'style="fill:#d3d3d3;stroke:black;stroke-width:{line_width}"/>'
+    )
+    # Center the text inside each header cell
+    svg_lines.append(
+        f'<text x="{x + column_widths[col_index] / 2}" y="{y}" text-anchor="middle" '
         f'style="fill:black;dominant-baseline:middle;font-weight:bold;'
         f'font-family:{font_family};font-size:{font_size}">{header}</text>'
     )
 
-# Data Rows
-for row_index, row in enumerate(data_rows):
-    y = (row_index + 1) * row_height
-    cy = y + row_height / 2
+# Update current_y to move down after the header
+current_y += header_row_height
 
-    is_header_row = (row_index == 0)
-    rect_fill = "#e0e0e0" if is_header_row else "white"
-    font_weight = "bold" if is_header_row else "normal"
+# Data Rows (draw borders for data cells as well)
+for row_index, row in enumerate(data_rows):
+    # Adjust row height based on whether there is a bubble
+    row_height = bubble_row_height if row["has_bubble"] else normal_row_height
+    y = current_y  # Current y position for the row
+    cy = y + row_height / 2  # Center of the cell vertically
 
     for col_index, key in enumerate(column_keys):
         x = sum(column_widths[:col_index])
         text = row.get(key, "").strip()
 
+        # Draw rectangle for the cell (border for all cells)
         svg_lines.append(
             f'<rect x="{x}" y="{y}" width="{column_widths[col_index]}" height="{row_height}" '
-            f'style="fill:{rect_fill};stroke:black;stroke-width:{line_width}"/>'
+            f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
         )
+
+        # Add text inside each cell (centered)
+        svg_lines.append(
+            f'<text x="{x + column_widths[col_index] / 2}" y="{cy}" text-anchor="middle" '
+            f'style="fill:black;dominant-baseline:middle;'
+            f'font-family:{font_family};font-size:{font_size}">{text}</text>'
+        )
+
+        # If there is a bubble, add the bubble SVG
         if key == "rev" and row["has_bubble"]:
-            svg_lines.append(f'<g id="bubble{row["rev"]}" transform="translate({x+2},{cy})">')
+            # Center the bubble within the cell
+            bubble_x = x + column_widths[col_index] / 2  # Horizontally center the bubble
+            bubble_y = cy - 3  # Vertically center the bubble plus an offset
+            svg_lines.append(f'<g id="bubble{row["rev"]}" transform="translate({bubble_x},{bubble_y})">')
             svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-start">')
+            svg_lines.append(f'    <polygon points="0.0,19.2 -16.63,-9.6 16.63,-9.6" fill="#FFFFFF" stroke="#000000"/>')
+            svg_lines.append(f'    <text x="0" y="0" style="font-size:8px;font-family:Arial" text-anchor="middle" dominant-baseline="middle">{row["rev"]}</text>')
             svg_lines.append(f'  </g>')
             svg_lines.append(f'  <g id="bubble{row["rev"]}-contents-end"/>')
             svg_lines.append(f'</g>')
-        else:
-            svg_lines.append(
-                f'<text x="{x}" y="{cy}" text-anchor="start" '
-                f'style="fill:black;dominant-baseline:middle;'
-                f'font-family:{font_family};font-size:{font_size}">{text}</text>'
-            )
+
+    # Move the current_y position for the next row
+    current_y += row_height
 
 svg_lines.append('</g>')
 svg_lines.append('<g id="revision-history-table-contents-end"/>')
 svg_lines.append('</svg>')
 
-# Write base SVG
+# Write the base SVG
 target_svg = path("revhistory master svg")
 with open(target_svg, "w", encoding="utf-8") as f:
     f.write("\n".join(svg_lines))
