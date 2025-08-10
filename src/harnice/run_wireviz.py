@@ -17,10 +17,6 @@ def generate_esch():
         print(f"from {basename(__file__)} > {currentframe().f_code.co_name}: Error while running wireviz: {e}")
         return
 
-    def silentremove(filepath):
-        if os.path.exists(filepath):
-            os.remove(filepath)
-
     silentremove(fileio.path("wireviz bom"))
     silentremove(fileio.path("wireviz html"))
     silentremove(fileio.path("wireviz png"))
