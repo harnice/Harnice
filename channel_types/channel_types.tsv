@@ -1,0 +1,4 @@
+channel_type_id	status	description	linked documentation	lower limit	upper limit	limit units	capacity	capacity units	signals	compatibility
+1		chassis ground							chassis	
+2		sensor excitation voltage		9	36	VDC	10	mA	"pos,neg"	
+3		sensor voltage signal output		-10	10	VDC	1	mA	"pos,neg"	
