@@ -3,7 +3,7 @@ import os
 from harnice import (
     fileio
 )
-from harnice.commands import render, new
+from harnice.commands import render
 
 def main():
     try:
@@ -32,27 +32,12 @@ def main():
             render.part()
         elif render_type == "flagnote":
             render.flagnote()
+        elif render_type == "box":
+            render.box()
         elif render_type in {"tblock", "titleblock"}:
             render.tblock()
         else:
             print(f"Unknown type for --render: {render_type}")
-
-    elif args.new:
-        new_type = args.new.lower()
-        fileio.set_product_type(new_type)
-
-        if new_type == "harness":
-            new.create_harness()
-        elif new_type == "system":
-            new.create_system()
-        elif new_type == "part":
-            new.create_part("")
-        elif new_type in {"tblock", "titleblock"}:
-            new.create_titleblock()
-        elif new_type == "flagnote":
-            new.create_flagnote()
-        else:
-            print(f"Unknown type for --new: {new_type}")
 
 def prompt(text, default=None):
     p = f"{text}"
