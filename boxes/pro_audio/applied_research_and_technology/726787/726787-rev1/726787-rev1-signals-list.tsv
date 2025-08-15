@@ -1,0 +1,13 @@
+channel	channel_type_id	compatible_channel_type_ids	signal	connector_name	connector_mpn	contact
+in1	1	2	pos	J1	XLR3F	2
+in1	1	2	neg	J1	XLR3F	3
+in1-gnd	5	5	chassis	J1	XLR3F	1
+in2	1	2	pos	J2	XLR3F	2
+in2	1	2	neg	J2	XLR3F	3
+in2-gnd	5	5	chassis	J2	XLR3F	1
+out1	4	3	pos	J3	XLR3M	2
+out1	4	3	neg	J3	XLR3M	3
+out1-gnd	5	5	chassis	J3	XLR3M	1
+out2	4	3	pos	J4	XLR3M	2
+out2	4	3	neg	J4	XLR3M	3
+out2-gnd	5	5	chassis	J4	XLR3M	1
