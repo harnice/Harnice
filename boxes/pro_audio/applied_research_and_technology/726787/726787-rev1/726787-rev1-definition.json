@@ -1,16 +1,3 @@
 
 {
-    "connectors": {
-        "J1": { "mpn": "DB9_F" },
-        "J2": { "mpn": "DB9_F" },
-        "J3": { "mpn": "DB9_F" },
-        "J4": { "mpn": "DB9_F" },
-        "J5": { "mpn": "DB9_F" },
-        "J6": { "mpn": "DB9_F" }
-    },
-    "channels": {
-        "ch1.chassis": { "channel_type_id": 1, "supplier": "public" },
-        "excite": { "channel_type_id": 2, "supplier": "public" },
-        "output": { "channel_type_id": 3, "supplier": "public" }
-    }
 }
