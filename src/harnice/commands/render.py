@@ -5,6 +5,7 @@ from xml.dom import minidom
 import random
 import math
 import runpy
+import re
 from harnice import (
     run_wireviz,
     instances_list,
@@ -401,7 +402,6 @@ def part():
     print(f"Part file '{fileio.partnumber('pn')}' updated")
     print()
 
-
 def flagnote():
     print("Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?")
     if cli.prompt("Press enter to confirm or any key to exit") == "":
@@ -523,7 +523,6 @@ def flagnote():
     print()
     print(f"Flagnote '{fileio.partnumber('pn')}' updated")
     print()
-
 
 def system():
     print("System-level rendering not yet implemented.")
