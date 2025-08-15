@@ -8,9 +8,9 @@ from harnice import fileio
 SIGNALS_HEADERS = [
     "channel",
     "channel_type_id",
-    "compatible_channel_ids",
+    "compatible_channel_type_ids",
     "signal",
-    "connector",
+    "connector_name",
     "connector_mpn",
     "contact"
 ]
@@ -46,7 +46,7 @@ def write_signal(**kwargs):
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(row)
 
-def signals_of_channel_type(channel_type_name, channel_type_id, ch_type_id_supplier="public"):
+def signals_of_channel_type(channel_type_id, ch_type_id_supplier="public"):
     """
     Reads the channel_types.tsv file for the given channel_type_id and returns a list of signals.
     """
@@ -61,25 +61,17 @@ def signals_of_channel_type(channel_type_name, channel_type_id, ch_type_id_suppl
                 return [sig.strip() for sig in signals_str.split(",") if sig.strip()]
     return []
 
-def compatible_channels(channel_type_name, ch_type_ids, ch_type_id_supplier="public"):
-    """
-    Reads the 'compatible_channel_ids' column from channel_types.tsv for the given channel type.
-    Returns as a comma-separated string of integers.
-    """
+def compatible_channel_types(channel_type_name, ch_type_ids, ch_type_id_supplier="public"):
     load_dotenv()
-    channel_type_id = ch_type_ids.get(channel_type_name)
-    if channel_type_id is None:
-        return ""
-
     tsv_path = _channel_types_path(ch_type_id_supplier)
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if str(row.get("channel_type_id", "")).strip() == str(channel_type_id):
-                comp_str = row.get("compatible_channel_ids", "")
-                return ",".join([cid.strip() for cid in comp_str.split(",") if cid.strip()])
-    return ""
+            if str(row.get("compatible_channel_type_ids", "")).strip() == str(channel_type_id):
+                signals_str = row.get("signals", "")
+                return [sig.strip() for sig in signals_str.split(",") if sig.strip()]
+    return []
 
 def _channel_types_path(ch_type_id_supplier):
     """
