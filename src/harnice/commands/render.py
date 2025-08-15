@@ -524,42 +524,5 @@ def flagnote():
     print(f"Flagnote '{fileio.partnumber('pn')}' updated")
     print()
 
-def box():
-    fileio.verify_revision_structure()
-
-    # Regex to extract each (symbol ...) block
-    SYMBOL_RE = re.compile(r"\(symbol\s+.*?\)\s*\)", re.S)
-
-    def parse_symbols(sym_file):
-        """Extract all (symbol ...) blocks from a .kicad_sym file."""
-        with open(sym_file, "r", encoding="utf-8") as f:
-            text = f.read()
-        return SYMBOL_RE.findall(text)
-
-    def main():
-        cwd = os.getcwd()
-        boxes_dir = os.path.dirname(cwd)  # Go up one level
-        if os.path.basename(boxes_dir) != "boxes":
-            raise RuntimeError(f"Expected 'boxes' folder above CWD, found: {boxes_dir}")
-
-        output_file = os.path.join(boxes_dir, "all_boxes.kicad_sym")
-
-        all_symbols = []
-        for root, _, files in os.walk(boxes_dir):
-            for file in files:
-                if file.endswith(".kicad_sym"):
-                    sym_path = os.path.join(root, file)
-                    if os.path.abspath(sym_path) == os.path.abspath(output_file):
-                        continue  # Skip output file
-                    all_symbols.extend(parse_symbols(sym_path))
-
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write("(kicad_symbol_lib (version 20211014) (generator merge-script)\n")
-            for sym in all_symbols:
-                f.write(f"  {sym}\n")
-            f.write(")\n")
-
-        print(f"[OK] Merged {len(all_symbols)} symbols into {output_file}")
-
 def system():
     print("System-level rendering not yet implemented.")

@@ -117,6 +117,11 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}-drawing.svg":"drawing",
             f"{partnumber("pn-rev")}-attributes.json":"attributes"
         }
+    elif product_type == "box":
+        return {
+            f"{partnumber("pn-rev")}.kicad_sym":"kicad sym",
+            f"{partnumber("pn-rev")}-definition.json":"box definition json",
+        }
 
 def generate_structure():
     os.makedirs(dirpath("artifacts"), exist_ok=True)
