@@ -120,6 +120,8 @@ def harnice_file_structure():
     elif product_type == "box":
         return {
             f"{partnumber("pn-rev")}.kicad_sym":"kicad sym",
+            f"{partnumber("pn-rev")}-signals-list-instructions.py":"signals list instructions",
+            f"{partnumber("pn-rev")}-signals-list.tsv":"signals list",
             f"{partnumber("pn-rev")}-definition.json":"box definition json",
         }
 
