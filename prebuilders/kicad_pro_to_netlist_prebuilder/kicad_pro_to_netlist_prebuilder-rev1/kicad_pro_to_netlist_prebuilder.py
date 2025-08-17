@@ -28,16 +28,34 @@ def path(target_value: str) -> str:
 
     raise KeyError(f"Filename {target_value} not found in {prebuilder_mpn} file tree")
 
+def parse_nets_from_export(export_text: str) -> Dict[str, list[str]]:
+    nets: Dict[str, list[str]] = {}
+    current_net = None
 
-def parse_nets_from_export(export_text: str) -> Dict[str, Dict[str, str]]:
-    nets: Dict[str, Dict[str, str]] = {}
-    for m in re.finditer(r'\(net\s+\(code\s+"[^"]*"\)\s+\(name\s+"([^"]+)"\)(.*?)\)', export_text, flags=re.S):
-        net_name, body = m.groups()
-        comp_map = {}
-        for node in re.finditer(r'\(node\s+\(ref\s+"([^"]+)"\).*?\(pinfunction\s+"([^"]*)"', body):
-            ref, pinfunc = node.groups()
-            comp_map[ref] = pinfunc
-        nets[net_name] = comp_map
+    for line in export_text.splitlines():
+        line = line.strip()
+
+        # Start of a net
+        if line.startswith("(net "):
+            m = re.search(r'\(name\s+"([^"]+)"\)', line)
+            if m:
+                current_net = m.group(1)
+                nets[current_net] = []
+
+        # Node lines
+        elif current_net and line.startswith("(node "):
+            ref = re.search(r'\(ref\s+"([^"]+)"\)', line)
+            pinfunc = re.search(r'\(pinfunction\s+"([^"]*)"\)', line)
+
+            if ref and pinfunc:
+                refname = ref.group(1)
+                func = pinfunc.group(1)
+                nets[current_net].append(f"{refname}:{func}")
+
+        # End of net
+        elif line == ")" and current_net:
+            current_net = None
+
     return nets
 
 
