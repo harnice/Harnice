@@ -1,0 +1,49 @@
+{
+    "connectors": {
+        "J1": {
+            "mpn":"DB9_F"
+        },
+        "J2": {
+            "mpn":"DB9_F"
+        },
+        "J3": {
+            "mpn":"DB9_F"
+        },
+        "J4": {
+            "mpn":"DB9_F"
+        },
+        "J5": {
+            "mpn":"DB9_F"
+        },
+        "J6": {
+            "mpn":"DB9_F"
+        }
+    },
+    "channels": {
+        "ch1.chassis": {
+            "channel_type_id": 1,
+            "signals": {
+                "chassis": "J1.bs"
+            }
+        },
+        "excite": {
+            "channel_type_id": 2,
+            "signals": {
+                "pos": "J1.A",
+                "neg": "J1.D"
+            }
+        },
+        "output": {
+            "channel_type_id": 3,
+            "signals": {
+                "pos_sig": "J1.B",
+                "neg_sig": "J1.C"
+            }
+        }
+    },
+    "box_setup": {
+        "suppliers": {
+            "channel_type_id": "public"
+        }
+    }
+}
