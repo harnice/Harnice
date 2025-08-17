@@ -3,7 +3,7 @@ import os
 from harnice import (
     fileio
 )
-from harnice.commands import render, box
+from harnice.commands import render, box, system
 
 def main():
     try:
@@ -27,7 +27,7 @@ def main():
         if render_type == "harness":
             render.harness()
         elif render_type == "system":
-            render.system()
+            system.render()
         elif render_type == "part":
             render.part()
         elif render_type == "flagnote":

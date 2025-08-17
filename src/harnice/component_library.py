@@ -17,6 +17,7 @@ from harnice import(
 )
 
 def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, used_rev=None, item_name=None, quiet=True):
+    load_dotenv()
     if not isinstance(supplier, str) or not supplier.strip():
         raise ValueError(f"when importing {mpn} 'supplier' must be a non-empty string. Got: {supplier}")
     if not isinstance(lib_subpath, str) or not lib_subpath.strip():

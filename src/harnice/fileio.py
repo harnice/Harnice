@@ -123,6 +123,12 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}-signals-list-instructions.py":"signals list instructions",
             f"{partnumber("pn-rev")}-signals-list.tsv":"signals list"
         }
+    elif product_type == "system":
+        return {
+            f"{partnumber("pn-rev")}-system-render-instructions.py":"system render instructions",
+            f"{partnumber("pn-rev")}-netlist.json":"netlist",
+            "prebuilders":{}
+        }
 
 def generate_structure():
     os.makedirs(dirpath("artifacts"), exist_ok=True)
