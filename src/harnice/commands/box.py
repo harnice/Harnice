@@ -68,25 +68,6 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 
 """
 
-# Fixed missing closing braces
-box_definition_json_default = """
-{
-    "connectors": {
-        "J1": { "mpn": "DB9_F" },
-        "J2": { "mpn": "DB9_F" },
-        "J3": { "mpn": "DB9_F" },
-        "J4": { "mpn": "DB9_F" },
-        "J5": { "mpn": "DB9_F" },
-        "J6": { "mpn": "DB9_F" }
-    },
-    "channels": {
-        "ch1.chassis": { "channel_type_id": 1, "supplier": "public" },
-        "excite": { "channel_type_id": 2, "supplier": "public" },
-        "output": { "channel_type_id": 3, "supplier": "public" }
-    }
-}
-"""
-
 def render():
     fileio.verify_revision_structure()
 
@@ -100,18 +81,7 @@ def render():
         runpy.run_path(fileio.path("signals list instructions"))
         print("Successfully rebuilt signals list per instructions.")
 
-    # Create box definition JSON if missing
-    if not os.path.exists(fileio.path("box definition json")):
-        with open(fileio.path("box definition json"), "w", encoding="utf-8") as f:
-            f.write(box_definition_json_default)
-
     # === Validation placeholders ===
-    try:
-        with open(fileio.path("box definition json"), "r", encoding="utf-8") as f:
-            json.load(f)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid box definition JSON: {e}")
-
     if not os.path.exists(fileio.path("signals list")):
         raise FileNotFoundError("Signals list was not generated.")
 

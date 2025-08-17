@@ -47,9 +47,6 @@ def write_signal(**kwargs):
         writer.writerow(row)
 
 def signals_of_channel_type(channel_type_id, ch_type_id_supplier="public"):
-    """
-    Reads the channel_types.tsv file for the given channel_type_id and returns a list of signals.
-    """
     load_dotenv()
     tsv_path = _channel_types_path(ch_type_id_supplier)
 
@@ -61,7 +58,7 @@ def signals_of_channel_type(channel_type_id, ch_type_id_supplier="public"):
                 return [sig.strip() for sig in signals_str.split(",") if sig.strip()]
     return []
 
-def compatible_channel_types(channel_type_name, ch_type_ids, ch_type_id_supplier="public"):
+def compatible_channel_types(channel_type_id, ch_type_id_supplier="public"):
     load_dotenv()
     tsv_path = _channel_types_path(ch_type_id_supplier)
 
