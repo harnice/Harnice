@@ -11,20 +11,11 @@ def path(target_value: str) -> str:
     if target_value == "kicad sch":
         return os.path.join(os.getcwd(), "kicad", f"{fileio.partnumber('pn-rev')}.kicad_sch")
 
-    if target_value == "kicad pro":
-        return os.path.join(os.getcwd(), "kicad", f"{fileio.partnumber('pn-rev')}.kicad_pro")
-
     if target_value == "netlist source":
         return os.path.join(os.getcwd(), "kicad", f"{fileio.partnumber('pn-rev')}.net")
 
     if target_value == "netlist json":
         return f"{fileio.partnumber('pn-rev')}-netlist.json"
-
-    if target_value == "bom json":
-        return f"{fileio.partnumber('pn-rev')}-bom.json"
-
-    if target_value == "netclasses json":
-        return f"{fileio.partnumber('pn-rev')}-netclasses.json"
 
     raise KeyError(f"Filename {target_value} not found in {prebuilder_mpn} file tree")
 
@@ -58,23 +49,6 @@ def parse_nets_from_export(export_text: str) -> Dict[str, list[str]]:
             current_net = None
 
     return nets
-
-
-def parse_bom_from_sch(sch_text: str) -> Dict[str, Dict[str, str]]:
-    bom: Dict[str, Dict[str, str]] = {}
-    for comp in re.finditer(
-        r'\(comp\s+\(ref\s+"([^"]+)"\).*?\(libsource\s+\(lib\s+"([^"]+)"\)\s+\(part\s+"([^"]+)"\)',
-        sch_text,
-        flags=re.S,
-    ):
-        ref, lib, part = comp.groups()
-        bom[ref] = {"lib": lib, "part": part}
-    return bom
-
-
-def parse_netclasses_from_pro(pro_text: str):
-    data = json.loads(pro_text)
-    return data.get("net_settings", {}).get("classes", [])
 
 
 def export_netlist():
@@ -112,22 +86,5 @@ with open(net_file, "r", encoding="utf-8") as f:
     net_text = f.read()
 nets = parse_nets_from_export(net_text)
 
-sch_file = path("kicad sch")
-with open(sch_file, "r", encoding="utf-8") as f:
-    sch_text = f.read()
-bom = parse_bom_from_sch(sch_text)
-
-pro_file = path("kicad pro")
-with open(pro_file, "r", encoding="utf-8") as f:
-    pro_text = f.read()
-netclasses = parse_netclasses_from_pro(pro_text)
-
 with open(path("netlist json"), "w", encoding="utf-8") as f:
     json.dump(nets, f, indent=2)
-
-with open(path("bom json"), "w", encoding="utf-8") as f:
-    json.dump(bom, f, indent=2)
-
-# not used right now
-# with open(path("netclasses json"), "w", encoding="utf-8") as f:
-#     json.dump(netclasses, f, indent=2)
