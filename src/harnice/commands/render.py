@@ -523,6 +523,3 @@ def flagnote():
     print()
     print(f"Flagnote '{fileio.partnumber('pn')}' updated")
     print()
-
-def system():
-    print("System-level rendering not yet implemented.")
