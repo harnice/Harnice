@@ -63,7 +63,7 @@
 			)
 		)
 		(symbol "Stellar_ST350-1000-rev1_1_1"
-			(pin output line
+			(pin unspecified line
 				(at -10.16 0 0)
 				(length 2.54)
 				(name "J1"
@@ -145,7 +145,7 @@
 			)
 		)
 		(symbol "Stellar_ST350-2000-rev1_1_1"
-			(pin output line
+			(pin unspecified line
 				(at -10.16 0 0)
 				(length 2.54)
 				(name "J1"

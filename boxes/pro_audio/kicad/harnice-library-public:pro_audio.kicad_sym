@@ -64,7 +64,7 @@
 			)
 		)
 		(symbol "applied_research_and_technology/726787-rev1_1_1"
-			(pin input line
+			(pin unspecified line
 				(at -8.89 1.27 0)
 				(length 2.54)
 				(name "in1"
@@ -74,7 +74,7 @@
 						)
 					)
 				)
-				(number ""
+				(number "1"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -82,7 +82,7 @@
 					)
 				)
 			)
-			(pin input line
+			(pin unspecified line
 				(at -8.89 -1.27 0)
 				(length 2.54)
 				(name "in2"
@@ -92,7 +92,7 @@
 						)
 					)
 				)
-				(number ""
+				(number "2"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -100,7 +100,7 @@
 					)
 				)
 			)
-			(pin input line
+			(pin unspecified line
 				(at 8.89 1.27 180)
 				(length 2.54)
 				(name "out1"
@@ -110,7 +110,7 @@
 						)
 					)
 				)
-				(number ""
+				(number "3"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -118,7 +118,7 @@
 					)
 				)
 			)
-			(pin input line
+			(pin unspecified line
 				(at 8.89 -1.27 180)
 				(length 2.54)
 				(name "out2"
@@ -128,7 +128,7 @@
 						)
 					)
 				)
-				(number ""
+				(number "4"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -200,7 +200,7 @@
 			)
 		)
 		(symbol "shure/sm58-rev1_1_1"
-			(pin output line
+			(pin unspecified line
 				(at 7.62 0 180)
 				(length 2.54)
 				(name "J1"
