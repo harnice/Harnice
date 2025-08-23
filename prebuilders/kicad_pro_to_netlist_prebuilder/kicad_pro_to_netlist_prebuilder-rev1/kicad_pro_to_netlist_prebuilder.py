@@ -28,7 +28,11 @@ def path(target_value: str) -> str:
 
     raise KeyError(f"Filename {target_value} not found in {prebuilder_mpn} file tree")
 
+
 def parse_nets_from_export(export_text: str) -> Dict[str, list[str]]:
+    """
+    Parse S-expression netlist (.net) into a dict {net_name: [ref:pinfunction, ...]}.
+    """
     nets: Dict[str, list[str]] = {}
     current_net = None
 
@@ -46,13 +50,10 @@ def parse_nets_from_export(export_text: str) -> Dict[str, list[str]]:
         elif current_net and line.startswith("(node "):
             ref = re.search(r'\(ref\s+"([^"]+)"\)', line)
             pinfunc = re.search(r'\(pinfunction\s+"([^"]*)"\)', line)
-
             if ref and pinfunc:
-                refname = ref.group(1)
-                func = pinfunc.group(1)
-                nets[current_net].append(f"{refname}:{func}")
+                nets[current_net].append(f"{ref.group(1)}:{pinfunc.group(1)}")
 
-        # End of net
+        # End of net block
         elif line == ")" and current_net:
             current_net = None
 
@@ -76,50 +77,36 @@ def parse_netclasses_from_pro(pro_text: str):
     return data.get("net_settings", {}).get("classes", [])
 
 
-def export_netlist_if_missing():
+def export_netlist():
     """
-    Ensure .net file exists using KiCad CLI.
+    Always export schematic netlist in S-expression format, overwriting if it exists.
     """
     net_file = path("netlist source")
     sch_file = path("kicad sch")
-
-    if os.path.exists(net_file):
-        return net_file
 
     if not os.path.exists(sch_file):
         raise FileNotFoundError("No schematic file (.kicad_sch) found")
 
     try:
         subprocess.run(
-            ["kicad-cli", "sch", "export", "netlist", sch_file, "--output", net_file],
+            [
+                "kicad-cli", "sch", "export", "netlist",
+                sch_file,
+                "--output", net_file
+            ],
             check=True
         )
         print(f"Exported netlist using kicad-cli → {net_file}")
         return net_file
     except FileNotFoundError:
-        raise RuntimeError(
-            "kicad-cli not found on PATH.\n\n"
-            "To install KiCad CLI:\n"
-            "  • macOS (Homebrew):\n"
-            "      brew install --cask kicad\n"
-            "      export PATH=\"/Applications/KiCad/KiCad.app/Contents/MacOS:$PATH\"\n\n"
-            "  • Ubuntu/Debian:\n"
-            "      sudo apt install kicad\n\n"
-            "  • Fedora:\n"
-            "      sudo dnf install kicad\n\n"
-            "  • Windows:\n"
-            "      Install KiCad 7 or 8 from https://kicad.org/download/\n"
-            "      Then add C:\\Program Files\\KiCad\\bin to your PATH.\n\n"
-            "After installation, verify with:\n"
-            "      kicad-cli --version\n"
-        )
+        raise RuntimeError("kicad-cli not found on PATH")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"kicad-cli export failed: {e}")
 
 
 # === Inline execution ===
 
-net_file = export_netlist_if_missing()
+net_file = export_netlist()
 
 with open(net_file, "r", encoding="utf-8") as f:
     net_text = f.read()
@@ -141,9 +128,6 @@ with open(path("netlist json"), "w", encoding="utf-8") as f:
 with open(path("bom json"), "w", encoding="utf-8") as f:
     json.dump(bom, f, indent=2)
 
-with open(path("netclasses json"), "w", encoding="utf-8") as f:
-    json.dump(netclasses, f, indent=2)
-
-print(f"Netlist JSON written to {path('netlist json')}")
-print(f"BOM JSON written to {path('bom json')}")
-print(f"Netclasses JSON written to {path('netclasses json')}")
+# not used right now
+# with open(path("netclasses json"), "w", encoding="utf-8") as f:
+#     json.dump(netclasses, f, indent=2)
