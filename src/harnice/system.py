@@ -35,6 +35,7 @@ system.pull_boxes_from_library()
 #                   CHANNEL MAPPING
 #===========================================================================
 system.new_channel_map()
+featuretree.runprebuilder("basic_channel_mapper_prebuilder", "public")
 """
 
 def render():
