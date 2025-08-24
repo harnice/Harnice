@@ -135,7 +135,7 @@ def validate_nodes():
                 if instance.get("item_type") == "Node":
                     segment_ends.append(instance.get("instance_name"))
 
-            add_segment(segment_id, {
+            add_segment_to_formboard_def(segment_id, {
                 "node_at_end_a": segment_ends[0],
                 "node_at_end_b": segment_ends[1],
                 "length": str(random.randint(6, 18)),

@@ -7,15 +7,10 @@ import math
 import runpy
 import re
 from harnice import (
-    run_wireviz,
     instances_list,
     svg_utils,
-    flagnotes,
-    formboard,
     rev_history,
-    component_library,
     fileio,
-    svg_outputs,
     cli
 )
 
