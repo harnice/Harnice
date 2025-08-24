@@ -5,7 +5,7 @@ import subprocess
 from typing import Dict
 from harnice import fileio
 
-prebuilder_mpn = "kicad"
+prebuilder_mpn = "kicad_pro_to_netlist"
 
 def path(target_value: str) -> str:
     if target_value == "kicad sch":
