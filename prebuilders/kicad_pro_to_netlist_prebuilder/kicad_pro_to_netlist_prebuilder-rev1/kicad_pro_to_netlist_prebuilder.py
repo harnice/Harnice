@@ -54,6 +54,7 @@ def parse_nets_from_export(export_text: str) -> Dict[str, list[str]]:
 def export_netlist():
     """
     Always export schematic netlist in S-expression format, overwriting if it exists.
+    Returns the path to the generated netlist file.
     """
     net_file = path("netlist source")
     sch_file = path("kicad sch")
@@ -74,6 +75,8 @@ def export_netlist():
         raise RuntimeError("kicad-cli not found on PATH")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"kicad-cli export failed: {e}")
+
+    return net_file   # <<< added
 
 
 # === Inline execution ===
