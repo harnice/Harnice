@@ -18,14 +18,22 @@ CHANNEL_MAP_COLUMNS = [
 
 system_render_instructions_default = """from harnice import featuretree, system
 
-# Compile Kicad information to get a system BOM and netlist
+#===========================================================================
+#                   KICAD PROCESSING
+#===========================================================================
 featuretree.runprebuilder("kicad_pro_to_netlist_prebuilder", "public")
 featuretree.runprebuilder("kicad_pro_to_bom_prebuilder", "public")
 
-# Import box definitions from library
+
+#===========================================================================
+#                   LIBRARY IMPORTING
+#===========================================================================
 system.pull_boxes_from_library()
 
-# Generate channel map
+
+#===========================================================================
+#                   CHANNEL MAPPING
+#===========================================================================
 system.new_channel_map()
 """
 
