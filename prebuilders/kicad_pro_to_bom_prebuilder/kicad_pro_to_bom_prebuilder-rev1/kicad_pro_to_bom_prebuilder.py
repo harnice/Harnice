@@ -4,10 +4,11 @@ from harnice import fileio
 
 prebuilder_mpn = "kicad_pro_to_bom"
 
-# kicad headers
-BOM_FIELDS = ["Reference", "MFG", "MPN"]
-# output headers
-BOM_LABELS = ["box_ref_des", "MFG", "MPN"]
+# kicad headers (fields in KiCad schematic, including custom attributes)
+BOM_FIELDS = ["Reference", "MFG", "MPN", "supplier"]
+
+# output headers (labels in TSV)
+BOM_LABELS = ["box_ref_des", "MFG", "MPN", "supplier"]
 
 def path(target_value: str) -> str:
     if target_value == "kicad sch":
