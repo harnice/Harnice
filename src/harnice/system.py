@@ -16,11 +16,24 @@ CHANNEL_MAP_COLUMNS = [
     "to_compatible_channel_type_ids"
 ]
 
-system_render_instructions_default = """
-from harnice import featuretree, system
+system_render_instructions_default = """from harnice import featuretree, system
+
+#===========================================================================
+#                   KICAD PROCESSING
+#===========================================================================
 featuretree.runprebuilder("kicad_pro_to_netlist_prebuilder", "public")
 featuretree.runprebuilder("kicad_pro_to_bom_prebuilder", "public")
+
+
+#===========================================================================
+#                   LIBRARY IMPORTING
+#===========================================================================
 system.pull_boxes_from_library()
+
+
+#===========================================================================
+#                   CHANNEL MAPPING
+#===========================================================================
 system.new_channel_map()
 """
 

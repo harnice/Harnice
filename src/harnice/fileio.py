@@ -408,7 +408,7 @@ def verify_feature_tree_exists(prebuilder="", artifact_builder_dict=None):
             "import os\nimport yaml\nimport re\nimport runpy\n\n"
             "from harnice import (\n"
             "    fileio, instances_list, component_library, svg_outputs,\n"
-            "    flagnotes, formboard, run_wireviz, rev_history, svg_utils, featuretree\n"
+            "    flagnotes, formboard, rev_history, svg_utils, featuretree\n"
             ")\n\n"
             "#===========================================================================\n"
             "#                   PREBUILDER SCRIPTING\n"
