@@ -120,7 +120,9 @@ def new_channel_map():
             row = {
                 "connected_connector_group": connected_connector_group,
                 "from_box_refdes": box_ref,
-                "from_box_channel_id": channel_id
+                "from_box_channel_id": channel_id,
+                "from_channel_type_id":  signal.get("channel_type_id", "").strip(),
+                "from_compatible_channel_type_ids":  signal.get("compatible_channel_type_ids", "").strip()
             }
 
             # create a uniqueness key from row values
