@@ -70,8 +70,6 @@ def export_netlist():
             ],
             check=True
         )
-        print(f"Exported netlist using kicad-cli → {net_file}")
-        return net_file
     except FileNotFoundError:
         raise RuntimeError("kicad-cli not found on PATH")
     except subprocess.CalledProcessError as e:
