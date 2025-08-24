@@ -1,13 +1,13 @@
-channel	channel_type_id	compatible_channel_type_ids	signal	connector_name	connector_mpn	contact
-in1	1	2	pos	in1	XLR3F	2
-in1	1	2	neg	in1	XLR3F	3
-in1-gnd	5	5	chassis	in1	XLR3F	1
-in2	1	2	pos	in2	XLR3F	2
-in2	1	2	neg	in2	XLR3F	3
-in2-gnd	5	5	chassis	in2	XLR3F	1
-out1	4	3	pos	out1	XLR3M	2
-out1	4	3	neg	out1	XLR3M	3
-out1-gnd	5	5	chassis	out1	XLR3M	1
-out2	4	3	pos	out2	XLR3M	2
-out2	4	3	neg	out2	XLR3M	3
-out2-gnd	5	5	chassis	out2	XLR3M	1
+channel	channel_type_id	compatible_channel_type_ids	signal	connector_name	connector_mpn	contact	compatible_channel_type_ids
+in1	1	2	pos	in1	XLR3F	2	2
+in1	1	2	neg	in1	XLR3F	3	2
+in1-gnd	5	5	chassis	in1	XLR3F	1	5
+in2	1	2	pos	in2	XLR3F	2	2
+in2	1	2	neg	in2	XLR3F	3	2
+in2-gnd	5	5	chassis	in2	XLR3F	1	5
+out1	4	3	pos	out1	XLR3M	2	3
+out1	4	3	neg	out1	XLR3M	3	3
+out1-gnd	5	5	chassis	out1	XLR3M	1	5
+out2	4	3	pos	out2	XLR3M	2	3
+out2	4	3	neg	out2	XLR3M	3	3
+out2-gnd	5	5	chassis	out2	XLR3M	1	5
