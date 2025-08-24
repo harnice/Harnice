@@ -50,6 +50,22 @@
 				(hide yes)
 			)
 		)
+		(property "MFG" "Applied Research and Technology"
+			(at 0.254 9.398 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "726787"
+			(at 0.254 7.366 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(symbol "applied_research_and_technology/726787-rev1_0_1"
 			(rectangle
 				(start -6.35 6.35)
@@ -184,6 +200,22 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
+			)
+		)
+		(property "MFG" "Shure"
+			(at -3.302 -3.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "SM58"
+			(at 2.286 -4.064 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(symbol "shure/sm58-rev1_0_1"
