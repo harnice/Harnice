@@ -1,9 +1,10 @@
 import argparse
 import os
 from harnice import (
-    fileio
+    fileio,
+    system
 )
-from harnice.commands import render, box, system
+from harnice.commands import render, box
 
 def main():
     try:
