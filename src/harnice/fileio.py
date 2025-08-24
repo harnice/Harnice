@@ -129,7 +129,8 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}-netlist.json":"netlist",
             f"{partnumber("pn-rev")}-chmap.tsv":"channel map",
             f"{partnumber("pn-rev")}-bom.tsv":"bom",
-            "prebuilders":{}
+            "prebuilders":{},
+            "imported_boxes":{}
         }
 
 def generate_structure():

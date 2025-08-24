@@ -1,7 +1,6 @@
-from harnice import fileio
+from harnice import fileio, component_library
 import runpy
 import os
-import json
 import csv
 
 CHANNEL_MAP_COLUMNS = [
@@ -20,7 +19,7 @@ system_render_instructions_default = """
 from harnice import featuretree, system
 featuretree.runprebuilder("kicad_pro_to_netlist_prebuilder", "public")
 featuretree.runprebuilder("kicad_pro_to_bom_prebuilder", "public")
-system.update_channel_map()
+system.pull_boxes_from_library()
 """
 
 def render():
@@ -32,16 +31,31 @@ def render():
 
     fileio.verify_revision_structure()
 
-def read_netlist():
-    with open(fileio.path("netlist"), "r", encoding="utf-8") as f:
-        return json.load(f)
+def read_bom_rows():
+    with open(fileio.path("bom"), "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        return list(reader)
 
-def update_channel_map():
+
+def pull_boxes_from_library():
     with open(fileio.path('channel map'), 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter='\t')
         writer.writeheader()
         writer.writerows([])
 
-    for instance in read_netlist():
-        #do stuff
-        pass
+    imported_boxes = []
+
+    for refdes in read_bom_rows():
+        if refdes not in imported_boxes:
+            #import box from library
+
+            component_library.pull_item_from_library(
+                supplier = refdes["supplier"],
+                lib_subpath="boxes/"+refdes["supplier_subpath"],
+                mpn=refdes["MPN"],
+                destination_directory=os.path.join(fileio.dirpath("imported_boxes"), refdes["box_ref_des"]),
+                used_rev=None,
+                item_name=refdes["box_ref_des"],
+                quiet=False
+            )
+        imported_boxes.append(refdes)
