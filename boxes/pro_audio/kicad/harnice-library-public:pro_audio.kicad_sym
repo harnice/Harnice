@@ -66,8 +66,17 @@
 				)
 			)
 		)
-		(property "supplier" "harnice-library-public/pro_audio/applied_research_and_technology"
+		(property "supplier" "harnice-library-public"
 			(at -0.254 -4.572 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "supplier_subpath" "pro_audio/applied_research_and_technology"
+			(at 0.254 -5.588 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -227,8 +236,17 @@
 				)
 			)
 		)
-		(property "supplier" "harnice-library-public/pro_audio/shure"
+		(property "supplier" "harnice-library-public"
 			(at 0.762 -6.096 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "supplier_subpath" "pro_audio/shure"
+			(at -0.508 -7.366 0)
 			(effects
 				(font
 					(size 1.27 1.27)

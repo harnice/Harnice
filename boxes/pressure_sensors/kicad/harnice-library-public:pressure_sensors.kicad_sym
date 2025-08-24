@@ -66,8 +66,17 @@
 				)
 			)
 		)
-		(property "supplier" "harnice-library-public/pressure_sensors"
+		(property "supplier" "harnice-library-public"
 			(at 0 -5.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "supplier_subpath" "pressure_sensors"
+			(at -0.508 -6.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -173,8 +182,17 @@
 				)
 			)
 		)
-		(property "supplier" "harnice-library-public/pressure_sensors"
+		(property "supplier" "harnice-library-public"
 			(at 0 -5.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "supplier_subpath" "pressure_sensors"
+			(at 0 -6.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
