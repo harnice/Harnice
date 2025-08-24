@@ -84,6 +84,15 @@
 				(hide yes)
 			)
 		)
+		(property "rev" "rev1"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(symbol "applied_research_and_technology/726787-rev1_0_1"
 			(rectangle
 				(start -6.35 6.35)
@@ -247,6 +256,15 @@
 		)
 		(property "supplier_subpath" "pro_audio/shure"
 			(at -0.508 -7.366 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" "rev1"
+			(at 0 0 0)
 			(effects
 				(font
 					(size 1.27 1.27)

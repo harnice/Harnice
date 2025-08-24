@@ -84,6 +84,15 @@
 				(hide yes)
 			)
 		)
+		(property "rev" "rev1"
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(symbol "Stellar_ST350-1000-rev1_0_1"
 			(rectangle
 				(start -7.62 3.175)
@@ -193,6 +202,15 @@
 		)
 		(property "supplier_subpath" "pressure_sensors"
 			(at 0 -6.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" "rev1"
+			(at 0 0 0)
 			(effects
 				(font
 					(size 1.27 1.27)
