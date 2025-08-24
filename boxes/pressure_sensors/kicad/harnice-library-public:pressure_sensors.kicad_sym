@@ -66,6 +66,15 @@
 				)
 			)
 		)
+		(property "supplier" "harnice-library-public"
+			(at 0 -5.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(symbol "Stellar_ST350-1000-rev1_0_1"
 			(rectangle
 				(start -7.62 3.175)
@@ -162,6 +171,15 @@
 				(font
 					(size 1.27 1.27)
 				)
+			)
+		)
+		(property "supplier" "harnice-library-public"
+			(at 0 -5.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
 			)
 		)
 		(symbol "Stellar_ST350-2000-rev1_0_1"
