@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import shutil
 import subprocess
 from typing import Dict
 from harnice import fileio
@@ -50,7 +51,6 @@ def parse_nets_from_export(export_text: str) -> Dict[str, list[str]]:
 
     return nets
 
-
 def export_netlist():
     """
     Always export schematic netlist in S-expression format, overwriting if it exists.
@@ -62,21 +62,29 @@ def export_netlist():
     if not os.path.exists(sch_file):
         raise FileNotFoundError("No schematic file (.kicad_sch) found")
 
+    # Try PATH first, then macOS app bundle fallback
+    kicad_cli = shutil.which("kicad-cli")
+    if not kicad_cli:
+        fallback = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
+        if os.path.exists(fallback):
+            kicad_cli = fallback
+        else:
+            raise RuntimeError("kicad-cli not found (neither on PATH nor in /Applications/KiCad)")
+
     try:
         subprocess.run(
             [
-                "kicad-cli", "sch", "export", "netlist",
+                kicad_cli, "sch", "export", "netlist",
                 sch_file,
                 "--output", net_file
             ],
             check=True
         )
-    except FileNotFoundError:
-        raise RuntimeError("kicad-cli not found on PATH")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"kicad-cli export failed: {e}")
 
-    return net_file   # <<< added
+    return net_file
+
 
 
 # === Inline execution ===
