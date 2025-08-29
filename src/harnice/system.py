@@ -142,54 +142,54 @@ def read_channel_map():
 
 def map_channel(from_box_refdes, from_box_channel_id, to_box_refdes, to_box_channel_id):
     """
-    Connects a channel from (refdes, channel_id) to another (refdes, channel_id).
-    Updates the channel map TSV by:
-      1. Finding the source row (from_*), setting its to_* fields.
-      2. Removing any standalone target row (to_*).
+    Updates the channel map:
+    1. Finds the row with (from_box_refdes, from_box_channel_id) == from args
+       and updates its 'to' fields.
+    2. Checks if a row exists with (from_box_refdes, from_box_channel_id) == to args,
+       but does not delete it.
     """
     path = fileio.path("channel map")
     if not os.path.exists(path):
         raise FileNotFoundError(f"Channel map not found at {path}")
 
     updated_rows = []
-    found_source = False
-    removed_target = False
+    found_from = False
+    found_to = False
 
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         fieldnames = reader.fieldnames
+
         for row in reader:
-            # Case 1: update the source row
+            # Update the FROM row with the TO values
             if (
                 row.get("from_box_refdes") == from_box_refdes
                 and row.get("from_box_channel_id") == from_box_channel_id
             ):
                 row["to_box_refdes"] = to_box_refdes
                 row["to_box_channel_id"] = to_box_channel_id
-                found_source = True
-                updated_rows.append(row)
-                continue
+                found_from = True
 
-            # Case 2: drop the standalone target row
+            # Detect if a row exists with FROM == TO args
             if (
-                not removed_target
-                and row.get("from_box_refdes") == to_box_refdes
+                row.get("from_box_refdes") == to_box_refdes
                 and row.get("from_box_channel_id") == to_box_channel_id
             ):
-                removed_target = True
-                continue
+                found_to = True
 
             updated_rows.append(row)
 
-    # Write updated TSV back
+    # Sanity check prints (optional, remove later if you want quiet)
+    if not found_from:
+        print(f"[WARN] No FROM row found for {from_box_refdes}:{from_box_channel_id}")
+    if not found_to:
+        print(f"[WARN] No TO row found for {to_box_refdes}:{to_box_channel_id}")
+
+    # Write the modified rows back
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
         writer.writerows(updated_rows)
 
-    return {
-        "found_source": found_source,
-        "removed_target": removed_target,
-    }
 
 
