@@ -191,6 +191,24 @@ def map_channel(from_key, to_key):
         writer.writeheader()
         writer.writerows(updated_rows)
 
+def compatible_channel_type_ids(from_key):
+    """
+    Given a (from_box_refdes, from_box_channel_id) tuple,
+    return a list of compatible channel_type_ids.
+    """
+    refdes, ch_id = from_key
+    for row in read_channel_map():
+        if (
+            row.get("from_box_refdes") == refdes
+            and row.get("from_box_channel_id") == ch_id
+        ):
+            return [
+                t.strip()
+                for t in str(row.get("compatible_channel_type_ids", "")).split(",")
+                if t.strip()
+            ]
+    return []
 
+    
 
 
