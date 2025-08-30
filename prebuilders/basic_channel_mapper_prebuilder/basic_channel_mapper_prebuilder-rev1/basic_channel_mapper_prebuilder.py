@@ -35,12 +35,7 @@ for net in unique_nets:
 
             # Perform mapping
             print(f"Mapping {from_key} → {to_key}")
-            system.map_channel(
-                from_box_refdes=from_row["from_box_refdes"],
-                from_box_channel_id=from_row["from_box_channel_id"],
-                to_box_refdes=to_row["from_box_refdes"],
-                to_box_channel_id=to_row["from_box_channel_id"],
-            )
+            system.map_channel(from_key, to_key)
 
             # Mark both as mapped
             mapped_channels.add(from_key)
