@@ -2,42 +2,44 @@ from harnice import system
 
 # Track mapped channels as (box_refdes, channel_id) tuples
 mapped_channels = set()
-
 rows = list(system.read_channel_map())
-unique_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))
+unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))
 
-for net in unique_nets:
-    # all rows belonging to this net
-    net_rows = [r for r in rows if r["merged_net"] == net]
+def map_and_record(from_key, to_key):
+    """Helper: map the two channels and mark them as mapped."""
+    print(f"Mapping {from_key} → {to_key}")
+    system.map_channel(from_key, to_key)
+    mapped_channels.add(from_key)
+    mapped_channels.add(to_key)
 
-    for from_row in net_rows:
-        from_key = (from_row["from_box_refdes"], from_row["from_box_channel_id"])
+# look through one merged net at a time
+for merged_net in unique_merged_nets:
+
+    # look at all channels connected within this net
+    net_channels = [r for r in rows if r["merged_net"] == merged_net]
+
+    for from_channel in net_channels:
+        from_key = (from_channel["from_box_refdes"], from_channel["from_box_channel_id"])
+
+        # don't map a channel if the from has already been mapped
         if from_key in mapped_channels:
-            continue  # already mapped
+            continue
 
-        # find a compatible partner
-        compat_ids = [
-            t.strip()
-            for t in str(from_row["compatible_channel_type_ids"]).split(",")
-            if t.strip()
-        ]
+        compatible_channel_type_ids = system.compatible_channel_type_ids(from_key)
 
-        for to_row in net_rows:
-            if to_row == from_row:
+        for to_channel_candidate in net_channels:
+            # don't map a channel to itself
+            if to_channel_candidate == from_channel:
                 continue
 
-            to_key = (to_row["from_box_refdes"], to_row["from_box_channel_id"])
+            # don't map if the channel type is not compatible
+            if str(to_channel_candidate["channel_type_id"]) not in compatible_channel_type_ids:
+                continue
+
+            # don't map a channel if it's already been mapped
+            to_key = (to_channel_candidate["from_box_refdes"], to_channel_candidate["from_box_channel_id"])
             if to_key in mapped_channels:
-                continue  # already mapped
+                continue
 
-            if str(to_row["channel_type_id"]) not in compat_ids:
-                continue  # incompatible
-
-            # Perform mapping
-            print(f"Mapping {from_key} → {to_key}")
-            system.map_channel(from_key, to_key)
-
-            # Mark both as mapped
-            mapped_channels.add(from_key)
-            mapped_channels.add(to_key)
-            break  # stop after first partner
+            map_and_record(from_key, to_key)
+            break  # stop after first compatible partner
