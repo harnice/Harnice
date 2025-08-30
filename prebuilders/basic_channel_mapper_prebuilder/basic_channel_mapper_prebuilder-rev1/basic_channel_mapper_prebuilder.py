@@ -1,40 +1,40 @@
 from harnice import system
 
-# Take a static snapshot of the channel map
+# Track mapped channels as (box_refdes, channel_id) tuples
+mapped_channels = set()
+
 rows = list(system.read_channel_map())
-mapped_nets = []
+unique_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))
 
-for net in rows:
-    current_net = net["merged_net"]
+for net in unique_nets:
+    # all rows belonging to this net
+    net_rows = [r for r in rows if r["merged_net"] == net]
 
-    # Only process each net once
-    if current_net not in mapped_nets:
-        mapped_nets.append(current_net)
-        continue
+    for from_row in net_rows:
+        from_key = (from_row["from_box_refdes"], from_row["from_box_channel_id"])
+        if from_key in mapped_channels:
+            continue  # already mapped
 
-    # Gather all rows for this net
-    from_rows = [r for r in rows if r["merged_net"] == current_net]
-    mapped_to_channels = set()
+        # find a compatible partner
+        compat_ids = [
+            t.strip()
+            for t in str(from_row["compatible_channel_type_ids"]).split(",")
+            if t.strip()
+        ]
 
-    for from_row in from_rows:
-        for to_row in from_rows:
+        for to_row in net_rows:
             if to_row == from_row:
                 continue
 
-            # Skip if we've already mapped this to_row
-            if (to_row["from_box_refdes"], to_row["from_box_channel_id"]) in mapped_to_channels:
-                continue
+            to_key = (to_row["from_box_refdes"], to_row["from_box_channel_id"])
+            if to_key in mapped_channels:
+                continue  # already mapped
 
-            # Check channel type compatibility
-            compat_ids = [
-                t.strip()
-                for t in str(from_row["compatible_channel_type_ids"]).split(",")
-                if t.strip()
-            ]
             if str(to_row["channel_type_id"]) not in compat_ids:
-                continue
+                continue  # incompatible
 
-            # Call the existing map_channel function
+            # Perform mapping
+            print(f"Mapping {from_key} → {to_key}")
             system.map_channel(
                 from_box_refdes=from_row["from_box_refdes"],
                 from_box_channel_id=from_row["from_box_channel_id"],
@@ -42,7 +42,7 @@ for net in rows:
                 to_box_channel_id=to_row["from_box_channel_id"],
             )
 
-            mapped_to_channels.add(
-                (to_row["from_box_refdes"], to_row["from_box_channel_id"])
-            )
-            break  # stop after first match for this from_row
+            # Mark both as mapped
+            mapped_channels.add(from_key)
+            mapped_channels.add(to_key)
+            break  # stop after first partner
