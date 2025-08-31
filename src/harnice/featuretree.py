@@ -3,28 +3,28 @@ import runpy
 import math
 import json
 import shutil
-import csv
 from harnice import fileio, component_library, instances_list
 
-def runprebuilder(prebuilder_name, supplier):
-    destination_directory=os.path.join(fileio.dirpath("prebuilders"), prebuilder_name)
+def runprebuilder(prebuilder_name, supplier, **kwargs):
+    destination_directory = os.path.join(fileio.dirpath("prebuilders"), prebuilder_name)
     os.makedirs(destination_directory, exist_ok=True)
+
     component_library.pull_item_from_library(
         supplier=supplier,
         lib_subpath="prebuilders",
         mpn=prebuilder_name,
         destination_directory=destination_directory,
         used_rev=None,
-        item_name=prebuilder_name
+        item_name=prebuilder_name,
     )
 
-    #if prebuilder_name is something
-        #make config files in the destination directory
+    script_path = os.path.join(destination_directory, f"{prebuilder_name}.py")
 
-    runpy.run_path(os.path.join(destination_directory, f"{prebuilder_name}.py"), run_name="__main__")
+    # forward **kwargs into the run context
+    runpy.run_path(script_path, run_name="__main__", init_globals=kwargs)
 
 
-def runartifactbuilder(artifact_builder_name, supplier, artifact_id, scale=None, scales=None):
+def runartifactbuilder(artifact_builder_name, supplier, artifact_id, **kwargs):
     artifact_path = os.path.join(fileio.dirpath("artifacts"), f"{artifact_builder_name}-{artifact_id}")
     os.makedirs(artifact_path, exist_ok=True)
 
@@ -34,21 +34,20 @@ def runartifactbuilder(artifact_builder_name, supplier, artifact_id, scale=None,
         mpn=artifact_builder_name,
         destination_directory=artifact_path,
         used_rev=None,
-        item_name=artifact_builder_name
+        item_name=artifact_builder_name,
     )
 
     script_path = os.path.join(artifact_path, f"{artifact_builder_name}.py")
 
-    # Variables to pass into the executed script
+    # always pass the basics, but let kwargs override/extend
     init_globals = {
-        "scale": scale,
-        "scales": scales,
         "artifact_id": artifact_id,
-        "artifact_path": artifact_path
-
+        "artifact_path": artifact_path,
+        **kwargs,  # merges/overrides
     }
 
     runpy.run_path(script_path, run_name="__main__", init_globals=init_globals)
+
 
 def lookup_outputcsys_from_lib_used(lib_name, outputcsys):
     attributes_path = os.path.join(
