@@ -141,11 +141,12 @@ def read_channel_map():
         reader = csv.DictReader(f, delimiter="\t")
         return list(reader)
 
-def map_channel(from_key, to_key):
+def map_channel(from_key, to_key, splice_key=""):
     """
     Updates the channel map:
     1. Finds the row with from_key (tuple: (refdes, channel_id)) and updates its 'to' fields.
     2. Removes the row with to_key (tuple: (refdes, channel_id)).
+    3. Optionally adds splice_key to the from row.
     """
     from_box_refdes, from_box_channel_id = from_key
     to_box_refdes, to_box_channel_id = to_key
@@ -158,35 +159,42 @@ def map_channel(from_key, to_key):
     found_from = False
     removed_to = False
 
+    # Load all rows once
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         fieldnames = reader.fieldnames
+        rows = list(reader)
 
-        for row in reader:
-            if (
-                row.get("from_box_refdes") == from_box_refdes
-                and row.get("from_box_channel_id") == from_box_channel_id
-            ):
-                row["to_box_refdes"] = to_box_refdes
-                row["to_box_channel_id"] = to_box_channel_id
-                found_from = True
-                updated_rows.append(row)
-                continue
-
-            if (
-                row.get("from_box_refdes") == to_box_refdes
-                and row.get("from_box_channel_id") == to_box_channel_id
-            ):
-                removed_to = True
-                continue
-
+    for row in rows:
+        if (
+            row.get("from_box_refdes") == from_box_refdes
+            and row.get("from_box_channel_id") == from_box_channel_id
+        ):
+            # Update FROM row
+            row["to_box_refdes"] = to_box_refdes
+            row["to_box_channel_id"] = to_box_channel_id
+            if splice_key:
+                row["splice_id"] = splice_key
+            found_from = True
             updated_rows.append(row)
+            continue
+
+        if (
+            row.get("from_box_refdes") == to_box_refdes
+            and row.get("from_box_channel_id") == to_box_channel_id
+        ):
+            # Drop TO row entirely
+            removed_to = True
+            continue
+
+        updated_rows.append(row)
 
     if not found_from:
         print(f"[WARN] No FROM row found for {from_key}")
     if not removed_to:
         print(f"[WARN] No TO row found (so nothing removed) for {to_key}")
 
+    # Write back
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
