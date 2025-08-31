@@ -30,13 +30,6 @@ def return_set():
         return set(line.strip() for line in f if line.strip())
 
 
-def remove_set():
-    """Delete the entire set file."""
-    path = fileio.path("mapped channels set")
-    if os.path.exists(path):
-        os.remove(path)
-
-
 def _write(items):
     """Internal: write a set of items to file."""
     path = fileio.path("mapped channels set")
