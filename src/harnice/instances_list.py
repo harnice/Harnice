@@ -57,53 +57,22 @@ def read_instance_rows():
     with open(fileio.path('instances list'), newline='', encoding='utf-8') as f:
         return list(csv.DictReader(f, delimiter='\t'))
 
-def add(instance_name, instance_data):
-    """
-    Adds a new instance to the instances list TSV.
-
-    Args:
-        instance_name (str): The name of the instance to add.
-        instance_data (dict): Dictionary of instance attributes. May include "instance_name".
-
-    Raises:
-        ValueError: If instance_name is missing, already exists, or conflicts with instance_data["instance_name"].
-    
-    Behavior:
-        - Raises ValueError if an instance with the same instance_name already exists.
-        - Raises ValueError if instance_name and instance_data["instance_name"] disagree.
-        - Only writes fields defined in INSTANCES_LIST_COLUMNS.
-        - Missing fields are written as empty strings.
-    """
-    if not instance_name:
-        raise ValueError("Missing required argument: 'instance_name'")
-
-    if "instance_name" in instance_data and instance_data["instance_name"] != instance_name:
-        raise ValueError(f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'")
-
-    instance_data["instance_name"] = instance_name  # Ensure the dict includes the name
-
-    instances = read_instance_rows()
-    if any(row.get("instance_name") == instance_name for row in instances):
-        raise ValueError(f"Instance already exists: '{instance_name}'")
-
-    # Add debug call chain
-    instance_data["debug"] = get_call_chain_str()
-    instance_data["debug_cutoff"] = " "
-
-    with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
-        writer.writerow({key: instance_data.get(key, '') for key in INSTANCES_LIST_COLUMNS})
-
 def add_unless_exists(instance_name, instance_data):
     """
-    Adds an instance to the instances list unless an instance with the same name already exists.
+    Adds a new instance to the instances list TSV, unless one with the same
+    name already exists.
 
     Args:
         instance_name (str): The name of the instance to add.
         instance_data (dict): Dictionary of instance attributes. May include "instance_name".
 
+    Returns:
+        bool: True if the instance already existed (no write performed),
+              False if a new row was written.
+
     Raises:
-        ValueError: If instance_name is missing, or if instance_name and instance_data["instance_name"] disagree.
+        ValueError: If instance_name is missing, or if instance_name and 
+                    instance_data["instance_name"] disagree.
     """
     if not instance_name:
         raise ValueError("Missing required argument: 'instance_name'")
@@ -120,8 +89,14 @@ def add_unless_exists(instance_name, instance_data):
     instance_data["debug_cutoff"] = " "
 
     instances = read_instance_rows()
-    if not any(inst.get("instance_name") == instance_name for inst in instances):
-        add(instance_name, instance_data)
+    if any(row.get("instance_name") == instance_name for row in instances):
+        return True  # Already exists
+
+    with open(fileio.path('instances list'), 'a', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter='\t')
+        writer.writerow({key: instance_data.get(key, '') for key in INSTANCES_LIST_COLUMNS})
+
+    return False  # Newly added
 
 def modify(instance_name, instance_data):
     """
