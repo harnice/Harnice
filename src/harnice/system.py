@@ -190,12 +190,6 @@ def map_channel(from_key, to_key, multi_ch_junction_key=""):
             continue
 
         updated_rows.append(row)
-
-    if not found_from:
-        print(f"[WARN] No FROM row found for {from_key}")
-    if not removed_to:
-        print(f"[WARN] No TO row found (so nothing removed) for {to_key}")
-
     # Write back
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
