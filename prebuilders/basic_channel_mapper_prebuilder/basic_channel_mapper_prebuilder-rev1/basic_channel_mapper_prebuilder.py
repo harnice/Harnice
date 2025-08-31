@@ -1,7 +1,6 @@
-from harnice import system
+from harnice import system, mapped_channels
 
 # Track mapped channels as (box_refdes, channel_id) tuples
-mapped_channels = set()
 rows = list(system.read_channel_map())
 unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))
 
@@ -9,8 +8,8 @@ def map_and_record(from_key, to_key):
     """Helper: map the two channels and mark them as mapped."""
     print(f"Mapping {from_key} → {to_key}")
     system.map_channel(from_key, to_key)
-    mapped_channels.add(from_key)
-    mapped_channels.add(to_key)
+    mapped_channels.append(from_key)
+    mapped_channels.append(to_key)
 
 # look through one merged net at a time
 for merged_net in unique_merged_nets:
@@ -22,7 +21,7 @@ for merged_net in unique_merged_nets:
         from_key = (from_channel["from_box_refdes"], from_channel["from_box_channel_id"])
 
         # don't map a channel if the from has already been mapped
-        if from_key in mapped_channels:
+        if mapped_channels.check(from_key):
             continue
 
         compatible_channel_type_ids = system.compatible_channel_type_ids(from_key)
@@ -38,7 +37,7 @@ for merged_net in unique_merged_nets:
 
             # don't map a channel if it's already been mapped
             to_key = (to_channel_candidate["from_box_refdes"], to_channel_candidate["from_box_channel_id"])
-            if to_key in mapped_channels:
+            if mapped_channels.check(to_key):
                 continue
 
             map_and_record(from_key, to_key)
