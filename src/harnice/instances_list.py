@@ -18,6 +18,7 @@ RECOGNIZED_ITEM_TYPES = {
 }
 
 INSTANCES_LIST_COLUMNS = [
+    'net',
     'instance_name',
     'print_name',
     'bom_line_number',
