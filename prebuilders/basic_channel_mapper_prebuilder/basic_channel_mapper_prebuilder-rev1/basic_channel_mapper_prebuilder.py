@@ -6,7 +6,6 @@ unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]
 
 def map_and_record(from_key, to_key):
     """Helper: map the two channels and mark them as mapped."""
-    print(f"Mapping {from_key} → {to_key}")
     system.map_channel(from_key, to_key)
     mapped_channels.append(from_key)
     mapped_channels.append(to_key)
