@@ -15,7 +15,7 @@ unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]
 # Defaults for globals
 DEFAULTS = {
     #name of the channel where splices are connected
-    "splice_channel_name": "splice",
+    "splice_channel_name": "shield",
 
     # list of channel type ids that are considered splices
     # any channel that has this channel type id will be connected to the added splice_net_name
@@ -44,23 +44,18 @@ for from_channel in rows:
 
     from_key = (from_channel["from_box_refdes"], from_channel["from_box_channel_id"])
     print()
-    print(f"!!!!!!!!! From key: {from_key}")
 
     # don't map a channel if the from has already been mapped
     if mapped_channels.check(from_key):
-        print(f"!!!!!!!!! From key already mapped: part of {mapped_channels.return_set()}")
         continue
 
     # don't map a channel if it's not part of the specified set
     if from_key in from_keys:
-        print(f"********* mapped {from_key}")
         map_and_record(from_key, splice_key)
         continue
 
     # don't map if the channel if it doesn't have the splice_channel_type_id we're looking for
     if str(from_channel["channel_type_id"]) not in [str(x) for x in splice_channel_type_ids]:
-        print(f"!!!!!!!!! From channel not in splice_channel_type_ids: {from_channel['channel_type_id']} not in {splice_channel_type_ids}")
         continue
 
-    print(f"********* mapped {from_key}")
     map_and_record(from_key, splice_key)
