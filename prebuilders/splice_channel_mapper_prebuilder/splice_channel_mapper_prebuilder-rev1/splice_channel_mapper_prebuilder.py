@@ -7,20 +7,20 @@ unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]
 
 """
 Example usage:
-featuretree.runprebuilder("shield_channel_mapper_prebuilder", "public")
+featuretree.runprebuilder("shield_channel_mapper_prebuilder", "public", shield_channel_name = "shield", shield_channel_type_ids = [5])
 """
 
 #---------------------------------
 #name of the channel where shields are connected
-shield_channel_name = "shield"
+#shield_channel_name = "shield"
 
 # list of channel type ids that are considered shields
 # any channel that has this channel type id will be connected to the added shield_net_name
-shield_channel_type_ids = [5]
+#shield_channel_type_ids = [5]
 
 # list of tuples of [[box_refdes, channel_id], ...]
 # any channel in this list will be connected to the added shield_net_name
-from_keys = []
+#from_keys = []
 
 
 def map_and_record(from_key, splice_key):
