@@ -143,14 +143,25 @@ def read_channel_map():
         reader = csv.DictReader(f, delimiter="\t")
         return list(reader)
 
-def map_channel(from_key, to_key, multi_ch_junction_key=""):
+def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
     """
     Updates the channel map:
     1. Finds the row with from_key (tuple: (refdes, channel_id)) and updates its 'to' fields.
-    2. Removes the row with to_key (tuple: (refdes, channel_id)).
+    2. Removes the row with to_key (tuple: (refdes, channel_id)), unless to_key is [None, None].
     3. Optionally adds multi_ch_junction_key to the from row.
+
+    Args:
+        from_key: [refdes, channel_id] (required)
+        to_key: [refdes, channel_id] or [None, None] (default: [None, None])
+        multi_ch_junction_key: optional junction ID
+
+    Raises:
+        ValueError if from_key is not found in the channel map.
+        ValueError if non-empty to_key is not found in the channel map.
     """
     from_device_refdes, from_device_channel_id = from_key
+    if to_key is None:
+        to_key = [None, None]
     to_device_refdes, to_device_channel_id = to_key
 
     path = fileio.path("channel map")
@@ -159,7 +170,8 @@ def map_channel(from_key, to_key, multi_ch_junction_key=""):
 
     updated_rows = []
     found_from = False
-    removed_to = False
+    found_to = False
+    require_to = bool(to_device_refdes or to_device_channel_id)  # only enforce if non-empty
 
     # Load all rows once
     with open(path, "r", encoding="utf-8") as f:
@@ -173,8 +185,8 @@ def map_channel(from_key, to_key, multi_ch_junction_key=""):
             and row.get("from_device_channel_id") == from_device_channel_id
         ):
             # Update FROM row
-            row["to_device_refdes"] = to_device_refdes
-            row["to_device_channel_id"] = to_device_channel_id
+            row["to_device_refdes"] = to_device_refdes or ""
+            row["to_device_channel_id"] = to_device_channel_id or ""
             if multi_ch_junction_key:
                 row["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
@@ -182,14 +194,21 @@ def map_channel(from_key, to_key, multi_ch_junction_key=""):
             continue
 
         if (
-            row.get("from_device_refdes") == to_device_refdes
+            require_to
+            and row.get("from_device_refdes") == to_device_refdes
             and row.get("from_device_channel_id") == to_device_channel_id
         ):
             # Drop TO row entirely
-            removed_to = True
+            found_to = True
             continue
 
         updated_rows.append(row)
+
+    # Explicit error checks
+    if not found_from:
+        raise ValueError(f"from_key {from_key} not found in channel map")
+    if require_to and not found_to:
+        raise ValueError(f"to_key {to_key} not found in channel map")
 
     # Write back
     with open(path, "w", newline="", encoding="utf-8") as f:
