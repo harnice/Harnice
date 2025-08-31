@@ -3,7 +3,9 @@ import json
 from harnice import fileio
 import runpy
 
-signals_list_instructions_default = """
+from harnice.system import system_feature_tree_default
+
+signals_list_feature_tree_default = """
 from harnice import icd
 
 ch_type_ids = {
@@ -71,15 +73,15 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 def render():
     fileio.verify_revision_structure()
 
-    # Create signals list instructions file if no list.
+    # Create signals list feature tree file if no list.
     if not os.path.exists(fileio.path("signals list")):
-        with open(fileio.path("signals list instructions"), "w", encoding="utf-8") as f:
-            f.write(signals_list_instructions_default)
+        with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
+            f.write(signals_list_feature_tree_default)
 
-    # Run the signals list instructions script
-    if os.path.exists(fileio.path("signals list instructions")):
-        runpy.run_path(fileio.path("signals list instructions"))
-        print("Successfully rebuilt signals list per instructions.")
+    # Run the signals list feature tree script
+    if os.path.exists(fileio.path("feature tree")):
+        runpy.run_path(fileio.path("feature tree"))
+        print("Successfully rebuilt signals list per feature tree.")
 
     # === Validation placeholders ===
     if not os.path.exists(fileio.path("signals list")):

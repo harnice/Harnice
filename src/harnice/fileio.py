@@ -120,12 +120,12 @@ def harnice_file_structure():
     elif product_type == "device":
         return {
             f"{partnumber("pn-rev")}.kicad_sym":"kicad sym",
-            f"{partnumber("pn-rev")}-signals-list-instructions.py":"signals list instructions",
+            f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
             f"{partnumber("pn-rev")}-signals-list.tsv":"signals list"
         }
     elif product_type == "system":
         return {
-            f"{partnumber("pn-rev")}-system-render-instructions.py":"system render instructions",
+            f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
             f"{partnumber("pn-rev")}-netlist.json":"netlist",
             f"{partnumber("pn-rev")}-chmap.tsv":"channel map",
             f"{partnumber("pn-rev")}-bom.tsv":"bom",
