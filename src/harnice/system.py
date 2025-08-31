@@ -12,7 +12,7 @@ CHANNEL_MAP_COLUMNS = [
     "from_box_channel_id",
     "to_box_refdes",
     "to_box_channel_id",
-    "splice_id"
+    "multi_ch_junction_id"
 ]
 
 system_render_instructions_default = """from harnice import featuretree, system
@@ -143,12 +143,12 @@ def read_channel_map():
         reader = csv.DictReader(f, delimiter="\t")
         return list(reader)
 
-def map_channel(from_key, to_key, splice_key=""):
+def map_channel(from_key, to_key, multi_ch_junction_key=""):
     """
     Updates the channel map:
     1. Finds the row with from_key (tuple: (refdes, channel_id)) and updates its 'to' fields.
     2. Removes the row with to_key (tuple: (refdes, channel_id)).
-    3. Optionally adds splice_key to the from row.
+    3. Optionally adds multi_ch_junction_key to the from row.
     """
     from_box_refdes, from_box_channel_id = from_key
     to_box_refdes, to_box_channel_id = to_key
@@ -175,8 +175,8 @@ def map_channel(from_key, to_key, splice_key=""):
             # Update FROM row
             row["to_box_refdes"] = to_box_refdes
             row["to_box_channel_id"] = to_box_channel_id
-            if splice_key:
-                row["splice_id"] = splice_key
+            if multi_ch_junction_key:
+                row["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
             updated_rows.append(row)
             continue
