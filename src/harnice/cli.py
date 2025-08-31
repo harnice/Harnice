@@ -4,7 +4,7 @@ from harnice import (
     fileio,
     system
 )
-from harnice.commands import render, box
+from harnice.commands import render, device
 
 def main():
     try:
@@ -33,8 +33,8 @@ def main():
             render.part()
         elif render_type == "flagnote":
             render.flagnote()
-        elif render_type == "box":
-            box.render()
+        elif render_type == "device":
+            device.render()
         elif render_type in {"tblock", "titleblock"}:
             render.tblock()
         else:
