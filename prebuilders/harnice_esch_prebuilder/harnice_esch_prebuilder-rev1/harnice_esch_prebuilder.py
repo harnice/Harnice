@@ -18,7 +18,7 @@ with open(path("harness yaml"), "r", encoding="utf-8") as f:
 
 # Iterate over the circuits and their associated ports
 for circuit_name, ports in harness_yaml.items():
-    instances_list.add(circuit_name, {
+    instances_list.add_unless_exists(circuit_name, {
         "item_type": "Circuit"
     })
     port_counter = 0
@@ -167,7 +167,7 @@ for instance in instances_list.read_instance_rows():
         mpn = instance.get("mpn")
         if re.fullmatch(r"D38999_26ZA.+", mpn):
             if instance.get("print_name") not in ["P3", "J1"]:
-                instances_list.add(f"{instance_name}.bs",{
+                instances_list.add_unless_exists(f"{instance_name}.bs",{
                     "mpn": "M85049-88_9Z03",
                     "print_name": f"{instances_list.attribute_of(instance_name, "print_name")}.bs",
                     "bom_line_number": "True",
