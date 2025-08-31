@@ -41,7 +41,7 @@
             }
         }
     },
-    "box_setup": {
+    "device_setup": {
         "suppliers": {
             "channel_type_id": "public"
         }

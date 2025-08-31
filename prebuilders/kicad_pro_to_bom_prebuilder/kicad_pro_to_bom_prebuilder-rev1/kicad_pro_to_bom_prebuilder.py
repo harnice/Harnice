@@ -8,7 +8,7 @@ prebuilder_mpn = "kicad_pro_to_bom"
 BOM_FIELDS = ["Reference", "MFG", "MPN", "supplier", "supplier_subpath", "rev"]
 
 # output headers (labels in TSV)
-BOM_LABELS = ["box_ref_des", "MFG", "MPN", "supplier", "supplier_subpath", "rev"]
+BOM_LABELS = ["device_ref_des", "MFG", "MPN", "supplier", "supplier_subpath", "rev"]
 
 def path(target_value: str) -> str:
     if target_value == "kicad sch":
