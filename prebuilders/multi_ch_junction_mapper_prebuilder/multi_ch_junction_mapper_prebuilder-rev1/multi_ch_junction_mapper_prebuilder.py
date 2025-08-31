@@ -34,7 +34,7 @@ for k, v in DEFAULTS.items():
 
 def map_and_record(from_key, multi_ch_junction_key):
     """Helper: map the two channels and mark them as mapped."""
-    system.map_channel(from_key, ["",""], multi_ch_junction_key=multi_ch_junction_key)
+    system.map_channel(from_key, [None,None], multi_ch_junction_key=multi_ch_junction_key)
     mapped_channels.append(from_key)
 #---------------------------------
 
