@@ -8,10 +8,10 @@ CHANNEL_MAP_COLUMNS = [
     "merged_net",
     "channel_type_id",
     "compatible_channel_type_ids",
-    "from_box_refdes",
-    "from_box_channel_id",
-    "to_box_refdes",
-    "to_box_channel_id",
+    "from_device_refdes",
+    "from_device_channel_id",
+    "to_device_refdes",
+    "to_device_channel_id",
     "multi_ch_junction_id"
 ]
 
@@ -27,7 +27,7 @@ featuretree.runprebuilder("kicad_pro_to_bom_prebuilder", "public")
 #===========================================================================
 #                   LIBRARY IMPORTING
 #===========================================================================
-system.pull_boxes_from_library()
+system.pull_devices_from_library()
 
 
 #===========================================================================
@@ -51,28 +51,28 @@ def read_bom_rows():
         return list(reader)
 
 
-def pull_boxes_from_library():
+def pull_devices_from_library():
     with open(fileio.path('channel map'), 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter='\t')
         writer.writeheader()
         writer.writerows([])
 
-    imported_boxes = []
+    imported_devices = []
 
     for refdes in read_bom_rows():
-        if refdes not in imported_boxes:
-            #import box from library
+        if refdes not in imported_devices:
+            #import device from library
 
             component_library.pull_item_from_library(
                 supplier = refdes["supplier"],
-                lib_subpath="boxes/"+refdes["supplier_subpath"],
+                lib_subpath="devices/"+refdes["supplier_subpath"],
                 mpn=refdes["MPN"],
-                destination_directory=os.path.join(fileio.dirpath("imported_boxes"), refdes["box_ref_des"]),
+                destination_directory=os.path.join(fileio.dirpath("imported_devices"), refdes["device_ref_des"]),
                 used_rev=None,
-                item_name=refdes["box_ref_des"],
+                item_name=refdes["device_ref_des"],
                 quiet=False
             )
-        imported_boxes.append(refdes)
+        imported_devices.append(refdes)
 
 def read_signals_list(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -89,13 +89,13 @@ def new_channel_map():
     netlist = read_netlist()   # load once
 
     for refdes in read_bom_rows():
-        box_ref = refdes.get("box_ref_des")
-        if not box_ref:
+        device_ref = refdes.get("device_ref_des")
+        if not device_ref:
             continue
 
         signals_path = os.path.join(
-            fileio.dirpath("imported_boxes"),
-            box_ref,
+            fileio.dirpath("imported_devices"),
+            device_ref,
             f"{refdes.get('MPN')}-{refdes.get('rev')}-signals-list.tsv"
         )
         if not os.path.exists(signals_path):
@@ -110,7 +110,7 @@ def new_channel_map():
             if not channel_id:
                 continue
 
-            connector_name_of_channel = f"{box_ref}:{signal.get('connector_name', '').strip()}"
+            connector_name_of_channel = f"{device_ref}:{signal.get('connector_name', '').strip()}"
             merged_net = next(
                 (net for net, conns in netlist.items() if connector_name_of_channel in conns),
                 None
@@ -120,12 +120,12 @@ def new_channel_map():
                 "merged_net": merged_net,
                 "channel_type_id":  signal.get("channel_type_id", "").strip(),
                 "compatible_channel_type_ids":  signal.get("compatible_channel_type_ids", "").strip(),
-                "from_box_refdes": box_ref,
-                "from_box_channel_id": channel_id
+                "from_device_refdes": device_ref,
+                "from_device_channel_id": channel_id
             }
 
             # create a uniqueness key from row values
-            key = (row["merged_net"], row["from_box_refdes"], row["from_box_channel_id"])
+            key = (row["merged_net"], row["from_device_refdes"], row["from_device_channel_id"])
 
             if key not in seen:
                 channel_map.append(row)
@@ -150,8 +150,8 @@ def map_channel(from_key, to_key, multi_ch_junction_key=""):
     2. Removes the row with to_key (tuple: (refdes, channel_id)).
     3. Optionally adds multi_ch_junction_key to the from row.
     """
-    from_box_refdes, from_box_channel_id = from_key
-    to_box_refdes, to_box_channel_id = to_key
+    from_device_refdes, from_device_channel_id = from_key
+    to_device_refdes, to_device_channel_id = to_key
 
     path = fileio.path("channel map")
     if not os.path.exists(path):
@@ -169,12 +169,12 @@ def map_channel(from_key, to_key, multi_ch_junction_key=""):
 
     for row in rows:
         if (
-            row.get("from_box_refdes") == from_box_refdes
-            and row.get("from_box_channel_id") == from_box_channel_id
+            row.get("from_device_refdes") == from_device_refdes
+            and row.get("from_device_channel_id") == from_device_channel_id
         ):
             # Update FROM row
-            row["to_box_refdes"] = to_box_refdes
-            row["to_box_channel_id"] = to_box_channel_id
+            row["to_device_refdes"] = to_device_refdes
+            row["to_device_channel_id"] = to_device_channel_id
             if multi_ch_junction_key:
                 row["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
@@ -182,8 +182,8 @@ def map_channel(from_key, to_key, multi_ch_junction_key=""):
             continue
 
         if (
-            row.get("from_box_refdes") == to_box_refdes
-            and row.get("from_box_channel_id") == to_box_channel_id
+            row.get("from_device_refdes") == to_device_refdes
+            and row.get("from_device_channel_id") == to_device_channel_id
         ):
             # Drop TO row entirely
             removed_to = True
@@ -204,14 +204,14 @@ def map_channel(from_key, to_key, multi_ch_junction_key=""):
 
 def compatible_channel_type_ids(from_key):
     """
-    Given a (from_box_refdes, from_box_channel_id) tuple,
+    Given a (from_device_refdes, from_device_channel_id) tuple,
     return a list of compatible channel_type_ids.
     """
     refdes, ch_id = from_key
     for row in read_channel_map():
         if (
-            row.get("from_box_refdes") == refdes
-            and row.get("from_box_channel_id") == ch_id
+            row.get("from_device_refdes") == refdes
+            and row.get("from_device_channel_id") == ch_id
         ):
             return [
                 t.strip()

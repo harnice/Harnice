@@ -117,7 +117,7 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}-drawing.svg":"drawing",
             f"{partnumber("pn-rev")}-attributes.json":"attributes"
         }
-    elif product_type == "box":
+    elif product_type == "device":
         return {
             f"{partnumber("pn-rev")}.kicad_sym":"kicad sym",
             f"{partnumber("pn-rev")}-signals-list-instructions.py":"signals list instructions",
@@ -131,7 +131,7 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}-bom.tsv":"bom",
             "mapped_channels.txt":"mapped channels set",
             "prebuilders":{},
-            "imported_boxes":{}
+            "imported_devices":{}
         }
 
 def generate_structure():
