@@ -15,7 +15,7 @@ CHANNEL_MAP_COLUMNS = [
     "multi_ch_junction_id"
 ]
 
-system_render_instructions_default = """from harnice import featuretree, system
+system_feature_tree_default = """from harnice import featuretree, system
 
 #===========================================================================
 #                   KICAD PROCESSING
@@ -39,11 +39,11 @@ featuretree.runprebuilder("basic_channel_mapper_prebuilder", "public")
 
 def render():
     fileio.verify_revision_structure()
-    if not os.path.exists(fileio.path("system render instructions")):
-        with open(fileio.path("system render instructions"), "w", encoding="utf-8") as f:
-            f.write(system_render_instructions_default)
+    if not os.path.exists(fileio.path("feature tree")):
+        with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
+            f.write(system_feature_tree_default)
 
-    runpy.run_path(fileio.path("system render instructions"))
+    runpy.run_path(fileio.path("feature tree"))
 
 def read_bom_rows():
     with open(fileio.path("bom"), "r", encoding="utf-8") as f:
