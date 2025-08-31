@@ -12,6 +12,7 @@ CHANNEL_MAP_COLUMNS = [
     "from_box_channel_id",
     "to_box_refdes",
     "to_box_channel_id",
+    "splice_id"
 ]
 
 system_render_instructions_default = """from harnice import featuretree, system
