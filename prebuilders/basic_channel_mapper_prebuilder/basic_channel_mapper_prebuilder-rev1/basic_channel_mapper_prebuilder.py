@@ -1,6 +1,6 @@
 from harnice import system, mapped_channels
 
-# Track mapped channels as (box_refdes, channel_id) tuples
+# Track mapped channels as (device_refdes, channel_id) tuples
 rows = list(system.read_channel_map())
 unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))
 
@@ -17,7 +17,7 @@ for merged_net in unique_merged_nets:
     net_channels = [r for r in rows if r["merged_net"] == merged_net]
 
     for from_channel in net_channels:
-        from_key = (from_channel["from_box_refdes"], from_channel["from_box_channel_id"])
+        from_key = (from_channel["from_device_refdes"], from_channel["from_device_channel_id"])
 
         # don't map a channel if the from has already been mapped
         if mapped_channels.check(from_key):
@@ -35,7 +35,7 @@ for merged_net in unique_merged_nets:
                 continue
 
             # don't map a channel if it's already been mapped
-            to_key = (to_channel_candidate["from_box_refdes"], to_channel_candidate["from_box_channel_id"])
+            to_key = (to_channel_candidate["from_device_refdes"], to_channel_candidate["from_device_channel_id"])
             if mapped_channels.check(to_key):
                 continue
 

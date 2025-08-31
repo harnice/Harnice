@@ -7,7 +7,7 @@ featuretree.runprebuilder("multi_ch_junction_mapper_prebuilder", "public", multi
 
 from harnice import system, mapped_channels
 
-# Track mapped channels as (box_refdes, channel_id) tuples
+# Track mapped channels as (device_refdes, channel_id) tuples
 rows = list(system.read_channel_map())
 unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))
 
@@ -21,7 +21,7 @@ DEFAULTS = {
     # any channel that has this channel type id will be connected to the added multi_ch_junction_net_name
     "multi_ch_junction_type_ids": [5],
 
-    # list of tuples of [[box_refdes, channel_id], ...]
+    # list of tuples of [[device_refdes, channel_id], ...]
     # any channel in this list will be connected to the added multi_ch_junction_net_name
     "from_keys": []
 }
@@ -41,7 +41,7 @@ def map_and_record(from_key, multi_ch_junction_key):
 for from_channel in rows:
     multi_ch_junction_key = f"{from_channel["merged_net"]}-{multi_ch_junction_name}"
 
-    from_key = (from_channel["from_box_refdes"], from_channel["from_box_channel_id"])
+    from_key = (from_channel["from_device_refdes"], from_channel["from_device_channel_id"])
     
     # don't map a channel if the from has already been mapped
     if mapped_channels.check(from_key):
