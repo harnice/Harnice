@@ -34,7 +34,6 @@ for k, v in DEFAULTS.items():
 
 def map_and_record(from_key, multi_ch_junction_key):
     """Helper: map the two channels and mark them as mapped."""
-    print(f"Mapping {from_key} → {multi_ch_junction_key}")
     system.map_channel(from_key, ["",""], multi_ch_junction_key=multi_ch_junction_key)
     mapped_channels.append(from_key)
 #---------------------------------
@@ -43,8 +42,7 @@ for from_channel in rows:
     multi_ch_junction_key = f"{from_channel["merged_net"]}-{multi_ch_junction_name}"
 
     from_key = (from_channel["from_box_refdes"], from_channel["from_box_channel_id"])
-    print()
-
+    
     # don't map a channel if the from has already been mapped
     if mapped_channels.check(from_key):
         continue
