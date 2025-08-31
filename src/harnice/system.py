@@ -1,4 +1,4 @@
-from harnice import fileio, component_library
+from harnice import fileio, component_library, mapped_channels
 import runpy
 import os
 import csv
@@ -135,6 +135,8 @@ def new_channel_map():
         writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(channel_map)
+
+    mapped_channels.new_set()
 
 def read_channel_map():
     with open(fileio.path("channel map"), "r", encoding="utf-8") as f:
