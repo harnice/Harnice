@@ -2,7 +2,7 @@ import os
 import json
 import math
 from collections import defaultdict
-from harnice import svg_outputs, flagnotes, rev_history, svg_utils, instances_list, fileio
+from harnice import flagnotes, svg_utils, instances_list, fileio
 
 artifact_mpn = "standard_harnice_formboard"
 

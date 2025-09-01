@@ -1,6 +1,6 @@
 import os
 import csv
-from harnice import instances_list, fileio, svg_outputs
+from harnice import instances_list, fileio
 
 #=============== PATHS ===============
 def path(target_value):
