@@ -1,4 +1,4 @@
-channel	channel_type_id	compatible_channel_type_ids	signal	connector_name	connector_mpn	contact	compatible_channel_type_ids
-out1	2	"['pos', 'neg']"	pos	J1	XLR3F	2	1
-out1	2	"['pos', 'neg']"	neg	J1	XLR3F	3	1
-out1-shield	5	['chassis']	shield	J1	XLR3F	1	5
+channel	channel_type_id	signal	connector_name	connector_mpn	contact	compatible_channel_type_ids
+out1	7	pos	J1	XLR3F	2	6
+out1	7	neg	J1	XLR3F	3	6
+out1	7	shield	J1	XLR3F	1	6
