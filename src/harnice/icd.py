@@ -9,10 +9,12 @@ SIGNALS_HEADERS = [
     "channel",
     "signal",
     "connector_name",
-    "contact"
-    "channel_type_id",
-    "channel_type_id_supplier",
+    "contact",
     "connector_mpn",
+    "channel_type_id",
+    "channel_type_id_status",
+    "channel_type_id_description",
+    "compatible_channel_type_ids",
 ]
 
 def new_signals_list():
