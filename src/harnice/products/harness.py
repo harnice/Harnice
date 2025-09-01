@@ -10,7 +10,7 @@ from harnice import (
 
 harness_feature_tree_default = """from harnice import (
     featuretree_utils, instances_list, component_library,
-    flagnote_utils, formboard, rev_history, svg_utils
+    flagnote_utils, formboard_utils, rev_history, svg_utils
 )
 
 #===========================================================================
@@ -59,11 +59,11 @@ featuretree_utils.update_translate_content()
 #===========================================================================
 #                   UPDATE FORMBOARD DATA
 #===========================================================================
-formboard.validate_nodes()
+formboard_utils.validate_nodes()
 
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Conductor":
-        formboard.map_instance_to_segments(instance.get("instance_name"))
+        formboard_utils.map_instance_to_segments(instance.get("instance_name"))
 
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Conductor":
@@ -84,8 +84,8 @@ for instance in instances_list.read_instance_rows():
                     cable_length = child_length
         instances_list.modify(instance.get("instance_name"), {"length": cable_length})
 
-formboard.generate_node_coordinates()
-formboard.make_segment_drawings()
+formboard_utils.generate_node_coordinates()
+formboard_utils.make_segment_drawings()
 
 #===========================================================================
 #                   ASSIGN BOM LINE NUMBERS
@@ -244,7 +244,7 @@ import runpy
 
 from harnice import (
     fileio, instances_list, component_library,
-    flagnote_utils, formboard, rev_history, svg_utils, featuretree_utils
+    flagnote_utils, formboard_utils, rev_history, svg_utils, featuretree_utils
 )
 
 #===========================================================================
