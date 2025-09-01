@@ -4,14 +4,10 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import random
 import math
-import runpy
-import re
+
 from harnice import (
-    instances_list,
     svg_utils,
-    rev_history,
-    fileio,
-    cli
+    fileio
 )
 
 def render():

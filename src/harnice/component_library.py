@@ -1,18 +1,11 @@
 import xml.etree.ElementTree as ET
-import math
-import xml.dom.minidom
 import os
 import csv
-import json
 import re
-from dotenv import load_dotenv, dotenv_values
-from os.path import basename
-from inspect import currentframe
+from dotenv import load_dotenv
 import shutil
-import filecmp
 from harnice import(
     fileio,
-    rev_history,
     instances_list
 )
 

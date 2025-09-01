@@ -1,4 +1,4 @@
-from harnice import fileio, component_library, mapped_channels
+from harnice import fileio
 import runpy
 import os
 

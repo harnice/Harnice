@@ -1,19 +1,12 @@
 import os
 import os.path
-import json
 import datetime
-import subprocess
 import shutil
-from os.path import basename
-from inspect import currentframe
-import xml.etree.ElementTree as ET
 import re
 import csv
-from dotenv import load_dotenv, dotenv_values
 from harnice import(
     rev_history,
-    cli,
-    component_library
+    cli
 )
 
 #standard punctuation:

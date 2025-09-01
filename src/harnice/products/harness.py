@@ -9,7 +9,7 @@ from harnice import (
 )
 
 harness_feature_tree_default = """from harnice import (
-    featuretree_utils, instances_list, component_library, svg_outputs,
+    featuretree_utils, instances_list, component_library,
     flagnotes, formboard, rev_history, svg_utils
 )
 
@@ -243,7 +243,7 @@ import re
 import runpy
 
 from harnice import (
-    fileio, instances_list, component_library, svg_outputs,
+    fileio, instances_list, component_library,
     flagnotes, formboard, rev_history, svg_utils, featuretree_utils
 )
 

@@ -1,5 +1,4 @@
 from harnice import fileio, component_library, mapped_channels
-import runpy
 import os
 import csv
 import json
