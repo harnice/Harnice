@@ -15,7 +15,7 @@ CHANNEL_MAP_COLUMNS = [
     "multi_ch_junction_id"
 ]
 
-system_feature_tree_default = """from harnice import featuretree, system
+system_feature_tree_default = """from harnice import featuretree, system, instances_list
 
 #===========================================================================
 #                   KICAD PROCESSING
@@ -35,6 +35,12 @@ system.pull_devices_from_library()
 #===========================================================================
 system.new_channel_map()
 featuretree.runprebuilder("basic_channel_mapper_prebuilder", "public")
+
+#===========================================================================
+#                   INSTANCES LIST
+#===========================================================================
+instances_list.make_new_list()
+instances_list.chmap_to_circuits()
 """
 
 def render():
@@ -234,6 +240,8 @@ def compatible_channel_type_ids(from_key):
             ]
     return []
 
-    
-
-
+def mpn_of_device_refdes(refdes):
+    for row in read_bom_rows():
+        if row.get("device_ref_des") == refdes:
+            return row.get("MFG"), row.get("MPN"), row.get("rev")
+    return None, None, None

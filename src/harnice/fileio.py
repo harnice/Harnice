@@ -129,6 +129,7 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}-netlist.json":"netlist",
             f"{partnumber("pn-rev")}-chmap.tsv":"channel map",
             f"{partnumber("pn-rev")}-bom.tsv":"bom",
+            f"{partnumber("pn-rev")}-instances_list.tsv":"instances list",
             "mapped_channels.txt":"mapped channels set",
             "prebuilders":{},
             "imported_devices":{}
