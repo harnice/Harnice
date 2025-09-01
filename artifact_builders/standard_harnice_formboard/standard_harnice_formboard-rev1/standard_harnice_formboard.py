@@ -2,7 +2,7 @@ import os
 import json
 import math
 from collections import defaultdict
-from harnice import svg_outputs, flagnotes, rev_history, svg_utils, instances_list, fileio
+from harnice import svg_utils, instances_list, fileio, flagnote_utils
 
 artifact_mpn = "standard_harnice_formboard"
 
@@ -73,7 +73,7 @@ instances = instances_list.read_instance_rows()
 printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
 
 if "Flagnote" in printable_item_types:
-    flagnotes.make_note_drawings(path("flagnotes"))
+    flagnote_utils.make_note_drawings(path("flagnotes"))
 
 rotation = 0 #TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
 if rotation == "":
@@ -91,7 +91,7 @@ for instance in instances:
 content_lines = []
 #TODO: fix hide stuff
 #formboard = page_setup_contents["formboards"].get(formboard_name, {})
-hide_filters = {} #formboard.get("hide_instances", {})
+hide_filters = {} #formboard_utils.get("hide_instances", {})
 
 for item_type, items in grouped_instances.items():
     content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
