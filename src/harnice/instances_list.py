@@ -3,7 +3,7 @@ import os
 import inspect
 from harnice import (
     fileio,
-    system,
+    system_utils,
     icd
 )
 
@@ -263,7 +263,7 @@ def chmap_to_circuits():
     """
     
     circuit_id = 0
-    for mapped_channel in system.read_channel_map():
+    for mapped_channel in system_utils.read_channel_map():
         from_key = (mapped_channel.get("from_device_refdes"), mapped_channel.get("from_device_channel_id"))
         to_key   = (mapped_channel.get("to_device_refdes"), mapped_channel.get("to_device_channel_id"))
         splice   = mapped_channel.get("splice_key")
@@ -279,8 +279,8 @@ def chmap_to_circuits():
         to_device_refdes, to_channel_id = to_key
 
         # Look up the device MPN from its refdes the bom
-        from_device_mfg, from_device_mpn, from_device_rev = system.mpn_of_device_refdes(from_device_refdes)
-        to_device_mfg, to_device_mpn, to_device_rev = system.mpn_of_device_refdes(to_device_refdes)
+        from_device_mfg, from_device_mpn, from_device_rev = system_utils.mpn_of_device_refdes(from_device_refdes)
+        to_device_mfg, to_device_mpn, to_device_rev = system_utils.mpn_of_device_refdes(to_device_refdes)
 
         # Find the device signals list
         from_device_signals_list_path = os.path.join(fileio.dirpath('imported_devices'), from_device_refdes, f"{from_device_mpn}-{from_device_rev}-signals-list.tsv")

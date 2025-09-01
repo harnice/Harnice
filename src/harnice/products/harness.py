@@ -1,31 +1,274 @@
-import os
-import json
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
-import random
-import math
+from dotenv import load_dotenv
 import runpy
-import re
+import os
 from harnice import (
     instances_list,
-    svg_utils,
     rev_history,
     fileio,
     cli
 )
 
-def render():
+harness_feature_tree_default = """from harnice import (
+    featuretree, instances_list, component_library, svg_outputs,
+    flagnotes, formboard, rev_history, svg_utils
+)
+
+#===========================================================================
+#                   IMPORT PARTS FROM LIBRARY
+#===========================================================================
+print()
+print("Importing parts from library")
+print(f'{"ITEM NAME":<24}  STATUS')
+
+for instance in instances_list.read_instance_rows():
+    instance_name = instance.get("instance_name")
+    mpn = instance.get("mpn")
+
+    if instance.get("item_type") in ["Connector", "Backshell"]:
+        if instance_name not in ["X100"]:
+            if mpn not in ["TXPA20"]:
+                component_library.pull_part(instance_name)
+
+#===========================================================================
+#                   LOCATE PARTS PER COORDINATE SYSTEMS
+#===========================================================================
+for instance in instances_list.read_instance_rows():
+    parent_csys = None
+    parent_csys_outputcsys_name = None
+
+    if instance.get("item_type") == "Connector":
+        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".bs")
+        parent_csys_outputcsys_name = "connector"
+        if parent_csys is None:
+            parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+            parent_csys_outputcsys_name = "origin"
+
+    elif instance.get("item_type") == "Backshell":
+        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+        parent_csys_outputcsys_name = "origin"
+    else:
+        continue
+
+    instances_list.modify(instance.get("instance_name"), {
+        "parent_csys_instance_name": parent_csys,
+        "parent_csys_outputcsys_name": parent_csys_outputcsys_name
+    })
+
+featuretree.update_translate_content()
+
+#===========================================================================
+#                   UPDATE FORMBOARD DATA
+#===========================================================================
+formboard.validate_nodes()
+
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Conductor":
+        formboard.map_instance_to_segments(instance.get("instance_name"))
+
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Conductor":
+        conductor_length = 0
+        for instance2 in instances_list.read_instance_rows():
+            if instance2.get("parent_instance") == instance.get("instance_name"):
+                if instance2.get("length", "").strip():
+                    conductor_length += int(instance2.get("length").strip())
+        instances_list.modify(instance.get("instance_name"), {"length": conductor_length})
+
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Cable":
+        cable_length = 0
+        for instance2 in instances_list.read_instance_rows():
+            if instance2.get("parent_instance") == instance.get("instance_name"):
+                child_length = int(instance2.get("length", "").strip())
+                if child_length > cable_length:
+                    cable_length = child_length
+        instances_list.modify(instance.get("instance_name"), {"length": cable_length})
+
+formboard.generate_node_coordinates()
+formboard.make_segment_drawings()
+
+#===========================================================================
+#                   ASSIGN BOM LINE NUMBERS
+#===========================================================================
+instances_list.assign_bom_line_numbers()
+
+#===========================================================================
+#                   ASSIGN FLAGNOTES
+#===========================================================================
+flagnote_counter = 1
+buildnote_counter = 1
+
+flagnotes.ensure_manual_list_exists()
+for manual_note in flagnotes.read_manual_list():
+    affected_list = manual_note.get("affectedinstances", "").strip().split(",")
+    for affected in affected_list:
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": manual_note.get("note_type"),
+            "mpn": manual_note.get("shape"),
+            "supplier": manual_note.get("shape_supplier"),
+            "bubble_text": buildnote_counter,
+            "parent_instance": affected,
+            "cluster": instances_list.attribute_of(affected, "cluster"),
+            "parent_csys_instance_name": affected,
+            "note_text": manual_note.get("note_text")
+        })
+        flagnote_counter += 1
+    if manual_note.get("note_type") == "buildnote":
+        buildnote_counter += 1
+
+for rev_row in flagnotes.read_revhistory():
+    affected_raw = rev_row.get("affectedinstances", "").strip()
+    if affected_raw:
+        for affected in [a.strip() for a in affected_raw.split(",") if a.strip()]:
+            instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+                "item_type": "Flagnote",
+                "note_type": "rev_change_callout",
+                "mpn": "rev_change_callout",
+                "supplier": "public",
+                "bubble_text": rev_row.get("rev"),
+                "parent_instance": affected,
+                "cluster": instances_list.attribute_of(affected, "cluster"),
+                "parent_csys_instance_name": affected
+            })
+            flagnote_counter += 1
+
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") in ["Contact", "Cable"]:
+        continue
+    if instance.get("bom_line_number") != "":
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": "bom_item",
+            "mpn": "bom_item",
+            "supplier": "public",
+            "bubble_text": instance.get("bom_line_number"),
+            "parent_instance": instance.get("instance_name"),
+            "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
+            "parent_csys_instance_name": instance.get("instance_name")
+        })
+        flagnote_counter += 1
+
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") in ["Connector", "Backshell"]:
+        bubble_text = instance.get("print_name") or instance.get("instance_name")
+        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            "item_type": "Flagnote",
+            "note_type": "part_name",
+            "mpn": "part_name",
+            "supplier": "public",
+            "bubble_text": bubble_text,
+            "parent_instance": instance.get("instance_name"),
+            "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
+            "parent_csys_instance_name": instance.get("instance_name")
+        })
+        flagnote_counter += 1
+
+contact_flagnote_conversion_happened = False
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Flagnote":
+        if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
+            instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+                "item_type": "Flagnote",
+                "note_type": "buildnote",
+                "mpn": "buildnote",
+                "supplier": "public",
+                "bubble_text": buildnote_counter,
+                "parent_instance": instance.get("parent_instance"),
+                "parent_csys_instance_name": instance.get("parent_instance"),
+                "note_text": "Special contacts used in this connector. Refer to wirelist for details"
+            })
+            flagnote_counter += 1
+            contact_flagnote_conversion_happened = True
+if contact_flagnote_conversion_happened:
+    buildnote_counter += 1
+
+flagnotes.assign_output_csys()
+featuretree.update_translate_content()
+flagnotes.compile_buildnotes()
+
+for instance in instances_list.read_instance_rows():
+    if instance.get("absolute_rotation") not in ["", None]:
+        instances_list.modify(instance.get("instance_name"), {
+            "rotate_csys": instance.get("absolute_rotation")
+        })
+"""
+
+def render(prebuilder="", artifact_builder_dict=None):
     print("Thanks for using Harnice!")
-    
-    # === Step 1: Verify revision and file structure at the top level ===
+
+    # Step 1: revision structure
     fileio.verify_revision_structure()
     fileio.generate_structure()
     rev_history.update_datemodified()
 
-    # === Step 2: Ensure feature_tree.py exists ===
-    fileio.verify_feature_tree_exists()
-    
-    # initialize instances list
+    # Step 2: Ensure feature tree exists
+    load_dotenv()
+    if not os.path.exists(fileio.path("feature tree")):
+        if prebuilder == "":
+            print("Do you want to use a prebuilder to help build this harness from scratch?")
+            print("  ''    Enter nothing for the standard Harnice esch prebuilder")
+            print("  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)")
+            print("  's'   Enter 's' for system if this harness is pulling data from a system instances list")
+            print("  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list prebuilder")
+            print("        Or enter the path to your desired prebuilder")
+            prebuilder = cli.prompt("")
+
+        if prebuilder in (None, "", "n"):
+            prebuilder_name = "harnice_esch_prebuilder"
+        elif prebuilder == "s":
+            prebuilder_name = "harnice_system_harness_prebuilder"
+        elif prebuilder == "w":
+            prebuilder_name = "wireviz_yaml_prebuilder"
+        else:
+            prebuilder_name = prebuilder
+
+        prebuilder_contents = f'featuretree.runprebuilder("{prebuilder_name}", "public")\\n'
+
+        if artifact_builder_dict is None:
+            artifact_builder_contents = (
+                'featuretree.runartifactbuilder("bom_exporter_bottom_up", "public", artifact_id="bom1")\\n'
+                'featuretree.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))\\n'
+                'featuretree.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")\\n'
+                'featuretree.runartifactbuilder("revision_history_table", "public", artifact_id="revhistory1")\\n'
+                'featuretree.runartifactbuilder("buildnotes_table", "public", artifact_id="buildnotestable1")\\n'
+                'featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)\\n'
+            )
+        else:
+            artifact_builder_contents = "".join(f"{line}\\n" for line in artifact_builder_dict)
+
+        feature_tree = f"""import os
+import yaml
+import re
+import runpy
+
+from harnice import (
+    fileio, instances_list, component_library, svg_outputs,
+    flagnotes, formboard, rev_history, svg_utils, featuretree
+)
+
+#===========================================================================
+#                   PREBUILDER SCRIPTING
+#===========================================================================
+{prebuilder_contents}
+#===========================================================================
+#                  HARNESS BUILD RULES
+#===========================================================================
+{harness_feature_tree_default}
+#===========================================================================
+#                  CONSTRUCT HARNESS ARTIFACTS
+#===========================================================================
+scales = {{
+    "A": 1
+}}
+{artifact_builder_contents}
+featuretree.copy_pdfs_to_cwd()
+"""
+
+        with open(fileio.path("feature tree"), "w", encoding="utf-8") as dst:
+            dst.write(feature_tree)
+
+    # Step 3: initialize instances list
     instances_list.make_new_list()
     instances_list.add_unless_exists("origin", {
         "instance_name": "origin",
@@ -33,8 +276,7 @@ def render():
         "location_is_node_or_segment": "Node"
     })
 
-    # === Step 3: Run the project-specific feature_tree.py ===
+    # Step 4: run feature tree
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
-    print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!")
-    print()
+    print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!\\n")
