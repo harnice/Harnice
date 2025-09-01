@@ -9,7 +9,7 @@ from harnice import (
 )
 
 harness_feature_tree_default = """from harnice import (
-    featuretree, instances_list, component_library, svg_outputs,
+    featuretree_utils, instances_list, component_library, svg_outputs,
     flagnotes, formboard, rev_history, svg_utils
 )
 
@@ -54,7 +54,7 @@ for instance in instances_list.read_instance_rows():
         "parent_csys_outputcsys_name": parent_csys_outputcsys_name
     })
 
-featuretree.update_translate_content()
+featuretree_utils.update_translate_content()
 
 #===========================================================================
 #                   UPDATE FORMBOARD DATA
@@ -184,7 +184,7 @@ if contact_flagnote_conversion_happened:
     buildnote_counter += 1
 
 flagnotes.assign_output_csys()
-featuretree.update_translate_content()
+featuretree_utils.update_translate_content()
 flagnotes.compile_buildnotes()
 
 for instance in instances_list.read_instance_rows():
@@ -224,15 +224,15 @@ def render(prebuilder="", artifact_builder_dict=None):
             prebuilder_name = prebuilder
 
         # ✅ No more stray \n
-        prebuilder_contents = f'featuretree.runprebuilder("{prebuilder_name}", "public")'
+        prebuilder_contents = f'featuretree_utils.runprebuilder("{prebuilder_name}", "public")'
 
         if artifact_builder_dict is None:
-            artifact_builder_contents = """featuretree.runartifactbuilder("bom_exporter_bottom_up", "public", artifact_id="bom1")
-featuretree.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))
-featuretree.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")
-featuretree.runartifactbuilder("revision_history_table", "public", artifact_id="revhistory1")
-featuretree.runartifactbuilder("buildnotes_table", "public", artifact_id="buildnotestable1")
-featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)
+            artifact_builder_contents = """featuretree_utils.runartifactbuilder("bom_exporter_bottom_up", "public", artifact_id="bom1")
+featuretree_utils.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))
+featuretree_utils.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")
+featuretree_utils.runartifactbuilder("revision_history_table", "public", artifact_id="revhistory1")
+featuretree_utils.runartifactbuilder("buildnotes_table", "public", artifact_id="buildnotestable1")
+featuretree_utils.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)
 """
         else:
             artifact_builder_contents = "\n".join(artifact_builder_dict)
@@ -244,7 +244,7 @@ import runpy
 
 from harnice import (
     fileio, instances_list, component_library, svg_outputs,
-    flagnotes, formboard, rev_history, svg_utils, featuretree
+    flagnotes, formboard, rev_history, svg_utils, featuretree_utils
 )
 
 #===========================================================================
@@ -265,7 +265,7 @@ scales = {{
 }}
 
 {artifact_builder_contents}
-featuretree.copy_pdfs_to_cwd()
+featuretree_utils.copy_pdfs_to_cwd()
 """
 
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as dst:
