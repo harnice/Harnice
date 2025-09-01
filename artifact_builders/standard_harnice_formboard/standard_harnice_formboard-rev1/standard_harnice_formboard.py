@@ -2,7 +2,7 @@ import os
 import json
 import math
 from collections import defaultdict
-from harnice import flagnotes, svg_utils, instances_list, fileio
+from harnice import svg_utils, instances_list, fileio, flagnote_utils
 
 artifact_mpn = "standard_harnice_formboard"
 
@@ -73,7 +73,7 @@ instances = instances_list.read_instance_rows()
 printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
 
 if "Flagnote" in printable_item_types:
-    flagnotes.make_note_drawings(path("flagnotes"))
+    flagnote_utils.make_note_drawings(path("flagnotes"))
 
 rotation = 0 #TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
 if rotation == "":
