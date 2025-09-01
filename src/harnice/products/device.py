@@ -1,6 +1,7 @@
 import os
-from harnice import fileio
 import runpy
+import csv
+from harnice import fileio, icd
 
 signals_list_feature_tree_default = """
 from harnice import icd
@@ -87,6 +88,68 @@ def render():
     if not os.path.exists(fileio.path("signals list")):
         raise FileNotFoundError("Signals list was not generated.")
 
-    # TODO: make sure every signal of a channel is accounted for within the same connector
+    # load the signals list to read it in subsequent checks
+    signals_list = []
+    with open(fileio.path("signals list"), "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        signals_list = list(reader)
+
+    # make sure the required headers are present and in the correct order
+    required_headers = icd.SIGNALS_HEADERS
+    actual_headers = list(signals_list[0].keys())
+
+    if actual_headers[:len(required_headers)] != required_headers:
+        raise ValueError(
+            f"Signals list headers are incorrect.\n"
+            f"Expected: {required_headers}\n"
+            f"Found:    {actual_headers[:len(required_headers)]}"
+        )
+
+    # make sure the required fields are present for each signal
+    required_fields = ["channel", "signal", "connector_name", "channel_type_id", "compatible_channel_type_ids"]
+    for signal in signals_list:
+        for field in required_fields:
+            if field not in signal:
+                raise ValueError(f"Channel {signal.get('channel')} is missing the field: {field}")
+
+    # make sure every signal of a channel is accounted for
+    for signal in signals_list:
+        channel_type_id, supplier = signal.get("channel_type_id").strip("[]").split(",")
+        expected_signals_of_channel = icd.signals_of_channel_type_id(channel_type_id, supplier)
+
+        found_signals = set()
+        connector_names = set()
+
+        for expected_signal in expected_signals_of_channel:
+            for signal2 in signals_list:
+                if (
+                    signal2.get("channel") == signal.get("channel")
+                    and signal2.get("signal") == expected_signal
+                ):
+                    found_signals.add(expected_signal)
+                    connector_names.add(signal2.get("connector_name"))
+
+        # --- Check completeness ---
+        missing_signals = set(expected_signals_of_channel) - found_signals
+        if missing_signals:
+            raise ValueError(
+                f"Channel {signal.get('channel')} is missing signals: {', '.join(missing_signals)}"
+            )
+
+        # --- Check connector consistency ---
+        if len(connector_names) > 1:
+            raise ValueError(
+                f"Channel {signal.get('channel')} has signals spread across multiple connectors: "
+                f"{', '.join(connector_names)}"
+            )
+
+    # make sure no connector contacts are duplicated
+    seen_contacts = set()
+
+    for signal in signals_list:
+        contact_key = f"{signal.get('connector_name')}-{signal.get('contact')}"
+        if contact_key in seen_contacts:
+            raise ValueError(f"Duplicate connector contact found: {contact_key}")
+        seen_contacts.add(contact_key)
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
