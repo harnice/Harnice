@@ -91,7 +91,7 @@ for instance in instances:
 content_lines = []
 #TODO: fix hide stuff
 #formboard = page_setup_contents["formboards"].get(formboard_name, {})
-hide_filters = {} #formboard.get("hide_instances", {})
+hide_filters = {} #formboard_utils.get("hide_instances", {})
 
 for item_type, items in grouped_instances.items():
     content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
