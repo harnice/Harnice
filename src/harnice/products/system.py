@@ -2,7 +2,7 @@ from harnice import fileio, component_library, mapped_channels
 import runpy
 import os
 
-system_feature_tree_default = """from harnice import featuretree, system, instances_list
+system_feature_tree_default = """from harnice import featuretree, system_utils, instances_list
 
 #===========================================================================
 #                   KICAD PROCESSING
@@ -14,13 +14,13 @@ featuretree.runprebuilder("kicad_pro_to_bom_prebuilder", "public")
 #===========================================================================
 #                   LIBRARY IMPORTING
 #===========================================================================
-system.pull_devices_from_library()
+system_utils.pull_devices_from_library()
 
 
 #===========================================================================
 #                   CHANNEL MAPPING
 #===========================================================================
-system.new_channel_map()
+system_utils.new_channel_map()
 featuretree.runprebuilder("basic_channel_mapper_prebuilder", "public")
 
 #===========================================================================
