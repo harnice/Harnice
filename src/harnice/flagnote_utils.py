@@ -1,9 +1,6 @@
 import os
-import json
 import csv
 import re
-import math
-from dotenv import load_dotenv, dotenv_values
 from harnice import(
     fileio,
     instances_list,

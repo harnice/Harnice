@@ -1,9 +1,6 @@
 import os
-import json
 from harnice import fileio
 import runpy
-
-from harnice.system import system_feature_tree_default
 
 signals_list_feature_tree_default = """
 from harnice import icd
