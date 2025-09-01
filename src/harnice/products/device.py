@@ -88,3 +88,5 @@ def render():
         raise FileNotFoundError("Signals list was not generated.")
 
     # TODO: make sure every signal of a channel is accounted for within the same connector
+
+    print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
