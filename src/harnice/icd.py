@@ -46,7 +46,8 @@ def write_signal(**kwargs):
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(row)
 
-def signals_of_channel_type(channel_type_id, ch_type_id_supplier="public"):
+#search channel_types.tsv
+def signals_of_channel_type_id(channel_type_id, ch_type_id_supplier="public"):
     load_dotenv()
     tsv_path = _channel_types_path(ch_type_id_supplier)
 
@@ -57,6 +58,20 @@ def signals_of_channel_type(channel_type_id, ch_type_id_supplier="public"):
                 signals_str = row.get("signals", "")
                 return [sig.strip() for sig in signals_str.split(",") if sig.strip()]
     return []
+
+#search a known imported device's signals list
+def signals_of_channel(channel_name, path_to_signals_list):
+    if not os.path.exists(path_to_signals_list):
+        return ""
+
+    signals = []
+    
+    with open(path_to_signals_list, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            if row.get("channel", "").strip() == channel_name.strip():
+                signals.append(row.get("signal", "").strip())
+    return signals
 
 def compatible_channel_types(channel_type_id, ch_type_id_supplier="public"):
     load_dotenv()
@@ -69,6 +84,37 @@ def compatible_channel_types(channel_type_id, ch_type_id_supplier="public"):
                 signals_str = row.get("signals", "")
                 return [sig.strip() for sig in signals_str.split(",") if sig.strip()]
     return []
+
+def pin_of_signal(signal, path_to_signals_list):
+    """
+    Returns the pin/contact information for a given signal from the signals list.
+    
+    Args:
+        signal (str): The signal name to search for
+        path_to_signals_list (str): Path to the signals list TSV file
+        
+    Returns:
+        str: The pin/contact information for the signal, or empty string if not found
+    """
+    if not os.path.exists(path_to_signals_list):
+        return ""
+    
+    with open(path_to_signals_list, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            if row.get("signal", "").strip() == signal.strip():
+                return row.get("contact", "").strip()
+    return ""
+
+def mating_connector_of_channel(channel_id, path_to_signals_list):
+    if not os.path.exists(path_to_signals_list):
+        raise FileNotFoundError(f"Signals list file not found: {path_to_signals_list}")
+    
+    with open(path_to_signals_list, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            if row.get("channel", "").strip() == channel_id.strip():
+                return row.get("connector_name", "").strip()
 
 def _channel_types_path(ch_type_id_supplier):
     """
