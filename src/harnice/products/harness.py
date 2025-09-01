@@ -223,19 +223,19 @@ def render(prebuilder="", artifact_builder_dict=None):
         else:
             prebuilder_name = prebuilder
 
-        prebuilder_contents = f'featuretree.runprebuilder("{prebuilder_name}", "public")\\n'
+        # ✅ No more stray \n
+        prebuilder_contents = f'featuretree.runprebuilder("{prebuilder_name}", "public")'
 
         if artifact_builder_dict is None:
-            artifact_builder_contents = (
-                'featuretree.runartifactbuilder("bom_exporter_bottom_up", "public", artifact_id="bom1")\\n'
-                'featuretree.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))\\n'
-                'featuretree.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")\\n'
-                'featuretree.runartifactbuilder("revision_history_table", "public", artifact_id="revhistory1")\\n'
-                'featuretree.runartifactbuilder("buildnotes_table", "public", artifact_id="buildnotestable1")\\n'
-                'featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)\\n'
-            )
+            artifact_builder_contents = """featuretree.runartifactbuilder("bom_exporter_bottom_up", "public", artifact_id="bom1")
+featuretree.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))
+featuretree.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")
+featuretree.runartifactbuilder("revision_history_table", "public", artifact_id="revhistory1")
+featuretree.runartifactbuilder("buildnotes_table", "public", artifact_id="buildnotestable1")
+featuretree.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)
+"""
         else:
-            artifact_builder_contents = "".join(f"{line}\\n" for line in artifact_builder_dict)
+            artifact_builder_contents = "\n".join(artifact_builder_dict)
 
         feature_tree = f"""import os
 import yaml
@@ -251,16 +251,19 @@ from harnice import (
 #                   PREBUILDER SCRIPTING
 #===========================================================================
 {prebuilder_contents}
+
 #===========================================================================
 #                  HARNESS BUILD RULES
 #===========================================================================
 {harness_feature_tree_default}
+
 #===========================================================================
 #                  CONSTRUCT HARNESS ARTIFACTS
 #===========================================================================
 scales = {{
     "A": 1
 }}
+
 {artifact_builder_contents}
 featuretree.copy_pdfs_to_cwd()
 """
@@ -279,4 +282,4 @@ featuretree.copy_pdfs_to_cwd()
     # Step 4: run feature tree
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
-    print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!\\n")
+    print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!\n")
