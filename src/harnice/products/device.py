@@ -80,7 +80,11 @@ def render():
         runpy.run_path(fileio.path("feature tree"))
         print("Successfully rebuilt signals list per feature tree.")
 
-    # === Validation placeholders ===
+
+################ Validate signals list
+
+    # make sure signals list exists
     if not os.path.exists(fileio.path("signals list")):
         raise FileNotFoundError("Signals list was not generated.")
 
+    # TODO: make sure every signal of a channel is accounted for within the same connector
