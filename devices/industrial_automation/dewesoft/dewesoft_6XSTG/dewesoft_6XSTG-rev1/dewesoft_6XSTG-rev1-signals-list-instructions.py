@@ -27,7 +27,7 @@ for connector_number in range(1, 7):
     for input_ch in ["adc", "excite"]:
         channel_name = f"ch{connector_number}.{input_ch}"
         channel_type_id = ch_type_ids.get(input_ch)
-        for signal in icd.signals_of_channel_type(input_ch, channel_type_id, ch_type_id_supplier):
+        for signal in icd.signals_of_channel_type_id(input_ch, channel_type_id, ch_type_id_supplier):
             icd.write_signal(
                 channel=channel_name,
                 channel_type_id=channel_type_id,
