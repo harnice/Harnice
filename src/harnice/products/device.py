@@ -46,23 +46,23 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
     for signal in icd.signals_of_channel_type(channel_type_id, ch_type_id_supplier):
         icd.write_signal(
             channel=channel_name,
-            channel_type_id=channel_type_id,
-            compatible_channel_type_ids=icd.compatible_channel_types(channel_type_id, ch_type_id_supplier),
             signal=signal,
             connector_name=connector_name,
-            connector_mpn=connector_mpn,
             contact=xlr_pinout.get(signal)
+            channel_type_id=channel_type_id,
+            channel_type_id_supplier="public",
+            connector_mpn=connector_mpn
         )
 
     # Add shield row
     icd.write_signal(
         channel=f"{channel_name}-shield",
-        channel_type_id=ch_type_ids["shield"],
-        compatible_channel_type_ids=icd.compatible_channel_types(ch_type_ids["shield"], ch_type_id_supplier),
         signal="shield",
         connector_name=connector_name,
-        connector_mpn=connector_mpn,
         contact=xlr_pinout.get("shield")
+        channel_type_id=ch_type_ids["shield"],
+        channel_type_id_supplier="public",
+        connector_mpn=connector_mpn
     )
 
 """

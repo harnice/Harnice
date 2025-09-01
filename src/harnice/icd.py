@@ -7,12 +7,12 @@ from harnice import fileio
 # Signals list column headers to match source of truth + compatibility change
 SIGNALS_HEADERS = [
     "channel",
-    "channel_type_id",
-    "compatible_channel_type_ids",
     "signal",
     "connector_name",
-    "connector_mpn",
     "contact"
+    "channel_type_id",
+    "channel_type_id_supplier",
+    "connector_mpn",
 ]
 
 def new_signals_list():
