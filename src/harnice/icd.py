@@ -47,7 +47,7 @@ def write_signal(**kwargs):
         writer.writerow(row)
 
 #search channel_types.tsv
-def signals_of_channel_type_id(channel_type_id, ch_type_id_supplier="public"):
+def signals_of_channel_type_id(channel_type_id, ch_type_id_supplier):
     load_dotenv()
     tsv_path = _channel_types_path(ch_type_id_supplier)
 
