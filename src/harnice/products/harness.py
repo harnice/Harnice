@@ -10,7 +10,7 @@ from harnice import (
 
 harness_feature_tree_default = """from harnice import (
     featuretree_utils, instances_list, component_library,
-    flagnotes, formboard, rev_history, svg_utils
+    flagnote_utils, formboard, rev_history, svg_utils
 )
 
 #===========================================================================
@@ -98,8 +98,8 @@ instances_list.assign_bom_line_numbers()
 flagnote_counter = 1
 buildnote_counter = 1
 
-flagnotes.ensure_manual_list_exists()
-for manual_note in flagnotes.read_manual_list():
+flagnote_utils.ensure_manual_list_exists()
+for manual_note in flagnote_utils.read_manual_list():
     affected_list = manual_note.get("affectedinstances", "").strip().split(",")
     for affected in affected_list:
         instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
@@ -117,7 +117,7 @@ for manual_note in flagnotes.read_manual_list():
     if manual_note.get("note_type") == "buildnote":
         buildnote_counter += 1
 
-for rev_row in flagnotes.read_revhistory():
+for rev_row in flagnote_utils.read_revhistory():
     affected_raw = rev_row.get("affectedinstances", "").strip()
     if affected_raw:
         for affected in [a.strip() for a in affected_raw.split(",") if a.strip()]:
@@ -183,9 +183,9 @@ for instance in instances_list.read_instance_rows():
 if contact_flagnote_conversion_happened:
     buildnote_counter += 1
 
-flagnotes.assign_output_csys()
+flagnote_utils.assign_output_csys()
 featuretree_utils.update_translate_content()
-flagnotes.compile_buildnotes()
+flagnote_utils.compile_buildnotes()
 
 for instance in instances_list.read_instance_rows():
     if instance.get("absolute_rotation") not in ["", None]:
@@ -244,7 +244,7 @@ import runpy
 
 from harnice import (
     fileio, instances_list, component_library,
-    flagnotes, formboard, rev_history, svg_utils, featuretree_utils
+    flagnote_utils, formboard, rev_history, svg_utils, featuretree_utils
 )
 
 #===========================================================================
