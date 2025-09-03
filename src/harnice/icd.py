@@ -2,7 +2,7 @@
 import csv
 import os
 from dotenv import load_dotenv
-from harnice import fileio
+from harnice import fileio, component_library
 
 # Signals list column headers to match source of truth + compatibility change
 SIGNALS_HEADERS = [
@@ -49,14 +49,17 @@ def write_signal(**kwargs):
         writer.writerow(row)
 
 #search channel_types.tsv
-def signals_of_channel_type_id(channel_type_id, ch_type_id_supplier):
+def signals_of_channel_type_id(channel_type_id):
     load_dotenv()
-    tsv_path = _channel_types_path(ch_type_id_supplier)
+    
+    chid, supplier = component_library.unpack(channel_type_id)
+
+    tsv_path = _channel_types_path((chid, supplier))
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if str(row.get("channel_type_id", "")).strip() == str(channel_type_id):
+            if str(row.get("channel_type_id", "")).strip() == str(chid):
                 signals_str = row.get("signals", "")
                 return [sig.strip() for sig in signals_str.split(",") if sig.strip()]
     return []
@@ -118,14 +121,21 @@ def mating_connector_of_channel(channel_id, path_to_signals_list):
             if row.get("channel", "").strip() == channel_id.strip():
                 return row.get("connector_name", "").strip()
 
-def _channel_types_path(ch_type_id_supplier):
+def _channel_types_path(channel_type_id):
     """
     Helper to get the path to channel_types.tsv based on an environment variable.
+
+    Args:
+        channel_type_id: tuple like (chid, supplier) or string like "(5, 'public')"
     """
-    base_dir = os.environ.get(ch_type_id_supplier)
+    chid, supplier = component_library.unpack(channel_type_id)  # <-- use your helper
+
+    base_dir = os.environ.get(supplier)
     if not base_dir:
-        raise EnvironmentError(f"Environment variable '{ch_type_id_supplier}' is not set.")
+        raise EnvironmentError(f"Environment variable '{supplier}' is not set.")
+
     tsv_path = os.path.join(base_dir, "channel_types", "channel_types.tsv")
     if not os.path.exists(tsv_path):
         raise FileNotFoundError(f"Channel types file not found: {tsv_path}")
+
     return tsv_path

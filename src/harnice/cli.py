@@ -3,7 +3,6 @@ import os
 from harnice import fileio
 from harnice.products import device, harness, part, flagnote, tblock, system
 
-
 def main():
     try:
         _ = os.getcwd()
@@ -17,31 +16,38 @@ def main():
         prog="harnice",
         description="Wire harness automation CLI"
     )
-    parser.add_argument(
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "-r", "--render",
-        required=True,
         choices=["harness", "system", "part", "flagnote", "device", "tblock", "titleblock"],
         help="Render a product type"
     )
+    group.add_argument(
+        "-l", "--lightweight",
+        choices=["device"],
+        help="Render a product type quickly without performing all checks"
+    )
     args = parser.parse_args()
 
-    render_type = args.render.lower()
-    fileio.set_product_type(render_type)
+    # figure out which product type string to use
+    product_type = args.render or args.lightweight
+    fileio.set_product_type(product_type.lower())
 
-    render_map = {
-        "harness": harness.render,
-        "system": system.render,
-        "part": part.render,
-        "flagnote": flagnote.render,
-        "device": device.render,
-        "tblock": tblock.render,
-        "titleblock": tblock.render,  # alias
-    }
+    if args.render:
+        render_map = {
+            "harness": harness.render,
+            "system": system.render,
+            "part": part.render,
+            "flagnote": flagnote.render,
+            "device": device.render,
+            "tblock": tblock.render,
+            "titleblock": tblock.render,  # alias
+        }
+        render_map[args.render.lower()]()
 
-    if render_type in render_map:
-        render_map[render_type]()
-    else:
-        print(f"Unknown type for --render: {render_type}")
+    elif args.lightweight:
+        device.lightweight_render()
 
 
 def prompt(text, default=None):

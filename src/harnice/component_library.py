@@ -161,3 +161,34 @@ def pull_part(instance_name):
         )
 
         instances_list.add_revhistory_of_imported_part(item_name, revhistory_row)
+
+def unpack(id_value):
+    """
+    Normalize channel_type_id into (int, str).
+
+    Accepts:
+        - Tuple like (5, "public")
+        - String like "(5, 'public')" or "(5,\"public\")"
+    Returns:
+        (int, str)
+    """
+    # Case 1: already a tuple
+    if isinstance(id_value, tuple):
+        if len(id_value) != 2:
+            raise ValueError(f"Invalid channel_type_id tuple: {id_value}")
+        key, supplier = id_value
+        return int(key), str(supplier).strip()
+
+    # Case 2: string
+    if isinstance(id_value, str):
+        text = id_value.strip().strip("()")
+        parts = [p.strip() for p in text.split(",")]
+        if len(parts) != 2:
+            raise ValueError(f"Invalid channel_type_id string: {id_value}")
+
+        key_str, supplier_str = parts
+        key = int(key_str)
+        supplier = supplier_str.strip("'\"")
+        return key, supplier
+
+    raise TypeError(f"Unsupported channel_type_id type: {type(id_value)}")
