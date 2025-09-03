@@ -65,9 +65,18 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 
 """
 
+def _sym_value(x):
+    """Get string value from sexpdata.Symbol or plain string; else None."""
+    if isinstance(x, sexpdata.Symbol):
+        return x.value()
+    if isinstance(x, str):
+        return x
+    return None
+
+
 def load_symbol(path, symbol_name):
     """Load a specific symbol S-expression from a .kicad_sym file.
-    If the file does not exist, create one. If the symbol does not exist, create it.
+    Ensures the file and symbol exist; creates a stub if missing.
     """
     if not os.path.exists(path):
         tree = [
@@ -78,19 +87,21 @@ def load_symbol(path, symbol_name):
     else:
         with open(path, "r", encoding="utf-8") as f:
             tree = sexpdata.load(f)
+        if not isinstance(tree, list):
+            tree = [sexpdata.Symbol('kicad_symbol_lib')]
 
     # Look for the symbol
     for item in tree:
-        if isinstance(item, list) and len(item) > 0 and getattr(item[0], "value", lambda: None)() == "symbol":
-            if len(item) > 1 and getattr(item[1], "value", lambda: None)() == symbol_name:
+        if isinstance(item, list) and item:
+            if _sym_value(item[0]) == "symbol" and len(item) > 1 and _sym_value(item[1]) == symbol_name:
                 return item
 
-    # Not found → create stub
+    # Not found → create stub (valid KiCad structure)
     new_symbol = [
         sexpdata.Symbol("symbol"),
-        sexpdata.Symbol(symbol_name),
-        [sexpdata.Symbol("property"), "Reference", "REF**", [sexpdata.Symbol("id"), "0"]],
-        [sexpdata.Symbol("property"), "Value", symbol_name, [sexpdata.Symbol("id"), "1"]],
+        str(symbol_name),
+        [sexpdata.Symbol("property"), "Reference", "REF**", [sexpdata.Symbol("id"), 0]],
+        [sexpdata.Symbol("property"), "Value", str(symbol_name), [sexpdata.Symbol("id"), 1]],
     ]
     tree.append(new_symbol)
 
@@ -101,13 +112,16 @@ def load_symbol(path, symbol_name):
 
 
 def extract_pins(symbol):
-    """Return dict {number: (pin_expr, name, type)} for easy comparison."""
+    """Return dict {number: (pin_expr, name)} for easy comparison.
+    Tolerant of tokens being sexpdata.Symbol or plain str.
+    """
     pins = {}
     for item in symbol:
-        if isinstance(item, list) and item[0].value() == "pin":
-            num = str(item[1].value())  # e.g. pin number
-            name = str(item[2].value()) # pin name
-            pins[num] = (item, name)
+        if isinstance(item, list) and item:
+            if _sym_value(item[0]) == "pin" and len(item) >= 3:
+                num = str(_sym_value(item[1]))
+                name = str(_sym_value(item[2]))
+                pins[num] = (item, name)
     return pins
 
 
@@ -117,9 +131,9 @@ def merge_symbols(existing_symbol, reference_symbol):
     reference_pins = extract_pins(reference_symbol)
 
     updated = []
-    # Keep existing non-pin elements (graphics, text, etc.)
-    for item in existing_symbol:
-        if not (isinstance(item, list) and item[0].value() == "pin"):
+    # Keep existing non-pin elements (graphics, text, etc.). Skip header (symbol, name).
+    for item in existing_symbol[2:]:
+        if not (isinstance(item, list) and item and _sym_value(item[0]) == "pin"):
             updated.append(item)
 
     # Add updated pin list
@@ -130,14 +144,16 @@ def merge_symbols(existing_symbol, reference_symbol):
             ref_pin = _merge_pin_coords(ref_pin, old_pin)
         updated.append(ref_pin)
 
-    return ["symbol", existing_symbol[1]] + updated
+    # Build normalized symbol: (symbol "Name" ...)
+    name_str = str(_sym_value(existing_symbol[1]))
+    return [sexpdata.Symbol("symbol"), name_str] + updated
 
 
 def _merge_pin_coords(ref_pin, old_pin):
     """Replace the (at x y <orientation>) field in ref_pin with old_pin's."""
     def get_at(pin_expr):
         for el in pin_expr:
-            if isinstance(el, list) and el[0].value() == "at":
+            if isinstance(el, list) and el and _sym_value(el[0]) == "at":
                 return el
         return None
 
@@ -145,16 +161,60 @@ def _merge_pin_coords(ref_pin, old_pin):
     if old_at:
         # Replace ref pin's "at" with old one
         for i, el in enumerate(ref_pin):
-            if isinstance(el, list) and el[0].value() == "at":
+            if isinstance(el, list) and el and _sym_value(el[0]) == "at":
                 ref_pin[i] = old_at
     return ref_pin
 
 
 def save_symbol(path, symbol, lib_meta=None):
-    """Write back updated symbol into .kicad_sym (simplified)."""
-    # Save the symbol itself
+    """Insert or replace the given symbol in the .kicad_sym library.
+    Preserves other symbols and library metadata.
+    """
+    # Load existing library (or create a new one)
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            tree = sexpdata.load(f)
+        if not isinstance(tree, list) or not tree:
+            tree = [sexpdata.Symbol("kicad_symbol_lib")]
+    else:
+        tree = [
+            sexpdata.Symbol("kicad_symbol_lib"),
+            [sexpdata.Symbol("version"), 20211014],
+            [sexpdata.Symbol("generator"), "harnice"],
+        ]
+
+    # Normalize header token
+    if not tree:
+        tree = [sexpdata.Symbol("kicad_symbol_lib")]
+    else:
+        if not (isinstance(tree[0], sexpdata.Symbol) and tree[0].value() == "kicad_symbol_lib"):
+            tree[0] = sexpdata.Symbol("kicad_symbol_lib")
+
+    # Ensure version/generator exist
+    has_version = any(isinstance(it, list) and it and _sym_value(it[0]) == "version" for it in tree[1:])
+    has_generator = any(isinstance(it, list) and it and _sym_value(it[0]) == "generator" for it in tree[1:])
+    if not has_version:
+        tree.insert(1, [sexpdata.Symbol("version"), 20211014])
+    if not has_generator:
+        insert_idx = 2 if has_version else 1
+        tree.insert(insert_idx, [sexpdata.Symbol("generator"), "harnice"])
+
+    # Replace existing symbol with same name, or append if missing
+    sym_name = _sym_value(symbol[1]) if isinstance(symbol, list) and len(symbol) > 1 else None
+    replaced = False
+    if sym_name:
+        for i, item in enumerate(tree):
+            if isinstance(item, list) and item:
+                if _sym_value(item[0]) == "symbol" and len(item) > 1 and _sym_value(item[1]) == sym_name:
+                    tree[i] = symbol
+                    replaced = True
+                    break
+    if not replaced:
+        tree.append(symbol)
+
+    # Write full library back
     with open(path, "w", encoding="utf-8") as f:
-        sexpdata.dump(["kicad_symbol_lib", symbol], f)
+        sexpdata.dump(tree, f)
 
     # Save library setup info (just one line now)
     with open(fileio.path("library setup info"), "w", encoding="utf-8") as f:
@@ -260,11 +320,17 @@ def validate_signals_list():
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
 def update_symbol():
-    # Load reference (from KiPart) and existing (user-edited)
-    ref = load_symbol(fileio.path("temp symbol"), fileio.partnumber("pn-rev"))
-    old = load_symbol(fileio.path("real symbol"), fileio.partnumber("pn-rev"))
+    """Ensure real library has PN-REV symbol, merging from construction-only 'temp'.
+    - construction-only library: single symbol named "temp"
+    - real library: symbol named fileio.partnumber("pn-rev")
+    """
+    # Load reference from construction-only library (symbol 'temp')
+    ref = load_symbol(fileio.path("temp symbol"), "temp")
+    # Ensure the real library contains the PN-REV symbol
+    sym_name = fileio.partnumber("pn-rev")
+    old = load_symbol(fileio.path("real symbol"), sym_name)
 
-    # Merge
+    # Merge temp into real
     merged = merge_symbols(old, ref)
 
     # Save back to library
