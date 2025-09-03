@@ -112,7 +112,6 @@ def harnice_file_structure():
         }
     elif product_type == "device":
         return {
-            f"{partnumber("pn-rev")}.kicad_sym":"kicad sym",
             f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
             f"{partnumber("pn-rev")}-signals-list.tsv":"signals list"
         }
@@ -129,13 +128,17 @@ def harnice_file_structure():
         }
 
 def generate_structure():
-    os.makedirs(dirpath("artifacts"), exist_ok=True)
-    os.makedirs(dirpath("instance_data"), exist_ok=True)
-    os.makedirs(dirpath("imported_instances"), exist_ok=True)
-    silentremove(dirpath("generated_instances_do_not_edit"))
-    os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
-    os.makedirs(dirpath("interactive_files"), exist_ok=True)
-    os.makedirs(dirpath("prebuilders"), exist_ok=True)
+    if product_type == "harness":
+        os.makedirs(dirpath("artifacts"), exist_ok=True)
+        os.makedirs(dirpath("instance_data"), exist_ok=True)
+        os.makedirs(dirpath("imported_instances"), exist_ok=True)
+        silentremove(dirpath("generated_instances_do_not_edit"))
+        os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
+        os.makedirs(dirpath("interactive_files"), exist_ok=True)
+        os.makedirs(dirpath("prebuilders"), exist_ok=True)
+    if product_type == "device":
+        os.makedirs(dirpath("kicad"), exist_ok=True)
+        os.makedirs(dirpath("construction_only"), exist_ok=True)
 
 def silentremove(filepath):
     if os.path.exists(filepath):
@@ -158,6 +161,16 @@ def path(target_value):
     if target_value == "revision history":
         file_path = os.path.join(_part_directory(), f"{partnumber("pn")}-revision_history.tsv")
         return file_path
+
+    if product_type == "device":
+        if target_value == "real symbol":
+            return os.path.join(dirpath("kicad"), f"{partnumber("pn")}.kicad_sym")
+
+        if target_value == "temp symbol":
+            return os.path.join(dirpath("kicad"), "construction_only", f"{partnumber("pn")}-construction-only.kicad_sym")
+
+        if target_value == "library setup info":
+            return os.path.join(dirpath("kicad"), "librarybasics.txt")
 
     def recursive_search(data, path):
         if isinstance(data, dict):
@@ -183,26 +196,31 @@ def path(target_value):
 
 def dirpath(target_key):
     #returns the path of a directory you know the name of. use that directory name as the argument. 
+    if product_type == "device":
+        if target_key == "kicad":
+            return os.path.join(_part_directory(), "kicad")
+        if target_key == "construction_only":
+            return os.path.join(_part_directory(), "kicad", "construction_only")
+    else:
+        def recursive_search(data, path):
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    if key == target_key:
+                        return path + [key]
+                    result = recursive_search(value, path + [key])
+                    if result:
+                        return result
+            elif isinstance(data, list):
+                for index, item in enumerate(data):
+                    result = recursive_search(item, path + [f"[{index}]"])
+                    if result:
+                        return result
+            return None
 
-    def recursive_search(data, path):
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if key == target_key:
-                    return path + [key]
-                result = recursive_search(value, path + [key])
-                if result:
-                    return result
-        elif isinstance(data, list):
-            for index, item in enumerate(data):
-                result = recursive_search(item, path + [f"[{index}]"])
-                if result:
-                    return result
-        return None
-
-    path_key = recursive_search(harnice_file_structure(), [])
-    if not path_key:
-        raise TypeError(f"Could not find directory {target_key}.")
-    return os.path.join(_rev_directory(),*path_key)
+        path_key = recursive_search(harnice_file_structure(), [])
+        if not path_key:
+            raise TypeError(f"Could not find directory {target_key}.")
+        return os.path.join(_rev_directory(),*path_key)
 
 def name(target_value):
     #returns the filename of a filekey. 

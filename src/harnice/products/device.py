@@ -66,16 +66,38 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 """
 
 def load_symbol(path, symbol_name):
-    """Load a specific symbol S-expression from a .kicad_sym file."""
-    with open(path, "r", encoding="utf-8") as f:
-        tree = sexpdata.load(f)
+    """Load a specific symbol S-expression from a .kicad_sym file.
+    If the file does not exist, create one. If the symbol does not exist, create it.
+    """
+    if not os.path.exists(path):
+        tree = [
+            sexpdata.Symbol('kicad_symbol_lib'),
+            [sexpdata.Symbol('version'), 20211014],
+            [sexpdata.Symbol('generator'), "harnice"],
+        ]
+    else:
+        with open(path, "r", encoding="utf-8") as f:
+            tree = sexpdata.load(f)
 
-    # .kicad_sym top-level: (kicad_symbol_lib (version ...) (generator ...) (symbol ...))
+    # Look for the symbol
     for item in tree:
-        if isinstance(item, list) and len(item) > 0 and item[0].value() == "symbol":
-            if item[1].value() == symbol_name:
+        if isinstance(item, list) and len(item) > 0 and getattr(item[0], "value", lambda: None)() == "symbol":
+            if len(item) > 1 and getattr(item[1], "value", lambda: None)() == symbol_name:
                 return item
-    raise ValueError(f"Symbol {symbol_name} not found in {path}")
+
+    # Not found → create stub
+    new_symbol = [
+        sexpdata.Symbol("symbol"),
+        sexpdata.Symbol(symbol_name),
+        [sexpdata.Symbol("property"), "Reference", "REF**", [sexpdata.Symbol("id"), "0"]],
+        [sexpdata.Symbol("property"), "Value", symbol_name, [sexpdata.Symbol("id"), "1"]],
+    ]
+    tree.append(new_symbol)
+
+    with open(path, "w", encoding="utf-8") as f:
+        sexpdata.dump(tree, f)
+
+    return new_symbol
 
 
 def extract_pins(symbol):
@@ -130,17 +152,40 @@ def _merge_pin_coords(ref_pin, old_pin):
 
 def save_symbol(path, symbol, lib_meta=None):
     """Write back updated symbol into .kicad_sym (simplified)."""
+    # Save the symbol itself
     with open(path, "w", encoding="utf-8") as f:
         sexpdata.dump(["kicad_symbol_lib", symbol], f)
 
+    # Save library setup info (just one line now)
+    with open(fileio.path("library setup info"), "w", encoding="utf-8") as f:
+        cwd_parent = os.path.abspath(os.path.dirname(os.getcwd()))
+
+        # Walk up until we find "devices"
+        path_search = cwd_parent
+        while True:
+            dirname = os.path.basename(path_search)
+            if dirname == "devices":
+                devices_path = path_search
+                break
+
+            new_path = os.path.dirname(path_search)
+            if new_path == path_search:  # hit filesystem root
+                raise FileNotFoundError("No 'devices' directory found in path hierarchy.")
+            path_search = new_path
+
+        # Compute relative path from devices/ to cwd_parent
+        rel_path = os.path.relpath(cwd_parent, devices_path)
+
+        # Write in the format "harnice:devices/…"
+        f.write(f"harnice-{os.path.join('devices', rel_path)}")
+
 def validate_signals_list():
     # make sure signals list exists
-    path = fileio.path("signals list")
-    if not os.path.exists(path):
+    if not os.path.exists(fileio.path("signals list")):
         raise FileNotFoundError("Signals list was not generated.")
 
     # load the signals list to read it in subsequent checks
-    with open(path, "r", encoding="utf-8") as f:
+    with open(fileio.path("signals list"), "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         headers = reader.fieldnames
         signals_list = list(reader)
@@ -216,17 +261,18 @@ def validate_signals_list():
 
 def update_symbol():
     # Load reference (from KiPart) and existing (user-edited)
-    ref = load_symbol("reference.kicad_sym", "MyConnector")
-    old = load_symbol("mylib.kicad_sym", "MyConnector")
+    ref = load_symbol(fileio.path("temp symbol"), fileio.partnumber("pn-rev"))
+    old = load_symbol(fileio.path("real symbol"), fileio.partnumber("pn-rev"))
 
     # Merge
     merged = merge_symbols(old, ref)
 
     # Save back to library
-    save_symbol("mylib.kicad_sym", merged)
+    save_symbol(fileio.path("real symbol"), merged)
 
 def device_render(lightweight=False):
     fileio.verify_revision_structure()
+    fileio.generate_structure()
 
     if not lightweight:
         # Create signals list feature tree file if no list.
@@ -234,15 +280,13 @@ def device_render(lightweight=False):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
                 f.write(signals_list_feature_tree_default)
 
-        # Run the signals list feature tree script
-        if os.path.exists(fileio.path("feature tree")):
-            runpy.run_path(fileio.path("feature tree"))
-            print("Successfully rebuilt signals list per feature tree.")
+    # Run the signals list feature tree script
+    if os.path.exists(fileio.path("feature tree")):
+        runpy.run_path(fileio.path("feature tree"))
+        print("Successfully rebuilt signals list per feature tree.")
 
+    if not lightweight:
         validate_signals_list()
-
-    if lightweight:
-        icd.new_signals_list()
 
     update_symbol()
 
