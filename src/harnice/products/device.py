@@ -112,57 +112,68 @@ def load_symbol(path, symbol_name):
 
 
 def extract_pins(symbol):
-    """Return dict {number: (pin_expr, name)} for easy comparison.
-    Tolerant of tokens being sexpdata.Symbol or plain str.
+    """
+    Return dict {number: pin_expr} keyed by pin number.
+    Works with proper KiCad pin structure where number is in a (number "...") sublist.
     """
     pins = {}
     for item in symbol:
-        if isinstance(item, list) and item:
-            if _sym_value(item[0]) == "pin" and len(item) >= 3:
-                num = str(_sym_value(item[1]))
-                name = str(_sym_value(item[2]))
-                pins[num] = (item, name)
+        if isinstance(item, list) and item and _sym_value(item[0]) == "pin":
+            num = None
+            for el in item:
+                if isinstance(el, list) and _sym_value(el[0]) == "number":
+                    if len(el) > 1:
+                        num = str(el[1])
+                        break
+            if num:
+                pins[num] = item
     return pins
 
 
+
 def merge_symbols(existing_symbol, reference_symbol):
-    """Update existing symbol pins to match reference, preserving coords/graphics."""
+    """
+    Update existing symbol pins to match reference, preserving coords/graphics.
+    - Non-pin items from existing symbol are preserved.
+    - Pins from reference symbol are inserted, with old coords if available.
+    """
     existing_pins = extract_pins(existing_symbol)
     reference_pins = extract_pins(reference_symbol)
 
     updated = []
-    # Keep existing non-pin elements (graphics, text, etc.). Skip header (symbol, name).
+    # Keep existing non-pin elements (graphics, properties, etc.)
     for item in existing_symbol[2:]:
         if not (isinstance(item, list) and item and _sym_value(item[0]) == "pin"):
             updated.append(item)
 
-    # Add updated pin list
-    for num, (ref_pin, ref_name) in reference_pins.items():
+    # Add updated pins
+    for num, ref_pin in reference_pins.items():
         if num in existing_pins:
-            old_pin, old_name = existing_pins[num]
-            # Copy coordinates from old pin
-            ref_pin = _merge_pin_coords(ref_pin, old_pin)
+            ref_pin = _merge_pin_coords(ref_pin, existing_pins[num])
         updated.append(ref_pin)
 
-    # Build normalized symbol: (symbol "Name" ...)
+    # Build normalized symbol: (symbol "Name" …)
     name_str = str(_sym_value(existing_symbol[1]))
     return [sexpdata.Symbol("symbol"), name_str] + updated
 
 
 def _merge_pin_coords(ref_pin, old_pin):
-    """Replace the (at x y <orientation>) field in ref_pin with old_pin's."""
+    """
+    Copy the (at …) from old_pin into ref_pin.
+    """
     def get_at(pin_expr):
         for el in pin_expr:
-            if isinstance(el, list) and el and _sym_value(el[0]) == "at":
+            if isinstance(el, list) and _sym_value(el[0]) == "at":
                 return el
         return None
 
     old_at = get_at(old_pin)
     if old_at:
-        # Replace ref pin's "at" with old one
+        # Replace the "at" field in ref_pin
         for i, el in enumerate(ref_pin):
-            if isinstance(el, list) and el and _sym_value(el[0]) == "at":
+            if isinstance(el, list) and _sym_value(el[0]) == "at":
                 ref_pin[i] = old_at
+                break
     return ref_pin
 
 
@@ -319,11 +330,87 @@ def validate_signals_list():
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
+def _dump_pretty(tree, f, indent=2):
+    """Pretty-print a sexpdata tree with newlines/indents for readability."""
+    text = sexpdata.dumps(tree)
+    # crude but effective: break after ") (" patterns
+    pretty = text.replace(") (", ")\n" + " " * indent + "(")
+    f.write(pretty + "\n")
+
+def update_construction_kicad_lib():
+    """
+    Scrape unique connector names from the signals list and
+    generate a construction-only KiCad library with a single
+    symbol 'temp'. Each connector becomes one pin/port.
+    """
+    # --- Collect unique connector names ---
+    path = fileio.path("signals list")
+    connectors = set()
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            name = row.get("connector_name", "").strip()
+            if name:
+                connectors.add(name)
+    connectors = sorted(connectors)
+
+    # --- Build the 'temp' symbol ---
+    symbol = [
+        sexpdata.Symbol("symbol"),
+        "temp",
+        # required KiCad properties
+        [sexpdata.Symbol("property"), "Reference", "U", [sexpdata.Symbol("id"), 0], [sexpdata.Symbol("at"), 0, 0, 0]],
+        [sexpdata.Symbol("property"), "Value", "temp", [sexpdata.Symbol("id"), 1], [sexpdata.Symbol("at"), 0, -100, 0]],
+        [sexpdata.Symbol("property"), "Footprint", "", [sexpdata.Symbol("id"), 2], [sexpdata.Symbol("at"), 0, -200, 0]],
+        [sexpdata.Symbol("property"), "Datasheet", "", [sexpdata.Symbol("id"), 3], [sexpdata.Symbol("at"), 0, -300, 0]],
+    ]
+
+    for i, conn in enumerate(connectors, start=1):
+        pin = [
+            sexpdata.Symbol("pin"),
+            sexpdata.Symbol("passive"),   # electrical type
+            sexpdata.Symbol("line"),      # pin shape
+            [sexpdata.Symbol("at"), 0, i * 100, sexpdata.Symbol("right")],
+            [sexpdata.Symbol("length"), 200],
+            [sexpdata.Symbol("name"), conn,
+                [sexpdata.Symbol("effects"),
+                    [sexpdata.Symbol("font"),
+                        [sexpdata.Symbol("size"), 1.27, 1.27]
+                    ]
+                ]
+            ],
+            [sexpdata.Symbol("number"), str(i),
+                [sexpdata.Symbol("effects"),
+                    [sexpdata.Symbol("font"),
+                        [sexpdata.Symbol("size"), 1.27, 1.27]
+                    ]
+                ]
+            ],
+        ]
+        symbol.append(pin)
+
+    # --- Wrap in KiCad library structure ---
+    tree = [
+        sexpdata.Symbol("kicad_symbol_lib"),
+        [sexpdata.Symbol("version"), 20211014],
+        [sexpdata.Symbol("generator"), "harnice"],
+        symbol,
+    ]
+
+    # --- Save to temp symbol library path ---
+    with open(fileio.path("temp symbol"), "w", encoding="utf-8") as f:
+        _dump_pretty(tree, f)
+
+    print(f"Updated construction library with connectors: {', '.join(connectors)}")
+
+
 def update_symbol():
     """Ensure real library has PN-REV symbol, merging from construction-only 'temp'.
     - construction-only library: single symbol named "temp"
     - real library: symbol named fileio.partnumber("pn-rev")
     """
+    # Ensure construction-only library is up to date
+    update_construction_kicad_lib()
     # Load reference from construction-only library (symbol 'temp')
     ref = load_symbol(fileio.path("temp symbol"), "temp")
     # Ensure the real library contains the PN-REV symbol
