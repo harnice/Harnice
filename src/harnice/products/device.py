@@ -2,7 +2,9 @@ import os
 import runpy
 import csv
 from harnice import fileio, icd
+import subprocess
 import sexpdata
+import json
 
 signals_list_feature_tree_default = """
 from harnice import icd
@@ -65,190 +67,66 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 
 """
 
-def _sym_value(x):
-    """Get string value from sexpdata.Symbol or plain string; else None."""
-    if isinstance(x, sexpdata.Symbol):
-        return x.value()
-    if isinstance(x, str):
-        return x
-    return None
-
-
-def load_symbol(path, symbol_name):
-    """Load a specific symbol S-expression from a .kicad_sym file.
-    Ensures the file and symbol exist; creates a stub if missing.
+def generate_temp_symbol(symbol_name=None):
     """
-    if not os.path.exists(path):
-        tree = [
-            sexpdata.Symbol('kicad_symbol_lib'),
-            [sexpdata.Symbol('version'), 20211014],
-            [sexpdata.Symbol('generator'), "harnice"],
-        ]
-    else:
-        with open(path, "r", encoding="utf-8") as f:
-            tree = sexpdata.load(f)
-        if not isinstance(tree, list):
-            tree = [sexpdata.Symbol('kicad_symbol_lib')]
+    Use KiPart to generate a KiCad .kicad_sym part file from the kipart CSV.
+    Always overwrites the temp symbol file.
+    """
+    csv_path = fileio.path("kipart csv")
+    out_path = fileio.path("temp symbol")
 
-    # Look for the symbol
-    for item in tree:
-        if isinstance(item, list) and item:
-            if _sym_value(item[0]) == "symbol" and len(item) > 1 and _sym_value(item[1]) == symbol_name:
-                return item
-
-    # Not found → create stub (valid KiCad structure)
-    new_symbol = [
-        sexpdata.Symbol("symbol"),
-        str(symbol_name),
-        [sexpdata.Symbol("property"), "Reference", "REF**", [sexpdata.Symbol("id"), 0]],
-        [sexpdata.Symbol("property"), "Value", str(symbol_name), [sexpdata.Symbol("id"), 1]],
+    # Add -w so existing file is overwritten
+    cmd = [
+        "kipart",
+        "-o", out_path,
+        "-w",
+        csv_path
     ]
-    tree.append(new_symbol)
 
-    with open(path, "w", encoding="utf-8") as f:
-        sexpdata.dump(tree, f)
+    if symbol_name:
+        cmd.extend(["-p", symbol_name])
 
-    return new_symbol
+    print("Running:", " ".join(cmd))
+    subprocess.run(cmd, check=True)
+
+    print(f"Temporary symbol written to {out_path}")
+    return out_path
 
 
-def extract_pins(symbol):
+def build_kipart_csv():
     """
-    Return dict {number: pin_expr} keyed by pin number.
-    Works with proper KiCad pin structure where number is in a (number "...") sublist.
+    Overwrites the kipart CSV in the 'spreadsheet' format KiPart expects:
+    <part name>
+    Pin,Type,Name
+    1,unspecified,in1
+    ...
     """
-    pins = {}
-    for item in symbol:
-        if isinstance(item, list) and item and _sym_value(item[0]) == "pin":
-            num = None
-            for el in item:
-                if isinstance(el, list) and _sym_value(el[0]) == "number":
-                    if len(el) > 1:
-                        num = str(el[1])
-                        break
-            if num:
-                pins[num] = item
-    return pins
+    signals_path = fileio.path("signals list")
+    csv_path = fileio.path("kipart csv")
 
+    # Derive part name from CWD (assumes PN-rev directory, e.g. SM58-rev2)
+    cwd = os.getcwd()
+    part_name = os.path.basename(cwd).split("-")[0]  # e.g. "SM58"
 
+    connector_names = set()
+    with open(signals_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")  # signals list is TSV
+        for row in reader:
+            connector_name = row.get("connector_name", "").strip()
+            if connector_name:
+                connector_names.add(connector_name)
 
-def merge_symbols(existing_symbol, reference_symbol):
-    """
-    Update existing symbol pins to match reference, preserving coords/graphics.
-    - Non-pin items from existing symbol are preserved.
-    - Pins from reference symbol are inserted, with old coords if available.
-    """
-    existing_pins = extract_pins(existing_symbol)
-    reference_pins = extract_pins(reference_symbol)
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        # First line is the part name
+        f.write(part_name + "\n")
 
-    updated = []
-    # Keep existing non-pin elements (graphics, properties, etc.)
-    for item in existing_symbol[2:]:
-        if not (isinstance(item, list) and item and _sym_value(item[0]) == "pin"):
-            updated.append(item)
+        writer = csv.writer(f, delimiter=",")
+        writer.writerow(["Pin", "Type", "Name"])
+        for i, name in enumerate(sorted(connector_names), start=1):
+            writer.writerow([i, "unspecified", name])
 
-    # Add updated pins
-    for num, ref_pin in reference_pins.items():
-        if num in existing_pins:
-            ref_pin = _merge_pin_coords(ref_pin, existing_pins[num])
-        updated.append(ref_pin)
-
-    # Build normalized symbol: (symbol "Name" …)
-    name_str = str(_sym_value(existing_symbol[1]))
-    return [sexpdata.Symbol("symbol"), name_str] + updated
-
-
-def _merge_pin_coords(ref_pin, old_pin):
-    """
-    Copy the (at …) from old_pin into ref_pin.
-    """
-    def get_at(pin_expr):
-        for el in pin_expr:
-            if isinstance(el, list) and _sym_value(el[0]) == "at":
-                return el
-        return None
-
-    old_at = get_at(old_pin)
-    if old_at:
-        # Replace the "at" field in ref_pin
-        for i, el in enumerate(ref_pin):
-            if isinstance(el, list) and _sym_value(el[0]) == "at":
-                ref_pin[i] = old_at
-                break
-    return ref_pin
-
-
-def save_symbol(path, symbol, lib_meta=None):
-    """Insert or replace the given symbol in the .kicad_sym library.
-    Preserves other symbols and library metadata.
-    """
-    # Load existing library (or create a new one)
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            tree = sexpdata.load(f)
-        if not isinstance(tree, list) or not tree:
-            tree = [sexpdata.Symbol("kicad_symbol_lib")]
-    else:
-        tree = [
-            sexpdata.Symbol("kicad_symbol_lib"),
-            [sexpdata.Symbol("version"), 20211014],
-            [sexpdata.Symbol("generator"), "harnice"],
-        ]
-
-    # Normalize header token
-    if not tree:
-        tree = [sexpdata.Symbol("kicad_symbol_lib")]
-    else:
-        if not (isinstance(tree[0], sexpdata.Symbol) and tree[0].value() == "kicad_symbol_lib"):
-            tree[0] = sexpdata.Symbol("kicad_symbol_lib")
-
-    # Ensure version/generator exist
-    has_version = any(isinstance(it, list) and it and _sym_value(it[0]) == "version" for it in tree[1:])
-    has_generator = any(isinstance(it, list) and it and _sym_value(it[0]) == "generator" for it in tree[1:])
-    if not has_version:
-        tree.insert(1, [sexpdata.Symbol("version"), 20211014])
-    if not has_generator:
-        insert_idx = 2 if has_version else 1
-        tree.insert(insert_idx, [sexpdata.Symbol("generator"), "harnice"])
-
-    # Replace existing symbol with same name, or append if missing
-    sym_name = _sym_value(symbol[1]) if isinstance(symbol, list) and len(symbol) > 1 else None
-    replaced = False
-    if sym_name:
-        for i, item in enumerate(tree):
-            if isinstance(item, list) and item:
-                if _sym_value(item[0]) == "symbol" and len(item) > 1 and _sym_value(item[1]) == sym_name:
-                    tree[i] = symbol
-                    replaced = True
-                    break
-    if not replaced:
-        tree.append(symbol)
-
-    # Write full library back
-    with open(path, "w", encoding="utf-8") as f:
-        sexpdata.dump(tree, f)
-
-    # Save library setup info (just one line now)
-    with open(fileio.path("library setup info"), "w", encoding="utf-8") as f:
-        cwd_parent = os.path.abspath(os.path.dirname(os.getcwd()))
-
-        # Walk up until we find "devices"
-        path_search = cwd_parent
-        while True:
-            dirname = os.path.basename(path_search)
-            if dirname == "devices":
-                devices_path = path_search
-                break
-
-            new_path = os.path.dirname(path_search)
-            if new_path == path_search:  # hit filesystem root
-                raise FileNotFoundError("No 'devices' directory found in path hierarchy.")
-            path_search = new_path
-
-        # Compute relative path from devices/ to cwd_parent
-        rel_path = os.path.relpath(cwd_parent, devices_path)
-
-        # Write in the format "harnice:devices/…"
-        f.write(f"harnice-{os.path.join('devices', rel_path)}")
+    print(f"KiPart CSV written to {csv_path} with {len(connector_names)} entries for part {part_name}.")
+    return csv_path
 
 def validate_signals_list():
     # make sure signals list exists
@@ -330,98 +208,31 @@ def validate_signals_list():
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
-def _dump_pretty(tree, f, indent=2):
-    """Pretty-print a sexpdata tree with newlines/indents for readability."""
-    text = sexpdata.dumps(tree)
-    # crude but effective: break after ") (" patterns
-    pretty = text.replace(") (", ")\n" + " " * indent + "(")
-    f.write(pretty + "\n")
+def s_exp_to_dict(exp):
+    """Convert an S-expression parsed by sexpdata into Python dicts/lists."""
+    if isinstance(exp, sexpdata.Symbol):
+        return exp.value()
+    elif isinstance(exp, list):
+        if len(exp) > 0 and isinstance(exp[0], sexpdata.Symbol):
+            head = exp[0].value()
+            if len(exp) == 2:
+                return {head: s_exp_to_dict(exp[1])}
+            else:
+                return {head: [s_exp_to_dict(e) for e in exp[1:]]}
+        else:
+            return [s_exp_to_dict(e) for e in exp]
+    else:
+        return exp  # numbers, strings, etc.
 
-def update_construction_kicad_lib():
-    """
-    Scrape unique connector names from the signals list and
-    generate a construction-only KiCad library with a single
-    symbol 'temp'. Each connector becomes one pin/port.
-    """
-    # --- Collect unique connector names ---
-    path = fileio.path("signals list")
-    connectors = set()
-    with open(path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            name = row.get("connector_name", "").strip()
-            if name:
-                connectors.add(name)
-    connectors = sorted(connectors)
+def parse_kicad_sym_file(file_path):
+    """Parse a KiCad .kicad_sym file into a nested Python dict."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = sexpdata.load(f)
+    return s_exp_to_dict(data)
 
-    # --- Build the 'temp' symbol ---
-    symbol = [
-        sexpdata.Symbol("symbol"),
-        "temp",
-        # required KiCad properties
-        [sexpdata.Symbol("property"), "Reference", "U", [sexpdata.Symbol("id"), 0], [sexpdata.Symbol("at"), 0, 0, 0]],
-        [sexpdata.Symbol("property"), "Value", "temp", [sexpdata.Symbol("id"), 1], [sexpdata.Symbol("at"), 0, -100, 0]],
-        [sexpdata.Symbol("property"), "Footprint", "", [sexpdata.Symbol("id"), 2], [sexpdata.Symbol("at"), 0, -200, 0]],
-        [sexpdata.Symbol("property"), "Datasheet", "", [sexpdata.Symbol("id"), 3], [sexpdata.Symbol("at"), 0, -300, 0]],
-    ]
-
-    for i, conn in enumerate(connectors, start=1):
-        pin = [
-            sexpdata.Symbol("pin"),
-            sexpdata.Symbol("passive"),   # electrical type
-            sexpdata.Symbol("line"),      # pin shape
-            [sexpdata.Symbol("at"), 0, i * 100, sexpdata.Symbol("right")],
-            [sexpdata.Symbol("length"), 200],
-            [sexpdata.Symbol("name"), conn,
-                [sexpdata.Symbol("effects"),
-                    [sexpdata.Symbol("font"),
-                        [sexpdata.Symbol("size"), 1.27, 1.27]
-                    ]
-                ]
-            ],
-            [sexpdata.Symbol("number"), str(i),
-                [sexpdata.Symbol("effects"),
-                    [sexpdata.Symbol("font"),
-                        [sexpdata.Symbol("size"), 1.27, 1.27]
-                    ]
-                ]
-            ],
-        ]
-        symbol.append(pin)
-
-    # --- Wrap in KiCad library structure ---
-    tree = [
-        sexpdata.Symbol("kicad_symbol_lib"),
-        [sexpdata.Symbol("version"), 20211014],
-        [sexpdata.Symbol("generator"), "harnice"],
-        symbol,
-    ]
-
-    # --- Save to temp symbol library path ---
-    with open(fileio.path("temp symbol"), "w", encoding="utf-8") as f:
-        _dump_pretty(tree, f)
-
-    print(f"Updated construction library with connectors: {', '.join(connectors)}")
-
-
-def update_symbol():
-    """Ensure real library has PN-REV symbol, merging from construction-only 'temp'.
-    - construction-only library: single symbol named "temp"
-    - real library: symbol named fileio.partnumber("pn-rev")
-    """
-    # Ensure construction-only library is up to date
-    update_construction_kicad_lib()
-    # Load reference from construction-only library (symbol 'temp')
-    ref = load_symbol(fileio.path("temp symbol"), "temp")
-    # Ensure the real library contains the PN-REV symbol
-    sym_name = fileio.partnumber("pn-rev")
-    old = load_symbol(fileio.path("real symbol"), sym_name)
-
-    # Merge temp into real
-    merged = merge_symbols(old, ref)
-
-    # Save back to library
-    save_symbol(fileio.path("real symbol"), merged)
+# Example usage:
+# sym_dict = parse_kicad_sym_file(fileio.path("temp symbol"))
+# print(json.dumps(sym_dict, indent=2))  # pretty-print as JSON if desired
 
 def device_render(lightweight=False):
     fileio.verify_revision_structure()
@@ -441,7 +252,8 @@ def device_render(lightweight=False):
     if not lightweight:
         validate_signals_list()
 
-    update_symbol()
+    build_kipart_csv()
+    generate_temp_symbol()
 
 def lightweight_render():
     device_render(lightweight=True)

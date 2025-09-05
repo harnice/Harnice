@@ -112,6 +112,10 @@ def harnice_file_structure():
         }
     elif product_type == "device":
         return {
+            "kicad_construction_only":{
+                f"{partnumber("pn-rev")}-kipart_sym.kicad_sym":"temp symbol",
+                f"{partnumber("pn-rev")}-kipart.csv":"kipart csv",
+            },
             f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
             f"{partnumber("pn-rev")}-signals-list.tsv":"signals list"
         }
@@ -138,7 +142,7 @@ def generate_structure():
         os.makedirs(dirpath("prebuilders"), exist_ok=True)
     if product_type == "device":
         os.makedirs(dirpath("kicad"), exist_ok=True)
-        os.makedirs(dirpath("construction_only"), exist_ok=True)
+        os.makedirs(dirpath("kicad_construction_only"), exist_ok=True)
 
 def silentremove(filepath):
     if os.path.exists(filepath):
@@ -165,9 +169,6 @@ def path(target_value):
     if product_type == "device":
         if target_value == "real symbol":
             return os.path.join(dirpath("kicad"), f"{partnumber("pn")}.kicad_sym")
-
-        if target_value == "temp symbol":
-            return os.path.join(dirpath("kicad"), "construction_only", f"{partnumber("pn")}-construction-only.kicad_sym")
 
         if target_value == "library setup info":
             return os.path.join(dirpath("kicad"), "librarybasics.txt")
@@ -199,28 +200,26 @@ def dirpath(target_key):
     if product_type == "device":
         if target_key == "kicad":
             return os.path.join(_part_directory(), "kicad")
-        if target_key == "construction_only":
-            return os.path.join(_part_directory(), "kicad", "construction_only")
-    else:
-        def recursive_search(data, path):
-            if isinstance(data, dict):
-                for key, value in data.items():
-                    if key == target_key:
-                        return path + [key]
-                    result = recursive_search(value, path + [key])
-                    if result:
-                        return result
-            elif isinstance(data, list):
-                for index, item in enumerate(data):
-                    result = recursive_search(item, path + [f"[{index}]"])
-                    if result:
-                        return result
-            return None
 
-        path_key = recursive_search(harnice_file_structure(), [])
-        if not path_key:
-            raise TypeError(f"Could not find directory {target_key}.")
-        return os.path.join(_rev_directory(),*path_key)
+    def recursive_search(data, path):
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key == target_key:
+                    return path + [key]
+                result = recursive_search(value, path + [key])
+                if result:
+                    return result
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                result = recursive_search(item, path + [f"[{index}]"])
+                if result:
+                    return result
+        return None
+
+    path_key = recursive_search(harnice_file_structure(), [])
+    if not path_key:
+        raise TypeError(f"Could not find directory {target_key}.")
+    return os.path.join(_rev_directory(),*path_key)
 
 def name(target_value):
     #returns the filename of a filekey. 

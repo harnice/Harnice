@@ -24,6 +24,7 @@
     pip install xlwt
     pip install lxml
     pip install sexpdata
+    pip install kipart
     pip3 install PyPDF2
     brew install graphviz
     brew install poppler  # for pdfunite
