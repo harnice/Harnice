@@ -112,10 +112,6 @@ def harnice_file_structure():
         }
     elif product_type == "device":
         return {
-            "kicad_construction_only":{
-                f"{partnumber("pn-rev")}-kipart_sym.kicad_sym":"temp symbol",
-                f"{partnumber("pn-rev")}-kipart.csv":"kipart csv",
-            },
             f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
             f"{partnumber("pn-rev")}-signals-list.tsv":"signals list"
         }
@@ -142,7 +138,6 @@ def generate_structure():
         os.makedirs(dirpath("prebuilders"), exist_ok=True)
     if product_type == "device":
         os.makedirs(dirpath("kicad"), exist_ok=True)
-        os.makedirs(dirpath("kicad_construction_only"), exist_ok=True)
 
 def silentremove(filepath):
     if os.path.exists(filepath):

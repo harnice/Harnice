@@ -67,66 +67,6 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 
 """
 
-def generate_temp_symbol(symbol_name=None):
-    """
-    Use KiPart to generate a KiCad .kicad_sym part file from the kipart CSV.
-    Always overwrites the temp symbol file.
-    """
-    csv_path = fileio.path("kipart csv")
-    out_path = fileio.path("temp symbol")
-
-    # Add -w so existing file is overwritten
-    cmd = [
-        "kipart",
-        "-o", out_path,
-        "-w",
-        csv_path
-    ]
-
-    if symbol_name:
-        cmd.extend(["-p", symbol_name])
-
-    print("Running:", " ".join(cmd))
-    subprocess.run(cmd, check=True)
-
-    print(f"Temporary symbol written to {out_path}")
-    return out_path
-
-
-def build_kipart_csv():
-    """
-    Overwrites the kipart CSV in the 'spreadsheet' format KiPart expects:
-    <part name>
-    Pin,Type,Name
-    1,unspecified,in1
-    ...
-    """
-    signals_path = fileio.path("signals list")
-    csv_path = fileio.path("kipart csv")
-
-    # Derive part name from CWD (assumes PN-rev directory, e.g. SM58-rev2)
-    cwd = os.getcwd()
-    part_name = os.path.basename(cwd).split("-")[0]  # e.g. "SM58"
-
-    connector_names = set()
-    with open(signals_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")  # signals list is TSV
-        for row in reader:
-            connector_name = row.get("connector_name", "").strip()
-            if connector_name:
-                connector_names.add(connector_name)
-
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        # First line is the part name
-        f.write(part_name + "\n")
-
-        writer = csv.writer(f, delimiter=",")
-        writer.writerow(["Pin", "Type", "Name"])
-        for i, name in enumerate(sorted(connector_names), start=1):
-            writer.writerow([i, "unspecified", name])
-
-    return csv_path
-
 def validate_signals_list():
     # make sure signals list exists
     if not os.path.exists(fileio.path("signals list")):
@@ -286,9 +226,7 @@ def device_render(lightweight=False):
     if not lightweight:
         validate_signals_list()
 
-    build_kipart_csv()
     validate_kicad_library()
-    #generate_temp_symbol()
 
 def lightweight_render():
     device_render(lightweight=True)
