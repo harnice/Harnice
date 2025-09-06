@@ -32,6 +32,12 @@ def new_signals_list():
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(SIGNALS_HEADERS)
 
+def read_signals_list():
+    signals_path = fileio.path("signals list")
+    with open(signals_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        return list(reader)
+
 def write_signal(**kwargs):
     """
     Appends a new row to the signals TSV file.
