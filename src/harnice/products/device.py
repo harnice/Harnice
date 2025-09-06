@@ -125,7 +125,6 @@ def build_kipart_csv():
         for i, name in enumerate(sorted(connector_names), start=1):
             writer.writerow([i, "unspecified", name])
 
-    print(f"KiPart CSV written to {csv_path} with {len(connector_names)} entries for part {part_name}.")
     return csv_path
 
 def validate_signals_list():
@@ -224,11 +223,41 @@ def s_exp_to_dict(exp):
     else:
         return exp  # numbers, strings, etc.
 
+def add_blank_symbol():
+    raise NotImplementedError(f"Please make a blank symbol in KiCad (called '{fileio.partnumber('pn-rev')}') and save it to library {fileio.partnumber('pn')}.")
+
 def parse_kicad_sym_file(file_path):
     """Parse a KiCad .kicad_sym file into a nested Python dict."""
     with open(file_path, "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
     return s_exp_to_dict(data)
+
+def validate_kicad_library():
+    unique_connectors_in_signals_list = set()
+
+    kicad_lib = parse_kicad_sym_file(fileio.path("real symbol"))
+
+    #check if symbol exists in the library
+    for item in kicad_lib.get("kicad_symbol_lib", []):
+        if "symbol" in item:
+            symbol_data = item["symbol"]
+            if isinstance(symbol_data, list) and symbol_data and symbol_data[0] == fileio.partnumber("pn-rev"):
+                break
+            else:
+                add_blank_symbol()
+    
+    #check if pins exist in the symbol
+    for unique_connector in unique_connectors_in_signals_list:
+        if unique_connector not in pin:
+            add_pin({
+                "name": unique_connector,
+                "number": counter,
+                })
+
+    #check if pins in symbol exist as connectors in the signals list
+    for unique_connector in unique_connectors_in_signals_list:
+        if pin not in unique_connector:
+            raise ValueError(f"Pin {pin} does not exist in the signals list.")
 
 # Example usage:
 # sym_dict = parse_kicad_sym_file(fileio.path("temp symbol"))
@@ -243,6 +272,11 @@ def device_render(lightweight=False):
         if not os.path.exists(fileio.path("signals list")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
                 f.write(signals_list_feature_tree_default)
+    else:
+        icd.new_signals_list()
+        icd.write_signal(
+            connector_name="J1",
+        )
 
     # Run the signals list feature tree script
     if os.path.exists(fileio.path("feature tree")):
@@ -253,7 +287,8 @@ def device_render(lightweight=False):
         validate_signals_list()
 
     build_kipart_csv()
-    generate_temp_symbol()
+    validate_kicad_library()
+    #generate_temp_symbol()
 
 def lightweight_render():
     device_render(lightweight=True)
