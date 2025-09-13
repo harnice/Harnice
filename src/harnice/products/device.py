@@ -299,13 +299,7 @@ def validate_kicad_library():
 
     sym_path = fileio.path("real symbol")
     if not os.path.exists(sym_path):
-        print(f"[DEBUG] Symbol file missing, creating new: {sym_path}")
-        blank_lib = {"kicad_symbol_lib": [
-            {"version": 20211014},
-            {"generator": "harnice"}
-        ]}
-        with open(sym_path, "w", encoding="utf-8") as f:
-            sexpdata.dump(dict_to_s_exp(blank_lib), f)
+        raise ValueError(f"Please make a new Kicad symbol at {sym_path}")
 
     # Step 1. Collect unique connectors from the signals list
     unique_connectors_in_signals_list = set()
@@ -313,8 +307,6 @@ def validate_kicad_library():
         connector_name = signal.get("connector_name")
         if connector_name:
             unique_connectors_in_signals_list.add(connector_name)
-
-    print(f"[DEBUG] Connectors found in signals list: {unique_connectors_in_signals_list}")
 
     # Step 2. Load the KiCad library
     kicad_lib = parse_kicad_sym_file(sym_path)
@@ -329,11 +321,7 @@ def validate_kicad_library():
                 symbol_data = data
                 break
     if symbol_data is None:
-        print(f"[DEBUG] No symbol for {pn_rev}, creating blank one")
-        add_blank_symbol(pn_rev)
-        return
-
-    print(f"[DEBUG] Found symbol for {pn_rev}")
+        raise ValueError(f"No symbol for {fileio.partnumber('R')} in library {fileio.partnumber('pn')}")
 
     # Step 4. Extract existing pins from the symbol
     existing_pins = set()
@@ -345,23 +333,19 @@ def validate_kicad_library():
                     name = entry["name"][0] if isinstance(entry["name"], list) else entry["name"]
                     existing_pins.add(name)
 
-    print(f"[DEBUG] Existing pins in symbol: {existing_pins}")
-
     # Step 5. Check if pins exist for each connector
     counter = 1
     for connector in unique_connectors_in_signals_list:
         if connector not in existing_pins:
-            print(f"[DEBUG] Adding pin for connector {connector} as #{counter}")
-            add_pin({
-                "name": connector,
-                "number": str(counter),
-            })
+            raise ValueError(f"Missing pin in symbol for connector {connector}")
             counter += 1
 
     # Step 6. Verify no extra pins exist
     for pin in existing_pins:
         if pin not in unique_connectors_in_signals_list:
             raise ValueError(f"Pin {pin} exists in the symbol but not in the signals list.")
+
+    print(f"Symbol for '{fileio.partnumber('pn-rev')}' has pins that match the connectors in the signals list.")
 
 def device_render(lightweight=False):
     fileio.verify_revision_structure()
