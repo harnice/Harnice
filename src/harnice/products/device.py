@@ -3,6 +3,7 @@ import runpy
 import csv
 from harnice import fileio, icd
 import sexpdata
+import json
 
 signals_list_feature_tree_default = """
 from harnice import icd
@@ -218,7 +219,7 @@ def add_blank_symbol(sym_name, default_refdes,
         [sexpdata.Symbol("exclude_from_sim"), sexpdata.Symbol("no")],
         [sexpdata.Symbol("in_bom"), sexpdata.Symbol("yes")],
         [sexpdata.Symbol("on_board"), sexpdata.Symbol("yes")],
-        make_property("Reference", default_refdes),
+        make_property("Reference", get_attribute("default_refdes")),
         make_property("Value", value),
         make_property("Footprint", footprint, hide=True),
         make_property("Datasheet", datasheet, hide=True),
@@ -456,8 +457,8 @@ def validate_kicad_library():
         add_blank_symbol(
             sym_name=fileio.partnumber("pn-rev"),
             default_refdes="U",
-            mfg="SPECIFY MANUFACTURER NAME",
-            mpn=fileio.partnumber("pn")
+            mfg=get_attribute("manufacturer"),
+            mpn=get_attribute("manufacturer_part_number")
         )
 
     # Step 1. Collect unique connectors from the signals list
@@ -483,9 +484,51 @@ def validate_kicad_library():
         # mark number as used
         seen_numbers.add(pin_number)
 
+def validate_attributes_json():
+    """Ensure an attributes JSON file exists with default values if missing."""
+
+    default_attributes = {
+        "manufacturer": "SPECIFY MANUFACTURER NAME",
+        "manufacturer_part_number": fileio.partnumber("pn"),
+        "default_refdes": "DEVICE"
+    }
+
+    attributes_path = fileio.path("attributes")
+
+    # If attributes file does not exist, create it with defaults
+    if not os.path.exists(attributes_path):
+        with open(attributes_path, "w", encoding="utf-8") as f:
+            json.dump(default_attributes, f, indent=4)
+        print(f"Created attributes file at {attributes_path}")
+
+    # If it exists, load it and verify required keys
+    else:
+        with open(attributes_path, "r", encoding="utf-8") as f:
+            try:
+                attributes = json.load(f)
+            except json.JSONDecodeError:
+                raise ValueError(f"Invalid JSON in attributes file: {attributes_path}")
+
+        updated = False
+        for key, value in default_attributes.items():
+            if key not in attributes:
+                attributes[key] = value
+                updated = True
+
+        if updated:
+            with open(attributes_path, "w", encoding="utf-8") as f:
+                json.dump(attributes, f, indent=4)
+            print(f"Updated attributes file with missing defaults at {attributes_path}")
+
+def get_attribute(attribute_key):
+    with open(fileio.path("attributes"), "r", encoding="utf-8") as f:
+        return json.load(f).get(attribute_key)
+
 def device_render(lightweight=False):
     fileio.verify_revision_structure()
     fileio.generate_structure()
+
+    validate_attributes_json()
 
     if not lightweight:
         if not os.path.exists(fileio.path("signals list")):
