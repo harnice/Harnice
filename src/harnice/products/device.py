@@ -280,6 +280,47 @@ def extract_pins_from_symbol(kicad_lib, symbol_name):
     recurse(kicad_lib, inside_target=False)
     return pins
 
+def validate_pins(pins, unique_connectors_in_signals_list):
+    """Validate pins for uniqueness, type conformity, and check required pins.
+    
+    Returns:
+        set: Any missing pin names from unique_connectors_in_signals_list.
+    Raises:
+        ValueError: On duplicate names/numbers or invalid types.
+    """
+    seen_names = set()
+    seen_numbers = set()
+
+    for pin in pins:
+        name = pin.get("name")
+        number = pin.get("number")
+        ptype = pin.get("type")
+
+        # Duplicate name
+        if name in seen_names:
+            raise ValueError(f"Duplicate pin name found: {name}")
+        seen_names.add(name)
+
+        # Duplicate number
+        if number in seen_numbers:
+            raise ValueError(f"Duplicate pin number found: {number}")
+        seen_numbers.add(number)
+
+        # Type check
+        if ptype != "unspecified":
+            raise ValueError(f"Pin {name} ({number}) has invalid type: {ptype}")
+
+    # Set comparison for 1:1 match
+    required = set(unique_connectors_in_signals_list)
+    pin_names = seen_names
+
+    missing = required - pin_names
+    extra = pin_names - required
+    if extra:
+        raise ValueError(f"Unexpected pin(s): {', '.join(sorted(extra))}")
+
+    return missing
+
 
 def validate_kicad_library():
     """
@@ -300,8 +341,6 @@ def validate_kicad_library():
             sym_name=fileio.partnumber("pn-rev"),
             default_refdes="U"
         )
-    else:
-        print(f"Symbol for {fileio.partnumber('pn-rev')} already exists")
 
     # Step 1. Collect unique connectors from the signals list
     unique_connectors_in_signals_list = set()
@@ -310,12 +349,11 @@ def validate_kicad_library():
         if connector_name:
             unique_connectors_in_signals_list.add(connector_name)
 
-    # Step 2. Extract existing pins from the symbol
+    # Step 2. Validate pins
     kicad_lib = parse_kicad_sym_file()
     pins = extract_pins_from_symbol(kicad_lib, fileio.partnumber("pn-rev"))
-
-    for pin in pins:
-        print(pin)
+    missing = validate_pins(pins, unique_connectors_in_signals_list)
+    print(missing)
 
     exit()
 
