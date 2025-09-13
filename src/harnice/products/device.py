@@ -178,8 +178,8 @@ def symbol_exists(kicad_library_data, target_symbol_name):
                     return True
     return False
 
-def add_blank_symbol(sym_name, default_refdes,
-                     value="", footprint="", datasheet="", description="", mfg="", mpn=""):
+def add_blank_symbol(sym_name,
+                     value="", footprint="", datasheet="", description=""):
     """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
 
     lib_path = fileio.path("library file")
@@ -224,8 +224,10 @@ def add_blank_symbol(sym_name, default_refdes,
         make_property("Footprint", footprint, hide=True),
         make_property("Datasheet", datasheet, hide=True),
         make_property("Description", description, hide=True),
-        make_property("MFG", mfg, hide=False, id_counter=0),
-        make_property("MPN", mpn, hide=False, id_counter=1),
+        make_property("MFG", get_attribute("manufacturer"), hide=False, id_counter=0),
+        make_property("MPN", get_attribute("manufacturer_part_number"), hide=False, id_counter=1),
+        make_property("Supplier", get_attribute("library_subpath"), hide=True, id_counter=2),
+        make_property("Rev", fileio.partnumber("rev"), hide=True, id_counter=2),
         [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")]
     ]
 
@@ -235,8 +237,6 @@ def add_blank_symbol(sym_name, default_refdes,
     # Write back out
     with open(lib_path, "w", encoding="utf-8") as f:
         sexpdata.dump(data, f, pretty=True)
-
-import sexpdata
 
 def extract_pins_from_symbol(kicad_lib, symbol_name):
     """
@@ -456,9 +456,6 @@ def validate_kicad_library():
     if not symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
         add_blank_symbol(
             sym_name=fileio.partnumber("pn-rev"),
-            default_refdes="U",
-            mfg=get_attribute("manufacturer"),
-            mpn=get_attribute("manufacturer_part_number")
         )
 
     # Step 1. Collect unique connectors from the signals list
@@ -490,7 +487,8 @@ def validate_attributes_json():
     default_attributes = {
         "manufacturer": "SPECIFY MANUFACTURER NAME",
         "manufacturer_part_number": fileio.partnumber("pn"),
-        "default_refdes": "DEVICE"
+        "default_refdes": "DEVICE",
+        "library_subpath": "UPDATE ATTRIBUTE: ENV VAR OF LIBRARY / SUBPATH TO PN FILE"
     }
 
     attributes_path = fileio.path("attributes")
