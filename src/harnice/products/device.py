@@ -2,9 +2,7 @@ import os
 import runpy
 import csv
 from harnice import fileio, icd
-import subprocess
 import sexpdata
-import json
 
 signals_list_feature_tree_default = """
 from harnice import icd
@@ -138,156 +136,96 @@ def validate_signals_list():
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
-def s_exp_to_dict(sexp):
-    if isinstance(sexp, list):
-        if sexp and isinstance(sexp[0], sexpdata.Symbol):
-            key = sexp[0].value()
-            return {key: [s_exp_to_dict(x) for x in sexp[1:]]}
-        else:
-            return [s_exp_to_dict(x) for x in sexp]
-    elif isinstance(sexp, sexpdata.Quoted):
-        return sexp.value()
-    elif isinstance(sexp, sexpdata.Symbol):
-        return sexp.value()
-    else:
-        return sexp
+def make_new_library_file():
+    """Create a bare .kicad_sym file with only library header info."""
 
-def dict_to_s_exp(obj):
-    if isinstance(obj, dict):
-        s_exp = []
-        for key, value in obj.items():
-            s_exp.append(sexpdata.Symbol(key))
-            if isinstance(value, list):
-                if all(not isinstance(v, (dict, list)) for v in value):
-                    for v in value:
-                        s_exp.append(dict_to_s_exp(v))
-                else:
-                    for v in value:
-                        s_exp.append(dict_to_s_exp(v))
-            else:
-                s_exp.append(dict_to_s_exp(value))
-        return s_exp
+    symbol_lib = [
+        sexpdata.Symbol("kicad_symbol_lib"),
+        [sexpdata.Symbol("version"), 20241209],
+        [sexpdata.Symbol("generator"), "kicad_symbol_editor"],
+        [sexpdata.Symbol("generator_version"), "9.0"],
+    ]
 
-    elif isinstance(obj, list):
-        return [dict_to_s_exp(x) for x in obj]
-
-    elif isinstance(obj, str):
-        if obj.lower() in ("yes", "no"):
-            return sexpdata.Symbol(obj.lower())
-        return obj
-
-    elif isinstance(obj, sexpdata.Symbol):
-        return obj
-
-    else:
-        return obj
-
-def write_kicad_sym_file(file_path, data):
-    print(data)
-    sexp = dict_to_s_exp(data)
-    with open(file_path, "w", encoding="utf-8") as f:
-        sexpdata.dump(sexp, f)
-
-def make_effects(hide=False):
-    """
-    Return a KiCad-correct effects block:
-    (effects
-      (font (size 1.27 1.27))
-      (hide yes)  ; if hide=True
-    )
-    """
-    effects = []
-    effects.append({"font": [{"size": [1.27, 1.27]}]})
-    if hide:
-        effects.append({"hide": sexpdata.Symbol("yes")})
-    return {"effects": effects}
-
-def add_blank_symbol(pn_rev=None):
-    sym_path = fileio.path("real symbol")
-    kicad_lib = parse_kicad_sym_file(sym_path)
-
-    if pn_rev is None:
-        pn_rev = fileio.partnumber("pn-rev")
-
-    def make_property(name, value, hide=False):
-        return {
-            "property": [
-                name,
-                value,
-                {"at": [0, 0, 0]},
-                make_effects(hide=hide)
-            ]
-        }
-
-    new_symbol = {
-        "symbol": [
-            pn_rev,
-            {"exclude_from_sim": sexpdata.Symbol("no")},
-            {"in_bom": sexpdata.Symbol("yes")},
-            {"on_board": sexpdata.Symbol("yes")},
-            make_property("Reference", "U"),
-            make_property("Value", ""),
-            make_property("Footprint", "", hide=True),
-            make_property("Datasheet", "", hide=True),
-            make_property("Description", "", hide=True),
-        ]
-    }
-
-    kicad_lib["kicad_symbol_lib"].append(new_symbol)
-
-    with open(sym_path, "w", encoding="utf-8") as f:
-        sexpdata.dump(dict_to_s_exp(kicad_lib), f)
-
-    print(f"Blank symbol '{pn_rev}' added to {sym_path}")
-
-def add_pin(pin_info):
-    sym_path = fileio.path("real symbol")
-    kicad_lib = parse_kicad_sym_file(sym_path)
-    pn_rev = fileio.partnumber("pn-rev")
-
-    symbol_data = None
-    for item in kicad_lib.get("kicad_symbol_lib", []):
-        if "symbol" in item:
-            data = item["symbol"]
-            if isinstance(data, list) and data and data[0] == pn_rev:
-                symbol_data = data
-                break
-    if symbol_data is None:
-        raise ValueError(f"Symbol {pn_rev} not found in {sym_path}")
-
-    new_pin = {
-        "pin": [
-            "passive",
-            "line",
-            {"at": [0, 0, "right"]},
-            {"length": 200},
-            {"name": [
-                pin_info["name"],
-                make_effects()
-            ]},
-            {"number": [
-                str(pin_info["number"]),
-                make_effects()
-            ]}
-        ]
-    }
-
-    symbol_data.append(new_pin)
-
-    with open(sym_path, "w", encoding="utf-8") as f:
-        sexpdata.dump(dict_to_s_exp(kicad_lib), f)
-
-    print(f"Added pin '{pin_info['name']}' (#{pin_info['number']}) to {pn_rev}")
-
-def remove_pin(pin):
-    raise NotImplementedError(
-        f"Please remove a pin from the symbol in KiCad (called '{fileio.partnumber('pn-rev')}')."
-    )
+    with open(fileio.path("library file"), "w", encoding="utf-8") as f:
+        sexpdata.dump(symbol_lib, f, pretty=True)
 
 def parse_kicad_sym_file(file_path):
+    """
+    Load a KiCad .kicad_sym file and return its parsed sexp data.
+    """
     with open(file_path, "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
-    return s_exp_to_dict(data)
+    return data
+
+
+def symbol_exists(kicad_library_data, target_symbol_name):
+    """
+    Check if a symbol with a given name exists in a KiCad library.
+
+    Args:
+        kicad_library_data: Parsed sexpdata of the .kicad_sym file.
+        target_symbol_name: The symbol name string to search for.
+
+    Returns:
+        True if the symbol exists, False otherwise.
+    """
+    for element in kicad_library_data:
+        # Each element could be a list like: ["symbol", "sym_name", ...]
+        if isinstance(element, list) and len(element) > 1:
+            if element[0] == sexpdata.Symbol("symbol"):
+                if str(element[1]) == target_symbol_name:
+                    return True
+    return False
+
+import sexpdata
+from harnice import fileio
+
+def add_blank_symbol(sym_name, default_refdes,
+                     value="", footprint="", datasheet="", description=""):
+    """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
+
+    lib_path = fileio.path("library file")
+
+    # Load the existing s-expression
+    with open(lib_path, "r", encoding="utf-8") as f:
+        data = sexpdata.load(f)
+
+    def make_property(name, text, hide=False):
+        prop = [
+            sexpdata.Symbol("property"), name, text,
+            [sexpdata.Symbol("at"), 0, 0, 0],
+            [sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"),
+                    [sexpdata.Symbol("size"), 1.27, 1.27]
+                ]
+            ]
+        ]
+        if hide:
+            # add (hide yes) as symbols, not strings
+            prop[-1].append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
+        return prop
+
+    # Build symbol s-expression
+    symbol = [
+        sexpdata.Symbol("symbol"), sym_name,
+        [sexpdata.Symbol("exclude_from_sim"), sexpdata.Symbol("no")],
+        [sexpdata.Symbol("in_bom"), sexpdata.Symbol("yes")],
+        [sexpdata.Symbol("on_board"), sexpdata.Symbol("yes")],
+        make_property("Reference", default_refdes),
+        make_property("Value", value),
+        make_property("Footprint", footprint, hide=True),
+        make_property("Datasheet", datasheet, hide=True),
+        make_property("Description", description, hide=True),
+        [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")]
+    ]
+
+    # Append to the library data
+    data.append(symbol)
+
+    # Write back out
+    with open(lib_path, "w", encoding="utf-8") as f:
+        sexpdata.dump(data, f, pretty=True)
+
 
 def validate_kicad_library():
     """
@@ -297,10 +235,21 @@ def validate_kicad_library():
     2. Pins that match the connectors in the signals list.
     """
 
-    sym_path = fileio.path("real symbol")
-    if not os.path.exists(sym_path):
-        raise ValueError(f"Please make a new Kicad symbol at {sym_path}")
+    if not os.path.exists(fileio.path("library file")):
+        print(f"Making a new Kicad symbol at {fileio.path("library file")}")
+        make_new_library_file()
 
+    kicad_library_data = parse_kicad_sym_file(fileio.path("library file"))
+
+    if not symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
+        add_blank_symbol(
+            sym_name=fileio.partnumber("pn-rev"),
+            default_refdes="U"
+        )
+    else:
+        print(f"Symbol for {fileio.partnumber('pn-rev')} already exists")
+
+    exit()
     # Step 1. Collect unique connectors from the signals list
     unique_connectors_in_signals_list = set()
     for signal in icd.read_signals_list():

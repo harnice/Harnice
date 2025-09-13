@@ -162,7 +162,7 @@ def path(target_value):
         return file_path
 
     if product_type == "device":
-        if target_value == "real symbol":
+        if target_value == "library file":
             return os.path.join(dirpath("kicad"), f"{partnumber("pn")}.kicad_sym")
 
         if target_value == "library setup info":
