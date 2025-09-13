@@ -112,7 +112,6 @@ def harnice_file_structure():
         }
     elif product_type == "device":
         return {
-            f"{partnumber("pn-rev")}.kicad_sym":"kicad sym",
             f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
             f"{partnumber("pn-rev")}-signals-list.tsv":"signals list"
         }
@@ -129,13 +128,16 @@ def harnice_file_structure():
         }
 
 def generate_structure():
-    os.makedirs(dirpath("artifacts"), exist_ok=True)
-    os.makedirs(dirpath("instance_data"), exist_ok=True)
-    os.makedirs(dirpath("imported_instances"), exist_ok=True)
-    silentremove(dirpath("generated_instances_do_not_edit"))
-    os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
-    os.makedirs(dirpath("interactive_files"), exist_ok=True)
-    os.makedirs(dirpath("prebuilders"), exist_ok=True)
+    if product_type == "harness":
+        os.makedirs(dirpath("artifacts"), exist_ok=True)
+        os.makedirs(dirpath("instance_data"), exist_ok=True)
+        os.makedirs(dirpath("imported_instances"), exist_ok=True)
+        silentremove(dirpath("generated_instances_do_not_edit"))
+        os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
+        os.makedirs(dirpath("interactive_files"), exist_ok=True)
+        os.makedirs(dirpath("prebuilders"), exist_ok=True)
+    if product_type == "device":
+        os.makedirs(dirpath("kicad"), exist_ok=True)
 
 def silentremove(filepath):
     if os.path.exists(filepath):
@@ -158,6 +160,13 @@ def path(target_value):
     if target_value == "revision history":
         file_path = os.path.join(_part_directory(), f"{partnumber("pn")}-revision_history.tsv")
         return file_path
+
+    if product_type == "device":
+        if target_value == "library file":
+            return os.path.join(dirpath("kicad"), f"{partnumber("pn")}.kicad_sym")
+
+        if target_value == "library setup info":
+            return os.path.join(dirpath("kicad"), "librarybasics.txt")
 
     def recursive_search(data, path):
         if isinstance(data, dict):
@@ -183,6 +192,9 @@ def path(target_value):
 
 def dirpath(target_key):
     #returns the path of a directory you know the name of. use that directory name as the argument. 
+    if product_type == "device":
+        if target_key == "kicad":
+            return os.path.join(_part_directory(), "kicad")
 
     def recursive_search(data, path):
         if isinstance(data, dict):

@@ -2,22 +2,21 @@ import os
 import runpy
 import csv
 from harnice import fileio, icd
+import sexpdata
 
 signals_list_feature_tree_default = """
 from harnice import icd
 
 ch_type_ids = {
-    "in": 1,
-    "out": 4,
-    "shield": 5
+    "in": (1, "public"),
+    "out": (4, "public"),
+    "chassis": (5, "public")
 }
-
-ch_type_id_supplier = "public"
 
 xlr_pinout = {
     "pos": 2,
     "neg": 3,
-    "shield": 1
+    "chassis": 1
 }
 
 connector_mpns = {
@@ -44,83 +43,70 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
     channel_name = connector_name
     connector_mpn = mpn_for_connector(connector_name)
 
-    for signal in icd.signals_of_channel_type(channel_type_id, ch_type_id_supplier):
+    for signal in icd.signals_of_channel_type_id(channel_type_id):
         icd.write_signal(
             channel=channel_name,
             signal=signal,
             connector_name=connector_name,
-            contact=xlr_pinout.get(signal)
+            contact=xlr_pinout.get(signal),
             channel_type_id=channel_type_id,
-            channel_type_id_supplier="public",
             connector_mpn=connector_mpn
         )
 
     # Add shield row
     icd.write_signal(
         channel=f"{channel_name}-shield",
-        signal="shield",
+        signal="chassis",
         connector_name=connector_name,
-        contact=xlr_pinout.get("shield")
-        channel_type_id=ch_type_ids["shield"],
-        channel_type_id_supplier="public",
+        contact=xlr_pinout.get("chassis"),
+        channel_type_id=ch_type_ids["chassis"],
         connector_mpn=connector_mpn
     )
 
 """
 
-def render():
-    fileio.verify_revision_structure()
-
-    # Create signals list feature tree file if no list.
-    if not os.path.exists(fileio.path("signals list")):
-        with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
-            f.write(signals_list_feature_tree_default)
-
-    # Run the signals list feature tree script
-    if os.path.exists(fileio.path("feature tree")):
-        runpy.run_path(fileio.path("feature tree"))
-        print("Successfully rebuilt signals list per feature tree.")
-
-
-################ Validate signals list
-
-    # make sure signals list exists
+def validate_signals_list():
     if not os.path.exists(fileio.path("signals list")):
         raise FileNotFoundError("Signals list was not generated.")
 
-    # load the signals list to read it in subsequent checks
-    signals_list = []
     with open(fileio.path("signals list"), "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
+        headers = reader.fieldnames
         signals_list = list(reader)
 
-    # make sure the required headers are present and in the correct order
+    if not headers:
+        raise ValueError("Signals list has no header row.")
+
     required_headers = icd.SIGNALS_HEADERS
-    actual_headers = list(signals_list[0].keys())
+    missing = [h for h in required_headers if h not in headers]
+    if missing:
+        raise ValueError(f"Signals list is missing headers: {', '.join(missing)}")
 
-    if actual_headers[:len(required_headers)] != required_headers:
-        raise ValueError(
-            f"Signals list headers are incorrect.\n"
-            f"Expected: {required_headers}\n"
-            f"Found:    {actual_headers[:len(required_headers)]}"
-        )
+    if not signals_list:
+        raise ValueError("Signals list has no data rows.")
 
-    # make sure the required fields are present for each signal
-    required_fields = ["channel", "signal", "connector_name", "channel_type_id", "compatible_channel_type_ids"]
+    required_fields = [
+        "channel",
+        "signal",
+        "connector_name",
+        "channel_type_id",
+        "compatible_channel_type_ids",
+    ]
+
     for signal in signals_list:
         for field in required_fields:
             if field not in signal:
-                raise ValueError(f"Channel {signal.get('channel')} is missing the field: {field}")
+                raise ValueError(
+                    f"Channel {signal.get('channel')} is missing the field: {field}"
+                )
 
-    # make sure every signal of a channel is accounted for
     for signal in signals_list:
-        channel_type_id, supplier = signal.get("channel_type_id").strip("[]").split(",")
-        expected_signals_of_channel = icd.signals_of_channel_type_id(channel_type_id, supplier)
-
+        channel_type_id = signal.get("channel_type_id")
+        expected_signals = icd.signals_of_channel_type_id(channel_type_id)
         found_signals = set()
         connector_names = set()
 
-        for expected_signal in expected_signals_of_channel:
+        for expected_signal in expected_signals:
             for signal2 in signals_list:
                 if (
                     signal2.get("channel") == signal.get("channel")
@@ -129,23 +115,19 @@ def render():
                     found_signals.add(expected_signal)
                     connector_names.add(signal2.get("connector_name"))
 
-        # --- Check completeness ---
-        missing_signals = set(expected_signals_of_channel) - found_signals
+        missing_signals = set(expected_signals) - found_signals
         if missing_signals:
             raise ValueError(
                 f"Channel {signal.get('channel')} is missing signals: {', '.join(missing_signals)}"
             )
 
-        # --- Check connector consistency ---
         if len(connector_names) > 1:
             raise ValueError(
                 f"Channel {signal.get('channel')} has signals spread across multiple connectors: "
                 f"{', '.join(connector_names)}"
             )
 
-    # make sure no connector contacts are duplicated
     seen_contacts = set()
-
     for signal in signals_list:
         contact_key = f"{signal.get('connector_name')}-{signal.get('contact')}"
         if contact_key in seen_contacts:
@@ -153,3 +135,380 @@ def render():
         seen_contacts.add(contact_key)
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
+
+def make_new_library_file():
+    """Create a bare .kicad_sym file with only library header info."""
+
+    symbol_lib = [
+        sexpdata.Symbol("kicad_symbol_lib"),
+        [sexpdata.Symbol("version"), 20241209],
+        [sexpdata.Symbol("generator"), "kicad_symbol_editor"],
+        [sexpdata.Symbol("generator_version"), "9.0"],
+    ]
+
+    with open(fileio.path("library file"), "w", encoding="utf-8") as f:
+        sexpdata.dump(symbol_lib, f, pretty=True)
+
+def parse_kicad_sym_file():
+    """
+    Load a KiCad .kicad_sym file and return its parsed sexp data.
+    """
+    with open(fileio.path("library file"), "r", encoding="utf-8") as f:
+        data = sexpdata.load(f)
+    return data
+
+
+def symbol_exists(kicad_library_data, target_symbol_name):
+    """
+    Check if a symbol with a given name exists in a KiCad library.
+
+    Args:
+        kicad_library_data: Parsed sexpdata of the .kicad_sym file.
+        target_symbol_name: The symbol name string to search for.
+
+    Returns:
+        True if the symbol exists, False otherwise.
+    """
+    for element in kicad_library_data:
+        # Each element could be a list like: ["symbol", "sym_name", ...]
+        if isinstance(element, list) and len(element) > 1:
+            if element[0] == sexpdata.Symbol("symbol"):
+                if str(element[1]) == target_symbol_name:
+                    return True
+    return False
+
+def add_blank_symbol(sym_name, default_refdes,
+                     value="", footprint="", datasheet="", description=""):
+    """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
+
+    lib_path = fileio.path("library file")
+
+    # Load the existing s-expression
+    with open(lib_path, "r", encoding="utf-8") as f:
+        data = sexpdata.load(f)
+
+    def make_property(name, text, hide=False):
+        prop = [
+            sexpdata.Symbol("property"), name, text,
+            [sexpdata.Symbol("at"), 0, 0, 0],
+            [sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"),
+                    [sexpdata.Symbol("size"), 1.27, 1.27]
+                ]
+            ]
+        ]
+        if hide:
+            # add (hide yes) as symbols, not strings
+            prop[-1].append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
+        return prop
+
+    # Build symbol s-expression
+    symbol = [
+        sexpdata.Symbol("symbol"), sym_name,
+        [sexpdata.Symbol("exclude_from_sim"), sexpdata.Symbol("no")],
+        [sexpdata.Symbol("in_bom"), sexpdata.Symbol("yes")],
+        [sexpdata.Symbol("on_board"), sexpdata.Symbol("yes")],
+        make_property("Reference", default_refdes),
+        make_property("Value", value),
+        make_property("Footprint", footprint, hide=True),
+        make_property("Datasheet", datasheet, hide=True),
+        make_property("Description", description, hide=True),
+        [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")]
+    ]
+
+    # Append to the library data
+    data.append(symbol)
+
+    # Write back out
+    with open(lib_path, "w", encoding="utf-8") as f:
+        sexpdata.dump(data, f, pretty=True)
+
+import sexpdata
+
+def extract_pins_from_symbol(kicad_lib, symbol_name):
+    """
+    Extract all pin info for the given symbol (and its subsymbols).
+    Returns a list of dicts like {"name": ..., "number": ..., "type": ..., "shape": ...}.
+    """
+
+    def sym_to_str(obj):
+        """Convert sexpdata.Symbol to string, pass through everything else."""
+        if isinstance(obj, sexpdata.Symbol):
+            return obj.value()
+        return obj
+
+    pins = []
+
+    def recurse(node, inside_target=False):
+        if not isinstance(node, list) or not node:
+            return
+
+        tag = sym_to_str(node[0])
+
+        if tag == "symbol":
+            sym_name = sym_to_str(node[1])
+            new_inside = inside_target or (sym_name == symbol_name)
+            for sub in node[2:]:
+                recurse(sub, inside_target=new_inside)
+
+        elif tag == "pin" and inside_target:
+            pin_type = sym_to_str(node[1]) if len(node) > 1 else None
+            pin_shape = sym_to_str(node[2]) if len(node) > 2 else None
+            name_val = None
+            number_val = None
+
+            for entry in node[3:]:
+                if isinstance(entry, list) and entry:
+                    etag = sym_to_str(entry[0])
+                    if etag == "name":
+                        name_val = sym_to_str(entry[1])
+                    elif etag == "number":
+                        number_val = sym_to_str(entry[1])
+
+            pin_info = {
+                "name": name_val,
+                "number": number_val,
+                "type": pin_type,
+                "shape": pin_shape,
+            }
+            pins.append(pin_info)
+
+        else:
+            for sub in node[1:]:
+                recurse(sub, inside_target=inside_target)
+
+    recurse(kicad_lib, inside_target=False)
+    return pins
+
+def validate_pins(pins, unique_connectors_in_signals_list):
+    """Validate pins for uniqueness, type conformity, and check required pins.
+    
+    Returns:
+        tuple:
+            missing (set): Any missing pin names from unique_connectors_in_signals_list.
+            used_pin_numbers (set): Numbers already assigned to pins.
+    Raises:
+        ValueError: On duplicate names/numbers or invalid types.
+    """
+    seen_names = set()
+    seen_numbers = set()
+
+    for pin in pins:
+        name = pin.get("name")
+        number = pin.get("number")
+        ptype = pin.get("type")
+
+        # Duplicate name
+        if name in seen_names:
+            raise ValueError(f"Duplicate pin name found: {name}")
+        seen_names.add(name)
+
+        # Duplicate number
+        if number in seen_numbers:
+            raise ValueError(f"Duplicate pin number found: {number}")
+        seen_numbers.add(number)
+
+        # Type check
+        if ptype != "unspecified":
+            raise ValueError(f"Pin {name} ({number}) has invalid type: {ptype}")
+
+    # Set comparison for 1:1 match
+    required = set(unique_connectors_in_signals_list)
+    pin_names = seen_names
+
+    missing = required - pin_names
+    extra = pin_names - required
+    if extra:
+        raise ValueError(f"Unexpected pin(s): {', '.join(sorted(extra))}")
+
+    return missing, seen_numbers
+
+import sexpdata
+from harnice import fileio
+
+def append_missing_pin(pin_name, pin_number, spacing=3.81):
+    """
+    Append a pin to a KiCad symbol if it's missing, auto-spacing vertically.
+    Immediately writes the updated symbol back to fileio.path("library file").
+
+    Args:
+        pin_name (str): name of the pin.
+        pin_number (str or int): number of the pin.
+        spacing (float): vertical spacing in mm (default 3.81mm).
+
+    Returns:
+        list: Updated symbol_data (sexpdata structure).
+    """
+    file_path = fileio.path("library file")
+    pin_number = str(pin_number)
+
+    # --- Load latest file contents ---
+    with open(file_path, "r", encoding="utf-8") as f:
+        symbol_data = sexpdata.load(f)
+
+    # --- Find the main symbol ---
+    top_symbol = None
+    sub_symbol = None
+    for item in symbol_data:
+        if isinstance(item, list) and len(item) > 0 and isinstance(item[0], sexpdata.Symbol):
+            if item[0].value() == "symbol":
+                top_symbol = item
+                for sub in item[1:]:
+                    if isinstance(sub, list) and isinstance(sub[0], sexpdata.Symbol):
+                        if sub[0].value() == "symbol":
+                            sub_symbol = sub
+                            break
+
+    # fallback: use top-level symbol if no sub-symbol found
+    target_symbol = sub_symbol if sub_symbol is not None else top_symbol
+    if target_symbol is None:
+        raise ValueError("No symbol found in file to append pins into.")
+
+    # --- Check for duplicates ---
+    for elem in target_symbol[1:]:
+        if isinstance(elem, list) and isinstance(elem[0], sexpdata.Symbol) and elem[0].value() == "pin":
+            name_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "name"), None)
+            num_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "number"), None)
+            if name_entry and name_entry[1] == pin_name and num_entry and num_entry[1] == pin_number:
+                return symbol_data  # already present, no write needed
+
+    # --- Find max Y among existing pins ---
+    max_y = -spacing  # ensures first pin goes at 0 if none exist
+    for elem in target_symbol[1:]:
+        if isinstance(elem, list) and isinstance(elem[0], sexpdata.Symbol) and elem[0].value() == "pin":
+            at_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "at"), None)
+            if at_entry and len(at_entry) >= 3:
+                y_val = float(at_entry[2])
+                if y_val > max_y:
+                    max_y = y_val
+
+    new_y = max_y + spacing
+
+    # --- Build new pin block (all keywords as Symbols) ---
+    new_pin = [
+        sexpdata.Symbol("pin"),
+        sexpdata.Symbol("unspecified"),
+        sexpdata.Symbol("line"),
+        [sexpdata.Symbol("at"), 0, new_y, 0],
+        [sexpdata.Symbol("length"), 2.54],
+        [sexpdata.Symbol("name"), pin_name,
+            [sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"),
+                    [sexpdata.Symbol("size"), 1.27, 1.27]
+                ]
+            ]
+        ],
+        [sexpdata.Symbol("number"), pin_number,
+            [sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"),
+                    [sexpdata.Symbol("size"), 1.27, 1.27]
+                ]
+            ]
+        ],
+    ]
+
+    target_symbol.append(new_pin)
+
+    # --- Write updated symbol back to file ---
+    with open(file_path, "w", encoding="utf-8") as f:
+        sexpdata.dump(symbol_data, f)
+
+    print(f"Appended pin {pin_name} ({pin_number}) to {fileio.partnumber('pn-rev')}")
+
+    return symbol_data
+
+
+def next_free_number(seen_numbers, start=1):
+    """Find the next unused pin number as a string."""
+    n = start
+    while True:
+        if str(n) not in seen_numbers:
+            return str(n)
+        n += 1
+
+def validate_kicad_library():
+    """
+    Validate that the KiCad .kicad_sym library has:
+    0. The .kicad_sym file exists (create if missing).
+    1. A symbol matching the current part number.
+    2. Pins that match the connectors in the signals list.
+    """
+
+    if not os.path.exists(fileio.path("library file")):
+        print(f"Making a new Kicad symbol at {fileio.path("library file")}")
+        make_new_library_file()
+
+    kicad_library_data = parse_kicad_sym_file()
+
+    if not symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
+        add_blank_symbol(
+            sym_name=fileio.partnumber("pn-rev"),
+            default_refdes="U"
+        )
+
+    # Step 1. Collect unique connectors from the signals list
+    unique_connectors_in_signals_list = set()
+    for signal in icd.read_signals_list():
+        connector_name = signal.get("connector_name")
+        if connector_name:
+            unique_connectors_in_signals_list.add(connector_name)
+
+    # Step 2. Validate pins
+    kicad_lib = parse_kicad_sym_file()
+    pins = extract_pins_from_symbol(kicad_lib, fileio.partnumber("pn-rev"))
+    missing, seen_numbers = validate_pins(pins, unique_connectors_in_signals_list)
+
+    kicad_library_data = parse_kicad_sym_file()
+
+    # Step 3. Append missing pins
+    for pin_name in missing:
+        # find the next available number
+        pin_number = next_free_number(seen_numbers)
+        # append it
+        symbol_data = append_missing_pin(pin_name, pin_number)
+        # mark number as used
+        seen_numbers.add(pin_number)
+
+    exit()
+
+    # Step 5. Check if pins exist for each connector
+    counter = 1
+    for connector in unique_connectors_in_signals_list:
+        if connector not in existing_pins:
+            raise ValueError(f"Missing pin in symbol for connector {connector}")
+            counter += 1
+
+    # Step 6. Verify no extra pins exist
+    for pin in existing_pins:
+        if pin not in unique_connectors_in_signals_list:
+            raise ValueError(f"Pin {pin} exists in the symbol but not in the signals list.")
+
+    print(f"Symbol for '{fileio.partnumber('pn-rev')}' has pins that match the connectors in the signals list.")
+
+def device_render(lightweight=False):
+    fileio.verify_revision_structure()
+    fileio.generate_structure()
+
+    if not lightweight:
+        if not os.path.exists(fileio.path("signals list")):
+            with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
+                f.write(signals_list_feature_tree_default)
+    else:
+        if not os.path.exists(fileio.path("signals list")):
+            icd.new_signals_list()
+            icd.write_signal(connector_name="J1")
+
+    if os.path.exists(fileio.path("feature tree")):
+        runpy.run_path(fileio.path("feature tree"))
+        print("Successfully rebuilt signals list per feature tree.")
+
+    if not lightweight:
+        validate_signals_list()
+
+    validate_kicad_library()
+
+def lightweight_render():
+    device_render(lightweight=True)
+
+def render():
+    device_render(lightweight=False)
