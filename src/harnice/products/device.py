@@ -149,11 +149,11 @@ def make_new_library_file():
     with open(fileio.path("library file"), "w", encoding="utf-8") as f:
         sexpdata.dump(symbol_lib, f, pretty=True)
 
-def parse_kicad_sym_file(file_path):
+def parse_kicad_sym_file():
     """
     Load a KiCad .kicad_sym file and return its parsed sexp data.
     """
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(fileio.path("library file"), "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
     return data
 
@@ -176,9 +176,6 @@ def symbol_exists(kicad_library_data, target_symbol_name):
                 if str(element[1]) == target_symbol_name:
                     return True
     return False
-
-import sexpdata
-from harnice import fileio
 
 def add_blank_symbol(sym_name, default_refdes,
                      value="", footprint="", datasheet="", description=""):
@@ -226,6 +223,63 @@ def add_blank_symbol(sym_name, default_refdes,
     with open(lib_path, "w", encoding="utf-8") as f:
         sexpdata.dump(data, f, pretty=True)
 
+import sexpdata
+
+def extract_pins_from_symbol(kicad_lib, symbol_name):
+    """
+    Extract all pin info for the given symbol (and its subsymbols).
+    Returns a list of dicts like {"name": ..., "number": ..., "type": ..., "shape": ...}.
+    """
+
+    def sym_to_str(obj):
+        """Convert sexpdata.Symbol to string, pass through everything else."""
+        if isinstance(obj, sexpdata.Symbol):
+            return obj.value()
+        return obj
+
+    pins = []
+
+    def recurse(node, inside_target=False):
+        if not isinstance(node, list) or not node:
+            return
+
+        tag = sym_to_str(node[0])
+
+        if tag == "symbol":
+            sym_name = sym_to_str(node[1])
+            new_inside = inside_target or (sym_name == symbol_name)
+            for sub in node[2:]:
+                recurse(sub, inside_target=new_inside)
+
+        elif tag == "pin" and inside_target:
+            pin_type = sym_to_str(node[1]) if len(node) > 1 else None
+            pin_shape = sym_to_str(node[2]) if len(node) > 2 else None
+            name_val = None
+            number_val = None
+
+            for entry in node[3:]:
+                if isinstance(entry, list) and entry:
+                    etag = sym_to_str(entry[0])
+                    if etag == "name":
+                        name_val = sym_to_str(entry[1])
+                    elif etag == "number":
+                        number_val = sym_to_str(entry[1])
+
+            pin_info = {
+                "name": name_val,
+                "number": number_val,
+                "type": pin_type,
+                "shape": pin_shape,
+            }
+            pins.append(pin_info)
+
+        else:
+            for sub in node[1:]:
+                recurse(sub, inside_target=inside_target)
+
+    recurse(kicad_lib, inside_target=False)
+    return pins
+
 
 def validate_kicad_library():
     """
@@ -239,7 +293,7 @@ def validate_kicad_library():
         print(f"Making a new Kicad symbol at {fileio.path("library file")}")
         make_new_library_file()
 
-    kicad_library_data = parse_kicad_sym_file(fileio.path("library file"))
+    kicad_library_data = parse_kicad_sym_file()
 
     if not symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
         add_blank_symbol(
@@ -249,7 +303,6 @@ def validate_kicad_library():
     else:
         print(f"Symbol for {fileio.partnumber('pn-rev')} already exists")
 
-    exit()
     # Step 1. Collect unique connectors from the signals list
     unique_connectors_in_signals_list = set()
     for signal in icd.read_signals_list():
@@ -257,30 +310,14 @@ def validate_kicad_library():
         if connector_name:
             unique_connectors_in_signals_list.add(connector_name)
 
-    # Step 2. Load the KiCad library
-    kicad_lib = parse_kicad_sym_file(sym_path)
-    symbol_data = None
+    # Step 2. Extract existing pins from the symbol
+    kicad_lib = parse_kicad_sym_file()
+    pins = extract_pins_from_symbol(kicad_lib, fileio.partnumber("pn-rev"))
 
-    # Step 3. Check if the symbol exists
-    pn_rev = fileio.partnumber("pn-rev")
-    for item in kicad_lib.get("kicad_symbol_lib", []):
-        if "symbol" in item:
-            data = item["symbol"]
-            if isinstance(data, list) and data and data[0] == pn_rev:
-                symbol_data = data
-                break
-    if symbol_data is None:
-        raise ValueError(f"No symbol for {fileio.partnumber('R')} in library {fileio.partnumber('pn')}")
+    for pin in pins:
+        print(pin)
 
-    # Step 4. Extract existing pins from the symbol
-    existing_pins = set()
-    for element in symbol_data:
-        if isinstance(element, dict) and "pin" in element:
-            pin_block = element["pin"]
-            for entry in pin_block:
-                if isinstance(entry, dict) and "name" in entry:
-                    name = entry["name"][0] if isinstance(entry["name"], list) else entry["name"]
-                    existing_pins.add(name)
+    exit()
 
     # Step 5. Check if pins exist for each connector
     counter = 1
