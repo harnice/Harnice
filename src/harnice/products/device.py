@@ -310,7 +310,7 @@ def validate_pins(pins, unique_connectors_in_signals_list):
 
         # Type check
         if ptype != "unspecified":
-            raise ValueError(f"Pin {name} ({number}) has invalid type: {ptype}")
+            raise ValueError(f"Pin {name} ({number}) has invalid type: {ptype}. Harnice requires all pins to have type 'unspecified'.")
 
     # Set comparison for 1:1 match
     required = set(unique_connectors_in_signals_list)
