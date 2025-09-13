@@ -284,7 +284,9 @@ def validate_pins(pins, unique_connectors_in_signals_list):
     """Validate pins for uniqueness, type conformity, and check required pins.
     
     Returns:
-        set: Any missing pin names from unique_connectors_in_signals_list.
+        tuple:
+            missing (set): Any missing pin names from unique_connectors_in_signals_list.
+            used_pin_numbers (set): Numbers already assigned to pins.
     Raises:
         ValueError: On duplicate names/numbers or invalid types.
     """
@@ -319,8 +321,110 @@ def validate_pins(pins, unique_connectors_in_signals_list):
     if extra:
         raise ValueError(f"Unexpected pin(s): {', '.join(sorted(extra))}")
 
-    return missing
+    return missing, seen_numbers
 
+import sexpdata
+from harnice import fileio
+
+def append_missing_pin(pin_name, pin_number, spacing=3.81):
+    """
+    Append a pin to a KiCad symbol if it's missing, auto-spacing vertically.
+    Immediately writes the updated symbol back to fileio.path("library file").
+
+    Args:
+        pin_name (str): name of the pin.
+        pin_number (str or int): number of the pin.
+        spacing (float): vertical spacing in mm (default 3.81mm).
+
+    Returns:
+        list: Updated symbol_data (sexpdata structure).
+    """
+    file_path = fileio.path("library file")
+    pin_number = str(pin_number)
+
+    # --- Load latest file contents ---
+    with open(file_path, "r", encoding="utf-8") as f:
+        symbol_data = sexpdata.load(f)
+
+    # --- Find the main symbol ---
+    top_symbol = None
+    sub_symbol = None
+    for item in symbol_data:
+        if isinstance(item, list) and len(item) > 0 and isinstance(item[0], sexpdata.Symbol):
+            if item[0].value() == "symbol":
+                top_symbol = item
+                for sub in item[1:]:
+                    if isinstance(sub, list) and isinstance(sub[0], sexpdata.Symbol):
+                        if sub[0].value() == "symbol":
+                            sub_symbol = sub
+                            break
+
+    # fallback: use top-level symbol if no sub-symbol found
+    target_symbol = sub_symbol if sub_symbol is not None else top_symbol
+    if target_symbol is None:
+        raise ValueError("No symbol found in file to append pins into.")
+
+    # --- Check for duplicates ---
+    for elem in target_symbol[1:]:
+        if isinstance(elem, list) and isinstance(elem[0], sexpdata.Symbol) and elem[0].value() == "pin":
+            name_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "name"), None)
+            num_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "number"), None)
+            if name_entry and name_entry[1] == pin_name and num_entry and num_entry[1] == pin_number:
+                return symbol_data  # already present, no write needed
+
+    # --- Find max Y among existing pins ---
+    max_y = -spacing  # ensures first pin goes at 0 if none exist
+    for elem in target_symbol[1:]:
+        if isinstance(elem, list) and isinstance(elem[0], sexpdata.Symbol) and elem[0].value() == "pin":
+            at_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "at"), None)
+            if at_entry and len(at_entry) >= 3:
+                y_val = float(at_entry[2])
+                if y_val > max_y:
+                    max_y = y_val
+
+    new_y = max_y + spacing
+
+    # --- Build new pin block (all keywords as Symbols) ---
+    new_pin = [
+        sexpdata.Symbol("pin"),
+        sexpdata.Symbol("unspecified"),
+        sexpdata.Symbol("line"),
+        [sexpdata.Symbol("at"), 0, new_y, 0],
+        [sexpdata.Symbol("length"), 2.54],
+        [sexpdata.Symbol("name"), pin_name,
+            [sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"),
+                    [sexpdata.Symbol("size"), 1.27, 1.27]
+                ]
+            ]
+        ],
+        [sexpdata.Symbol("number"), pin_number,
+            [sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"),
+                    [sexpdata.Symbol("size"), 1.27, 1.27]
+                ]
+            ]
+        ],
+    ]
+
+    target_symbol.append(new_pin)
+
+    # --- Write updated symbol back to file ---
+    with open(file_path, "w", encoding="utf-8") as f:
+        sexpdata.dump(symbol_data, f)
+
+    print(f"Appended pin {pin_name} ({pin_number}) to {fileio.partnumber('pn-rev')}")
+
+    return symbol_data
+
+
+def next_free_number(seen_numbers, start=1):
+    """Find the next unused pin number as a string."""
+    n = start
+    while True:
+        if str(n) not in seen_numbers:
+            return str(n)
+        n += 1
 
 def validate_kicad_library():
     """
@@ -352,8 +456,18 @@ def validate_kicad_library():
     # Step 2. Validate pins
     kicad_lib = parse_kicad_sym_file()
     pins = extract_pins_from_symbol(kicad_lib, fileio.partnumber("pn-rev"))
-    missing = validate_pins(pins, unique_connectors_in_signals_list)
-    print(missing)
+    missing, seen_numbers = validate_pins(pins, unique_connectors_in_signals_list)
+
+    kicad_library_data = parse_kicad_sym_file()
+
+    # Step 3. Append missing pins
+    for pin_name in missing:
+        # find the next available number
+        pin_number = next_free_number(seen_numbers)
+        # append it
+        symbol_data = append_missing_pin(pin_name, pin_number)
+        # mark number as used
+        seen_numbers.add(pin_number)
 
     exit()
 
