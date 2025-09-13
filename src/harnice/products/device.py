@@ -178,7 +178,7 @@ def symbol_exists(kicad_library_data, target_symbol_name):
     return False
 
 def add_blank_symbol(sym_name, default_refdes,
-                     value="", footprint="", datasheet="", description=""):
+                     value="", footprint="", datasheet="", description="", mfg="", mpn=""):
     """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
 
     lib_path = fileio.path("library file")
@@ -187,19 +187,29 @@ def add_blank_symbol(sym_name, default_refdes,
     with open(lib_path, "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
 
-    def make_property(name, text, hide=False):
+    def make_property(name, value, id_counter=None, hide=False):
+        builtins = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
+
         prop = [
-            sexpdata.Symbol("property"), name, text,
-            [sexpdata.Symbol("at"), 0, 0, 0],
-            [sexpdata.Symbol("effects"),
-                [sexpdata.Symbol("font"),
-                    [sexpdata.Symbol("size"), 1.27, 1.27]
-                ]
-            ]
+            sexpdata.Symbol("property"),
+            name,
+            value,
         ]
+
+        if name not in builtins:
+            if id_counter is None:
+                raise ValueError(f"Custom property {name} requires an id_counter")
+            prop.append([sexpdata.Symbol("id"), id_counter])
+
+        prop.append([sexpdata.Symbol("at"), 0, 0, 0])
+
+        effects = [sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"),
+                    [sexpdata.Symbol("size"), 1.27, 1.27]]]
         if hide:
-            # add (hide yes) as symbols, not strings
-            prop[-1].append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
+            effects.append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
+        prop.append(effects)
+
         return prop
 
     # Build symbol s-expression
@@ -213,6 +223,8 @@ def add_blank_symbol(sym_name, default_refdes,
         make_property("Footprint", footprint, hide=True),
         make_property("Datasheet", datasheet, hide=True),
         make_property("Description", description, hide=True),
+        make_property("MFG", mfg, hide=False, id_counter=0),
+        make_property("MPN", mpn, hide=False, id_counter=1),
         [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")]
     ]
 
@@ -443,7 +455,9 @@ def validate_kicad_library():
     if not symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
         add_blank_symbol(
             sym_name=fileio.partnumber("pn-rev"),
-            default_refdes="U"
+            default_refdes="U",
+            mfg="SPECIFY MANUFACTURER NAME",
+            mpn=fileio.partnumber("pn")
         )
 
     # Step 1. Collect unique connectors from the signals list
@@ -465,25 +479,9 @@ def validate_kicad_library():
         # find the next available number
         pin_number = next_free_number(seen_numbers)
         # append it
-        symbol_data = append_missing_pin(pin_name, pin_number)
+        append_missing_pin(pin_name, pin_number)
         # mark number as used
         seen_numbers.add(pin_number)
-
-    exit()
-
-    # Step 5. Check if pins exist for each connector
-    counter = 1
-    for connector in unique_connectors_in_signals_list:
-        if connector not in existing_pins:
-            raise ValueError(f"Missing pin in symbol for connector {connector}")
-            counter += 1
-
-    # Step 6. Verify no extra pins exist
-    for pin in existing_pins:
-        if pin not in unique_connectors_in_signals_list:
-            raise ValueError(f"Pin {pin} exists in the symbol but not in the signals list.")
-
-    print(f"Symbol for '{fileio.partnumber('pn-rev')}' has pins that match the connectors in the signals list.")
 
 def device_render(lightweight=False):
     fileio.verify_revision_structure()
