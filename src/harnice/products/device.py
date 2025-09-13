@@ -3,6 +3,7 @@ import runpy
 import csv
 from harnice import fileio, icd
 import sexpdata
+import json
 
 signals_list_feature_tree_default = """
 from harnice import icd
@@ -177,7 +178,7 @@ def symbol_exists(kicad_library_data, target_symbol_name):
                     return True
     return False
 
-def add_blank_symbol(sym_name, default_refdes,
+def add_blank_symbol(sym_name,
                      value="", footprint="", datasheet="", description=""):
     """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
 
@@ -187,19 +188,29 @@ def add_blank_symbol(sym_name, default_refdes,
     with open(lib_path, "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
 
-    def make_property(name, text, hide=False):
+    def make_property(name, value, id_counter=None, hide=False):
+        builtins = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
+
         prop = [
-            sexpdata.Symbol("property"), name, text,
-            [sexpdata.Symbol("at"), 0, 0, 0],
-            [sexpdata.Symbol("effects"),
-                [sexpdata.Symbol("font"),
-                    [sexpdata.Symbol("size"), 1.27, 1.27]
-                ]
-            ]
+            sexpdata.Symbol("property"),
+            name,
+            value,
         ]
+
+        if name not in builtins:
+            if id_counter is None:
+                raise ValueError(f"Custom property {name} requires an id_counter")
+            prop.append([sexpdata.Symbol("id"), id_counter])
+
+        prop.append([sexpdata.Symbol("at"), 0, 0, 0])
+
+        effects = [sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"),
+                    [sexpdata.Symbol("size"), 1.27, 1.27]]]
         if hide:
-            # add (hide yes) as symbols, not strings
-            prop[-1].append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
+            effects.append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
+        prop.append(effects)
+
         return prop
 
     # Build symbol s-expression
@@ -208,11 +219,15 @@ def add_blank_symbol(sym_name, default_refdes,
         [sexpdata.Symbol("exclude_from_sim"), sexpdata.Symbol("no")],
         [sexpdata.Symbol("in_bom"), sexpdata.Symbol("yes")],
         [sexpdata.Symbol("on_board"), sexpdata.Symbol("yes")],
-        make_property("Reference", default_refdes),
+        make_property("Reference", get_attribute("default_refdes")),
         make_property("Value", value),
         make_property("Footprint", footprint, hide=True),
         make_property("Datasheet", datasheet, hide=True),
         make_property("Description", description, hide=True),
+        make_property("MFG", get_attribute("manufacturer"), hide=False, id_counter=0),
+        make_property("MPN", get_attribute("manufacturer_part_number"), hide=False, id_counter=1),
+        make_property("Supplier", get_attribute("library_subpath"), hide=True, id_counter=2),
+        make_property("Rev", fileio.partnumber("rev"), hide=True, id_counter=2),
         [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")]
     ]
 
@@ -222,8 +237,6 @@ def add_blank_symbol(sym_name, default_refdes,
     # Write back out
     with open(lib_path, "w", encoding="utf-8") as f:
         sexpdata.dump(data, f, pretty=True)
-
-import sexpdata
 
 def extract_pins_from_symbol(kicad_lib, symbol_name):
     """
@@ -310,7 +323,7 @@ def validate_pins(pins, unique_connectors_in_signals_list):
 
         # Type check
         if ptype != "unspecified":
-            raise ValueError(f"Pin {name} ({number}) has invalid type: {ptype}")
+            raise ValueError(f"Pin {name} ({number}) has invalid type: {ptype}. Harnice requires all pins to have type 'unspecified'.")
 
     # Set comparison for 1:1 match
     required = set(unique_connectors_in_signals_list)
@@ -443,7 +456,6 @@ def validate_kicad_library():
     if not symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
         add_blank_symbol(
             sym_name=fileio.partnumber("pn-rev"),
-            default_refdes="U"
         )
 
     # Step 1. Collect unique connectors from the signals list
@@ -465,29 +477,56 @@ def validate_kicad_library():
         # find the next available number
         pin_number = next_free_number(seen_numbers)
         # append it
-        symbol_data = append_missing_pin(pin_name, pin_number)
+        append_missing_pin(pin_name, pin_number)
         # mark number as used
         seen_numbers.add(pin_number)
 
-    exit()
+def validate_attributes_json():
+    """Ensure an attributes JSON file exists with default values if missing."""
 
-    # Step 5. Check if pins exist for each connector
-    counter = 1
-    for connector in unique_connectors_in_signals_list:
-        if connector not in existing_pins:
-            raise ValueError(f"Missing pin in symbol for connector {connector}")
-            counter += 1
+    default_attributes = {
+        "manufacturer": "SPECIFY MANUFACTURER NAME",
+        "manufacturer_part_number": fileio.partnumber("pn"),
+        "default_refdes": "DEVICE",
+        "library_subpath": "UPDATE ATTRIBUTE: ENV VAR OF LIBRARY / SUBPATH TO PN FILE"
+    }
 
-    # Step 6. Verify no extra pins exist
-    for pin in existing_pins:
-        if pin not in unique_connectors_in_signals_list:
-            raise ValueError(f"Pin {pin} exists in the symbol but not in the signals list.")
+    attributes_path = fileio.path("attributes")
 
-    print(f"Symbol for '{fileio.partnumber('pn-rev')}' has pins that match the connectors in the signals list.")
+    # If attributes file does not exist, create it with defaults
+    if not os.path.exists(attributes_path):
+        with open(attributes_path, "w", encoding="utf-8") as f:
+            json.dump(default_attributes, f, indent=4)
+        print(f"Created attributes file at {attributes_path}")
+
+    # If it exists, load it and verify required keys
+    else:
+        with open(attributes_path, "r", encoding="utf-8") as f:
+            try:
+                attributes = json.load(f)
+            except json.JSONDecodeError:
+                raise ValueError(f"Invalid JSON in attributes file: {attributes_path}")
+
+        updated = False
+        for key, value in default_attributes.items():
+            if key not in attributes:
+                attributes[key] = value
+                updated = True
+
+        if updated:
+            with open(attributes_path, "w", encoding="utf-8") as f:
+                json.dump(attributes, f, indent=4)
+            print(f"Updated attributes file with missing defaults at {attributes_path}")
+
+def get_attribute(attribute_key):
+    with open(fileio.path("attributes"), "r", encoding="utf-8") as f:
+        return json.load(f).get(attribute_key)
 
 def device_render(lightweight=False):
     fileio.verify_revision_structure()
     fileio.generate_structure()
+
+    validate_attributes_json()
 
     if not lightweight:
         if not os.path.exists(fileio.path("signals list")):

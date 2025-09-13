@@ -113,7 +113,8 @@ def harnice_file_structure():
     elif product_type == "device":
         return {
             f"{partnumber("pn-rev")}-feature_tree.py":"feature tree",
-            f"{partnumber("pn-rev")}-signals-list.tsv":"signals list"
+            f"{partnumber("pn-rev")}-signals-list.tsv":"signals list",
+            f"{partnumber("pn-rev")}-attributes.json":"attributes"
         }
     elif product_type == "system":
         return {
