@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import runpy
 import os
 from harnice import (
@@ -203,7 +202,6 @@ def render(prebuilder="", artifact_builder_dict=None):
     rev_history.update_datemodified()
 
     # Step 2: Ensure feature tree exists
-    load_dotenv()
     if not os.path.exists(fileio.path("feature tree")):
         if prebuilder == "":
             print("Do you want to use a prebuilder to help build this harness from scratch?")

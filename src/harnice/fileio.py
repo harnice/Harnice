@@ -162,6 +162,10 @@ def path(target_value):
         file_path = os.path.join(_part_directory(), f"{partnumber("pn")}-revision_history.tsv")
         return file_path
 
+    if target_value == "library locations":
+        #TODO: HOW DO I MAKE THIS RETURN THE HARNICE INSTALL LOCATION?
+        return "/Users/kenyonshutt/Documents/GitHub/harnice/library_locations.csv"
+
     if product_type == "device":
         if target_value == "library file":
             return os.path.join(dirpath("kicad"), f"{partnumber("pn")}.kicad_sym")

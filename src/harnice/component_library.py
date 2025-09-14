@@ -2,7 +2,6 @@ import xml.etree.ElementTree as ET
 import os
 import csv
 import re
-from dotenv import load_dotenv
 import shutil
 from harnice import(
     fileio,
@@ -162,7 +161,7 @@ def pull_part(instance_name):
 
         instances_list.add_revhistory_of_imported_part(item_name, revhistory_row)
 
-def unpack(id_value):
+def unpack_channel_type_id(id_value):
     """
     Normalize channel_type_id into (int, str).
 
@@ -192,3 +191,15 @@ def unpack(id_value):
         return key, supplier
 
     raise TypeError(f"Unsupported channel_type_id type: {type(id_value)}")
+
+def parse_library_locations(lib_repo, wanted_field):
+    lib_info_list = []
+    with open(fileio.path("library locations"), newline='', encoding='utf-8') as f:
+        lib_info_list = list(csv.DictReader(f, delimiter=','))
+    for lib in lib_info_list:
+        if lib.get("id") == lib_repo:
+            return lib.get(wanted_field)
+    raise ValueError(f"Could not find library repo id {lib_repo}")
+
+if __name__ == "__main__":
+    print(parse_library_locations("public","local_path"))
