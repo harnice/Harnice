@@ -488,7 +488,7 @@ def validate_attributes_json():
         "manufacturer": "SPECIFY MANUFACTURER NAME",
         "manufacturer_part_number": fileio.partnumber("pn"),
         "default_refdes": "DEVICE",
-        "library_subpath": "UPDATE ATTRIBUTE: ENV VAR OF LIBRARY / SUBPATH TO PN FILE"
+        "library_subpath": "TRACEABLE LIBRARY PATH"
     }
 
     attributes_path = fileio.path("attributes")

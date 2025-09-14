@@ -9,7 +9,6 @@ from harnice import(
 )
 
 def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, used_rev=None, item_name=None, quiet=True):
-    load_dotenv()
     if not isinstance(supplier, str) or not supplier.strip():
         raise ValueError(f"when importing {mpn} 'supplier' must be a non-empty string. Got: {supplier}")
     if not isinstance(lib_subpath, str) or not lib_subpath.strip():
@@ -22,10 +21,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     if item_name == "":
         item_name = mpn
 
-    supplier_root = os.getenv(supplier)
-    if supplier_root is None:
-        raise ValueError(f"Environment variable '{supplier}' is not set. Expected to find path for library root.")
-
+    supplier_root = parse_library_locations(supplier, wanted_field="local_path")
     base_path = os.path.join(supplier_root, lib_subpath, mpn)
     lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
 
@@ -39,9 +35,6 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     local_rev = str(max(revs_found)) if revs_found else None
 
     # === Find highest rev in library
-    if not os.path.exists(base_path):
-        raise FileNotFoundError(f"Library folder not found: {base_path}")
-
     revision_folders = [
         name for name in os.listdir(base_path)
         if os.path.isdir(os.path.join(base_path, name)) and re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", name)
@@ -123,7 +116,6 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     return library_rev, revhistory_row
 
 def pull_part(instance_name):
-    load_dotenv()
     supported_library_components = ['connector', 'backshell']
     instances = instances_list.read_instance_rows()
 
@@ -200,6 +192,3 @@ def parse_library_locations(lib_repo, wanted_field):
         if lib.get("id") == lib_repo:
             return lib.get(wanted_field)
     raise ValueError(f"Could not find library repo id {lib_repo}")
-
-if __name__ == "__main__":
-    print(parse_library_locations("public","local_path"))

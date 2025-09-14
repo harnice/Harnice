@@ -125,16 +125,14 @@ def mating_connector_of_channel(channel_id, path_to_signals_list):
 
 def _channel_types_path(channel_type_id):
     """
-    Helper to get the path to channel_types.tsv based on an environment variable.
+    Helper to get the path to channel_types.tsv.
 
     Args:
         channel_type_id: tuple like (chid, supplier) or string like "(5, 'public')"
     """
     chid, supplier = component_library.unpack_channel_type_id(channel_type_id)  # <-- use your helper
 
-    base_dir = os.environ.get(supplier)
-    if not base_dir:
-        raise EnvironmentError(f"Environment variable '{supplier}' is not set.")
+    base_dir = component_library.parse_library_locations(supplier, "local_path")
 
     tsv_path = os.path.join(base_dir, "channel_types", "channel_types.tsv")
     if not os.path.exists(tsv_path):
