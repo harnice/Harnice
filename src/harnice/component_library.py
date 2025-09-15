@@ -21,7 +21,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     if item_name == "":
         item_name = mpn
 
-    supplier_root = parse_library_locations(supplier, wanted_field="local_path")
+    supplier_root = os.path.expanduser(parse_library_locations(supplier, wanted_field="local_path"))
     base_path = os.path.join(supplier_root, lib_subpath, mpn)
     lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
 
