@@ -21,7 +21,7 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     if item_name == "":
         item_name = mpn
 
-    supplier_root = os.path.expanduser(parse_library_locations(supplier, wanted_field="local_path"))
+    supplier_root = os.path.expanduser(get_local_path(supplier))
     base_path = os.path.join(supplier_root, lib_subpath, mpn)
     lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
 
@@ -184,11 +184,11 @@ def unpack_channel_type_id(id_value):
 
     raise TypeError(f"Unsupported channel_type_id type: {type(id_value)}")
 
-def parse_library_locations(lib_repo, wanted_field):
+def get_local_path(lib_repo):
     lib_info_list = []
     with open(fileio.path("library locations"), newline='', encoding='utf-8') as f:
         lib_info_list = list(csv.DictReader(f, delimiter=','))
     for lib in lib_info_list:
-        if lib.get("id") == lib_repo:
-            return lib.get(wanted_field)
+        if lib.get("url") == lib_repo:
+            return lib.get("local_path")
     raise ValueError(f"Could not find library repo id {lib_repo}")

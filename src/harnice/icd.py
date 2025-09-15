@@ -132,7 +132,7 @@ def _channel_types_path(channel_type_id):
     """
     chid, supplier = component_library.unpack_channel_type_id(channel_type_id)  # <-- use your helper
 
-    base_dir = component_library.parse_library_locations(supplier, "local_path")
+    base_dir = component_library.get_local_path(supplier, "local_path")
 
     tsv_path = os.path.join(base_dir, "channel_types", "channel_types.tsv")
     if not os.path.exists(tsv_path):
