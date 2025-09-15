@@ -1,2 +1,4 @@
 pn	desc	rev	status	releaseticket	datestarted	datemodified	datereleased	drawnby	checkedby	revisionupdates	affectedinstances
 sm58	MICROPHONE, HANDHELD, DYNAMIC	1			8/16/25	8/16/25				INITIAL RELEASE	
+SM58	MICROPHONE, HANDHELD, DYNAMIC	2			9/2/25	9/2/25				test	
+SM58	MICROPHONE, HANDHELD, DYNAMIC	3			9/6/25	9/6/25				testing kicad lib checker	
