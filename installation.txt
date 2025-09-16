@@ -6,21 +6,25 @@
     3. git clone: https://github.com/kenyonshutt/harnice
 
 ***********
-1. update your environment variables to point Harnice towards your libararies. here's an example:
+1. update library_locations.csv to point Harnice towards your libararies. make this file, if it doesn't exist, make it in the root of your harnice repo.
+    here's the format:
     :
-        public=~/github/harnice-library-public
-        user=~/Projects/harnice-library-user
+        repo_url,local_path
     :
-    add whatever other library you need here. pull components from that library by referencing them by "supplier" in your yaml. 
-    you can use git or dropbox or whatever to control your libraries in a repo separate from harnice. 
+
+    here's an example:
+    :
+        https://github.com/kenyonshutt/harnice-library-public,Users/kenyonshutt/Documents/github/harnice-library-public
+    :
+    add whatever other library you need in this document. pull components from that library by referencing them by their url for traceability purposes. 
+    you can use git or dropbox or whatever to control your libraries in a repo separate from harnice, as you wish.
+    local_path is used to point harnice towards where the files for that repo live on your computer, but is not stored in any part definition.
 
 *************
 2. install python however you want
 
 *************
 3. install the following packages: (for example, install by "pip3 install x")
-    pip3 install wireviz
-    pip3 install dotenv
     pip install xlwt
     pip install lxml
     pip install sexpdata

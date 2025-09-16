@@ -9,9 +9,9 @@ signals_list_feature_tree_default = """
 from harnice import icd
 
 ch_type_ids = {
-    "in": (1, "public"),
-    "out": (4, "public"),
-    "chassis": (5, "public")
+    "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
+    "out": (4, "https://github.com/kenyonshutt/harnice-library-public"),
+    "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public")
 }
 
 xlr_pinout = {
@@ -488,7 +488,7 @@ def validate_attributes_json():
         "manufacturer": "SPECIFY MANUFACTURER NAME",
         "manufacturer_part_number": fileio.partnumber("pn"),
         "default_refdes": "DEVICE",
-        "library_subpath": "UPDATE ATTRIBUTE: ENV VAR OF LIBRARY / SUBPATH TO PN FILE"
+        "library_subpath": "TRACEABLE LIBRARY PATH"
     }
 
     attributes_path = fileio.path("attributes")

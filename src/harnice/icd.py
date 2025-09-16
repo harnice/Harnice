@@ -1,7 +1,6 @@
 # icd.py
 import csv
 import os
-from dotenv import load_dotenv
 from harnice import fileio, component_library
 
 # Signals list column headers to match source of truth + compatibility change
@@ -56,9 +55,7 @@ def write_signal(**kwargs):
 
 #search channel_types.tsv
 def signals_of_channel_type_id(channel_type_id):
-    load_dotenv()
-    
-    chid, supplier = component_library.unpack(channel_type_id)
+    chid, supplier = component_library.unpack_channel_type_id(channel_type_id)
 
     tsv_path = _channel_types_path((chid, supplier))
 
@@ -84,8 +81,7 @@ def signals_of_channel(channel_name, path_to_signals_list):
                 signals.append(row.get("signal", "").strip())
     return signals
 
-def compatible_channel_types(channel_type_id, ch_type_id_supplier="public"):
-    load_dotenv()
+def compatible_channel_types(channel_type_id, ch_type_id_supplier="https://github.com/kenyonshutt/harnice-library-public"):
     tsv_path = _channel_types_path(ch_type_id_supplier)
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
@@ -129,16 +125,14 @@ def mating_connector_of_channel(channel_id, path_to_signals_list):
 
 def _channel_types_path(channel_type_id):
     """
-    Helper to get the path to channel_types.tsv based on an environment variable.
+    Helper to get the path to channel_types.tsv.
 
     Args:
-        channel_type_id: tuple like (chid, supplier) or string like "(5, 'public')"
+        channel_type_id: tuple like (chid, supplier) or string like "(5, 'https://github.com/kenyonshutt/harnice-library-public')"
     """
-    chid, supplier = component_library.unpack(channel_type_id)  # <-- use your helper
+    chid, supplier = component_library.unpack_channel_type_id(channel_type_id)  # <-- use your helper
 
-    base_dir = os.environ.get(supplier)
-    if not base_dir:
-        raise EnvironmentError(f"Environment variable '{supplier}' is not set.")
+    base_dir = component_library.get_local_path(supplier, "local_path")
 
     tsv_path = os.path.join(base_dir, "channel_types", "channel_types.tsv")
     if not os.path.exists(tsv_path):
