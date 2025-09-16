@@ -124,7 +124,7 @@ for rev_row in flagnote_utils.read_revhistory():
                 "item_type": "Flagnote",
                 "note_type": "rev_change_callout",
                 "mpn": "rev_change_callout",
-                "supplier": "public",
+                "supplier": "https://github.com/kenyonshutt/harnice-library-public",
                 "bubble_text": rev_row.get("rev"),
                 "parent_instance": affected,
                 "cluster": instances_list.attribute_of(affected, "cluster"),
@@ -140,7 +140,7 @@ for instance in instances_list.read_instance_rows():
             "item_type": "Flagnote",
             "note_type": "bom_item",
             "mpn": "bom_item",
-            "supplier": "public",
+            "supplier": "https://github.com/kenyonshutt/harnice-library-public",
             "bubble_text": instance.get("bom_line_number"),
             "parent_instance": instance.get("instance_name"),
             "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
@@ -155,7 +155,7 @@ for instance in instances_list.read_instance_rows():
             "item_type": "Flagnote",
             "note_type": "part_name",
             "mpn": "part_name",
-            "supplier": "public",
+            "supplier": "https://github.com/kenyonshutt/harnice-library-public",
             "bubble_text": bubble_text,
             "parent_instance": instance.get("instance_name"),
             "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
@@ -171,7 +171,7 @@ for instance in instances_list.read_instance_rows():
                 "item_type": "Flagnote",
                 "note_type": "buildnote",
                 "mpn": "buildnote",
-                "supplier": "public",
+                "supplier": "https://github.com/kenyonshutt/harnice-library-public",
                 "bubble_text": buildnote_counter,
                 "parent_instance": instance.get("parent_instance"),
                 "parent_csys_instance_name": instance.get("parent_instance"),
@@ -222,15 +222,15 @@ def render(prebuilder="", artifact_builder_dict=None):
             prebuilder_name = prebuilder
 
         # ✅ No more stray \n
-        prebuilder_contents = f'featuretree_utils.runprebuilder("{prebuilder_name}", "public")'
+        prebuilder_contents = f'featuretree_utils.runprebuilder("{prebuilder_name}", "https://github.com/kenyonshutt/harnice-library-public")'
 
         if artifact_builder_dict is None:
-            artifact_builder_contents = """featuretree_utils.runartifactbuilder("bom_exporter_bottom_up", "public", artifact_id="bom1")
-featuretree_utils.runartifactbuilder("standard_harnice_formboard", "public", artifact_id="formboard1", scale=scales.get("A"))
-featuretree_utils.runartifactbuilder("wirelist_exporter", "public", artifact_id="wirelist1")
-featuretree_utils.runartifactbuilder("revision_history_table", "public", artifact_id="revhistory1")
-featuretree_utils.runartifactbuilder("buildnotes_table", "public", artifact_id="buildnotestable1")
-featuretree_utils.runartifactbuilder("pdf_generator", "public", artifact_id="drawing1", scales=scales)
+            artifact_builder_contents = """featuretree_utils.runartifactbuilder("bom_exporter_bottom_up", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom1")
+featuretree_utils.runartifactbuilder("standard_harnice_formboard", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="formboard1", scale=scales.get("A"))
+featuretree_utils.runartifactbuilder("wirelist_exporter", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="wirelist1")
+featuretree_utils.runartifactbuilder("revision_history_table", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="revhistory1")
+featuretree_utils.runartifactbuilder("buildnotes_table", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="buildnotestable1")
+featuretree_utils.runartifactbuilder("pdf_generator", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="drawing1", scales=scales)
 """
         else:
             artifact_builder_contents = "\n".join(artifact_builder_dict)

@@ -158,8 +158,8 @@ def unpack_channel_type_id(id_value):
     Normalize channel_type_id into (int, str).
 
     Accepts:
-        - Tuple like (5, "public")
-        - String like "(5, 'public')" or "(5,\"public\")"
+        - Tuple like (5, "https://github.com/kenyonshutt/harnice-library-public")
+        - String like "(5, 'https://github.com/kenyonshutt/harnice-library-public')" or "(5,\"public\")"
     Returns:
         (int, str)
     """

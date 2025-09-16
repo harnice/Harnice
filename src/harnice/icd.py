@@ -81,7 +81,7 @@ def signals_of_channel(channel_name, path_to_signals_list):
                 signals.append(row.get("signal", "").strip())
     return signals
 
-def compatible_channel_types(channel_type_id, ch_type_id_supplier="public"):
+def compatible_channel_types(channel_type_id, ch_type_id_supplier="https://github.com/kenyonshutt/harnice-library-public"):
     tsv_path = _channel_types_path(ch_type_id_supplier)
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
@@ -128,7 +128,7 @@ def _channel_types_path(channel_type_id):
     Helper to get the path to channel_types.tsv.
 
     Args:
-        channel_type_id: tuple like (chid, supplier) or string like "(5, 'public')"
+        channel_type_id: tuple like (chid, supplier) or string like "(5, 'https://github.com/kenyonshutt/harnice-library-public')"
     """
     chid, supplier = component_library.unpack_channel_type_id(channel_type_id)  # <-- use your helper
 

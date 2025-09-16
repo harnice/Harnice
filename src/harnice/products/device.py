@@ -9,9 +9,9 @@ signals_list_feature_tree_default = """
 from harnice import icd
 
 ch_type_ids = {
-    "in": (1, "public"),
-    "out": (4, "public"),
-    "chassis": (5, "public")
+    "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
+    "out": (4, "https://github.com/kenyonshutt/harnice-library-public"),
+    "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public")
 }
 
 xlr_pinout = {
