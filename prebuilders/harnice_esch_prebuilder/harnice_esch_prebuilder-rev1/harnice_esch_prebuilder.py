@@ -36,7 +36,7 @@ for circuit_name, ports in harness_yaml.items():
             # Add this contact to the system with its part number (mpn)
 
             if value == "TXPA20":
-                supplier = "public"
+                supplier = "https://github.com/kenyonshutt/harnice-library-public"
 
             instances_list.add_unless_exists(instance_name, {
                 "item_type": "Contact",
@@ -123,13 +123,13 @@ for instance in instances_list.read_instance_rows():
             instances_list.modify(instance_name,{
                 "bom_line_number": "True",
                 "mpn": "D38999_26ZB98PN",
-                "supplier": "public"
+                "supplier": "https://github.com/kenyonshutt/harnice-library-public"
             })
         else:
             instances_list.modify(instance_name,{
                 "bom_line_number": "True",
                 "mpn": "D38999_26ZA98PN",
-                "supplier": "public"
+                "supplier": "https://github.com/kenyonshutt/harnice-library-public"
             })
 
 
@@ -171,7 +171,7 @@ for instance in instances_list.read_instance_rows():
                     "mpn": "M85049-88_9Z03",
                     "print_name": f"{instances_list.attribute_of(instance_name, "print_name")}.bs",
                     "bom_line_number": "True",
-                    "supplier": "public",
+                    "supplier": "https://github.com/kenyonshutt/harnice-library-public",
                     "item_type": "Backshell",
                     "parent_instance": instance.get("instance_name"),
                     "cluster": instance_name,

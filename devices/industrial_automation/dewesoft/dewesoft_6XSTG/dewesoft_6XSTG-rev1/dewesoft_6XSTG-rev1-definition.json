@@ -43,7 +43,7 @@
     },
     "device_setup": {
         "suppliers": {
-            "channel_type_id": "public"
+            "channel_type_id": "https://github.com/kenyonshutt/harnice-library-public"
         }
     }
 }

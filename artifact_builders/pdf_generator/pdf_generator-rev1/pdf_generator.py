@@ -31,7 +31,7 @@ def update_page_setup_json():
         "pages": [
             {
                 "name": "page1",
-                "supplier": "public",
+                "supplier": "https://github.com/kenyonshutt/harnice-library-public",
                 "titleblock": "harnice_tblock-11x8.5",
                 "text_replacements": {
                     "tblock-key-desc": "pull_from_revision_history(desc)",
@@ -76,11 +76,6 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         if not tblock_data:
             raise KeyError(f"[ERROR] Titleblock '{page_name}' not found in harnice output contents")
 
-        supplier_key = tblock_data.get("supplier")
-        supplier_root = os.getenv(supplier_key)
-        if not supplier_root:
-            raise EnvironmentError(f"[ERROR] Environment variable '{supplier_key}' is not set")
-
         titleblock = tblock_data.get("titleblock")
 
         # === Prepare destination directory for used files ===
@@ -88,7 +83,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
 
         # === Pull from library ===
         component_library.pull_item_from_library(
-            supplier=supplier_key,
+            supplier=tblock_data.get("supplier"),
             lib_subpath="titleblocks",
             mpn=titleblock,
             destination_directory=destination_directory,

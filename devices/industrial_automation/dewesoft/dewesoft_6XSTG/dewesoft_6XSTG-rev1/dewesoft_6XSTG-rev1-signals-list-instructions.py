@@ -7,7 +7,7 @@ ch_type_ids = {
     "chassis": 3
 }
 
-ch_type_id_supplier = "public"
+ch_type_id_supplier = "https://github.com/kenyonshutt/harnice-library-public"
 
 signal_to_contact = {
     "in.pos": 1,
