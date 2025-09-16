@@ -268,8 +268,6 @@ def verify_revision_structure():
 
     def make_new_rev_tsv(path, pn, rev):
         columns = rev_history.revision_history_columns()
-        
-        # Ensure file exists with header
         with open(path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
@@ -280,47 +278,58 @@ def verify_revision_structure():
             return "file not found"
 
         with open(path, newline='', encoding='utf-8') as f:
-            reader = csv.DictReader(f, delimiter='\t')
             rows = list(csv.DictReader(f, delimiter='\t'))
-            fieldnames = reader.fieldnames
 
-        # Build the row with required fields and blank others
-        desc = rev_history.initial_release_desc()
-        if not desc:
+        rev = int(rev)
+
+        desc = ""
+        if rev != 1:
+            # should we obsolete the previous rev?
+            for row in rows:
+                if int(row.get("rev", 0)) == rev - 1:
+                    desc = row.get("desc")
+                    if row.get("status") in [None, ""]:
+                        print(f"Your previous revision ({rev - 1}) has no status. Do you want to obsolete it?")
+                        obsolete_message = cli.prompt(
+                            "Type your message here, leave blank for 'OBSOLETE' message, or type 'n' to keep it blank.",
+                            default="OBSOLETE"
+                        )
+                        if obsolete_message == "n":
+                            obsolete_message = ""
+                        row["status"] = obsolete_message  # ← modified here
+                    break
+
+        if desc not in [None, ""]:
             desc = "HARNESS, DOES A, FOR B"
-        desc = cli.prompt("Enter a description of this part", default=desc)
+            desc = cli.prompt("Enter a description of this part", default=desc)
 
         revisionupdates = "INITIAL RELEASE"
         if rev_history.initial_release_exists():
             revisionupdates = ""
         revisionupdates = cli.prompt("Enter a description for this revision", default=revisionupdates)
         while not revisionupdates or not revisionupdates.strip():
-                print("Revision updates can't be blank!")
-                revisionupdates = cli.prompt("Enter a description for this revision", default=None)
+            print("Revision updates can't be blank!")
+            revisionupdates = cli.prompt("Enter a description for this revision", default=None)
 
         rows.append({
             "pn": pn,
             "rev": rev,
             "desc": desc,
-            "rev": rev,
             "status": "",
             "datestarted": today(),
             "datemodified": today(),
             "revisionupdates": revisionupdates
         })
 
-        # Append the row
         columns = rev_history.revision_history_columns()
-        with open(path, "w", newline='') as f:
+        with open(path, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
             writer.writerows(rows)
 
     def prompt_new_part(part_dir, pn):
-        rev = cli.prompt("Enter revision number", default="1")
-        # append to TSV
+        rev = int(cli.prompt("Enter revision number", default="1"))
         make_new_rev_tsv(temp_tsv_path, pn, rev)
-        # create and cd into rev folder
         folder = os.path.join(part_dir, f"{pn}-rev{rev}")
         os.makedirs(folder, exist_ok=True)
         os.chdir(folder)
@@ -352,10 +361,9 @@ def verify_revision_structure():
     elif x == "file not found":
         make_new_rev_tsv(path("revision history"), pn, rev)
 
-     # — now we’re in a revision folder, with pn, rev, temp_tsv_path set —
+    # now we’re in a revision folder, with pn, rev, temp_tsv_path set
     if not rev_history.status(rev) == "":
         raise RuntimeError(f"Revision {rev} status is not clear. Harnice will only let you render revs with a blank status.")
-
 
     print(f"Working on PN: {pn}, Rev: {rev}")
     return pn, rev
