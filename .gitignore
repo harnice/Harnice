@@ -49,9 +49,6 @@ coverage.xml
 # ===================================
 # Environment Variables / Secrets
 # ===================================
-.env
-.env.*
-*.env
 secrets.*
 library_locations.csv
 
