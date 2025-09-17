@@ -1,7 +1,7 @@
 import os
 import runpy
 import csv
-from harnice import fileio, icd
+from harnice import fileio, icd, rev_history
 import sexpdata
 import json
 
@@ -223,11 +223,12 @@ def add_blank_symbol(sym_name,
         make_property("Value", value),
         make_property("Footprint", footprint, hide=True),
         make_property("Datasheet", datasheet, hide=True),
-        make_property("Description", description, hide=True),
+        make_property("Description", get_attribute("desc"), hide=True),
         make_property("MFG", get_attribute("manufacturer"), hide=False, id_counter=0),
         make_property("MPN", get_attribute("manufacturer_part_number"), hide=False, id_counter=1),
-        make_property("Supplier", get_attribute("library_subpath"), hide=True, id_counter=2),
-        make_property("Rev", fileio.partnumber("rev"), hide=True, id_counter=2),
+        make_property("Library Repository", get_attribute("library_repo"), hide=True, id_counter=2),
+        make_property("Library Subpath", get_attribute("library_subpath"), hide=True, id_counter=3),
+        make_property("Rev", fileio.partnumber("rev"), hide=True, id_counter=4),
         [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")]
     ]
 
@@ -519,8 +520,13 @@ def validate_attributes_json():
             print(f"Updated attributes file with missing defaults at {attributes_path}")
 
 def get_attribute(attribute_key):
-    with open(fileio.path("attributes"), "r", encoding="utf-8") as f:
-        return json.load(f).get(attribute_key)
+    if attribute_key in rev_history.revision_history_columns():
+        revision_info = rev_history.revision_info()
+        return revision_info.get(attribute_key)
+
+    else:
+        with open(fileio.path("attributes"), "r", encoding="utf-8") as f:
+            return json.load(f).get(attribute_key)
 
 def device_render(lightweight=False):
     fileio.verify_revision_structure()
