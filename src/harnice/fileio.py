@@ -262,22 +262,22 @@ def verify_revision_structure():
     def is_revision_folder(name, parent_name):
         return name.startswith(f"{parent_name}-rev") and name.split("-rev")[-1].isdigit()
 
-    def has_revision_folder_inside(path, pn):
+    def has_revision_folder_inside(dir_path, pn):
         pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
-        return any(pattern.fullmatch(d) for d in os.listdir(path))
+        return any(pattern.fullmatch(d) for d in os.listdir(dir_path))
 
-    def make_new_rev_tsv(path, pn, rev):
+    def make_new_rev_tsv(tsv_path, pn, rev):
         columns = rev_history.revision_history_columns()
-        with open(path, 'w', newline='', encoding='utf-8') as f:
+        with open(tsv_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
-        append_row_to_tsv(path, pn, rev)
+        append_row_to_tsv(tsv_path, pn, rev)
 
-    def append_row_to_tsv(path, pn, rev):
-        if not os.path.exists(path):
+    def append_row_to_tsv(tsv_path, pn, rev):
+        if not os.path.exists(tsv_path):
             return "file not found"
 
-        with open(path, newline='', encoding='utf-8') as f:
+        with open(tsv_path, newline='', encoding='utf-8') as f:
             rows = list(csv.DictReader(f, delimiter='\t'))
 
         rev = int(rev)
@@ -296,7 +296,7 @@ def verify_revision_structure():
                         )
                         if obsolete_message == "n":
                             obsolete_message = ""
-                        row["status"] = obsolete_message  # ← modified here
+                        row["status"] = obsolete_message
                     break
 
         if desc not in [None, ""]:
@@ -311,18 +311,51 @@ def verify_revision_structure():
             print("Revision updates can't be blank!")
             revisionupdates = cli.prompt("Enter a description for this revision", default=None)
 
+        # add supplier if path is found in library locations
+        library_repo = ""
+        library_subpath = ""
+        cwd = str(os.getcwd()).lower().strip("~")
+
+        with open(path("library locations"), newline='', encoding='utf-8') as f:
+            lib_info_list = list(csv.DictReader(f, delimiter=','))
+
+        for row in lib_info_list:
+            local_path = str(row.get("local_path", "")).lower().strip("~")
+            if local_path and local_path in cwd:
+                library_repo = row.get("url")
+
+                # compute subpath
+                remainder = cwd[len(local_path):].lstrip("/")        # strip leading slash
+                parts = remainder.split("/")
+
+                # drop the first item ("devices") and the last two
+                if len(parts) > 3:
+                    core_parts = parts[2:-2]
+                else:
+                    core_parts = []
+
+                if core_parts:
+                    library_subpath = "/".join(core_parts) + "/"
+                else:
+                    library_subpath = ""
+
+                break
+        ####
+
         rows.append({
             "pn": pn,
             "rev": rev,
             "desc": desc,
             "status": "",
+            "library_repo": library_repo,
+            "library_subpath": library_subpath,
             "datestarted": today(),
             "datemodified": today(),
             "revisionupdates": revisionupdates
         })
 
         columns = rev_history.revision_history_columns()
-        with open(path, "w", newline='', encoding="utf-8") as f:
+        with open(tsv_path, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
             writer.writerows(rows)
