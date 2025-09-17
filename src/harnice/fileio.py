@@ -314,7 +314,7 @@ def verify_revision_structure():
         # add supplier if path is found in library locations
         library_repo = ""
         library_subpath = ""
-        cwd = str(os.getcwd()).lower().strip("~")
+        cwd = str(os.getcwd()).lower().strip("~") #322: this shouldn't be the CWD, it should be the part directory, but we don't know it yet
 
         with open(path("library locations"), newline='', encoding='utf-8') as f:
             lib_info_list = list(csv.DictReader(f, delimiter=','))
