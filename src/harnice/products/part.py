@@ -11,7 +11,7 @@ from harnice import (
 )
 
 def render():
-    fileio.verify_revision_structure()
+    fileio.verify_revision_structure(product_type="part")
 
     # === ATTRIBUTES JSON DEFAULTS ===
     default_attributes = {

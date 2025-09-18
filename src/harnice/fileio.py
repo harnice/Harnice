@@ -247,7 +247,7 @@ def name(target_value):
 
     return recursive_search(harnice_file_structure())
 
-def verify_revision_structure():
+def verify_revision_structure(product_type=None):
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
@@ -260,30 +260,32 @@ def verify_revision_structure():
         pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
         return any(pattern.fullmatch(d) for d in os.listdir(path))
 
-    def make_new_rev_tsv(path, pn, rev):
+    def make_new_rev_tsv(filepath, pn, rev):
         columns = rev_history.revision_history_columns()
-        with open(path, 'w', newline='', encoding='utf-8') as f:
+        with open(filepath, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
-        append_row_to_tsv(path, pn, rev)
+        append_revision_row(filepath, pn, rev)
 
-    def append_row_to_tsv(path, pn, rev):
-        if not os.path.exists(path):
+    def append_revision_row(filepath, pn, rev):
+        if not os.path.exists(filepath):
             return "file not found"
 
-        with open(path, newline='', encoding='utf-8') as f:
+        with open(filepath, newline='', encoding='utf-8') as f:
             rows = list(csv.DictReader(f, delimiter='\t'))
 
         rev = int(rev)
 
         desc = ""
         if rev != 1:
-            # should we obsolete the previous rev?
+            # find the highest revision in the table
+            highest_existing_rev = max(int(row.get("rev", 0)) for row in rows if row.get("rev"))
+
             for row in rows:
-                if int(row.get("rev", 0)) == rev - 1:
+                if int(row.get("rev", 0)) == highest_existing_rev:
                     desc = row.get("desc")
                     if row.get("status") in [None, ""]:
-                        print(f"Your previous revision ({rev - 1}) has no status. Do you want to obsolete it?")
+                        print(f"Your existing highest revision ({highest_existing_rev}) has no status. Do you want to obsolete it?")
                         obsolete_message = cli.prompt(
                             "Type your message here, leave blank for 'OBSOLETE' message, or type 'n' to keep it blank.",
                             default="OBSOLETE"
@@ -293,9 +295,23 @@ def verify_revision_structure():
                         row["status"] = obsolete_message  # ← modified here
                     break
 
-        if desc not in [None, ""]:
-            desc = "HARNESS, DOES A, FOR B"
-            desc = cli.prompt("Enter a description of this part", default=desc)
+        default_descs = {
+            "harness": "HARNESS, DOES A, FOR B",
+            "part": "COTS COMPONENT, SIZE, COLOR, etc.",
+            "flagnote": "FLAGNOTE, PURPOSE",
+            "tblock": "TITLEBLOCK, PAPER SIZE, DESIGN",
+            "device": "DEVICE, FUNCTION, ATTRIBUTES, etc.",
+            "system": "SYSTEM, SCOPE, etc.",
+        }
+
+        # fallback in case product_type isn't in dict
+        default_desc = default_descs.get(product_type, "")
+
+        if desc in [None, ""]:
+            desc = cli.prompt(
+                f"Enter a description of this {product_type}",
+                default=default_desc
+            )
 
         revisionupdates = "INITIAL RELEASE"
         if rev_history.initial_release_exists():
@@ -305,7 +321,7 @@ def verify_revision_structure():
             print("Revision updates can't be blank!")
             revisionupdates = cli.prompt("Enter a description for this revision", default=None)
 
-        # add supplier if path is found in library locations
+        # add supplier if filepath is found in library locations
         library_repo = ""
         library_subpath = ""
         cwd = str(os.getcwd()).lower().strip("~")
@@ -316,8 +332,6 @@ def verify_revision_structure():
         for row in lib_info_list:
             local_path = str(row.get("local_path", "")).lower().strip("~")
             if local_path and local_path in cwd:
-                print(f"!!!!!!!!!!!!{local_path}")
-                print(f"!!!!!!!!!!!!{cwd}")
                 library_repo = row.get("url")
 
                 # keep only the portion AFTER local_path
@@ -335,10 +349,8 @@ def verify_revision_structure():
 
                 # build library_subpath and product
                 if core_parts:
-                    product = core_parts[0] + "/"           # first element
-                    library_subpath = "/".join(core_parts[1:]) + "/" if len(core_parts) > 1 else ""
+                    library_subpath = "/".join(core_parts[1:]) + "/" if len(core_parts) > 1 else ""  # strip out the first element (product type)
                 else:
-                    product = ""
                     library_subpath = ""
 
                 break
@@ -351,7 +363,7 @@ def verify_revision_structure():
             "desc": desc,
             "status": "",
             "library_repo": library_repo,
-            "product": product,
+            "product": product_type,
             "library_subpath": library_subpath,
             "datestarted": today(),
             "datemodified": today(),
@@ -359,7 +371,7 @@ def verify_revision_structure():
         })
 
         columns = rev_history.revision_history_columns()
-        with open(path, "w", newline='', encoding="utf-8") as f:
+        with open(filepath, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
             writer.writerows(rows)
@@ -375,7 +387,7 @@ def verify_revision_structure():
     # 1) Already in a <PN>-revN folder?
     if is_revision_folder(cwd_name, parent):
         pn = parent
-        rev = int(cwd_name.split("-rev")[-1]) #already in a rev folder #TODO: #325
+        rev = int(cwd_name.split("-rev")[-1]) #already in a rev folder
 
     # 2) In a part folder (has rev folders inside)?
     elif has_revision_folder_inside(cwd, cwd_name):
@@ -394,7 +406,7 @@ def verify_revision_structure():
     # if everything looks good but the tsv isn't
     x = rev_history.revision_info()
     if x == "row not found":
-        append_row_to_tsv(path("revision history"), pn, rev)
+        append_revision_row(path("revision history"), pn, rev)
     elif x == "file not found":
         make_new_rev_tsv(path("revision history"), pn, rev)
 
