@@ -256,22 +256,22 @@ def verify_revision_structure():
     def is_revision_folder(name, parent_name):
         return name.startswith(f"{parent_name}-rev") and name.split("-rev")[-1].isdigit()
 
-    def has_revision_folder_inside(dir_path, pn):
+    def has_revision_folder_inside(path, pn):
         pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
-        return any(pattern.fullmatch(d) for d in os.listdir(dir_path))
+        return any(pattern.fullmatch(d) for d in os.listdir(path))
 
-    def make_new_rev_tsv(tsv_path, pn, rev):
+    def make_new_rev_tsv(path, pn, rev):
         columns = rev_history.revision_history_columns()
-        with open(tsv_path, 'w', newline='', encoding='utf-8') as f:
+        with open(path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
-        append_row_to_tsv(tsv_path, pn, rev)
+        append_row_to_tsv(path, pn, rev)
 
-    def append_row_to_tsv(tsv_path, pn, rev):
-        if not os.path.exists(tsv_path):
+    def append_row_to_tsv(path, pn, rev):
+        if not os.path.exists(path):
             return "file not found"
 
-        with open(tsv_path, newline='', encoding='utf-8') as f:
+        with open(path, newline='', encoding='utf-8') as f:
             rows = list(csv.DictReader(f, delimiter='\t'))
 
         rev = int(rev)
@@ -290,7 +290,7 @@ def verify_revision_structure():
                         )
                         if obsolete_message == "n":
                             obsolete_message = ""
-                        row["status"] = obsolete_message
+                        row["status"] = obsolete_message  # ← modified here
                     break
 
         if desc not in [None, ""]:
@@ -359,7 +359,7 @@ def verify_revision_structure():
         })
 
         columns = rev_history.revision_history_columns()
-        with open(tsv_path, "w", newline='', encoding="utf-8") as f:
+        with open(path, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
             writer.writerows(rows)
