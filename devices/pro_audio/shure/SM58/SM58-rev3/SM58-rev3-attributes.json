@@ -1,7 +1,0 @@
-{
-    "manufacturer": "SPECIFY MANUFACTURER NAME",
-    "manufacturer_part_number": "SM58",
-    "default_refdes": "DEVICE",
-    "supplier": "https://github.com/kenyonshutt/harnice-library-public",
-    "library_subpath": "UPDATE ATTRIBUTE: ENV VAR OF LIBRARY / SUBPATH TO PN FILE"
-}
