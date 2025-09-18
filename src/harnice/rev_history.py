@@ -6,7 +6,8 @@ from harnice import (
 
 # === Global Columns Definition ===
 REVISION_HISTORY_COLUMNS = [
-    "pn", 
+    "mfg",
+    "pn",
     "desc", 
     "rev", 
     "status", 
