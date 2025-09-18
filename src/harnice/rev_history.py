@@ -6,13 +6,17 @@ from harnice import (
 
 # === Global Columns Definition ===
 REVISION_HISTORY_COLUMNS = [
-    "pn", 
+    "mfg",
+    "pn",
     "desc", 
     "rev", 
     "status", 
-    "releaseticket", 
+    "releaseticket",
+    "library_repo",
+    "product",
+    "library_subpath",
     "datestarted", 
-    "datemodified", 
+    "datemodified",
     "datereleased", 
     "drawnby", 
     "checkedby", 
