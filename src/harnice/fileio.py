@@ -293,9 +293,23 @@ def verify_revision_structure(product_type=None):
                         row["status"] = obsolete_message  # ← modified here
                     break
 
-        if desc not in [None, ""]:
-            desc = "HARNESS, DOES A, FOR B"
-            desc = cli.prompt("Enter a description of this part", default=desc)
+        default_descs = {
+            "harness": "HARNESS, DOES A, FOR B",
+            "part": "COTS COMPONENT, SIZE, COLOR, etc.",
+            "flagnote": "FLAGNOTE, PURPOSE",
+            "tblock": "TITLEBLOCK, PAPER SIZE, DESIGN",
+            "device": "DEVICE, FUNCTION, ATTRIBUTES, etc.",
+            "system": "SYSTEM, SCOPE, etc.",
+        }
+
+        # fallback in case product_type isn't in dict
+        default_desc = default_descs.get(product_type, "")
+
+        if desc in [None, ""]:
+            desc = cli.prompt(
+                f"Enter a description of this {product_type}",
+                default=default_desc
+            )
 
         revisionupdates = "INITIAL RELEASE"
         if rev_history.initial_release_exists():
