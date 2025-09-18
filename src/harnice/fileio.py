@@ -19,12 +19,6 @@ product_type = ""
 
 pn = ""
 rev = 0
-#fileio mode:
-mode = "unknown"
-#valid options:
-    #   "partfile" - cwd is in the higher-level part dir
-    #   "revisionfile" - cwd is in the lower-level rev dir inside a part dir
-    #   "unknown" - structure is not recognized. when verify_revision_structure() is run, this is set to one of the other two
 
 def _part_directory():
     return os.path.dirname(os.getcwd())
@@ -314,7 +308,7 @@ def verify_revision_structure():
         # add supplier if path is found in library locations
         library_repo = ""
         library_subpath = ""
-        cwd = str(os.getcwd()).lower().strip("~") #322: this shouldn't be the CWD, it should be the part directory, but we don't know it yet
+        cwd = str(os.getcwd()).lower().strip("~")
 
         with open(path("library locations"), newline='', encoding='utf-8') as f:
             lib_info_list = list(csv.DictReader(f, delimiter=','))
@@ -322,24 +316,33 @@ def verify_revision_structure():
         for row in lib_info_list:
             local_path = str(row.get("local_path", "")).lower().strip("~")
             if local_path and local_path in cwd:
+                print(f"!!!!!!!!!!!!{local_path}")
+                print(f"!!!!!!!!!!!!{cwd}")
                 library_repo = row.get("url")
 
-                # compute subpath
-                remainder = cwd[len(local_path):].lstrip("/")        # strip leading slash
+                # keep only the portion AFTER local_path
+                idx = cwd.find(local_path)
+                remainder = cwd[idx + len(local_path):].lstrip("/")
                 parts = remainder.split("/")
 
-                # drop the first item ("devices") and the last two
-                if len(parts) > 3:
-                    core_parts = parts[2:-2]
+                # find the part number in the path
+                pn = str(partnumber("pn")).lower()
+                if pn in parts:
+                    pn_index = parts.index(pn)
+                    core_parts = parts[:pn_index]   # everything before pn
                 else:
-                    core_parts = []
+                    core_parts = parts
 
+                # build library_subpath and product
                 if core_parts:
-                    library_subpath = "/".join(core_parts) + "/"
+                    product = core_parts[0] + "/"           # first element
+                    library_subpath = "/".join(core_parts[1:]) + "/" if len(core_parts) > 1 else ""
                 else:
+                    product = ""
                     library_subpath = ""
 
                 break
+
         ####
 
         rows.append({
@@ -348,6 +351,7 @@ def verify_revision_structure():
             "desc": desc,
             "status": "",
             "library_repo": library_repo,
+            "product": product,
             "library_subpath": library_subpath,
             "datestarted": today(),
             "datemodified": today(),
@@ -371,13 +375,13 @@ def verify_revision_structure():
     # 1) Already in a <PN>-revN folder?
     if is_revision_folder(cwd_name, parent):
         pn = parent
-        rev = int(cwd_name.split("-rev")[-1])
+        rev = int(cwd_name.split("-rev")[-1]) #already in a rev folder #TODO: #325
 
     # 2) In a part folder (has rev folders inside)?
     elif has_revision_folder_inside(cwd, cwd_name):
         print(f"This is a part folder ({cwd_name}).")
         print(f"Please `cd` into one of its revision subfolders (e.g. `{cwd_name}-rev1`) and rerun.")
-        exit()
+        exit() #cancels if not in a rev folder
 
     # 3) Unknown – offer to initialize a new PN here
     else:
@@ -385,7 +389,7 @@ def verify_revision_structure():
         if answer.lower() not in ("y", "yes", ""):
             exit()
         pn = cwd_name
-        rev = prompt_new_part(cwd, pn)
+        rev = prompt_new_part(cwd, pn) #changes the cwd to the new rev folder
 
     # if everything looks good but the tsv isn't
     x = rev_history.revision_info()

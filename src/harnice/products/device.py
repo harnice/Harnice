@@ -337,9 +337,6 @@ def validate_pins(pins, unique_connectors_in_signals_list):
 
     return missing, seen_numbers
 
-import sexpdata
-from harnice import fileio
-
 def append_missing_pin(pin_name, pin_number, spacing=3.81):
     """
     Append a pin to a KiCad symbol if it's missing, auto-spacing vertically.
@@ -498,7 +495,6 @@ def validate_attributes_json():
     if not os.path.exists(attributes_path):
         with open(attributes_path, "w", encoding="utf-8") as f:
             json.dump(default_attributes, f, indent=4)
-        print(f"Created attributes file at {attributes_path}")
 
     # If it exists, load it and verify required keys
     else:
