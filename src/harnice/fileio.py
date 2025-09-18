@@ -278,12 +278,14 @@ def verify_revision_structure(product_type=None):
 
         desc = ""
         if rev != 1:
-            # should we obsolete the previous rev?
+            # find the highest revision in the table
+            highest_existing_rev = max(int(row.get("rev", 0)) for row in rows if row.get("rev"))
+
             for row in rows:
-                if int(row.get("rev", 0)) == rev - 1:
+                if int(row.get("rev", 0)) == highest_existing_rev:
                     desc = row.get("desc")
                     if row.get("status") in [None, ""]:
-                        print(f"Your previous revision ({rev - 1}) has no status. Do you want to obsolete it?")
+                        print(f"Your existing highest revision ({highest_existing_rev}) has no status. Do you want to obsolete it?")
                         obsolete_message = cli.prompt(
                             "Type your message here, leave blank for 'OBSOLETE' message, or type 'n' to keep it blank.",
                             default="OBSOLETE"
