@@ -310,7 +310,7 @@ def verify_revision_structure():
         while not revisionupdates or not revisionupdates.strip():
             print("Revision updates can't be blank!")
             revisionupdates = cli.prompt("Enter a description for this revision", default=None)
-
+            
         rows.append({
             "pn": pn,
             "rev": rev,
