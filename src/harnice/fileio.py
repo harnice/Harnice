@@ -316,8 +316,6 @@ def verify_revision_structure():
         for row in lib_info_list:
             local_path = str(row.get("local_path", "")).lower().strip("~")
             if local_path and local_path in cwd:
-                print(f"!!!!!!!!!!!!{local_path}")
-                print(f"!!!!!!!!!!!!{cwd}")
                 library_repo = row.get("url")
 
                 # keep only the portion AFTER local_path
