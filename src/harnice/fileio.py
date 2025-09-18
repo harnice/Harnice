@@ -247,7 +247,7 @@ def name(target_value):
 
     return recursive_search(harnice_file_structure())
 
-def verify_revision_structure():
+def verify_revision_structure(product_type=None):
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
@@ -260,18 +260,18 @@ def verify_revision_structure():
         pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
         return any(pattern.fullmatch(d) for d in os.listdir(path))
 
-    def make_new_rev_tsv(path, pn, rev):
+    def make_new_rev_tsv(filepath, pn, rev):
         columns = rev_history.revision_history_columns()
-        with open(path, 'w', newline='', encoding='utf-8') as f:
+        with open(filepath, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
-        append_row_to_tsv(path, pn, rev)
+        append_revision_row(filepath, pn, rev)
 
-    def append_row_to_tsv(path, pn, rev):
-        if not os.path.exists(path):
+    def append_revision_row(filepath, pn, rev):
+        if not os.path.exists(filepath):
             return "file not found"
 
-        with open(path, newline='', encoding='utf-8') as f:
+        with open(filepath, newline='', encoding='utf-8') as f:
             rows = list(csv.DictReader(f, delimiter='\t'))
 
         rev = int(rev)
@@ -305,7 +305,7 @@ def verify_revision_structure():
             print("Revision updates can't be blank!")
             revisionupdates = cli.prompt("Enter a description for this revision", default=None)
 
-        # add supplier if path is found in library locations
+        # add supplier if filepath is found in library locations
         library_repo = ""
         library_subpath = ""
         cwd = str(os.getcwd()).lower().strip("~")
@@ -333,10 +333,8 @@ def verify_revision_structure():
 
                 # build library_subpath and product
                 if core_parts:
-                    product = core_parts[0] + "/"           # first element
-                    library_subpath = "/".join(core_parts[1:]) + "/" if len(core_parts) > 1 else ""
+                    library_subpath = "/".join(core_parts[1:]) + "/" if len(core_parts) > 1 else ""  # strip out the first element (product type)
                 else:
-                    product = ""
                     library_subpath = ""
 
                 break
@@ -349,7 +347,7 @@ def verify_revision_structure():
             "desc": desc,
             "status": "",
             "library_repo": library_repo,
-            "product": product,
+            "product": product_type,
             "library_subpath": library_subpath,
             "datestarted": today(),
             "datemodified": today(),
@@ -357,7 +355,7 @@ def verify_revision_structure():
         })
 
         columns = rev_history.revision_history_columns()
-        with open(path, "w", newline='', encoding="utf-8") as f:
+        with open(filepath, "w", newline='', encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
             writer.writeheader()
             writer.writerows(rows)
@@ -392,7 +390,7 @@ def verify_revision_structure():
     # if everything looks good but the tsv isn't
     x = rev_history.revision_info()
     if x == "row not found":
-        append_row_to_tsv(path("revision history"), pn, rev)
+        append_revision_row(path("revision history"), pn, rev)
     elif x == "file not found":
         make_new_rev_tsv(path("revision history"), pn, rev)
 

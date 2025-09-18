@@ -33,7 +33,7 @@ def render():
         ]
     }
 
-    fileio.verify_revision_structure()
+    fileio.verify_revision_structure(product_type="tblock")
 
     # === If param file doesn't exist, create it ===
     if not os.path.exists(fileio.path("params")):

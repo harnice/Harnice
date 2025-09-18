@@ -197,7 +197,7 @@ def render(prebuilder="", artifact_builder_dict=None):
     print("Thanks for using Harnice!")
 
     # Step 1: revision structure
-    fileio.verify_revision_structure()
+    fileio.verify_revision_structure(product_type="harness")
     fileio.generate_structure()
     rev_history.update_datemodified()
 

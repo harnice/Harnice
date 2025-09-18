@@ -12,7 +12,7 @@ def render():
     if cli.prompt("Press enter to confirm or any key to exit") == "":
         exit()
 
-    fileio.verify_revision_structure()
+    fileio.verify_revision_structure(product_type="flagnote")
     params_path = fileio.path("params")
 
     # Geometry generators
