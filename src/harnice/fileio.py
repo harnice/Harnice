@@ -387,7 +387,7 @@ def verify_revision_structure(product_type=None):
     # 1) Already in a <PN>-revN folder?
     if is_revision_folder(cwd_name, parent):
         pn = parent
-        rev = int(cwd_name.split("-rev")[-1]) #already in a rev folder #TODO: #325
+        rev = int(cwd_name.split("-rev")[-1]) #already in a rev folder
 
     # 2) In a part folder (has rev folders inside)?
     elif has_revision_folder_inside(cwd, cwd_name):
