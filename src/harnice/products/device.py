@@ -239,6 +239,106 @@ def add_blank_symbol(sym_name,
     with open(lib_path, "w", encoding="utf-8") as f:
         sexpdata.dump(data, f, pretty=True)
 
+def overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
+    """
+    Overwrite or create a property inside the target symbol block
+    in the KiCad .kicad_sym library file.
+
+    - File is always fileio.path("library file")
+    - Symbol to modify is always named fileio.partnumber("pn-rev")
+
+    Args:
+        prop_name (str): Name of the property
+        value (str): Value to set (will always be forced to string)
+        hide (bool): Whether to hide the property
+    """
+
+    target_symbol_name = fileio.partnumber("pn-rev")
+
+    # Ensure value is a string (KiCad requirement)
+    if value is None:
+        value = ""
+    else:
+        value = str(value)
+
+    # Load the library file
+    with open(fileio.path("library file"), "r", encoding="utf-8") as f:
+        data = sexpdata.load(f)
+
+    def make_property(name, value, id_counter=None, hide=False):
+        builtins = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
+        prop = [
+            sexpdata.Symbol("property"),
+            name,
+            value,  # always a string
+        ]
+        if name not in builtins:
+            if id_counter is None:
+                raise ValueError(f"Custom property {name} requires an id_counter")
+            prop.append([sexpdata.Symbol("id"), id_counter])
+        prop.append([sexpdata.Symbol("at"), 0, 0, 0])
+        effects = [
+            sexpdata.Symbol("effects"),
+            [sexpdata.Symbol("font"), [sexpdata.Symbol("size"), 1.27, 1.27]],
+        ]
+        if hide:
+            effects.append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
+        prop.append(effects)
+        return prop
+
+    def next_id(symbol):
+        """Find the next available id number among custom properties."""
+        max_id = -1
+        for elem in symbol:
+            if (
+                isinstance(elem, list)
+                and len(elem) >= 4
+                and isinstance(elem[0], sexpdata.Symbol)
+                and elem[0].value() == "property"
+            ):
+                for sub in elem:
+                    if isinstance(sub, list) and len(sub) == 2:
+                        if (
+                            isinstance(sub[0], sexpdata.Symbol)
+                            and sub[0].value() == "id"
+                            and isinstance(sub[1], int)
+                        ):
+                            max_id = max(max_id, sub[1])
+        return max_id + 1
+
+    def overwrite_or_create(symbol):
+        # Try to overwrite existing property
+        for elem in symbol:
+            if (
+                isinstance(elem, list)
+                and len(elem) >= 3
+                and isinstance(elem[0], sexpdata.Symbol)
+                and elem[0].value() == "property"
+                and elem[1] == prop_name
+            ):
+                elem[2] = value  # force overwrite as string
+                return symbol
+
+        # If missing, create new one with next id
+        new_id = next_id(symbol)
+        new_prop = make_property(prop_name, value, id_counter=new_id, hide=hide)
+        symbol.append(new_prop)
+        return symbol
+
+    # Traverse to the right (symbol ...) block
+    for i, elem in enumerate(data):
+        if (
+            isinstance(elem, list)
+            and isinstance(elem[0], sexpdata.Symbol)
+            and elem[0].value() == "symbol"
+            and elem[1] == target_symbol_name
+        ):
+            data[i] = overwrite_or_create(elem)
+
+    # Save file back
+    with open(fileio.path("library file"), "w", encoding="utf-8") as f:
+        sexpdata.dump(data, f)
+
 def extract_pins_from_symbol(kicad_lib, symbol_name):
     """
     Extract all pin info for the given symbol (and its subsymbols).
@@ -333,7 +433,7 @@ def validate_pins(pins, unique_connectors_in_signals_list):
     missing = required - pin_names
     extra = pin_names - required
     if extra:
-        raise ValueError(f"Unexpected pin(s): {', '.join(sorted(extra))}")
+        raise ValueError(f"The following pin(s) exist in KiCad symbol but not Signals List: {', '.join(sorted(extra))}")
 
     return missing, seen_numbers
 
@@ -479,14 +579,20 @@ def validate_kicad_library():
         # mark number as used
         seen_numbers.add(pin_number)
 
+    # Step 4. Overwrite symbol properties
+    overwrite_or_create_property_in_symbol("Reference", get_attribute("default_refdes"), hide=False)
+    overwrite_or_create_property_in_symbol("Description", get_attribute("desc"), hide=False)
+    overwrite_or_create_property_in_symbol("MFG", get_attribute("mfg"), hide=True)
+    overwrite_or_create_property_in_symbol("MPN", get_attribute("pn"), hide=False)
+    overwrite_or_create_property_in_symbol("Library Repository", get_attribute("library_repo"), hide=True)
+    overwrite_or_create_property_in_symbol("Library Subpath", get_attribute("library_subpath"), hide=True)
+    overwrite_or_create_property_in_symbol("Rev", fileio.partnumber("rev"), hide=True)
+
 def validate_attributes_json():
     """Ensure an attributes JSON file exists with default values if missing."""
 
     default_attributes = {
-        "manufacturer": "SPECIFY MANUFACTURER NAME",
-        "manufacturer_part_number": fileio.partnumber("pn"),
-        "default_refdes": "DEVICE",
-        "library_subpath": "TRACEABLE LIBRARY PATH"
+        "default_refdes": "DEVICE"
     }
 
     attributes_path = fileio.path("attributes")
@@ -516,6 +622,7 @@ def validate_attributes_json():
             print(f"Updated attributes file with missing defaults at {attributes_path}")
 
 def get_attribute(attribute_key):
+    #find an attribute from either revision history tsv or attributes json
     if attribute_key in rev_history.revision_history_columns():
         revision_info = rev_history.revision_info()
         return revision_info.get(attribute_key)
