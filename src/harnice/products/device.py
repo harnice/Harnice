@@ -537,7 +537,13 @@ def device_render(lightweight=False):
     else:
         if not os.path.exists(fileio.path("signals list")):
             icd.new_signals_list()
-            icd.write_signal(connector_name="J1")
+            icd.write_signal(
+                connector_name="J1",
+                channel_type_id=0,
+                signal="placeholder",
+                contact=1,
+                connector_mpn="DB9_F"
+            )
 
     if os.path.exists(fileio.path("feature tree")):
         runpy.run_path(fileio.path("feature tree"))

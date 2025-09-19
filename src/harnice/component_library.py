@@ -175,16 +175,17 @@ def unpack_channel_type_id(id_value):
         text = id_value.strip().strip("()")
         parts = [p.strip() for p in text.split(",")]
         if len(parts) != 2:
-            raise ValueError(f"Invalid channel_type_id string: {id_value}")
+            raise ValueError(f"Invalid channel_type_id: {id_value}. Expected format: (chid [int], supplier [str])")
 
         key_str, supplier_str = parts
         key = int(key_str)
         supplier = supplier_str.strip("'\"")
         return key, supplier
 
-    raise TypeError(f"Unsupported channel_type_id type: {type(id_value)}")
+    raise TypeError(f"Invalid channel_type_id: {type(id_value)}")
 
 def get_local_path(lib_repo):
+    #takes in a library repo url and returns the local path
     lib_info_list = []
     with open(fileio.path("library locations"), newline='', encoding='utf-8') as f:
         lib_info_list = list(csv.DictReader(f, delimiter=','))

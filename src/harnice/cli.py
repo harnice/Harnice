@@ -1,16 +1,21 @@
 import argparse
 import os
+import sys
 from harnice import fileio
 from harnice.products import device, harness, part, flagnote, tblock, system
 
-def main():
+def ensure_cwd_exists():
     try:
-        _ = os.getcwd()
-    except FileNotFoundError:
-        raise RuntimeError(
-            "Your command line is in a directory that doesn't exist. "
-            "(maybe you were working on a file you just tried to delete?)"
-        )
+        cwd = os.getcwd()
+    except (FileNotFoundError, PermissionError):
+        sys.exit("Error: The current working directory is invalid "
+                 "(it may have been deleted or you lack permission to access it).")
+
+    if not os.path.exists(cwd):
+        sys.exit(f"Error: The current working directory no longer exists: {cwd}")
+        
+def main():
+    ensure_cwd_exists()
 
     parser = argparse.ArgumentParser(
         prog="harnice",
