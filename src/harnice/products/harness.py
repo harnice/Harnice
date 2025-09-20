@@ -193,7 +193,7 @@ for instance in instances_list.read_instance_rows():
         })
 """
 
-def render(prebuilder="", artifact_builder_dict=None):
+def render(build_macro="", output_macro_dict=None):
     print("Thanks for using Harnice!")
 
     # Step 1: revision structure
@@ -203,37 +203,37 @@ def render(prebuilder="", artifact_builder_dict=None):
 
     # Step 2: Ensure feature tree exists
     if not os.path.exists(fileio.path("feature tree")):
-        if prebuilder == "":
-            print("Do you want to use a prebuilder to help build this harness from scratch?")
-            print("  ''    Enter nothing for the standard Harnice esch prebuilder")
+        if build_macro == "":
+            print("Do you want to use a build_macro to help build this harness from scratch?")
+            print("  ''    Enter nothing for the standard Harnice esch build_macro")
             print("  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)")
             print("  's'   Enter 's' for system if this harness is pulling data from a system instances list")
-            print("  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list prebuilder")
-            print("        Or enter the path to your desired prebuilder")
-            prebuilder = cli.prompt("")
+            print("  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list build_macro")
+            print("        Or enter the path to your desired build_macro")
+            build_macro = cli.prompt("")
 
-        if prebuilder in (None, "", "n"):
-            prebuilder_name = "harnice_esch_prebuilder"
-        elif prebuilder == "s":
-            prebuilder_name = "harnice_system_harness_prebuilder"
-        elif prebuilder == "w":
-            prebuilder_name = "wireviz_yaml_prebuilder"
+        if build_macro in (None, "", "n"):
+            build_macro_name = "harnice_esch_build_macro"
+        elif build_macro == "s":
+            build_macro_name = "harnice_system_harness_build_macro"
+        elif build_macro == "w":
+            build_macro_name = "wireviz_yaml_build_macro"
         else:
-            prebuilder_name = prebuilder
+            build_macro_name = build_macro
 
         # ✅ No more stray \n
-        prebuilder_contents = f'featuretree_utils.runprebuilder("{prebuilder_name}", "https://github.com/kenyonshutt/harnice-library-public")'
+        build_macro_contents = f'featuretree_utils.run_macro("{build_macro_name}", "https://github.com/kenyonshutt/harnice-library-public")'
 
-        if artifact_builder_dict is None:
-            artifact_builder_contents = """featuretree_utils.runartifactbuilder("bom_exporter_bottom_up", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom1")
-featuretree_utils.runartifactbuilder("standard_harnice_formboard", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="formboard1", scale=scales.get("A"))
-featuretree_utils.runartifactbuilder("wirelist_exporter", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="wirelist1")
-featuretree_utils.runartifactbuilder("revision_history_table", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="revhistory1")
-featuretree_utils.runartifactbuilder("buildnotes_table", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="buildnotestable1")
-featuretree_utils.runartifactbuilder("pdf_generator", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="drawing1", scales=scales)
+        if output_macro_dict is None:
+            output_macro_contents = """featuretree_utils.run_macro("bom_exporter_bottom_up", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="output_macros", artifact_id="bom1")
+featuretree_utils.run_macro("standard_harnice_formboard", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="output_macros", artifact_id="formboard1", scale=scales.get("A"))
+featuretree_utils.run_macro("wirelist_exporter", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="output_macros", artifact_id="wirelist1")
+featuretree_utils.run_macro("revision_history_table", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="output_macros", artifact_id="revhistory1")
+featuretree_utils.run_macro("buildnotes_table", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="output_macros", artifact_id="buildnotestable1")
+featuretree_utils.run_macro("pdf_generator", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="output_macros", artifact_id="drawing1", scales=scales)
 """
         else:
-            artifact_builder_contents = "\n".join(artifact_builder_dict)
+            output_macro_contents = "\n".join(output_macro_dict)
 
         feature_tree = f"""import os
 import yaml
@@ -246,9 +246,9 @@ from harnice import (
 )
 
 #===========================================================================
-#                   PREBUILDER SCRIPTING
+#                   build_macro SCRIPTING
 #===========================================================================
-{prebuilder_contents}
+{build_macro_contents}
 
 #===========================================================================
 #                  HARNESS BUILD RULES
@@ -262,7 +262,7 @@ scales = {{
     "A": 1
 }}
 
-{artifact_builder_contents}
+{output_macro_contents}
 featuretree_utils.copy_pdfs_to_cwd()
 """
 

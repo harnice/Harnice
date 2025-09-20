@@ -86,7 +86,7 @@ def harnice_file_structure():
                     f"{partnumber("pn-rev")}.formboard_graph_definition.tsv":"formboard graph definition",
                     f"{partnumber("pn-rev")}.flagnotes.tsv":"flagnotes manual"
                 },
-                "prebuilders":{}
+                "build_macros":{}
             }
     elif product_type == "part":
         return {
@@ -118,7 +118,7 @@ def harnice_file_structure():
             f"{partnumber("pn-rev")}-bom.tsv":"bom",
             f"{partnumber("pn-rev")}-instances_list.tsv":"instances list",
             "mapped_channels.txt":"mapped channels set",
-            "prebuilders":{},
+            "build_macros":{},
             "imported_devices":{}
         }
 
@@ -130,7 +130,7 @@ def generate_structure():
         silentremove(dirpath("generated_instances_do_not_edit"))
         os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
         os.makedirs(dirpath("interactive_files"), exist_ok=True)
-        os.makedirs(dirpath("prebuilders"), exist_ok=True)
+        os.makedirs(dirpath("build_macros"), exist_ok=True)
     if product_type == "device":
         os.makedirs(dirpath("kicad"), exist_ok=True)
 
