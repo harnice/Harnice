@@ -5,39 +5,39 @@ import json
 import shutil
 from harnice import fileio, component_library, instances_list
 
-def runprebuilder(prebuilder_name, supplier, **kwargs):
-    destination_directory = os.path.join(fileio.dirpath("prebuilders"), prebuilder_name)
+def runbuild_macro(build_macro_name, supplier, **kwargs):
+    destination_directory = os.path.join(fileio.dirpath("build_macros"), build_macro_name)
     os.makedirs(destination_directory, exist_ok=True)
 
     component_library.pull_item_from_library(
         supplier=supplier,
-        lib_subpath="prebuilders",
-        mpn=prebuilder_name,
+        lib_subpath="build_macros",
+        mpn=build_macro_name,
         destination_directory=destination_directory,
         used_rev=None,
-        item_name=prebuilder_name,
+        item_name=build_macro_name,
     )
 
-    script_path = os.path.join(destination_directory, f"{prebuilder_name}.py")
+    script_path = os.path.join(destination_directory, f"{build_macro_name}.py")
 
     # forward **kwargs into the run context
     runpy.run_path(script_path, run_name="__main__", init_globals=kwargs)
 
 
-def runartifactbuilder(artifact_builder_name, supplier, artifact_id, **kwargs):
-    artifact_path = os.path.join(fileio.dirpath("artifacts"), f"{artifact_builder_name}-{artifact_id}")
+def runartifactbuilder(output_macro_name, supplier, artifact_id, **kwargs):
+    artifact_path = os.path.join(fileio.dirpath("artifacts"), f"{output_macro_name}-{artifact_id}")
     os.makedirs(artifact_path, exist_ok=True)
 
     component_library.pull_item_from_library(
         supplier=supplier,
-        lib_subpath="artifact_builders",
-        mpn=artifact_builder_name,
+        lib_subpath="output_macros",
+        mpn=output_macro_name,
         destination_directory=artifact_path,
         used_rev=None,
-        item_name=artifact_builder_name,
+        item_name=output_macro_name,
     )
 
-    script_path = os.path.join(artifact_path, f"{artifact_builder_name}.py")
+    script_path = os.path.join(artifact_path, f"{output_macro_name}.py")
 
     # always pass the basics, but let kwargs override/extend
     init_globals = {
