@@ -1,7 +1,7 @@
 
 """
 Example usage:
-featuretree_utils.runprebuilder("multi_ch_junction_mapper_prebuilder", "https://github.com/kenyonshutt/harnice-library-public", multi_ch_junction_name = "shield", multi_ch_junction_type_ids = [5])
+featuretree_utils.run_macro("multi_ch_junction_mapper_build_macro", "https://github.com/kenyonshutt/harnice-library-public", multi_ch_junction_name = "shield", multi_ch_junction_type_ids = [5])
 """
 
 

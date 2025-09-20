@@ -1,4 +1,5 @@
 channel_type_id	status	description	direction	signals	compatible_channel_type_ids	linked documentation	lower limit	upper limit	limit units	capacity	capacity units
+0		placeholder		placeholder	0						
 1		balanced audio mic level	in	"pos,neg"	2						
 2		balanced audio mic level	out	"pos,neg"	1						
 3		balanced audio line level	in	"pos,neg"	4						
