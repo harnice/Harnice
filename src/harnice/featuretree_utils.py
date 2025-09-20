@@ -6,20 +6,20 @@ import shutil
 from harnice import fileio, component_library, instances_list
 
 
-def run_macro(output_macro_name, supplier, artifact_id, **kwargs):
-    artifact_path = os.path.join(fileio.dirpath("artifacts"), f"{output_macro_name}-{artifact_id}")
+def run_macro(macro_name, supplier, lib_subpath, artifact_id="", **kwargs):
+    artifact_path = os.path.join(fileio.dirpath("artifacts"), f"{macro_name}-{artifact_id}")
     os.makedirs(artifact_path, exist_ok=True)
 
     component_library.pull_item_from_library(
         supplier=supplier,
-        lib_subpath="output_macros",
-        mpn=output_macro_name,
+        lib_subpath=lib_subpath,
+        mpn=macro_name,
         destination_directory=artifact_path,
         used_rev=None,
-        item_name=output_macro_name,
+        item_name=macro_name,
     )
 
-    script_path = os.path.join(artifact_path, f"{output_macro_name}.py")
+    script_path = os.path.join(artifact_path, f"{macro_name}.py")
 
     # always pass the basics, but let kwargs override/extend
     init_globals = {
