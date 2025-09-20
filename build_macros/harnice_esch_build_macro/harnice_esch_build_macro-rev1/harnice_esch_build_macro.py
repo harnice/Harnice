@@ -3,13 +3,13 @@ import yaml
 import os
 from harnice import instances_list, fileio  # assuming your project structure provides these
 
-prebuilder_mpn = "harnice_esch_prebuilder"
+build_macro_mpn = "harnice_esch_build_macro"
 
 def path(target_value):
     if target_value == "harness yaml":
         return os.path.join(os.getcwd(), f"{fileio.partnumber("pn-rev")}-esch.yaml")
     else:
-        raise KeyError(f"Filename {target_value} not found in {prebuilder_mpn} file tree")
+        raise KeyError(f"Filename {target_value} not found in {build_macro_mpn} file tree")
 
 #=============== CREATE BASE INSTANCES FROM ESCH #===============
 # Load the YAML file once and parse it

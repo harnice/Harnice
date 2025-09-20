@@ -2,7 +2,7 @@ import os
 import subprocess
 from harnice import fileio
 
-prebuilder_mpn = "kicad_pro_to_bom"
+build_macro_mpn = "kicad_pro_to_bom"
 
 # kicad headers (fields in KiCad schematic, including custom attributes)
 BOM_FIELDS = ["Reference", "MFG", "MPN", "supplier", "supplier_subpath", "rev"]
@@ -13,7 +13,7 @@ BOM_LABELS = ["device_ref_des", "MFG", "MPN", "supplier", "supplier_subpath", "r
 def path(target_value: str) -> str:
     if target_value == "kicad sch":
         return os.path.join(os.getcwd(), "kicad", f"{fileio.partnumber('pn-rev')}.kicad_sch")
-    raise KeyError(f"Filename {target_value} not found in {prebuilder_mpn} file tree")
+    raise KeyError(f"Filename {target_value} not found in {build_macro_mpn} file tree")
 
 
 """

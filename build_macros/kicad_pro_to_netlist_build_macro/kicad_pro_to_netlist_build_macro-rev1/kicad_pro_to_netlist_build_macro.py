@@ -6,7 +6,7 @@ import subprocess
 from typing import Dict
 from harnice import fileio
 
-prebuilder_mpn = "kicad_pro_to_netlist"
+build_macro_mpn = "kicad_pro_to_netlist"
 
 def path(target_value: str) -> str:
     if target_value == "kicad sch":
@@ -18,7 +18,7 @@ def path(target_value: str) -> str:
     if target_value == "netlist json":
         return f"{fileio.partnumber('pn-rev')}-netlist.json"
 
-    raise KeyError(f"Filename {target_value} not found in {prebuilder_mpn} file tree")
+    raise KeyError(f"Filename {target_value} not found in {build_macro_mpn} file tree")
 
 
 def parse_nets_from_export(export_text: str) -> Dict[str, list[str]]:
