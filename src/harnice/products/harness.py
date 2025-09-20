@@ -222,15 +222,15 @@ def render(build_macro="", output_macro_dict=None):
             build_macro_name = build_macro
 
         # ✅ No more stray \n
-        build_macro_contents = f'featuretree_utils.runbuild_macro("{build_macro_name}", "https://github.com/kenyonshutt/harnice-library-public")'
+        build_macro_contents = f'featuretree_utils.run_macro("{build_macro_name}", "https://github.com/kenyonshutt/harnice-library-public")'
 
         if output_macro_dict is None:
-            output_macro_contents = """featuretree_utils.runartifactbuilder("bom_exporter_bottom_up", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom1")
-featuretree_utils.runartifactbuilder("standard_harnice_formboard", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="formboard1", scale=scales.get("A"))
-featuretree_utils.runartifactbuilder("wirelist_exporter", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="wirelist1")
-featuretree_utils.runartifactbuilder("revision_history_table", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="revhistory1")
-featuretree_utils.runartifactbuilder("buildnotes_table", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="buildnotestable1")
-featuretree_utils.runartifactbuilder("pdf_generator", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="drawing1", scales=scales)
+            output_macro_contents = """featuretree_utils.run_macro("bom_exporter_bottom_up", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom1")
+featuretree_utils.run_macro("standard_harnice_formboard", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="formboard1", scale=scales.get("A"))
+featuretree_utils.run_macro("wirelist_exporter", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="wirelist1")
+featuretree_utils.run_macro("revision_history_table", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="revhistory1")
+featuretree_utils.run_macro("buildnotes_table", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="buildnotestable1")
+featuretree_utils.run_macro("pdf_generator", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="drawing1", scales=scales)
 """
         else:
             output_macro_contents = "\n".join(output_macro_dict)
