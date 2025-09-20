@@ -178,6 +178,28 @@ def symbol_exists(kicad_library_data, target_symbol_name):
                     return True
     return False
 
+def make_property(name, value, id_counter=None, hide=False):
+    #adds a property to the current rev symbol of the library 
+    builtins = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
+    prop = [
+        sexpdata.Symbol("property"),
+        name,
+        value,  # always a string
+    ]
+    if name not in builtins:
+        if id_counter is None:
+            raise ValueError(f"Custom property {name} requires an id_counter")
+        prop.append([sexpdata.Symbol("id"), id_counter])
+    prop.append([sexpdata.Symbol("at"), 0, 0, 0])
+    effects = [
+        sexpdata.Symbol("effects"),
+        [sexpdata.Symbol("font"), [sexpdata.Symbol("size"), 1.27, 1.27]],
+    ]
+    if hide:
+        effects.append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
+    prop.append(effects)
+    return prop
+
 def add_blank_symbol(sym_name,
                      value="", footprint="", datasheet="", description=""):
     """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
@@ -187,31 +209,6 @@ def add_blank_symbol(sym_name,
     # Load the existing s-expression
     with open(lib_path, "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
-
-    def make_property(name, value, id_counter=None, hide=False):
-        builtins = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
-
-        prop = [
-            sexpdata.Symbol("property"),
-            name,
-            value,
-        ]
-
-        if name not in builtins:
-            if id_counter is None:
-                raise ValueError(f"Custom property {name} requires an id_counter")
-            prop.append([sexpdata.Symbol("id"), id_counter])
-
-        prop.append([sexpdata.Symbol("at"), 0, 0, 0])
-
-        effects = [sexpdata.Symbol("effects"),
-                [sexpdata.Symbol("font"),
-                    [sexpdata.Symbol("size"), 1.27, 1.27]]]
-        if hide:
-            effects.append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
-        prop.append(effects)
-
-        return prop
 
     # Build symbol s-expression
     symbol = [
@@ -264,27 +261,6 @@ def overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
     # Load the library file
     with open(fileio.path("library file"), "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
-
-    def make_property(name, value, id_counter=None, hide=False):
-        builtins = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
-        prop = [
-            sexpdata.Symbol("property"),
-            name,
-            value,  # always a string
-        ]
-        if name not in builtins:
-            if id_counter is None:
-                raise ValueError(f"Custom property {name} requires an id_counter")
-            prop.append([sexpdata.Symbol("id"), id_counter])
-        prop.append([sexpdata.Symbol("at"), 0, 0, 0])
-        effects = [
-            sexpdata.Symbol("effects"),
-            [sexpdata.Symbol("font"), [sexpdata.Symbol("size"), 1.27, 1.27]],
-        ]
-        if hide:
-            effects.append([sexpdata.Symbol("hide"), sexpdata.Symbol("yes")])
-        prop.append(effects)
-        return prop
 
     def next_id(symbol):
         """Find the next available id number among custom properties."""
