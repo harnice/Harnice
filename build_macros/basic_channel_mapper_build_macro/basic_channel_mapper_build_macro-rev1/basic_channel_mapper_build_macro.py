@@ -1,8 +1,8 @@
 from harnice import system_utils, mapped_channels
 
 # Track mapped channels as (device_refdes, channel_id) tuples
-rows = list(system_utils.read_channel_map())
-unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))
+channels = list(system_utils.read_channel_map())
+unique_merged_nets = sorted(set(r["merged_net"] for r in channels if r["merged_net"]))
 
 
 def map_and_record(from_key, to_key):
@@ -16,7 +16,7 @@ def map_and_record(from_key, to_key):
 for merged_net in unique_merged_nets:
 
     # look at all channels connected within this net
-    net_channels = [r for r in rows if r["merged_net"] == merged_net]
+    net_channels = [r for r in channels if r["merged_net"] == merged_net]
 
     for from_channel in net_channels:
         from_key = (
