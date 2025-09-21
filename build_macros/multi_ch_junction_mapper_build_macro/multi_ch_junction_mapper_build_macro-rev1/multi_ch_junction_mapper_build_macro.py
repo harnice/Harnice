@@ -2,11 +2,13 @@
 """
 Example usage:
 featuretree_utils.run_macro("multi_ch_junction_mapper_build_macro", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="build_macros", multi_ch_junction_name = "shield", multi_ch_junction_type_ids = [5])
+
+args:
+- multi_ch_junction_name: name of the channel where multi_ch_junctions are connected
+- multi_ch_junction_type_ids: list of channel type ids that are considered multi_ch_junctions
+- from_keys: list of tuples of [[device_refdes, channel_id], ...]
 """
-
-
 from harnice import system, mapped_channels
-
 # Track mapped channels as (device_refdes, channel_id) tuples
 rows = list(system.read_channel_map())
 unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))
