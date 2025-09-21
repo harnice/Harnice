@@ -31,7 +31,7 @@ INSTANCES_LIST_COLUMNS = [
     "note_number",  # <--------- merge with parent_csys and import instances of child csys?
     "bubble_text",
     "note_text",
-    "supplier",
+    "lib_repo",
     "lib_latest_rev",
     "lib_rev_used_here",
     "lib_status",
@@ -156,7 +156,7 @@ def assign_bom_line_numbers():
         if instance.get("bom_line_number") == "True":
             if instance.get("mpn") == "":
                 raise ValueError(
-                    f"You've chosen to add {instance.get("instance_name")} to the bom, but haven't specified an MPN"
+                    f"You've chosen to add {instance.get('instance_name')} to the bom, but haven't specified an MPN"
                 )
             if instance.get("mpn") not in bom:
                 bom.append(instance.get("mpn"))

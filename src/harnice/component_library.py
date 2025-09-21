@@ -6,7 +6,7 @@ from harnice import fileio, instances_list
 
 
 def pull_item_from_library(
-    supplier,
+    lib_repo,
     lib_subpath,
     mpn,
     destination_directory,
@@ -14,9 +14,9 @@ def pull_item_from_library(
     item_name=None,
     quiet=True,
 ):
-    if not isinstance(supplier, str) or not supplier.strip():
+    if not isinstance(lib_repo, str) or not lib_repo.strip():
         raise ValueError(
-            f"when importing {mpn} 'supplier' must be a non-empty string. Got: {supplier}"
+            f"when importing {mpn} 'lib_repo' must be a non-empty string. Got: {lib_repo}"
         )
     if not isinstance(lib_subpath, str) or not lib_subpath.strip():
         raise ValueError(
@@ -32,8 +32,8 @@ def pull_item_from_library(
     if item_name == "":
         item_name = mpn
 
-    supplier_root = os.path.expanduser(get_local_path(supplier))
-    base_path = os.path.join(supplier_root, lib_subpath, mpn)
+    lib_repo_root = os.path.expanduser(get_local_path(lib_repo))
+    base_path = os.path.join(lib_repo_root, lib_subpath, mpn)
     lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
 
     # === Find highest local rev
@@ -139,7 +139,7 @@ def pull_part(instance_name):
         if not item_name == instance_name:
             continue
 
-        supplier = instance.get("supplier")
+        lib_repo = instance.get("lib_repo")
         mpn = instance.get("mpn", "")
         destination_directory = os.path.join(
             fileio.dirpath("imported_instances"), item_name
@@ -158,7 +158,7 @@ def pull_part(instance_name):
         used_rev = desired_rev if desired_rev != "latest" else None
 
         returned_rev, revhistory_row = pull_item_from_library(
-            supplier=supplier,
+            lib_repo=lib_repo,
             lib_subpath="parts",
             mpn=mpn,
             destination_directory=destination_directory,
@@ -184,8 +184,8 @@ def unpack_channel_type_id(id_value):
     if isinstance(id_value, tuple):
         if len(id_value) != 2:
             raise ValueError(f"Invalid channel_type_id tuple: {id_value}")
-        key, supplier = id_value
-        return int(key), str(supplier).strip()
+        key, lib_repo = id_value
+        return int(key), str(lib_repo).strip()
 
     # Case 2: string
     if isinstance(id_value, str):
@@ -193,13 +193,13 @@ def unpack_channel_type_id(id_value):
         parts = [p.strip() for p in text.split(",")]
         if len(parts) != 2:
             raise ValueError(
-                f"Invalid channel_type_id: {id_value}. Expected format: (chid [int], supplier [str])"
+                f"Invalid channel_type_id: {id_value}. Expected format: (chid [int], lib_repo [str])"
             )
 
-        key_str, supplier_str = parts
+        key_str, lib_repo_str = parts
         key = int(key_str)
-        supplier = supplier_str.strip("'\"")
-        return key, supplier
+        lib_repo = lib_repo_str.strip("'\"")
+        return key, lib_repo
 
     raise TypeError(f"Invalid channel_type_id: {type(id_value)}")
 

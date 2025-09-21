@@ -75,50 +75,50 @@ def harnice_file_structure():
 
     if product_type == "harness":
         return {
-            f"{partnumber("pn-rev")}-feature_tree.py": "feature tree",
-            f"{partnumber("pn-rev")}-instances_list.tsv": "instances list",
+            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
+            f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "artifacts": {
-                f"{partnumber("pn-rev")}-formboard_graph_definition.svg": "formboard graph definition svg",
+                f"{partnumber('pn-rev')}-formboard_graph_definition.svg": "formboard graph definition svg",
             },
             "instance_data": {
                 "imported_instances": {},
                 "generated_instances_do_not_edit": {},
             },
             "interactive_files": {
-                f"{partnumber("pn-rev")}.formboard_graph_definition.tsv": "formboard graph definition",
-                f"{partnumber("pn-rev")}.flagnotes.tsv": "flagnotes manual",
+                f"{partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
+                f"{partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
             },
             "build_macros": {},
         }
     elif product_type == "part":
         return {
-            f"{partnumber("pn-rev")}-drawing.svg": "drawing",
-            f"{partnumber("pn-rev")}-attributes.json": "attributes",
+            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
+            f"{partnumber('pn-rev')}-attributes.json": "attributes",
         }
     elif product_type == "flagnote":
         return {
-            f"{partnumber("pn-rev")}-params.json": "params",
-            f"{partnumber("pn-rev")}-drawing.svg": "drawing",
+            f"{partnumber('pn-rev')}-params.json": "params",
+            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
         }
     elif product_type in ("tblock", "titleblock"):
         return {
-            f"{partnumber("pn-rev")}-params.json": "params",
-            f"{partnumber("pn-rev")}-drawing.svg": "drawing",
-            f"{partnumber("pn-rev")}-attributes.json": "attributes",
+            f"{partnumber('pn-rev')}-params.json": "params",
+            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
+            f"{partnumber('pn-rev')}-attributes.json": "attributes",
         }
     elif product_type == "device":
         return {
-            f"{partnumber("pn-rev")}-feature_tree.py": "feature tree",
-            f"{partnumber("pn-rev")}-signals-list.tsv": "signals list",
-            f"{partnumber("pn-rev")}-attributes.json": "attributes",
+            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
+            f"{partnumber('pn-rev')}-signals-list.tsv": "signals list",
+            f"{partnumber('pn-rev')}-attributes.json": "attributes",
         }
     elif product_type == "system":
         return {
-            f"{partnumber("pn-rev")}-feature_tree.py": "feature tree",
-            f"{partnumber("pn-rev")}-netlist.json": "netlist",
-            f"{partnumber("pn-rev")}-chmap.tsv": "channel map",
-            f"{partnumber("pn-rev")}-bom.tsv": "bom",
-            f"{partnumber("pn-rev")}-instances_list.tsv": "instances list",
+            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
+            f"{partnumber('pn-rev')}-netlist.json": "netlist",
+            f"{partnumber('pn-rev')}-chmap.tsv": "channel map",
+            f"{partnumber('pn-rev')}-bom.tsv": "bom",
+            f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "mapped_channels.txt": "mapped channels set",
             "build_macros": {},
             "imported_devices": {},
@@ -159,7 +159,7 @@ def path(target_value):
     """
     if target_value == "revision history":
         file_path = os.path.join(
-            _part_directory(), f"{partnumber("pn")}-revision_history.tsv"
+            _part_directory(), f"{partnumber('pn')}-revision_history.tsv"
         )
         return file_path
 
@@ -169,7 +169,7 @@ def path(target_value):
 
     if product_type == "device":
         if target_value == "library file":
-            return os.path.join(dirpath("kicad"), f"{partnumber("pn")}.kicad_sym")
+            return os.path.join(dirpath("kicad"), f"{partnumber('pn')}.kicad_sym")
 
         if target_value == "library setup info":
             return os.path.join(dirpath("kicad"), "librarybasics.txt")
@@ -340,7 +340,7 @@ def verify_revision_structure(product_type=None):
                 "Enter a description for this revision", default=None
             )
 
-        # add supplier if filepath is found in library locations
+        # add lib_repo if filepath is found in library locations
         library_repo = ""
         library_subpath = ""
         cwd = str(os.getcwd()).lower().strip("~")
