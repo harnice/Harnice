@@ -8,11 +8,11 @@ def path(target_value):
     # artifact_path gets passed in as a global from the caller
     if target_value == "bom tsv":
         return os.path.join(
-            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-bom.tsv"
+            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom.tsv"
         )
     if target_value == "bom svg":
         return os.path.join(
-            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-bom-master.svg"
+            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom-master.svg"
         )
     else:
         raise KeyError(f"Filename {target_value} not found in bom_exporter file tree")
@@ -24,7 +24,7 @@ BOM_COLUMNS = [
     "mpn",
     "item_type",
     "qty",
-    "supplier",
+    "lib_repo",
     "total_length_exact",
     "total_length_plus_margin",
 ]
@@ -51,7 +51,7 @@ for i in range(1, highest_bom_number + 1):
     mpn = ""
     item_type = ""
     qty = 0
-    supplier = ""
+    lib_repo = ""
     total_length_exact = 0
     total_length_plus_margin = 0
 
@@ -61,7 +61,7 @@ for i in range(1, highest_bom_number + 1):
                 mpn = instance.get("mpn")
                 item_type = instance.get("item_type")
                 qty += 1
-                supplier = instance.get("supplier")
+                lib_repo = instance.get("lib_repo")
                 if not instance.get("length") == "":
                     total_length_exact += int(instance.get("length"))
                     total_length_plus_margin += (
@@ -77,7 +77,7 @@ for i in range(1, highest_bom_number + 1):
             "mpn": mpn,
             "item_type": item_type,
             "qty": qty,
-            "supplier": supplier,
+            "lib_repo": lib_repo,
             "total_length_exact": total_length_exact,
             "total_length_plus_margin": total_length_plus_margin,
         }

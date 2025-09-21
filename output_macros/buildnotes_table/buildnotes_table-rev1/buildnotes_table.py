@@ -40,12 +40,12 @@ for instance in instances_list.read_instance_rows():
             has_shape = True
         if has_shape:
             shape = instance.get("mpn")
-            supplier = instance.get("supplier")
+            lib_repo = instance.get("lib_repo")
 
         # Pull bubble from the library if there is a shape
-        if has_shape and shape and supplier:
+        if has_shape and shape and lib_repo:
             component_library.pull_item_from_library(
-                supplier=supplier,
+                lib_repo=lib_repo,
                 lib_subpath="flagnotes",
                 mpn=shape,
                 destination_directory=path("buildnotes table bubbles"),

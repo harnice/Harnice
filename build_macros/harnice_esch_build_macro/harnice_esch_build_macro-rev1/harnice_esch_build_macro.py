@@ -11,7 +11,7 @@ build_macro_mpn = "harnice_esch_build_macro"
 
 def path(target_value):
     if target_value == "harness yaml":
-        return os.path.join(os.getcwd(), f"{fileio.partnumber("pn-rev")}-esch.yaml")
+        return os.path.join(os.getcwd(), f"{fileio.partnumber('pn-rev')}-esch.yaml")
     else:
         raise KeyError(
             f"Filename {target_value} not found in {build_macro_mpn} file tree"
@@ -32,7 +32,6 @@ for circuit_name, ports in harness_yaml.items():
     # Go through each port in this circuit
     # Port label is the port, value is either a string or a dictionary
     for port_label, value in ports.items():
-
         if port_label == "contact":
             # Automatically name the contact with the circuit name and a number
             instance_name = f"{circuit_name}.contact{contact_counter}"
@@ -41,7 +40,7 @@ for circuit_name, ports in harness_yaml.items():
             # Add this contact to the system with its part number (mpn)
 
             if value == "TXPA20":
-                supplier = "https://github.com/kenyonshutt/harnice-library-public"
+                lib_repo = "https://github.com/kenyonshutt/harnice-library-public"
 
             instances_list.add_unless_exists(
                 instance_name,
@@ -49,7 +48,7 @@ for circuit_name, ports in harness_yaml.items():
                     "item_type": "Contact",
                     "bom_line_number": True,
                     "mpn": value,
-                    "supplier": supplier,
+                    "lib_repo": lib_repo,
                     "location_is_node_or_segment": "Node",
                     "circuit_id": circuit_name,
                     "circuit_id_port": port_counter,
@@ -90,7 +89,6 @@ for circuit_name, ports in harness_yaml.items():
             # the value will be a dictionary with extra fields
             if type(value) is dict:
                 for subkey, subval in value.items():
-
                     # If the field is "cavity", add a cavity under this connector
                     if subkey == "cavity":
                         instance_name = f"{port_label}.cavity{subval}"
@@ -145,7 +143,7 @@ for instance in instances_list.read_instance_rows():
                 {
                     "bom_line_number": "True",
                     "mpn": "D38999_26ZB98PN",
-                    "supplier": "https://github.com/kenyonshutt/harnice-library-public",
+                    "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
                 },
             )
         else:
@@ -154,7 +152,7 @@ for instance in instances_list.read_instance_rows():
                 {
                     "bom_line_number": "True",
                     "mpn": "D38999_26ZA98PN",
-                    "supplier": "https://github.com/kenyonshutt/harnice-library-public",
+                    "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
                 },
             )
 
@@ -174,7 +172,7 @@ for instance in instances_list.read_instance_rows():
         instances_list.modify(instance_name, {"print_name": "J2"})
     elif instance.get("item_type") == "Connector":
         raise ValueError(
-            f"Connector {instance.get("instance_name")} defined but does not have a print name assigned."
+            f"Connector {instance.get('instance_name')} defined but does not have a print name assigned."
         )
 
 
@@ -189,9 +187,9 @@ for instance in instances_list.read_instance_rows():
                     f"{instance_name}.bs",
                     {
                         "mpn": "M85049-88_9Z03",
-                        "print_name": f"{instances_list.attribute_of(instance_name, "print_name")}.bs",
+                        "print_name": f"{instances_list.attribute_of(instance_name, 'print_name')}.bs",
                         "bom_line_number": "True",
-                        "supplier": "https://github.com/kenyonshutt/harnice-library-public",
+                        "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
                         "item_type": "Backshell",
                         "parent_instance": instance.get("instance_name"),
                         "cluster": instance_name,
