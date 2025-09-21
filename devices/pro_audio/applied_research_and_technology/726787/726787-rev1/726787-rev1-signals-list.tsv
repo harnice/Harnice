@@ -1,13 +1,13 @@
-channel	channel_type_id	compatible_channel_type_ids	signal	connector_name	connector_mpn	contact
-in1	6	7	pos	in1	XLR3F	2
-in1	6	7	neg	in1	XLR3F	3
-in1	6	7	chassis	in1	XLR3F	1
-in2	6	7	pos	in2	XLR3F	2
-in2	6	7	neg	in2	XLR3F	3
-in2	6	7	chassis	in2	XLR3F	1
-out1	9	8	pos	out1	XLR3M	2
-out1	9	8	neg	out1	XLR3M	3
-out1	9	8	chassis	out1	XLR3M	1
-out2	9	8	pos	out2	XLR3M	2
-out2	9	8	neg	out2	XLR3M	3
-out2	9	8	chassis	out2	XLR3M	1
+channel	signal	connector_name	contact	connector_mpn	channel_type_id	channel_type_id_status	channel_type_id_description	compatible_channel_type_ids
+in1	pos	in1	2	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')			
+in1	neg	in1	3	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')			
+in1-shield	chassis	in1	1	XLR3F	(5, 'https://github.com/kenyonshutt/harnice-library-public')			
+in2	pos	in2	2	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')			
+in2	neg	in2	3	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')			
+in2-shield	chassis	in2	1	XLR3F	(5, 'https://github.com/kenyonshutt/harnice-library-public')			
+out1	pos	out1	2	XLR3M	(4, 'https://github.com/kenyonshutt/harnice-library-public')			
+out1	neg	out1	3	XLR3M	(4, 'https://github.com/kenyonshutt/harnice-library-public')			
+out1-shield	chassis	out1	1	XLR3M	(5, 'https://github.com/kenyonshutt/harnice-library-public')			
+out2	pos	out2	2	XLR3M	(4, 'https://github.com/kenyonshutt/harnice-library-public')			
+out2	neg	out2	3	XLR3M	(4, 'https://github.com/kenyonshutt/harnice-library-public')			
+out2-shield	chassis	out2	1	XLR3M	(5, 'https://github.com/kenyonshutt/harnice-library-public')			
