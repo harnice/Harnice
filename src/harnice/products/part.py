@@ -1,7 +1,5 @@
 import os
 import json
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
 import random
 import math
 
@@ -100,7 +98,7 @@ def render():
     ]
 
     # === Render Output Csys Locations ===
-    lines.append(f'  <g id="output csys locations">')
+    lines.append('  <g id="output csys locations">')
 
     arrow_len = 24
     dot_radius = 4
@@ -149,7 +147,7 @@ def render():
 
             draw_arrow(x, y, dx_x, dy_x, "red")
             draw_arrow(x, y, dx_y, dy_y, "green")
-            lines.append(f'    </g>')
+            lines.append('    </g>')
 
         except Exception as e:
             print(f"[WARNING] Failed to render csys {csys_name}: {e}")

@@ -1,4 +1,3 @@
-import xml.etree.ElementTree as ET
 import os
 import csv
 import re
@@ -116,7 +115,6 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     return library_rev, revhistory_row
 
 def pull_part(instance_name):
-    supported_library_components = ['connector', 'backshell']
     instances = instances_list.read_instance_rows()
 
     for instance in instances:
@@ -124,7 +122,6 @@ def pull_part(instance_name):
         if not item_name == instance_name:
             continue
 
-        item_type = instance.get('item_type', '').lower()
         supplier = instance.get('supplier')
         mpn = instance.get('mpn', '')
         destination_directory = os.path.join(fileio.dirpath("imported_instances"), item_name)

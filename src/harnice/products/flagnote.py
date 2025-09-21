@@ -84,7 +84,6 @@ def render():
 
     svg_width = 6 * 96
     svg_height = 6 * 96
-    group_name = "contents"
 
     fill = p.get("fill")
     if not isinstance(fill, int):
@@ -116,9 +115,9 @@ def render():
         f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
         f'  <g id="{fileio.partnumber('pn')}-drawing-contents-start">',
         contents.rstrip(),
-        f'  </g>',
+        '  </g>',
         f'  <g id="{fileio.partnumber('pn')}-drawing-contents-end">',
-        f'  </g>',
+        '  </g>',
         '</svg>'
     ]
 

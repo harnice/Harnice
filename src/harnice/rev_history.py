@@ -52,10 +52,11 @@ def initial_release_exists():
         with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t")
             for row in reader:
-                if str(row.get("revisionupdates")) =="INITIAL RELEASE":
+                if str(row.get("revisionupdates", "")).strip() == "INITIAL RELEASE":
                     return True
-    except:
+    except FileNotFoundError:
         return False
+    return False
 
 def initial_release_desc():
     try:
@@ -64,7 +65,7 @@ def initial_release_desc():
             for row in reader:
                 if row.get("revisionupdates") == "INITIAL RELEASE":
                     return row.get("desc")
-    except:
+    except FileNotFoundError:
         pass
 
 def update_datemodified():
