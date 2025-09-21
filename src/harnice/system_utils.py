@@ -58,7 +58,7 @@ def read_netlist():
         return json.load(f)
 
 
-def new_channel_map():
+def new_blank_channel_map():
     channel_map = []
     seen = set()  # track unique rows by tuple key
     netlist = read_netlist()  # load once

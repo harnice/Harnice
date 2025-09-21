@@ -20,7 +20,7 @@ system_utils.pull_devices_from_library()
 #===========================================================================
 #                   CHANNEL MAPPING
 #===========================================================================
-system_utils.new_channel_map()
+system_utils.new_blank_channel_map()
 featuretree_utils.run_macro("basic_channel_mapper_build_macro", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="build_macros")
 
 #===========================================================================
