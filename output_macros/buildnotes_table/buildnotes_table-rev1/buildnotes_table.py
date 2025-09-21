@@ -1,14 +1,10 @@
 import os
 import csv
 import re
-from harnice import (
-    fileio,
-    component_library,
-    svg_utils,
-    instances_list
-)
+from harnice import fileio, component_library, svg_utils, instances_list
 
 artifact_mpn = "buildnotes_table"
+
 
 def path(target_value):
     if target_value == "buildnotes table bubbles":
@@ -19,6 +15,7 @@ def path(target_value):
         return os.path.join(artifact_path, "buildnotes-list.tsv")
     else:
         raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
+
 
 os.makedirs(path("buildnotes table bubbles"), exist_ok=True)
 
@@ -53,15 +50,13 @@ for instance in instances_list.read_instance_rows():
                 mpn=shape,
                 destination_directory=path("buildnotes table bubbles"),
                 item_name=f"bubble{buildnote_number}",
-                quiet=True
+                quiet=True,
             )
 
         # Append row information only if it contains valid data
-        data_rows.append({
-            "buildnote_number": buildnote_number,
-            "note": note,
-            "has_shape": has_shape
-        })
+        data_rows.append(
+            {"buildnote_number": buildnote_number, "note": note, "has_shape": has_shape}
+        )
 
 num_rows = len(data_rows)  # Number of valid data rows
 svg_width = sum(column_widths)
@@ -72,7 +67,7 @@ svg_lines = [
     f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
     f'font-family="{font_family}" font-size="{font_size}">',
     '<g id="buildnotes-table-contents-start">',
-    f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none" stroke="black" stroke-width="{line_width}"/>'
+    f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none" stroke="black" stroke-width="{line_width}"/>',
 ]
 
 # Column positions
@@ -104,7 +99,9 @@ current_y = row_height  # Start from the row directly below the header
 # === Data Rows ===
 for row_index, row in enumerate(data_rows):
     # Adjust row height based on whether there is a bubble
-    row_height_adjusted = row_height if not row["has_shape"] else 0.4 * 96  # Height for rows with bubbles
+    row_height_adjusted = (
+        row_height if not row["has_shape"] else 0.4 * 96
+    )  # Height for rows with bubbles
     y = current_y  # Current y position for the row
     cy = y + row_height_adjusted / 2  # Center of the cell vertically
 
@@ -138,18 +135,20 @@ for row_index, row in enumerate(data_rows):
     # If row has a shape (bubble), add the bubble
     if row["has_shape"]:
         buildnote_number = row["buildnote_number"]
-        svg_lines.append(f'<g id="bubble{buildnote_number}" transform="translate({bubble_x + column_widths[0] / 2},{cy})">')
+        svg_lines.append(
+            f'<g id="bubble{buildnote_number}" transform="translate({bubble_x + column_widths[0] / 2},{cy})">'
+        )
         svg_lines.append(f'  <g id="bubble{buildnote_number}-contents-start">')
-        svg_lines.append(f'  </g>')
+        svg_lines.append(f"  </g>")
         svg_lines.append(f'  <g id="bubble{buildnote_number}-contents-end"/>')
-        svg_lines.append(f'</g>')
+        svg_lines.append(f"</g>")
 
     # Update the current_y position for the next row
     current_y += row_height_adjusted  # Move down after drawing the row
 
-svg_lines.append('</g>')
+svg_lines.append("</g>")
 svg_lines.append('<g id="buildnotes-table-contents-end"/>')
-svg_lines.append('</svg>')
+svg_lines.append("</svg>")
 
 # === Write SVG Output ===
 with open(path("buildnotes table svg"), "w", encoding="utf-8") as svg_file:
@@ -161,7 +160,9 @@ for row in data_rows:
         continue
 
     buildnote_number = row["buildnote_number"]
-    source_svg_filepath = os.path.join(path("buildnotes table bubbles"), f"bubble{buildnote_number}-drawing.svg")
+    source_svg_filepath = os.path.join(
+        path("buildnotes table bubbles"), f"bubble{buildnote_number}-drawing.svg"
+    )
     target_svg_filepath = path("buildnotes table svg")
     group_name = f"bubble{buildnote_number}"
 
@@ -170,7 +171,9 @@ for row in data_rows:
         with open(source_svg_filepath, "r", encoding="utf-8") as f:
             svg_text = f.read()
 
-        updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{buildnote_number}<', svg_text)
+        updated_text = re.sub(
+            r">\s*flagnote-text\s*<", f">{buildnote_number}<", svg_text
+        )
 
         with open(source_svg_filepath, "w", encoding="utf-8") as f:
             f.write(updated_text)
@@ -180,5 +183,5 @@ for row in data_rows:
         target_svg_filepath=target_svg_filepath,
         source_svg_filepath=source_svg_filepath,
         source_group_name=group_name,
-        destination_group_name=group_name
+        destination_group_name=group_name,
     )

@@ -1,13 +1,10 @@
 import os
 import csv
 import re
-from harnice import (
-    fileio,
-    component_library,
-    svg_utils
-)
+from harnice import fileio, component_library, svg_utils
 
 artifact_mpn = "revision_history_table"
+
 
 def path(target_value):
     if target_value == "revision table bubbles":
@@ -17,11 +14,28 @@ def path(target_value):
     else:
         raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
 
+
 os.makedirs(path("revision table bubbles"), exist_ok=True)
 
 # === Configuration ===
-column_headers = ["REVISION", "UPDATE", "STATUS", "DRAWN BY", "CHECKED BY", "STARTED", "MODIFIED"]
-column_keys = ["rev", "revisionupdates", "status", "drawnby", "checkedby", "datestarted", "datemodified"]
+column_headers = [
+    "REVISION",
+    "UPDATE",
+    "STATUS",
+    "DRAWN BY",
+    "CHECKED BY",
+    "STARTED",
+    "MODIFIED",
+]
+column_keys = [
+    "rev",
+    "revisionupdates",
+    "status",
+    "drawnby",
+    "checkedby",
+    "datestarted",
+    "datemodified",
+]
 column_widths = [0.5 * 96, 1.5 * 96, 0.6 * 96, 0.75 * 96, 0.75 * 96, 0.4 * 96, 0.4 * 96]
 header_row_height = 0.16 * 96  # Height for the header row
 normal_row_height = 0.16 * 96  # Default height for rows without bubbles
@@ -44,7 +58,7 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
                 mpn="rev_change_callout",  # Assumed the bubble shape for all rows
                 destination_directory=path("revision table bubbles"),
                 item_name=f"bubble{rev}",
-                quiet=True
+                quiet=True,
             )
         row["has_bubble"] = has_bubble
         data_rows.append(row)
@@ -52,13 +66,15 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
 # Calculate SVG height based on the number of rows
 num_rows = len(data_rows) + 1  # Include header row
 svg_width = sum(column_widths)
-svg_height = header_row_height + sum(bubble_row_height if row["has_bubble"] else normal_row_height for row in data_rows)
+svg_height = header_row_height + sum(
+    bubble_row_height if row["has_bubble"] else normal_row_height for row in data_rows
+)
 
 svg_lines = [
     f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
     f'font-family="{font_family}" font-size="{font_size}">',
     '<g id="revision-history-table-contents-start">',
-    f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none"/>'
+    f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none"/>',
 ]
 
 # Header Row
@@ -116,25 +132,30 @@ for row_index, row in enumerate(data_rows):
             mpn="rev_change_callout",  # Assumed the bubble shape for all rows
             destination_directory=path("revision table bubbles"),
             item_name=bubble_name,
-            quiet=True
+            quiet=True,
         )
 
         # Inject the bubble into the SVG at the correct position
-        bubble_x = sum(column_widths[:column_keys.index("rev")]) + column_widths[column_keys.index("rev")] / 2  # Center of the "rev" column
+        bubble_x = (
+            sum(column_widths[: column_keys.index("rev")])
+            + column_widths[column_keys.index("rev")] / 2
+        )  # Center of the "rev" column
         bubble_y = cy  # Vertically centered
 
-        svg_lines.append(f'<g id="{bubble_name}" transform="translate({bubble_x},{bubble_y})">')
+        svg_lines.append(
+            f'<g id="{bubble_name}" transform="translate({bubble_x},{bubble_y})">'
+        )
         svg_lines.append(f'  <g id="{bubble_name}-contents-start">')
-        svg_lines.append(f'  </g>')
+        svg_lines.append(f"  </g>")
         svg_lines.append(f'  <g id="{bubble_name}-contents-end"/>')
-        svg_lines.append(f'</g>')
+        svg_lines.append(f"</g>")
 
     # Move the current_y position for the next row
     current_y += row_height
 
-svg_lines.append('</g>')
+svg_lines.append("</g>")
 svg_lines.append('<g id="revision-history-table-contents-end"/>')
-svg_lines.append('</svg>')
+svg_lines.append("</svg>")
 
 # Write the base SVG
 target_svg = path("revhistory master svg")
@@ -148,8 +169,7 @@ for row in data_rows:
 
     rev_text = row["rev"]
     source_svg_filepath = os.path.join(
-        path("revision table bubbles"),
-        f"bubble{rev_text}-drawing.svg"
+        path("revision table bubbles"), f"bubble{rev_text}-drawing.svg"
     )
     target_svg_filepath = path("revhistory master svg")
     group_name = f"bubble{rev_text}"
@@ -159,7 +179,7 @@ for row in data_rows:
         with open(source_svg_filepath, "r", encoding="utf-8") as f:
             svg_text = f.read()
 
-        updated_text = re.sub(r'>\s*flagnote-text\s*<', f'>{rev_text}<', svg_text)
+        updated_text = re.sub(r">\s*flagnote-text\s*<", f">{rev_text}<", svg_text)
 
         with open(source_svg_filepath, "w", encoding="utf-8") as f:
             f.write(updated_text)
@@ -169,5 +189,5 @@ for row in data_rows:
         target_svg_filepath=target_svg_filepath,
         source_svg_filepath=source_svg_filepath,
         source_group_name=group_name,
-        destination_group_name=group_name
+        destination_group_name=group_name,
     )

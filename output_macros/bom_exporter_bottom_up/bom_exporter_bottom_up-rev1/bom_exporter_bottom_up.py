@@ -2,36 +2,44 @@ import os
 import csv
 from harnice import instances_list, fileio
 
-#=============== PATHS ===============
+
+# =============== PATHS ===============
 def path(target_value):
-    #artifact_path gets passed in as a global from the caller
+    # artifact_path gets passed in as a global from the caller
     if target_value == "bom tsv":
-        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-bom.tsv")
+        return os.path.join(
+            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-bom.tsv"
+        )
     if target_value == "bom svg":
-        return os.path.join(artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-bom-master.svg")
+        return os.path.join(
+            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-bom-master.svg"
+        )
     else:
         raise KeyError(f"Filename {target_value} not found in bom_exporter file tree")
 
+
 CABLE_MARGIN = 12
 BOM_COLUMNS = [
-    'bom_line_number', 
-    'mpn', 
-    'item_type', 
-    'qty', 
-    'supplier', 
-    'total_length_exact',
-    'total_length_plus_margin'
+    "bom_line_number",
+    "mpn",
+    "item_type",
+    "qty",
+    "supplier",
+    "total_length_exact",
+    "total_length_plus_margin",
 ]
 
-with open(path("bom tsv"), 'w', newline='', encoding='utf-8') as f:
-    writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter='\t')
+with open(path("bom tsv"), "w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
     writer.writeheader()
     writer.writerows([])
 
+
 def add_line_to_bom(line_data):
-    with open(path("bom tsv"), 'a', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter='\t')
-        writer.writerow({key: line_data.get(key, '') for key in BOM_COLUMNS})
+    with open(path("bom tsv"), "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
+        writer.writerow({key: line_data.get(key, "") for key in BOM_COLUMNS})
+
 
 highest_bom_number = 0
 for instance in instances_list.read_instance_rows():
@@ -56,20 +64,24 @@ for i in range(1, highest_bom_number + 1):
                 supplier = instance.get("supplier")
                 if not instance.get("length") == "":
                     total_length_exact += int(instance.get("length"))
-                    total_length_plus_margin += int(instance.get("length")) + CABLE_MARGIN
+                    total_length_plus_margin += (
+                        int(instance.get("length")) + CABLE_MARGIN
+                    )
                 else:
                     total_length_exact = ""
                     total_length_plus_margin = ""
 
-    add_line_to_bom({
-        'bom_line_number': i,
-        'mpn': mpn,
-        'item_type': item_type,
-        'qty': qty,
-        'supplier': supplier,
-        'total_length_exact': total_length_exact,
-        'total_length_plus_margin': total_length_plus_margin
-    })
+    add_line_to_bom(
+        {
+            "bom_line_number": i,
+            "mpn": mpn,
+            "item_type": item_type,
+            "qty": qty,
+            "supplier": supplier,
+            "total_length_exact": total_length_exact,
+            "total_length_plus_margin": total_length_plus_margin,
+        }
+    )
 
 # === Create BOM Table SVG ===
 selected_columns = ["bom_line_number", "qty", "total_length_exact", "mpn"]
@@ -98,7 +110,7 @@ svg_height = num_rows * row_height
 svg_lines = [
     f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
     f'font-family="{font_family}" font-size="{font_size}">',
-    f'<g id="{artifact_id}-bom-contents-start">'
+    f'<g id="{artifact_id}-bom-contents-start">',
 ]
 
 column_x_positions = []
@@ -109,7 +121,7 @@ for width in column_widths:
 
 for row_index, row in enumerate(reversed(table_rows)):
     y = -1 * (row_index + 1) * row_height
-    is_header_row = (row_index == 0)
+    is_header_row = row_index == 0
     rect_fill = "#e0e0e0" if is_header_row else "white"
     font_weight = "bold" if is_header_row else "normal"
 
@@ -146,9 +158,9 @@ for row_index, row in enumerate(reversed(table_rows)):
                 f'style="fill:none;stroke:black;stroke-width:{line_width}"/>'
             )
 
-svg_lines.append('</g>')
+svg_lines.append("</g>")
 svg_lines.append(f'<g id="{artifact_id}-bom-contents-end"/>')
-svg_lines.append('</svg>')
+svg_lines.append("</svg>")
 
 with open(path("bom svg"), "w", encoding="utf-8") as svg_file:
     svg_file.write("\n".join(svg_lines))

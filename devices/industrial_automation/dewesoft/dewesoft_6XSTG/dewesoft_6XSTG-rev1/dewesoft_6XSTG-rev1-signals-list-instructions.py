@@ -1,23 +1,17 @@
 from harnice import icd
 
-ch_type_ids = {
-    "in": 1,
-    "excite": 2,
-    "sense": 1,
-    "chassis": 3
-}
+ch_type_ids = {"in": 1, "excite": 2, "sense": 1, "chassis": 3}
 
 ch_type_id_supplier = "https://github.com/kenyonshutt/harnice-library-public"
 
 signal_to_contact = {
     "in.pos": 1,
-    "in.neg"
-    "excite_neg": 8,
+    "in.neg" "excite_neg": 8,
     "adc_1a": 3,
     "adc_1b": 4,
     "adc_2a": 5,
     "adc_2b": 6,
-    "shield": 7
+    "shield": 7,
 }
 
 icd.new_signals_list()
@@ -27,13 +21,17 @@ for connector_number in range(1, 7):
     for input_ch in ["adc", "excite"]:
         channel_name = f"ch{connector_number}.{input_ch}"
         channel_type_id = ch_type_ids.get(input_ch)
-        for signal in icd.signals_of_channel_type_id(input_ch, channel_type_id, ch_type_id_supplier):
+        for signal in icd.signals_of_channel_type_id(
+            input_ch, channel_type_id, ch_type_id_supplier
+        ):
             icd.write_signal(
                 channel=channel_name,
                 channel_type_id=channel_type_id,
-                compatible_channel_ids=icd.compatible_channels(input_ch, ch_type_ids, ch_type_id_supplier),
+                compatible_channel_ids=icd.compatible_channels(
+                    input_ch, ch_type_ids, ch_type_id_supplier
+                ),
                 signal=signal,
                 connector_name=connector_name,
                 connector_mpn="DB9_F",
-                contact=signal_to_contact.get(signal)
+                contact=signal_to_contact.get(signal),
             )
