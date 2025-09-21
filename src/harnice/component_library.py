@@ -2,20 +2,32 @@ import os
 import csv
 import re
 import shutil
-from harnice import(
-    fileio,
-    instances_list
-)
+from harnice import fileio, instances_list
 
-def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, used_rev=None, item_name=None, quiet=True):
+
+def pull_item_from_library(
+    supplier,
+    lib_subpath,
+    mpn,
+    destination_directory,
+    used_rev=None,
+    item_name=None,
+    quiet=True,
+):
     if not isinstance(supplier, str) or not supplier.strip():
-        raise ValueError(f"when importing {mpn} 'supplier' must be a non-empty string. Got: {supplier}")
+        raise ValueError(
+            f"when importing {mpn} 'supplier' must be a non-empty string. Got: {supplier}"
+        )
     if not isinstance(lib_subpath, str) or not lib_subpath.strip():
-        raise ValueError(f"when importing {mpn} 'lib_subpath' must be a non-empty string. Got: {lib_subpath}")
+        raise ValueError(
+            f"when importing {mpn} 'lib_subpath' must be a non-empty string. Got: {lib_subpath}"
+        )
     if not isinstance(mpn, str) or not mpn.strip():
         raise ValueError(f"'mpn' must be a non-empty string. Got: {mpn}")
     if not isinstance(destination_directory, str) or not destination_directory.strip():
-        raise ValueError(f"when importing {mpn} 'destination_directory' must be a non-empty string. Got: {destination_directory}")
+        raise ValueError(
+            f"when importing {mpn} 'destination_directory' must be a non-empty string. Got: {destination_directory}"
+        )
 
     if item_name == "":
         item_name = mpn
@@ -35,19 +47,25 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
 
     # === Find highest rev in library
     revision_folders = [
-        name for name in os.listdir(base_path)
-        if os.path.isdir(os.path.join(base_path, name)) and re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", name)
+        name
+        for name in os.listdir(base_path)
+        if os.path.isdir(os.path.join(base_path, name))
+        and re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", name)
     ]
     if not revision_folders:
         raise FileNotFoundError(f"No revision folders found for {mpn} in {base_path}")
 
-    library_rev = str(max(int(re.search(r"rev(\d+)", name).group(1)) for name in revision_folders))
+    library_rev = str(
+        max(int(re.search(r"rev(\d+)", name).group(1)) for name in revision_folders)
+    )
 
     # === Decide which rev to use (from local presence)
     if local_rev:
         rev_to_use = local_rev
         if int(library_rev) > int(local_rev):
-            status = f"newer rev exists   (rev{local_rev} used, rev{library_rev} available)"
+            status = (
+                f"newer rev exists   (rev{local_rev} used, rev{library_rev} available)"
+            )
         else:
             status = f"library up to date (rev{local_rev})"
     else:
@@ -86,14 +104,12 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
             shutil.copy2(src_file, dst_file)
 
             if new_name.endswith(".svg"):
-                with open(dst_file, 'r', encoding='utf-8') as f:
+                with open(dst_file, "r", encoding="utf-8") as f:
                     content = f.read()
                 content = content.replace(
                     f"{mpn}-drawing-contents-start", f"{item_name}-contents-start"
-                ).replace(
-                    f"{mpn}-drawing-contents-end", f"{item_name}-contents-end"
-                )
-                with open(dst_file, 'w', encoding='utf-8') as f:
+                ).replace(f"{mpn}-drawing-contents-end", f"{item_name}-contents-end")
+                with open(dst_file, "w", encoding="utf-8") as f:
                     f.write(content)
 
     if not quiet:
@@ -105,8 +121,8 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
     if not os.path.exists(revhistory_path):
         raise FileNotFoundError(f"Expected revision history TSV at: {revhistory_path}")
 
-    with open(revhistory_path, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f, delimiter='\t')
+    with open(revhistory_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
             if row.get("rev", "").strip() == library_rev:
                 revhistory_row = row
@@ -114,17 +130,20 @@ def pull_item_from_library(supplier, lib_subpath, mpn, destination_directory, us
 
     return library_rev, revhistory_row
 
+
 def pull_part(instance_name):
     instances = instances_list.read_instance_rows()
 
     for instance in instances:
-        item_name = instance.get('instance_name')
+        item_name = instance.get("instance_name")
         if not item_name == instance_name:
             continue
 
-        supplier = instance.get('supplier')
-        mpn = instance.get('mpn', '')
-        destination_directory = os.path.join(fileio.dirpath("imported_instances"), item_name)
+        supplier = instance.get("supplier")
+        mpn = instance.get("mpn", "")
+        destination_directory = os.path.join(
+            fileio.dirpath("imported_instances"), item_name
+        )
 
         # Determine rev from existing folders
         revs_found = []
@@ -145,10 +164,11 @@ def pull_part(instance_name):
             destination_directory=destination_directory,
             used_rev=used_rev,
             item_name=item_name,
-            quiet=False
+            quiet=False,
         )
 
         instances_list.add_revhistory_of_imported_part(item_name, revhistory_row)
+
 
 def unpack_channel_type_id(id_value):
     """
@@ -172,7 +192,9 @@ def unpack_channel_type_id(id_value):
         text = id_value.strip().strip("()")
         parts = [p.strip() for p in text.split(",")]
         if len(parts) != 2:
-            raise ValueError(f"Invalid channel_type_id: {id_value}. Expected format: (chid [int], supplier [str])")
+            raise ValueError(
+                f"Invalid channel_type_id: {id_value}. Expected format: (chid [int], supplier [str])"
+            )
 
         key_str, supplier_str = parts
         key = int(key_str)
@@ -181,11 +203,12 @@ def unpack_channel_type_id(id_value):
 
     raise TypeError(f"Invalid channel_type_id: {type(id_value)}")
 
+
 def get_local_path(lib_repo):
-    #takes in a library repo url and returns the local path
+    # takes in a library repo url and returns the local path
     lib_info_list = []
-    with open(fileio.path("library locations"), newline='', encoding='utf-8') as f:
-        lib_info_list = list(csv.DictReader(f, delimiter=','))
+    with open(fileio.path("library locations"), newline="", encoding="utf-8") as f:
+        lib_info_list = list(csv.DictReader(f, delimiter=","))
     for lib in lib_info_list:
         if lib.get("url") == lib_repo:
             return lib.get("local_path")

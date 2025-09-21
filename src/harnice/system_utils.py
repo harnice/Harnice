@@ -11,8 +11,9 @@ CHANNEL_MAP_COLUMNS = [
     "from_device_channel_id",
     "to_device_refdes",
     "to_device_channel_id",
-    "multi_ch_junction_id"
+    "multi_ch_junction_id",
 ]
+
 
 def read_bom_rows():
     with open(fileio.path("bom"), "r", encoding="utf-8") as f:
@@ -21,8 +22,8 @@ def read_bom_rows():
 
 
 def pull_devices_from_library():
-    with open(fileio.path('channel map'), 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter='\t')
+    with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows([])
 
@@ -30,32 +31,37 @@ def pull_devices_from_library():
 
     for refdes in read_bom_rows():
         if refdes not in imported_devices:
-            #import device from library
+            # import device from library
 
             component_library.pull_item_from_library(
-                supplier = refdes["supplier"],
-                lib_subpath="devices/"+refdes["supplier_subpath"],
+                supplier=refdes["supplier"],
+                lib_subpath="devices/" + refdes["supplier_subpath"],
                 mpn=refdes["MPN"],
-                destination_directory=os.path.join(fileio.dirpath("imported_devices"), refdes["device_ref_des"]),
+                destination_directory=os.path.join(
+                    fileio.dirpath("imported_devices"), refdes["device_ref_des"]
+                ),
                 used_rev=None,
                 item_name=refdes["device_ref_des"],
-                quiet=False
+                quiet=False,
             )
         imported_devices.append(refdes)
+
 
 def read_signals_list(path):
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         return list(reader)
 
+
 def read_netlist():
     with open(fileio.path("netlist"), "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 def new_channel_map():
     channel_map = []
     seen = set()  # track unique rows by tuple key
-    netlist = read_netlist()   # load once
+    netlist = read_netlist()  # load once
 
     for refdes in read_bom_rows():
         device_ref = refdes.get("device_ref_des")
@@ -65,7 +71,7 @@ def new_channel_map():
         signals_path = os.path.join(
             fileio.dirpath("imported_devices"),
             device_ref,
-            f"{refdes.get('MPN')}-{refdes.get('rev')}-signals-list.tsv"
+            f"{refdes.get('MPN')}-{refdes.get('rev')}-signals-list.tsv",
         )
         if not os.path.exists(signals_path):
             continue
@@ -79,22 +85,34 @@ def new_channel_map():
             if not channel_id:
                 continue
 
-            connector_name_of_channel = f"{device_ref}:{signal.get('connector_name', '').strip()}"
+            connector_name_of_channel = (
+                f"{device_ref}:{signal.get('connector_name', '').strip()}"
+            )
             merged_net = next(
-                (net for net, conns in netlist.items() if connector_name_of_channel in conns),
-                None
+                (
+                    net
+                    for net, conns in netlist.items()
+                    if connector_name_of_channel in conns
+                ),
+                None,
             )
 
             row = {
                 "merged_net": merged_net,
-                "channel_type_id":  signal.get("channel_type_id", "").strip(),
-                "compatible_channel_type_ids":  signal.get("compatible_channel_type_ids", "").strip(),
+                "channel_type_id": signal.get("channel_type_id", "").strip(),
+                "compatible_channel_type_ids": signal.get(
+                    "compatible_channel_type_ids", ""
+                ).strip(),
                 "from_device_refdes": device_ref,
-                "from_device_channel_id": channel_id
+                "from_device_channel_id": channel_id,
             }
 
             # create a uniqueness key from row values
-            key = (row["merged_net"], row["from_device_refdes"], row["from_device_channel_id"])
+            key = (
+                row["merged_net"],
+                row["from_device_refdes"],
+                row["from_device_channel_id"],
+            )
 
             if key not in seen:
                 channel_map.append(row)
@@ -107,10 +125,12 @@ def new_channel_map():
 
     mapped_channels.new_set()
 
+
 def read_channel_map():
     with open(fileio.path("channel map"), "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         return list(reader)
+
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
     """
@@ -140,7 +160,9 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
     updated_rows = []
     found_from = False
     found_to = False
-    require_to = bool(to_device_refdes or to_device_channel_id)  # only enforce if non-empty
+    require_to = bool(
+        to_device_refdes or to_device_channel_id
+    )  # only enforce if non-empty
 
     # Load all rows once
     with open(path, "r", encoding="utf-8") as f:
@@ -185,6 +207,7 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
         writer.writeheader()
         writer.writerows(updated_rows)
 
+
 def compatible_channel_type_ids(from_key):
     """
     Given a (from_device_refdes, from_device_channel_id) tuple,
@@ -202,6 +225,7 @@ def compatible_channel_type_ids(from_key):
                 if t.strip()
             ]
     return []
+
 
 def mpn_of_device_refdes(refdes):
     for row in read_bom_rows():

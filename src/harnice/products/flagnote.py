@@ -2,13 +2,13 @@ import os
 import json
 import random
 import math
-from harnice import (
-    fileio,
-    cli
-)
+from harnice import fileio, cli
+
 
 def render():
-    print("Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?")
+    print(
+        "Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?"
+    )
     if cli.prompt("Press enter to confirm or any key to exit") == "":
         exit()
 
@@ -21,7 +21,7 @@ def render():
         return [
             [
                 round(radius * math.cos(2 * math.pi * i / n + angle_offset), 2),
-                round(radius * math.sin(2 * math.pi * i / n + angle_offset), 2)
+                round(radius * math.sin(2 * math.pi * i / n + angle_offset), 2),
             ]
             for i in range(n)
         ]
@@ -47,7 +47,7 @@ def render():
         ("left arrow", left_arrow),
         ("octagon", lambda: regular_ngon(8)),
         ("diamond", lambda: regular_ngon(4, rotation_deg=0)),
-        ("flag / pennant", flag_pennant)
+        ("flag / pennant", flag_pennant),
     ]
 
     # === Prompt shape if no params exist ===
@@ -66,11 +66,7 @@ def render():
                     break
             print("Invalid selection. Please enter a number from the list.")
 
-        params = {
-            "fill": 0xFFFFFF,
-            "border": 0x000000,
-            "text inside": "flagnote-text"
-        }
+        params = {"fill": 0xFFFFFF, "border": 0x000000, "text inside": "flagnote-text"}
 
         if shape_func:
             params["vertices"] = shape_func()
@@ -115,10 +111,10 @@ def render():
         f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
         f'  <g id="{fileio.partnumber('pn')}-drawing-contents-start">',
         contents.rstrip(),
-        '  </g>',
+        "  </g>",
         f'  <g id="{fileio.partnumber('pn')}-drawing-contents-end">',
-        '  </g>',
-        '</svg>'
+        "  </g>",
+        "</svg>",
     ]
 
     with open(fileio.path("drawing"), "w", encoding="utf-8") as f:

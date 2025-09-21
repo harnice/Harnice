@@ -1,11 +1,6 @@
 import runpy
 import os
-from harnice import (
-    instances_list,
-    rev_history,
-    fileio,
-    cli
-)
+from harnice import instances_list, rev_history, fileio, cli
 
 harness_feature_tree_default = """from harnice import (
     featuretree_utils, instances_list, component_library,
@@ -193,6 +188,7 @@ for instance in instances_list.read_instance_rows():
         })
 """
 
+
 def render(build_macro="", output_macro_dict=None):
     print("Thanks for using Harnice!")
 
@@ -204,11 +200,19 @@ def render(build_macro="", output_macro_dict=None):
     # Step 2: Ensure feature tree exists
     if not os.path.exists(fileio.path("feature tree")):
         if build_macro == "":
-            print("Do you want to use a build_macro to help build this harness from scratch?")
+            print(
+                "Do you want to use a build_macro to help build this harness from scratch?"
+            )
             print("  ''    Enter nothing for the standard Harnice esch build_macro")
-            print("  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)")
-            print("  's'   Enter 's' for system if this harness is pulling data from a system instances list")
-            print("  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list build_macro")
+            print(
+                "  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)"
+            )
+            print(
+                "  's'   Enter 's' for system if this harness is pulling data from a system instances list"
+            )
+            print(
+                "  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list build_macro"
+            )
             print("        Or enter the path to your desired build_macro")
             build_macro = cli.prompt("")
 
@@ -271,11 +275,14 @@ featuretree_utils.copy_pdfs_to_cwd()
 
     # Step 3: initialize instances list
     instances_list.make_new_list()
-    instances_list.add_unless_exists("origin", {
-        "instance_name": "origin",
-        "item_type": "Node",
-        "location_is_node_or_segment": "Node"
-    })
+    instances_list.add_unless_exists(
+        "origin",
+        {
+            "instance_name": "origin",
+            "item_type": "Node",
+            "location_is_node_or_segment": "Node",
+        },
+    )
 
     # Step 4: run feature tree
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")
