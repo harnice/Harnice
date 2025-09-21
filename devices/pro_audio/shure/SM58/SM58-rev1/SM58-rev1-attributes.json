@@ -1,6 +1,3 @@
 {
-    "manufacturer": "SPECIFY MANUFACTURER NAME",
-    "manufacturer_part_number": "SM58",
-    "default_refdes": "DEVICE",
-    "library_subpath": "TRACEABLE LIBRARY PATH"
+    "default_refdes": "MIC"
 }
