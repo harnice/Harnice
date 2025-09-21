@@ -22,11 +22,6 @@ def read_bom_rows():
 
 
 def pull_devices_from_library():
-    with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
-        writer.writeheader()
-        writer.writerows([])
-
     imported_devices = []
 
     for refdes in read_bom_rows():
@@ -59,6 +54,11 @@ def read_netlist():
 
 
 def new_blank_channel_map():
+    with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows([])
+
     channel_map = []
     seen = set()  # track unique rows by tuple key
     netlist = read_netlist()  # load once
