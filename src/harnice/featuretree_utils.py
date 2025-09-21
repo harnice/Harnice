@@ -8,7 +8,7 @@ from harnice import fileio, component_library, instances_list
 
 def run_macro(macro_name, supplier, lib_subpath, artifact_id="", **kwargs):
     artifact_path = os.path.join(
-        fileio.dirpath("artifacts"), f"{macro_name}-{artifact_id}"
+        fileio.dirpath("build_macros"), f"{macro_name}-{artifact_id}"
     )
     os.makedirs(artifact_path, exist_ok=True)
 

@@ -176,7 +176,7 @@ def unpack_channel_type_id(id_value):
 
     Accepts:
         - Tuple like (5, "https://github.com/kenyonshutt/harnice-library-public")
-        - String like "(5, 'https://github.com/kenyonshutt/harnice-library-public')" or "(5,\"public\")"
+        - String like "(5, 'https://github.com/kenyonshutt/harnice-library-public')"
     Returns:
         (int, str)
     """
