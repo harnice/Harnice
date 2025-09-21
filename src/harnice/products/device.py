@@ -66,6 +66,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 
 """
 
+
 def validate_signals_list():
     if not os.path.exists(fileio.path("signals list")):
         raise FileNotFoundError("Signals list was not generated.")
@@ -137,6 +138,7 @@ def validate_signals_list():
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
+
 def make_new_library_file():
     """Create a bare .kicad_sym file with only library header info."""
 
@@ -149,6 +151,7 @@ def make_new_library_file():
 
     with open(fileio.path("library file"), "w", encoding="utf-8") as f:
         sexpdata.dump(symbol_lib, f, pretty=True)
+
 
 def parse_kicad_sym_file():
     """
@@ -178,8 +181,9 @@ def symbol_exists(kicad_library_data, target_symbol_name):
                     return True
     return False
 
+
 def make_property(name, value, id_counter=None, hide=False):
-    #adds a property to the current rev symbol of the library 
+    # adds a property to the current rev symbol of the library
     builtins = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
     prop = [
         sexpdata.Symbol("property"),
@@ -200,8 +204,8 @@ def make_property(name, value, id_counter=None, hide=False):
     prop.append(effects)
     return prop
 
-def add_blank_symbol(sym_name,
-                     value="", footprint="", datasheet="", description=""):
+
+def add_blank_symbol(sym_name, value="", footprint="", datasheet="", description=""):
     """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
 
     lib_path = fileio.path("library file")
@@ -212,7 +216,8 @@ def add_blank_symbol(sym_name,
 
     # Build symbol s-expression
     symbol = [
-        sexpdata.Symbol("symbol"), sym_name,
+        sexpdata.Symbol("symbol"),
+        sym_name,
         [sexpdata.Symbol("exclude_from_sim"), sexpdata.Symbol("no")],
         [sexpdata.Symbol("in_bom"), sexpdata.Symbol("yes")],
         [sexpdata.Symbol("on_board"), sexpdata.Symbol("yes")],
@@ -222,11 +227,17 @@ def add_blank_symbol(sym_name,
         make_property("Datasheet", datasheet, hide=True),
         make_property("Description", get_attribute("desc"), hide=True),
         make_property("MFG", get_attribute("manufacturer"), hide=False, id_counter=0),
-        make_property("MPN", get_attribute("manufacturer_part_number"), hide=False, id_counter=1),
-        make_property("Library Repository", get_attribute("library_repo"), hide=True, id_counter=2),
-        make_property("Library Subpath", get_attribute("library_subpath"), hide=True, id_counter=3),
+        make_property(
+            "MPN", get_attribute("manufacturer_part_number"), hide=False, id_counter=1
+        ),
+        make_property(
+            "Library Repository", get_attribute("library_repo"), hide=True, id_counter=2
+        ),
+        make_property(
+            "Library Subpath", get_attribute("library_subpath"), hide=True, id_counter=3
+        ),
         make_property("Rev", fileio.partnumber("rev"), hide=True, id_counter=4),
-        [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")]
+        [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")],
     ]
 
     # Append to the library data
@@ -235,6 +246,7 @@ def add_blank_symbol(sym_name,
     # Write back out
     with open(lib_path, "w", encoding="utf-8") as f:
         sexpdata.dump(data, f, pretty=True)
+
 
 def overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
     """
@@ -315,6 +327,7 @@ def overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
     with open(fileio.path("library file"), "w", encoding="utf-8") as f:
         sexpdata.dump(data, f)
 
+
 def extract_pins_from_symbol(kicad_lib, symbol_name):
     """
     Extract all pin info for the given symbol (and its subsymbols).
@@ -370,9 +383,10 @@ def extract_pins_from_symbol(kicad_lib, symbol_name):
     recurse(kicad_lib, inside_target=False)
     return pins
 
+
 def validate_pins(pins, unique_connectors_in_signals_list):
     """Validate pins for uniqueness, type conformity, and check required pins.
-    
+
     Returns:
         tuple:
             missing (set): Any missing pin names from unique_connectors_in_signals_list.
@@ -400,7 +414,9 @@ def validate_pins(pins, unique_connectors_in_signals_list):
 
         # Type check
         if ptype != "unspecified":
-            raise ValueError(f"Pin {name} ({number}) has invalid type: {ptype}. Harnice requires all pins to have type 'unspecified'.")
+            raise ValueError(
+                f"Pin {name} ({number}) has invalid type: {ptype}. Harnice requires all pins to have type 'unspecified'."
+            )
 
     # Set comparison for 1:1 match
     required = set(unique_connectors_in_signals_list)
@@ -409,9 +425,12 @@ def validate_pins(pins, unique_connectors_in_signals_list):
     missing = required - pin_names
     extra = pin_names - required
     if extra:
-        raise ValueError(f"The following pin(s) exist in KiCad symbol but not Signals List: {', '.join(sorted(extra))}")
+        raise ValueError(
+            f"The following pin(s) exist in KiCad symbol but not Signals List: {', '.join(sorted(extra))}"
+        )
 
     return missing, seen_numbers
+
 
 def append_missing_pin(pin_name, pin_number, spacing=3.81):
     """
@@ -437,7 +456,11 @@ def append_missing_pin(pin_name, pin_number, spacing=3.81):
     top_symbol = None
     sub_symbol = None
     for item in symbol_data:
-        if isinstance(item, list) and len(item) > 0 and isinstance(item[0], sexpdata.Symbol):
+        if (
+            isinstance(item, list)
+            and len(item) > 0
+            and isinstance(item[0], sexpdata.Symbol)
+        ):
             if item[0].value() == "symbol":
                 top_symbol = item
                 for sub in item[1:]:
@@ -453,17 +476,57 @@ def append_missing_pin(pin_name, pin_number, spacing=3.81):
 
     # --- Check for duplicates ---
     for elem in target_symbol[1:]:
-        if isinstance(elem, list) and isinstance(elem[0], sexpdata.Symbol) and elem[0].value() == "pin":
-            name_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "name"), None)
-            num_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "number"), None)
-            if name_entry and name_entry[1] == pin_name and num_entry and num_entry[1] == pin_number:
+        if (
+            isinstance(elem, list)
+            and isinstance(elem[0], sexpdata.Symbol)
+            and elem[0].value() == "pin"
+        ):
+            name_entry = next(
+                (
+                    x
+                    for x in elem
+                    if isinstance(x, list)
+                    and isinstance(x[0], sexpdata.Symbol)
+                    and x[0].value() == "name"
+                ),
+                None,
+            )
+            num_entry = next(
+                (
+                    x
+                    for x in elem
+                    if isinstance(x, list)
+                    and isinstance(x[0], sexpdata.Symbol)
+                    and x[0].value() == "number"
+                ),
+                None,
+            )
+            if (
+                name_entry
+                and name_entry[1] == pin_name
+                and num_entry
+                and num_entry[1] == pin_number
+            ):
                 return symbol_data  # already present, no write needed
 
     # --- Find max Y among existing pins ---
     max_y = -spacing  # ensures first pin goes at 0 if none exist
     for elem in target_symbol[1:]:
-        if isinstance(elem, list) and isinstance(elem[0], sexpdata.Symbol) and elem[0].value() == "pin":
-            at_entry = next((x for x in elem if isinstance(x, list) and isinstance(x[0], sexpdata.Symbol) and x[0].value() == "at"), None)
+        if (
+            isinstance(elem, list)
+            and isinstance(elem[0], sexpdata.Symbol)
+            and elem[0].value() == "pin"
+        ):
+            at_entry = next(
+                (
+                    x
+                    for x in elem
+                    if isinstance(x, list)
+                    and isinstance(x[0], sexpdata.Symbol)
+                    and x[0].value() == "at"
+                ),
+                None,
+            )
             if at_entry and len(at_entry) >= 3:
                 y_val = float(at_entry[2])
                 if y_val > max_y:
@@ -478,19 +541,21 @@ def append_missing_pin(pin_name, pin_number, spacing=3.81):
         sexpdata.Symbol("line"),
         [sexpdata.Symbol("at"), 0, new_y, 0],
         [sexpdata.Symbol("length"), 2.54],
-        [sexpdata.Symbol("name"), pin_name,
-            [sexpdata.Symbol("effects"),
-                [sexpdata.Symbol("font"),
-                    [sexpdata.Symbol("size"), 1.27, 1.27]
-                ]
-            ]
+        [
+            sexpdata.Symbol("name"),
+            pin_name,
+            [
+                sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"), [sexpdata.Symbol("size"), 1.27, 1.27]],
+            ],
         ],
-        [sexpdata.Symbol("number"), pin_number,
-            [sexpdata.Symbol("effects"),
-                [sexpdata.Symbol("font"),
-                    [sexpdata.Symbol("size"), 1.27, 1.27]
-                ]
-            ]
+        [
+            sexpdata.Symbol("number"),
+            pin_number,
+            [
+                sexpdata.Symbol("effects"),
+                [sexpdata.Symbol("font"), [sexpdata.Symbol("size"), 1.27, 1.27]],
+            ],
         ],
     ]
 
@@ -512,6 +577,7 @@ def next_free_number(seen_numbers, start=1):
         if str(n) not in seen_numbers:
             return str(n)
         n += 1
+
 
 def validate_kicad_library():
     """
@@ -556,20 +622,27 @@ def validate_kicad_library():
         seen_numbers.add(pin_number)
 
     # Step 4. Overwrite symbol properties
-    overwrite_or_create_property_in_symbol("Reference", get_attribute("default_refdes"), hide=False)
-    overwrite_or_create_property_in_symbol("Description", get_attribute("desc"), hide=False)
+    overwrite_or_create_property_in_symbol(
+        "Reference", get_attribute("default_refdes"), hide=False
+    )
+    overwrite_or_create_property_in_symbol(
+        "Description", get_attribute("desc"), hide=False
+    )
     overwrite_or_create_property_in_symbol("MFG", get_attribute("mfg"), hide=True)
     overwrite_or_create_property_in_symbol("MPN", get_attribute("pn"), hide=False)
-    overwrite_or_create_property_in_symbol("Library Repository", get_attribute("library_repo"), hide=True)
-    overwrite_or_create_property_in_symbol("Library Subpath", get_attribute("library_subpath"), hide=True)
+    overwrite_or_create_property_in_symbol(
+        "Library Repository", get_attribute("library_repo"), hide=True
+    )
+    overwrite_or_create_property_in_symbol(
+        "Library Subpath", get_attribute("library_subpath"), hide=True
+    )
     overwrite_or_create_property_in_symbol("Rev", fileio.partnumber("rev"), hide=True)
+
 
 def validate_attributes_json():
     """Ensure an attributes JSON file exists with default values if missing."""
 
-    default_attributes = {
-        "default_refdes": "DEVICE"
-    }
+    default_attributes = {"default_refdes": "DEVICE"}
 
     attributes_path = fileio.path("attributes")
 
@@ -597,8 +670,9 @@ def validate_attributes_json():
                 json.dump(attributes, f, indent=4)
             print(f"Updated attributes file with missing defaults at {attributes_path}")
 
+
 def get_attribute(attribute_key):
-    #find an attribute from either revision history tsv or attributes json
+    # find an attribute from either revision history tsv or attributes json
     if attribute_key in rev_history.revision_history_columns():
         revision_info = rev_history.revision_info()
         return revision_info.get(attribute_key)
@@ -606,6 +680,7 @@ def get_attribute(attribute_key):
     else:
         with open(fileio.path("attributes"), "r", encoding="utf-8") as f:
             return json.load(f).get(attribute_key)
+
 
 def device_render(lightweight=False):
     fileio.verify_revision_structure(product_type="device")
@@ -625,7 +700,7 @@ def device_render(lightweight=False):
                 channel_type_id=0,
                 signal="placeholder",
                 contact=1,
-                connector_mpn="DB9_F"
+                connector_mpn="DB9_F",
             )
 
     if os.path.exists(fileio.path("feature tree")):
@@ -637,8 +712,10 @@ def device_render(lightweight=False):
 
     validate_kicad_library()
 
+
 def lightweight_render():
     device_render(lightweight=True)
+
 
 def render():
     device_render(lightweight=False)

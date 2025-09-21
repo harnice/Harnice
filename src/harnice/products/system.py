@@ -30,6 +30,7 @@ instances_list.make_new_list()
 instances_list.chmap_to_circuits()
 """
 
+
 def render():
     fileio.verify_revision_structure(product_type="system")
     if not os.path.exists(fileio.path("feature tree")):

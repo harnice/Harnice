@@ -7,7 +7,9 @@ from harnice import fileio, component_library, instances_list
 
 
 def run_macro(macro_name, supplier, lib_subpath, artifact_id="", **kwargs):
-    artifact_path = os.path.join(fileio.dirpath("artifacts"), f"{macro_name}-{artifact_id}")
+    artifact_path = os.path.join(
+        fileio.dirpath("artifacts"), f"{macro_name}-{artifact_id}"
+    )
     os.makedirs(artifact_path, exist_ok=True)
 
     component_library.pull_item_from_library(
@@ -33,9 +35,7 @@ def run_macro(macro_name, supplier, lib_subpath, artifact_id="", **kwargs):
 
 def lookup_outputcsys_from_lib_used(lib_name, outputcsys):
     attributes_path = os.path.join(
-        fileio.dirpath("imported_instances"),
-        lib_name,
-        f"{lib_name}-attributes.json"
+        fileio.dirpath("imported_instances"), lib_name, f"{lib_name}-attributes.json"
     )
 
     try:
@@ -71,27 +71,30 @@ def lookup_outputcsys_from_lib_used(lib_name, outputcsys):
 
     return x, y, rotation
 
+
 def update_translate_content():
     for instance in instances_list.read_instance_rows():
 
         if instance.get("parent_csys_instance_name") in ["", None]:
-            continue # skip if there isn't a parent defined
+            continue  # skip if there isn't a parent defined
 
         if instance.get("item_type") == "Node":
-            continue # these are automatically assigned at start
+            continue  # these are automatically assigned at start
 
         parent_csys_outputcsys_name = instance.get("parent_csys_outputcsys_name")
 
         if not parent_csys_outputcsys_name:
             continue  # skip if missing required info
 
-        x, y, rotation = lookup_outputcsys_from_lib_used(instance.get("parent_csys_instance_name"), parent_csys_outputcsys_name)
+        x, y, rotation = lookup_outputcsys_from_lib_used(
+            instance.get("parent_csys_instance_name"), parent_csys_outputcsys_name
+        )
 
-        instances_list.modify(instance.get("instance_name"), {
-            "translate_x": x,
-            "translate_y": y,
-            "rotate_csys": rotation
-        })
+        instances_list.modify(
+            instance.get("instance_name"),
+            {"translate_x": x, "translate_y": y, "rotate_csys": rotation},
+        )
+
 
 def copy_pdfs_to_cwd():
     artifacts_dir = fileio.dirpath("artifacts")
