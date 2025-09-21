@@ -710,7 +710,9 @@ def device_render(lightweight=False):
     if not lightweight:
         validate_signals_list()
 
-    print(f"Kicad nickname:       harnice-devices/{rev_history.revision_info().get('library_subpath')}{fileio.partnumber('pn')}")
+    print(
+        f"Kicad nickname:       harnice-devices/{rev_history.revision_info().get('library_subpath')}{fileio.partnumber('pn')}"
+    )
 
     validate_kicad_library()
 
