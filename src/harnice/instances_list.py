@@ -158,7 +158,7 @@ def assign_bom_line_numbers():
                 raise ValueError(
                     f"You've chosen to add {instance.get("instance_name")} to the bom, but haven't specified an MPN"
                 )
-            if not instance.get("mpn") in bom:
+            if instance.get("mpn") not in bom:
                 bom.append(instance.get("mpn"))
 
     bom_line_number = 1
