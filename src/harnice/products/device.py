@@ -231,12 +231,12 @@ def add_blank_symbol(sym_name, value="", footprint="", datasheet="", description
             "MPN", get_attribute("manufacturer_part_number"), hide=False, id_counter=1
         ),
         make_property(
-            "Library Repository", get_attribute("library_repo"), hide=True, id_counter=2
+            "lib_repo", get_attribute("library_repo"), hide=True, id_counter=2
         ),
         make_property(
-            "Library Subpath", get_attribute("library_subpath"), hide=True, id_counter=3
+            "lib_subpath", get_attribute("library_subpath"), hide=True, id_counter=3
         ),
-        make_property("Rev", fileio.partnumber("rev"), hide=True, id_counter=4),
+        make_property("rev", fileio.partnumber("rev"), hide=True, id_counter=4),
         [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")],
     ]
 
@@ -631,12 +631,12 @@ def validate_kicad_library():
     overwrite_or_create_property_in_symbol("MFG", get_attribute("mfg"), hide=True)
     overwrite_or_create_property_in_symbol("MPN", get_attribute("pn"), hide=False)
     overwrite_or_create_property_in_symbol(
-        "Library Repository", get_attribute("library_repo"), hide=True
+        "lib_repo", get_attribute("library_repo"), hide=True
     )
     overwrite_or_create_property_in_symbol(
-        "Library Subpath", get_attribute("library_subpath"), hide=True
+        "lib_subpath", get_attribute("library_subpath"), hide=True
     )
-    overwrite_or_create_property_in_symbol("Rev", fileio.partnumber("rev"), hide=True)
+    overwrite_or_create_property_in_symbol("rev", fileio.partnumber("rev"), hide=True)
 
 
 def validate_attributes_json():

@@ -50,7 +50,7 @@ def pull_item_from_library(
         name
         for name in os.listdir(base_path)
         if os.path.isdir(os.path.join(base_path, name))
-        and re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", name)
+        and re.fullmatch(rf"{re.escape(mpn.lower())}-rev(\d+)", name.lower())
     ]
     if not revision_folders:
         raise FileNotFoundError(f"No revision folders found for {mpn} in {base_path}")
