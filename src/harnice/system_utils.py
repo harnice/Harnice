@@ -25,6 +25,10 @@ def pull_devices_from_library():
     imported_devices = []
 
     for refdes in read_bom_rows():
+        if refdes["lib_repo"] in ["", None]:
+            os.makedirs(os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]), exist_ok=True)
+            continue
+
         if refdes not in imported_devices:
             # import device from library
 
@@ -33,7 +37,7 @@ def pull_devices_from_library():
                 lib_subpath="devices/" + refdes["lib_subpath"],
                 mpn=refdes["MPN"],
                 destination_directory=os.path.join(
-                    fileio.dirpath("imported_devices"), refdes["device_ref_des"]
+                    fileio.dirpath("devices"), refdes["device_ref_des"]
                 ),
                 used_rev=None,
                 item_name=refdes["device_ref_des"],
@@ -69,7 +73,7 @@ def new_blank_channel_map():
             continue
 
         signals_path = os.path.join(
-            fileio.dirpath("imported_devices"),
+            fileio.dirpath("devices"),
             device_ref,
             f"{refdes.get('MPN')}-{refdes.get('rev')}-signals-list.tsv",
         )
