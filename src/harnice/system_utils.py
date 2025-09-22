@@ -22,11 +22,6 @@ def read_bom_rows():
 
 
 def pull_devices_from_library():
-    with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
-        writer.writeheader()
-        writer.writerows([])
-
     imported_devices = []
 
     for refdes in read_bom_rows():
@@ -34,8 +29,8 @@ def pull_devices_from_library():
             # import device from library
 
             component_library.pull_item_from_library(
-                supplier=refdes["supplier"],
-                lib_subpath="devices/" + refdes["supplier_subpath"],
+                lib_repo=refdes["lib_repo"],
+                lib_subpath="devices/" + refdes["lib_subpath"],
                 mpn=refdes["MPN"],
                 destination_directory=os.path.join(
                     fileio.dirpath("imported_devices"), refdes["device_ref_des"]
@@ -58,7 +53,12 @@ def read_netlist():
         return json.load(f)
 
 
-def new_channel_map():
+def new_blank_channel_map():
+    with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows([])
+
     channel_map = []
     seen = set()  # track unique rows by tuple key
     netlist = read_netlist()  # load once

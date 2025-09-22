@@ -6,14 +6,14 @@ import shutil
 from harnice import fileio, component_library, instances_list
 
 
-def run_macro(macro_name, supplier, lib_subpath, artifact_id="", **kwargs):
+def run_macro(macro_name, lib_repo, lib_subpath, artifact_id="", **kwargs):
     artifact_path = os.path.join(
-        fileio.dirpath("artifacts"), f"{macro_name}-{artifact_id}"
+        fileio.dirpath("build_macros"), f"{macro_name}-{artifact_id}"
     )
     os.makedirs(artifact_path, exist_ok=True)
 
     component_library.pull_item_from_library(
-        supplier=supplier,
+        lib_repo=lib_repo,
         lib_subpath=lib_subpath,
         mpn=macro_name,
         destination_directory=artifact_path,
@@ -74,7 +74,6 @@ def lookup_outputcsys_from_lib_used(lib_name, outputcsys):
 
 def update_translate_content():
     for instance in instances_list.read_instance_rows():
-
         if instance.get("parent_csys_instance_name") in ["", None]:
             continue  # skip if there isn't a parent defined
 

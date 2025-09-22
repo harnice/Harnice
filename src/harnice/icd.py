@@ -59,9 +59,9 @@ def write_signal(**kwargs):
 
 # search channel_types.tsv
 def signals_of_channel_type_id(channel_type_id):
-    chid, supplier = component_library.unpack_channel_type_id(channel_type_id)
+    chid, lib_repo = component_library.unpack_channel_type_id(channel_type_id)
 
-    tsv_path = _channel_types_path((chid, supplier))
+    tsv_path = _channel_types_path((chid, lib_repo))
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -89,9 +89,9 @@ def signals_of_channel(channel_name, path_to_signals_list):
 
 def compatible_channel_types(
     channel_type_id,
-    ch_type_id_supplier="https://github.com/kenyonshutt/harnice-library-public",
+    ch_type_id_lib_repo="https://github.com/kenyonshutt/harnice-library-public",
 ):
-    tsv_path = _channel_types_path(ch_type_id_supplier)
+    tsv_path = _channel_types_path(ch_type_id_lib_repo)
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -142,13 +142,13 @@ def _channel_types_path(channel_type_id):
     Helper to get the path to channel_types.tsv.
 
     Args:
-        channel_type_id: tuple like (chid, supplier) or string like "(5, 'https://github.com/kenyonshutt/harnice-library-public')"
+        channel_type_id: tuple like (chid, lib_repo) or string like "(5, 'https://github.com/kenyonshutt/harnice-library-public')"
     """
-    chid, supplier = component_library.unpack_channel_type_id(
+    chid, lib_repo = component_library.unpack_channel_type_id(
         channel_type_id
     )  # <-- use your helper
 
-    base_dir = component_library.get_local_path(supplier)
+    base_dir = component_library.get_local_path(lib_repo)
 
     tsv_path = os.path.join(base_dir, "channel_types", "channel_types.tsv")
 

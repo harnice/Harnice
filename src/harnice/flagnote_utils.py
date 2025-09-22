@@ -8,7 +8,7 @@ MANUAL_FLAGNOTES_COLUMNS = [
     "note_type",
     "note_text",
     "shape",
-    "shape_supplier",
+    "shape_lib_repo",
     "bubble_text",
     "affectedinstances",
 ]
@@ -56,7 +56,7 @@ def make_note_drawings(formboard_dir):
 
         # === Pull library item ===
         component_library.pull_item_from_library(
-            supplier=instance.get("supplier"),
+            lib_repo=instance.get("lib_repo"),
             lib_subpath="flagnotes",
             mpn=instance.get("mpn"),
             destination_directory=destination_directory,
@@ -75,7 +75,7 @@ def make_note_drawings(formboard_dir):
         with open(drawing_path, "r", encoding="utf-8") as f:
             svg = f.read()
 
-        svg = re.sub(r">flagnote-text<", f'>{instance.get("bubble_text")}<', svg)
+        svg = re.sub(r">flagnote-text<", f">{instance.get('bubble_text')}<", svg)
 
         with open(drawing_path, "w", encoding="utf-8") as f:
             f.write(svg)
@@ -113,20 +113,20 @@ def compile_buildnotes():
             # if not, make it
             if already_exists == False:
                 instances_list.add_unless_exists(
-                    f"buildnote-{instance.get("bubble_text")}",
+                    f"buildnote-{instance.get('bubble_text')}",
                     {
                         "item_type": "Buildnote",
                         "note_text": buildnote_text,
                         "note_number": note_number,
                     },
                 )
-                if instance.get("supplier") not in [None, ""]:
+                if instance.get("lib_repo") not in [None, ""]:
                     if instance.get("parent_instance") not in [None, ""]:
                         instances_list.modify(
-                            f"buildnote-{instance.get("bubble_text")}",
+                            f"buildnote-{instance.get('bubble_text')}",
                             {
                                 "mpn": instance.get("mpn"),
-                                "supplier": instance.get("supplier"),
+                                "lib_repo": instance.get("lib_repo"),
                             },
                         )
 
@@ -158,7 +158,7 @@ def assign_output_csys():
                         },
                     )
                     instances_list.add_unless_exists(
-                        f"{instance.get("instance_name")}.leader",
+                        f"{instance.get('instance_name')}.leader",
                         {
                             "parent_csys_instance_name": current_affected_instance,
                             "parent_instance": instance.get("instance_name"),
