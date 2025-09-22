@@ -1,4 +1,4 @@
-channel	channel_type_id	signal	connector_name	connector_mpn	contact	compatible_channel_type_ids
-out1	7	pos	J1	XLR3F	2	6
-out1	7	neg	J1	XLR3F	3	6
-out1	7	shield	J1	XLR3F	1	6
+channel	signal	connector_name	contact	connector_mpn	channel_type_id	channel_type_id_status	channel_type_id_description	compatible_channel_type_ids
+out1	pos	out1	2	XLR3M	"(4, 'https://github.com/kenyonshutt/harnice-library-public')"			
+out1	neg	out1	3	XLR3M	"(4, 'https://github.com/kenyonshutt/harnice-library-public')"			
+out1-shield	chassis	out1	1	XLR3M	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"			

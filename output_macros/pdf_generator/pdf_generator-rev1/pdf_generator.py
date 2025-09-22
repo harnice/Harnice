@@ -11,16 +11,16 @@ def path(target_value):
     # artifact_path gets passed in as a global from the caller
     if target_value == "page setup":
         return os.path.join(
-            artifact_path, f"{fileio.partnumber("pn-rev")}-page_setup.json"
+            artifact_path, f"{fileio.partnumber('pn-rev')}-page_setup.json"
         )
     if target_value == "output pdf":
         return os.path.join(
-            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-output.pdf"
+            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-output.pdf"
         )
     if target_value == "master contents":
         return os.path.join(
             artifact_path,
-            f"{fileio.partnumber("pn-rev")}-{artifact_id}-mastercontents.svg",
+            f"{fileio.partnumber('pn-rev')}-{artifact_id}-mastercontents.svg",
         )
     if target_value == "page svgs":
         os.makedirs(os.path.join(artifact_path, "page_svgs"), exist_ok=True)
@@ -40,7 +40,7 @@ def update_page_setup_json():
         "pages": [
             {
                 "name": "page1",
-                "supplier": "https://github.com/kenyonshutt/harnice-library-public",
+                "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
                 "titleblock": "harnice_tblock-11x8.5",
                 "text_replacements": {
                     "tblock-key-desc": "pull_from_revision_history(desc)",
@@ -100,7 +100,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
 
         # === Pull from library ===
         component_library.pull_item_from_library(
-            supplier=tblock_data.get("supplier"),
+            lib_repo=tblock_data.get("lib_repo"),
             lib_subpath="titleblocks",
             mpn=titleblock,
             destination_directory=destination_directory,
@@ -278,7 +278,7 @@ def update_harnice_output(page_setup_contents):
         filepath = os.path.join(path("page svgs"), filename)
 
         # pull PDF size from json in library
-        titleblock_supplier = page_data.get("supplier")
+        titleblock_lib_repo = page_data.get("lib_repo")
         titleblock = page_data.get("titleblock", {})
         attr_library_path = os.path.join(
             path("tblock svgs"), page_name, f"{page_name}-attributes.json"
@@ -330,7 +330,7 @@ def produce_multipage_pdf(page_setup_contents):
 
     for page in page_setup_contents.get("pages", []):
         page_name = page.get("name")
-        svg_filename = f"{fileio.partnumber("pn-rev")}-{artifact_id}-{page_name}.svg"
+        svg_filename = f"{fileio.partnumber('pn-rev')}-{artifact_id}-{page_name}.svg"
         svg_path = os.path.join(path("page svgs"), svg_filename)
         if not os.path.exists(svg_path):
             raise FileNotFoundError(f"[ERROR] SVG not found: {svg_path}")
