@@ -8,7 +8,7 @@ system_feature_tree_default = """from harnice import featuretree_utils, system_u
 #                   KICAD PROCESSING
 #===========================================================================
 featuretree_utils.run_macro("kicad_pro_to_system_connector_list", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
-featuretree_utils.run_macro("kicad_pro_to_bom_build_macro", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
+featuretree_utils.run_macro("kicad_pro_to_bom", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
 
 #===========================================================================
@@ -21,7 +21,7 @@ system_utils.pull_devices_from_library()
 #                   CHANNEL MAPPING
 #===========================================================================
 system_utils.new_blank_channel_map()
-featuretree_utils.run_macro("basic_channel_mapper_build_macro", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
+featuretree_utils.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
 #===========================================================================
 #                   INSTANCES LIST
