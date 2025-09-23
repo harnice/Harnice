@@ -212,11 +212,11 @@ def prep_master(page_setup_contents):
     delta_x_translate = 1600
     masters = []
 
-    # === Discover all master SVGs in artifacts ===
-    artifacts_dir = fileio.dirpath("artifacts")
+    # === Discover all master SVGs in macros folder ===
+    macros_dir = fileio.dirpath("macros")
     part_prefix = fileio.partnumber("pn-rev")
 
-    for root, _, files in os.walk(artifacts_dir):
+    for root, _, files in os.walk(macros_dir):
         for filename in files:
             if filename.endswith("-master.svg"):
                 # Remove the "-master.svg" suffix
