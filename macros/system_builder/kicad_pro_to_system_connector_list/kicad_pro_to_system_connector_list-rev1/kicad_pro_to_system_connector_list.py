@@ -6,7 +6,7 @@ import csv
 from typing import Dict
 from harnice import fileio
 
-build_macro_mpn = "kicad_pro_to_netlist"
+build_macro_mpn = "kicad_pro_to_system_connector_list"
 
 
 def path(target_value: str) -> str:
@@ -145,7 +145,7 @@ disconnect_refdes = find_disconnects()
 merged_nets = merge_disconnect_nets(nets, disconnect_refdes)
 
 # write contents to TSV
-with open(fileio.path("netlist"), "w", newline="", encoding="utf-8") as f:
+with open(fileio.path("system connector list"), "w", newline="", encoding="utf-8") as f:
     fieldnames = ["device_refdes", "connector", "net", "merged_net", "disconnect"]
     writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
     writer.writeheader()

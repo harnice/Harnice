@@ -2,7 +2,7 @@ import csv
 from harnice import fileio, mapped_channels, icd, system_utils
 
 verbose = False
-# Load channel map rows from the new netlist TSV
+# Load channel map rows from the new system connector list TSV
 with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
     channels = list(reader)
