@@ -18,8 +18,16 @@ for merged_net in unique_merged_nets:
     if verbose:
         print(f"Mapping channels for merged net: {merged_net}")
 
-    # Look at all channels connected within this net
-    net_channels = [r for r in channels if r.get("merged_net") == merged_net]
+    # Look at all channels connected within this net, sorted alphabetically
+    net_channels = sorted(
+        [r for r in channels if r.get("merged_net") == merged_net],
+        key=lambda r: (
+            r.get("from_device_refdes", ""),
+            r.get("to_device_refdes", ""),
+            r.get("from_device_channel_id", ""),
+            r.get("to_device_channel_id", ""),
+        ),
+    )
 
     for from_channel in net_channels:
         from_key = (
