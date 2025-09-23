@@ -309,12 +309,12 @@ def chmap_to_circuits():
         from_device_signals_list_path = os.path.join(
             fileio.dirpath("devices"),
             from_device_refdes,
-            f"{from_device_mpn}-{from_device_rev}-signals-list.tsv",
+            f"{from_device_mpn}-{from_device_rev}-signals_list.tsv",
         )
         to_device_signals_list_path = os.path.join(
             fileio.dirpath("devices"),
             to_device_refdes,
-            f"{to_device_mpn}-{to_device_rev}-signals-list.tsv",
+            f"{to_device_mpn}-{to_device_rev}-signals_list.tsv",
         )
 
         # Generate a mating connector name

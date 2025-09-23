@@ -108,7 +108,7 @@ def new_blank_channel_map():
             device_signals_list_path = os.path.join(
                 fileio.dirpath("devices"),
                 device_refdes,
-                f"{device_mpn_rev}-signals-list.tsv",
+                f"{device_mpn_rev}-signals_list.tsv",
             )
 
         # load signals list
