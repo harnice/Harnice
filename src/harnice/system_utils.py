@@ -58,9 +58,9 @@ def read_signals_list(path):
         return list(csv.DictReader(f, delimiter="\t"))
 
 
-def read_netlist():
-    netlist = {}
-    with open(fileio.path("netlist"), "r", encoding="utf-8") as f:
+def read_connector_list():
+    connector_list = {}
+    with open(fileio.path("system connector list"), "r", encoding="utf-8") as f:
         for row in csv.DictReader(f, delimiter="\t"):
             merged_net = row.get("merged_net", "").strip()
             if not merged_net:
@@ -70,8 +70,8 @@ def read_netlist():
                 "net": row.get("net", "").strip(),
                 "disconnect": row.get("disconnect", "").strip(),
             }
-            netlist.setdefault(merged_net, []).append(entry)
-    return netlist
+            connector_list.setdefault(merged_net, []).append(entry)
+    return connector_list
 
 
 def new_blank_channel_map():
@@ -81,11 +81,11 @@ def new_blank_channel_map():
     with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
         bom = list(csv.DictReader(f, delimiter="\t"))
 
-    # load netlist
-    with open(fileio.path("netlist"), newline="", encoding="utf-8") as f:
-        netlist = list(csv.DictReader(f, delimiter="\t"))
+    # load connector list
+    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
+        connector_list = list(csv.DictReader(f, delimiter="\t"))
 
-    for connector in netlist:
+    for connector in connector_list:
         device_refdes = connector.get("device_refdes")
 
         # look up mpn-rev from BOM
@@ -122,7 +122,7 @@ def new_blank_channel_map():
             if already:
                 continue
 
-            # only concerned with signals on connectors from the netlist
+            # only concerned with signals on connectors from the connector list
             if not signal.get("connector_name") == connector.get("connector"):
                 continue
 
