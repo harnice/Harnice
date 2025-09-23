@@ -221,7 +221,7 @@ def render(build_macro="", output_macro_dict=None):
         elif build_macro == "s":
             build_macro_name = "import_harness_from_harnice_system"
         elif build_macro == "w":
-            build_macro_name = "wireviz_yaml_build_macro"
+            build_macro_name = "import_harness_wireviz_yaml"
         else:
             build_macro_name = build_macro
 
