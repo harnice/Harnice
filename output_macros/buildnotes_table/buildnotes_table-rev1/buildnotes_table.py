@@ -46,7 +46,7 @@ for instance in instances_list.read_instance_rows():
         if has_shape and shape and lib_repo:
             component_library.pull_item_from_library(
                 lib_repo=lib_repo,
-                lib_subpath="flagnotes",
+                product="flagnotes",
                 mpn=shape,
                 destination_directory=path("buildnotes table bubbles"),
                 item_name=f"bubble{buildnote_number}",
