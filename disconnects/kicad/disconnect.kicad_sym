@@ -7,7 +7,8 @@
 		(in_bom yes)
 		(on_board yes)
 		(property "Reference" "X"
-			(at 0 2.032 0)
+			(at 0 7.112 0)
+			(do_not_autoplace)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -15,7 +16,8 @@
 			)
 		)
 		(property "Value" ""
-			(at 0 0 0)
+			(at 2.54 -4.064 0)
+			(do_not_autoplace)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -49,10 +51,31 @@
 				(hide yes)
 			)
 		)
+		(property "Disconnect" "TRUE"
+			(at 2.54 -7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(symbol "disconnect_0_1"
 			(rectangle
-				(start -10.16 5.715)
-				(end 10.16 -1.905)
+				(start -3.81 5.715)
+				(end -1.27 -5.715)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(rectangle
+				(start 1.27 5.715)
+				(end 3.81 -5.715)
 				(stroke
 					(width 0)
 					(type default)
@@ -64,7 +87,7 @@
 		)
 		(symbol "disconnect_1_1"
 			(text "DISCONNECT"
-				(at 0 4.572 0)
+				(at 0 0.254 900)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -72,7 +95,7 @@
 				)
 			)
 			(pin unspecified line
-				(at -10.16 0 180)
+				(at -6.35 0 0)
 				(length 2.54)
 				(name "A"
 					(effects
@@ -90,7 +113,7 @@
 				)
 			)
 			(pin unspecified line
-				(at 10.16 0 0)
+				(at 6.35 0 180)
 				(length 2.54)
 				(name "B"
 					(effects

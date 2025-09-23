@@ -5,10 +5,18 @@ from harnice import fileio
 build_macro_mpn = "kicad_pro_to_bom"
 
 # kicad headers (fields in KiCad schematic, including custom attributes)
-BOM_FIELDS = ["Reference", "MFG", "MPN", "lib_repo", "lib_subpath", "rev"]
+BOM_FIELDS = ["Reference", "MFG", "MPN", "lib_repo", "lib_subpath", "rev", "Disconnect"]
 
 # output headers (labels in TSV)
-BOM_LABELS = ["device_ref_des", "MFG", "MPN", "lib_repo", "lib_subpath", "rev"]
+BOM_LABELS = [
+    "device_ref_des",
+    "MFG",
+    "MPN",
+    "lib_repo",
+    "lib_subpath",
+    "rev",
+    "disconnect",
+]
 
 
 def path(target_value: str) -> str:

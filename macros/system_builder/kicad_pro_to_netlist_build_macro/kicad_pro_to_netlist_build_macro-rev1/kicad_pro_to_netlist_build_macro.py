@@ -3,6 +3,7 @@ import re
 import json
 import shutil
 import subprocess
+import csv
 from typing import Dict
 from harnice import fileio
 
@@ -86,15 +87,66 @@ def export_netlist():
         raise RuntimeError(f"kicad-cli export failed: {e}")
 
     return net_file
+  
+def find_disconnects() -> set[str]:
+    """Read BOM TSV and return set of refdes marked as disconnect=True."""
+    disconnects = set()
+    with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            if str(row.get("disconnect", "")).strip().lower() == "true":
+                disconnects.add(row["device_ref_des"])
+    return disconnects
 
 
-# === Inline execution ===
+def merge_disconnect_nets(nets: Dict[str, list[str]], disconnect_refdes: set[str]) -> Dict[str, list[str]]:
+    """
+    Merge nets that are connected through 2-port disconnect devices.
+    Collapse ports into just the refdes (e.g. X1 instead of X1:A, X1:B).
+    """
+    merged = {}
+    skip_keys = set()
 
+    # Look for pairs of nets sharing each disconnect
+    for refdes in disconnect_refdes:
+        involved_keys = [k for k, conns in nets.items() if any(refdes in c for c in conns)]
+        if len(involved_keys) == 2:
+            k1, k2 = involved_keys
+            new_key = f"{k1}+{k2}"
+            merged_conns = []
+
+            for k in [k1, k2]:
+                for c in nets[k]:
+                    if refdes in c:
+                        if refdes not in merged_conns:
+                            merged_conns.append(refdes)
+                    else:
+                        merged_conns.append(c)
+
+            merged[new_key] = merged_conns
+            skip_keys.update(involved_keys)
+
+    # Keep all others unchanged
+    for k, v in nets.items():
+        if k not in skip_keys:
+            merged[k] = v
+
+    return merged
+
+
+# -------------------------------
+# Main workflow
+# -------------------------------
 net_file = export_netlist()
 
 with open(net_file, "r", encoding="utf-8") as f:
     net_text = f.read()
 nets = parse_nets_from_export(net_text)
 
+# merge nets connected by disconnects
+disconnect_refdes = find_disconnects()
+nets = merge_disconnect_nets(nets, disconnect_refdes)
+
+# write contents to json
 with open(path("netlist json"), "w", encoding="utf-8") as f:
     json.dump(nets, f, indent=2)

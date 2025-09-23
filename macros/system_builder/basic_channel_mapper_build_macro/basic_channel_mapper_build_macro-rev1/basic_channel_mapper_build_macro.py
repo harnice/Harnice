@@ -1,4 +1,4 @@
-from harnice import system_utils, mapped_channels
+from harnice import system_utils, mapped_channels, icd
 
 # Track mapped channels as (device_refdes, channel_id) tuples
 channels = list(system_utils.read_channel_map())
@@ -10,7 +10,6 @@ def map_and_record(from_key, to_key):
     system_utils.map_channel(from_key, to_key)
     mapped_channels.append(from_key)
     mapped_channels.append(to_key)
-
 
 # look through one merged net at a time
 for merged_net in unique_merged_nets:
@@ -31,22 +30,22 @@ for merged_net in unique_merged_nets:
         compatible_channel_type_ids = system_utils.compatible_channel_type_ids(from_key)
 
         for to_channel_candidate in net_channels:
+            to_key = (
+                to_channel_candidate["from_device_refdes"],
+                to_channel_candidate["from_device_channel_id"],
+            )
+
             # don't map a channel to itself
             if to_channel_candidate == from_channel:
                 continue
 
             # don't map if the channel type is not compatible
-            if (
-                str(to_channel_candidate["channel_type_id"])
-                not in compatible_channel_type_ids
-            ):
+            from_type = icd.parse_channel_type_id(from_channel.get("channel_type_id"))
+            compatibles = icd.parse_channel_type_id_list(to_channel_candidate.get("compatible_channel_type_ids"))
+            if from_type not in compatibles:
                 continue
 
             # don't map a channel if it's already been mapped
-            to_key = (
-                to_channel_candidate["from_device_refdes"],
-                to_channel_candidate["from_device_channel_id"],
-            )
             if mapped_channels.check(to_key):
                 continue
 
