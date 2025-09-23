@@ -1,5 +1,6 @@
 import os
 import subprocess
+import csv
 from harnice import fileio
 
 build_macro_mpn = "kicad_pro_to_bom"
@@ -32,21 +33,19 @@ Use KiCad CLI to export a BOM TSV from the schematic.
 Includes columns defined in BOM_FIELDS (with BOM_LABELS as headers).
 Always overwrites the BOM file.
 """
-sch_path = path("kicad sch")
-bom_path = fileio.path("bom")
 
 cmd = [
     "kicad-cli",
     "sch",
     "export",
     "bom",
-    sch_path,
+    path("kicad sch"),
     "--fields",
     ",".join(BOM_FIELDS),
     "--labels",
     ",".join(BOM_LABELS),
     "--output",
-    bom_path,
+    fileio.path("bom"),
     "--field-delimiter",
     "\t",
     "--string-delimiter",
@@ -55,3 +54,26 @@ cmd = [
 
 # Run silently
 subprocess.run(cmd, check=True, capture_output=True)
+
+
+# --- Correct disconnects with local if lib_repo is empty ---
+bom_path = fileio.path("bom")
+
+# Read TSV into list of dicts
+with open(bom_path, "r", encoding="utf-8") as f:
+    reader = csv.DictReader(f, delimiter="\t")
+    bom = list(reader)
+
+# Patch disconnect rows
+for row in bom:
+    if row.get("disconnect", "").upper() == "TRUE":
+        if not row.get("lib_repo"):
+            row["lib_repo"] = "local"
+            row["MPN"] = f"{fileio.partnumber("pn-rev")}-{row.get("device_ref_des")}"
+
+# Rewrite TSV
+with open(bom_path, "w", encoding="utf-8", newline="") as f:
+    fieldnames = BOM_LABELS
+    writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+    writer.writeheader()
+    writer.writerows(bom)

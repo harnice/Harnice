@@ -146,17 +146,18 @@ merged_nets = merge_disconnect_nets(nets, disconnect_refdes)
 
 # write contents to TSV
 with open(fileio.path("netlist"), "w", newline="", encoding="utf-8") as f:
-    fieldnames = ["device refdes", "net", "merged net", "disconnect"]
+    fieldnames = ["device_refdes", "connector", "net", "merged_net", "disconnect"]
     writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
     writer.writeheader()
 
     for merged_net, conns in merged_nets.items():
         for conn in conns:
-            # Split refdes (ignore channel now)
+            # Default values
+            device_refdes, pinfunction = conn, ""
+
+            # Split refdes and pinfunction if present
             if ":" in conn:
-                device_refdes, _ = conn.split(":", 1)
-            else:
-                device_refdes = conn
+                device_refdes, pinfunction = conn.split(":", 1)
 
             # Mark TRUE if this refdes is a disconnect
             disconnect_flag = "TRUE" if device_refdes in disconnect_refdes else ""
@@ -166,8 +167,9 @@ with open(fileio.path("netlist"), "w", newline="", encoding="utf-8") as f:
 
             for orig in orig_nets:
                 writer.writerow({
-                    "device refdes": device_refdes,
+                    "device_refdes": device_refdes,
+                    "connector": pinfunction,
                     "net": orig,
-                    "merged net": merged_net,
+                    "merged_net": merged_net,
                     "disconnect": disconnect_flag,
                 })
