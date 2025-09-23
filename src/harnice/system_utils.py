@@ -30,7 +30,8 @@ def pull_devices_from_library():
 
             component_library.pull_item_from_library(
                 lib_repo=refdes["lib_repo"],
-                lib_subpath="devices/" + refdes["lib_subpath"],
+                product="devices",
+                lib_subpath=refdes["lib_subpath"],
                 mpn=refdes["MPN"],
                 destination_directory=os.path.join(
                     fileio.dirpath("imported_devices"), refdes["device_ref_des"]

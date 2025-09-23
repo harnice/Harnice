@@ -6,7 +6,7 @@ import shutil
 from harnice import fileio, component_library, instances_list
 
 
-def run_macro(macro_name, lib_repo, lib_subpath, artifact_id="", **kwargs):
+def run_macro(macro_name, lib_repo, product, lib_subpath="", artifact_id="", **kwargs):
     artifact_path = os.path.join(
         fileio.dirpath("build_macros"), f"{macro_name}-{artifact_id}"
     )
@@ -14,6 +14,7 @@ def run_macro(macro_name, lib_repo, lib_subpath, artifact_id="", **kwargs):
 
     component_library.pull_item_from_library(
         lib_repo=lib_repo,
+        product=product,
         lib_subpath=lib_subpath,
         mpn=macro_name,
         destination_directory=artifact_path,
