@@ -3,19 +3,15 @@ from harnice import fileio, mapped_channels, icd, system_utils
 
 verbose = False
 # Load channel map rows from the new netlist TSV
-with open(fileio.path("netlist"), newline="", encoding="utf-8") as f:
+with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
     channels = list(reader)
 
 # Collect unique merged nets
 unique_merged_nets = sorted(set(r["merged_net"] for r in channels if r.get("merged_net")))
 
-def map_and_record(from_key, to_key):
-    """Helper: map the two channels and mark them as mapped."""
-    system_utils.map_channel(from_key, to_key)
-    mapped_channels.append(from_key)
-    mapped_channels.append(to_key)
-
+#keep track of what we've already mapped
+mapped_channels.new_set()
 
 # Look through one merged net at a time
 for merged_net in unique_merged_nets:
@@ -32,7 +28,7 @@ for merged_net in unique_merged_nets:
         )
 
         if verbose:
-            print(f"     From key: {from_channel}")
+            print(f"     From key: {from_key}")
 
         # Don't map a channel if the "from" has already been mapped
         if mapped_channels.check(from_key):
@@ -74,5 +70,7 @@ for merged_net in unique_merged_nets:
                     print("               To key candidate already mapped")
                 continue
 
-            map_and_record(from_key, to_key)
+            if verbose:
+                print("                    ********* MAPPED *********")
+            system_utils.map_and_record(from_key, to_key)
             break  # Stop after first compatible partner
