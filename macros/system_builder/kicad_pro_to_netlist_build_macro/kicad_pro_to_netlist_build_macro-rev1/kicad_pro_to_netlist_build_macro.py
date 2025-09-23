@@ -1,6 +1,5 @@
 import os
 import re
-import json
 import shutil
 import subprocess
 import csv
@@ -18,9 +17,6 @@ def path(target_value: str) -> str:
 
     if target_value == "netlist source":
         return os.path.join(os.getcwd(), "kicad", f"{fileio.partnumber('pn-rev')}.net")
-
-    if target_value == "netlist json":
-        return f"{fileio.partnumber('pn-rev')}-netlist.json"
 
     raise KeyError(f"Filename {target_value} not found in {build_macro_mpn} file tree")
 
@@ -87,7 +83,8 @@ def export_netlist():
         raise RuntimeError(f"kicad-cli export failed: {e}")
 
     return net_file
-  
+
+
 def find_disconnects() -> set[str]:
     """Read BOM TSV and return set of refdes marked as disconnect=True."""
     disconnects = set()
@@ -145,8 +142,32 @@ nets = parse_nets_from_export(net_text)
 
 # merge nets connected by disconnects
 disconnect_refdes = find_disconnects()
-nets = merge_disconnect_nets(nets, disconnect_refdes)
+merged_nets = merge_disconnect_nets(nets, disconnect_refdes)
 
-# write contents to json
-with open(path("netlist json"), "w", encoding="utf-8") as f:
-    json.dump(nets, f, indent=2)
+# write contents to TSV
+with open(fileio.path("netlist"), "w", newline="", encoding="utf-8") as f:
+    fieldnames = ["device refdes", "net", "merged net", "disconnect"]
+    writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+    writer.writeheader()
+
+    for merged_net, conns in merged_nets.items():
+        for conn in conns:
+            # Split refdes (ignore channel now)
+            if ":" in conn:
+                device_refdes, _ = conn.split(":", 1)
+            else:
+                device_refdes = conn
+
+            # Mark TRUE if this refdes is a disconnect
+            disconnect_flag = "TRUE" if device_refdes in disconnect_refdes else ""
+
+            # Keep all original nets in 'net' if merged
+            orig_nets = merged_net.split("+") if "+" in merged_net else [merged_net]
+
+            for orig in orig_nets:
+                writer.writerow({
+                    "device refdes": device_refdes,
+                    "net": orig,
+                    "merged net": merged_net,
+                    "disconnect": disconnect_flag,
+                })
