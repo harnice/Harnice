@@ -77,9 +77,7 @@ def harnice_file_structure():
         return {
             f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
-            "artifacts": {
-                f"{partnumber('pn-rev')}-formboard_graph_definition.svg": "formboard graph definition svg",
-            },
+            f"{partnumber('pn-rev')}-formboard_graph_definition.svg": "formboard graph definition svg",
             "instance_data": {
                 "imported_instances": {},
                 "generated_instances_do_not_edit": {},
@@ -88,7 +86,7 @@ def harnice_file_structure():
                 f"{partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
                 f"{partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
             },
-            "build_macros": {},
+            "macros": {},
         }
     elif product_type == "part":
         return {
@@ -120,20 +118,19 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-bom.tsv": "bom",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "mapped_channels.txt": "mapped channels set",
-            "build_macros": {},
+            "macros": {},
             "imported_devices": {},
         }
 
 
 def generate_structure():
     if product_type == "harness":
-        os.makedirs(dirpath("artifacts"), exist_ok=True)
         os.makedirs(dirpath("instance_data"), exist_ok=True)
         os.makedirs(dirpath("imported_instances"), exist_ok=True)
         silentremove(dirpath("generated_instances_do_not_edit"))
         os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
         os.makedirs(dirpath("interactive_files"), exist_ok=True)
-        os.makedirs(dirpath("build_macros"), exist_ok=True)
+        os.makedirs(dirpath("macros"), exist_ok=True)
     if product_type == "device":
         os.makedirs(dirpath("kicad"), exist_ok=True)
 

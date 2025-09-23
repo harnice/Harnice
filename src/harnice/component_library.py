@@ -19,10 +19,6 @@ def pull_item_from_library(
         raise ValueError(
             f"when importing {mpn} 'lib_repo' must be a non-empty string. Got: {lib_repo}"
         )
-    if not isinstance(lib_subpath, str) or not lib_subpath.strip():
-        raise ValueError(
-            f"when importing {mpn} 'lib_subpath' must be a non-empty string. Got: {lib_subpath}"
-        )
     if not isinstance(product, str) or not product.strip():
         raise ValueError(
             f"when importing {mpn} 'product' must be a non-empty string. Got: {product}"
@@ -164,7 +160,7 @@ def pull_part(instance_name):
 
         returned_rev, revhistory_row = pull_item_from_library(
             lib_repo=lib_repo,
-            lib_subpath="parts",
+            product="parts",
             mpn=mpn,
             destination_directory=destination_directory,
             used_rev=used_rev,
