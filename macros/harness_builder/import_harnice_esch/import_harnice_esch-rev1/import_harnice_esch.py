@@ -6,7 +6,7 @@ from harnice import (
     fileio,
 )  # assuming your project structure provides these
 
-build_macro_mpn = "harnice_esch_build_macro"
+build_macro_mpn = "import_harnice_esch"
 
 
 def path(target_value):

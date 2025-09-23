@@ -1,6 +1,6 @@
 """
 Example usage:
-featuretree_utils.run_macro("multi_ch_junction_mapper_build_macro", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="build_macros", multi_ch_junction_name = "shield", multi_ch_junction_type_ids = [5])
+featuretree_utils.run_macro("multi_channel_junction_mapper", "https://github.com/kenyonshutt/harnice-library-public", lib_subpath="build_macros", multi_ch_junction_name = "shield", multi_ch_junction_type_ids = [5])
 
 args:
 - multi_ch_junction_name: name of the channel where multi_ch_junctions are connected
@@ -34,7 +34,7 @@ for k, v in DEFAULTS.items():
 
 
 for from_channel in rows:
-    multi_ch_junction_key = f"{from_channel["merged_net"]}-{multi_ch_junction_name}"
+    multi_ch_junction_key = f"{from_channel['merged_net']}-{multi_ch_junction_name}"
 
     from_key = (
         from_channel["from_device_refdes"],
