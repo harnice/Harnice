@@ -1,4 +1,4 @@
-from harnice import fileio, component_library, mapped_channels, fileio
+from harnice import fileio, component_library, mapped_channels
 import os
 import csv
 import ast
