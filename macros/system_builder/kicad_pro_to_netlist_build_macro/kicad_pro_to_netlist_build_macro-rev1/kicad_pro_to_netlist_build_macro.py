@@ -87,8 +87,7 @@ def export_netlist():
         raise RuntimeError(f"kicad-cli export failed: {e}")
 
     return net_file
-
-
+  
 def find_disconnects() -> set[str]:
     """Read BOM TSV and return set of refdes marked as disconnect=True."""
     disconnects = set()
