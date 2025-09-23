@@ -21,7 +21,7 @@ system_utils.pull_devices_from_library()
 #                   CHANNEL MAPPING
 #===========================================================================
 system_utils.new_blank_channel_map()
-featuretree_utils.run_macro("basic_channel_mapper_build_macro", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
+featuretree_utils.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
 #===========================================================================
 #                   INSTANCES LIST
