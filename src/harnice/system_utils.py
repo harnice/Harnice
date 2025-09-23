@@ -2,6 +2,7 @@ from harnice import fileio, component_library, mapped_channels
 import os
 import csv
 import json
+import ast
 
 CHANNEL_MAP_COLUMNS = [
     "merged_net",
@@ -12,6 +13,7 @@ CHANNEL_MAP_COLUMNS = [
     "to_device_refdes",
     "to_device_channel_id",
     "multi_ch_junction_id",
+    "disconnect_refdes_key",
 ]
 
 
@@ -26,7 +28,10 @@ def pull_devices_from_library():
 
     for refdes in read_bom_rows():
         if refdes["lib_repo"] in ["", None]:
-            os.makedirs(os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]), exist_ok=True)
+            os.makedirs(
+                os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]),
+                exist_ok=True,
+            )
             continue
 
         if refdes not in imported_devices:
@@ -106,7 +111,7 @@ def new_blank_channel_map():
                 "merged_net": merged_net,
                 "channel_type_id": signal.get("channel_type_id", "").strip(),
                 "compatible_channel_type_ids": signal.get(
-                    "compatible_channel_type_ids", ""
+                    "compatible_channel_type_ids"
                 ).strip(),
                 "from_device_refdes": device_ref,
                 "from_device_channel_id": channel_id,
@@ -158,11 +163,12 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
         to_key = [None, None]
     to_device_refdes, to_device_channel_id = to_key
 
-    path = fileio.path("channel map")
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Channel map not found at {path}")
+    if not os.path.exists(fileio.path("channel map")):
+        raise FileNotFoundError(
+            f"Channel map not found at {fileio.path("channel map")}"
+        )
 
-    updated_rows = []
+    updated_channels = []
     found_from = False
     found_to = False
     require_to = bool(
@@ -170,35 +176,36 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
     )  # only enforce if non-empty
 
     # Load all rows once
-    with open(path, "r", encoding="utf-8") as f:
+    with open(fileio.path("channel map"), "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         fieldnames = reader.fieldnames
-        rows = list(reader)
+        channels = list(reader)
 
-    for row in rows:
+    # update the from channel to include to information
+    for channel in channels:
         if (
-            row.get("from_device_refdes") == from_device_refdes
-            and row.get("from_device_channel_id") == from_device_channel_id
+            channel.get("from_device_refdes") == from_device_refdes
+            and channel.get("from_device_channel_id") == from_device_channel_id
         ):
             # Update FROM row
-            row["to_device_refdes"] = to_device_refdes or ""
-            row["to_device_channel_id"] = to_device_channel_id or ""
+            channel["to_device_refdes"] = to_device_refdes or ""
+            channel["to_device_channel_id"] = to_device_channel_id or ""
             if multi_ch_junction_key:
-                row["multi_ch_junction_id"] = multi_ch_junction_key
+                channel["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
-            updated_rows.append(row)
+            updated_channels.append(channel)
             continue
 
         if (
             require_to
-            and row.get("from_device_refdes") == to_device_refdes
-            and row.get("from_device_channel_id") == to_device_channel_id
+            and channel.get("from_device_refdes") == to_device_refdes
+            and channel.get("from_device_channel_id") == to_device_channel_id
         ):
             # Drop TO row entirely
             found_to = True
             continue
 
-        updated_rows.append(row)
+        updated_channels.append(channel)
 
     # Explicit error checks
     if not found_from:
@@ -207,16 +214,16 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
         raise ValueError(f"to_key {to_key} not found in channel map")
 
     # Write back
-    with open(path, "w", newline="", encoding="utf-8") as f:
+    with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
-        writer.writerows(updated_rows)
+        writer.writerows(updated_channels)
 
 
 def compatible_channel_type_ids(from_key):
     """
     Given a (from_device_refdes, from_device_channel_id) tuple,
-    return a list of compatible channel_type_ids.
+    return a list of compatible channel_type_ids as proper tuples.
     """
     refdes, ch_id = from_key
     for row in read_channel_map():
@@ -224,11 +231,20 @@ def compatible_channel_type_ids(from_key):
             row.get("from_device_refdes") == refdes
             and row.get("from_device_channel_id") == ch_id
         ):
-            return [
-                t.strip()
-                for t in str(row.get("compatible_channel_type_ids", "")).split(",")
-                if t.strip()
-            ]
+            raw_val = row.get("compatible_channel_type_ids", "")
+            if not raw_val:
+                return []
+            try:
+                parsed = ast.literal_eval(raw_val)
+                # Handle both single tuple and list of tuples
+                if isinstance(parsed, tuple):
+                    return [parsed]
+                if isinstance(parsed, list):
+                    return parsed
+                return [parsed]
+            except Exception:
+                # Fallback to your old behavior
+                return [t.strip() for t in str(raw_val).split(",") if t.strip()]
     return []
 
 
