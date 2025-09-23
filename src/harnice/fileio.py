@@ -119,7 +119,7 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "mapped_channels.txt": "mapped channels set",
             "macros": {},
-            "imported_devices": {},
+            "devices": {},
         }
 
 

@@ -1,6 +1,7 @@
 # icd.py
 import csv
 import os
+import ast
 from harnice import fileio, component_library
 
 # Signals list column headers to match source of truth + compatibility change
@@ -153,3 +154,30 @@ def _channel_types_path(channel_type_id):
     tsv_path = os.path.join(base_dir, "channel_types", "channel_types.tsv")
 
     return os.path.expanduser(tsv_path)  # <-- expand ~ to full home dir
+
+
+def parse_channel_type_id(val):
+    """Convert stored string into a tuple (chid:int, supplier:str)."""
+    if not val:
+        return None
+    if isinstance(val, tuple):
+        # Already parsed
+        chid, supplier = val
+    else:
+        chid, supplier = ast.literal_eval(str(val))
+    return (int(chid), str(supplier).strip())
+
+
+def parse_channel_type_id_list(val):
+    """Convert stored string/list into a list of tuples."""
+    if not val:
+        return []
+    if isinstance(val, list):
+        return [parse_channel_type_id(v) for v in val]
+    # Could be a single tuple string or a list string
+    parsed = ast.literal_eval(str(val))
+    if isinstance(parsed, tuple):
+        return [parse_channel_type_id(parsed)]
+    if isinstance(parsed, list):
+        return [parse_channel_type_id(v) for v in parsed]
+    return [parse_channel_type_id(parsed)]
