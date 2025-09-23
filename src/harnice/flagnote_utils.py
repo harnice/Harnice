@@ -57,7 +57,7 @@ def make_note_drawings(formboard_dir):
         # === Pull library item ===
         component_library.pull_item_from_library(
             lib_repo=instance.get("lib_repo"),
-            lib_subpath="flagnotes",
+            product="flagnotes",
             mpn=instance.get("mpn"),
             destination_directory=destination_directory,
             used_rev=None,

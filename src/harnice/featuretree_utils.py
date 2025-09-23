@@ -6,27 +6,28 @@ import shutil
 from harnice import fileio, component_library, instances_list
 
 
-def run_macro(macro_name, lib_repo, lib_subpath, artifact_id="", **kwargs):
-    artifact_path = os.path.join(
-        fileio.dirpath("build_macros"), f"{macro_name}-{artifact_id}"
+def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
+    macro_dirpath = os.path.join(
+        fileio.dirpath("macros"), lib_subpath, f"{macro_name}-{artifact_id}"
     )
-    os.makedirs(artifact_path, exist_ok=True)
+    os.makedirs(macro_dirpath, exist_ok=True)
 
     component_library.pull_item_from_library(
         lib_repo=lib_repo,
+        product="macros",
         lib_subpath=lib_subpath,
         mpn=macro_name,
-        destination_directory=artifact_path,
+        destination_directory=macro_dirpath,
         used_rev=None,
         item_name=macro_name,
     )
 
-    script_path = os.path.join(artifact_path, f"{macro_name}.py")
+    script_path = os.path.join(macro_dirpath, f"{macro_name}.py")
 
     # always pass the basics, but let kwargs override/extend
     init_globals = {
         "artifact_id": artifact_id,
-        "artifact_path": artifact_path,
+        "artifact_path": macro_dirpath,
         **kwargs,  # merges/overrides
     }
 
@@ -96,7 +97,7 @@ def update_translate_content():
 
 
 def copy_pdfs_to_cwd():
-    artifacts_dir = fileio.dirpath("artifacts")
+    artifacts_dir = fileio.dirpath("macros")
     cwd = os.getcwd()
 
     for root, _, files in os.walk(artifacts_dir):

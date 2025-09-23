@@ -7,9 +7,10 @@ from harnice import fileio, instances_list
 
 def pull_item_from_library(
     lib_repo,
-    lib_subpath,
+    product,
     mpn,
     destination_directory,
+    lib_subpath="",
     used_rev=None,
     item_name=None,
     quiet=True,
@@ -18,9 +19,9 @@ def pull_item_from_library(
         raise ValueError(
             f"when importing {mpn} 'lib_repo' must be a non-empty string. Got: {lib_repo}"
         )
-    if not isinstance(lib_subpath, str) or not lib_subpath.strip():
+    if not isinstance(product, str) or not product.strip():
         raise ValueError(
-            f"when importing {mpn} 'lib_subpath' must be a non-empty string. Got: {lib_subpath}"
+            f"when importing {mpn} 'product' must be a non-empty string. Got: {product}"
         )
     if not isinstance(mpn, str) or not mpn.strip():
         raise ValueError(f"'mpn' must be a non-empty string. Got: {mpn}")
@@ -33,7 +34,7 @@ def pull_item_from_library(
         item_name = mpn
 
     lib_repo_root = os.path.expanduser(get_local_path(lib_repo))
-    base_path = os.path.join(lib_repo_root, lib_subpath, mpn)
+    base_path = os.path.join(lib_repo_root, product, lib_subpath, mpn)
     lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
 
     # === Find highest local rev
@@ -159,7 +160,7 @@ def pull_part(instance_name):
 
         returned_rev, revhistory_row = pull_item_from_library(
             lib_repo=lib_repo,
-            lib_subpath="parts",
+            product="parts",
             mpn=mpn,
             destination_directory=destination_directory,
             used_rev=used_rev,
