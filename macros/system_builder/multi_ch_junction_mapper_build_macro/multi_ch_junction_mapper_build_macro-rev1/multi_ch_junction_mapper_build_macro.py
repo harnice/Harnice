@@ -8,7 +8,7 @@ args:
 - from_keys: list of tuples of [[device_refdes, channel_id], ...]
 """
 
-from harnice import system, mapped_channels
+from harnice import system, mapped_channels, system_utils
 
 # Track mapped channels as (device_refdes, channel_id) tuples
 rows = list(system.read_channel_map())
@@ -31,18 +31,7 @@ DEFAULTS = {
 for k, v in DEFAULTS.items():
     if k not in globals():
         globals()[k] = v
-# ---------------------------------
 
-
-def map_and_record(from_key, multi_ch_junction_key):
-    """Helper: map the two channels and mark them as mapped."""
-    system.map_channel(
-        from_key, [None, None], multi_ch_junction_key=multi_ch_junction_key
-    )
-    mapped_channels.append(from_key)
-
-
-# ---------------------------------
 
 for from_channel in rows:
     multi_ch_junction_key = f"{from_channel["merged_net"]}-{multi_ch_junction_name}"
@@ -58,7 +47,7 @@ for from_channel in rows:
 
     # don't map a channel if it's not part of the specified set
     if from_key in from_keys:
-        map_and_record(from_key, multi_ch_junction_key)
+        system_utils.map_and_record(from_key, multi_ch_junction_key)
         continue
 
     # don't map if the channel if it doesn't have the multi_ch_junction_channel_type_id we're looking for
@@ -67,4 +56,4 @@ for from_channel in rows:
     ]:
         continue
 
-    map_and_record(from_key, multi_ch_junction_key)
+    system_utils.map_and_record(from_key, multi_ch_junction_key)
