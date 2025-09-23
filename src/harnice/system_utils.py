@@ -52,6 +52,11 @@ def pull_devices_from_library():
                 )
         imported_devices.append(refdes)
 
+def map_and_record(from_key, to_key):
+    map_channel(from_key, to_key)
+    mapped_channels.append(from_key)
+    mapped_channels.append(to_key)
+
 
 def read_signals_list(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -185,6 +190,7 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
             and channel.get("from_device_channel_id") == to_device_channel_id
         ):
             found_to = True
+            continue #do not map to channel
         updated_channels.append(channel)
 
     if not found_from:
