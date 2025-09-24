@@ -1,4 +1,4 @@
-from harnice import fileio
+from harnice import fileio, mapped_channels
 import runpy
 import os
 
@@ -21,6 +21,10 @@ system_utils.pull_devices_from_library()
 #                   CHANNEL MAPPING
 #===========================================================================
 system_utils.new_blank_channel_map()
+
+#add manual channel map commands here. key=(from_device_refdes, from_device_channel_id)
+#system_utils.map_and_record({from_key}, {to_key})
+
 featuretree_utils.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 system_utils.solve_disconnect_channels()
 
@@ -37,5 +41,8 @@ def render():
     if not os.path.exists(fileio.path("feature tree")):
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
             f.write(system_feature_tree_default)
+
+    # keep track of what we've already mapped
+    mapped_channels.new_set()
 
     runpy.run_path(fileio.path("feature tree"))

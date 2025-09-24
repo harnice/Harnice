@@ -2,9 +2,7 @@ from harnice import fileio, component_library, mapped_channels
 import os
 import csv
 import ast
-import csv
 from collections import deque
-from harnice import fileio
 
 
 CHANNEL_MAP_COLUMNS = [
@@ -17,6 +15,7 @@ CHANNEL_MAP_COLUMNS = [
     "to_device_channel_id",
     "multi_ch_junction_id",
     "disconnect_refdes_key",
+    "manual_map_channel_python_equiv",
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
@@ -55,6 +54,7 @@ def pull_devices_from_library():
                     quiet=False,
                 )
         imported_devices.append(refdes)
+
 
 def map_and_record(from_key, to_key):
     map_channel(from_key, to_key)
@@ -166,6 +166,7 @@ def read_channel_map():
 
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
+
     from_device_refdes, from_device_channel_id = from_key
     to_device_refdes, to_device_channel_id = to_key or (None, None)
 
@@ -183,18 +184,27 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
             channel.get("from_device_refdes") == from_device_refdes
             and channel.get("from_device_channel_id") == from_device_channel_id
         ):
-            channel["to_device_refdes"] = to_device_refdes or ""
-            channel["to_device_channel_id"] = to_device_channel_id or ""
+            channel["to_device_refdes"] = to_device_refdes
+            channel["to_device_channel_id"] = to_device_channel_id
             if multi_ch_junction_key:
                 channel["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
+            # add python equivalent to channel map to help user grab this map and force its use here or elsewhere
+            if require_to:
+                channel["manual_map_channel_python_equiv"] = (
+                    f"system_utils.map_and_record({from_key}, {to_key})"
+                )
+            elif multi_ch_junction_key:
+                channel["manual_map_channel_python_equiv"] = (
+                    f"system_utils.map_and_record({from_key}, multi_ch_junction_key={multi_ch_junction_key})"
+                )
         elif (
             require_to
             and channel.get("from_device_refdes") == to_device_refdes
             and channel.get("from_device_channel_id") == to_device_channel_id
         ):
             found_to = True
-            continue #do not map to channel
+            continue  # do not map to channel
         updated_channels.append(channel)
 
     if not found_from:
@@ -232,6 +242,7 @@ def mpn_of_device_refdes(refdes):
             return row.get("MFG"), row.get("MPN"), row.get("rev")
     return None, None, None
 
+
 def connector_of_channel(key):
     bom = read_bom_rows()
     refdes, channel_id = key
@@ -254,6 +265,7 @@ def connector_of_channel(key):
                 return row.get("connector_name", "").strip()
 
     raise ValueError(f"Connector not found for channel {key}")
+
 
 def disconnects_in_net(net):
     disconnects = []
@@ -278,10 +290,10 @@ def solve_disconnect_channels():
         connector_list = list(csv.DictReader(f, delimiter="\t"))
 
     # --- Build indexes from connector_list ---
-    by_device = {}          # device_refdes -> [connector,...]
-    by_net = {}             # net -> [(device_refdes, connector), ...]
-    net_of = {}             # (device_refdes, connector) -> net
-    is_disconnect = set()   # devices flagged as disconnect
+    by_device = {}  # device_refdes -> [connector,...]
+    by_net = {}  # net -> [(device_refdes, connector), ...]
+    net_of = {}  # (device_refdes, connector) -> net
+    is_disconnect = set()  # devices flagged as disconnect
 
     for row in connector_list:
         dev = (row.get("device_refdes") or "").strip()
@@ -304,15 +316,19 @@ def solve_disconnect_channels():
         # X5 missing?
         for ref in ["X5"]:
             if ref in is_disconnect and not any(k[0] == ref for k in net_of):
-                print(f"[warn] Disconnect {ref} has no connectors in system connector list.")
+                print(
+                    f"[warn] Disconnect {ref} has no connectors in system connector list."
+                )
 
         # Example: PREAMP1 in1 & in2 should NOT be same net (unless truly shorted)
         if ("PREAMP1", "in1") in net_of and ("PREAMP1", "in2") in net_of:
             n1 = net_of[("PREAMP1", "in1")]
             n2 = net_of[("PREAMP1", "in2")]
             if n1 == n2:
-                print(f"[warn] PREAMP1 in1 and in2 share net '{n1}'. "
-                      f"If that's not intentional, your connector list export is wrong.")
+                print(
+                    f"[warn] PREAMP1 in1 and in2 share net '{n1}'. "
+                    f"If that's not intentional, your connector list export is wrong."
+                )
 
     _warn_if_suspect()
 
@@ -335,7 +351,9 @@ def solve_disconnect_channels():
             if net:
                 for nxt in by_net.get(net, []):
                     if nxt not in seen:
-                        seen.add(nxt); prev[nxt] = cur; q.append(nxt)
+                        seen.add(nxt)
+                        prev[nxt] = cur
+                        q.append(nxt)
 
             # neighbors on the SAME DEVICE -> ONLY if device is a disconnect
             dev, _ = cur
@@ -343,7 +361,9 @@ def solve_disconnect_channels():
                 for other_con in by_device.get(dev, []):
                     nxt = (dev, other_con)
                     if nxt not in seen:
-                        seen.add(nxt); prev[nxt] = cur; q.append(nxt)
+                        seen.add(nxt)
+                        prev[nxt] = cur
+                        q.append(nxt)
 
         if start != goal and goal not in prev:
             return []
@@ -365,7 +385,7 @@ def solve_disconnect_channels():
     # --- run for each row in channel map ---
     for row in channel_map:
         from_key = (row.get("from_device_refdes"), row.get("from_device_channel_id"))
-        to_key   = (row.get("to_device_refdes"),   row.get("to_device_channel_id"))
+        to_key = (row.get("to_device_refdes"), row.get("to_device_channel_id"))
 
         # skip incomplete rows
         if not from_key[0] or not from_key[1] or not to_key[0] or not to_key[1]:
@@ -374,11 +394,11 @@ def solve_disconnect_channels():
         # system_utils.connector_of_channel() lives in this module — call directly here.
         # If you're pasting this function elsewhere, replace with your import as needed.
         from_cn = (from_key[0], connector_of_channel(from_key))
-        to_cn   = (to_key[0],   connector_of_channel(to_key))
+        to_cn = (to_key[0], connector_of_channel(to_key))
 
         # optional fast path: if both ends report the same net, nothing to solve
         n_from = net_of.get(from_cn)
-        n_to   = net_of.get(to_cn)
+        n_to = net_of.get(to_cn)
         if n_from and n_to and n_from == n_to:
             # same-net: no disconnect devices required in between
             continue
