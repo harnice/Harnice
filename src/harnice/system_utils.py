@@ -231,6 +231,7 @@ def mpn_of_device_refdes(refdes):
 def connector_of_channel(key):
     bom = read_bom_rows()
     refdes, channel_id = key
+    device_mpn_rev = ""
 
     for row in bom:
         if row.get("device_ref_des") == refdes:
