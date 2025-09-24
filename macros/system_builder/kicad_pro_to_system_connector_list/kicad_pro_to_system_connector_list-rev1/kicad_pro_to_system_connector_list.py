@@ -107,7 +107,9 @@ def merge_disconnect_nets(
     # Build adjacency map of nets <-> nets via disconnect refdes
     adjacency: Dict[str, set[str]] = {k: set() for k in nets}
     for refdes in disconnect_refdes:
-        involved_keys = [k for k, conns in nets.items() if any(refdes in c for c in conns)]
+        involved_keys = [
+            k for k, conns in nets.items() if any(refdes in c for c in conns)
+        ]
         for i in range(len(involved_keys)):
             for j in range(i + 1, len(involved_keys)):
                 a, b = involved_keys[i], involved_keys[j]
@@ -148,7 +150,6 @@ def merge_disconnect_nets(
     return merged
 
 
-
 # -------------------------------
 # Main workflow
 # -------------------------------
@@ -176,10 +177,12 @@ with open(fileio.path("system connector list"), "w", newline="", encoding="utf-8
 
             disconnect_flag = "TRUE" if device_refdes in disconnect_refdes else ""
 
-            writer.writerow({
-                "device_refdes": device_refdes,
-                "connector": pinfunction,
-                "net": orig_net,          # original net
-                "merged_net": merged_net, # merged net
-                "disconnect": disconnect_flag,
-            })
+            writer.writerow(
+                {
+                    "device_refdes": device_refdes,
+                    "connector": pinfunction,
+                    "net": orig_net,  # original net
+                    "merged_net": merged_net,  # merged net
+                    "disconnect": disconnect_flag,
+                }
+            )
