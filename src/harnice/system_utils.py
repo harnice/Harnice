@@ -227,3 +227,33 @@ def mpn_of_device_refdes(refdes):
         if row.get("device_ref_des") == refdes:
             return row.get("MFG"), row.get("MPN"), row.get("rev")
     return None, None, None
+
+def connector_of_channel(key):
+    bom = read_bom_rows()
+    refdes, channel_id = key
+
+    for row in bom:
+        if row.get("device_ref_des") == refdes:
+            device_mpn_rev = f"{row.get('MPN')}-{row.get('rev')}"
+            break
+
+    device_signals_list_path = os.path.join(
+        fileio.dirpath("devices"),
+        refdes,
+        f"{device_mpn_rev}-signals_list.tsv",
+    )
+    with open(device_signals_list_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            if row.get("channel", "").strip() == channel_id.strip():
+                return row.get("connector_name", "").strip()
+
+    raise ValueError(f"Connector not found for channel {key}")
+
+def disconnects_in_net(net):
+    disconnects = []
+    for connector in read_connector_list():
+        if connector.get("net") == net:
+            if connector.get("disconnect") == "TRUE":
+                disconnects.append(connector.get("device_refdes"))
+    return disconnects
