@@ -32,4 +32,4 @@ for channel in channel_map:
         break
 
     else:
-        
+        disconnects_of_from_net = system_utils.disconnects_in_net(from_net)
