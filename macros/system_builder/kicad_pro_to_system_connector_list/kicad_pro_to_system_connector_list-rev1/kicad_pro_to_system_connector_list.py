@@ -96,12 +96,14 @@ def find_disconnects() -> set[str]:
     return disconnects
 
 
-def merge_disconnect_nets(nets: Dict[str, list[str]], disconnect_refdes: set[str]) -> Dict[str, list[str]]:
+def merge_disconnect_nets(
+    nets: Dict[str, list[str]], disconnect_refdes: set[str]
+) -> Dict[str, list[tuple[str, str]]]:
     """
-    Merge nets that are connected through 2-port disconnect devices.
-    Collapse ports into just the refdes (e.g. X1 instead of X1:A, X1:B).
+    Return mapping {merged_net: [(conn_string, orig_net), ...]}.
+    Each connection keeps its original net name and pinfunction (e.g., X1:A).
     """
-    merged = {}
+    merged: Dict[str, list[tuple[str, str]]] = {}
     skip_keys = set()
 
     # Look for pairs of nets sharing each disconnect
@@ -110,15 +112,12 @@ def merge_disconnect_nets(nets: Dict[str, list[str]], disconnect_refdes: set[str
         if len(involved_keys) == 2:
             k1, k2 = involved_keys
             new_key = f"{k1}+{k2}"
-            merged_conns = []
+            merged_conns: list[tuple[str, str]] = []
 
             for k in [k1, k2]:
                 for c in nets[k]:
-                    if refdes in c:
-                        if refdes not in merged_conns:
-                            merged_conns.append(refdes)
-                    else:
-                        merged_conns.append(c)
+                    # KEEP full "X1:A" or "X1:B", do not collapse to just "X1"
+                    merged_conns.append((c, k))
 
             merged[new_key] = merged_conns
             skip_keys.update(involved_keys)
@@ -126,7 +125,7 @@ def merge_disconnect_nets(nets: Dict[str, list[str]], disconnect_refdes: set[str
     # Keep all others unchanged
     for k, v in nets.items():
         if k not in skip_keys:
-            merged[k] = v
+            merged[k] = [(c, k) for c in v]
 
     return merged
 
@@ -151,25 +150,17 @@ with open(fileio.path("system connector list"), "w", newline="", encoding="utf-8
     writer.writeheader()
 
     for merged_net, conns in merged_nets.items():
-        for conn in conns:
-            # Default values
+        for conn, orig_net in conns:
             device_refdes, pinfunction = conn, ""
-
-            # Split refdes and pinfunction if present
             if ":" in conn:
                 device_refdes, pinfunction = conn.split(":", 1)
 
-            # Mark TRUE if this refdes is a disconnect
             disconnect_flag = "TRUE" if device_refdes in disconnect_refdes else ""
 
-            # Keep all original nets in 'net' if merged
-            orig_nets = merged_net.split("+") if "+" in merged_net else [merged_net]
-
-            for orig in orig_nets:
-                writer.writerow({
-                    "device_refdes": device_refdes,
-                    "connector": pinfunction,
-                    "net": orig,
-                    "merged_net": merged_net,
-                    "disconnect": disconnect_flag,
-                })
+            writer.writerow({
+                "device_refdes": device_refdes,
+                "connector": pinfunction,
+                "net": orig_net,          # original net
+                "merged_net": merged_net, # merged net
+                "disconnect": disconnect_flag,
+            })
