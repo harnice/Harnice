@@ -2,9 +2,7 @@ from harnice import fileio, component_library, mapped_channels
 import os
 import csv
 import ast
-import csv
 from collections import deque
-from harnice import fileio
 
 
 CHANNEL_MAP_COLUMNS = [
@@ -17,6 +15,7 @@ CHANNEL_MAP_COLUMNS = [
     "to_device_channel_id",
     "multi_ch_junction_id",
     "disconnect_refdes_key",
+    "manual_map_channel_python_equiv"
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
@@ -166,6 +165,7 @@ def read_channel_map():
 
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
+    
     from_device_refdes, from_device_channel_id = from_key
     to_device_refdes, to_device_channel_id = to_key or (None, None)
 
@@ -183,11 +183,16 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
             channel.get("from_device_refdes") == from_device_refdes
             and channel.get("from_device_channel_id") == from_device_channel_id
         ):
-            channel["to_device_refdes"] = to_device_refdes or ""
-            channel["to_device_channel_id"] = to_device_channel_id or ""
+            channel["to_device_refdes"] = to_device_refdes
+            channel["to_device_channel_id"] = to_device_channel_id
             if multi_ch_junction_key:
                 channel["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
+            #add python equivalent to channel map to help user grab this map and force its use here or elsewhere
+            if require_to:
+                channel["manual_map_channel_python_equiv"] = f"system_utils.map_and_record({from_key}, {to_key})"
+            elif multi_ch_junction_key:
+                channel["manual_map_channel_python_equiv"] = f"system_utils.map_and_record({from_key}, multi_ch_junction_key={multi_ch_junction_key})"
         elif (
             require_to
             and channel.get("from_device_refdes") == to_device_refdes
