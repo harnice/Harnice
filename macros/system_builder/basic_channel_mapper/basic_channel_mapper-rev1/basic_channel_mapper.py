@@ -8,7 +8,9 @@ with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
     channels = list(reader)
 
 # Collect unique merged nets
-unique_merged_nets = sorted(set(r["merged_net"] for r in channels if r.get("merged_net")))
+unique_merged_nets = sorted(
+    set(r["merged_net"] for r in channels if r.get("merged_net"))
+)
 
 # Look through one merged net at a time
 for merged_net in unique_merged_nets:
