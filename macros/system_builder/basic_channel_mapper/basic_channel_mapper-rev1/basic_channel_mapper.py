@@ -10,9 +10,6 @@ with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
 # Collect unique merged nets
 unique_merged_nets = sorted(set(r["merged_net"] for r in channels if r.get("merged_net")))
 
-#keep track of what we've already mapped
-mapped_channels.new_set()
-
 # Look through one merged net at a time
 for merged_net in unique_merged_nets:
     if verbose:
@@ -76,6 +73,10 @@ for merged_net in unique_merged_nets:
             if mapped_channels.check(to_key):
                 if verbose:
                     print("               To key candidate already mapped")
+                continue
+            if mapped_channels.check(from_key):
+                if verbose:
+                    print("               From key candidate already mapped")
                 continue
 
             if verbose:
