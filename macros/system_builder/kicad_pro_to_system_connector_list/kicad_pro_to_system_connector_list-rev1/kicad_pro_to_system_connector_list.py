@@ -96,39 +96,57 @@ def find_disconnects() -> set[str]:
     return disconnects
 
 
-def merge_disconnect_nets(nets: Dict[str, list[str]], disconnect_refdes: set[str]) -> Dict[str, list[str]]:
+def merge_disconnect_nets(
+    nets: Dict[str, list[str]], disconnect_refdes: set[str]
+) -> Dict[str, list[tuple[str, str]]]:
     """
-    Merge nets that are connected through 2-port disconnect devices.
-    Collapse ports into just the refdes (e.g. X1 instead of X1:A, X1:B).
+    Merge nets connected through any chain of disconnects.
+    Returns {merged_net: [(conn_string, orig_net), ...]}.
     """
-    merged = {}
-    skip_keys = set()
 
-    # Look for pairs of nets sharing each disconnect
+    # Build adjacency map of nets <-> nets via disconnect refdes
+    adjacency: Dict[str, set[str]] = {k: set() for k in nets}
     for refdes in disconnect_refdes:
         involved_keys = [k for k, conns in nets.items() if any(refdes in c for c in conns)]
-        if len(involved_keys) == 2:
-            k1, k2 = involved_keys
-            new_key = f"{k1}+{k2}"
-            merged_conns = []
+        for i in range(len(involved_keys)):
+            for j in range(i + 1, len(involved_keys)):
+                a, b = involved_keys[i], involved_keys[j]
+                adjacency[a].add(b)
+                adjacency[b].add(a)
 
-            for k in [k1, k2]:
-                for c in nets[k]:
-                    if refdes in c:
-                        if refdes not in merged_conns:
-                            merged_conns.append(refdes)
-                    else:
-                        merged_conns.append(c)
+    # DFS to find connected components of nets
+    visited = set()
+    groups: list[set[str]] = []
 
-            merged[new_key] = merged_conns
-            skip_keys.update(involved_keys)
+    for net in nets:
+        if net not in visited:
+            stack = [net]
+            group = set()
+            while stack:
+                cur = stack.pop()
+                if cur in visited:
+                    continue
+                visited.add(cur)
+                group.add(cur)
+                stack.extend(adjacency[cur])
+            groups.append(group)
 
-    # Keep all others unchanged
-    for k, v in nets.items():
-        if k not in skip_keys:
-            merged[k] = v
+    # Build merged net dictionary
+    merged: Dict[str, list[tuple[str, str]]] = {}
+    for group in groups:
+        if len(group) == 1:
+            net = next(iter(group))
+            merged[net] = [(c, net) for c in nets[net]]
+        else:
+            new_key = "+".join(sorted(group))
+            conns: list[tuple[str, str]] = []
+            for net in group:
+                for c in nets[net]:
+                    conns.append((c, net))
+            merged[new_key] = conns
 
     return merged
+
 
 
 # -------------------------------
@@ -151,25 +169,17 @@ with open(fileio.path("system connector list"), "w", newline="", encoding="utf-8
     writer.writeheader()
 
     for merged_net, conns in merged_nets.items():
-        for conn in conns:
-            # Default values
+        for conn, orig_net in conns:
             device_refdes, pinfunction = conn, ""
-
-            # Split refdes and pinfunction if present
             if ":" in conn:
                 device_refdes, pinfunction = conn.split(":", 1)
 
-            # Mark TRUE if this refdes is a disconnect
             disconnect_flag = "TRUE" if device_refdes in disconnect_refdes else ""
 
-            # Keep all original nets in 'net' if merged
-            orig_nets = merged_net.split("+") if "+" in merged_net else [merged_net]
-
-            for orig in orig_nets:
-                writer.writerow({
-                    "device_refdes": device_refdes,
-                    "connector": pinfunction,
-                    "net": orig,
-                    "merged_net": merged_net,
-                    "disconnect": disconnect_flag,
-                })
+            writer.writerow({
+                "device_refdes": device_refdes,
+                "connector": pinfunction,
+                "net": orig_net,          # original net
+                "merged_net": merged_net, # merged net
+                "disconnect": disconnect_flag,
+            })

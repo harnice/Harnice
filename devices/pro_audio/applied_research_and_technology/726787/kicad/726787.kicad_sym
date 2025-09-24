@@ -1,1 +1,187 @@
-(kicad_symbol_lib (version 20241209) (generator "kicad_symbol_editor") (generator_version "9.0") (symbol "726787-rev1" (exclude_from_sim no) (in_bom yes) (on_board yes) (property "Reference" "PREAMP" (at 0 1.016 0) (do_not_autoplace) (effects (font (size 1.27 1.27)))) (property "Value" "" (at 0 -2.286 0) (do_not_autoplace) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Description" "PREAMP, 2CH" (at -1.016 -11.684 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "MFG" "APPLIED RESEARCH AND TECHNOLOGY" (at -0.762 5.842 0) (do_not_autoplace) (effects (font (size 1.27 1.27)))) (property "MPN" "726787" (at 0 3.302 0) (do_not_autoplace) (effects (font (size 1.27 1.27)))) (property "Library Repository" "https://github.com/kenyonshutt/harnice-library-public" (at 2.286 -10.16 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Library Subpath" "pro_audio/applied_research_and_technology/" (at 1.27 -8.636 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Rev" "rev1" (at 4.064 -12.7 0) (effects (font (size 1.27 1.27)) (hide yes))) (symbol "726787-rev1_0_1" (rectangle (start -11.43 7.62) (end 11.43 -3.81) (stroke (width 0) (type default)) (fill (type none)))) (symbol "726787-rev1_1_1" (pin unspecified line (at -13.97 0 0) (length 2.54) (name "in2" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27))))) (pin unspecified line (at -13.97 -2.54 0) (length 2.54) (name "in1" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27))))) (pin unspecified line (at 13.97 0 180) (length 2.54) (name "out1" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27))))) (pin unspecified line (at 13.97 -2.54 180) (length 2.54) (name "out2" (effects (font (size 1.27 1.27)))) (number "4" (effects (font (size 1.27 1.27)))))) (embedded_fonts no) (property "lib_repo" "https://github.com/kenyonshutt/harnice-library-public" (id 0) (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "lib_subpath" "pro_audio/applied_research_and_technology/" (id 1) (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "rev" "rev1" (id 2) (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes)))))
+(kicad_symbol_lib
+	(version 20241209)
+	(generator "kicad_symbol_editor")
+	(generator_version "9.0")
+	(symbol "726787-rev1"
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "PREAMP"
+			(at 0 5.334 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 0 -2.286 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "PREAMP, 2CH"
+			(at 0.254 -6.858 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" "APPLIED RESEARCH AND TECHNOLOGY"
+			(at 0 -9.652 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "726787"
+			(at 0 2.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "lib_repo" "https://github.com/kenyonshutt/harnice-library-public"
+			(at -0.508 -14.224 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" "pro_audio/applied_research_and_technology/"
+			(at -0.508 -11.684 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" "rev1"
+			(at 0 -16.764 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "726787-rev1_0_1"
+			(rectangle
+				(start -11.43 7.62)
+				(end 11.43 -3.81)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "726787-rev1_1_1"
+			(pin unspecified line
+				(at -13.97 0 0)
+				(length 2.54)
+				(name "in1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at -13.97 -2.54 0)
+				(length 2.54)
+				(name "in2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at 13.97 0 180)
+				(length 2.54)
+				(name "out1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at 13.97 -2.54 180)
+				(length 2.54)
+				(name "out2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "4"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+)
