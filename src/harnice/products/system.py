@@ -42,7 +42,7 @@ def render():
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
             f.write(system_feature_tree_default)
 
-    #keep track of what we've already mapped
+    # keep track of what we've already mapped
     mapped_channels.new_set()
 
     runpy.run_path(fileio.path("feature tree"))
