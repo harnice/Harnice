@@ -101,7 +101,7 @@ def new_blank_channel_map():
                 break
 
         # signals list path
-        if connector.get("disconnect"):
+        if connector.get("disconnect") == "TRUE":
             # don't want disconnects to show up in channel map
             continue
         else:
