@@ -29,18 +29,34 @@ def read_bom_rows():
 def pull_devices_from_library():
     imported_devices = []
     for refdes in read_bom_rows():
-        if refdes.get("lib_repo") in ["", None]:
-            os.makedirs(
-                os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]),
-                exist_ok=True,
-            )
-            continue
-
         if refdes not in imported_devices:
-            if refdes.get("lib_repo") == "local":
+            if refdes.get("disconnect") == "TRUE":
+                os.makedirs(
+                    os.path.join(fileio.dirpath("disconnects"), refdes["device_ref_des"]),
+                    exist_ok=True,
+                )
+                if refdes.get("lib_repo") == "local":
+                    continue
+                else:
+                    component_library.pull_item_from_library(
+                        lib_repo=refdes["lib_repo"],
+                        product="disconnects",
+                        lib_subpath=refdes["lib_subpath"],
+                        mpn=refdes["MPN"],
+                        destination_directory=os.path.join(
+                            fileio.dirpath("disconnects"), refdes["device_ref_des"]
+                        ),
+                        used_rev=None,
+                        item_name=refdes["device_ref_des"],
+                        quiet=False,
+                    )
                 continue
 
             else:
+                os.makedirs(
+                    os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]),
+                    exist_ok=True,
+                )
                 component_library.pull_item_from_library(
                     lib_repo=refdes["lib_repo"],
                     product="devices",

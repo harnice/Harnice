@@ -120,6 +120,7 @@ def harnice_file_structure():
             "mapped_channels.txt": "mapped channels set",
             "macros": {},
             "devices": {},
+            "disconnects": {},
         }
 
 
