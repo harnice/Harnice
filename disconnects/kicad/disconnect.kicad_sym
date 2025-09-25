@@ -15,8 +15,8 @@
 				)
 			)
 		)
-		(property "Value" "test"
-			(at 0 -7.62 0)
+		(property "Value" ""
+			(at 0 -7.874 0)
 			(do_not_autoplace)
 			(effects
 				(font
@@ -52,26 +52,8 @@
 				(hide yes)
 			)
 		)
-		(property "Disconnect" "AUX"
-			(at 0 0 0)
-			(do_not_autoplace)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "channel_type_id" "1"
-			(at 0 -3.048 0)
-			(do_not_autoplace)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "library_subpath" "test"
-			(at 0 -4.572 0)
+		(property "Disconnect" "GHOST"
+			(at 0 -3.302 0)
 			(do_not_autoplace)
 			(effects
 				(font
@@ -80,12 +62,24 @@
 				(hide yes)
 			)
 		)
-		(property "library_url" "test"
-			(at 0 -6.096 0)
+		(property "channel_type_id" ""
+			(at 0 -3.048 0)
 			(do_not_autoplace)
 			(effects
 				(font
 					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at 0 -4.318 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 0.508 0.508)
+					(thickness 0.1016)
+					(bold yes)
 				)
 				(hide yes)
 			)
@@ -104,6 +98,14 @@
 			)
 		)
 		(symbol "aux-channel_1_1"
+			(text "GHOST"
+				(at 1.016 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
 			(pin unspecified line
 				(at -7.62 0 0)
 				(length 2.54)
@@ -175,7 +177,57 @@
 			)
 		)
 		(property "Disconnect" "TRUE"
-			(at 2.54 -7.112 0)
+			(at 0.254 -7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" ""
+			(at -0.254 -13.208 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" ""
+			(at -0.254 -15.24 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at 0 -8.89 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" ""
+			(at -0.254 -10.922 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" ""
+			(at 0 -16.764 0)
 			(do_not_autoplace)
 			(effects
 				(font
@@ -328,7 +380,57 @@
 			)
 		)
 		(property "Disconnect" "TRUE"
-			(at 2.54 -7.112 0)
+			(at 0.254 -6.858 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" ""
+			(at 0 -12.7 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" ""
+			(at 0 -14.732 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at 0 -10.414 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" ""
+			(at -0.254 -8.382 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" ""
+			(at 0 -16.256 0)
 			(do_not_autoplace)
 			(effects
 				(font
@@ -481,7 +583,57 @@
 			)
 		)
 		(property "Disconnect" "TRUE"
-			(at 2.54 -7.112 0)
+			(at 0.508 -7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" ""
+			(at -0.254 -13.97 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" ""
+			(at 0 -16.256 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at -0.254 -9.398 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" ""
+			(at 0 -11.684 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" ""
+			(at 0 -18.034 0)
 			(do_not_autoplace)
 			(effects
 				(font
@@ -652,7 +804,57 @@
 			)
 		)
 		(property "Disconnect" "TRUE"
-			(at 2.54 -7.112 0)
+			(at 0 -7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" ""
+			(at 0 -9.398 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" ""
+			(at 0 -14.986 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at -0.254 -12.954 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" ""
+			(at -0.254 -11.176 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" ""
+			(at 0 -16.256 0)
 			(do_not_autoplace)
 			(effects
 				(font
