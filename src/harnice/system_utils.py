@@ -32,7 +32,9 @@ def pull_devices_from_library():
         if refdes not in imported_devices:
             if refdes.get("disconnect") == "TRUE":
                 os.makedirs(
-                    os.path.join(fileio.dirpath("disconnects"), refdes["device_ref_des"]),
+                    os.path.join(
+                        fileio.dirpath("disconnects"), refdes["device_ref_des"]
+                    ),
                     exist_ok=True,
                 )
                 if refdes.get("lib_repo") == "local":
@@ -182,7 +184,6 @@ def read_channel_map():
 
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
-
     from_device_refdes, from_device_channel_id = from_key
     to_device_refdes, to_device_channel_id = to_key or (None, None)
 
