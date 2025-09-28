@@ -172,11 +172,15 @@ def pull_part(instance_name):
 
 
 def get_local_path(lib_repo):
-    # takes in a library repo url and returns the local path
-    lib_info_list = []
+    # takes in a library repo url and returns the expanded local path
     with open(fileio.path("library locations"), newline="", encoding="utf-8") as f:
         lib_info_list = list(csv.DictReader(f, delimiter=","))
+
     for lib in lib_info_list:
         if lib.get("url") == lib_repo:
-            return lib.get("local_path")
+            local_path = lib.get("local_path")
+            if not local_path:
+                raise ValueError(f"No local_path found for {lib_repo}")
+            return os.path.expanduser(local_path)
+
     raise ValueError(f"Could not find library repo id {lib_repo}")
