@@ -5,7 +5,7 @@ import ast
 from harnice import fileio, component_library
 
 # Signals list column headers to match source of truth + compatibility change
-SIGNALS_HEADERS = [
+DEVICE_SIGNALS_HEADERS = [
     "channel",
     "signal",
     "connector_name",
@@ -40,7 +40,7 @@ global headers
 def new_signals_list(headers_arg):
     global headers
     if headers_arg == "device":
-        headers = SIGNALS_HEADERS
+        headers = DEVICE_SIGNALS_HEADERS
     elif headers_arg == "disconnect":
         headers = DISCONNECT_SIGNALS_HEADERS
 
@@ -85,15 +85,18 @@ def write_signal(**kwargs):
 
 # search channel_types.tsv
 def signals_of_channel_type_id(channel_type_id):
-    chid, lib_repo = unpack_channel_type_id(channel_type_id)
+    chid, lib_repo = parse_channel_type_id(channel_type_id)
     tsv_path = path_of_channel_type_id((chid, lib_repo))
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
             if str(row.get("channel_type_id", "")).strip() == str(chid):
-                signals_str = row.get("signals", "")
-                return [sig.strip() for sig in signals_str.split(",") if sig.strip()]
+                return [
+                    sig.strip()
+                    for sig in row.get("signals", "").split(",")
+                    if sig.strip()
+                ]
     return []
 
 
@@ -113,7 +116,7 @@ def signals_of_channel(channel_name, path_to_signals_list):
 
 
 def compatible_channel_types(channel_type_id):
-    chid, lib_repo = unpack_channel_type_id(channel_type_id)
+    chid, lib_repo = parse_channel_type_id(channel_type_id)
     tsv_path = path_of_channel_type_id((chid, lib_repo))
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
@@ -124,17 +127,12 @@ def compatible_channel_types(channel_type_id):
                 if not signals_str:
                     return []
 
-                # TSV may contain multiple tuples, separated by semicolons or commas
-                # Normalize into a list string if needed
                 try:
-                    # if it looks like a list already, eval as list
                     if signals_str.startswith("["):
                         return ast.literal_eval(signals_str)
-                    # if it's a single tuple, wrap in list
                     parsed = ast.literal_eval(signals_str)
                     return [parsed] if isinstance(parsed, tuple) else parsed
                 except Exception:
-                    # fallback: split and try parsing each
                     items = []
                     for sig in signals_str.split(","):
                         sig = sig.strip()
@@ -150,13 +148,6 @@ def compatible_channel_types(channel_type_id):
 def pin_of_signal(signal, path_to_signals_list):
     """
     Returns the pin/contact information for a given signal from the signals list.
-
-    Args:
-        signal (str): The signal name to search for
-        path_to_signals_list (str): Path to the signals list TSV file
-
-    Returns:
-        str: The pin/contact information for the signal, or empty string if not found
     """
     if not os.path.exists(path_to_signals_list):
         return ""
@@ -183,15 +174,11 @@ def mating_connector_of_channel(channel_id, path_to_signals_list):
 def path_of_channel_type_id(channel_type_id):
     """
     Args:
-        channel_type_id: tuple like (chid, lib_repo) or string like "(5, 'https://github.com/kenyonshutt/harnice-library-public')"
+        channel_type_id: tuple like (chid, lib_repo) or string like "(5, '...')"
     """
-    chid, lib_repo = unpack_channel_type_id(channel_type_id)
-
+    chid, lib_repo = parse_channel_type_id(channel_type_id)
     base_dir = component_library.get_local_path(lib_repo)
-
-    tsv_path = os.path.join(base_dir, "channel_types", "channel_types.tsv")
-
-    return os.path.expanduser(tsv_path)  # <-- expand ~ to full home dir
+    return os.path.join(base_dir, "channel_types", "channel_types.tsv")
 
 
 def parse_channel_type_id(val):
@@ -199,7 +186,6 @@ def parse_channel_type_id(val):
     if not val:
         return None
     if isinstance(val, tuple):
-        # Already parsed
         chid, supplier = val
     else:
         chid, supplier = ast.literal_eval(str(val))
@@ -212,13 +198,21 @@ def parse_channel_type_id_list(val):
         return []
     if isinstance(val, list):
         return [parse_channel_type_id(v) for v in val]
-    # Could be a single tuple string or a list string
     parsed = ast.literal_eval(str(val))
     if isinstance(parsed, tuple):
         return [parse_channel_type_id(parsed)]
     if isinstance(parsed, list):
         return [parse_channel_type_id(v) for v in parsed]
     return [parse_channel_type_id(parsed)]
+
+
+def assert_unique(values, label):
+    """Raise ValueError if duplicates are found in values."""
+    seen = set()
+    for v in values:
+        if v in seen:
+            raise ValueError(f"Duplicate {label} found: {v}")
+        seen.add(v)
 
 
 def validate_signals_list_for_device():
@@ -238,7 +232,7 @@ def validate_signals_list_for_device():
     counter = 2
     for signal in signals_list:
         print("Looking at csv row:", counter)
-        channel_type_id = signal.get("channel_type_id")
+        channel_type_id = parse_channel_type_id(signal.get("channel_type_id"))
         expected_signals = signals_of_channel_type_id(channel_type_id)
         found_signals = set()
         connector_names = set()
@@ -263,17 +257,20 @@ def validate_signals_list_for_device():
                 f"Channel {signal.get('channel')} has signals spread across multiple connectors: "
                 f"{', '.join(connector_names)}"
             )
-        
+
         counter += 1
 
     seen_contacts = set()
     for signal in signals_list:
         contact_key = f"{signal.get('connector_name')}-{signal.get('contact')}"
         if contact_key in seen_contacts:
-            raise ValueError(f"Duplicate connector contact found: {contact_key}")
+            raise ValueError(
+                f"Duplicate connector contact found in device: {contact_key}"
+            )
         seen_contacts.add(contact_key)
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
+
 
 def validate_signals_list_for_disconnect():
     print("--------------------------------")
@@ -295,14 +292,17 @@ def validate_signals_list_for_disconnect():
         A_channel_type_id = parse_channel_type_id(signal.get("A_channel_type_id"))
         B_channel_type_id = parse_channel_type_id(signal.get("B_channel_type_id"))
 
-        if B_channel_type_id not in parse_channel_type_id_list(compatible_channel_types(A_channel_type_id)):
-            if A_channel_type_id not in parse_channel_type_id_list(compatible_channel_types(B_channel_type_id)):
+        if B_channel_type_id not in parse_channel_type_id_list(
+            compatible_channel_types(A_channel_type_id)
+        ):
+            if A_channel_type_id not in parse_channel_type_id_list(
+                compatible_channel_types(B_channel_type_id)
+            ):
                 raise ValueError("A and B channel types are not compatible")
 
-        expected_signals = signals_of_channel_type_id(A_channel_type_id) # if A is compatible with B, then A and B should have the same signals
+        expected_signals = signals_of_channel_type_id(A_channel_type_id)
         found_signals = set()
 
-        
         for expected_signal in expected_signals:
             for signal2 in signals_list:
                 if (
@@ -316,55 +316,22 @@ def validate_signals_list_for_disconnect():
             raise ValueError(
                 f"Channel {signal.get('channel')} is missing signals: {', '.join(missing_signals)}"
             )
-        
+
         counter += 1
 
-    A_seen_contacts = set()
+    seen_A = set()
     for signal in signals_list:
-        contact_key = signal.get('A_contact')
-        if contact_key in A_seen_contacts:
-            raise ValueError(f"Duplicate connector contact found: {contact_key}")
-        A_seen_contacts.add(contact_key)
+        A_contact = signal.get("A_contact")
+        if A_contact in seen_A:
+            raise ValueError(f"Duplicate A_contact found in disconnect: {A_contact}")
+        seen_A.add(A_contact)
 
-    B_seen_contacts = set()
+    # Check duplicates for B side
+    seen_B = set()
     for signal in signals_list:
-        contact_key = signal.get('B_contact')
-        if contact_key in B_seen_contacts:
-            raise ValueError(f"Duplicate connector contact found: {contact_key}")
-        B_seen_contacts.add(contact_key)
+        B_contact = signal.get("B_contact")
+        if B_contact in seen_B:
+            raise ValueError(f"Duplicate B_contact found in disconnect: {B_contact}")
+        seen_B.add(B_contact)
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
-
-
-def unpack_channel_type_id(id_value):
-    """
-    Normalize channel_type_id into (int, str).
-
-    Accepts:
-        - Tuple like (5, "https://github.com/kenyonshutt/harnice-library-public")
-        - String like "(5, 'https://github.com/kenyonshutt/harnice-library-public')"
-    Returns:
-        (int, str)
-    """
-    # Case 1: already a tuple
-    if isinstance(id_value, tuple):
-        if len(id_value) != 2:
-            raise ValueError(f"Invalid channel_type_id tuple: {id_value}")
-        key, lib_repo = id_value
-        return int(key), str(lib_repo).strip()
-
-    # Case 2: string
-    if isinstance(id_value, str):
-        text = id_value.strip().strip("()")
-        parts = [p.strip() for p in text.split(",")]
-        if len(parts) != 2:
-            raise ValueError(
-                f"Invalid channel_type_id: {id_value}. Expected format: (chid [int], lib_repo [str])"
-            )
-
-        key_str, lib_repo_str = parts
-        key = int(key_str)
-        lib_repo = lib_repo_str.strip("'\"")
-        return key, lib_repo
-
-    raise TypeError(f"Invalid channel_type_id: {type(id_value)}")
