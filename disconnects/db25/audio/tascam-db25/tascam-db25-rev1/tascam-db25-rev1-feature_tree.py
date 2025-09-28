@@ -1,33 +1,63 @@
+
 from harnice import icd
 
 ch_type_ids = {
     "A": {
-        "balanced audio mic level in": (
-            1,
-            "https://github.com/kenyonshutt/harnice-library-public",
-        ),
-        "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public"),
+        "balanced audio mic level in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
+        "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public")
     },
     "B": {
-        "balanced audio mic level out": (
-            2,
-            "https://github.com/kenyonshutt/harnice-library-public",
-        ),
-        "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public"),
-    },
+        "balanced audio mic level out": (2, "https://github.com/kenyonshutt/harnice-library-public"),
+        "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public")
+    }
 }
 
-cn_mpns = {"A": "DB25F", "B": "DB25M"}
+cn_mpns = {
+    "A": "DB25F",
+    "B": "DB25M"
+}
 
 contact_number = {
-    "ch0": {"pos": 24, "neg": 12, "chassis": 25},
-    "ch1": {"pos": 10, "neg": 23, "chassis": 11},
-    "ch2": {"pos": 21, "neg": 9, "chassis": 22},
-    "ch3": {"pos": 7, "neg": 20, "chassis": 8},
-    "ch4": {"pos": 18, "neg": 6, "chassis": 19},
-    "ch5": {"pos": 4, "neg": 17, "chassis": 5},
-    "ch6": {"pos": 15, "neg": 3, "chassis": 16},
-    "ch7": {"pos": 1, "neg": 14, "chassis": 2},
+    "ch0": {
+        "pos": 24,
+        "neg": 12,
+        "chassis": 25
+    },
+    "ch1": {
+        "pos": 10,
+        "neg": 23,
+        "chassis": 11
+    },
+    "ch2": {
+        "pos": 21,
+        "neg": 9,
+        "chassis": 22
+    },
+    "ch3": {
+        "pos": 7,
+        "neg": 20,
+        "chassis": 8
+    },
+    "ch4": {
+        "pos": 18,
+        "neg": 6,
+        "chassis": 19
+    },
+    "ch5": {
+        "pos": 4,
+        "neg": 17,
+        "chassis": 5
+    },
+    "ch6": {
+        "pos": 15,
+        "neg": 3,
+        "chassis": 16
+    },
+    "ch7": {
+        "pos": 1,
+        "neg": 14,
+        "chassis": 2
+    },
 }
 
 icd.new_signals_list("disconnect")
@@ -35,15 +65,15 @@ icd.new_signals_list("disconnect")
 for channel in range(8):
     channel_name = f"ch{channel}"
 
-    for signal in icd.signals_of_channel_type_id(
-        ch_type_ids["A"]["balanced audio mic level in"]
-    ):
+    for signal in icd.signals_of_channel_type_id(ch_type_ids["A"]["balanced audio mic level in"]):
         icd.write_signal(
             channel=channel_name,
             signal=signal,
+
             A_contact=contact_number[channel_name][signal],
             A_connector_mpn=cn_mpns["A"],
             A_channel_type_id=ch_type_ids["A"]["balanced audio mic level in"],
+
             B_contact=contact_number[channel_name][signal],
             B_connector_mpn=cn_mpns["B"],
             B_channel_type_id=ch_type_ids["B"]["balanced audio mic level out"],
@@ -53,10 +83,13 @@ for channel in range(8):
         icd.write_signal(
             channel=f"{channel_name}-shield",
             signal=signal,
+
             A_contact=contact_number[channel_name][signal],
             A_connector_mpn=cn_mpns["A"],
             A_channel_type_id=ch_type_ids["A"]["chassis"],
+
             B_contact=contact_number[channel_name][signal],
             B_connector_mpn=cn_mpns["B"],
             B_channel_type_id=ch_type_ids["B"]["chassis"],
         )
+
