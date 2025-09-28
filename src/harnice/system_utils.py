@@ -39,6 +39,10 @@ def pull_devices_from_library():
                 )
                 if refdes.get("lib_repo") == "local":
                     continue
+                if not refdes.get("MPN"):
+                    raise ValueError(
+                        f"MPN is required for disconnect refdes {refdes['device_ref_des']}"
+                    )
                 else:
                     component_library.pull_item_from_library(
                         lib_repo=refdes["lib_repo"],
