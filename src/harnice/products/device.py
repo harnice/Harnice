@@ -1,11 +1,10 @@
 import os
 import runpy
-import csv
 from harnice import fileio, icd, rev_history
 import sexpdata
 import json
 
-signals_list_feature_tree_default = """
+device_feature_tree_default = """
 from harnice import icd
 
 ch_type_ids = {
@@ -31,7 +30,7 @@ def mpn_for_connector(connector_name):
             return mpn
     return None
 
-icd.new_signals_list()
+icd.new_signals_list("device")
 
 for connector_name in ["in1", "in2", "out1", "out2"]:
     if connector_name.startswith("in"):
@@ -65,78 +64,6 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
     )
 
 """
-
-
-def validate_signals_list():
-    if not os.path.exists(fileio.path("signals list")):
-        raise FileNotFoundError("Signals list was not generated.")
-
-    with open(fileio.path("signals list"), "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        headers = reader.fieldnames
-        signals_list = list(reader)
-
-    if not headers:
-        raise ValueError("Signals list has no header row.")
-
-    required_headers = icd.SIGNALS_HEADERS
-    missing = [h for h in required_headers if h not in headers]
-    if missing:
-        raise ValueError(f"Signals list is missing headers: {', '.join(missing)}")
-
-    if not signals_list:
-        raise ValueError("Signals list has no data rows.")
-
-    required_fields = [
-        "channel",
-        "signal",
-        "connector_name",
-        "channel_type_id",
-        "compatible_channel_type_ids",
-    ]
-
-    for signal in signals_list:
-        for field in required_fields:
-            if field not in signal:
-                raise ValueError(
-                    f"Channel {signal.get('channel')} is missing the field: {field}"
-                )
-
-    for signal in signals_list:
-        channel_type_id = signal.get("channel_type_id")
-        expected_signals = icd.signals_of_channel_type_id(channel_type_id)
-        found_signals = set()
-        connector_names = set()
-
-        for expected_signal in expected_signals:
-            for signal2 in signals_list:
-                if (
-                    signal2.get("channel") == signal.get("channel")
-                    and signal2.get("signal") == expected_signal
-                ):
-                    found_signals.add(expected_signal)
-                    connector_names.add(signal2.get("connector_name"))
-
-        missing_signals = set(expected_signals) - found_signals
-        if missing_signals:
-            raise ValueError(
-                f"Channel {signal.get('channel')} is missing signals: {', '.join(missing_signals)}"
-            )
-
-        if len(connector_names) > 1:
-            raise ValueError(
-                f"Channel {signal.get('channel')} has signals spread across multiple connectors: "
-                f"{', '.join(connector_names)}"
-            )
-
-    seen_contacts = set()
-    for signal in signals_list:
-        contact_key = f"{signal.get('connector_name')}-{signal.get('contact')}"
-        if contact_key in seen_contacts:
-            raise ValueError(f"Duplicate connector contact found: {contact_key}")
-        seen_contacts.add(contact_key)
-
-    print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
 
 def make_new_library_file():
@@ -691,7 +618,7 @@ def device_render(lightweight=False):
     if not lightweight:
         if not os.path.exists(fileio.path("signals list")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
-                f.write(signals_list_feature_tree_default)
+                f.write(device_feature_tree_default)
     else:
         if not os.path.exists(fileio.path("signals list")):
             icd.new_signals_list()
@@ -708,7 +635,7 @@ def device_render(lightweight=False):
         print("Successfully rebuilt signals list per feature tree.")
 
     if not lightweight:
-        validate_signals_list()
+        icd.validate_signals_list_for_device()
 
     print(
         f"Kicad nickname:       harnice-devices/{rev_history.revision_info().get('library_subpath')}{fileio.partnumber('pn')}"

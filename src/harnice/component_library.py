@@ -171,46 +171,16 @@ def pull_part(instance_name):
         instances_list.add_revhistory_of_imported_part(item_name, revhistory_row)
 
 
-def unpack_channel_type_id(id_value):
-    """
-    Normalize channel_type_id into (int, str).
-
-    Accepts:
-        - Tuple like (5, "https://github.com/kenyonshutt/harnice-library-public")
-        - String like "(5, 'https://github.com/kenyonshutt/harnice-library-public')"
-    Returns:
-        (int, str)
-    """
-    # Case 1: already a tuple
-    if isinstance(id_value, tuple):
-        if len(id_value) != 2:
-            raise ValueError(f"Invalid channel_type_id tuple: {id_value}")
-        key, lib_repo = id_value
-        return int(key), str(lib_repo).strip()
-
-    # Case 2: string
-    if isinstance(id_value, str):
-        text = id_value.strip().strip("()")
-        parts = [p.strip() for p in text.split(",")]
-        if len(parts) != 2:
-            raise ValueError(
-                f"Invalid channel_type_id: {id_value}. Expected format: (chid [int], lib_repo [str])"
-            )
-
-        key_str, lib_repo_str = parts
-        key = int(key_str)
-        lib_repo = lib_repo_str.strip("'\"")
-        return key, lib_repo
-
-    raise TypeError(f"Invalid channel_type_id: {type(id_value)}")
-
-
 def get_local_path(lib_repo):
-    # takes in a library repo url and returns the local path
-    lib_info_list = []
+    # takes in a library repo url and returns the expanded local path
     with open(fileio.path("library locations"), newline="", encoding="utf-8") as f:
         lib_info_list = list(csv.DictReader(f, delimiter=","))
+
     for lib in lib_info_list:
         if lib.get("url") == lib_repo:
-            return lib.get("local_path")
+            local_path = lib.get("local_path")
+            if not local_path:
+                raise ValueError(f"No local_path found for {lib_repo}")
+            return os.path.expanduser(local_path)
+
     raise ValueError(f"Could not find library repo id {lib_repo}")

@@ -2,7 +2,15 @@ import argparse
 import os
 import sys
 from harnice import fileio
-from harnice.products import device, harness, part, flagnote, tblock, system
+from harnice.products import (
+    device,
+    harness,
+    part,
+    flagnote,
+    tblock,
+    system,
+    disconnect,
+)
 
 
 def ensure_cwd_exists():
@@ -35,6 +43,7 @@ def main():
             "part",
             "flagnote",
             "device",
+            "disconnect",
             "tblock",
             "titleblock",
         ],
@@ -59,6 +68,7 @@ def main():
             "part": part.render,
             "flagnote": flagnote.render,
             "device": device.render,
+            "disconnect": disconnect.render,
             "tblock": tblock.render,
             "titleblock": tblock.render,  # alias
         }

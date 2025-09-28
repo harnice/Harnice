@@ -29,18 +29,40 @@ def read_bom_rows():
 def pull_devices_from_library():
     imported_devices = []
     for refdes in read_bom_rows():
-        if refdes.get("lib_repo") in ["", None]:
-            os.makedirs(
-                os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]),
-                exist_ok=True,
-            )
-            continue
-
         if refdes not in imported_devices:
-            if refdes.get("lib_repo") == "local":
+            if refdes.get("disconnect") == "TRUE":
+                os.makedirs(
+                    os.path.join(
+                        fileio.dirpath("disconnects"), refdes["device_ref_des"]
+                    ),
+                    exist_ok=True,
+                )
+                if refdes.get("lib_repo") == "local":
+                    continue
+                if not refdes.get("MPN"):
+                    raise ValueError(
+                        f"MPN is required for disconnect refdes {refdes['device_ref_des']}"
+                    )
+                else:
+                    component_library.pull_item_from_library(
+                        lib_repo=refdes["lib_repo"],
+                        product="disconnects",
+                        lib_subpath=refdes["lib_subpath"],
+                        mpn=refdes["MPN"],
+                        destination_directory=os.path.join(
+                            fileio.dirpath("disconnects"), refdes["device_ref_des"]
+                        ),
+                        used_rev=None,
+                        item_name=refdes["device_ref_des"],
+                        quiet=False,
+                    )
                 continue
 
             else:
+                os.makedirs(
+                    os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]),
+                    exist_ok=True,
+                )
                 component_library.pull_item_from_library(
                     lib_repo=refdes["lib_repo"],
                     product="devices",
@@ -166,7 +188,6 @@ def read_channel_map():
 
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
-
     from_device_refdes, from_device_channel_id = from_key
     to_device_refdes, to_device_channel_id = to_key or (None, None)
 

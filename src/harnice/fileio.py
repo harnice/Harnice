@@ -110,6 +110,12 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
             f"{partnumber('pn-rev')}-attributes.json": "attributes",
         }
+    elif product_type == "disconnect":
+        return {
+            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
+            f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
+            f"{partnumber('pn-rev')}-attributes.json": "attributes",
+        }
     elif product_type == "system":
         return {
             f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
@@ -120,6 +126,7 @@ def harnice_file_structure():
             "mapped_channels.txt": "mapped channels set",
             "macros": {},
             "devices": {},
+            "disconnects": {},
         }
 
 
