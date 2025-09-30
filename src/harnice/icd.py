@@ -76,6 +76,10 @@ def write_signal(**kwargs):
     if not os.path.exists(signals_path):
         new_signals_list()
 
+    # If channel_type_id is present, compute compatible_channel_type_ids
+    channel_type_id = kwargs.get("channel_type_id", "")
+    kwargs["compatible_channel_type_ids"] = compatible_channel_types(channel_type_id)
+
     row = [kwargs.get(col, "") for col in headers]
 
     with open(signals_path, "a", newline="", encoding="utf-8") as f:
