@@ -126,26 +126,48 @@ def compatible_channel_types(channel_type_id):
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if str(chid) == str(row.get("channel_type_id")):
-                signals_str = row.get("compatible_channel_type_ids", "").strip()
-                if not signals_str:
-                    return []
+            if str(chid) != str(row.get("channel_type_id")):
+                continue
 
-                try:
-                    if signals_str.startswith("["):
-                        return ast.literal_eval(signals_str)
-                    parsed = ast.literal_eval(signals_str)
-                    return [parsed] if isinstance(parsed, tuple) else parsed
-                except Exception:
-                    items = []
-                    for sig in signals_str.split(","):
-                        sig = sig.strip()
-                        if sig:
-                            try:
-                                items.append(ast.literal_eval(sig))
-                            except Exception:
-                                items.append(sig)  # last resort: keep raw string
-                    return items
+            signals_str = row.get("compatible_channel_type_ids", "").strip()
+            if not signals_str:
+                return []
+
+            # Ensure it is *not* wrapped in []
+            if signals_str.startswith("[") or signals_str.endswith("]"):
+                raise ValueError(
+                    f"Invalid format for compatible_channel_type_ids: {signals_str}. "
+                    "Do not use [] around the list."
+                )
+
+            try:
+                # Wrap in parentheses to make ast.parse happy: "(a),(b)" → "((a),(b))"
+                parsed = ast.literal_eval(f"({signals_str},)")
+            except Exception as e:
+                raise ValueError(
+                    f"Could not parse compatible_channel_type_ids: {signals_str}"
+                ) from e
+
+            # Ensure parsed is a tuple of tuples
+            if not isinstance(parsed, tuple):
+                raise ValueError(f"Expected tuple of tuples, got {type(parsed)}")
+
+            # Flatten if extra nesting from our wrapper
+            if len(parsed) == 1 and isinstance(parsed[0], tuple) and isinstance(parsed[0][0], tuple):
+                parsed = parsed[0]
+
+            # Validate each item
+            for item in parsed:
+                if not (isinstance(item, tuple) and len(item) == 2):
+                    raise ValueError(f"Each compatible channel must be a 2-tuple: {item}")
+                chid_val, repo_val = item
+                if not isinstance(chid_val, int):
+                    raise ValueError(f"First element must be int, got {chid_val!r}")
+                if not isinstance(repo_val, str):
+                    raise ValueError(f"Second element must be str, got {repo_val!r}")
+
+            return list(parsed)
+
     return []
 
 
