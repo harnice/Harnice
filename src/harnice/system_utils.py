@@ -7,15 +7,29 @@ from collections import deque
 
 CHANNEL_MAP_COLUMNS = [
     "merged_net",
-    "channel_type_id",
-    "compatible_channel_type_ids",
     "from_device_refdes",
     "from_device_channel_id",
+    "from_channel_type_id",
+    "from_compatible_channel_type_ids",
     "to_device_refdes",
     "to_device_channel_id",
+    "to_channel_type_id",
+    "to_compatible_channel_type_ids",
     "multi_ch_junction_id",
     "disconnect_refdes_key",
     "manual_map_channel_python_equiv",
+]
+
+DISCONNECT_CHANNEL_MAP_COLUMNS = [
+    "merged_net",
+    "channel_type_id",
+    "compatible_channel_type_ids",
+    "from_destination_device_refdes",
+    "from_destination_device_channel_id",
+    "to_destination_device_refdes",
+    "to_destination_device_channel_id",
+    "disconnect_refdes",
+    "disconnect_channel_id",
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
@@ -160,16 +174,12 @@ def new_blank_channel_map():
             # build row
             channel_map_row = {
                 "merged_net": connector.get("merged_net", ""),
-                "channel_type_id": signal.get("channel_type_id", ""),
-                "compatible_channel_type_ids": signal.get(
+                "from_channel_type_id": signal.get("channel_type_id", ""),
+                "from_compatible_channel_type_ids": signal.get(
                     "compatible_channel_type_ids", ""
                 ),
                 "from_device_refdes": device_refdes,
                 "from_device_channel_id": sig_channel,
-                "to_device_refdes": "",
-                "to_device_channel_id": "",
-                "multi_ch_junction_id": "",
-                "disconnect_refdes_key": "",
             }
             channel_map.append(channel_map_row)
 
@@ -182,30 +192,92 @@ def new_blank_channel_map():
     return channel_map
 
 
+def new_blank_disconnect_map():
+    disconnect_channel_map = []
+
+    # load channel map
+    with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
+        channel_map = list(csv.DictReader(f, delimiter="\t"))
+
+    for channel in channel_map:
+        disconnect_refdes_keys = []
+
+        raw = channel.get("disconnect_refdes_key")
+        if raw:
+            # Case 1: already a Python list
+            if isinstance(raw, list):
+                disconnect_refdes_keys = raw
+            else:
+                # Case 2: string that looks like a list -> parse safely
+                try:
+                    parsed = ast.literal_eval(raw)
+                    if isinstance(parsed, list):
+                        disconnect_refdes_keys = parsed
+                    else:
+                        # fallback: strip brackets and split manually
+                        clean = raw.replace("[", "").replace("]", "")
+                        disconnect_refdes_keys = [x.strip() for x in clean.split(",") if x.strip()]
+                except Exception:
+                    # fallback: strip brackets and split manually
+                    clean = raw.replace("[", "").replace("]", "")
+                    disconnect_refdes_keys = [x.strip() for x in clean.split(",") if x.strip()]
+
+        for disconnect_refdes_key in disconnect_refdes_keys:
+            disconnect_channel_map.append(
+                {
+                    "merged_net": channel.get("merged_net"),
+                    "channel_type_id": channel.get("channel_type_id"),
+                    "compatible_channel_type_ids": channel.get("compatible_channel_type_ids"),
+                    "from_destination_device_refdes": channel.get("from_device_refdes"),
+                    "from_destination_device_channel_id": channel.get("from_device_channel_id"),
+                    "to_destination_device_refdes": channel.get("to_device_refdes"),
+                    "to_destination_device_channel_id": channel.get("to_device_channel_id"),
+                    "disconnect_refdes": disconnect_refdes_key,
+                }
+            )
+
+    with open(fileio.path("disconnect channel map"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=DISCONNECT_CHANNEL_MAP_COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(disconnect_channel_map)
+
+
 def read_channel_map():
     with open(fileio.path("channel map"), "r", encoding="utf-8") as f:
         return list(csv.DictReader(f, delimiter="\t"))
 
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
-    from_device_refdes, from_device_channel_id = from_key
-    to_device_refdes, to_device_channel_id = to_key or (None, None)
-
     if not os.path.exists(fileio.path("channel map")):
         raise FileNotFoundError(
             f"Channel map not found at {fileio.path('channel map')}"
         )
 
     channels = read_channel_map()
+
+    to_device_refdes, to_device_channel_id = to_key or (None, None)
+
+    to_channel = None
+    for channel in channels:
+        if channel.get("from_device_refdes") == from_key[0] and channel.get("from_device_channel_id") == from_key[1]:
+            to_channel = channel
+            break
+
+    if not to_channel:
+        raise ValueError(f"to_key {to_key} not found in channel map")
+
     updated_channels, found_from, found_to = [], False, False
     require_to = bool(to_device_refdes or to_device_channel_id)
 
     for channel in channels:
         if (
-            channel.get("from_device_refdes") == from_device_refdes
-            and channel.get("from_device_channel_id") == from_device_channel_id
+            channel.get("from_device_refdes") == from_key[0]
+            and channel.get("from_device_channel_id") == from_key[1]
         ):
-            channel["to_device_refdes"] = to_device_refdes
+            channel["to_device_refdes"] = to_channel.get("to_device_refdes")
+            channel["to_device_channel_id"] = to_channel.get("to_device_channel_id")
+            channel["to_channel_type_id"] = to_channel.get("to_channel_type_id")
+            channel["to_compatible_channel_type_ids"] = to_channel.get("to_compatible_channel_type_ids")
             channel["to_device_channel_id"] = to_device_channel_id
             if multi_ch_junction_key:
                 channel["multi_ch_junction_id"] = multi_ch_junction_key
@@ -225,7 +297,7 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
             and channel.get("from_device_channel_id") == to_device_channel_id
         ):
             found_to = True
-            continue  # do not map to channel
+            continue  # do not add the to channel as another line in the channel map (it only exists in the from channel's row)
         updated_channels.append(channel)
 
     if not found_from:
@@ -246,7 +318,7 @@ def compatible_channel_type_ids(from_key):
             row.get("from_device_refdes") == refdes
             and row.get("from_device_channel_id") == ch_id
         ):
-            raw_val = row.get("compatible_channel_type_ids", "")
+            raw_val = row.get("from_compatible_channel_type_ids", "")
             if not raw_val:
                 return []
             try:
@@ -297,7 +369,7 @@ def disconnects_in_net(net):
     return disconnects
 
 
-def solve_disconnect_channels():
+def find_shortest_disconnect_chain():
     """
     For each (from_device/channel) -> (to_device/channel) in the channel map,
     find the SHORTEST series chain of disconnect devices between them and

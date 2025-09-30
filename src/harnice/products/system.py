@@ -25,8 +25,14 @@ system_utils.new_blank_channel_map()
 #add manual channel map commands here. key=(from_device_refdes, from_device_channel_id)
 #system_utils.map_and_record({from_key}, {to_key})
 
+#map channels to other compatible channels by sorting alphabetically then mapping compatibles
 featuretree_utils.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
-system_utils.solve_disconnect_channels()
+
+#if mapped channels must connect via disconnects, add the list of disconnects to the channel map
+system_utils.find_shortest_disconnect_chain()
+
+#map channels that must pass through disconnects to available channels inside disconnects
+system_utils.new_blank_disconnect_map()
 
 #===========================================================================
 #                   INSTANCES LIST
