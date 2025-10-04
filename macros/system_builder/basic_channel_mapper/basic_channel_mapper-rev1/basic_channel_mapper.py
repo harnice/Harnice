@@ -2,6 +2,7 @@ import csv
 from harnice import fileio, mapped_channels, icd, system_utils
 
 verbose = False
+
 # Load channel map rows from the new system connector list TSV
 with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
@@ -43,8 +44,13 @@ for merged_net in unique_merged_nets:
                 print("          From key already mapped")
             continue
 
-        # List of compatible channel type IDs for this channel
-        compatible_channel_type_ids = system_utils.compatible_channel_type_ids(from_key)
+        # Parse channel types
+        from_type = icd.parse_channel_type_id(
+            from_channel.get("from_channel_type_id")
+        )
+        compatibles_from = icd.compatible_channel_types(
+            from_channel.get("from_channel_type_id")
+        )
 
         for to_channel_candidate in net_channels:
             to_key = (
@@ -61,12 +67,18 @@ for merged_net in unique_merged_nets:
                     print("               To key candidate is the same as from key")
                 continue
 
-            # Don't map if the channel type is not compatible
-            from_type = icd.parse_channel_type_id(from_channel.get("channel_type_id"))
-            compatibles = icd.parse_channel_type_id_list(
-                to_channel_candidate.get("compatible_channel_type_ids")
+            # Parse "to" type and its compatibles
+            to_type = icd.parse_channel_type_id(
+                to_channel_candidate.get("from_channel_type_id")
             )
-            if from_type not in compatibles:
+            compatibles_to = icd.compatible_channel_types(
+                to_channel_candidate.get("from_channel_type_id")
+            )
+
+            # Backwards-compatible check: either side may declare compatibility
+            if not (
+                to_type in compatibles_from or from_type in compatibles_to
+            ):
                 if verbose:
                     print("               To key candidate is not compatible")
                 continue
