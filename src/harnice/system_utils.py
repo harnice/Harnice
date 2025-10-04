@@ -248,9 +248,6 @@ def read_channel_map():
 
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
-    print()
-    print(f"!!!!!!!!!from!{from_key}")
-    print(f"!!!!!to!!!!!{to_key}")
     if not os.path.exists(fileio.path("channel map")):
         raise FileNotFoundError(
             f"Channel map not found at {fileio.path('channel map')}"
@@ -275,8 +272,6 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
         raise ValueError(f"to_key {to_key} not found in channel map")
     else:
         require_to = bool(to_key[0] or to_key[1])
-    print(f"!!!!from!!!!!!{from_channel}")
-    print(f"!!!!to!!!!!!{to_channel}")
     #find the a compatible channel and write it to the from channel
     updated_channels, found_from, found_to = [], False, False
 
