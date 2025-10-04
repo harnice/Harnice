@@ -34,6 +34,11 @@ system_utils.find_shortest_disconnect_chain()
 #map channels that must pass through disconnects to available channels inside disconnects
 system_utils.new_blank_disconnect_map()
 
+#add manual disconnect map commands here
+
+#map channels passing through disconnects to available channels inside disconnects
+featuretree_utils.run_macro("disconnect_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
+
 #===========================================================================
 #                   INSTANCES LIST
 #===========================================================================
