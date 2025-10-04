@@ -1,7 +1,6 @@
 from harnice import fileio, component_library, mapped_channels, icd
 import os
 import csv
-import ast
 from collections import deque
 
 
@@ -16,20 +15,25 @@ CHANNEL_MAP_COLUMNS = [
     "to_channel_type_id",
     "to_compatible_channel_type_ids",
     "multi_ch_junction_id",
-    "disconnect_refdes_key",
+    "disconnect_refdes_requirement",
     "manual_map_channel_python_equiv",
 ]
 
 DISCONNECT_CHANNEL_MAP_COLUMNS = [
-    "merged_net",
-    "channel_type_id",
-    "compatible_channel_type_ids",
-    "from_destination_device_refdes",
-    "from_destination_device_channel_id",
-    "to_destination_device_refdes",
-    "to_destination_device_channel_id",
+    "A-side_device_refdes",
+    "A-side_device_channel_id",
+    "A-side_device_channel_type_id",
+    "A-side_device_compatible_channel_type_ids",
+    "B-side_device_refdes",
+    "B-side_device_channel_id",
+    "B-side_device_channel_type_id",
+    "B-side_device_compatible_channel_type_ids",
     "disconnect_refdes",
     "disconnect_channel_id",
+    "A-port_channel_type",
+    "A-port_compatible_channel_type_ids",
+    "B-port_channel_type",
+    "B-port_compatible_channel_type_ids"
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
@@ -200,41 +204,82 @@ def new_blank_disconnect_map():
         channel_map = list(csv.DictReader(f, delimiter="\t"))
 
     for channel in channel_map:
-        disconnect_refdes_keys = []
+        raw = (channel.get("disconnect_refdes_requirement") or "").strip()
+        if not raw:
+            continue
 
-        raw = channel.get("disconnect_refdes_key")
-        if raw:
-            # Case 1: already a Python list
-            if isinstance(raw, list):
-                disconnect_refdes_keys = raw
+        # split on semicolon -> one row per disconnect_refdes requirement
+        disconnects = [item.strip() for item in raw.split(";") if item.strip()]
+
+        for requirement in disconnects:
+            # requirement looks like "X1(A,B)" or "X2(B,A)"
+            refdes, ports = requirement.split("(")
+            ports = ports.rstrip(")")
+            first_port, second_port = [p.strip() for p in ports.split(",")]
+
+            # orientation: (A,B) means from_device is A-side, (B,A) means from_device is B-side
+            if (first_port, second_port) == ("A", "B"):
+                a_refdes  = channel.get("from_device_refdes", "")
+                a_chan_id = channel.get("from_device_channel_id", "")
+                a_chan_type_id = channel.get("from_channel_type_id", "")
+                a_chan_compatible_channel_type_ids = channel.get("from_compatible_channel_type_ids", "")
+                b_refdes  = channel.get("to_device_refdes", "")
+                b_chan_id = channel.get("to_device_channel_id", "")
+                b_chan_type_id = channel.get("to_channel_type_id", "")
+                b_chan_compatible_channel_type_ids = channel.get("to_compatible_channel_type_ids", "")
+            elif (first_port, second_port) == ("B", "A"):
+                b_refdes  = channel.get("from_device_refdes", "")
+                b_chan_id = channel.get("from_device_channel_id", "")
+                b_chan_type_id = channel.get("from_channel_type_id", "")
+                b_chan_compatible_channel_type_ids = channel.get("from_compatible_channel_type_ids", "")
+                a_refdes  = channel.get("to_device_refdes", "")
+                a_chan_id = channel.get("to_device_channel_id", "")
+                a_chan_type_id = channel.get("to_channel_type_id", "")
+                a_chan_compatible_channel_type_ids = channel.get("to_compatible_channel_type_ids", "")
             else:
-                # Case 2: string that looks like a list -> parse safely
-                try:
-                    parsed = ast.literal_eval(raw)
-                    if isinstance(parsed, list):
-                        disconnect_refdes_keys = parsed
-                    else:
-                        # fallback: strip brackets and split manually
-                        clean = raw.replace("[", "").replace("]", "")
-                        disconnect_refdes_keys = [x.strip() for x in clean.split(",") if x.strip()]
-                except Exception:
-                    # fallback: strip brackets and split manually
-                    clean = raw.replace("[", "").replace("]", "")
-                    disconnect_refdes_keys = [x.strip() for x in clean.split(",") if x.strip()]
+                raise ValueError(f"Unexpected port order: {requirement}")
 
-        for disconnect_refdes_key in disconnect_refdes_keys:
-            disconnect_channel_map.append(
-                {
-                    "merged_net": channel.get("merged_net"),
-                    "channel_type_id": channel.get("channel_type_id"),
-                    "compatible_channel_type_ids": channel.get("compatible_channel_type_ids"),
-                    "from_destination_device_refdes": channel.get("from_device_refdes"),
-                    "from_destination_device_channel_id": channel.get("from_device_channel_id"),
-                    "to_destination_device_refdes": channel.get("to_device_refdes"),
-                    "to_destination_device_channel_id": channel.get("to_device_channel_id"),
-                    "disconnect_refdes": disconnect_refdes_key,
-                }
+            disconnect_channel_map.append({
+                "A-side_device_refdes": a_refdes,
+                "A-side_device_channel_id": a_chan_id,
+                "A-side_device_channel_type_id": a_chan_type_id,
+                "A-side_device_compatible_channel_type_ids": a_chan_compatible_channel_type_ids,
+                "B-side_device_refdes": b_refdes,
+                "B-side_device_channel_id": b_chan_id,
+                "B-side_device_channel_type_id": b_chan_type_id,
+                "B-side_device_compatible_channel_type_ids": b_chan_compatible_channel_type_ids,
+                "disconnect_refdes": refdes.strip(),
+            })
+
+    # load BOM
+    with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
+        bom = list(csv.DictReader(f, delimiter="\t"))
+
+    for item in bom:
+        if item.get("disconnect"):
+            disconnect_signals_list_path = os.path.join(
+                fileio.dirpath("disconnects"),
+                item.get("device_ref_des"),
+                f"{item.get('MPN')}-{item.get('rev')}-signals_list.tsv",
             )
+            with open(disconnect_signals_list_path, newline="", encoding="utf-8") as f:
+                disconnect_signals = list(csv.DictReader(f, delimiter="\t"))
+
+            available_disconnect_channels = set()
+            for signal in disconnect_signals:
+                if signal.get("channel") in available_disconnect_channels:
+                    continue
+                available_disconnect_channels.add(signal.get("channel"))
+            
+                disconnect_channel_map.append({
+                    "disconnect_refdes": item.get("device_ref_des"),
+                    "disconnect_channel_id": signal.get("channel"),
+                    "A-port_channel_type": signal.get("A_channel_type_id"),
+                    "A-port_compatible_channel_type_ids": signal.get("A_compatible_channel_type_ids"),
+                    "B-port_channel_type": signal.get("B_channel_type_id"),
+                    "B-port_compatible_channel_type_ids": signal.get("B_compatible_channel_type_ids")
+                })
+
 
     with open(fileio.path("disconnect channel map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=DISCONNECT_CHANNEL_MAP_COLUMNS, delimiter="\t")
@@ -360,7 +405,7 @@ def find_shortest_disconnect_chain():
     """
     For each (from_device/channel) -> (to_device/channel) in the channel map,
     find the SHORTEST series chain of disconnect devices between them and
-    write it to 'disconnect_refdes_key' in the channel map TSV.
+    write it to 'disconnect_refdes_requirement' in the channel map TSV.
     """
     # --- Load tables ---
     with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
@@ -454,12 +499,30 @@ def find_shortest_disconnect_chain():
             path.append(prev[path[-1]])
         path.reverse()
 
-        # collect disconnect devices when we traverse INSIDE them
+        # collect disconnect devices with strict A/B port pairs
         chain = []
         for a, b in zip(path, path[1:]):
             if a[0] == b[0] and a[0] in is_disconnect:
-                if not chain or chain[-1] != a[0]:
-                    chain.append(a[0])
+                dev = a[0]
+                port_a = a[1]
+                port_b = b[1]
+
+                # enforce A/B only
+                for port in (port_a, port_b):
+                    if port not in {"A", "B"}:
+                        raise ValueError(
+                            f"Disconnect {dev} has invalid port name '{port}'. "
+                            "Only 'A' and 'B' are allowed."
+                        )
+
+                # enforce they are different
+                if port_a == port_b:
+                    raise ValueError(
+                        f"Disconnect {dev} has invalid same-port traversal: {port_a}"
+                    )
+
+                chain.append(f"{dev}({port_a},{port_b})")
+
         return chain
 
     # --- run for each row in channel map ---
@@ -485,7 +548,8 @@ def find_shortest_disconnect_chain():
 
         chain = _shortest_disconnect_chain(from_cn, to_cn)
         if chain:
-            row["disconnect_refdes_key"] = str(chain)
+            # write as comma-separated string without brackets
+            row["disconnect_refdes_requirement"] = ";".join(chain)
 
     # --- write back ---
     with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
