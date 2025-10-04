@@ -1,4 +1,4 @@
-from harnice import fileio, component_library, mapped_channels
+from harnice import fileio, component_library, mapped_channels, icd
 import os
 import csv
 import ast
@@ -248,6 +248,9 @@ def read_channel_map():
 
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
+    print()
+    print(f"!!!!!!!!!from!{from_key}")
+    print(f"!!!!!to!!!!!{to_key}")
     if not os.path.exists(fileio.path("channel map")):
         raise FileNotFoundError(
             f"Channel map not found at {fileio.path('channel map')}"
@@ -255,50 +258,57 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
 
     channels = read_channel_map()
 
-    to_device_refdes, to_device_channel_id = to_key or (None, None)
-
     to_channel = None
     for channel in channels:
-        if channel.get("from_device_refdes") == from_key[0] and channel.get("from_device_channel_id") == from_key[1]:
+        if channel.get("from_device_refdes") == to_key[0] and channel.get("from_device_channel_id") == to_key[1]:
             to_channel = channel
             break
-
-    if not to_channel:
-        raise ValueError(f"to_key {to_key} not found in channel map")
-
-    updated_channels, found_from, found_to = [], False, False
-    require_to = bool(to_device_refdes or to_device_channel_id)
-
+    
+    from_channel = None
     for channel in channels:
+        if channel.get("from_device_refdes") == from_key[0] and channel.get("from_device_channel_id") == from_key[1]:
+            from_channel = channel
+            break
+
+    # you have to have at least a to channel or a multi_ch_junction_key, can't map from to nothing
+    if not to_channel and multi_ch_junction_key == (""):
+        raise ValueError(f"to_key {to_key} not found in channel map")
+    else:
+        require_to = bool(to_key[0] or to_key[1])
+    print(f"!!!!from!!!!!!{from_channel}")
+    print(f"!!!!to!!!!!!{to_channel}")
+    #find the a compatible channel and write it to the from channel
+    updated_channels, found_from, found_to = [], False, False
+
+    for from_channel in channels:
         if (
-            channel.get("from_device_refdes") == from_key[0]
-            and channel.get("from_device_channel_id") == from_key[1]
+            from_channel.get("from_device_refdes") == from_key[0]
+            and from_channel.get("from_device_channel_id") == from_key[1]
         ):
-            channel["to_device_refdes"] = to_channel.get("to_device_refdes")
-            channel["to_device_channel_id"] = to_channel.get("to_device_channel_id")
-            channel["to_channel_type_id"] = to_channel.get("to_channel_type_id")
-            channel["to_compatible_channel_type_ids"] = to_channel.get("to_compatible_channel_type_ids")
-            channel["to_device_channel_id"] = to_device_channel_id
+            from_channel["to_device_refdes"] = to_key[0]
+            from_channel["to_device_channel_id"] = to_key[1]
+            from_channel["to_channel_type_id"] = to_channel.get("from_channel_type_id")
+            from_channel["to_compatible_channel_type_ids"] = to_channel.get("from_compatible_channel_type_ids")
             if multi_ch_junction_key:
-                channel["multi_ch_junction_id"] = multi_ch_junction_key
+                from_channel["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
             # add python equivalent to channel map to help user grab this map and force its use here or elsewhere
             if require_to:
-                channel["manual_map_channel_python_equiv"] = (
+                from_channel["manual_map_channel_python_equiv"] = (
                     f"system_utils.map_and_record({from_key}, {to_key})"
                 )
             elif multi_ch_junction_key:
-                channel["manual_map_channel_python_equiv"] = (
+                from_channel["manual_map_channel_python_equiv"] = (
                     f"system_utils.map_and_record({from_key}, multi_ch_junction_key={multi_ch_junction_key})"
                 )
         elif (
             require_to
-            and channel.get("from_device_refdes") == to_device_refdes
-            and channel.get("from_device_channel_id") == to_device_channel_id
+            and from_channel.get("from_device_refdes") == to_key[0]
+            and from_channel.get("from_device_channel_id") == to_key[1]
         ):
             found_to = True
             continue  # do not add the to channel as another line in the channel map (it only exists in the from channel's row)
-        updated_channels.append(channel)
+        updated_channels.append(from_channel)
 
     if not found_from:
         raise ValueError(f"from_key {from_key} not found in channel map")
@@ -309,24 +319,6 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
         writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(updated_channels)
-
-
-def compatible_channel_type_ids(from_key):
-    refdes, ch_id = from_key
-    for row in read_channel_map():
-        if (
-            row.get("from_device_refdes") == refdes
-            and row.get("from_device_channel_id") == ch_id
-        ):
-            raw_val = row.get("from_compatible_channel_type_ids", "")
-            if not raw_val:
-                return []
-            try:
-                parsed = ast.literal_eval(raw_val)
-                return parsed if isinstance(parsed, list) else [parsed]
-            except Exception:
-                return [t.strip() for t in str(raw_val).split(",") if t.strip()]
-    return []
 
 
 def mpn_of_device_refdes(refdes):

@@ -78,8 +78,15 @@ def write_signal(**kwargs):
 
     # If channel_type_id is present, compute compatible_channel_type_ids
     channel_type_id = kwargs.get("channel_type_id", "")
-    kwargs["compatible_channel_type_ids"] = compatible_channel_types(channel_type_id)
+    compat_list = compatible_channel_types(channel_type_id)
 
+    # Join list into comma-separated string (no brackets)
+    if isinstance(compat_list, list):
+        kwargs["compatible_channel_type_ids"] = ",".join(str(x) for x in compat_list)
+    else:
+        kwargs["compatible_channel_type_ids"] = ""
+
+    # Fill row according to headers
     row = [kwargs.get(col, "") for col in headers]
 
     with open(signals_path, "a", newline="", encoding="utf-8") as f:
@@ -119,7 +126,12 @@ def signals_of_channel(channel_name, path_to_signals_list):
     return signals
 
 
+
 def compatible_channel_types(channel_type_id):
+    """
+    Look up compatible channel_type_ids for the given channel_type_id.
+    Splits the TSV field by commas and parses each entry into (chid, lib_repo).
+    """
     chid, lib_repo = parse_channel_type_id(channel_type_id)
     tsv_path = path_of_channel_type_id((chid, lib_repo))
 
@@ -133,43 +145,14 @@ def compatible_channel_types(channel_type_id):
             if not signals_str:
                 return []
 
-            # Ensure it is *not* wrapped in []
-            if signals_str.startswith("[") or signals_str.endswith("]"):
-                raise ValueError(
-                    f"Invalid format for compatible_channel_type_ids: {signals_str}. "
-                    "Do not use [] around the list."
-                )
-
-            try:
-                # Wrap in parentheses to make ast.parse happy: "(a),(b)" → "((a),(b))"
-                parsed = ast.literal_eval(f"({signals_str},)")
-            except Exception as e:
-                raise ValueError(
-                    f"Could not parse compatible_channel_type_ids: {signals_str}"
-                ) from e
-
-            # Ensure parsed is a tuple of tuples
-            if not isinstance(parsed, tuple):
-                raise ValueError(f"Expected tuple of tuples, got {type(parsed)}")
-
-            # Flatten if extra nesting from our wrapper
-            if len(parsed) == 1 and isinstance(parsed[0], tuple) and isinstance(parsed[0][0], tuple):
-                parsed = parsed[0]
-
-            # Validate each item
-            for item in parsed:
-                if not (isinstance(item, tuple) and len(item) == 2):
-                    raise ValueError(f"Each compatible channel must be a 2-tuple: {item}")
-                chid_val, repo_val = item
-                if not isinstance(chid_val, int):
-                    raise ValueError(f"First element must be int, got {chid_val!r}")
-                if not isinstance(repo_val, str):
-                    raise ValueError(f"Second element must be str, got {repo_val!r}")
-
-            return list(parsed)
+            values = [v.strip() for v in signals_str.split(";") if v.strip()]
+            parsed = []
+            for v in values:
+                parsed.append(parse_channel_type_id(v))
+            return parsed
 
     return []
-
+    
 
 def pin_of_signal(signal, path_to_signals_list):
     """
@@ -216,20 +199,6 @@ def parse_channel_type_id(val):
     else:
         chid, supplier = ast.literal_eval(str(val))
     return (int(chid), str(supplier).strip())
-
-
-def parse_channel_type_id_list(val):
-    """Convert stored string/list into a list of tuples."""
-    if not val:
-        return []
-    if isinstance(val, list):
-        return [parse_channel_type_id(v) for v in val]
-    parsed = ast.literal_eval(str(val))
-    if isinstance(parsed, tuple):
-        return [parse_channel_type_id(parsed)]
-    if isinstance(parsed, list):
-        return [parse_channel_type_id(v) for v in parsed]
-    return [parse_channel_type_id(parsed)]
 
 
 def assert_unique(values, label):
