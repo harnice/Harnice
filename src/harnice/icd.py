@@ -12,8 +12,6 @@ DEVICE_SIGNALS_HEADERS = [
     "contact",
     "connector_mpn",
     "channel_type_id",
-    "channel_type_id_status",
-    "channel_type_id_description",
     "compatible_channel_type_ids",
 ]
 
@@ -24,13 +22,9 @@ DISCONNECT_SIGNALS_HEADERS = [
     "B_contact",
     "A_connector_mpn",
     "A_channel_type_id",
-    "A_channel_type_id_status",
-    "A_channel_type_id_description",
     "A_compatible_channel_type_ids",
     "B_connector_mpn",
     "B_channel_type_id",
-    "B_channel_type_id_status",
-    "B_channel_type_id_description",
     "B_compatible_channel_type_ids",
 ]
 
@@ -77,14 +71,31 @@ def write_signal(**kwargs):
         new_signals_list()
 
     # If channel_type_id is present, compute compatible_channel_type_ids
-    channel_type_id = kwargs.get("channel_type_id", "")
-    compat_list = compatible_channel_types(channel_type_id)
+    if fileio.product_type == "device":
+        channel_type_id = kwargs.get("channel_type_id", "")
+        compat_list = compatible_channel_types(channel_type_id)
 
-    # Join list into comma-separated string (no brackets)
-    if isinstance(compat_list, list):
-        kwargs["compatible_channel_type_ids"] = ",".join(str(x) for x in compat_list)
-    else:
-        kwargs["compatible_channel_type_ids"] = ""
+        # Join list into comma-separated string
+        if isinstance(compat_list, list):
+            kwargs["compatible_channel_type_ids"] = ",".join(str(x) for x in compat_list)
+        else:
+            kwargs["compatible_channel_type_ids"] = ""
+    
+    elif fileio.product_type == "disconnect":
+        A_channel_type_id = kwargs.get("A_channel_type_id", "")
+        B_channel_type_id = kwargs.get("B_channel_type_id", "")
+        A_compat_list = compatible_channel_types(A_channel_type_id)
+        B_compat_list = compatible_channel_types(B_channel_type_id)
+        
+        if isinstance(A_compat_list, list):
+            kwargs["A_compatible_channel_type_ids"] = ",".join(str(x) for x in A_compat_list)
+        else:
+            kwargs["A_compatible_channel_type_ids"] = ""
+
+        if isinstance(B_compat_list, list):
+            kwargs["B_compatible_channel_type_ids"] = ",".join(str(x) for x in B_compat_list)
+        else:
+            kwargs["B_compatible_channel_type_ids"] = ""
 
     # Fill row according to headers
     row = [kwargs.get(col, "") for col in headers]
@@ -287,12 +298,8 @@ def validate_signals_list_for_disconnect():
         A_channel_type_id = parse_channel_type_id(signal.get("A_channel_type_id"))
         B_channel_type_id = parse_channel_type_id(signal.get("B_channel_type_id"))
 
-        if B_channel_type_id not in parse_channel_type_id_list(
-            compatible_channel_types(A_channel_type_id)
-        ):
-            if A_channel_type_id not in parse_channel_type_id_list(
-                compatible_channel_types(B_channel_type_id)
-            ):
+        if B_channel_type_id not in compatible_channel_types(A_channel_type_id):
+            if A_channel_type_id not in compatible_channel_types(B_channel_type_id):
                 raise ValueError("A and B channel types are not compatible")
 
         expected_signals = signals_of_channel_type_id(A_channel_type_id)
