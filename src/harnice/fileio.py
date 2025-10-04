@@ -121,6 +121,7 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
             f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
             f"{partnumber('pn-rev')}-chmap.tsv": "channel map",
+            f"{partnumber('pn-rev')}-disconnect_chmap.tsv": "disconnect channel map",
             f"{partnumber('pn-rev')}-bom.tsv": "bom",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "mapped_channels.txt": "mapped channels set",

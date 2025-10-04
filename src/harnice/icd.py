@@ -78,8 +78,15 @@ def write_signal(**kwargs):
 
     # If channel_type_id is present, compute compatible_channel_type_ids
     channel_type_id = kwargs.get("channel_type_id", "")
-    kwargs["compatible_channel_type_ids"] = compatible_channel_types(channel_type_id)
+    compat_list = compatible_channel_types(channel_type_id)
 
+    # Join list into comma-separated string (no brackets)
+    if isinstance(compat_list, list):
+        kwargs["compatible_channel_type_ids"] = ",".join(str(x) for x in compat_list)
+    else:
+        kwargs["compatible_channel_type_ids"] = ""
+
+    # Fill row according to headers
     row = [kwargs.get(col, "") for col in headers]
 
     with open(signals_path, "a", newline="", encoding="utf-8") as f:
@@ -119,35 +126,33 @@ def signals_of_channel(channel_name, path_to_signals_list):
     return signals
 
 
+
 def compatible_channel_types(channel_type_id):
+    """
+    Look up compatible channel_type_ids for the given channel_type_id.
+    Splits the TSV field by commas and parses each entry into (chid, lib_repo).
+    """
     chid, lib_repo = parse_channel_type_id(channel_type_id)
     tsv_path = path_of_channel_type_id((chid, lib_repo))
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if str(chid) == str(row.get("channel_type_id")):
-                signals_str = row.get("compatible_channel_type_ids", "").strip()
-                if not signals_str:
-                    return []
+            if str(chid) != str(row.get("channel_type_id")):
+                continue
 
-                try:
-                    if signals_str.startswith("["):
-                        return ast.literal_eval(signals_str)
-                    parsed = ast.literal_eval(signals_str)
-                    return [parsed] if isinstance(parsed, tuple) else parsed
-                except Exception:
-                    items = []
-                    for sig in signals_str.split(","):
-                        sig = sig.strip()
-                        if sig:
-                            try:
-                                items.append(ast.literal_eval(sig))
-                            except Exception:
-                                items.append(sig)  # last resort: keep raw string
-                    return items
+            signals_str = row.get("compatible_channel_type_ids", "").strip()
+            if not signals_str:
+                return []
+
+            values = [v.strip() for v in signals_str.split(";") if v.strip()]
+            parsed = []
+            for v in values:
+                parsed.append(parse_channel_type_id(v))
+            return parsed
+
     return []
-
+    
 
 def pin_of_signal(signal, path_to_signals_list):
     """
@@ -194,20 +199,6 @@ def parse_channel_type_id(val):
     else:
         chid, supplier = ast.literal_eval(str(val))
     return (int(chid), str(supplier).strip())
-
-
-def parse_channel_type_id_list(val):
-    """Convert stored string/list into a list of tuples."""
-    if not val:
-        return []
-    if isinstance(val, list):
-        return [parse_channel_type_id(v) for v in val]
-    parsed = ast.literal_eval(str(val))
-    if isinstance(parsed, tuple):
-        return [parse_channel_type_id(parsed)]
-    if isinstance(parsed, list):
-        return [parse_channel_type_id(v) for v in parsed]
-    return [parse_channel_type_id(parsed)]
 
 
 def assert_unique(values, label):
