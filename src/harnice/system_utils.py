@@ -31,7 +31,10 @@ DISCONNECT_CHANNEL_MAP_COLUMNS = [
     "B-side_device_compatible_channel_type_ids",
     "disconnect_refdes",
     "disconnect_channel_id",
-    "A-port_channel_type"
+    "A-port_channel_type",
+    "A-port_compatible_channel_type_ids",
+    "B-port_channel_type",
+    "B-port_compatible_channel_type_ids"
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
@@ -227,14 +230,20 @@ def new_blank_disconnect_map():
         for disconnect_refdes_requirement in disconnect_refdes_requirements:
             disconnect_channel_map.append(
                 {
-                    "merged_net": channel.get("merged_net"),
-                    "channel_type_id": channel.get("channel_type_id"),
-                    "compatible_channel_type_ids": channel.get("compatible_channel_type_ids"),
-                    "from_destination_device_refdes": channel.get("from_device_refdes"),
-                    "from_destination_device_channel_id": channel.get("from_device_channel_id"),
-                    "to_destination_device_refdes": channel.get("to_device_refdes"),
-                    "to_destination_device_channel_id": channel.get("to_device_channel_id"),
-                    "disconnect_refdes": disconnect_refdes_requirement,
+                    "A-side_device_refdes": "",
+                    "A-side_device_channel_id": "",
+                    "A-side_device_channel_type_id": "",
+                    "A-side_device_compatible_channel_type_ids": "",
+                    "B-side_device_refdes": "",
+                    "B-side_device_channel_id": "",
+                    "B-side_device_channel_type_id": "",
+                    "B-side_device_compatible_channel_type_ids": "",
+                    "disconnect_refdes": "",
+                    "disconnect_channel_id": "",
+                    "A-port_channel_type": "",
+                    "A-port_compatible_channel_type_ids": "",
+                    "B-port_channel_type": "",
+                    "B-port_compatible_channel_type_ids": ""
                 }
             )
 
