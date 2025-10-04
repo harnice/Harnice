@@ -21,15 +21,17 @@ CHANNEL_MAP_COLUMNS = [
 ]
 
 DISCONNECT_CHANNEL_MAP_COLUMNS = [
-    "merged_net",
-    "channel_type_id",
-    "compatible_channel_type_ids",
-    "from_destination_device_refdes",
-    "from_destination_device_channel_id",
-    "to_destination_device_refdes",
-    "to_destination_device_channel_id",
+    "A-side_device_refdes",
+    "A-side_device_channel_id",
+    "A-side_device_channel_type_id",
+    "A-side_device_compatible_channel_type_ids",
+    "B-side_device_refdes",
+    "B-side_device_channel_id",
+    "B-side_device_channel_type_id",
+    "B-side_device_compatible_channel_type_ids",
     "disconnect_refdes",
     "disconnect_channel_id",
+    "A-port_channel_type"
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
