@@ -16,7 +16,7 @@ CHANNEL_MAP_COLUMNS = [
     "to_channel_type_id",
     "to_compatible_channel_type_ids",
     "multi_ch_junction_id",
-    "disconnect_refdes_key",
+    "disconnect_refdes_requirement",
     "manual_map_channel_python_equiv",
 ]
 
@@ -202,29 +202,29 @@ def new_blank_disconnect_map():
         channel_map = list(csv.DictReader(f, delimiter="\t"))
 
     for channel in channel_map:
-        disconnect_refdes_keys = []
+        disconnect_refdes_requirements = []
 
-        raw = channel.get("disconnect_refdes_key")
+        raw = channel.get("disconnect_refdes_requirement")
         if raw:
             # Case 1: already a Python list
             if isinstance(raw, list):
-                disconnect_refdes_keys = raw
+                disconnect_refdes_requirements = raw
             else:
                 # Case 2: string that looks like a list -> parse safely
                 try:
                     parsed = ast.literal_eval(raw)
                     if isinstance(parsed, list):
-                        disconnect_refdes_keys = parsed
+                        disconnect_refdes_requirements = parsed
                     else:
                         # fallback: strip brackets and split manually
                         clean = raw.replace("[", "").replace("]", "")
-                        disconnect_refdes_keys = [x.strip() for x in clean.split(",") if x.strip()]
+                        disconnect_refdes_requirements = [x.strip() for x in clean.split(",") if x.strip()]
                 except Exception:
                     # fallback: strip brackets and split manually
                     clean = raw.replace("[", "").replace("]", "")
-                    disconnect_refdes_keys = [x.strip() for x in clean.split(",") if x.strip()]
+                    disconnect_refdes_requirements = [x.strip() for x in clean.split(",") if x.strip()]
 
-        for disconnect_refdes_key in disconnect_refdes_keys:
+        for disconnect_refdes_requirement in disconnect_refdes_requirements:
             disconnect_channel_map.append(
                 {
                     "merged_net": channel.get("merged_net"),
@@ -234,7 +234,7 @@ def new_blank_disconnect_map():
                     "from_destination_device_channel_id": channel.get("from_device_channel_id"),
                     "to_destination_device_refdes": channel.get("to_device_refdes"),
                     "to_destination_device_channel_id": channel.get("to_device_channel_id"),
-                    "disconnect_refdes": disconnect_refdes_key,
+                    "disconnect_refdes": disconnect_refdes_requirement,
                 }
             )
 
@@ -362,7 +362,7 @@ def find_shortest_disconnect_chain():
     """
     For each (from_device/channel) -> (to_device/channel) in the channel map,
     find the SHORTEST series chain of disconnect devices between them and
-    write it to 'disconnect_refdes_key' in the channel map TSV.
+    write it to 'disconnect_refdes_requirement' in the channel map TSV.
     """
     # --- Load tables ---
     with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
@@ -487,7 +487,8 @@ def find_shortest_disconnect_chain():
 
         chain = _shortest_disconnect_chain(from_cn, to_cn)
         if chain:
-            row["disconnect_refdes_key"] = str(chain)
+            # write as comma-separated string without brackets
+            row["disconnect_refdes_requirement"] = ",".join(chain)
 
     # --- write back ---
     with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
