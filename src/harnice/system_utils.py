@@ -249,12 +249,37 @@ def new_blank_disconnect_map():
                 "B-side_device_channel_type_id": b_chan_type_id,
                 "B-side_device_compatible_channel_type_ids": b_chan_compatible_channel_type_ids,
                 "disconnect_refdes": refdes.strip(),
-                "disconnect_channel_id": "",
-                "A-port_channel_type": "",
-                "A-port_compatible_channel_type_ids": "",
-                "B-port_channel_type": "",
-                "B-port_compatible_channel_type_ids": ""
             })
+
+    # load BOM
+    with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
+        bom = list(csv.DictReader(f, delimiter="\t"))
+
+    for item in bom:
+        if item.get("disconnect"):
+            disconnect_signals_list_path = os.path.join(
+                fileio.dirpath("disconnects"),
+                item.get("device_ref_des"),
+                f"{item.get('MPN')}-{item.get('rev')}-signals_list.tsv",
+            )
+            with open(disconnect_signals_list_path, newline="", encoding="utf-8") as f:
+                disconnect_signals = list(csv.DictReader(f, delimiter="\t"))
+
+            available_disconnect_channels = set()
+            for signal in disconnect_signals:
+                if signal.get("channel") in available_disconnect_channels:
+                    continue
+                available_disconnect_channels.add(signal.get("channel"))
+            
+                disconnect_channel_map.append({
+                    "disconnect_refdes": signal.get("device_ref_des"),
+                    "disconnect_channel_id": signal.get("channel"),
+                    "A-port_channel_type": signal.get("A_channel_type_id"),
+                    "A-port_compatible_channel_type_ids": signal.get("A_compatible_channel_type_ids"),
+                    "B-port_channel_type": signal.get("B_channel_type_id"),
+                    "B-port_compatible_channel_type_ids": signal.get("B_compatible_channel_type_ids")
+                })
+
 
     with open(fileio.path("disconnect channel map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=DISCONNECT_CHANNEL_MAP_COLUMNS, delimiter="\t")
