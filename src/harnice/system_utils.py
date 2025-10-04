@@ -272,7 +272,7 @@ def new_blank_disconnect_map():
                 available_disconnect_channels.add(signal.get("channel"))
             
                 disconnect_channel_map.append({
-                    "disconnect_refdes": signal.get("device_ref_des"),
+                    "disconnect_refdes": item.get("device_ref_des"),
                     "disconnect_channel_id": signal.get("channel"),
                     "A-port_channel_type": signal.get("A_channel_type_id"),
                     "A-port_compatible_channel_type_ids": signal.get("A_compatible_channel_type_ids"),
