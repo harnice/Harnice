@@ -1,5 +1,5 @@
 import csv
-from harnice import fileio, icd
+from harnice import fileio, icd, system_utils
 
 verbose = True
 extra_verbose = False
@@ -105,5 +105,9 @@ for required_channel in disconnect_channel_map():
         print(f"ERROR: No compatible channel found for {required_channel.get('A-side_device_refdes')}.{required_channel.get('A-side_device_channel_id')} -> {required_channel.get('B-side_device_refdes')}.{required_channel.get('B-side_device_channel_id')}")
     
     else:
+        a_side_key = (required_channel.get("A-side_device_refdes"), required_channel.get("A-side_device_channel_id"))
+        disconnect_key = (candidate.get("disconnect_refdes"), candidate.get("disconnect_channel_id"))
+        system_utils.map_channel_to_disconnect_channel(a_side_key, disconnect_key)
+
         if verbose:
             print(f"Mapped to {candidate.get('disconnect_channel_id')} of {candidate.get('disconnect_refdes')} because: ({map_message})")
