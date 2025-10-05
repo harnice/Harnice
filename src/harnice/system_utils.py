@@ -3,6 +3,7 @@ from harnice import (
     component_library,
     mapped_channels,
     mapped_disconnect_channels,
+    icd,
 )
 import os
 import csv
@@ -39,7 +40,20 @@ DISCONNECT_CHANNEL_MAP_COLUMNS = [
     "A-port_compatible_channel_type_ids",
     "B-port_channel_type",
     "B-port_compatible_channel_type_ids",
-    "manual_map_channel_python_equiv"
+    "manual_map_channel_python_equiv",
+]
+
+CIRCUITS_LIST_COLUMNS = [
+    "net",
+    "circuit_id",
+    "from_refdes",
+    "from_channel_id",
+    "from_connector_name",
+    "from_contact",
+    "to_refdes",
+    "to_channel_id",
+    "to_connector_name",
+    "to_contact",
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
@@ -648,3 +662,75 @@ def find_shortest_disconnect_chain():
         writer = csv.DictWriter(f, fieldnames=channel_map[0].keys(), delimiter="\t")
         writer.writeheader()
         writer.writerows(channel_map)
+
+
+def make_circuits_list():
+    circuit_id = 0
+    circuits_list = []
+    for mapped_channel in read_channel_map():
+        # if it's not mapped, skip it
+        if mapped_channel.get("to_device_refdes") in [None, ""] and mapped_channel.get(
+            "multi_ch_junction_id"
+        ) in [None, ""]:
+            continue
+
+
+        # if there's a disconnect requirement, more complicated
+        #if mapped_channel.get("disconnect_refdes_requirement"):
+            #pass
+
+        #else:
+        for signals_of_channel in icd.signals_of_channel(
+            mapped_channel.get("from_channel_type_id")
+        ):
+
+            net_of_channel = mapped_channel.get("from_device_refdes")
+
+            path_of_from_device_signals_list = os.path.join(
+                fileio.dirpath("devices"),
+                mapped_channel.get("from_device_refdes"),
+                f"{mapped_channel.get('from_device_mpn')}-{mapped_channel.get('from_device_rev')}-signals_list.tsv",
+            )
+            from_connector_name = icd.connector_name_of_channel(
+                mapped_channel.get("from_device_channel_id"),
+                path_of_from_device_signals_list,
+            )
+            from_contact = icd.pin_of_signal(
+                signals_of_channel, path_of_from_device_signals_list
+            )
+
+
+            path_of_to_device_signals_list = os.path.join(
+                fileio.dirpath("devices"),
+                mapped_channel.get("to_device_refdes"),
+                f"{mapped_channel.get('to_device_mpn')}-{mapped_channel.get('to_device_rev')}-signals_list.tsv",
+            )
+            to_connector_name = icd.connector_name_of_channel(
+                mapped_channel.get("to_device_channel_id"),
+                path_of_to_device_signals_list,
+            )
+            to_contact = icd.pin_of_signal(
+                signals_of_channel, path_of_to_device_signals_list
+            )
+
+
+            circuits_list.append(
+                {
+                    "net": net_of_channel,
+                    "circuit_id": circuit_id,
+                    "from_refdes": mapped_channel.get("from_device_refdes"),
+                    "from_channel_id": mapped_channel.get("from_device_channel_id"),
+                    "from_connector_name": from_connector_name,
+                    "from_contact": from_contact,
+                    "to_refdes": mapped_channel.get("to_device_refdes"),
+                    "to_channel_id": mapped_channel.get("to_device_channel_id"),
+                    "to_connector_name": to_connector_name,
+                    "to_contact": to_contact,
+                }
+            )
+            circuit_id += 1
+
+    with open(fileio.path("circuits list"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CIRCUITS_LIST_COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(circuits_list)

@@ -124,6 +124,7 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-disconnect_chmap.tsv": "disconnect channel map",
             f"{partnumber('pn-rev')}-bom.tsv": "bom",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
+            f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
             "mapped_channels.txt": "mapped channels set",
             "mapped_disconnect_channels.txt": "mapped disconnect channels set",
             "macros": {},

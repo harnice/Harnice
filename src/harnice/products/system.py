@@ -42,6 +42,9 @@ featuretree_utils.run_macro("disconnect_channel_mapper", "system_builder", "http
 #===========================================================================
 #                   INSTANCES LIST
 #===========================================================================
+#process channel and disconnect maps to make a list of every circuit in your system
+system_utils.make_circuits_list()
+
 instances_list.make_new_list()
 instances_list.chmap_to_circuits()
 """

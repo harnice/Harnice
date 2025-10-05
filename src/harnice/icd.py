@@ -129,16 +129,14 @@ def signals_of_channel_type_id(channel_type_id):
 
 
 # search a known imported device's signals list
-def signals_of_channel(channel_name, path_to_signals_list):
-    if not os.path.exists(path_to_signals_list):
-        return ""
-
+def signals_of_channel(channel_type_id):
+    chid, lib_repo = channel_type_id
     signals = []
 
-    with open(path_to_signals_list, newline="", encoding="utf-8") as f:
+    with open(lib_repo, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if row.get("channel", "").strip() == channel_name.strip():
+            if row.get("channel", "").strip() == chid.strip():
                 signals.append(row.get("signal", "").strip())
     return signals
 
@@ -185,7 +183,7 @@ def pin_of_signal(signal, path_to_signals_list):
     return ""
 
 
-def mating_connector_of_channel(channel_id, path_to_signals_list):
+def connector_name_of_channel(channel_id, path_to_signals_list):
     if not os.path.exists(path_to_signals_list):
         raise FileNotFoundError(f"Signals list file not found: {path_to_signals_list}")
 
