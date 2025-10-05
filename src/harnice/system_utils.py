@@ -293,11 +293,6 @@ def read_channel_map():
 
 
 def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
-    if not os.path.exists(fileio.path("channel map")):
-        raise FileNotFoundError(
-            f"Channel map not found at {fileio.path('channel map')}"
-        )
-
     channels = read_channel_map()
 
     to_channel = None
@@ -359,6 +354,47 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
         writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(updated_channels)
+
+
+def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
+    
+    # Load all rows
+    with open(fileio.path("disconnect channel map"), "r", encoding="utf-8") as f:
+        channels = list(csv.DictReader(f, delimiter="\t"))
+
+    # Find the disconnect row we want to merge
+    disconnect_info = None
+    for row in channels:
+        if row.get("disconnect_refdes") == disconnect_key[0] and row.get("disconnect_channel_id") == disconnect_key[1]:
+            disconnect_info = row
+            break
+
+    updated_channels = []
+    for row in channels:
+
+        # Case 1: row matches the A-side device/channel -> update it with disconnect info
+        if row.get("A-side_device_refdes") == a_side_key[0] and row.get("A-side_device_channel_id") == a_side_key[1]:
+            row["disconnect_channel_id"] = disconnect_key[1]
+            row["A-port_channel_type"] = disconnect_info.get("A-port_channel_type", "")
+            row["A-port_compatible_channel_type_ids"] = disconnect_info.get("A-port_compatible_channel_type_ids", "")
+            row["B-port_channel_type"] = disconnect_info.get("B-port_channel_type", "")
+            row["B-port_compatible_channel_type_ids"] = disconnect_info.get("B-port_compatible_channel_type_ids", "")
+            updated_channels.append(row)
+
+        # Case 2: row is the disconnect itself -> skip it
+        elif row.get("disconnect_refdes") == disconnect_key[0] and row.get("disconnect_channel_id") == disconnect_key[1]:
+            continue
+
+        # Case 3: leave all other rows untouched
+        else:
+            updated_channels.append(row)
+
+    # Write the updated table back
+    with open(fileio.path("disconnect channel map"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=DISCONNECT_CHANNEL_MAP_COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(updated_channels)
+
 
 
 def mpn_of_device_refdes(refdes):
