@@ -171,18 +171,12 @@ def compatible_channel_types(channel_type_id):
 
 
 def pin_of_signal(signal, path_to_signals_list):
-    """
-    Returns the pin/contact information for a given signal from the signals list.
-    """
-    if not os.path.exists(path_to_signals_list):
-        return ""
-
     with open(path_to_signals_list, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
             if row.get("signal", "").strip() == signal.strip():
                 return row.get("contact", "").strip()
-    return ""
+        raise ValueError(f"Signal {signal} not found in {path_to_signals_list}")
 
 
 def connector_name_of_channel(channel_id, path_to_signals_list):

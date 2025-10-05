@@ -660,74 +660,62 @@ def find_shortest_disconnect_chain():
         writer.writerows(channel_map)
 
 
+import csv
+import os
+from harnice import fileio, icd
+
 def make_circuits_list():
     # --- Load channel map ---
     with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
         channel_map = list(csv.DictReader(f, delimiter="\t"))
 
-    # --- Load disconnect channel map ---
-    with open(fileio.path("disconnect channel map"), newline="", encoding="utf-8") as f:
-        disconnect_map = list(csv.DictReader(f, delimiter="\t"))
-
-    # Build lookup: refdes -> [channel_ids...]
-    disc_lookup = {}
-    for row in disconnect_map:
-        refdes = (row.get("disconnect_refdes") or "").strip()
-        chid = (row.get("disconnect_channel_id") or "").strip()
-        if refdes and chid:
-            disc_lookup.setdefault(refdes, []).append(chid)
-
-    # For sequential assignment tracking
-    disc_counters = {ref: 0 for ref in disc_lookup}
-
     circuits_list = []
     circuit_id = 0
 
-    # --- Helper to resolve either a device or disconnect endpoint ---
-    def resolve_endpoint(refdes, channel_id, side, signal):
-        if refdes in disc_lookup:  # Disconnect
-            # consume next available channel_id
-            idx = disc_counters[refdes]
-            if idx >= len(disc_lookup[refdes]):
-                raise ValueError(f"Ran out of channel_ids for disconnect {refdes}")
-            resolved_chid = disc_lookup[refdes][idx]
-            # Note: same channel_id assigned to both A and B of this hop
-            return {
-                "refdes": refdes,
-                "channel_id": resolved_chid,
-                "connector_name": side,
-                "contact": "",
-            }
-        else:  # Device
-            signals_list_path = os.path.join(
-                fileio.dirpath("devices"), refdes, f"{refdes}-signals_list.tsv"
-            )
-            connector_name = (
-                icd.connector_name_of_channel(channel_id, signals_list_path)
-                if channel_id
-                else ""
-            )
-            contact = icd.pin_of_signal(signal, signals_list_path) if channel_id else ""
-            return {
-                "refdes": refdes,
-                "channel_id": channel_id,
-                "connector_name": connector_name,
-                "contact": contact,
-            }
+    # --- Resolver for devices ---
+    def resolve_device_endpoint(refdes, channel_id, signal):
+        signals_list_path = os.path.join(fileio.dirpath("devices"), refdes, f"{refdes}-signals_list.tsv")
+        connector_name = icd.connector_name_of_channel(channel_id, signals_list_path) if channel_id else ""
+        contact = icd.pin_of_signal(signal, signals_list_path) if channel_id else ""
+        return {
+            "refdes": refdes,
+            "channel_id": channel_id,
+            "connector_name": connector_name,
+            "contact": contact,
+        }
+
+    # --- Resolver for disconnects ---
+    def resolve_disconnect_endpoint(refdes, side, signal):
+        """Resolve a disconnect endpoint given side=A/B and signal type (pos/neg/chassis)."""
+        signals_list_path = os.path.join(fileio.dirpath("disconnects"), refdes, f"{refdes}-signals_list.tsv")
+        with open(signals_list_path, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f, delimiter="\t"))
+
+        row = next((r for r in rows if r.get("signal") == signal), None)
+        if not row:
+            raise ValueError(f"No row found in {refdes}-signals_list.tsv for signal={signal}")
+
+        channel_id = row.get("channel")  # e.g. ch0, ch0-shield, ...
+        contact = row.get(f"{side}_contact")  # A_contact or B_contact
+
+        return {
+            "refdes": refdes,
+            "channel_id": channel_id,
+            "connector_name": side,   # "A" or "B"
+            "contact": contact,
+        }
 
     # --- Iterate channel map ---
     for mapped_channel in channel_map:
         if not mapped_channel.get("from_device_channel_id"):
             continue
-        if not mapped_channel.get("to_device_refdes") and not mapped_channel.get(
-            "multi_ch_junction_id"
-        ):
+        if not mapped_channel.get("to_device_refdes") and not mapped_channel.get("multi_ch_junction_id"):
             continue
 
         from_dev = mapped_channel["from_device_refdes"]
-        from_ch = mapped_channel["from_device_channel_id"]
-        to_dev = mapped_channel["to_device_refdes"]
-        to_ch = mapped_channel["to_device_channel_id"]
+        from_ch  = mapped_channel["from_device_channel_id"]
+        to_dev   = mapped_channel["to_device_refdes"]
+        to_ch    = mapped_channel["to_device_channel_id"]
 
         # All signals of this channel
         signals = icd.signals_of_channel(from_ch, from_dev)
@@ -739,6 +727,7 @@ def make_circuits_list():
                 token = token.strip()
                 if not token:
                     continue
+                # e.g. "X1(A,B)" → refdes="X1", from_side="A", to_side="B"
                 refdes, sides_str = token.split("(", 1)
                 refdes = refdes.strip()
                 sides_str = sides_str.rstrip(")")
@@ -748,15 +737,11 @@ def make_circuits_list():
         # Nets chain
         nets_chain = []
         if mapped_channel.get("chain_of_nets"):
-            nets_chain = [
-                n.strip()
-                for n in mapped_channel["chain_of_nets"].split(";")
-                if n.strip()
-            ]
+            nets_chain = [n.strip() for n in mapped_channel["chain_of_nets"].split(";") if n.strip()]
 
         # Build path: from device → disconnects → to device
         path = []
-        for refdes, side_from, side_to in disconnects:
+        for (refdes, side_from, side_to) in disconnects:
             path.append((refdes, side_from, side_to))  # disconnect hop
         path.append((to_dev, None, None))  # final endpoint
 
@@ -764,8 +749,8 @@ def make_circuits_list():
         for signal in signals:
             net_idx = 0
             last_refdes = from_dev
-            last_chid = from_ch
-            last_side = None
+            last_chid   = from_ch
+            last_side   = None
 
             for hop in path:
                 net = nets_chain[net_idx] if net_idx < len(nets_chain) else ""
@@ -773,32 +758,25 @@ def make_circuits_list():
                 if hop[1] is not None:  # Disconnect hop
                     refdes, side_from, side_to = hop
 
-                    # consume channel_id once per disconnect use
-                    idx = disc_counters[refdes]
-                    if idx >= len(disc_lookup[refdes]):
-                        raise ValueError(
-                            f"Ran out of channel_ids for disconnect {refdes}"
-                        )
-                    channel_id_for_both = disc_lookup[refdes][idx]
-                    disc_counters[refdes] += 1
+                    # left side = device or disconnect
+                    if last_refdes in [d[0] for d in disconnects]:
+                        from_ep = resolve_disconnect_endpoint(last_refdes, side_from, signal)
+                    else:
+                        from_ep = resolve_device_endpoint(last_refdes, last_chid, signal)
 
-                    from_ep = resolve_endpoint(
-                        last_refdes, last_chid, side_from, signal
-                    )
-                    to_ep = {
-                        "refdes": refdes,
-                        "channel_id": channel_id_for_both,
-                        "connector_name": side_to,
-                        "contact": "",
-                    }
+                    # right side = always a disconnect here
+                    to_ep = resolve_disconnect_endpoint(refdes, side_to, signal)
 
                 else:  # Final device
                     to_refdes, _, _ = hop
-                    from_ep = resolve_endpoint(
-                        last_refdes, last_chid, last_side, signal
-                    )
-                    to_ep = resolve_endpoint(to_refdes, to_ch, None, signal)
+                    if last_refdes in [d[0] for d in disconnects]:
+                        from_ep = resolve_disconnect_endpoint(last_refdes, last_side, signal)
+                    else:
+                        from_ep = resolve_device_endpoint(last_refdes, last_chid, signal)
 
+                    to_ep = resolve_device_endpoint(to_refdes, to_ch, signal)
+
+                # append circuit row
                 circuits_list.append(
                     {
                         "net": net,
@@ -813,9 +791,7 @@ def make_circuits_list():
                         "net_to_connector_name": to_ep["connector_name"],
                         "net_to_contact": to_ep["contact"],
                         "from_side_device_refdes": mapped_channel["from_device_refdes"],
-                        "from_side_device_chname": mapped_channel[
-                            "from_device_channel_id"
-                        ],
+                        "from_side_device_chname": mapped_channel["from_device_channel_id"],
                         "to_side_device_refdes": mapped_channel["to_device_refdes"],
                         "to_side_device_chname": mapped_channel["to_device_channel_id"],
                     }
@@ -825,10 +801,8 @@ def make_circuits_list():
 
                 # Update last node for next hop
                 last_refdes = to_ep["refdes"]
-                last_chid = to_ep["channel_id"]
-                last_side = (
-                    hop[2] if hop[1] is not None else None
-                )  # side_to if disconnect
+                last_chid   = to_ep["channel_id"]
+                last_side   = hop[2] if hop[1] is not None else None  # side_to if disconnect
 
     # --- Write back ---
     with open(fileio.path("circuits list"), "w", newline="", encoding="utf-8") as f:
