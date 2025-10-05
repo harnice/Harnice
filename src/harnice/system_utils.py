@@ -217,7 +217,7 @@ def new_blank_channel_map():
 
 
 def new_blank_disconnect_map():
-    disconnect_channel_map = []
+    disconnect_map = []
 
     # load channel map
     with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
@@ -267,7 +267,7 @@ def new_blank_disconnect_map():
             else:
                 raise ValueError(f"Unexpected port order: {requirement}")
 
-            disconnect_channel_map.append(
+            disconnect_map.append(
                 {
                     "A-side_device_refdes": a_refdes,
                     "A-side_device_channel_id": a_chan_id,
@@ -290,7 +290,7 @@ def new_blank_disconnect_map():
             disconnect_signals_list_path = os.path.join(
                 fileio.dirpath("disconnects"),
                 item.get("device_ref_des"),
-                f"{item.get("device_ref_des")}-signals_list.tsv",
+                f"{item.get('device_ref_des')}-signals_list.tsv",
             )
             with open(disconnect_signals_list_path, newline="", encoding="utf-8") as f:
                 disconnect_signals = list(csv.DictReader(f, delimiter="\t"))
@@ -301,7 +301,7 @@ def new_blank_disconnect_map():
                     continue
                 available_disconnect_channels.add(signal.get("channel"))
 
-                disconnect_channel_map.append(
+                disconnect_map.append(
                     {
                         "disconnect_refdes": item.get("device_ref_des"),
                         "disconnect_channel_id": signal.get("channel"),
@@ -316,14 +316,12 @@ def new_blank_disconnect_map():
                     }
                 )
 
-    with open(
-        fileio.path("disconnect channel map"), "w", newline="", encoding="utf-8"
-    ) as f:
+    with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f, fieldnames=DISCONNECT_CHANNEL_MAP_COLUMNS, delimiter="\t"
         )
         writer.writeheader()
-        writer.writerows(disconnect_channel_map)
+        writer.writerows(disconnect_map)
 
 
 def read_channel_map():
@@ -405,7 +403,7 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
 
 def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
     # Load all rows
-    with open(fileio.path("disconnect channel map"), "r", encoding="utf-8") as f:
+    with open(fileio.path("disconnect map"), "r", encoding="utf-8") as f:
         channels = list(csv.DictReader(f, delimiter="\t"))
 
     # Find the disconnect row we want to merge
@@ -452,9 +450,7 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
         updated_channels.append(row)
 
     # Write the updated table back
-    with open(
-        fileio.path("disconnect channel map"), "w", newline="", encoding="utf-8"
-    ) as f:
+    with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f, fieldnames=DISCONNECT_CHANNEL_MAP_COLUMNS, delimiter="\t"
         )
@@ -651,19 +647,30 @@ def make_circuits_list():
 
     # resolvers
     def resolve_device_endpoint(refdes, channel_id, signal):
-        slp = os.path.join(fileio.dirpath("devices"), refdes, f"{refdes}-signals_list.tsv")
+        slp = os.path.join(
+            fileio.dirpath("devices"), refdes, f"{refdes}-signals_list.tsv"
+        )
         connector = icd.connector_name_of_channel(channel_id, slp) if channel_id else ""
-        contact   = icd.pin_of_signal(signal, slp) if channel_id else ""
-        return {"refdes": refdes, "channel_id": channel_id, "connector_name": connector, "contact": contact}
+        contact = icd.pin_of_signal(signal, slp) if channel_id else ""
+        return {
+            "refdes": refdes,
+            "channel_id": channel_id,
+            "connector_name": connector,
+            "contact": contact,
+        }
 
     def resolve_disconnect_endpoint(refdes, side, signal):
         """side must be 'A' or 'B'."""
-        slp = os.path.join(fileio.dirpath("disconnects"), refdes, f"{refdes}-signals_list.tsv")
+        slp = os.path.join(
+            fileio.dirpath("disconnects"), refdes, f"{refdes}-signals_list.tsv"
+        )
         with open(slp, newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f, delimiter="\t"))
         row = next((r for r in rows if (r.get("signal") or "").strip() == signal), None)
         if row is None:
-            raise ValueError(f"{refdes}-signals_list.tsv has no row for signal='{signal}'")
+            raise ValueError(
+                f"{refdes}-signals_list.tsv has no row for signal='{signal}'"
+            )
         ch_id = (row.get("channel") or "").strip()
         if side == "A":
             contact = (row.get("A_contact") or "").strip()
@@ -671,7 +678,12 @@ def make_circuits_list():
             contact = (row.get("B_contact") or "").strip()
         else:
             raise ValueError(f"Invalid side '{side}' for disconnect {refdes}")
-        return {"refdes": refdes, "channel_id": ch_id, "connector_name": side, "contact": contact}
+        return {
+            "refdes": refdes,
+            "channel_id": ch_id,
+            "connector_name": side,
+            "contact": contact,
+        }
 
     # --- iterate channel rows ---
     for m in channel_map:
@@ -681,9 +693,9 @@ def make_circuits_list():
             continue
 
         from_dev = m["from_device_refdes"]
-        from_ch  = m["from_device_channel_id"]
-        to_dev   = m["to_device_refdes"]
-        to_ch    = m["to_device_channel_id"]
+        from_ch = m["from_device_channel_id"]
+        to_dev = m["to_device_refdes"]
+        to_ch = m["to_device_channel_id"]
 
         # signals of the channel (fan out)
         signals = icd.signals_of_channel(from_ch, from_dev)
@@ -697,7 +709,7 @@ def make_circuits_list():
                     continue
                 refdes, sides = tok.split("(", 1)
                 refdes = refdes.strip()
-                sides  = sides.rstrip(")")
+                sides = sides.rstrip(")")
                 side_from, side_to = [s.strip() for s in sides.split(",")]
                 dis_chain.append((refdes, side_from, side_to))
         dis_set = {d[0] for d in dis_chain}
@@ -714,8 +726,8 @@ def make_circuits_list():
             net_i = 0
             # current node before first segment is the from device
             cur_refdes = from_dev
-            cur_side   = None     # only meaningful when current node is a disconnect
-            cur_chid   = from_ch  # channel id when at a device
+            cur_side = None  # only meaningful when current node is a disconnect
+            cur_chid = from_ch  # channel id when at a device
 
             for hop in hops:
                 net = nets_chain[net_i] if net_i < len(nets_chain) else ""
@@ -734,23 +746,27 @@ def make_circuits_list():
                     right = resolve_disconnect_endpoint(refdes, side_from, sig)
 
                     # record circuit row for this net segment
-                    circuits_list.append({
-                        "net": net,
-                        "circuit_id": circuit_id,
-                        "signal": sig,
-                        "net_from_refdes": left["refdes"],
-                        "net_from_channel_id": left["channel_id"],
-                        "net_from_connector_name": left["connector_name"],
-                        "net_from_contact": left["contact"],
-                        "net_to_refdes": right["refdes"],
-                        "net_to_channel_id": right["channel_id"],
-                        "net_to_connector_name": right["connector_name"],  # A (entering side)
-                        "net_to_contact": right["contact"],
-                        "from_side_device_refdes": m["from_device_refdes"],
-                        "from_side_device_chname": m["from_device_channel_id"],
-                        "to_side_device_refdes": m["to_device_refdes"],
-                        "to_side_device_chname": m["to_device_channel_id"],
-                    })
+                    circuits_list.append(
+                        {
+                            "net": net,
+                            "circuit_id": circuit_id,
+                            "signal": sig,
+                            "net_from_refdes": left["refdes"],
+                            "net_from_channel_id": left["channel_id"],
+                            "net_from_connector_name": left["connector_name"],
+                            "net_from_contact": left["contact"],
+                            "net_to_refdes": right["refdes"],
+                            "net_to_channel_id": right["channel_id"],
+                            "net_to_connector_name": right[
+                                "connector_name"
+                            ],  # A (entering side)
+                            "net_to_contact": right["contact"],
+                            "from_side_device_refdes": m["from_device_refdes"],
+                            "from_side_device_chname": m["from_device_channel_id"],
+                            "to_side_device_refdes": m["to_device_refdes"],
+                            "to_side_device_chname": m["to_device_channel_id"],
+                        }
+                    )
                     circuit_id += 1
                     net_i += 1
 
@@ -758,8 +774,8 @@ def make_circuits_list():
                     # becomes the disconnect's EXIT side (side_to). the channel id
                     # is the same "channel" value from its signals list.
                     cur_refdes = refdes
-                    cur_side   = side_to
-                    cur_chid   = right["channel_id"]
+                    cur_side = side_to
+                    cur_chid = right["channel_id"]
 
                 else:
                     # --- final segment goes from current node to the final device ---
@@ -772,23 +788,25 @@ def make_circuits_list():
 
                     right = resolve_device_endpoint(to_refdes, to_ch, sig)
 
-                    circuits_list.append({
-                        "net": net,
-                        "circuit_id": circuit_id,
-                        "signal": sig,
-                        "net_from_refdes": left["refdes"],
-                        "net_from_channel_id": left["channel_id"],
-                        "net_from_connector_name": left["connector_name"],
-                        "net_from_contact": left["contact"],
-                        "net_to_refdes": right["refdes"],
-                        "net_to_channel_id": right["channel_id"],
-                        "net_to_connector_name": right["connector_name"],
-                        "net_to_contact": right["contact"],
-                        "from_side_device_refdes": m["from_device_refdes"],
-                        "from_side_device_chname": m["from_device_channel_id"],
-                        "to_side_device_refdes": m["to_device_refdes"],
-                        "to_side_device_chname": m["to_device_channel_id"],
-                    })
+                    circuits_list.append(
+                        {
+                            "net": net,
+                            "circuit_id": circuit_id,
+                            "signal": sig,
+                            "net_from_refdes": left["refdes"],
+                            "net_from_channel_id": left["channel_id"],
+                            "net_from_connector_name": left["connector_name"],
+                            "net_from_contact": left["contact"],
+                            "net_to_refdes": right["refdes"],
+                            "net_to_channel_id": right["channel_id"],
+                            "net_to_connector_name": right["connector_name"],
+                            "net_to_contact": right["contact"],
+                            "from_side_device_refdes": m["from_device_refdes"],
+                            "from_side_device_chname": m["from_device_channel_id"],
+                            "to_side_device_refdes": m["to_device_refdes"],
+                            "to_side_device_chname": m["to_device_channel_id"],
+                        }
+                    )
                     circuit_id += 1
                     net_i += 1
 
