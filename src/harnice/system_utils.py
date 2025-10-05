@@ -39,6 +39,7 @@ DISCONNECT_CHANNEL_MAP_COLUMNS = [
     "A-port_compatible_channel_type_ids",
     "B-port_channel_type",
     "B-port_compatible_channel_type_ids",
+    "manual_map_channel_python_equiv"
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
@@ -426,6 +427,10 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
             row["B-port_channel_type"] = disconnect_info.get("B-port_channel_type", "")
             row["B-port_compatible_channel_type_ids"] = disconnect_info.get(
                 "B-port_compatible_channel_type_ids", ""
+            )
+
+            row["manual_map_channel_python_equiv"] = (
+                f"system_utils.map_and_record_disconnect({a_side_key}, {disconnect_key})"
             )
 
         elif (
