@@ -1,7 +1,7 @@
 import csv
 from harnice import fileio, icd, system_utils, mapped_disconnect_channels
 
-verbose = True
+verbose = False
 extra_verbose = False
 
 
