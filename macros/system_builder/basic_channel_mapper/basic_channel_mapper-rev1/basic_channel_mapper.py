@@ -45,9 +45,7 @@ for merged_net in unique_merged_nets:
             continue
 
         # Parse channel types
-        from_type = icd.parse_channel_type_id(
-            from_channel.get("from_channel_type_id")
-        )
+        from_type = icd.parse_channel_type_id(from_channel.get("from_channel_type_id"))
         compatibles_from = icd.compatible_channel_types(
             from_channel.get("from_channel_type_id")
         )
@@ -76,9 +74,7 @@ for merged_net in unique_merged_nets:
             )
 
             # Backwards-compatible check: either side may declare compatibility
-            if not (
-                to_type in compatibles_from or from_type in compatibles_to
-            ):
+            if not (to_type in compatibles_from or from_type in compatibles_to):
                 if verbose:
                     print("               To key candidate is not compatible")
                 continue
