@@ -129,16 +129,16 @@ def signals_of_channel_type_id(channel_type_id):
 
 
 # search a known imported device's signals list
-def signals_of_channel(channel_name, path_to_signals_list):
-    if not os.path.exists(path_to_signals_list):
-        return ""
+def signals_of_channel(chname, device_refdes):
+    signals_list_path = os.path.join(
+        fileio.dirpath("devices"), device_refdes, f"{device_refdes}-signals_list.tsv"
+    )
 
     signals = []
-
-    with open(path_to_signals_list, newline="", encoding="utf-8") as f:
+    with open(signals_list_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if row.get("channel", "").strip() == channel_name.strip():
+            if row.get("channel", "").strip() == chname.strip():
                 signals.append(row.get("signal", "").strip())
     return signals
 
@@ -171,21 +171,15 @@ def compatible_channel_types(channel_type_id):
 
 
 def pin_of_signal(signal, path_to_signals_list):
-    """
-    Returns the pin/contact information for a given signal from the signals list.
-    """
-    if not os.path.exists(path_to_signals_list):
-        return ""
-
     with open(path_to_signals_list, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
             if row.get("signal", "").strip() == signal.strip():
                 return row.get("contact", "").strip()
-    return ""
+        raise ValueError(f"Signal {signal} not found in {path_to_signals_list}")
 
 
-def mating_connector_of_channel(channel_id, path_to_signals_list):
+def connector_name_of_channel(channel_id, path_to_signals_list):
     if not os.path.exists(path_to_signals_list):
         raise FileNotFoundError(f"Signals list file not found: {path_to_signals_list}")
 
