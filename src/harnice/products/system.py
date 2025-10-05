@@ -1,4 +1,4 @@
-from harnice import fileio, mapped_channels
+from harnice import fileio, mapped_channels, mapped_disconnect_channels
 import runpy
 import os
 
@@ -34,6 +34,11 @@ system_utils.find_shortest_disconnect_chain()
 #map channels that must pass through disconnects to available channels inside disconnects
 system_utils.new_blank_disconnect_map()
 
+#add manual disconnect map commands here
+
+#map channels passing through disconnects to available channels inside disconnects
+featuretree_utils.run_macro("disconnect_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
+
 #===========================================================================
 #                   INSTANCES LIST
 #===========================================================================
@@ -50,5 +55,6 @@ def render():
 
     # keep track of what we've already mapped
     mapped_channels.new_set()
+    mapped_disconnect_channels.new_set()
 
     runpy.run_path(fileio.path("feature tree"))
