@@ -77,23 +77,29 @@ def write_signal(**kwargs):
 
         # Join list into comma-separated string
         if isinstance(compat_list, list):
-            kwargs["compatible_channel_type_ids"] = ",".join(str(x) for x in compat_list)
+            kwargs["compatible_channel_type_ids"] = ",".join(
+                str(x) for x in compat_list
+            )
         else:
             kwargs["compatible_channel_type_ids"] = ""
-    
+
     elif fileio.product_type == "disconnect":
         A_channel_type_id = kwargs.get("A_channel_type_id", "")
         B_channel_type_id = kwargs.get("B_channel_type_id", "")
         A_compat_list = compatible_channel_types(A_channel_type_id)
         B_compat_list = compatible_channel_types(B_channel_type_id)
-        
+
         if isinstance(A_compat_list, list):
-            kwargs["A_compatible_channel_type_ids"] = ",".join(str(x) for x in A_compat_list)
+            kwargs["A_compatible_channel_type_ids"] = ",".join(
+                str(x) for x in A_compat_list
+            )
         else:
             kwargs["A_compatible_channel_type_ids"] = ""
 
         if isinstance(B_compat_list, list):
-            kwargs["B_compatible_channel_type_ids"] = ",".join(str(x) for x in B_compat_list)
+            kwargs["B_compatible_channel_type_ids"] = ",".join(
+                str(x) for x in B_compat_list
+            )
         else:
             kwargs["B_compatible_channel_type_ids"] = ""
 
@@ -137,7 +143,6 @@ def signals_of_channel(channel_name, path_to_signals_list):
     return signals
 
 
-
 def compatible_channel_types(channel_type_id):
     """
     Look up compatible channel_type_ids for the given channel_type_id.
@@ -163,7 +168,7 @@ def compatible_channel_types(channel_type_id):
             return parsed
 
     return []
-    
+
 
 def pin_of_signal(signal, path_to_signals_list):
     """

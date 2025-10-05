@@ -404,7 +404,8 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
         if (
             row.get("disconnect_refdes") == disconnect_key[0]
             and row.get("disconnect_channel_id") == disconnect_key[1]
-            and row.get("A-side_device_refdes") in [None, ""] #otherwise it might find an already mapped channel
+            and row.get("A-side_device_refdes")
+            in [None, ""]  # otherwise it might find an already mapped channel
         ):
             disconnect_info = row
             break
@@ -433,7 +434,7 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
             and row.get("A-side_device_refdes") in [None, ""]
         ):
             continue
-        
+
         updated_channels.append(row)
 
     # Write the updated table back
