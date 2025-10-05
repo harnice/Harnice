@@ -129,14 +129,16 @@ def signals_of_channel_type_id(channel_type_id):
 
 
 # search a known imported device's signals list
-def signals_of_channel(channel_type_id):
-    chid, lib_repo = channel_type_id
-    signals = []
+def signals_of_channel(chname, device_refdes):
+    signals_list_path = os.path.join(
+        fileio.dirpath("devices"), device_refdes, f"{device_refdes}-signals_list.tsv"
+    )
 
-    with open(lib_repo, newline="", encoding="utf-8") as f:
+    signals = []
+    with open(signals_list_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if row.get("channel", "").strip() == chid.strip():
+            if row.get("channel", "").strip() == chname.strip():
                 signals.append(row.get("signal", "").strip())
     return signals
 

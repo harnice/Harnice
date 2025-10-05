@@ -151,23 +151,12 @@ def read_connector_list():
 def new_blank_channel_map():
     channel_map = []
 
-    # load BOM
-    with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
-        bom = list(csv.DictReader(f, delimiter="\t"))
-
     # load connector list
     with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
         connector_list = list(csv.DictReader(f, delimiter="\t"))
 
     for connector in connector_list:
         device_refdes = connector.get("device_refdes")
-
-        # look up mpn-rev from BOM
-        device_mpn_rev = ""
-        for item in bom:
-            if item.get("device_ref_des") == device_refdes:
-                device_mpn_rev = f"{item.get('MPN')}-{item.get('rev')}"
-                break
 
         # signals list path
         if connector.get("disconnect") == "TRUE":
@@ -177,7 +166,7 @@ def new_blank_channel_map():
             device_signals_list_path = os.path.join(
                 fileio.dirpath("devices"),
                 device_refdes,
-                f"{device_mpn_rev}-signals_list.tsv",
+                f"{device_refdes}-signals_list.tsv",
             )
 
         # load signals list
@@ -295,7 +284,7 @@ def new_blank_disconnect_map():
             disconnect_signals_list_path = os.path.join(
                 fileio.dirpath("disconnects"),
                 item.get("device_ref_des"),
-                f"{item.get('MPN')}-{item.get('rev')}-signals_list.tsv",
+                f"{item.get("device_ref_des")}-signals_list.tsv",
             )
             with open(disconnect_signals_list_path, newline="", encoding="utf-8") as f:
                 disconnect_signals = list(csv.DictReader(f, delimiter="\t"))
@@ -475,19 +464,12 @@ def mpn_of_device_refdes(refdes):
 
 
 def connector_of_channel(key):
-    bom = read_bom_rows()
     refdes, channel_id = key
-    device_mpn_rev = ""
-
-    for row in bom:
-        if row.get("device_ref_des") == refdes:
-            device_mpn_rev = f"{row.get('MPN')}-{row.get('rev')}"
-            break
 
     device_signals_list_path = os.path.join(
         fileio.dirpath("devices"),
         refdes,
-        f"{device_mpn_rev}-signals_list.tsv",
+        f"{refdes}-signals_list.tsv",
     )
     with open(device_signals_list_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -668,20 +650,24 @@ def make_circuits_list():
     circuit_id = 0
     circuits_list = []
     for mapped_channel in read_channel_map():
+        # if it's blank, skip it
+        if mapped_channel.get("from_device_channel_id") in [None, ""]:
+            continue
+
         # if it's not mapped, skip it
         if mapped_channel.get("to_device_refdes") in [None, ""] and mapped_channel.get(
             "multi_ch_junction_id"
         ) in [None, ""]:
             continue
 
-
         # if there's a disconnect requirement, more complicated
-        #if mapped_channel.get("disconnect_refdes_requirement"):
-            #pass
+        # if mapped_channel.get("disconnect_refdes_requirement"):
+        # pass
 
-        #else:
+        # else:
         for signals_of_channel in icd.signals_of_channel(
-            mapped_channel.get("from_channel_type_id")
+            mapped_channel.get("from_device_channel_id"),
+            mapped_channel.get("from_device_refdes"),
         ):
 
             net_of_channel = mapped_channel.get("from_device_refdes")
@@ -689,7 +675,7 @@ def make_circuits_list():
             path_of_from_device_signals_list = os.path.join(
                 fileio.dirpath("devices"),
                 mapped_channel.get("from_device_refdes"),
-                f"{mapped_channel.get('from_device_mpn')}-{mapped_channel.get('from_device_rev')}-signals_list.tsv",
+                f"{mapped_channel.get('from_device_refdes')}-signals_list.tsv",
             )
             from_connector_name = icd.connector_name_of_channel(
                 mapped_channel.get("from_device_channel_id"),
@@ -699,11 +685,10 @@ def make_circuits_list():
                 signals_of_channel, path_of_from_device_signals_list
             )
 
-
             path_of_to_device_signals_list = os.path.join(
                 fileio.dirpath("devices"),
                 mapped_channel.get("to_device_refdes"),
-                f"{mapped_channel.get('to_device_mpn')}-{mapped_channel.get('to_device_rev')}-signals_list.tsv",
+                f"{mapped_channel.get('to_device_refdes')}-signals_list.tsv",
             )
             to_connector_name = icd.connector_name_of_channel(
                 mapped_channel.get("to_device_channel_id"),
@@ -712,7 +697,6 @@ def make_circuits_list():
             to_contact = icd.pin_of_signal(
                 signals_of_channel, path_of_to_device_signals_list
             )
-
 
             circuits_list.append(
                 {

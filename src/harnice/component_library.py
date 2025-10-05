@@ -87,7 +87,13 @@ def pull_item_from_library(
     shutil.copytree(source_lib_path, target_lib_path)
 
     # === Copy editable files only if not already present
-    rename_suffixes = ["-drawing.svg", "-params.json", "-attributes.json"]
+    rename_suffixes = [
+        "-drawing.svg",
+        "-params.json",
+        "-attributes.json",
+        "-signals_list.tsv",
+        "-feature_tree.py",
+    ]
 
     for filename in os.listdir(source_lib_path):
         src_file = os.path.join(source_lib_path, filename)
