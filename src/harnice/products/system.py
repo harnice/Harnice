@@ -1,4 +1,4 @@
-from harnice import fileio, mapped_channels
+from harnice import fileio, mapped_channels, mapped_disconnect_channels
 import runpy
 import os
 
@@ -55,5 +55,6 @@ def render():
 
     # keep track of what we've already mapped
     mapped_channels.new_set()
+    mapped_disconnect_channels.new_set()
 
     runpy.run_path(fileio.path("feature tree"))

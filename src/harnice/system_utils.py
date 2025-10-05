@@ -404,6 +404,7 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
         if (
             row.get("disconnect_refdes") == disconnect_key[0]
             and row.get("disconnect_channel_id") == disconnect_key[1]
+            and row.get("A-side_device_refdes") in [None, ""] #otherwise it might find an already mapped channel
         ):
             disconnect_info = row
             break
@@ -414,6 +415,7 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
         if (
             row.get("A-side_device_refdes") == a_side_key[0]
             and row.get("A-side_device_channel_id") == a_side_key[1]
+            and row.get("disconnect_refdes") == disconnect_key[0]
         ):
             row["disconnect_channel_id"] = disconnect_key[1]
             row["A-port_channel_type"] = disconnect_info.get("A-port_channel_type", "")
@@ -424,18 +426,15 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
             row["B-port_compatible_channel_type_ids"] = disconnect_info.get(
                 "B-port_compatible_channel_type_ids", ""
             )
-            updated_channels.append(row)
 
-        # Case 2: row is the disconnect itself -> skip it
         elif (
             row.get("disconnect_refdes") == disconnect_key[0]
             and row.get("disconnect_channel_id") == disconnect_key[1]
+            and row.get("A-side_device_refdes") in [None, ""]
         ):
             continue
-
-        # Case 3: leave all other rows untouched
-        else:
-            updated_channels.append(row)
+        
+        updated_channels.append(row)
 
     # Write the updated table back
     with open(
