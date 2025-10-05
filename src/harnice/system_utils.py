@@ -533,25 +533,6 @@ def find_shortest_disconnect_chain():
         if (row.get("disconnect") or "").strip().upper() == "TRUE":
             is_disconnect.add(dev)
 
-    # --- sanity checks ---
-    def _warn_if_suspect():
-        for ref in ["X5"]:
-            if ref in is_disconnect and not any(k[0] == ref for k in net_of):
-                print(
-                    f"[warn] Disconnect {ref} has no connectors in system connector list."
-                )
-
-        if ("PREAMP1", "in1") in net_of and ("PREAMP1", "in2") in net_of:
-            n1 = net_of[("PREAMP1", "in1")]
-            n2 = net_of[("PREAMP1", "in2")]
-            if n1 == n2:
-                print(
-                    f"[warn] PREAMP1 in1 and in2 share net '{n1}'. "
-                    f"If that's not intentional, your connector list export is wrong."
-                )
-
-    _warn_if_suspect()
-
     # --- shortest-path search ---
     def _shortest_disconnect_chain(from_cn_key, to_cn_key):
         start, goal = from_cn_key, to_cn_key
