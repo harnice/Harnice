@@ -661,60 +661,60 @@ def make_circuits_list():
             continue
 
         # if there's a disconnect requirement, more complicated
-        # if mapped_channel.get("disconnect_refdes_requirement"):
-        # pass
+        if mapped_channel.get("disconnect_refdes_requirement"):
+            pass
 
-        # else:
-        for signals_of_channel in icd.signals_of_channel(
-            mapped_channel.get("from_device_channel_id"),
-            mapped_channel.get("from_device_refdes"),
-        ):
-
-            net_of_channel = mapped_channel.get("from_device_refdes")
-
-            path_of_from_device_signals_list = os.path.join(
-                fileio.dirpath("devices"),
-                mapped_channel.get("from_device_refdes"),
-                f"{mapped_channel.get('from_device_refdes')}-signals_list.tsv",
-            )
-            from_connector_name = icd.connector_name_of_channel(
+        else:
+            for signals_of_channel in icd.signals_of_channel(
                 mapped_channel.get("from_device_channel_id"),
-                path_of_from_device_signals_list,
-            )
-            from_contact = icd.pin_of_signal(
-                signals_of_channel, path_of_from_device_signals_list
-            )
+                mapped_channel.get("from_device_refdes"),
+            ):
 
-            path_of_to_device_signals_list = os.path.join(
-                fileio.dirpath("devices"),
-                mapped_channel.get("to_device_refdes"),
-                f"{mapped_channel.get('to_device_refdes')}-signals_list.tsv",
-            )
-            to_connector_name = icd.connector_name_of_channel(
-                mapped_channel.get("to_device_channel_id"),
-                path_of_to_device_signals_list,
-            )
-            to_contact = icd.pin_of_signal(
-                signals_of_channel, path_of_to_device_signals_list
-            )
+                net_of_channel = mapped_channel.get("from_device_refdes")
 
-            circuits_list.append(
-                {
-                    "net": net_of_channel,
-                    "circuit_id": circuit_id,
-                    "from_refdes": mapped_channel.get("from_device_refdes"),
-                    "from_channel_id": mapped_channel.get("from_device_channel_id"),
-                    "from_connector_name": from_connector_name,
-                    "from_contact": from_contact,
-                    "to_refdes": mapped_channel.get("to_device_refdes"),
-                    "to_channel_id": mapped_channel.get("to_device_channel_id"),
-                    "to_connector_name": to_connector_name,
-                    "to_contact": to_contact,
-                }
-            )
-            circuit_id += 1
+                path_of_from_device_signals_list = os.path.join(
+                    fileio.dirpath("devices"),
+                    mapped_channel.get("from_device_refdes"),
+                    f"{mapped_channel.get('from_device_refdes')}-signals_list.tsv",
+                )
+                from_connector_name = icd.connector_name_of_channel(
+                    mapped_channel.get("from_device_channel_id"),
+                    path_of_from_device_signals_list,
+                )
+                from_contact = icd.pin_of_signal(
+                    signals_of_channel, path_of_from_device_signals_list
+                )
 
-    with open(fileio.path("circuits list"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=CIRCUITS_LIST_COLUMNS, delimiter="\t")
-        writer.writeheader()
-        writer.writerows(circuits_list)
+                path_of_to_device_signals_list = os.path.join(
+                    fileio.dirpath("devices"),
+                    mapped_channel.get("to_device_refdes"),
+                    f"{mapped_channel.get('to_device_refdes')}-signals_list.tsv",
+                )
+                to_connector_name = icd.connector_name_of_channel(
+                    mapped_channel.get("to_device_channel_id"),
+                    path_of_to_device_signals_list,
+                )
+                to_contact = icd.pin_of_signal(
+                    signals_of_channel, path_of_to_device_signals_list
+                )
+
+                circuits_list.append(
+                    {
+                        "net": net_of_channel,
+                        "circuit_id": circuit_id,
+                        "from_refdes": mapped_channel.get("from_device_refdes"),
+                        "from_channel_id": mapped_channel.get("from_device_channel_id"),
+                        "from_connector_name": from_connector_name,
+                        "from_contact": from_contact,
+                        "to_refdes": mapped_channel.get("to_device_refdes"),
+                        "to_channel_id": mapped_channel.get("to_device_channel_id"),
+                        "to_connector_name": to_connector_name,
+                        "to_contact": to_contact,
+                    }
+                )
+                circuit_id += 1
+
+        with open(fileio.path("circuits list"), "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=CIRCUITS_LIST_COLUMNS, delimiter="\t")
+            writer.writeheader()
+            writer.writerows(circuits_list)
