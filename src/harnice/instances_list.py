@@ -256,124 +256,61 @@ def get_call_chain_str():
     return " -> ".join(chain_parts)
 
 
-def chmap_to_circuits():
-    """
-    Convert mapped channels (from channel map) into circuit + signal instances.
+def add_connector_contact_nodes_and_circuits():
+    with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
+        circuits_list = list(csv.DictReader(f, delimiter="\t"))
 
-    Rules:
-        - If exactly two of (from_key, to_key, splice_id) are populated,
-          the channel must be mapped into instances.
-        - Look up the channel type to determine how many signals it contains.
-        - For each involved device/box, find signals in its signals list.
-        - Add two instances per signal (with parent = connector instance).
-        - Add one instance for the circuit (per net).
-        - Add two instances for the mating connectors.
+    for circuit in circuits_list:
+        #add connectors and contacts
 
-    Sources of data:
-        - Channels live in the channel map
-        - Channel types are irrelevant here
-        - Signals of a channel lives in imported_devices
-    """
+        from_connector_key = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
+        from_connector_node = f"{from_connector_key}.node"
 
-    circuit_id = 0
-    for mapped_channel in system_utils.read_channel_map():
-        from_key = (
-            mapped_channel.get("from_device_refdes"),
-            mapped_channel.get("from_device_channel_id"),
-        )
-        to_key = (
-            mapped_channel.get("to_device_refdes"),
-            mapped_channel.get("to_device_channel_id"),
-        )
-        splice = mapped_channel.get("splice_key")
+        from_contact_key = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_contact')}"
+        from_contact_node = f"{from_contact_key}.node"
 
-        # See if a channel is "mapped": either from and to are populated or from and splice are populated, aka two of the three must be populated
-        populated = [bool(from_key[0]), bool(to_key[0]), bool(splice)]
+        to_connector_key = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
+        to_connector_node = f"{to_connector_key}.node"
 
-        if sum(populated) != 2:
-            continue  # if two of the three are populated, this counts as a "mapped channel", otherwise, it's unmapped so skip it
+        to_contact_key = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_contact')}"
+        to_contact_node = f"{to_contact_key}.node"
 
-        # ---- Gather signals from involved devices ----
-        from_device_refdes, from_channel_id = from_key
-        to_device_refdes, to_channel_id = to_key
+        add_unless_exists(from_connector_node, {
+            "net": circuit.get('net'),
+            "item_type": "Node",
+            "location_is_node_or_segment": "Node",
+            "cluster": from_connector_key
+        })
+        add_unless_exists(from_contact_node, {
+            "net": circuit.get('net'),
+            "item_type": "Node",
+            "parent_instance": from_connector_node,
+            "location_is_node_or_segment": "Node",
+            "cluster": from_connector_key
+        })
 
-        # Look up the device MPN from its refdes the bom
-        from_device_mfg, from_device_mpn, from_device_rev = (
-            system_utils.mpn_of_device_refdes(from_device_refdes)
-        )
-        to_device_mfg, to_device_mpn, to_device_rev = system_utils.mpn_of_device_refdes(
-            to_device_refdes
-        )
+        add_unless_exists(to_connector_node, {
+            "net": circuit.get('net'),
+            "item_type": "Node",
+            "location_is_node_or_segment": "Node",
+            "cluster": to_connector_key
+        })
+        add_unless_exists(to_contact_node, {
+            "net": circuit.get('net'),
+            "item_type": "Node",
+            "parent_instance": to_connector_node,
+            "location_is_node_or_segment": "Node",
+            "cluster": to_connector_key
+        })
 
-        # Find the device signals list
-        from_device_signals_list_path = os.path.join(
-            fileio.dirpath("devices"),
-            from_device_refdes,
-            f"{from_device_mpn}-{from_device_rev}-signals_list.tsv",
-        )
-        to_device_signals_list_path = os.path.join(
-            fileio.dirpath("devices"),
-            to_device_refdes,
-            f"{to_device_mpn}-{to_device_rev}-signals_list.tsv",
-        )
+        #add circuit
+        circuit_name = f"circuit-{circuit.get('circuit_id')}"
+        circuit_data = {
+            "net": circuit.get("net"),
+            "item_type": "Circuit",
+            "circuit_id": circuit.get("circuit_id"),
+            "node_at_end_a": from_contact_node,
+            "node_at_end_b": to_contact_node
+        }
 
-        # Generate a mating connector name
-        from_mating_connector_name = f"X-{from_device_refdes}-{icd.mating_connector_of_channel(from_channel_id, from_device_signals_list_path)}"
-        to_mating_connector_name = f"X-{to_device_refdes}-{icd.mating_connector_of_channel(to_channel_id, to_device_signals_list_path)}"
-
-        # Add mating connectors to instances list
-        add_unless_exists(
-            from_mating_connector_name,
-            {
-                "net": mapped_channel.get("merged_net"),
-                "item_type": "Connector",
-                "cluster": from_mating_connector_name,
-            },
-        )
-        add_unless_exists(
-            to_mating_connector_name,
-            {
-                "net": mapped_channel.get("merged_net"),
-                "item_type": "Connector",
-                "cluster": to_mating_connector_name,
-            },
-        )
-
-        # only need to cycle through the from channels, because at this point it is assumed that the to channels are compatible and therefore matching
-        for signal in icd.signals_of_channel(
-            from_channel_id, from_device_signals_list_path
-        ):
-            add_unless_exists(
-                f"{from_device_refdes}-{from_channel_id}-{signal}",
-                {
-                    "net": mapped_channel.get("merged_net"),
-                    "item_type": "Signal",
-                    "signal": signal,
-                    "parent_instance": from_mating_connector_name,
-                    "cluster": from_mating_connector_name,
-                    "circuit_id": f"circuit_{circuit_id}",
-                },
-            )
-            add_unless_exists(
-                f"{to_device_refdes}-{to_channel_id}-{signal}",
-                {
-                    "net": mapped_channel.get("merged_net"),
-                    "item_type": "Signal",
-                    "signal": signal,
-                    "parent_instance": to_mating_connector_name,
-                    "cluster": to_mating_connector_name,
-                    "circuit_id": f"circuit_{circuit_id}",
-                },
-            )
-            add_unless_exists(
-                f"{from_device_refdes}-{from_channel_id}-{to_device_refdes}-{to_channel_id}-{signal}",
-                {
-                    "net": mapped_channel.get("merged_net"),
-                    "item_type": "Circuit",
-                    "signal": signal,
-                    "circuit_id": f"circuit_{circuit_id}",
-                    "node_at_end_a": f"{from_device_refdes}-{from_channel_id}-{signal}",
-                    "node_at_end_b": f"{to_device_refdes}-{to_channel_id}-{signal}",
-                },
-            )
-            circuit_id += 1
+        add_unless_exists(circuit_name, circuit_data)
