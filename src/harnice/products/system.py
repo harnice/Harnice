@@ -39,14 +39,15 @@ system_utils.new_blank_disconnect_map()
 #map channels passing through disconnects to available channels inside disconnects
 featuretree_utils.run_macro("disconnect_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
-#===========================================================================
-#                   INSTANCES LIST
-#===========================================================================
 #process channel and disconnect maps to make a list of every circuit in your system
 system_utils.make_circuits_list()
 
+#===========================================================================
+#                   INSTANCES LIST
+#===========================================================================
 instances_list.make_new_list()
-instances_list.chmap_to_circuits()
+instances_list.add_nodes_for_contacts_and_connectors()
+instances_list.circuits_list_to_instances()
 """
 
 
