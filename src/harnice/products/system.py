@@ -46,8 +46,7 @@ system_utils.make_circuits_list()
 #                   INSTANCES LIST
 #===========================================================================
 instances_list.make_new_list()
-instances_list.add_nodes_for_contacts_and_connectors()
-instances_list.circuits_list_to_instances()
+instances_list.add_connector_contact_nodes_and_circuits()
 """
 
 

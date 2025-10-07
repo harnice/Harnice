@@ -256,28 +256,13 @@ def get_call_chain_str():
     return " -> ".join(chain_parts)
 
 
-def circuits_list_to_instances():
+def add_connector_contact_nodes_and_circuits():
     with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
         circuits_list = list(csv.DictReader(f, delimiter="\t"))
 
     for circuit in circuits_list:
-        instance_name = f"circuit-{circuit.get('circuit_id')}"
-        instance_data = {
-            "net": circuit.get("net"),
-            "item_type": "Circuit",
-            "location_is_node_or_segment": "Node",
-            "circuit_id": circuit.get("circuit_id"),
-            "node_at_end_a": f"{circuit.get("from_side_device_refdes")}.{circuit.get("net_from_connector_name")}.{circuit.get("net_from_contact")}",
-            "node_at_end_b": f"{circuit.get("to_side_device_refdes")}.{circuit.get("net_to_connector_name")}.{circuit.get("net_to_contact")}"
-        }
+        #add connectors and contacts
 
-        add_unless_exists(instance_name, instance_data)
-
-def add_nodes_for_contacts_and_connectors():
-    with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
-        circuits_list = list(csv.DictReader(f, delimiter="\t"))
-
-    for circuit in circuits_list:
         from_connector_key = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
         from_connector_node = f"{from_connector_key}.node"
 
@@ -317,3 +302,15 @@ def add_nodes_for_contacts_and_connectors():
             "location_is_node_or_segment": "Node",
             "cluster": to_connector_key
         })
+
+        #add circuit
+        circuit_name = f"circuit-{circuit.get('circuit_id')}"
+        circuit_data = {
+            "net": circuit.get("net"),
+            "item_type": "Circuit",
+            "circuit_id": circuit.get("circuit_id"),
+            "node_at_end_a": from_contact_node,
+            "node_at_end_b": to_contact_node
+        }
+
+        add_unless_exists(circuit_name, circuit_data)
