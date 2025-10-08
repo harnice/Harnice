@@ -611,7 +611,6 @@ def get_attribute(attribute_key):
 
 def device_render(lightweight=False):
     fileio.verify_revision_structure(product_type="device")
-    fileio.generate_structure()
 
     validate_attributes_json()
 

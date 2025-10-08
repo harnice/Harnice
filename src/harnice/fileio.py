@@ -119,17 +119,21 @@ def harnice_file_structure():
     elif product_type == "system":
         return {
             f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
-            f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
-            f"{partnumber('pn-rev')}-chmap.tsv": "channel map",
-            f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
-            f"{partnumber('pn-rev')}-bom.tsv": "bom",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
-            f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
-            "mapped_channels.txt": "mapped channels set",
-            "mapped_disconnect_channels.txt": "mapped disconnect channels set",
-            "macros": {},
             "devices": {},
             "disconnects": {},
+            "lists":{
+                f"{partnumber('pn-rev')}-bom.tsv": "bom",
+                f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
+                f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
+            },
+            "macros": {},
+            "maps":{
+                f"{partnumber('pn-rev')}-chmap.tsv": "channel map",
+                f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
+                "mapped_channels.txt": "mapped channels set",
+                "mapped_disconnect_channels.txt": "mapped disconnect channels set",
+            },
         }
 
 
@@ -143,6 +147,12 @@ def generate_structure():
         os.makedirs(dirpath("macros"), exist_ok=True)
     if product_type == "device":
         os.makedirs(dirpath("kicad"), exist_ok=True)
+    if product_type == "system":
+        os.makedirs(dirpath("devices"), exist_ok=True)
+        os.makedirs(dirpath("disconnects"), exist_ok=True)
+        os.makedirs(dirpath("lists"), exist_ok=True)
+        os.makedirs(dirpath("macros"), exist_ok=True)
+        os.makedirs(dirpath("maps"), exist_ok=True)
 
 
 def silentremove(filepath):
@@ -452,6 +462,9 @@ def verify_revision_structure(product_type=None):
         )
 
     print(f"Working on PN: {pn}, Rev: {rev}")
+    generate_structure()
+    rev_history.update_datemodified()
+
     return pn, rev
 
 
