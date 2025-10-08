@@ -8,18 +8,13 @@ system_feature_tree_default = """from harnice import featuretree_utils, system_u
 #                   KICAD PROCESSING
 #===========================================================================
 featuretree_utils.run_macro("kicad_pro_to_bom", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
-featuretree_utils.run_macro("kicad_pro_to_system_connector_list", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
-
-
-#===========================================================================
-#                   LIBRARY IMPORTING
-#===========================================================================
 system_utils.pull_devices_from_library()
 
 
 #===========================================================================
 #                   CHANNEL MAPPING
 #===========================================================================
+featuretree_utils.run_macro("kicad_pro_to_system_connector_list", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 system_utils.new_blank_channel_map()
 
 #add manual channel map commands here. key=(from_device_refdes, from_device_channel_id)

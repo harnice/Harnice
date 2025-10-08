@@ -24,6 +24,9 @@ INSTANCES_LIST_COLUMNS = [
     "diameter",  # apparent diameter of a segment <---------- change to print_diameter
     "node_at_end_a",  # derived from formboard definition
     "node_at_end_b",  # derived from formboard definition
+    "mating_device_refdes",
+    "mating_device_connector",
+    "mating_device_connector_mpn",
     "parent_csys_instance_name",  # the other instance upon which this instance's location is based
     "parent_csys_outputcsys_name",  # the specific output coordinate system of the parent that this instance's location is based
     "translate_x",  # derived from parent_csys and parent_csys_name
@@ -332,3 +335,17 @@ def add_connector_contact_nodes_and_circuits():
         }
 
         add_unless_exists(circuit_name, circuit_data)
+
+    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
+        connector_list = list(csv.DictReader(f, delimiter="\t"))
+    
+    for connector in connector_list:
+        try:
+            modify(f"{connector.get('device_refdes')}.{connector.get('connector')}.mc", {
+                "mating_device_refdes": connector.get("device_refdes"),
+                "mating_device_connector": connector.get("connector"),
+                "mating_device_connector_mpn": connector.get("connector_mpn")
+            })
+        except ValueError:
+            # a connextor exists in your system but isn't part of a harness and thus has not been assigned an instance to modify
+            pass
