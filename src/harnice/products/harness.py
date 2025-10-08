@@ -194,8 +194,6 @@ def render(build_macro="", output_macro_dict=None):
 
     # Step 1: revision structure
     fileio.verify_revision_structure(product_type="harness")
-    fileio.generate_structure()
-    rev_history.update_datemodified()
 
     # Step 2: Ensure feature tree exists
     if not os.path.exists(fileio.path("feature tree")):
