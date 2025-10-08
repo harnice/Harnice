@@ -180,15 +180,26 @@ with open(fileio.path("system connector list"), "w", newline="", encoding="utf-8
             # figure out connector mpn
             connector_mpn = ""
             if disconnect_flag:
-                path_to_signals_list = os.path.join(os.getcwd(), "disconnects", device_refdes, f"{device_refdes}-signals_list.tsv")
+                path_to_signals_list = os.path.join(
+                    os.getcwd(), "disconnects", device_refdes, f"{device_refdes}-signals_list.tsv"
+                )
+                with open(path_to_signals_list, newline="", encoding="utf-8") as f:
+                    reader = csv.DictReader(f, delimiter="\t")
+                    first_row = next(reader, None)
+                    if first_row:
+                        if pinfunction == "A":
+                            connector_mpn = first_row.get("B_connector_mpn", "")
+                        elif pinfunction == "B":
+                            connector_mpn = first_row.get("A_connector_mpn", "")
+
             else:
                 path_to_signals_list = os.path.join(os.getcwd(), "devices", device_refdes, f"{device_refdes}-signals_list.tsv")
-            with open(path_to_signals_list, newline="", encoding="utf-8") as f:
-                reader = csv.DictReader(f, delimiter="\t")
-                for row in reader:
-                    if row.get("connector_name", "").strip() == pinfunction.strip():
-                        connector_mpn = row.get("connector_mpn", "").strip()
-                        break
+                with open(path_to_signals_list, newline="", encoding="utf-8") as f:
+                    reader = csv.DictReader(f, delimiter="\t")
+                    for row in reader:
+                        if row.get("connector_name", "").strip() == pinfunction.strip():
+                           connector_mpn = row.get("connector_mpn", "").strip()
+                           break
 
             writer.writerow(
                 {
