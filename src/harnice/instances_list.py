@@ -265,15 +265,15 @@ def add_connector_contact_nodes_and_circuits():
 
         from_connector_key = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
         from_connector_node = f"{from_connector_key}.node"
+        from_connector = f"{from_connector_key}.mc"
 
-        from_contact_key = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_contact')}"
-        from_contact_node = f"{from_contact_key}.node"
+        from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_contact')}"
 
         to_connector_key = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
         to_connector_node = f"{to_connector_key}.node"
+        to_connector = f"{to_connector_key}.mc"
 
-        to_contact_key = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_contact')}"
-        to_contact_node = f"{to_contact_key}.node"
+        to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_contact')}"
 
         add_unless_exists(from_connector_node, {
             "net": circuit.get('net'),
@@ -281,10 +281,16 @@ def add_connector_contact_nodes_and_circuits():
             "location_is_node_or_segment": "Node",
             "cluster": from_connector_key
         })
-        add_unless_exists(from_contact_node, {
+        add_unless_exists(from_connector, {
             "net": circuit.get('net'),
-            "item_type": "Node",
-            "parent_instance": from_connector_node,
+            "item_type": "Connector",
+            "location_is_node_or_segment": "Node",
+            "cluster": from_connector_key
+        })
+        add_unless_exists(from_cavity, {
+            "net": circuit.get('net'),
+            "item_type": "Cavity",
+            "parent_instance": from_connector,
             "location_is_node_or_segment": "Node",
             "cluster": from_connector_key
         })
@@ -295,10 +301,16 @@ def add_connector_contact_nodes_and_circuits():
             "location_is_node_or_segment": "Node",
             "cluster": to_connector_key
         })
-        add_unless_exists(to_contact_node, {
+        add_unless_exists(to_connector, {
             "net": circuit.get('net'),
-            "item_type": "Node",
-            "parent_instance": to_connector_node,
+            "item_type": "Connector",
+            "location_is_node_or_segment": "Node",
+            "cluster": to_connector_key
+        })
+        add_unless_exists(to_cavity, {
+            "net": circuit.get('net'),
+            "item_type": "Cavity",
+            "parent_instance": to_connector,
             "location_is_node_or_segment": "Node",
             "cluster": to_connector_key
         })
@@ -309,8 +321,8 @@ def add_connector_contact_nodes_and_circuits():
             "net": circuit.get("net"),
             "item_type": "Circuit",
             "circuit_id": circuit.get("circuit_id"),
-            "node_at_end_a": from_contact_node,
-            "node_at_end_b": to_contact_node
+            "node_at_end_a": from_cavity,
+            "node_at_end_b": to_cavity
         }
 
         add_unless_exists(circuit_name, circuit_data)
