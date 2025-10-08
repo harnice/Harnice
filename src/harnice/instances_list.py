@@ -1,7 +1,7 @@
 import csv
 import os
 import inspect
-from harnice import fileio, system_utils, icd
+from harnice import fileio
 
 RECOGNIZED_ITEM_TYPES = {"Segment", "Node", "Flagnote", "Flagnote leader", "Location"}
 
@@ -17,6 +17,9 @@ INSTANCES_LIST_COLUMNS = [
     "cluster",  # a group of co-located parts (connectors, backshells, nodes)
     "circuit_id",  # which signal this component is electrically connected to
     "circuit_id_port",  # the sequential id of this item in its signal chain
+    "from_channel_type_id",
+    "to_channel_type_id",
+    "signal_of_channel_type",
     "length",  # derived from formboard definition, the length of a segment
     "diameter",  # apparent diameter of a segment <---------- change to print_diameter
     "node_at_end_a",  # derived from formboard definition
@@ -321,6 +324,9 @@ def add_connector_contact_nodes_and_circuits():
             "net": circuit.get("net"),
             "item_type": "Circuit",
             "circuit_id": circuit.get("circuit_id"),
+            "from_channel_type_id": circuit.get("from_channel_type_id"),
+            "to_channel_type_id": circuit.get("to_channel_type_id"),
+            "signal_of_channel_type": circuit.get("signal"),
             "node_at_end_a": from_cavity,
             "node_at_end_b": to_cavity
         }

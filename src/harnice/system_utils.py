@@ -60,6 +60,8 @@ CIRCUITS_LIST_COLUMNS = [
     "from_side_device_chname",
     "to_side_device_refdes",
     "to_side_device_chname",
+    "from_channel_type_id",
+    "to_channel_type_id",
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
@@ -824,6 +826,8 @@ def make_circuits_list():
                         {
                             "net": net,
                             "circuit_id": circuit_id,
+                            "from_channel_type_id": row.get("from_channel_type_id"),
+                            "to_channel_type_id": row.get("to_channel_type_id"),
                             "signal": signal,
                             "net_from_refdes": left["refdes"],
                             "net_from_channel_id": left["channel_id"],
@@ -863,6 +867,8 @@ def make_circuits_list():
                             "net": net,
                             "circuit_id": circuit_id,
                             "signal": signal,
+                            "from_channel_type_id": row.get("from_channel_type_id"),
+                            "to_channel_type_id": row.get("to_channel_type_id"),
                             "net_from_refdes": left["refdes"],
                             "net_from_channel_id": left["channel_id"],
                             "net_from_connector_name": left["connector_name"],
