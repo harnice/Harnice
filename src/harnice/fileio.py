@@ -122,13 +122,13 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "devices": {},
             "disconnects": {},
-            "lists":{
+            "lists": {
                 f"{partnumber('pn-rev')}-bom.tsv": "bom",
                 f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
                 f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
             },
             "macros": {},
-            "maps":{
+            "maps": {
                 f"{partnumber('pn-rev')}-chmap.tsv": "channel map",
                 f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
                 "mapped_channels.txt": "mapped channels set",

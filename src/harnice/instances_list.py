@@ -267,61 +267,83 @@ def add_connector_contact_nodes_and_circuits():
         circuits_list = list(csv.DictReader(f, delimiter="\t"))
 
     for circuit in circuits_list:
-        #add connectors and contacts
+        # add connectors and contacts
 
-        from_connector_key = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
+        from_connector_key = (
+            f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
+        )
         from_connector_node = f"{from_connector_key}.node"
         from_connector = f"{from_connector_key}.mc"
 
         from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_contact')}"
 
-        to_connector_key = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
+        to_connector_key = (
+            f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
+        )
         to_connector_node = f"{to_connector_key}.node"
         to_connector = f"{to_connector_key}.mc"
 
         to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_contact')}"
 
-        add_unless_exists(from_connector_node, {
-            "net": circuit.get('net'),
-            "item_type": "Node",
-            "location_is_node_or_segment": "Node",
-            "cluster": from_connector_key
-        })
-        add_unless_exists(from_connector, {
-            "net": circuit.get('net'),
-            "item_type": "Connector",
-            "location_is_node_or_segment": "Node",
-            "cluster": from_connector_key
-        })
-        add_unless_exists(from_cavity, {
-            "net": circuit.get('net'),
-            "item_type": "Cavity",
-            "parent_instance": from_connector,
-            "location_is_node_or_segment": "Node",
-            "cluster": from_connector_key
-        })
+        add_unless_exists(
+            from_connector_node,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Node",
+                "location_is_node_or_segment": "Node",
+                "cluster": from_connector_key,
+            },
+        )
+        add_unless_exists(
+            from_connector,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Connector",
+                "location_is_node_or_segment": "Node",
+                "cluster": from_connector_key,
+            },
+        )
+        add_unless_exists(
+            from_cavity,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Cavity",
+                "parent_instance": from_connector,
+                "location_is_node_or_segment": "Node",
+                "cluster": from_connector_key,
+            },
+        )
 
-        add_unless_exists(to_connector_node, {
-            "net": circuit.get('net'),
-            "item_type": "Node",
-            "location_is_node_or_segment": "Node",
-            "cluster": to_connector_key
-        })
-        add_unless_exists(to_connector, {
-            "net": circuit.get('net'),
-            "item_type": "Connector",
-            "location_is_node_or_segment": "Node",
-            "cluster": to_connector_key
-        })
-        add_unless_exists(to_cavity, {
-            "net": circuit.get('net'),
-            "item_type": "Cavity",
-            "parent_instance": to_connector,
-            "location_is_node_or_segment": "Node",
-            "cluster": to_connector_key
-        })
+        add_unless_exists(
+            to_connector_node,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Node",
+                "location_is_node_or_segment": "Node",
+                "cluster": to_connector_key,
+            },
+        )
+        add_unless_exists(
+            to_connector,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Connector",
+                "location_is_node_or_segment": "Node",
+                "cluster": to_connector_key,
+            },
+        )
+        add_unless_exists(
+            to_cavity,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Cavity",
+                "parent_instance": to_connector,
+                "location_is_node_or_segment": "Node",
+                "cluster": to_connector_key,
+            },
+        )
 
-        #add circuit
+        # add circuit
         circuit_name = f"circuit-{circuit.get('circuit_id')}"
         circuit_data = {
             "net": circuit.get("net"),
@@ -331,21 +353,24 @@ def add_connector_contact_nodes_and_circuits():
             "to_channel_type_id": circuit.get("to_channel_type_id"),
             "signal_of_channel_type": circuit.get("signal"),
             "node_at_end_a": from_cavity,
-            "node_at_end_b": to_cavity
+            "node_at_end_b": to_cavity,
         }
 
         add_unless_exists(circuit_name, circuit_data)
 
     with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
         connector_list = list(csv.DictReader(f, delimiter="\t"))
-    
+
     for connector in connector_list:
         try:
-            modify(f"{connector.get('device_refdes')}.{connector.get('connector')}.mc", {
-                "mating_device_refdes": connector.get("device_refdes"),
-                "mating_device_connector": connector.get("connector"),
-                "mating_device_connector_mpn": connector.get("connector_mpn")
-            })
+            modify(
+                f"{connector.get('device_refdes')}.{connector.get('connector')}.mc",
+                {
+                    "mating_device_refdes": connector.get("device_refdes"),
+                    "mating_device_connector": connector.get("connector"),
+                    "mating_device_connector_mpn": connector.get("connector_mpn"),
+                },
+            )
         except ValueError:
             # a connextor exists in your system but isn't part of a harness and thus has not been assigned an instance to modify
             pass
