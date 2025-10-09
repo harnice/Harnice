@@ -67,13 +67,6 @@ with open(bom_path, "r", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
     bom = list(reader)
 
-# Patch disconnect rows
-for row in bom:
-    if row.get("disconnect", "").upper() == "TRUE":
-        if not row.get("lib_repo"):
-            row["lib_repo"] = "local"
-            row["MPN"] = f"{fileio.partnumber("pn-rev")}-{row.get("device_ref_des")}"
-
 # Rewrite TSV
 with open(bom_path, "w", encoding="utf-8", newline="") as f:
     fieldnames = BOM_LABELS
