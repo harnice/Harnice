@@ -1,4 +1,4 @@
-# icd.py
+# signals_list.py
 import csv
 import os
 import ast
@@ -31,7 +31,7 @@ DISCONNECT_SIGNALS_HEADERS = [
 global headers
 
 
-def new_signals_list(headers_arg):
+def new_list(headers_arg):
     global headers
     if headers_arg == "device":
         headers = DEVICE_SIGNALS_HEADERS
@@ -53,7 +53,7 @@ def new_signals_list(headers_arg):
         writer.writerow(headers)
 
 
-def read_signals_list():
+def read_list():
     signals_path = fileio.path("signals list")
     with open(signals_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -68,7 +68,7 @@ def write_signal(**kwargs):
     signals_path = fileio.path("signals list")
 
     if not os.path.exists(signals_path):
-        new_signals_list()
+        new_list()
 
     # If channel_type_id is present, compute compatible_channel_type_ids
     if fileio.product_type == "device":
@@ -220,7 +220,7 @@ def assert_unique(values, label):
         seen.add(v)
 
 
-def validate_signals_list_for_device():
+def validate_for_device():
     print("--------------------------------")
     print("Validating signals list...")
     if not os.path.exists(fileio.path("signals list")):
@@ -277,7 +277,7 @@ def validate_signals_list_for_device():
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
 
-def validate_signals_list_for_disconnect():
+def validate_for_disconnect():
     print("--------------------------------")
     print("Validating signals list...")
     if not os.path.exists(fileio.path("signals list")):

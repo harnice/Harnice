@@ -3,7 +3,7 @@ from harnice import (
     component_library,
     mapped_channels,
     mapped_disconnect_channels,
-    icd,
+    signals_list,
 )
 import os
 import csv
@@ -718,9 +718,11 @@ def make_circuits_list():
             fileio.dirpath("devices"), refdes, f"{refdes}-signals_list.tsv"
         )
         connector_name = (
-            icd.connector_name_of_channel(channel_id, slp) if channel_id else ""
+            signals_list.connector_name_of_channel(channel_id, slp)
+            if channel_id
+            else ""
         )
-        contact = icd.pin_of_signal(signal, slp) if channel_id else ""
+        contact = signals_list.pin_of_signal(signal, slp) if channel_id else ""
         return {
             "refdes": refdes,
             "channel_id": channel_id,
@@ -762,7 +764,7 @@ def make_circuits_list():
         to_refdes = row["to_device_refdes"].strip()
         to_channel_id = row["to_device_channel_id"].strip()
 
-        signals = icd.signals_of_channel(from_channel_id, from_refdes)
+        signals = signals_list.signals_of_channel(from_channel_id, from_refdes)
 
         # --- parse disconnect requirement ---
         disconnect_chain = []
