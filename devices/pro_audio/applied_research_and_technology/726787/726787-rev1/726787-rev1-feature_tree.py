@@ -1,4 +1,4 @@
-from harnice import icd
+from harnice import signals_list
 
 ch_type_ids = {
     "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
@@ -18,7 +18,7 @@ def mpn_for_connector(connector_name):
     return None
 
 
-icd.new_signals_list("device")
+signals_list.new_list("device")
 
 for connector_name in ["in1", "in2", "out1", "out2"]:
     if connector_name.startswith("in"):
@@ -31,8 +31,8 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
     channel_name = connector_name
     connector_mpn = mpn_for_connector(connector_name)
 
-    for signal in icd.signals_of_channel_type_id(channel_type_id):
-        icd.write_signal(
+    for signal in signals_list.signals_of_channel_type_id(channel_type_id):
+        signals_list.write_signal(
             channel=channel_name,
             signal=signal,
             connector_name=connector_name,
@@ -42,7 +42,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
         )
 
     # Add shield row
-    icd.write_signal(
+    signals_list.write_signal(
         channel=f"{channel_name}-shield",
         signal="chassis",
         connector_name=connector_name,

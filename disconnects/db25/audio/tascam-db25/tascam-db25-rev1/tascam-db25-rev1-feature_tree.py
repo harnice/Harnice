@@ -1,4 +1,4 @@
-from harnice import icd
+from harnice import signals_list
 
 ch_type_ids = {
     "A": {
@@ -30,15 +30,15 @@ contact_number = {
     "ch7": {"pos": 1, "neg": 14, "chassis": 2},
 }
 
-icd.new_signals_list("disconnect")
+signals_list.new_list("disconnect")
 
 for channel in range(8):
     channel_name = f"ch{channel}"
 
-    for signal in icd.signals_of_channel_type_id(
+    for signal in signals_list.signals_of_channel_type_id(
         ch_type_ids["A"]["balanced audio mic level in"]
     ):
-        icd.write_signal(
+        signals_list.write_signal(
             channel=channel_name,
             signal=signal,
             A_contact=contact_number[channel_name][signal],
@@ -49,8 +49,8 @@ for channel in range(8):
             B_channel_type_id=ch_type_ids["B"]["balanced audio mic level out"],
         )
 
-    for signal in icd.signals_of_channel_type_id(ch_type_ids["A"]["chassis"]):
-        icd.write_signal(
+    for signal in signals_list.signals_of_channel_type_id(ch_type_ids["A"]["chassis"]):
+        signals_list.write_signal(
             channel=f"{channel_name}-shield",
             signal=signal,
             A_contact=contact_number[channel_name][signal],

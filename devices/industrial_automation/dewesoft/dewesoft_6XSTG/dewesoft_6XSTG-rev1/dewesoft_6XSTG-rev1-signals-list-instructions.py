@@ -1,4 +1,4 @@
-from harnice import icd
+from harnice import signals_list
 
 ch_type_ids = {"in": 1, "excite": 2, "sense": 1, "chassis": 3}
 
@@ -14,20 +14,20 @@ signal_to_contact = {
     "shield": 7,
 }
 
-icd.new_signals_list()
+signals_list.new_list()
 
 for connector_number in range(1, 7):
     connector_name = f"J{connector_number}"
     for input_ch in ["adc", "excite"]:
         channel_name = f"ch{connector_number}.{input_ch}"
         channel_type_id = ch_type_ids.get(input_ch)
-        for signal in icd.signals_of_channel_type_id(
+        for signal in signals_list.signals_of_channel_type_id(
             input_ch, channel_type_id, ch_type_id_lib_repo
         ):
-            icd.write_signal(
+            signals_list.write_signal(
                 channel=channel_name,
                 channel_type_id=channel_type_id,
-                compatible_channel_ids=icd.compatible_channels(
+                compatible_channel_ids=signals_list.compatible_channels(
                     input_ch, ch_type_ids, ch_type_id_lib_repo
                 ),
                 signal=signal,
