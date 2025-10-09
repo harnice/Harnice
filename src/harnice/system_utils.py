@@ -77,6 +77,14 @@ def pull_devices_from_library():
     for refdes in read_bom_rows():
         if refdes not in imported_devices:
             if refdes.get("disconnect") == "TRUE":
+                if refdes.get("MPN") in [None, ""]:
+                    raise ValueError(
+                        f"MPN is required to be able to import disconnect {refdes['device_ref_des']}"
+                    )
+                if refdes.get("lib_repo") in [None, ""]:
+                    raise ValueError(
+                        f"lib_repo is required to be able to import disconnect {refdes['device_ref_des']}"
+                    )
                 os.makedirs(
                     os.path.join(
                         fileio.dirpath("disconnects"), refdes["device_ref_des"]
