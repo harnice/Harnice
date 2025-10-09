@@ -1,11 +1,11 @@
 import os
 import runpy
-from harnice import fileio, icd, rev_history
+from harnice import fileio, signals_list, rev_history
 import sexpdata
 import json
 
 device_feature_tree_default = """
-from harnice import icd
+from harnice import signals_list
 
 ch_type_ids = {
     "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
@@ -30,7 +30,7 @@ def mpn_for_connector(connector_name):
             return mpn
     return None
 
-icd.new_signals_list("device")
+signals_list.new_list("device")
 
 for connector_name in ["in1", "in2", "out1", "out2"]:
     if connector_name.startswith("in"):
@@ -43,8 +43,8 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
     channel_name = connector_name
     connector_mpn = mpn_for_connector(connector_name)
 
-    for signal in icd.signals_of_channel_type_id(channel_type_id):
-        icd.write_signal(
+    for signal in signals_list.signals_of_channel_type_id(channel_type_id):
+        signals_list.write_signal(
             channel=channel_name,
             signal=signal,
             connector_name=connector_name,
@@ -54,7 +54,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
         )
 
     # Add shield row
-    icd.write_signal(
+    signals_list.write_signal(
         channel=f"{channel_name}-shield",
         signal="chassis",
         connector_name=connector_name,
@@ -515,7 +515,7 @@ def validate_kicad_library():
     """
 
     if not os.path.exists(fileio.path("library file")):
-        print(f"Making a new Kicad symbol at {fileio.path("library file")}")
+        print(f"Making a new Kicad symbol at {fileio.path('library file')}")
         make_new_library_file()
 
     kicad_library_data = parse_kicad_sym_file()
@@ -527,7 +527,7 @@ def validate_kicad_library():
 
     # Step 1. Collect unique connectors from the signals list
     unique_connectors_in_signals_list = set()
-    for signal in icd.read_signals_list():
+    for signal in signals_list.read_list():
         connector_name = signal.get("connector_name")
         if connector_name:
             unique_connectors_in_signals_list.add(connector_name)
@@ -620,8 +620,8 @@ def device_render(lightweight=False):
                 f.write(device_feature_tree_default)
     else:
         if not os.path.exists(fileio.path("signals list")):
-            icd.new_signals_list()
-            icd.write_signal(
+            signals_list.new_list()
+            signals_list.write_signal(
                 connector_name="J1",
                 channel_type_id=0,
                 signal="placeholder",
@@ -634,7 +634,7 @@ def device_render(lightweight=False):
         print("Successfully rebuilt signals list per feature tree.")
 
     if not lightweight:
-        icd.validate_signals_list_for_device()
+        signals_list.validate_for_device()
 
     print(
         f"Kicad nickname:       harnice-devices/{rev_history.revision_info().get('library_subpath')}{fileio.partnumber('pn')}"

@@ -1,9 +1,9 @@
 import runpy
 import os
-from harnice import fileio, icd
+from harnice import fileio, signals_list
 
 disconnect_feature_tree_default = """
-from harnice import icd
+from harnice import signals_list
 
 ch_type_ids = {
     "A": {
@@ -64,13 +64,13 @@ contact_number = {
     },
 }
 
-icd.new_signals_list("disconnect")
+signals_list.new_list("disconnect")
 
 for channel in range(8):
     channel_name = f"ch{channel}"
 
-    for signal in icd.signals_of_channel_type_id(ch_type_ids["A"]["balanced audio mic level in"]):
-        icd.write_signal(
+    for signal in signals_list.signals_of_channel_type_id(ch_type_ids["A"]["balanced audio mic level in"]):
+        signals_list.write_signal(
             channel=channel_name,
             signal=signal,
 
@@ -83,8 +83,8 @@ for channel in range(8):
             B_channel_type_id=ch_type_ids["B"]["balanced audio mic level out"],
         )
 
-    for signal in icd.signals_of_channel_type_id(ch_type_ids["A"]["chassis"]):
-        icd.write_signal(
+    for signal in signals_list.signals_of_channel_type_id(ch_type_ids["A"]["chassis"]):
+        signals_list.write_signal(
             channel=f"{channel_name}-shield",
             signal=signal,
 
@@ -111,4 +111,4 @@ def render():
         runpy.run_path(fileio.path("feature tree"))
         print("Successfully rebuilt signals list per feature tree.")
 
-    icd.validate_signals_list_for_disconnect()
+    signals_list.validate_for_disconnect()
