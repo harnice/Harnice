@@ -1,5 +1,5 @@
 import csv
-from harnice import fileio, mapped_channels, icd, system_utils
+from harnice import fileio, mapped_channels, signals_list, system_utils
 
 verbose = False
 
@@ -45,8 +45,10 @@ for merged_net in unique_merged_nets:
             continue
 
         # Parse channel types
-        from_type = icd.parse_channel_type_id(from_channel.get("from_channel_type_id"))
-        compatibles_from = icd.compatible_channel_types(
+        from_type = signals_list.parse_channel_type_id(
+            from_channel.get("from_channel_type_id")
+        )
+        compatibles_from = signals_list.compatible_channel_types(
             from_channel.get("from_channel_type_id")
         )
 
@@ -66,10 +68,10 @@ for merged_net in unique_merged_nets:
                 continue
 
             # Parse "to" type and its compatibles
-            to_type = icd.parse_channel_type_id(
+            to_type = signals_list.parse_channel_type_id(
                 to_channel_candidate.get("from_channel_type_id")
             )
-            compatibles_to = icd.compatible_channel_types(
+            compatibles_to = signals_list.compatible_channel_types(
                 to_channel_candidate.get("from_channel_type_id")
             )
 

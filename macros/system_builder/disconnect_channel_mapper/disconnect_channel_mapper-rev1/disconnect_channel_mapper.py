@@ -5,13 +5,13 @@ verbose = False
 extra_verbose = False
 
 
-def disconnect_map():
-    """Always reloads the disconnect map from TSV."""
-    with open(fileio.path("disconnect map"), newline="", encoding="utf-8") as f:
+def disconnect_channel_map():
+    """Always reloads the disconnect channel map from TSV."""
+    with open(fileio.path("disconnect channel map"), newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f, delimiter="\t"))
 
 
-for required_channel in disconnect_map():
+for required_channel in disconnect_channel_map():
     # skip available channel rows (A-side empty)
     if required_channel.get("A-side_device_refdes") in [None, ""]:
         continue
@@ -28,7 +28,7 @@ for required_channel in disconnect_map():
     # collect available candidates for the same disconnect_refdes
     available_candidates = [
         c
-        for c in disconnect_map()
+        for c in disconnect_channel_map()
         if c.get("A-side_device_refdes") in [None, ""]
         and c.get("disconnect_refdes") == disconnect_refdes
     ]
