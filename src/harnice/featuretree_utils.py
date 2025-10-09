@@ -7,9 +7,14 @@ from harnice import fileio, component_library, instances_list
 
 
 def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
-    macro_dirpath = os.path.join(
-        fileio.dirpath("macros"), lib_subpath, f"{macro_name}-{artifact_id}"
-    )
+    if artifact_id == "":
+        macro_dirpath = os.path.join(
+            fileio.dirpath("macros"), lib_subpath, f"{macro_name}"
+        )
+    else:
+        macro_dirpath = os.path.join(
+            fileio.dirpath("macros"), lib_subpath, f"{macro_name}-{artifact_id}"
+        )
     os.makedirs(macro_dirpath, exist_ok=True)
 
     component_library.pull_item_from_library(
