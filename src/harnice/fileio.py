@@ -18,11 +18,11 @@ pn = ""
 rev = 0
 
 
-def _part_directory():
+def part_directory():
     return os.path.dirname(os.getcwd())
 
 
-def _rev_directory():
+def rev_directory():
     return os.getcwd()
 
 
@@ -42,7 +42,7 @@ def partnumber(format):
     # rev:       returns "revR"
     # R:         returns "R"
 
-    pn_rev = os.path.basename(_rev_directory())
+    pn_rev = os.path.basename(rev_directory())
 
     if format == "pn-rev":
         return pn_rev
@@ -176,7 +176,7 @@ def path(target_value):
     """
     if target_value == "revision history":
         file_path = os.path.join(
-            _part_directory(), f"{partnumber('pn')}-revision_history.tsv"
+            part_directory(), f"{partnumber('pn')}-revision_history.tsv"
         )
         return file_path
 
@@ -211,14 +211,14 @@ def path(target_value):
     path_value = recursive_search(harnice_file_structure(), [])
     if not path_value:
         raise TypeError(f"Could not find filepath of {target_value}.")
-    return os.path.join(_rev_directory(), *path_value)
+    return os.path.join(rev_directory(), *path_value)
 
 
 def dirpath(target_key):
     # returns the path of a directory you know the name of. use that directory name as the argument.
     if product_type == "device":
         if target_key == "kicad":
-            return os.path.join(_part_directory(), "kicad")
+            return os.path.join(part_directory(), "kicad")
 
     def recursive_search(data, path):
         if isinstance(data, dict):
@@ -238,7 +238,7 @@ def dirpath(target_key):
     path_key = recursive_search(harnice_file_structure(), [])
     if not path_key:
         raise TypeError(f"Could not find directory {target_key}.")
-    return os.path.join(_rev_directory(), *path_key)
+    return os.path.join(rev_directory(), *path_key)
 
 
 def name(target_value):
