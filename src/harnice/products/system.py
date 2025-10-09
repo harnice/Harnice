@@ -9,6 +9,7 @@ system_feature_tree_default = """from harnice import featuretree_utils, system_u
 #===========================================================================
 featuretree_utils.run_macro("kicad_pro_to_bom", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 system_utils.pull_devices_from_library()
+featuretree_utils.run_macro("kicad_sch_to_pdf", "system_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="blockdiagram1")
 
 
 #===========================================================================
