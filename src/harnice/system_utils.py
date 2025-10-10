@@ -67,7 +67,7 @@ CIRCUITS_LIST_COLUMNS = [
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
 
 MANIFEST_COLUMNS = [
-    "harness_net",
+    "net",
     "harness_pn"
 ]
 
@@ -908,9 +908,9 @@ def make_circuits_list():
         writer.writeheader()
         writer.writerows(circuits_list)
 
-def update_upstream(manifest_nets, instances_list):
-    if fileio.product_type() != "harness":
-        raise ValueError("update_upstream() can only be called from a harness")\
+def update_upstream(path_to_system_rev, manifest_nets, harness_pn, instances_list):
+    update_manifest(path_to_system_rev, manifest_nets, harness_pn)
+    # future expansion planned here
 
 def new_manifest():
     """
@@ -933,7 +933,7 @@ def new_manifest():
         with open(manifest_path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t")
             existing_manifest = list(reader)
-            manifest_nets = {row.get("harness_net", "").strip() for row in existing_manifest if row.get("harness_net")}
+            manifest_nets = {row.get("net", "").strip() for row in existing_manifest if row.get("net")}
     except FileNotFoundError:
         existing_manifest = []
         manifest_nets = set()
@@ -944,24 +944,47 @@ def new_manifest():
     nets_to_keep = manifest_nets & connector_nets
 
     # Preserve existing info for kept nets
-    updated_manifest = [row for row in existing_manifest if row.get("harness_net") in nets_to_keep]
+    updated_manifest = [row for row in existing_manifest if row.get("net") in nets_to_keep]
 
     # Add new rows for new nets
     for net in sorted(nets_to_add):
-        updated_manifest.append({"harness_net": net})
+        updated_manifest.append({"net": net})
 
     # Sort by net name for consistency
-    updated_manifest = sorted(updated_manifest, key=lambda r: r.get("harness_net", ""))
+    updated_manifest = sorted(updated_manifest, key=lambda r: r.get("net", ""))
 
     # Write updated manifest
     with open(manifest_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=MANIFEST_COLUMNS, delimiter="\t")
         writer.writeheader()
         for row in updated_manifest:
-            # Ensure all columns exist in each row
             full_row = {col: row.get(col, "") for col in MANIFEST_COLUMNS}
             writer.writerow(full_row)
 
 
-def add_to_manifest(net):
-    pass
+def update_manifest(path_to_system_rev, manifest_nets, harness_pn):
+    manifest_path = os.path.join(path_to_system_rev, "lists", "system_manifest.tsv")
+
+    # Read existing manifest
+    with open(manifest_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        manifest = list(reader)
+        fieldnames = reader.fieldnames
+
+    # --- Pass 1: update matching nets ---
+    for net in manifest_nets:
+        for row in manifest:
+            if row.get("net") == net:
+                row["harness_pn"] = harness_pn
+                break
+
+    # --- Pass 2: remove outdated links ---
+    for row in manifest:
+        if row.get("harness_pn") == harness_pn and row.get("net") not in manifest_nets:
+            row["harness_pn"] = ""
+
+    # Write back updated manifest
+    with open(manifest_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(manifest)
