@@ -125,6 +125,7 @@ def harnice_file_structure():
             "lists": {
                 f"{partnumber('pn-rev')}-bom.tsv": "bom",
                 f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
+                "system_manifest.tsv": "system manifest",
                 f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
             },
             "macros": {},
