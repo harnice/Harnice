@@ -199,31 +199,42 @@ def render(build_macro="", output_macro_dict=None):
     if not os.path.exists(fileio.path("feature tree")):
         if build_macro == "":
             print(
-                "Do you want to use a build_macro to help build this harness from scratch?"
+                "Do you want to use a build_macro to help build this harness from scratch? [s]"
             )
-            print("  ''    Enter nothing for the standard Harnice esch build_macro")
+            print(
+                "  's'   Enter 's' for system (or just hit enter) if this harness is pulling data from a system instances list"
+            )
+            print("  'y'   Enter 'y' for the standard Harnice esch build_macro")
             print(
                 "  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)"
             )
             print(
-                "  's'   Enter 's' for system if this harness is pulling data from a system instances list"
-            )
-            print(
                 "  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list build_macro"
             )
-            print("        Or enter the path to your desired build_macro")
             build_macro = cli.prompt("")
 
-        if build_macro in (None, "", "n"):
-            build_macro_name = "import_harnice_esch"
-        elif build_macro == "s":
+        if build_macro in (None, "", "s"):
             build_macro_name = "import_harness_from_harnice_system"
+            system_pn= cli.prompt("Enter the system part number")
+            system_rev = cli.prompt("Enter the system revision id (ex. rev1)")
+            project_location_key = cli.prompt("Make sure project_locations contains a link to the local path of this system. Enter the traceable key")
+            target_net = cli.prompt("Enter the net you want to build this harness from")
+
+            path_to_system_pn = fileio.get_path_to_project(project_location_key)
+
+            build_macro_contents = f'featuretree_utils.run_macro("{build_macro_name}", "harness_builder", "https://github.com/kenyonshutt/harnice-library-public", system_pn_rev=["{system_pn}","{system_rev}"], path_to_system_rev=os.path.join("{path_to_system_pn}", "{system_pn}-{system_rev}"), target_net="{target_net}")'
+            
+        elif build_macro == "n":
+            build_macro_name = "import_harnice_esch"
+            build_macro_contents = f'featuretree_utils.run_macro("{build_macro_name}", "harness_builder", "https://github.com/kenyonshutt/harnice-library-public")'
+
         elif build_macro == "w":
             build_macro_name = "import_harness_wireviz_yaml"
-        else:
-            build_macro_name = build_macro
+            build_macro_contents = f'featuretree_utils.run_macro("{build_macro_name}", "harness_builder", "https://github.com/kenyonshutt/harnice-library-public")'
 
-        build_macro_contents = f'featuretree_utils.run_macro("{build_macro_name}", "harness_builder", "https://github.com/kenyonshutt/harnice-library-public")'
+        else:
+            print("Unrecognized input. If you meant to select a template not listed, just select a template, delete the contents and start over manually. rip.")
+            render()
 
         if output_macro_dict is None:
             output_macro_contents = """featuretree_utils.run_macro("bom_exporter_bottom_up", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom1")

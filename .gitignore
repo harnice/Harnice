@@ -51,6 +51,7 @@ coverage.xml
 # ===================================
 secrets.*
 library_locations.csv
+project_locations.csv
 
 # ===================================
 # IDEs / Editors

@@ -184,6 +184,9 @@ def path(target_value):
         # TODO: HOW DO I MAKE THIS RETURN THE HARNICE INSTALL LOCATION?
         return "/Users/kenyonshutt/Documents/GitHub/harnice/library_locations.csv"
 
+    if target_value == "project locations":
+        return "/Users/kenyonshutt/Documents/GitHub/harnice/project_locations.csv"
+
     if product_type == "device":
         if target_value == "library file":
             return os.path.join(dirpath("kicad"), f"{partnumber('pn')}.kicad_sym")
@@ -470,3 +473,18 @@ def verify_revision_structure(product_type=None):
 
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
+
+def get_path_to_project(traceable_key):
+    # takes in a project repo traceable key and returns the expanded local path
+    # traceable key is some unique identifier for this project (project part number, github url, etc)
+    with open(path("project locations"), newline="", encoding="utf-8") as f:
+        project_list = list(csv.DictReader(f, delimiter=","))
+
+    for project in project_list:
+        if project.get("traceable_key").strip() == traceable_key.strip():
+            local_path = project.get("local_path")
+            if not local_path:
+                raise ValueError(f"No project local path found for {traceable_key}")
+            return os.path.expanduser(local_path)
+
+    raise ValueError(f"Could not find library repo id {traceable_key}")
