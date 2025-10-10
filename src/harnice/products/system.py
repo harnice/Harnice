@@ -16,6 +16,7 @@ featuretree_utils.run_macro("kicad_sch_to_pdf", "system_artifacts", "https://git
 #                   CHANNEL MAPPING
 #===========================================================================
 featuretree_utils.run_macro("kicad_pro_to_system_connector_list", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
+system_utils.new_manifest()
 system_utils.new_blank_channel_map()
 
 #add manual channel map commands here. key=(from_device_refdes, from_device_channel_id)
