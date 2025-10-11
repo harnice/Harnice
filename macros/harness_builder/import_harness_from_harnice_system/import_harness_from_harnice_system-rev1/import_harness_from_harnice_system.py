@@ -22,4 +22,4 @@ for instance in system_instances_list_data:
     if instance.get("net") == target_net:
         instances_list.add_unless_exists(instance.get("instance_name"), instance)
 
-system_utils.update_upstream(path_to_system_rev, manifest_nets, fileio.partnumber('pn-rev'), [])
+system_utils.update_upstream_manifest(path_to_system_rev, system_pn_rev, manifest_nets, fileio.partnumber('pn-rev'))
