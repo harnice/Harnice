@@ -8,6 +8,7 @@ from harnice import (
 import os
 import csv
 from collections import deque
+import shutil
 
 
 CHANNEL_MAP_COLUMNS = [
@@ -908,10 +909,6 @@ def make_circuits_list():
         writer.writeheader()
         writer.writerows(circuits_list)
 
-def update_upstream(path_to_system_rev, manifest_nets, harness_pn, instances_list):
-    update_manifest(path_to_system_rev, manifest_nets, harness_pn)
-    # future expansion planned here
-
 def new_manifest():
     """
     Synchronize the system manifest with the system connector list:
@@ -962,8 +959,8 @@ def new_manifest():
             writer.writerow(full_row)
 
 
-def update_manifest(path_to_system_rev, manifest_nets, harness_pn):
-    manifest_path = os.path.join(path_to_system_rev, "lists", "system_manifest.tsv")
+def update_upstream_manifest(path_to_system_rev, system_pn_rev, manifest_nets, harness_pn):
+    manifest_path = os.path.join(path_to_system_rev, "lists", f"{system_pn_rev[0]}-{system_pn_rev[1]}-system_manifest.tsv")
 
     # Read existing manifest
     with open(manifest_path, newline="", encoding="utf-8") as f:
@@ -988,3 +985,9 @@ def update_manifest(path_to_system_rev, manifest_nets, harness_pn):
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
         writer.writerows(manifest)
+
+def push_harness_instances_list_to_upstream_system(path_to_system_rev, system_pn_rev):
+    path_to_harness_dir_of_system = os.path.join(
+        path_to_system_rev, f"{system_pn_rev[0]}-{system_pn_rev[1]}", "harnesses"
+    )
+    shutil.copy(fileio.path("instances list"), path_to_harness_dir_of_system)

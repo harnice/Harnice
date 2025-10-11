@@ -122,10 +122,12 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "devices": {},
             "disconnects": {},
+            "harnesses": {},
             "lists": {
                 f"{partnumber('pn-rev')}-bom.tsv": "bom",
                 f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
-                "system_manifest.tsv": "system manifest",
+                f"{partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
+                f"{partnumber('pn-rev')}-system_manifest.tsv": "system manifest",
                 f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
             },
             "macros": {},
@@ -151,6 +153,7 @@ def generate_structure():
     if product_type == "system":
         os.makedirs(dirpath("devices"), exist_ok=True)
         os.makedirs(dirpath("disconnects"), exist_ok=True)
+        os.makedirs(dirpath("harnesses"), exist_ok=True)
         os.makedirs(dirpath("lists"), exist_ok=True)
         os.makedirs(dirpath("macros"), exist_ok=True)
         os.makedirs(dirpath("maps"), exist_ok=True)
