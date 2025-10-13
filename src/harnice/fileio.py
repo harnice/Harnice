@@ -122,6 +122,7 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "devices": {},
             "disconnects": {},
+            "features_for_relatives": {},
             "harnesses": {},
             "lists": {
                 f"{partnumber('pn-rev')}-bom.tsv": "bom",
@@ -153,6 +154,7 @@ def generate_structure():
     if product_type == "system":
         os.makedirs(dirpath("devices"), exist_ok=True)
         os.makedirs(dirpath("disconnects"), exist_ok=True)
+        os.makedirs(dirpath("features_for_relatives"), exist_ok=True)
         os.makedirs(dirpath("harnesses"), exist_ok=True)
         os.makedirs(dirpath("lists"), exist_ok=True)
         os.makedirs(dirpath("macros"), exist_ok=True)
