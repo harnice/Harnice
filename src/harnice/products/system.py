@@ -1,4 +1,4 @@
-from harnice import fileio, mapped_channels, mapped_disconnect_channels
+from harnice import fileio, mapped_channels, mapped_disconnect_channels, system_utils
 import runpy
 import os
 
@@ -58,3 +58,5 @@ def render():
     mapped_disconnect_channels.new_set()
 
     runpy.run_path(fileio.path("feature tree"))
+
+    system_utils.update_post_harness_instances_list()
