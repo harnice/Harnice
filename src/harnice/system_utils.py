@@ -8,6 +8,7 @@ from harnice import (
 import os
 import csv
 from collections import deque
+import shutil
 
 
 CHANNEL_MAP_COLUMNS = [
@@ -65,6 +66,10 @@ CIRCUITS_LIST_COLUMNS = [
 ]
 
 NETLIST_COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]
+
+MANIFEST_COLUMNS = ["net", "harness_pn"]
+
+manifest = []
 
 
 def read_bom_rows():
@@ -900,3 +905,164 @@ def make_circuits_list():
         writer = csv.DictWriter(f, fieldnames=CIRCUITS_LIST_COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(circuits_list)
+
+
+def new_manifest():
+    """
+    Synchronize the system manifest with the system connector list:
+      - Remove nets that no longer exist in the connector list
+      - Add nets that appear in the connector list but not yet in the manifest
+      - Preserve all other column data for nets that still exist
+    """
+    # Load connector list and extract unique nets
+    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
+        connector_list = list(csv.DictReader(f, delimiter="\t"))
+    connector_nets = {
+        row.get("net", "").strip() for row in connector_list if row.get("net")
+    }
+
+    manifest_path = fileio.path("system manifest")
+
+    # Load existing manifest if present
+    existing_manifest = []
+    manifest_nets = set()
+    try:
+        with open(manifest_path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            existing_manifest = list(reader)
+            manifest_nets = {
+                row.get("net", "").strip()
+                for row in existing_manifest
+                if row.get("net")
+            }
+    except FileNotFoundError:
+        existing_manifest = []
+        manifest_nets = set()
+
+    # Determine differences
+    nets_to_add = connector_nets - manifest_nets
+    nets_to_remove = manifest_nets - connector_nets
+    nets_to_keep = manifest_nets & connector_nets
+
+    # Preserve existing info for kept nets
+    updated_manifest = [
+        row for row in existing_manifest if row.get("net") in nets_to_keep
+    ]
+
+    # Add new rows for new nets
+    for net in sorted(nets_to_add):
+        updated_manifest.append({"net": net})
+
+    # Sort by net name for consistency
+    updated_manifest = sorted(updated_manifest, key=lambda r: r.get("net", ""))
+
+    # Write updated manifest
+    with open(manifest_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=MANIFEST_COLUMNS, delimiter="\t")
+        writer.writeheader()
+        for row in updated_manifest:
+            full_row = {col: row.get(col, "") for col in MANIFEST_COLUMNS}
+            writer.writerow(full_row)
+
+
+def update_upstream_manifest(
+    path_to_system_rev, system_pn_rev, manifest_nets, harness_pn
+):
+    manifest_path = os.path.join(
+        path_to_system_rev,
+        "lists",
+        f"{system_pn_rev[0]}-{system_pn_rev[1]}-system_manifest.tsv",
+    )
+
+    # Read existing manifest
+    with open(manifest_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        manifest = list(reader)
+        fieldnames = reader.fieldnames
+
+    # --- Pass 1: update matching nets ---
+    for net in manifest_nets:
+        for row in manifest:
+            if row.get("net") == net:
+                row["harness_pn"] = harness_pn
+                break
+
+    # --- Pass 2: remove outdated links ---
+    for row in manifest:
+        if row.get("harness_pn") == harness_pn and row.get("net") not in manifest_nets:
+            row["harness_pn"] = ""
+
+    # Write back updated manifest
+    with open(manifest_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(manifest)
+
+
+def push_harness_instances_list_to_upstream_system(path_to_system_rev, system_pn_rev):
+    path_to_harness_dir_of_system = os.path.join(
+        path_to_system_rev, f"{system_pn_rev[0]}-{system_pn_rev[1]}", "harnesses"
+    )
+    shutil.copy(fileio.path("instances list"), path_to_harness_dir_of_system)
+
+
+def update_post_harness_instances_list():
+    """
+    Build the 'post harness instances list' by merging instance data from:
+      - Each harness's instances list if the harness_pn is defined and file exists
+      - Otherwise, fall back to the system-level instances list for matching nets
+
+    Writes a clean TSV with INSTANCES_LIST_COLUMNS.
+    """
+    from harnice.instances_list import INSTANCES_LIST_COLUMNS
+
+    post_harness_instances = []
+
+    # --- load manifest ---
+    manifest_path = fileio.path("system manifest")
+    with open(manifest_path, newline="", encoding="utf-8") as f:
+        manifest = list(csv.DictReader(f, delimiter="\t"))
+
+    # --- load system-level instances ---
+    with open(fileio.path("instances list"), newline="", encoding="utf-8") as f:
+        system_instances_list = list(csv.DictReader(f, delimiter="\t"))
+
+    # --- iterate through manifest rows ---
+    for harness in manifest:
+        harness_pn = (harness.get("harness_pn") or "").strip()
+        net = (harness.get("net") or "").strip()
+        if not net:
+            continue
+
+        # Case 1: harness_pn missing -> import from system instances
+        if not harness_pn:
+            for system_instance in system_instances_list:
+                if system_instance.get("net", "").strip() == net:
+                    post_harness_instances.append(system_instance)
+            continue
+
+        # Case 2: harness_pn provided -> try to load harness instances list
+        harness_instances_list_path = os.path.join(
+            fileio.dirpath("harnesses"),
+            harness_pn,
+            "lists",
+            f"{harness_pn}-instances_list.tsv",
+        )
+
+        if os.path.exists(harness_instances_list_path):
+            with open(harness_instances_list_path, newline="", encoding="utf-8") as f:
+                harness_instances_list = list(csv.DictReader(f, delimiter="\t"))
+            post_harness_instances.extend(harness_instances_list)
+        else:
+            # Fallback to system-level instances for same net
+            for system_instance in system_instances_list:
+                if system_instance.get("net", "").strip() == net:
+                    post_harness_instances.append(system_instance)
+
+    # --- write output ---
+    output_path = fileio.path("post harness instances list")
+    with open(output_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter="\t")
+        writer.writeheader()
+        for instance in post_harness_instances:
+            writer.writerow({k: instance.get(k, "") for k in INSTANCES_LIST_COLUMNS})

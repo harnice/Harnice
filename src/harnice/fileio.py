@@ -122,9 +122,12 @@ def harnice_file_structure():
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "devices": {},
             "disconnects": {},
+            "harnesses": {},
             "lists": {
                 f"{partnumber('pn-rev')}-bom.tsv": "bom",
                 f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
+                f"{partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
+                f"{partnumber('pn-rev')}-system_manifest.tsv": "system manifest",
                 f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
             },
             "macros": {},
@@ -150,6 +153,7 @@ def generate_structure():
     if product_type == "system":
         os.makedirs(dirpath("devices"), exist_ok=True)
         os.makedirs(dirpath("disconnects"), exist_ok=True)
+        os.makedirs(dirpath("harnesses"), exist_ok=True)
         os.makedirs(dirpath("lists"), exist_ok=True)
         os.makedirs(dirpath("macros"), exist_ok=True)
         os.makedirs(dirpath("maps"), exist_ok=True)
@@ -183,6 +187,9 @@ def path(target_value):
     if target_value == "library locations":
         # TODO: HOW DO I MAKE THIS RETURN THE HARNICE INSTALL LOCATION?
         return "/Users/kenyonshutt/Documents/GitHub/harnice/library_locations.csv"
+
+    if target_value == "project locations":
+        return "/Users/kenyonshutt/Documents/GitHub/harnice/project_locations.csv"
 
     if product_type == "device":
         if target_value == "library file":
@@ -470,3 +477,19 @@ def verify_revision_structure(product_type=None):
 
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
+
+
+def get_path_to_project(traceable_key):
+    # takes in a project repo traceable key and returns the expanded local path
+    # traceable key is some unique identifier for this project (project part number, github url, etc)
+    with open(path("project locations"), newline="", encoding="utf-8") as f:
+        project_list = list(csv.DictReader(f, delimiter=","))
+
+    for project in project_list:
+        if project.get("traceable_key").strip() == traceable_key.strip():
+            local_path = project.get("local_path")
+            if not local_path:
+                raise ValueError(f"No project local path found for {traceable_key}")
+            return os.path.expanduser(local_path)
+
+    raise ValueError(f"Could not find library repo id {traceable_key}")
