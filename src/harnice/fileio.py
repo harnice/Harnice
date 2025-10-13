@@ -178,19 +178,23 @@ def path(target_value):
     Returns:
         list: A list of container names leading to the element containing the target value, or None if not found.
     """
+    # FILES NOT DEPENDENT ON PRODUCT TYPE
     if target_value == "revision history":
         file_path = os.path.join(
             part_directory(), f"{partnumber('pn')}-revision_history.tsv"
         )
         return file_path
 
+    # FILES DEPENDENT ON HARNICE ROOT
+    harnice_root = os.path.dirname(os.path.dirname(harnice.__file__))
+
     if target_value == "library locations":
-        # TODO: HOW DO I MAKE THIS RETURN THE HARNICE INSTALL LOCATION?
-        return "/Users/kenyonshutt/Documents/GitHub/harnice/library_locations.csv"
+        return os.path.join(harnice_root, "library_locations.csv")
 
     if target_value == "project locations":
-        return "/Users/kenyonshutt/Documents/GitHub/harnice/project_locations.csv"
+        return os.path.join(harnice_root, "project_locations.csv")
 
+    # FILES OUTSIDE OF PRODUCT DIRECTORY
     if product_type == "device":
         if target_value == "library file":
             return os.path.join(dirpath("kicad"), f"{partnumber('pn')}.kicad_sym")
@@ -198,6 +202,7 @@ def path(target_value):
         if target_value == "library setup info":
             return os.path.join(dirpath("kicad"), "librarybasics.txt")
 
+    # FILES INSIDE OF A STRUCURE DEFINED BY FILEIO
     def recursive_search(data, path):
         if isinstance(data, dict):
             for key, value in data.items():
