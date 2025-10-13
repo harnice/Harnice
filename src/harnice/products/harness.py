@@ -224,7 +224,7 @@ def render(build_macro="", output_macro_dict=None):
 
             path_to_system_pn = fileio.get_path_to_project(project_location_key)
             build_macro_contents = f'featuretree_utils.run_macro(\n    "{build_macro_name}",\n    "harness_builder",\n    "https://github.com/kenyonshutt/harnice-library-public",\n    system_pn_rev=["{system_pn}","{system_rev}"],\n    path_to_system_rev=os.path.join("{path_to_system_pn}", "{system_pn}-{system_rev}"),\n    target_net="{target_net}",\n    manifest_nets=["{target_net}"]\n)'
-            push_harness_instances_list_to_upstream_system = f'system_utils.push_harness_instances_list_to_upstream_system("{path_to_system_pn}", "{system_pn}-{system_rev}")'
+            push_harness_instances_list_to_upstream_system = f'system_utils.push_harness_instances_list_to_upstream_system("{path_to_system_pn}", ("{system_pn}","{system_rev}"))'
 
         elif build_macro == "n":
             build_macro_name = "import_harnice_esch"
