@@ -186,7 +186,8 @@ def path(target_value):
         return file_path
 
     # FILES DEPENDENT ON HARNICE ROOT
-    harnice_root = os.path.dirname(os.path.dirname(harnice.__file__))
+    import harnice
+    harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
 
     if target_value == "library locations":
         return os.path.join(harnice_root, "library_locations.csv")
