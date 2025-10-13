@@ -215,9 +215,11 @@ def render(build_macro="", output_macro_dict=None):
 
         if build_macro in (None, "", "s"):
             build_macro_name = "import_harness_from_harnice_system"
-            system_pn= cli.prompt("Enter the system part number")
+            system_pn = cli.prompt("Enter the system part number")
             system_rev = cli.prompt("Enter the system revision id (ex. rev1)")
-            project_location_key = cli.prompt("Make sure project_locations contains a link to the local path of this system. Enter the traceable key")
+            project_location_key = cli.prompt(
+                "Make sure project_locations contains a link to the local path of this system. Enter the traceable key"
+            )
             target_net = cli.prompt("Enter the net you want to build this harness from")
 
             path_to_system_pn = fileio.get_path_to_project(project_location_key)
@@ -233,7 +235,9 @@ def render(build_macro="", output_macro_dict=None):
             build_macro_contents = f'featuretree_utils.run_macro("{build_macro_name}", "harness_builder", "https://github.com/kenyonshutt/harnice-library-public")'
 
         else:
-            print("Unrecognized input. If you meant to select a template not listed, just select a template, delete the contents and start over manually. rip.")
+            print(
+                "Unrecognized input. If you meant to select a template not listed, just select a template, delete the contents and start over manually. rip."
+            )
             render()
 
         if output_macro_dict is None:

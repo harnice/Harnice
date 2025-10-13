@@ -478,6 +478,7 @@ def verify_revision_structure(product_type=None):
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
 
+
 def get_path_to_project(traceable_key):
     # takes in a project repo traceable key and returns the expanded local path
     # traceable key is some unique identifier for this project (project part number, github url, etc)
