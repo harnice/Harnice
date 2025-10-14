@@ -1,4 +1,5 @@
 import csv
+from itertools import product
 import os
 import inspect
 from harnice import fileio
@@ -83,6 +84,9 @@ def add_unless_exists(instance_name, instance_data):
         )
 
     instance_data["instance_name"] = instance_name  # Ensure consistency
+
+    if fileio.get_net() and fileio.product_type == "harness":
+        instance_data["net"] = fileio.get_net()
 
     # Add debug call chain
     instance_data["debug"] = get_call_chain_str()
