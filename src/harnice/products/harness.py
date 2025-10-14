@@ -289,7 +289,7 @@ featuretree_utils.copy_pdfs_to_cwd()
         "origin",
         {
             "instance_name": "origin",
-            "item_type": "Node",
+            "item_type": "Origin",
             "location_is_node_or_segment": "Node",
         },
     )

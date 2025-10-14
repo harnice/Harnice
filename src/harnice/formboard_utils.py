@@ -280,7 +280,6 @@ def validate_nodes():
 def generate_node_coordinates():
     # === Step 1: Load segments and nodes from instances_list ===
     instances = instances_list.read_instance_rows()
-    instance_lookup = {inst.get("instance_name", ""): inst for inst in instances}
 
     segments = [inst for inst in instances if inst.get("item_type") == "Segment"]
     nodes = [inst for inst in instances if inst.get("item_type") == "Node"]
