@@ -30,8 +30,12 @@ def read_segment_rows():
 
 
 def write_segment_rows(rows):
-    with open(fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t", lineterminator="\n")
+    with open(
+        fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8"
+    ) as f:
+        writer = csv.DictWriter(
+            f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t", lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(rows)
         f.write("\n")
@@ -57,7 +61,9 @@ def add_segment_to_formboard_def(segment_id, segment_data):
             delimiter="\t",
             lineterminator="\n",
         )
-        writer.writerow({key: segment_data.get(key, "") for key in FORMBOARD_TSV_COLUMNS})
+        writer.writerow(
+            {key: segment_data.get(key, "") for key in FORMBOARD_TSV_COLUMNS}
+        )
 
     return False
 
@@ -149,10 +155,11 @@ def validate_nodes():
             add_segment_to_formboard_def(
                 segment_id,
                 {
+                    "segment_id": segment_id,
                     "node_at_end_a": segment_ends[0],
                     "node_at_end_b": segment_ends[1],
                     "length": str(random.randint(6, 18)),
-                    "angle": str(0 if node_counter == 0 else random.randint(0, 359)),
+                    "angle": str(0),
                     "diameter": 0.1,
                 },
             )
@@ -324,7 +331,6 @@ def validate_nodes():
         raise Exception(
             f"Disconnected formboard graph found ({len(components)} clusters):\n{formatted_clusters}"
         )
-
 
 
 def generate_node_coordinates():
