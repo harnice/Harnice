@@ -30,51 +30,36 @@ def read_segment_rows():
 
 
 def write_segment_rows(rows):
-    """
-    Overwrites the formboard graph definition TSV with the provided rows.
-
-    Args:
-        rows (List[dict]): List of dictionaries matching FORMBOARD_TSV_COLUMNS.
-    """
-    with open(
-        fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8"
-    ) as f:
-        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t")
+    with open(fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t", lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
-
-
-def append_segment_row(data_dict):
-    """
-    Appends a single row to the formboard graph definition TSV.
-
-    Args:
-        data_dict (dict): Dictionary of segment data.
-                          Missing fields will be written as empty strings.
-    """
-    with open(
-        fileio.path("formboard graph definition"), "a", newline="", encoding="utf-8"
-    ) as f:
-        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t")
-        writer.writerow({key: data_dict.get(key, "") for key in FORMBOARD_TSV_COLUMNS})
+        f.write("\n")
 
 
 def add_segment_to_formboard_def(segment_id, segment_data):
-    if not segment_id:
-        raise ValueError("Missing required argument: 'segment_id'")
+    segments = read_segment_rows()
+    if any(row.get("segment_id") == segment_id for row in segments):
+        return True
 
-    if "segment_id" in segment_data and segment_data["segment_id"] != segment_id:
-        raise ValueError(
-            f"Inconsistent segment_id: argument='{segment_id}' vs data['segment_id']='{segment_data['segment_id']}'"
+    path = fileio.path("formboard graph definition")
+
+    with open(path, "a+", encoding="utf-8") as f:
+        f.seek(0, os.SEEK_END)
+        if f.tell() > 0:
+            f.seek(f.tell() - 1)
+            if f.read(1) != "\n":
+                f.write("\n")
+
+        writer = csv.DictWriter(
+            f,
+            fieldnames=FORMBOARD_TSV_COLUMNS,
+            delimiter="\t",
+            lineterminator="\n",
         )
+        writer.writerow({key: segment_data.get(key, "") for key in FORMBOARD_TSV_COLUMNS})
 
-    segment_data["segment_id"] = segment_id  # Ensure it is included
-
-    existing = read_segment_rows()
-    if any(row.get("segment_id") == segment_id for row in existing):
-        raise ValueError(f"Segment already exists: '{segment_id}'")
-
-    append_segment_row(segment_data)
+    return False
 
 
 def segment_attribute_of(segment_id, key):
@@ -145,7 +130,7 @@ def validate_nodes():
                             "angle": str(
                                 0 if node_counter == 0 else random.randint(0, 359)
                             ),
-                            "diameter": "0.1",
+                            "diameter": 0.1,
                         },
                     )
                     node_counter += 1
@@ -168,7 +153,7 @@ def validate_nodes():
                     "node_at_end_b": segment_ends[1],
                     "length": str(random.randint(6, 18)),
                     "angle": str(0 if node_counter == 0 else random.randint(0, 359)),
-                    "diameter": "0.1",
+                    "diameter": 0.1,
                 },
             )
 
@@ -209,15 +194,37 @@ def validate_nodes():
                         },
                     )
 
+                    # Create a new segment connecting the missing node to an existing one
                     segment_id = f"{missing_node}_leg"
 
+                    # Pick any existing node to attach to (avoid self-connection)
                     whatever_node_to_attach_new_leg_to = ""
                     for instance in instances_list.read_instance_rows():
-                        if instance.get("item_type") == "Node":
+                        if (
+                            instance.get("item_type") == "Node"
+                            and instance.get("instance_name") != missing_node
+                        ):
                             whatever_node_to_attach_new_leg_to = instance.get(
                                 "instance_name"
                             )
-                            continue
+                            break
+
+                    if not whatever_node_to_attach_new_leg_to:
+                        raise ValueError(
+                            f"No existing node found to connect {missing_node} to."
+                        )
+
+                    add_segment_to_formboard_def(
+                        segment_id,
+                        {
+                            "segment_id": segment_id,
+                            "node_at_end_a": missing_node,
+                            "node_at_end_b": whatever_node_to_attach_new_leg_to,
+                            "length": str(random.randint(6, 18)),
+                            "angle": str(random.randint(0, 359)),
+                            "diameter": 0.1,
+                        },
+                    )
 
     for segment in read_segment_rows():
         instances_list.add_unless_exists(
@@ -276,6 +283,48 @@ def validate_nodes():
                 raise Exception(
                     "Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet."
                 )
+
+    # === Detect disconnected or dangling nodes ===
+    # Collect all nodes referenced by segments
+    all_nodes_in_segments = set(adjacency.keys())
+
+    # Any nodes in instances_list but not in any segment?
+    nodes_without_segments = nodes_from_instances_list - all_nodes_in_segments
+    if nodes_without_segments:
+        raise Exception(
+            f"Dangling nodes with no connections found: {', '.join(sorted(nodes_without_segments))}"
+        )
+
+    # Detect disconnected subgraphs (multiple components)
+    def bfs(start):
+        q = deque([start])
+        seen = {start}
+        while q:
+            n = q.popleft()
+            for nbr in adjacency.get(n, []):
+                if nbr not in seen:
+                    seen.add(nbr)
+                    q.append(nbr)
+        return seen
+
+    all_nodes = set(adjacency.keys())
+    seen_global = set()
+    components = []
+
+    for n in all_nodes:
+        if n not in seen_global:
+            component = bfs(n)
+            seen_global |= component
+            components.append(component)
+
+    if len(components) > 1:
+        formatted_clusters = "\n".join(
+            f"  - [{', '.join(sorted(c))}]" for c in components
+        )
+        raise Exception(
+            f"Disconnected formboard graph found ({len(components)} clusters):\n{formatted_clusters}"
+        )
+
 
 
 def generate_node_coordinates():
@@ -404,11 +453,31 @@ def generate_node_coordinates():
         if a in node_coordinates and b in node_coordinates:
             x1, y1 = map_xy(*node_coordinates[a])
             x2, y2 = map_xy(*node_coordinates[b])
+
+            # Draw line from A to B
             draw.line((x1, y1, x2, y2), fill="black", width=2)
+
+            # --- Draw arrowhead on B side ---
+            arrow_length = 25
+            arrow_angle = math.radians(25)  # degrees between arrow sides
+            angle = math.atan2(y2 - y1, x2 - x1)
+
+            # Compute arrowhead points
+            left_x = x2 - arrow_length * math.cos(angle - arrow_angle)
+            left_y = y2 - arrow_length * math.sin(angle - arrow_angle)
+            right_x = x2 - arrow_length * math.cos(angle + arrow_angle)
+            right_y = y2 - arrow_length * math.sin(angle + arrow_angle)
+
+            draw.polygon([(x2, y2), (left_x, left_y), (right_x, right_y)], fill="black")
 
             # Midpoint label
             mid_x, mid_y = (x1 + x2) / 2, (y1 + y2) / 2
-            draw.text((mid_x, mid_y - 10), seg.get("instance_name", ""), fill="blue", font=font)
+            draw.text(
+                (mid_x, mid_y - 10),
+                seg.get("instance_name", ""),
+                fill="blue",
+                font=font,
+            )
 
     # --- Draw nodes ---
     for name, (x, y) in node_coordinates.items():
@@ -417,10 +486,15 @@ def generate_node_coordinates():
         draw.text((cx, cy - 15), name, fill="black", font=font, anchor="mm")
 
     # Legend
-    draw.text((padding, height - padding / 2),
-              "Arrows point from End A to End B", fill="black", font=font)
+    draw.text(
+        (padding, height - padding / 2),
+        "Arrows point from End A to End B",
+        fill="black",
+        font=font,
+    )
 
     img.save(fileio.path("formboard graph definition png"), dpi=(96, 96))
+
 
 def map_instance_to_segments(instance_name):
     # Ensure you're trying to map an instance that is segment-based.
