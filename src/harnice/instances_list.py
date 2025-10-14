@@ -277,7 +277,7 @@ def add_connector_contact_nodes_and_circuits():
             f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
         )
         from_connector_node = f"{from_connector_key}.node"
-        from_connector = f"{from_connector_key}.mc"
+        from_connector = f"{from_connector_key}.conn"
 
         from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_contact')}"
 
@@ -285,7 +285,7 @@ def add_connector_contact_nodes_and_circuits():
             f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
         )
         to_connector_node = f"{to_connector_key}.node"
-        to_connector = f"{to_connector_key}.mc"
+        to_connector = f"{to_connector_key}.conn"
 
         to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_contact')}"
 
@@ -368,7 +368,7 @@ def add_connector_contact_nodes_and_circuits():
     for connector in connector_list:
         try:
             modify(
-                f"{connector.get('device_refdes')}.{connector.get('connector')}.mc",
+                f"{connector.get('device_refdes')}.{connector.get('connector')}.conn",
                 {
                     "mating_device_refdes": connector.get("device_refdes"),
                     "mating_device_connector": connector.get("connector"),
