@@ -311,10 +311,12 @@ def add_connector_contact_nodes_and_circuits():
             from_cavity,
             {
                 "net": circuit.get("net"),
-                "item_type": "Cavity",
+                "item_type": "Connector cavity",
                 "parent_instance": from_connector,
                 "location_is_node_or_segment": "Node",
                 "cluster": from_connector_key,
+                "circuit_id": circuit.get("circuit_id"),
+                "circuit_id_port": 0,
             },
         )
 
@@ -340,10 +342,12 @@ def add_connector_contact_nodes_and_circuits():
             to_cavity,
             {
                 "net": circuit.get("net"),
-                "item_type": "Cavity",
+                "item_type": "Connector cavity",
                 "parent_instance": to_connector,
                 "location_is_node_or_segment": "Node",
                 "cluster": to_connector_key,
+                "circuit_id": circuit.get("circuit_id"),
+                "circuit_id_port": 1,
             },
         )
 
