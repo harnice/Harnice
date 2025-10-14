@@ -284,6 +284,48 @@ def validate_nodes():
                     "Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet."
                 )
 
+    # === Detect disconnected or dangling nodes ===
+    # Collect all nodes referenced by segments
+    all_nodes_in_segments = set(adjacency.keys())
+
+    # Any nodes in instances_list but not in any segment?
+    nodes_without_segments = nodes_from_instances_list - all_nodes_in_segments
+    if nodes_without_segments:
+        raise Exception(
+            f"Dangling nodes with no connections found: {', '.join(sorted(nodes_without_segments))}"
+        )
+
+    # Detect disconnected subgraphs (multiple components)
+    def bfs(start):
+        q = deque([start])
+        seen = {start}
+        while q:
+            n = q.popleft()
+            for nbr in adjacency.get(n, []):
+                if nbr not in seen:
+                    seen.add(nbr)
+                    q.append(nbr)
+        return seen
+
+    all_nodes = set(adjacency.keys())
+    seen_global = set()
+    components = []
+
+    for n in all_nodes:
+        if n not in seen_global:
+            component = bfs(n)
+            seen_global |= component
+            components.append(component)
+
+    if len(components) > 1:
+        formatted_clusters = "\n".join(
+            f"  - [{', '.join(sorted(c))}]" for c in components
+        )
+        raise Exception(
+            f"Disconnected formboard graph found ({len(components)} clusters):\n{formatted_clusters}"
+        )
+
+
 
 def generate_node_coordinates():
     # === Step 1: Load segments and nodes from instances_list ===
