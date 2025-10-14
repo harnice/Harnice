@@ -425,7 +425,22 @@ def generate_node_coordinates():
         if a in node_coordinates and b in node_coordinates:
             x1, y1 = map_xy(*node_coordinates[a])
             x2, y2 = map_xy(*node_coordinates[b])
+
+            # Draw line from A to B
             draw.line((x1, y1, x2, y2), fill="black", width=2)
+
+            # --- Draw arrowhead on B side ---
+            arrow_length = 25
+            arrow_angle = math.radians(25)  # degrees between arrow sides
+            angle = math.atan2(y2 - y1, x2 - x1)
+
+            # Compute arrowhead points
+            left_x = x2 - arrow_length * math.cos(angle - arrow_angle)
+            left_y = y2 - arrow_length * math.sin(angle - arrow_angle)
+            right_x = x2 - arrow_length * math.cos(angle + arrow_angle)
+            right_y = y2 - arrow_length * math.sin(angle + arrow_angle)
+
+            draw.polygon([(x2, y2), (left_x, left_y), (right_x, right_y)], fill="black")
 
             # Midpoint label
             mid_x, mid_y = (x1 + x2) / 2, (y1 + y2) / 2
