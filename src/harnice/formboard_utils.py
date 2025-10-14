@@ -30,51 +30,36 @@ def read_segment_rows():
 
 
 def write_segment_rows(rows):
-    """
-    Overwrites the formboard graph definition TSV with the provided rows.
-
-    Args:
-        rows (List[dict]): List of dictionaries matching FORMBOARD_TSV_COLUMNS.
-    """
-    with open(
-        fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8"
-    ) as f:
-        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t")
+    with open(fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t", lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
-
-
-def append_segment_row(data_dict):
-    """
-    Appends a single row to the formboard graph definition TSV.
-
-    Args:
-        data_dict (dict): Dictionary of segment data.
-                          Missing fields will be written as empty strings.
-    """
-    with open(
-        fileio.path("formboard graph definition"), "a", newline="", encoding="utf-8"
-    ) as f:
-        writer = csv.DictWriter(f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t")
-        writer.writerow({key: data_dict.get(key, "") for key in FORMBOARD_TSV_COLUMNS})
+        f.write("\n")
 
 
 def add_segment_to_formboard_def(segment_id, segment_data):
-    if not segment_id:
-        raise ValueError("Missing required argument: 'segment_id'")
+    segments = read_segment_rows()
+    if any(row.get("segment_id") == segment_id for row in segments):
+        return True
 
-    if "segment_id" in segment_data and segment_data["segment_id"] != segment_id:
-        raise ValueError(
-            f"Inconsistent segment_id: argument='{segment_id}' vs data['segment_id']='{segment_data['segment_id']}'"
+    path = fileio.path("formboard graph definition")
+
+    with open(path, "a+", encoding="utf-8") as f:
+        f.seek(0, os.SEEK_END)
+        if f.tell() > 0:
+            f.seek(f.tell() - 1)
+            if f.read(1) != "\n":
+                f.write("\n")
+
+        writer = csv.DictWriter(
+            f,
+            fieldnames=FORMBOARD_TSV_COLUMNS,
+            delimiter="\t",
+            lineterminator="\n",
         )
+        writer.writerow({key: segment_data.get(key, "") for key in FORMBOARD_TSV_COLUMNS})
 
-    segment_data["segment_id"] = segment_id  # Ensure it is included
-
-    existing = read_segment_rows()
-    if any(row.get("segment_id") == segment_id for row in existing):
-        raise ValueError(f"Segment already exists: '{segment_id}'")
-
-    append_segment_row(segment_data)
+    return False
 
 
 def segment_attribute_of(segment_id, key):
@@ -232,6 +217,7 @@ def validate_nodes():
                     add_segment_to_formboard_def(
                         segment_id,
                         {
+                            "segment_id": segment_id,
                             "node_at_end_a": missing_node,
                             "node_at_end_b": whatever_node_to_attach_new_leg_to,
                             "length": str(random.randint(6, 18)),
