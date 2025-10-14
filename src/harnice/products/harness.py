@@ -2,11 +2,7 @@ import runpy
 import os
 from harnice import instances_list, fileio, cli
 
-harness_feature_tree_default = """from harnice import (
-    featuretree_utils, instances_list, component_library,
-    flagnote_utils, formboard_utils, rev_history, svg_utils, system_utils
-)
-
+harness_feature_tree_default = """
 #===========================================================================
 #                   IMPORT PARTS FROM LIBRARY
 #===========================================================================
@@ -258,7 +254,8 @@ import runpy
 
 from harnice import (
     fileio, instances_list, component_library,
-    flagnote_utils, formboard_utils, rev_history, svg_utils, featuretree_utils
+    flagnote_utils, formboard_utils, rev_history, svg_utils, 
+    featuretree_utils, system_utils
 )
 
 #===========================================================================
