@@ -209,7 +209,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
 
 def prep_master(page_setup_contents):
     translate = [0, -3200]
-    delta_x_translate = 1600
+    delta_x_translate = 0
     masters = []
 
     # === Discover all master SVGs in macros folder ===
