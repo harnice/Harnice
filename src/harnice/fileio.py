@@ -13,6 +13,7 @@ from harnice import rev_history, cli
 # this separates name from unique instance identifier
 
 product_type = ""
+net = ""
 
 pn = ""
 rev = 0
@@ -29,6 +30,14 @@ def rev_directory():
 def set_product_type(x):
     global product_type
     product_type = x
+
+
+def set_net(x):
+    global net
+    net = x
+
+def get_net():
+    return net
 
 
 def partnumber(format):
