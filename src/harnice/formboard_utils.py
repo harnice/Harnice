@@ -145,7 +145,7 @@ def validate_nodes():
                             "angle": str(
                                 0 if node_counter == 0 else random.randint(0, 359)
                             ),
-                            "diameter": "0.1",
+                            "diameter": 0.1,
                         },
                     )
                     node_counter += 1
@@ -168,7 +168,7 @@ def validate_nodes():
                     "node_at_end_b": segment_ends[1],
                     "length": str(random.randint(6, 18)),
                     "angle": str(0 if node_counter == 0 else random.randint(0, 359)),
-                    "diameter": "0.1",
+                    "diameter": 0.1,
                 },
             )
 
@@ -209,15 +209,36 @@ def validate_nodes():
                         },
                     )
 
+                    # Create a new segment connecting the missing node to an existing one
                     segment_id = f"{missing_node}_leg"
 
+                    # Pick any existing node to attach to (avoid self-connection)
                     whatever_node_to_attach_new_leg_to = ""
                     for instance in instances_list.read_instance_rows():
-                        if instance.get("item_type") == "Node":
+                        if (
+                            instance.get("item_type") == "Node"
+                            and instance.get("instance_name") != missing_node
+                        ):
                             whatever_node_to_attach_new_leg_to = instance.get(
                                 "instance_name"
                             )
-                            continue
+                            break
+
+                    if not whatever_node_to_attach_new_leg_to:
+                        raise ValueError(
+                            f"No existing node found to connect {missing_node} to."
+                        )
+
+                    add_segment_to_formboard_def(
+                        segment_id,
+                        {
+                            "node_at_end_a": missing_node,
+                            "node_at_end_b": whatever_node_to_attach_new_leg_to,
+                            "length": str(random.randint(6, 18)),
+                            "angle": str(random.randint(0, 359)),
+                            "diameter": 0.1,
+                        },
+                    )
 
     for segment in read_segment_rows():
         instances_list.add_unless_exists(
@@ -408,7 +429,12 @@ def generate_node_coordinates():
 
             # Midpoint label
             mid_x, mid_y = (x1 + x2) / 2, (y1 + y2) / 2
-            draw.text((mid_x, mid_y - 10), seg.get("instance_name", ""), fill="blue", font=font)
+            draw.text(
+                (mid_x, mid_y - 10),
+                seg.get("instance_name", ""),
+                fill="blue",
+                font=font,
+            )
 
     # --- Draw nodes ---
     for name, (x, y) in node_coordinates.items():
@@ -417,10 +443,15 @@ def generate_node_coordinates():
         draw.text((cx, cy - 15), name, fill="black", font=font, anchor="mm")
 
     # Legend
-    draw.text((padding, height - padding / 2),
-              "Arrows point from End A to End B", fill="black", font=font)
+    draw.text(
+        (padding, height - padding / 2),
+        "Arrows point from End A to End B",
+        fill="black",
+        font=font,
+    )
 
     img.save(fileio.path("formboard graph definition png"), dpi=(96, 96))
+
 
 def map_instance_to_segments(instance_name):
     # Ensure you're trying to map an instance that is segment-based.
