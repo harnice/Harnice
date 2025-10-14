@@ -77,7 +77,7 @@ def harnice_file_structure():
         return {
             f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
-            f"{partnumber('pn-rev')}-formboard_graph_definition.svg": "formboard graph definition svg",
+            f"{partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
             "instance_data": {
                 "imported_instances": {},
                 "generated_instances_do_not_edit": {},

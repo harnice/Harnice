@@ -2,6 +2,7 @@ import os
 import random
 import math
 import csv
+from PIL import Image, ImageDraw, ImageFont
 from collections import defaultdict, deque
 from harnice import instances_list, fileio
 
@@ -280,7 +281,6 @@ def validate_nodes():
 def generate_node_coordinates():
     # === Step 1: Load segments and nodes from instances_list ===
     instances = instances_list.read_instance_rows()
-    instance_lookup = {inst.get("instance_name", ""): inst for inst in instances}
 
     segments = [inst for inst in instances if inst.get("item_type") == "Segment"]
     nodes = [inst for inst in instances if inst.get("item_type") == "Node"]
@@ -320,6 +320,10 @@ def generate_node_coordinates():
                 length = float(segment.get("length", 0))
             except ValueError:
                 continue
+
+            # Flip the direction if we're traversing from the B-end toward A-end
+            if current == segment.get("node_at_end_b"):
+                angle_deg = (angle_deg + 180) % 360
 
             radians = math.radians(angle_deg)
             dx = length * math.cos(radians)
@@ -363,107 +367,60 @@ def generate_node_coordinates():
             },
         )
 
-    # === Step 6: Generate SVG ===
-    output_file_path = fileio.path("formboard graph definition svg")
-
+    # === Step 6: Generate PNG ===
     padding = 50
+    scale = 96  # pixels per inch
     radius = 5
-    font_size = 12
-    scale = 96  # 96 pixels per inch
 
-    instances = instances_list.read_instance_rows()
-    node_coordinates_svg = {
-        inst.get("instance_name"): (
-            float(inst.get("translate_x", "0")),
-            float(inst.get("translate_y", "0")),
+    # Compute bounding box
+    xs = [x for x, y in node_coordinates.values()]
+    ys = [y for x, y in node_coordinates.values()]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+
+    width = int((max_x - min_x) * scale + 2 * padding)
+    height = int((max_y - min_y) * scale + 2 * padding)
+
+    def map_xy(x, y):
+        """Map logical (CAD) coordinates to image coordinates."""
+        return (
+            int((x - min_x) * scale + padding),
+            int(height - ((y - min_y) * scale + padding)),  # flip Y for image
         )
-        for inst in instances
-        if inst.get("item_type") == "Node"
-        and inst.get("translate_x")
-        and inst.get("translate_y")
-    }
 
-    if not node_coordinates_svg:
-        print("No valid node coordinates found for SVG.")
-        return
+    # Create white canvas
+    img = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(img)
 
-    all_x = [coord[0] * scale for coord in node_coordinates_svg.values()]
-    all_y = [coord[1] * scale for coord in node_coordinates_svg.values()]
-    min_x, max_x = min(all_x), max(all_x)
-    min_y, max_y = min(all_y), max(all_y)
-    width = max_x - min_x + 2 * padding
-    height = max_y - min_y + 2 * padding
+    # Try to get a system font
+    try:
+        font = ImageFont.truetype("Arial.ttf", 12)
+    except OSError:
+        font = ImageFont.load_default()
 
-    def map_coordinates(x, y):
-        return x * scale - min_x + padding, height - (y * scale - min_y + padding)
-
-    svg_elements = []
-    segment_midpoints = {}
-
+    # --- Draw segments ---
     for seg in segments:
-        a = seg.get("node_at_end_a")
-        b = seg.get("node_at_end_b")
-        coord_a = node_coordinates_svg.get(a)
-        coord_b = node_coordinates_svg.get(b)
+        a, b = seg.get("node_at_end_a"), seg.get("node_at_end_b")
+        if a in node_coordinates and b in node_coordinates:
+            x1, y1 = map_xy(*node_coordinates[a])
+            x2, y2 = map_xy(*node_coordinates[b])
+            draw.line((x1, y1, x2, y2), fill="black", width=2)
 
-        if coord_a and coord_b:
-            start_x, start_y = map_coordinates(*coord_a)
-            end_x, end_y = map_coordinates(*coord_b)
+            # Midpoint label
+            mid_x, mid_y = (x1 + x2) / 2, (y1 + y2) / 2
+            draw.text((mid_x, mid_y - 10), seg.get("instance_name", ""), fill="blue", font=font)
 
-            mid_x_svg = (start_x + end_x) / 2
-            mid_y_svg = (start_y + end_y) / 2
+    # --- Draw nodes ---
+    for name, (x, y) in node_coordinates.items():
+        cx, cy = map_xy(x, y)
+        draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill="red")
+        draw.text((cx, cy - 15), name, fill="black", font=font, anchor="mm")
 
-            mid_x_logical = (mid_x_svg + min_x - padding) / scale
-            mid_y_logical = (height - mid_y_svg + min_y - padding) / scale
+    # Legend
+    draw.text((padding, height - padding / 2),
+              "Arrows point from End A to End B", fill="black", font=font)
 
-            segment_id = seg.get("instance_name", "")
-            segment_midpoints[segment_id] = (
-                round(mid_x_logical, 2),
-                round(mid_y_logical, 2),
-            )
-
-            # Draw the segment line with arrowhead from A to B
-            svg_elements.append(
-                f'<line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}" '
-                f'stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />'
-            )
-
-            # Label the segment ID at midpoint
-            svg_elements.append(
-                f'<text x="{mid_x_svg}" y="{mid_y_svg}" font-size="{font_size}" '
-                f'text-anchor="middle" fill="blue">{segment_id}</text>'
-            )
-
-    for node_name, (x_logical, y_logical) in node_coordinates_svg.items():
-        x, y = map_coordinates(x_logical, y_logical)
-        svg_elements.append(f'<circle cx="{x}" cy="{y}" r="{radius}" fill="red" />')
-        svg_elements.append(
-            f'<text x="{x}" y="{y - 10}" font-size="{font_size}" '
-            f'text-anchor="middle" fill="black">{node_name}</text>'
-        )
-
-    # Legend text at bottom left
-    legend_x, legend_y = padding, height - padding / 2
-    svg_elements.append(
-        f'<text x="{legend_x}" y="{legend_y}" font-size="{font_size}" '
-        f'fill="black">Arrows point from End A to End B</text>'
-    )
-
-    # Wrap with <svg> and include arrowhead definition
-    svg_content = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}">'
-        f"<defs>"
-        f'  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" '
-        f'orient="auto">'
-        f'    <polygon points="0 0, 10 3.5, 0 7" fill="black" />'
-        f"  </marker>"
-        f"</defs>" + "".join(svg_elements) + "</svg>"
-    )
-
-    with open(output_file_path, "w") as output_file:
-        output_file.write(svg_content)
-
+    img.save(fileio.path("formboard graph definition png"), dpi=(96, 96))
 
 def map_instance_to_segments(instance_name):
     # Ensure you're trying to map an instance that is segment-based.
