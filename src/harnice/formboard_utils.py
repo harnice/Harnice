@@ -320,6 +320,10 @@ def generate_node_coordinates():
             except ValueError:
                 continue
 
+            # Flip the direction if we're traversing from the B-end toward A-end
+            if current == segment.get("node_at_end_b"):
+                angle_deg = (angle_deg + 180) % 360
+
             radians = math.radians(angle_deg)
             dx = length * math.cos(radians)
             dy = length * math.sin(radians)
