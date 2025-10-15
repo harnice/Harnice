@@ -63,13 +63,15 @@ def squeeze_instance_between_ports_in_circuit(
 ):
     for instance in instances_list.read_instance_rows():
         if instance.get("circuit_id") == circuit_id:
+            if instance.get("item_type") == "Circuit":
+                continue
             old_port_number = instance.get("circuit_port_number")
-            if instance.get("circuit_port_number") < new_circuit_port_number:
+            if int(instance.get("circuit_port_number")) < new_circuit_port_number:
                 continue
             else:
                 instances_list.modify(
                     instance.get("instance_name"),
-                    {"circuit_port_number": old_port_number + 1},
+                    {"circuit_port_number": int(old_port_number) + 1},
                 )
 
         if instance.get("instance_name") == instance_name:
@@ -94,3 +96,10 @@ def instances_of_circuit(circuit_id):
     instances.sort(key=lambda x: int(x.get("circuit_port_number") or 999999))
 
     return [i.get("instance_name") for i in instances]
+
+def instance_of_circuit_port_number(circuit_id, circuit_port_number):
+    for instance in instances_list.read_instance_rows():
+        if instance.get("circuit_id") == circuit_id:
+            if instance.get("circuit_port_number") == circuit_port_number:
+                return instance.get("instance_name")
+    return None

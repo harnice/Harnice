@@ -514,7 +514,7 @@ def map_instance_to_segments(instance_name):
 
     # Find terminal nodes from the ports
     prev_instance, next_instance = (
-        circuit_instance.instance_names_of_adjacent_ports(  # TODO: maybe make this an argument to this function
+        circuit_instance.end_ports_of_circuit(  # TODO: maybe make this an argument to this function
             instance_name
         )
     )

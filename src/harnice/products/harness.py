@@ -47,6 +47,23 @@ for instance in instances_list.read_instance_rows():
 featuretree_utils.update_translate_content()
 
 #===========================================================================
+#                   ASSIGN CONDUCTORS
+#===========================================================================
+#assume the only existing ports at this point are cavities 0 and 1
+
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Circuit":
+        circuit_id = instance.get("circuit_id")
+        conductor_name = f"{circuit_id}-conductor"
+        instances_list.add_unless_exists(conductor_name, {
+            "item_type": "Conductor",
+            "location_is_node_or_segment": "Segment",
+            "node_at_end_a": circuit_instance.instance_of_circuit_port_number(circuit_id, 0),
+            "node_at_end_b": circuit_instance.instance_of_circuit_port_number(circuit_id, 1)
+        })
+        circuit_instance.squeeze_instance_between_ports_in_circuit(conductor_name, instance.get("circuit_id"), 1)
+
+#===========================================================================
 #                   UPDATE FORMBOARD DATA
 #===========================================================================
 formboard_utils.validate_nodes()
@@ -255,7 +272,7 @@ import runpy
 from harnice import (
     fileio, instances_list, component_library,
     flagnote_utils, formboard_utils, rev_history, svg_utils, 
-    featuretree_utils, system_utils
+    featuretree_utils, system_utils, circuit_instance
 )
 
 #===========================================================================
