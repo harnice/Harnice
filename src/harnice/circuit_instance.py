@@ -80,3 +80,17 @@ def squeeze_instance_between_ports_in_circuit(
                     "circuit_port_number": new_circuit_port_number,
                 },
             )
+
+
+def instances_of_circuit(circuit_id):
+    instances = []
+    for instance in instances_list.read_instance_rows():
+        if instance.get("circuit_id") == circuit_id:
+            if instance.get("item_type") == "Circuit":
+                continue
+            instances.append(instance)
+
+    # sort numerically by circuit_port_number, treating missing as large number
+    instances.sort(key=lambda x: int(x.get("circuit_port_number") or 999999))
+
+    return [i.get("instance_name") for i in instances]
