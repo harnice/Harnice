@@ -4,7 +4,8 @@ import os
 from harnice import (
     instances_list,
     fileio,
-)  # assuming your project structure provides these
+    circuit_instance
+)
 
 build_macro_mpn = "import_harnice_esch"
 
@@ -202,7 +203,7 @@ for instance in instances_list.read_instance_rows():
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Contact":
         instance_name = instance.get("instance_name")
-        prev_port, next_port = instances_list.instance_names_of_adjacent_ports(
+        prev_port, next_port = circuit_instance.instance_names_of_adjacent_ports(
             instance_name
         )
         prev_port_location_is_node_or_segment = instances_list.attribute_of(
