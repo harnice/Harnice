@@ -17,7 +17,7 @@ INSTANCES_LIST_COLUMNS = [
     "location_is_node_or_segment",  # each instance is either better represented by one or ther other
     "cluster",  # a group of co-located parts (connectors, backshells, nodes)
     "circuit_id",  # which signal this component is electrically connected to
-    "circuit_id_port",  # the sequential id of this item in its signal chain
+    "circuit_port_number",  # the sequential id of this item in its signal chain
     "from_channel_type_id",
     "to_channel_type_id",
     "signal_of_channel_type",
@@ -210,12 +210,12 @@ def instance_names_of_adjacent_ports(target_instance):
             # assign parents to contacts based on the assumption that one of the two adjacent items in the circuit will be a node-item
             if (
                 instance.get("circuit_id") == ""
-                or instance.get("circuit_id_port") == ""
+                or instance.get("circuit_port_number") == ""
             ):
                 raise ValueError(f"Circuit order unspecified for {target_instance}")
 
             circuit_id = instance.get("circuit_id")
-            circuit_id_port = int(instance.get("circuit_id_port"))
+            circuit_port_number = int(instance.get("circuit_port_number"))
 
             # find the adjacent port
             prev_port = ""
@@ -223,9 +223,15 @@ def instance_names_of_adjacent_ports(target_instance):
 
             for instance2 in read_instance_rows():
                 if instance2.get("circuit_id") == circuit_id:
-                    if int(instance2.get("circuit_id_port")) == circuit_id_port - 1:
+                    if (
+                        int(instance2.get("circuit_port_number"))
+                        == circuit_port_number - 1
+                    ):
                         prev_port = instance2.get("instance_name")
-                    if int(instance2.get("circuit_id_port")) == circuit_id_port + 1:
+                    if (
+                        int(instance2.get("circuit_port_number"))
+                        == circuit_port_number + 1
+                    ):
                         next_port = instance2.get("instance_name")
 
             return prev_port, next_port
@@ -316,7 +322,7 @@ def add_connector_contact_nodes_and_circuits():
                 "location_is_node_or_segment": "Node",
                 "cluster": from_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
-                "circuit_id_port": 0,
+                "circuit_port_number": 0,
             },
         )
 
@@ -347,12 +353,12 @@ def add_connector_contact_nodes_and_circuits():
                 "location_is_node_or_segment": "Node",
                 "cluster": to_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
-                "circuit_id_port": 1,
+                "circuit_port_number": 1,
             },
         )
 
         # add circuit
-        circuit_name = f"circuit-{circuit.get('circuit_id')}"
+        circuit_id = f"circuit-{circuit.get('circuit_id')}"
         circuit_data = {
             "net": circuit.get("net"),
             "item_type": "Circuit",
@@ -364,7 +370,7 @@ def add_connector_contact_nodes_and_circuits():
             "node_at_end_b": to_cavity,
         }
 
-        add_unless_exists(circuit_name, circuit_data)
+        add_unless_exists(circuit_id, circuit_data)
 
     with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
         connector_list = list(csv.DictReader(f, delimiter="\t"))
