@@ -239,7 +239,7 @@ def render(build_macro="", output_macro_dict=None):
         if output_macro_dict is None:
             output_macro_contents = """featuretree_utils.run_macro("bom_exporter_bottom_up", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom1")
 featuretree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="formboard1", scale=scales.get("A"))
-featuretree_utils.run_macro("wirelist_exporter", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="wirelist1")
+featuretree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="circuitviz1")
 featuretree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="revhistory1")
 featuretree_utils.run_macro("buildnotes_table", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="buildnotestable1")
 featuretree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="drawing1", scales=scales)
