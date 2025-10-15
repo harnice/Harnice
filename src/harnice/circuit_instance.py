@@ -81,6 +81,7 @@ def squeeze_instance_between_ports_in_circuit(
                 },
             )
 
+
 def instances_of_circuit(circuit_id):
     instances = []
     for instance in instances_list.read_instance_rows():
