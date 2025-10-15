@@ -12,16 +12,16 @@ def path(target_value):
     # artifact_path gets passed in as a global from the caller
     if target_value == "wirelist no formats":
         return os.path.join(
-            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-wirelist.tsv"
+            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.tsv"
         )
     if target_value == "wirelist pretty":
         return os.path.join(
-            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-wirelist.xls"
+            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.xls"
         )
     if target_value == "wirelist svg":
         return os.path.join(
             artifact_path,
-            f"{fileio.partnumber("pn-rev")}-{artifact_id}-wirelist-master.svg",
+            f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist-master.svg",
         )
     else:
         raise KeyError(
@@ -31,7 +31,7 @@ def path(target_value):
 
 # =============== WIRELIST COLUMNS ===============
 WIRELIST_COLUMNS = [
-    {"name": "Circuit_name", "fill": "black", "font": "white"},
+    {"name": "circuit_id", "fill": "black", "font": "white"},
     {"name": "Length", "fill": "black", "font": "white"},
     {"name": "Cable", "fill": "black", "font": "white"},
     {"name": "Conductor_identifier", "fill": "black", "font": "white"},
@@ -62,7 +62,7 @@ for instance in instances_list.read_instance_rows():
     if instance.get("item_type") != "Circuit":
         continue
 
-    circuit_name = instance.get("instance_name")
+    circuit_id = instance.get("instance_name")
     length = ""
     cable = ""
     conductor_identifier = ""
@@ -77,7 +77,7 @@ for instance in instances_list.read_instance_rows():
     connector_cavity_counter = 0
     for instance3 in instances_list.read_instance_rows():
         if (
-            instance3.get("circuit_id") == circuit_name
+            instance3.get("circuit_id") == circuit_id
             and instance3.get("item_type") == "Connector cavity"
         ):
             if connector_cavity_counter == 0:
@@ -92,7 +92,7 @@ for instance in instances_list.read_instance_rows():
                 )
             else:
                 raise ValueError(
-                    f"There are 3 or more cavities specified in circuit {circuit_name} "
+                    f"There are 3 or more cavities specified in circuit {circuit_id} "
                     "but expected two (to, from) when building wirelist."
                 )
             connector_cavity_counter += 1
@@ -100,7 +100,7 @@ for instance in instances_list.read_instance_rows():
     # Locate special contacts
     for instance4 in instances_list.read_instance_rows():
         if (
-            instance4.get("circuit_id") == circuit_name
+            instance4.get("circuit_id") == circuit_id
             and instance4.get("item_type") == "Contact"
         ):
             parent = instance4.get("parent_instance")
@@ -112,7 +112,7 @@ for instance in instances_list.read_instance_rows():
     # Locate conductor
     for instance5 in instances_list.read_instance_rows():
         if (
-            instance5.get("circuit_id") == circuit_name
+            instance5.get("circuit_id") == circuit_id
             and instance5.get("item_type") == "Conductor"
         ):
             conductor_identifier = instance5.get("print_name")
@@ -121,7 +121,7 @@ for instance in instances_list.read_instance_rows():
 
     add(
         {
-            "Circuit_name": circuit_name,
+            "circuit_id": circuit_id,
             "Length": length,
             "Cable": cable,
             "Conductor_identifier": conductor_identifier,
@@ -207,8 +207,8 @@ for col_idx, col in enumerate(WIRELIST_COLUMNS):
     y = start_y
     svg_lines.append(
         f"""
-<rect x="{x}" y="{y}" width="{col_width}" height="{row_height}" fill="{col['fill']}" stroke="black" />
-<text x="{x + col_width/2}" y="{y + row_height/2}" fill="{col['font']}" text-anchor="middle" dominant-baseline="middle" font-family="{font_family}" font-size="{font_size}">{col['name']}</text>"""
+<rect x="{x}" y="{y}" width="{col_width}" height="{row_height}" fill="{col["fill"]}" stroke="black" />
+<text x="{x + col_width / 2}" y="{y + row_height / 2}" fill="{col["font"]}" text-anchor="middle" dominant-baseline="middle" font-family="{font_family}" font-size="{font_size}">{col["name"]}</text>"""
     )
 
 for row_idx, row in enumerate(data_rows):
@@ -219,7 +219,7 @@ for row_idx, row in enumerate(data_rows):
         svg_lines.append(
             f"""
 <rect x="{x}" y="{y}" width="{col_width}" height="{row_height}" fill="white" stroke="black" />
-<text x="{x + col_width/2}" y="{y + row_height/2}" fill="black" text-anchor="middle" dominant-baseline="middle" font-family="{font_family}" font-size="{font_size}">{text}</text>"""
+<text x="{x + col_width / 2}" y="{y + row_height / 2}" fill="black" text-anchor="middle" dominant-baseline="middle" font-family="{font_family}" font-size="{font_size}">{text}</text>"""
         )
 
 svg_lines.append("</g>")

@@ -24,8 +24,8 @@ with open(path("harness yaml"), "r", encoding="utf-8") as f:
     harness_yaml = yaml.safe_load(f)
 
 # Iterate over the circuits and their associated ports
-for circuit_name, ports in harness_yaml.items():
-    instances_list.add_unless_exists(circuit_name, {"item_type": "Circuit"})
+for circuit_id, ports in harness_yaml.items():
+    instances_list.add_unless_exists(circuit_id, {"item_type": "Circuit"})
     port_counter = 0
     contact_counter = 0  # Automatically number contacts like contact1, contact2, etc.
 
@@ -34,7 +34,7 @@ for circuit_name, ports in harness_yaml.items():
     for port_label, value in ports.items():
         if port_label == "contact":
             # Automatically name the contact with the circuit name and a number
-            instance_name = f"{circuit_name}.contact{contact_counter}"
+            instance_name = f"{circuit_id}.contact{contact_counter}"
             contact_counter += 1
 
             # Add this contact to the system with its part number (mpn)
@@ -50,8 +50,8 @@ for circuit_name, ports in harness_yaml.items():
                     "mpn": value,
                     "lib_repo": lib_repo,
                     "location_is_node_or_segment": "Node",
-                    "circuit_id": circuit_name,
-                    "circuit_id_port": port_counter,
+                    "circuit_id": circuit_id,
+                    "circuit_port_number": port_counter,
                 },
             )
 
@@ -100,8 +100,8 @@ for circuit_name, ports in harness_yaml.items():
                                 "parent_instance": port_label,
                                 "cluster": port_label,
                                 "location_is_node_or_segment": "Node",
-                                "circuit_id": circuit_name,
-                                "circuit_id_port": port_counter,
+                                "circuit_id": circuit_id,
+                                "circuit_port_number": port_counter,
                             },
                         )
 
@@ -115,8 +115,8 @@ for circuit_name, ports in harness_yaml.items():
                                 "item_type": "Conductor",
                                 "parent_instance": port_label,
                                 "location_is_node_or_segment": "Segment",
-                                "circuit_id": circuit_name,
-                                "circuit_id_port": port_counter,
+                                "circuit_id": circuit_id,
+                                "circuit_port_number": port_counter,
                             },
                         )
 

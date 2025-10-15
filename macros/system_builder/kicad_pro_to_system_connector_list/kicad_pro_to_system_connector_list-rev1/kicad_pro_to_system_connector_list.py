@@ -165,7 +165,14 @@ merged_nets = merge_disconnect_nets(nets, disconnect_refdes)
 
 # write contents to TSV
 with open(fileio.path("system connector list"), "w", newline="", encoding="utf-8") as f:
-    fieldnames = ["device_refdes", "connector", "net", "merged_net", "disconnect", "connector_mpn"]
+    fieldnames = [
+        "device_refdes",
+        "connector",
+        "net",
+        "merged_net",
+        "disconnect",
+        "connector_mpn",
+    ]
     writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
     writer.writeheader()
 
@@ -181,7 +188,10 @@ with open(fileio.path("system connector list"), "w", newline="", encoding="utf-8
             connector_mpn = ""
             if disconnect_flag:
                 path_to_signals_list = os.path.join(
-                    os.getcwd(), "disconnects", device_refdes, f"{device_refdes}-signals_list.tsv"
+                    os.getcwd(),
+                    "disconnects",
+                    device_refdes,
+                    f"{device_refdes}-signals_list.tsv",
                 )
                 with open(path_to_signals_list, newline="", encoding="utf-8") as f:
                     reader = csv.DictReader(f, delimiter="\t")
@@ -193,13 +203,18 @@ with open(fileio.path("system connector list"), "w", newline="", encoding="utf-8
                             connector_mpn = first_row.get("A_connector_mpn", "")
 
             else:
-                path_to_signals_list = os.path.join(os.getcwd(), "devices", device_refdes, f"{device_refdes}-signals_list.tsv")
+                path_to_signals_list = os.path.join(
+                    os.getcwd(),
+                    "devices",
+                    device_refdes,
+                    f"{device_refdes}-signals_list.tsv",
+                )
                 with open(path_to_signals_list, newline="", encoding="utf-8") as f:
                     reader = csv.DictReader(f, delimiter="\t")
                     for row in reader:
                         if row.get("connector_name", "").strip() == pinfunction.strip():
-                           connector_mpn = row.get("connector_mpn", "").strip()
-                           break
+                            connector_mpn = row.get("connector_mpn", "").strip()
+                            break
 
             writer.writerow(
                 {
