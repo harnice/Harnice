@@ -24,4 +24,6 @@ for instance in system_instances_list_data:
 
 fileio.set_net(target_net)
 
-system_utils.update_upstream_manifest(path_to_system_rev, system_pn_rev, manifest_nets, fileio.partnumber('pn-rev'))
+system_utils.update_upstream_manifest(
+    path_to_system_rev, system_pn_rev, manifest_nets, fileio.partnumber("pn-rev")
+)

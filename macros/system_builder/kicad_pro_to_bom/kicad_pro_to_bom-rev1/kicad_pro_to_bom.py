@@ -35,7 +35,9 @@ Always overwrites the BOM file.
 """
 
 if not os.path.isfile(path("kicad sch")):
-    raise FileNotFoundError(f"Schematic not found. Check your kicad sch exists at this name and location: \n{path("kicad sch")}")
+    raise FileNotFoundError(
+        f"Schematic not found. Check your kicad sch exists at this name and location: \n{path("kicad sch")}"
+    )
 
 cmd = [
     "kicad-cli",
