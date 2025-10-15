@@ -95,8 +95,8 @@ def instances_of_circuit(circuit_id):
     # sort numerically by circuit_port_number, treating missing as large number
     instances.sort(key=lambda x: int(x.get("circuit_port_number") or 999999))
 
-    return [i.get("instance_name") for i in instances]
-
+    return instances
+    
 def instance_of_circuit_port_number(circuit_id, circuit_port_number):
     for instance in instances_list.read_instance_rows():
         if instance.get("circuit_id") == circuit_id:
