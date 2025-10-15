@@ -79,7 +79,7 @@ def lookup_outputcsys_from_lib_used(lib_name, outputcsys):
 
 
 def update_translate_content():
-    #this looks through parent csys and finds its output csys and recommends its translate_x and translate_y
+    # this looks through parent csys and finds its output csys and recommends its translate_x and translate_y
     for instance in instances_list.read_instance_rows():
         if instance.get("parent_csys_instance_name") in ["", None]:
             continue  # skip if there isn't a parent defined
@@ -117,12 +117,13 @@ def copy_pdfs_to_cwd():
                 except Exception as e:
                     print(f"[ERROR] Could not copy {source_path}: {e}")
 
+
 def run_feature_for_relative(project_key, referenced_pn_rev, feature_tree_name):
     project_path = fileio.get_path_to_project(project_key)
     feature_tree_path = os.path.join(
         project_path,
         f"{referenced_pn_rev[0]}-{referenced_pn_rev[1]}",
-        "features_for_relatives", 
-        feature_tree_name
+        "features_for_relatives",
+        feature_tree_name,
     )
     runpy.run_path(feature_tree_path, run_name="__main__")

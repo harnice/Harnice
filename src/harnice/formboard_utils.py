@@ -4,7 +4,7 @@ import math
 import csv
 from PIL import Image, ImageDraw, ImageFont
 from collections import defaultdict, deque
-from harnice import instances_list, fileio
+from harnice import instances_list, fileio, circuit_instance
 
 FORMBOARD_TSV_COLUMNS = [
     "segment_id",
@@ -513,8 +513,10 @@ def map_instance_to_segments(instance_name):
         )
 
     # Find terminal nodes from the ports
-    prev_instance, next_instance = instances_list.instance_names_of_adjacent_ports(
-        instance_name
+    prev_instance, next_instance = (
+        circuit_instance.instance_names_of_adjacent_ports(  # TODO: maybe make this an argument to this function
+            instance_name
+        )
     )
     node_of_prev_instance = instances_list.instance_in_cluster_with_suffix(
         instances_list.attribute_of(prev_instance, "cluster"), ".node"

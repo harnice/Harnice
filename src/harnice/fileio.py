@@ -36,6 +36,7 @@ def set_net(x):
     global net
     net = x
 
+
 def get_net():
     return net
 
@@ -198,6 +199,7 @@ def path(target_value):
 
     # FILES DEPENDENT ON HARNICE ROOT
     import harnice
+
     harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
 
     if target_value == "library locations":
