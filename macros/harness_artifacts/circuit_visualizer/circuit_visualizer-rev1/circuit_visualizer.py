@@ -10,12 +10,13 @@ whitespace_length = 24
 
 # Font and style
 FONT_FAMILY = "Arial"
-FONT_SIZE = 8
+FONT_SIZE = 7
 FONT_COLOR = "black"
 
 # Table layout
 HEADER_HEIGHT = 16
 ROW_HEIGHT = 30
+outer_margin_length = 96  # ~1 inch margin from table edges to first/last node
 COL1_WIDTH = 72
 TABLE_MARGIN_X = 16
 TABLE_MARGIN_Y = 16
@@ -23,8 +24,10 @@ TABLE_STROKE = "black"
 TABLE_FILL = "white"
 
 # Derived layout
-COL2_WIDTH = overall_length + 2 * whitespace_length  # right cell width = visualization + margin
-VISUALIZATION_INSET_X = whitespace_length            # left inset centers visualization
+COL2_WIDTH = (
+    overall_length + 2 * whitespace_length
+)  # right cell width = visualization + margin
+VISUALIZATION_INSET_X = whitespace_length  # left inset centers visualization
 
 # SVG header/footer
 SVG_HEADER = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -47,37 +50,93 @@ def path(target_value):
 
 
 # =============== DRAW HELPERS ===============
-def plot_node(node_instance, x, y, local_group):
-    """Draw a node as a filled circle with its instance name aligned horizontally."""
-    node_name = node_instance.get("instance_name", "")
+def plot_node(node_instance, x, y, local_group, text_position):
+    """Draw a node as a filled circle with its instance name positioned relative to it."""
+    print_name = node_instance.get("print_name", "")
     cx = x + node_pointsize / 2
     cy = y
 
-    circle = f'<circle cx="{cx}" cy="{cy}" r="{node_pointsize / 2}" fill="white" stroke="black" stroke-width="1"/>'
-    label_y = y + node_pointsize + 8
-    label = (
-        f'<text x="{cx}" y="{label_y}" fill="{FONT_COLOR}" '
-        f'text-anchor="middle" font-family="{FONT_FAMILY}" '
-        f'font-size="{FONT_SIZE}">{node_name}</text>'
+    circle = (
+        f'<circle cx="{cx}" cy="{cy}" r="{node_pointsize / 2}" '
+        f'fill="white" stroke="black" stroke-width="1"/>'
     )
+
+    # Default offsets
+    offset = 8
+    label_x = cx
+    label_y = cy
+    text_anchor = "middle"
+    dominant_baseline = "middle"
+
+    if text_position == "above":
+        label_y = cy - offset
+        text_anchor = "middle"
+        dominant_baseline = "auto"
+    elif text_position == "below":
+        label_y = cy + offset
+        text_anchor = "middle"
+        dominant_baseline = "hanging"
+    elif text_position == "left":
+        label_x = cx - offset
+        text_anchor = "end"
+        dominant_baseline = "middle"
+    elif text_position == "right":
+        label_x = cx + offset
+        text_anchor = "start"
+        dominant_baseline = "middle"
+    else:
+        label_y = cy + offset
+        text_anchor = "middle"
+        dominant_baseline = "hanging"
+
+    label = (
+        f'<text x="{label_x}" y="{label_y}" fill="{FONT_COLOR}" '
+        f'text-anchor="{text_anchor}" dominant-baseline="{dominant_baseline}" '
+        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE}">{print_name}</text>'
+    )
+
     local_group.append(circle)
     local_group.append(label)
 
 
 def plot_segment(segment_instance, x, y, length, local_group):
-    """Draw a segment as a solid black rectangle (no border)."""
-    segment_name = segment_instance.get("instance_name", "")
+    """Draw a segment as a solid black rectangle (no border),
+    with the segment label centered on the line over a white background.
+    """
+    print_name = segment_instance.get("print_name", "")
     rect_height = 2
 
+    # Black line
     rect = f'<rect x="{x}" y="{y - rect_height / 2}" width="{length}" height="{rect_height}" fill="black"/>'
-    label_y = y + node_pointsize + 8
+
+    # Label position
+    label_y = y + FONT_SIZE / 2 - 1  # vertically centered slightly above midline
     label_x = x + (length / 2)
+
+    # Measure background box around text
+    text_padding_x = 3
+    text_padding_y = 2
+    approx_text_width = len(print_name) * (FONT_SIZE * 0.6)
+    bg_x = label_x - (approx_text_width / 2) - text_padding_x
+    bg_y = label_y - FONT_SIZE + text_padding_y / 2
+
+    # White rectangle under text (no border)
+    label_bg = (
+        f'<rect x="{bg_x}" y="{bg_y}" '
+        f'width="{approx_text_width + 2 * text_padding_x}" '
+        f'height="{FONT_SIZE + text_padding_y}" fill="white"/>'
+    )
+
+    # Label text
     label = (
         f'<text x="{label_x}" y="{label_y}" fill="{FONT_COLOR}" '
         f'text-anchor="middle" font-family="{FONT_FAMILY}" '
-        f'font-size="{FONT_SIZE}">{segment_name}</text>'
+        f'font-size="{FONT_SIZE}">{print_name}</text>'
     )
+
+    # Append elements (order: line → bg → text)
     local_group.append(rect)
+    local_group.append(label_bg)
     local_group.append(label)
 
 
@@ -86,26 +145,26 @@ def build_header():
     header_group = []
     y0 = TABLE_MARGIN_Y
 
-    # Column outlines
+    # Column outlines (gray fill for header)
     header_group.append(
         f'<rect x="{TABLE_MARGIN_X}" y="{y0}" width="{COL1_WIDTH}" height="{HEADER_HEIGHT}" '
-        f'fill="{TABLE_FILL}" stroke="{TABLE_STROKE}" />'
+        f'fill="#E0E0E0" stroke="{TABLE_STROKE}" />'
     )
     header_group.append(
         f'<rect x="{TABLE_MARGIN_X + COL1_WIDTH}" y="{y0}" width="{COL2_WIDTH}" height="{HEADER_HEIGHT}" '
-        f'fill="{TABLE_FILL}" stroke="{TABLE_STROKE}" />'
+        f'fill="#E0E0E0" stroke="{TABLE_STROKE}" />'
     )
 
-    # Column labels
+    # Column labels (bold)
     header_group.append(
         f'<text x="{TABLE_MARGIN_X + COL1_WIDTH / 2}" y="{y0 + HEADER_HEIGHT / 2}" '
         f'fill="{FONT_COLOR}" text-anchor="middle" dominant-baseline="middle" '
-        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE + 1}">Circuit ID</text>'
+        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE + 1}" font-weight="bold">CIRCUIT</text>'
     )
     header_group.append(
         f'<text x="{TABLE_MARGIN_X + COL1_WIDTH + COL2_WIDTH / 2}" y="{y0 + HEADER_HEIGHT / 2}" '
         f'fill="{FONT_COLOR}" text-anchor="middle" dominant-baseline="middle" '
-        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE + 1}">Circuit Visualization</text>'
+        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE + 1}" font-weight="bold">SCHEMATIC</text>'
     )
     return header_group
 
@@ -119,6 +178,7 @@ for instance in instances_list.read_instance_rows():
         continue
 
     circuit_id = instance.get("circuit_id")
+    print_name = instance.get("print_name", "")
     ports = circuit_instance.instances_of_circuit(circuit_id)
 
     # Local group for this circuit's graphics
@@ -134,27 +194,72 @@ for instance in instances_list.read_instance_rows():
     delta_x = 0
     try:
         segment_length = (
-            overall_length - (num_nodes + num_segments) * whitespace_length
+            overall_length
+            - (2 * outer_margin_length)  # reserve left/right margins
+            - (num_nodes + num_segments - 1) * whitespace_length
         ) / num_segments
     except ZeroDivisionError:
-        delta_x = overall_length / num_nodes
+        delta_x = (overall_length - 2 * outer_margin_length) / max(num_nodes, 1)
         segment_length = 0
 
-    x = 0
-    for port in ports:
-        item_type = port.get("item_type")
-        if item_type == "Connector cavity":
-            plot_node(port, x, y=ROW_HEIGHT / 2, local_group=local_group)
-            x += whitespace_length + delta_x
-        elif item_type == "Conductor":
-            plot_segment(
-                port,
-                x,
+    x = outer_margin_length  # start after left margin
+    for i, port in enumerate(ports):
+        kind = port.get("location_is_node_or_segment")
+
+        if kind == "Node":
+            circuit_port_number = int(port.get("circuit_port_number") or -1)
+            num_ports = len(ports) - 1  # zero-based last index
+
+            # --- Determine label position ---
+            if circuit_port_number == 0:
+                text_position = "left"
+            elif circuit_port_number == num_ports:
+                text_position = "right"
+            else:
+                prev_port = ports[i - 1] if i > 0 else None
+                if prev_port:
+                    if prev_port.get("location_is_node_or_segment") == "Node":
+                        prev_text_pos = prev_port.get("text_position", "below")
+                        text_position = "above" if prev_text_pos == "below" else "below"
+                    elif prev_port.get("location_is_node_or_segment") == "Segment":
+                        text_position = "above"
+                    else:
+                        text_position = "below"
+                else:
+                    text_position = "below"
+
+            port["text_position"] = text_position
+
+            # --- Draw node ---
+            plot_node(
+                node_instance=port,
+                x=x,
                 y=ROW_HEIGHT / 2,
-                length=segment_length,
                 local_group=local_group,
+                text_position=text_position,
             )
-            x += segment_length + whitespace_length
+
+            # --- Determine what comes next ---
+            next_item = ports[i + 1] if i + 1 < len(ports) else None
+            if next_item:
+                if next_item.get("location_is_node_or_segment") == "Segment":
+                    # Draw the segment immediately after this node
+                    plot_segment(
+                        segment_instance=next_item,
+                        x=x + node_pointsize,
+                        y=ROW_HEIGHT / 2,
+                        length=segment_length,
+                        local_group=local_group,
+                    )
+                    # Move to the end of the segment for the next element
+                    x += node_pointsize + segment_length
+                elif next_item.get("location_is_node_or_segment") == "Node":
+                    # Only add whitespace if next is another node
+                    x += whitespace_length
+
+        elif kind == "Segment":
+            # Segments are now handled inline after their preceding Node
+            continue
 
     # Table row outline
     y_row_top = y_offset + (row_index * ROW_HEIGHT)
@@ -171,7 +276,7 @@ for instance in instances_list.read_instance_rows():
     svg_elements.append(
         f'<text x="{TABLE_MARGIN_X + COL1_WIDTH / 2}" y="{y_row_top + ROW_HEIGHT / 2}" '
         f'fill="{FONT_COLOR}" text-anchor="middle" dominant-baseline="middle" '
-        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE}">{circuit_id}</text>'
+        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE}">{print_name}</text>'
     )
 
     # Right cell (graphics group)
