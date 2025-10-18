@@ -112,6 +112,10 @@ for instance in instances_list.read_instance_rows():
         instance_name = instance.get("instance_name", "")
         print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
         instances_list.modify(instance_name, {"print_name": print_name})
+    elif instance.get("item_type") == "Conductor":
+        instances_list.modify(instance.get("instance_name"), {
+            "print_name": f"{instance.get("cable_identifier")}"
+        })
     else:
         instances_list.modify(instance.get("instance_name"), {
             "print_name": instance.get("instance_name")
