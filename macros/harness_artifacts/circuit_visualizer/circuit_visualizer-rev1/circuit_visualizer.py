@@ -12,6 +12,7 @@ whitespace_length = 24
 FONT_FAMILY = "Arial"
 FONT_SIZE = 7
 FONT_COLOR = "black"
+line_spacing = 7
 
 # Table layout
 HEADER_HEIGHT = 16
@@ -48,7 +49,7 @@ def path(target_value):
 
 # =============== DRAW HELPERS ===============
 def plot_node(node_instance, x, y, local_group, text_position):
-    """Draw a node circle and its label."""
+    """Draw a node circle and its label with two stacked lines."""
     print_name = node_instance.get("print_name", "")
     cx = x + node_pointsize / 2
     cy = y
@@ -58,18 +59,18 @@ def plot_node(node_instance, x, y, local_group, text_position):
         f'fill="white" stroke="black" stroke-width="1"/>'
     )
 
+    line1 = instances_list.attribute_of(node_instance.get("instance_name"), "parent_instance")
+    line2 = print_name
+
     offset = 8
     label_x = cx
-    label_y = cy
+    label_y_center = cy
     text_anchor = "middle"
-    dominant_baseline = "middle"
 
     if text_position == "above":
-        label_y = cy - offset
-        dominant_baseline = "auto"
+        label_y_center = cy - offset - (FONT_SIZE / 2)
     elif text_position == "below":
-        label_y = cy + offset
-        dominant_baseline = "hanging"
+        label_y_center = cy + offset + (FONT_SIZE / 2)
     elif text_position == "left":
         label_x = cx - offset
         text_anchor = "end"
@@ -77,48 +78,71 @@ def plot_node(node_instance, x, y, local_group, text_position):
         label_x = cx + offset
         text_anchor = "start"
 
-    label = (
-        f'<text x="{label_x}" y="{label_y}" fill="{FONT_COLOR}" '
-        f'text-anchor="{text_anchor}" dominant-baseline="{dominant_baseline}" '
-        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE}">{print_name}</text>'
+    # Compute vertical positions for two lines
+    line1_y = label_y_center - (line_spacing / 2)
+    line2_y = label_y_center + (line_spacing / 2)
+
+    # Two stacked text lines
+    text_template = (
+        f'<text x="{{x}}" y="{{y}}" fill="{FONT_COLOR}" '
+        f'text-anchor="{text_anchor}" font-family="{FONT_FAMILY}" '
+        f'font-size="{FONT_SIZE}">{{text}}</text>'
     )
+    label1 = text_template.format(x=label_x, y=line1_y, text=line1)
+    label2 = text_template.format(x=label_x, y=line2_y, text=line2)
 
     local_group.append(circle)
-    local_group.append(label)
+    local_group.append(label1)
+    local_group.append(label2)
 
 
 def plot_segment(segment_instance, x, y, length, local_group):
-    """Draw a segment as a solid black rectangle with centered text and white background."""
+    """Draw a segment as a solid black rectangle with two stacked text lines over a white background."""
     print_name = segment_instance.get("print_name", "")
     rect_height = 2
 
     rect = f'<rect x="{x}" y="{y - rect_height / 2}" width="{length}" height="{rect_height}" fill="black"/>'
 
-    label_y = y + FONT_SIZE / 2 - 1
-    label_x = x + (length / 2)
+    line1 = instances_list.attribute_of(segment_instance.get("instance_name"), "parent_instance")
+    line2 = print_name
 
+    label_x = x + (length / 2)
+    label_y_center = y
+
+    # Compute vertical positions for two lines
+    line1_y = label_y_center - (line_spacing / 2)
+    line2_y = label_y_center + (line_spacing / 2)
+
+    # Estimate text box for white background
     text_padding_x = 3
     text_padding_y = 2
-    approx_text_width = len(print_name) * (FONT_SIZE * 0.6)
-    bg_x = label_x - (approx_text_width / 2) - text_padding_x
-    bg_y = label_y - FONT_SIZE + text_padding_y / 2
+    try:
+        text_width = max(len(line1), len(line2)) * (FONT_SIZE * 0.6)
+    except TypeError:
+        text_width = 0
+    text_height = FONT_SIZE * 2 + line_spacing + text_padding_y
+
+    bg_x = label_x - (text_width / 2) - text_padding_x
+    bg_y = label_y_center - (text_height / 2)
 
     label_bg = (
         f'<rect x="{bg_x}" y="{bg_y}" '
-        f'width="{approx_text_width + 2 * text_padding_x}" '
-        f'height="{FONT_SIZE + text_padding_y}" fill="white"/>'
+        f'width="{text_width + 2 * text_padding_x}" '
+        f'height="{text_height}" fill="white"/>'
     )
 
-    label = (
-        f'<text x="{label_x}" y="{label_y}" fill="{FONT_COLOR}" '
+    text_template = (
+        f'<text x="{{x}}" y="{{y}}" fill="{FONT_COLOR}" '
         f'text-anchor="middle" font-family="{FONT_FAMILY}" '
-        f'font-size="{FONT_SIZE}">{print_name}</text>'
+        f'font-size="{FONT_SIZE}">{{text}}</text>'
     )
+    label1 = text_template.format(x=label_x, y=line1_y, text=line1)
+    label2 = text_template.format(x=label_x, y=line2_y, text=line2)
 
     local_group.append(rect)
     local_group.append(label_bg)
-    local_group.append(label)
-
+    local_group.append(label1)
+    local_group.append(label2)
 
 # =============== HEADER ROW ===============
 def build_header():
