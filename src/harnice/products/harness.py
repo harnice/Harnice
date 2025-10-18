@@ -54,7 +54,7 @@ featuretree_utils.update_translate_content()
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Circuit":
         circuit_id = instance.get("circuit_id")
-        conductor_name = f"{circuit_id}-conductor"
+        conductor_name = f"conductor-{circuit_id}"
         instances_list.add_unless_exists(conductor_name, {
             "item_type": "Conductor",
             "location_is_node_or_segment": "Segment",
@@ -98,6 +98,16 @@ formboard_utils.make_segment_drawings()
 #                   ASSIGN BOM LINE NUMBERS
 #===========================================================================
 instances_list.assign_bom_line_numbers()
+
+
+#===========================================================================
+#                   ASSIGN PRINT NAMES
+#===========================================================================
+for instance in instances_list.read_instance_rows():
+    instances_list.modify(instance.get("instance_name"), {
+        "print_name": instance.get("instance_name")
+    })
+
 
 #===========================================================================
 #                   ASSIGN FLAGNOTES
