@@ -22,8 +22,8 @@ TABLE_STROKE = "black"
 TABLE_FILL = "white"
 
 # Node box margins (apply globally)
-NODE_MARGIN_X = 5   # horizontal space between cell boundary and first/last node box
-NODE_MARGIN_Y = 3   # vertical space between top/bottom of cell and node box
+NODE_MARGIN_X = 5  # horizontal space between cell boundary and first/last node box
+NODE_MARGIN_Y = 3  # vertical space between top/bottom of cell and node box
 
 # Derived layout
 COL2_WIDTH = circuit_length + 2 * whitespace_length
@@ -56,7 +56,9 @@ def plot_node(node_instance, x, y, box_width, local_group):
     """
     # Text lines
     line1 = node_instance.get("item_type", "")
-    line2 = instances_list.attribute_of(node_instance.get("parent_instance"), "print_name")
+    line2 = instances_list.attribute_of(
+        node_instance.get("parent_instance"), "print_name"
+    )
     line3 = node_instance.get("print_name", "")
     lines = [line1, line2, line3]
 
@@ -92,7 +94,9 @@ def plot_segment(segment_instance, x, y, length, local_group):
     rect = f'<rect x="{x}" y="{rect_y}" width="{length}" height="{rect_height}" fill="black"/>'
 
     # Labels
-    line1 = instances_list.attribute_of(segment_instance.get("instance_name"), "parent_instance")
+    line1 = instances_list.attribute_of(
+        segment_instance.get("instance_name"), "parent_instance"
+    )
     line2 = segment_instance.get("print_name")
     label_x = x + (length / 2)
     label_y_center = y
