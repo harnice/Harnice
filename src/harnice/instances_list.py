@@ -54,7 +54,7 @@ def read_instance_rows():
         return list(csv.DictReader(f, delimiter="\t"))
 
 
-def add_unless_exists(instance_name, instance_data):
+def new_instance(instance_name, instance_data):
     """
     Adds a new instance to the instances list TSV, unless one with the same
     name already exists.
@@ -71,8 +71,10 @@ def add_unless_exists(instance_name, instance_data):
         ValueError: If instance_name is missing, or if instance_name and
                     instance_data["instance_name"] disagree.
     """
-    if not instance_name:
-        raise ValueError("Argument 'instance_name' is blank and reqired to idenitify a unique instance")
+    if instance_name in ["", None]:
+        raise ValueError(
+            "Argument 'instance_name' is blank and reqired to idenitify a unique instance"
+        )
 
     if (
         "instance_name" in instance_data
@@ -82,7 +84,8 @@ def add_unless_exists(instance_name, instance_data):
             f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'"
         )
 
-    instance_data["instance_name"] = instance_name  # Ensure consistency
+    if any(row.get("instance_name") == instance_name for row in read_instance_rows()):
+        raise ValueError(f"An instance with the name '{instance_name}' already exists")
 
     if fileio.get_net() and fileio.product_type == "harness":
         instance_data["net"] = fileio.get_net()
@@ -91,17 +94,14 @@ def add_unless_exists(instance_name, instance_data):
     instance_data["debug"] = get_call_chain_str()
     instance_data["debug_cutoff"] = " "
 
-    instances = read_instance_rows()
-    if any(row.get("instance_name") == instance_name for row in instances):
-        return True  # Already exists
+    # add argumet to data added
+    instance_data["instance_name"] = instance_name
 
     with open(fileio.path("instances list"), "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter="\t")
         writer.writerow(
             {key: instance_data.get(key, "") for key in INSTANCES_LIST_COLUMNS}
         )
-
-    return False  # Newly added
 
 
 def modify(instance_name, instance_data):
@@ -261,7 +261,7 @@ def add_connector_contact_nodes_and_circuits():
 
         to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_contact')}"
 
-        add_unless_exists(
+        new_instance(
             from_connector_node,
             {
                 "net": circuit.get("net"),
@@ -270,7 +270,7 @@ def add_connector_contact_nodes_and_circuits():
                 "cluster": from_connector_key,
             },
         )
-        add_unless_exists(
+        new_instance(
             from_connector,
             {
                 "net": circuit.get("net"),
@@ -279,7 +279,7 @@ def add_connector_contact_nodes_and_circuits():
                 "cluster": from_connector_key,
             },
         )
-        add_unless_exists(
+        new_instance(
             from_cavity,
             {
                 "net": circuit.get("net"),
@@ -292,7 +292,7 @@ def add_connector_contact_nodes_and_circuits():
             },
         )
 
-        add_unless_exists(
+        new_instance(
             to_connector_node,
             {
                 "net": circuit.get("net"),
@@ -301,7 +301,7 @@ def add_connector_contact_nodes_and_circuits():
                 "cluster": to_connector_key,
             },
         )
-        add_unless_exists(
+        new_instance(
             to_connector,
             {
                 "net": circuit.get("net"),
@@ -310,7 +310,7 @@ def add_connector_contact_nodes_and_circuits():
                 "cluster": to_connector_key,
             },
         )
-        add_unless_exists(
+        new_instance(
             to_cavity,
             {
                 "net": circuit.get("net"),
@@ -336,7 +336,7 @@ def add_connector_contact_nodes_and_circuits():
             "node_at_end_b": to_cavity,
         }
 
-        add_unless_exists(circuit_id, circuit_data)
+        new_instance(circuit_id, circuit_data)
 
     with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
         connector_list = list(csv.DictReader(f, delimiter="\t"))
