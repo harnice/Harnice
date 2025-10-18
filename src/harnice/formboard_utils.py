@@ -43,7 +43,9 @@ def write_segment_rows(rows):
 
 def add_segment_to_formboard_def(segment_id, segment_data):
     if not segment_id:
-        raise ValueError("Argument 'segment_id' is blank and required to identify a unique segment")
+        raise ValueError(
+            "Argument 'segment_id' is blank and required to identify a unique segment"
+        )
 
     segments = read_segment_rows()
     if any(row.get("segment_id") == segment_id for row in segments):
@@ -189,7 +191,7 @@ def validate_nodes():
                             break
 
                 for missing_node in nodes_from_instances_list_not_in_formboard_def:
-                    instances_list.add_unless_exists(
+                    instances_list.new_instance(
                         missing_node,
                         {
                             "instance_name": missing_node,
@@ -240,7 +242,8 @@ def validate_nodes():
 
     # Find nodes that appear in exactly one segment and are not in the current instances list
     obsolete_nodes = [
-        node for node, count in node_occurrences.items()
+        node
+        for node, count in node_occurrences.items()
         if count == 1 and node not in nodes_from_instances_list
     ]
 
@@ -257,7 +260,7 @@ def validate_nodes():
 
     # === Sync formboard definition with instances list ===
     for segment in read_segment_rows():
-        instances_list.add_unless_exists(
+        instances_list.new_instance(
             segment.get("segment_id"),
             {
                 "item_type": "Segment",
@@ -273,15 +276,18 @@ def validate_nodes():
         )
 
     for node in nodes_from_formboard_definition:
-        instances_list.add_unless_exists(
-            node,
-            {
-                "item_type": "Node",
-                "location_is_node_or_segment": "Node",
-                "parent_csys_instance_name": "origin",
-                "parent_csys_outputcsys_name": "origin",
-            },
-        )
+        try: #if this node already exists, that's ok we don't have to add it again
+            instances_list.new_instance(
+                node,
+                {
+                    "item_type": "Node",
+                    "location_is_node_or_segment": "Node",
+                    "parent_csys_instance_name": "origin",
+                    "parent_csys_outputcsys_name": "origin",
+                },
+            )
+        except ValueError:
+            pass
 
     # === Detect loops ===
     adjacency = defaultdict(list)
@@ -519,27 +525,24 @@ def generate_node_coordinates():
     img.save(fileio.path("formboard graph definition png"), dpi=(96, 96))
 
 
-def map_instance_to_segments(instance_name):
+def map_instance_to_segments(instance):
     # Ensure you're trying to map an instance that is segment-based.
-    if (
-        not instances_list.attribute_of(instance_name, "location_is_node_or_segment")
-        == "Segment"
-    ):
+    if instance.get("location_is_node_or_segment") != "Segment":
         raise ValueError(
-            f"You're trying to map a non segment-based instance {instance_name} across segments."
+            f"You're trying to map a non segment-based instance {instance.get('instance_name')} across segments."
         )
 
     # Find terminal nodes from the ports
-    prev_instance, next_instance = (
-        circuit_instance.end_ports_of_circuit(  # TODO: maybe make this an argument to this function
-            instance_name
+    zero_port, max_port = (
+        circuit_instance.end_ports_of_circuit(
+            instance.get("circuit_id")
         )
     )
-    node_of_prev_instance = instances_list.instance_in_cluster_with_suffix(
-        instances_list.attribute_of(prev_instance, "cluster"), ".node"
+    zero_port_node = instances_list.instance_in_cluster_with_suffix(
+        instances_list.attribute_of(zero_port, "cluster"), ".node"
     )
-    node_of_next_instance = instances_list.instance_in_cluster_with_suffix(
-        instances_list.attribute_of(next_instance, "cluster"), ".node"
+    max_port_node = instances_list.instance_in_cluster_with_suffix(
+        instances_list.attribute_of(max_port, "cluster"), ".node"
     )
 
     # Build graph of segments
@@ -565,7 +568,7 @@ def map_instance_to_segments(instance_name):
     # BFS to find a node path
     from collections import deque
 
-    queue = deque([(node_of_prev_instance, [node_of_prev_instance])])
+    queue = deque([(zero_port_node, [zero_port_node])])
     visited = set()
 
     while queue:
@@ -574,7 +577,7 @@ def map_instance_to_segments(instance_name):
             continue
         visited.add(current)
 
-        if current == node_of_next_instance:
+        if current == max_port_node:
             # Convert node path to segment names
             segment_path = []
             for i in range(len(path) - 1):
@@ -588,16 +591,16 @@ def map_instance_to_segments(instance_name):
                 queue.append((neighbor, path + [neighbor]))
     else:
         raise ValueError(
-            f"No segment path found between {node_of_prev_instance} and {node_of_next_instance}"
+            f"No segment path found between {zero_port_node} and {max_port_node}"
         )
 
     # Add a new instance for each connected segment
     for seg_name in segment_path:
-        instances_list.add_unless_exists(
-            f"{instance_name}.{seg_name}",
+        instances_list.new_instance(
+            f"{instance.get('instance_name')}.{seg_name}",
             {
                 "item_type": "Hardware segment",
-                "parent_instance": instance_name,
+                "parent_instance": instance.get("instance_name"),
                 "parent_csys": seg_name,
                 "location_is_node_or_segment": "Segment",
                 "length": instances_list.attribute_of(seg_name, "length"),

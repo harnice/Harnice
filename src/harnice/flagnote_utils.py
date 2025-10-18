@@ -112,7 +112,7 @@ def compile_buildnotes():
 
             # if not, make it
             if already_exists == False:
-                instances_list.add_unless_exists(
+                instances_list.new_instance(
                     f"buildnote-{instance.get('bubble_text')}",
                     {
                         "item_type": "Buildnote",
@@ -157,7 +157,7 @@ def assign_output_csys():
                             "absolute_rotation": 0,
                         },
                     )
-                    instances_list.add_unless_exists(
+                    instances_list.new_instance(
                         f"{instance.get('instance_name')}.leader",
                         {
                             "parent_csys_instance_name": current_affected_instance,

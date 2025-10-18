@@ -35,6 +35,10 @@ def instance_names_of_adjacent_ports(target_instance):
 
 
 def end_ports_of_circuit(circuit_id):
+    try: 
+        int(circuit_id)
+    except ValueError:
+        raise ValueError(f"Pass an integer circuit_id, not '{circuit_id}'")
     zero_port = ""
     max_port = ""
     for instance in instances_list.read_instance_rows():
@@ -52,6 +56,10 @@ def max_port_number_in_circuit(circuit_id):
     max_port_number = 0
     for instance in instances_list.read_instance_rows():
         if instance.get("circuit_id") == circuit_id:
+            if instance.get("circuit_port_number") == "":
+                if instance.get("item_type") == "Circuit":
+                    continue
+                raise ValueError(f"Circuit port number is blank for {instance.get('instance_name')}")
             max_port_number = max(
                 max_port_number, int(instance.get("circuit_port_number"))
             )

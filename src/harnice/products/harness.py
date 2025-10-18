@@ -55,7 +55,7 @@ for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Circuit":
         circuit_id = instance.get("circuit_id")
         conductor_name = f"conductor-{circuit_id}"
-        instances_list.add_unless_exists(conductor_name, {
+        instances_list.new_instance(conductor_name, {
             "item_type": "Conductor",
             "location_is_node_or_segment": "Segment",
             "node_at_end_a": circuit_instance.instance_of_circuit_port_number(circuit_id, 0),
@@ -70,7 +70,7 @@ formboard_utils.validate_nodes()
 
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Conductor":
-        formboard_utils.map_instance_to_segments(instance.get("instance_name"))
+        formboard_utils.map_instance_to_segments(instance)
 
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Conductor":
@@ -128,7 +128,7 @@ flagnote_utils.ensure_manual_list_exists()
 for manual_note in flagnote_utils.read_manual_list():
     affected_list = manual_note.get("affectedinstances", "").strip().split(",")
     for affected in affected_list:
-        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+        instances_list.new_instance(f"flagnote-{flagnote_counter}", {
             "item_type": "Flagnote",
             "note_type": manual_note.get("note_type"),
             "mpn": manual_note.get("shape"),
@@ -147,7 +147,7 @@ for rev_row in flagnote_utils.read_revhistory():
     affected_raw = rev_row.get("affectedinstances", "").strip()
     if affected_raw:
         for affected in [a.strip() for a in affected_raw.split(",") if a.strip()]:
-            instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            instances_list.new_instance(f"flagnote-{flagnote_counter}", {
                 "item_type": "Flagnote",
                 "note_type": "rev_change_callout",
                 "mpn": "rev_change_callout",
@@ -163,7 +163,7 @@ for instance in instances_list.read_instance_rows():
     if instance.get("item_type") in ["Contact", "Cable"]:
         continue
     if instance.get("bom_line_number") != "":
-        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+        instances_list.new_instance(f"flagnote-{flagnote_counter}", {
             "item_type": "Flagnote",
             "note_type": "bom_item",
             "mpn": "bom_item",
@@ -178,7 +178,7 @@ for instance in instances_list.read_instance_rows():
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") in ["Connector", "Backshell"]:
         bubble_text = instance.get("print_name") or instance.get("instance_name")
-        instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+        instances_list.new_instance(f"flagnote-{flagnote_counter}", {
             "item_type": "Flagnote",
             "note_type": "part_name",
             "mpn": "part_name",
@@ -194,7 +194,7 @@ contact_flagnote_conversion_happened = False
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Flagnote":
         if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
-            instances_list.add_unless_exists(f"flagnote-{flagnote_counter}", {
+            instances_list.new_instance(f"flagnote-{flagnote_counter}", {
                 "item_type": "Flagnote",
                 "note_type": "buildnote",
                 "mpn": "buildnote",
@@ -321,7 +321,7 @@ featuretree_utils.copy_pdfs_to_cwd()
 
     # Step 3: initialize instances list
     instances_list.make_new_list()
-    instances_list.add_unless_exists(
+    instances_list.new_instance(
         "origin",
         {
             "instance_name": "origin",
