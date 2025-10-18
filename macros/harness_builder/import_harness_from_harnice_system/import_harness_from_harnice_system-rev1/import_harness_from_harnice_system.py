@@ -20,7 +20,7 @@ with open(path_to_system_instances_list, newline="", encoding="utf-8") as f:
 
 for instance in system_instances_list_data:
     if instance.get("net") == target_net:
-        instances_list.add_unless_exists(instance.get("instance_name"), instance)
+        instances_list.new_instance(instance.get("instance_name"), instance)
 
 fileio.set_net(target_net)
 
