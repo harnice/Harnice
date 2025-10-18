@@ -104,9 +104,18 @@ instances_list.assign_bom_line_numbers()
 #                   ASSIGN PRINT NAMES
 #===========================================================================
 for instance in instances_list.read_instance_rows():
-    instances_list.modify(instance.get("instance_name"), {
-        "print_name": instance.get("instance_name")
-    })
+    if instance.get("item_type") == "Contact":
+        instances_list.modify(instance.get("instance_name"), {
+            "print_name": instance.get("mpn")
+            })
+    elif instance.get("item_type") == "Connector cavity":
+        instance_name = instance.get("instance_name", "")
+        print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
+        instances_list.modify(instance_name, {"print_name": print_name})
+    else:
+        instances_list.modify(instance.get("instance_name"), {
+            "print_name": instance.get("instance_name")
+            })
 
 
 #===========================================================================
