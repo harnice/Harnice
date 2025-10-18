@@ -1,7 +1,7 @@
 import csv
 import os
 import inspect
-from harnice import fileio
+from harnice import component_library, fileio
 
 RECOGNIZED_ITEM_TYPES = {"Segment", "Node", "Flagnote", "Flagnote leader", "Location"}
 
@@ -33,6 +33,9 @@ INSTANCES_LIST_COLUMNS = [
     "translate_y",  # derived from parent_csys and parent_csys_name
     "rotate_csys",  # derived from parent_csys and parent_csys_name
     "absolute_rotation",  # manual add, not nominally used unless it's a flagnote
+    "cable_group",
+    "cable_container",
+    "cable_identifier",
     "note_type",
     "note_number",  # <--------- merge with parent_csys and import instances of child csys?
     "bubble_text",
@@ -354,3 +357,81 @@ def add_connector_contact_nodes_and_circuits():
         except ValueError:
             # a connextor exists in your system but isn't part of a harness and thus has not been assigned an instance to modify
             pass
+
+
+def assign_cable_conductor(
+    cable_instance_name,  # unique identifier for the cable in your project
+    cable_conductor_id,   # (container, identifier) tuple identifying the conductor in the cable being imported
+    conductor_instance,   # instance name of the conductor in your project
+    library_info,         # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev, item_name}
+):
+    instances = read_instance_rows()
+
+    # --- Check if cable is already imported ---
+    already_imported = any(
+        inst.get("instance_name") == cable_instance_name for inst in instances
+    )
+
+    # --- Import from library if not already imported ---
+    if not already_imported:
+        lib_subpath = library_info.get("lib_subpath", "")
+        used_rev = library_info.get("used_rev", "")
+
+        destination_directory = os.path.join(
+            fileio.dirpath("imported_instances"), cable_instance_name
+        )
+    
+        os.makedirs(destination_directory, exist_ok=True)
+
+        component_library.pull_item_from_library(
+            lib_repo=library_info.get("lib_repo"),
+            product="cables",
+            mpn=library_info.get("mpn"),
+            destination_directory=destination_directory,
+            lib_subpath=lib_subpath,
+            used_rev=used_rev,
+            item_name=cable_instance_name,
+        )
+
+        new_instance(
+            cable_instance_name,
+            {
+                "item_type": "Cable",
+                "location_is_node_or_segment": "Segment",
+                "cable_group": cable_instance_name,
+            },
+        )
+
+    # --- Make sure conductor of cable has not been assigned yet
+    for instance in instances:
+        if instance.get("cable_group") == cable_instance_name:
+            if instance.get("cable_container") == cable_conductor_id[0]:
+                if instance.get("cable_identifier") == cable_conductor_id[1]:
+                    raise ValueError(f"Conductor {cable_conductor_id} has already been assigned to {instance.get('instance_name')}")
+
+    # --- Make sure conductor instance has not already been assigned to a cable
+    for instance in instances:
+        if instance.get("instance_name") == conductor_instance:
+            if (
+                instance.get("cable_group") not in ["", None]
+                or instance.get("cable_container") not in ["", None]
+                or instance.get("cable_identifier") not in ["", None]
+            ):
+                raise ValueError(
+                    f"Conductor '{conductor_instance}' has already been assigned "
+                    f"to '{instance.get('cable_identifier')}' of cable '{instance.get('cable_group')}'"
+                )
+
+    # --- assign conductor
+    for instance in instances:
+        if instance.get("instance_name") == conductor_instance:
+            modify(
+                conductor_instance,
+                {
+                    "parent_instance": cable_instance_name,
+                    "cable_group": cable_instance_name,
+                    "cable_container": cable_conductor_id[0],
+                    "cable_identifier": cable_conductor_id[1],
+                },
+            )
+            break

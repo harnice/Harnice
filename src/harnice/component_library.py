@@ -93,6 +93,7 @@ def pull_item_from_library(
         "-attributes.json",
         "-signals_list.tsv",
         "-feature_tree.py",
+        "-conductor_list.tsv",
     ]
 
     for filename in os.listdir(source_lib_path):

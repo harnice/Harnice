@@ -348,11 +348,11 @@ def validate_nodes():
             components.append(component)
 
     if len(components) > 1:
-        formatted_clusters = "\n".join(
+        formatted_connector_groups = "\n".join(
             f"  - [{', '.join(sorted(c))}]" for c in components
         )
         raise Exception(
-            f"Disconnected formboard graph found ({len(components)} clusters):\n{formatted_clusters}"
+            f"Disconnected formboard graph found ({len(components)} connector_groups):\n{formatted_connector_groups}"
         )
 
 
@@ -537,10 +537,10 @@ def map_instance_to_segments(instance):
         instance.get("circuit_id")
     )
     zero_port_node = instances_list.instance_in_cluster_with_suffix(
-        instances_list.attribute_of(zero_port, "cluster"), ".node"
+        instances_list.attribute_of(zero_port, "connector_group"), ".node"
     )
     max_port_node = instances_list.instance_in_cluster_with_suffix(
-        instances_list.attribute_of(max_port, "cluster"), ".node"
+        instances_list.attribute_of(max_port, "connector_group"), ".node"
     )
 
     # Build graph of segments
