@@ -27,14 +27,14 @@ for instance in instances_list.read_instance_rows():
     parent_csys_outputcsys_name = None
 
     if instance.get("item_type") == "Connector":
-        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".bs")
+        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("connector_group"), ".bs")
         parent_csys_outputcsys_name = "connector"
         if parent_csys is None:
-            parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+            parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("connector_group"), ".node")
             parent_csys_outputcsys_name = "origin"
 
     elif instance.get("item_type") == "Backshell":
-        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("cluster"), ".node")
+        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("connector_group"), ".node")
         parent_csys_outputcsys_name = "origin"
     else:
         continue
@@ -112,6 +112,10 @@ for instance in instances_list.read_instance_rows():
         instance_name = instance.get("instance_name", "")
         print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
         instances_list.modify(instance_name, {"print_name": print_name})
+    elif instance.get("item_type") == "Conductor":
+        instances_list.modify(instance.get("instance_name"), {
+            "print_name": f"{instance.get("cable_identifier")}"
+        })
     else:
         instances_list.modify(instance.get("instance_name"), {
             "print_name": instance.get("instance_name")
@@ -135,7 +139,7 @@ for manual_note in flagnote_utils.read_manual_list():
             "lib_repo": manual_note.get("shape_lib_repo"),
             "bubble_text": buildnote_counter,
             "parent_instance": affected,
-            "cluster": instances_list.attribute_of(affected, "cluster"),
+            "connector_group": instances_list.attribute_of(affected, "connector_group"),
             "parent_csys_instance_name": affected,
             "note_text": manual_note.get("note_text")
         })
@@ -154,7 +158,7 @@ for rev_row in flagnote_utils.read_revhistory():
                 "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
                 "bubble_text": rev_row.get("rev"),
                 "parent_instance": affected,
-                "cluster": instances_list.attribute_of(affected, "cluster"),
+                "connector_group": instances_list.attribute_of(affected, "connector_group"),
                 "parent_csys_instance_name": affected
             })
             flagnote_counter += 1
@@ -170,7 +174,7 @@ for instance in instances_list.read_instance_rows():
             "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
             "bubble_text": instance.get("bom_line_number"),
             "parent_instance": instance.get("instance_name"),
-            "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
+            "connector_group": instances_list.attribute_of(instance.get("instance_name"), "connector_group"),
             "parent_csys_instance_name": instance.get("instance_name")
         })
         flagnote_counter += 1
@@ -185,7 +189,7 @@ for instance in instances_list.read_instance_rows():
             "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
             "bubble_text": bubble_text,
             "parent_instance": instance.get("instance_name"),
-            "cluster": instances_list.attribute_of(instance.get("instance_name"), "cluster"),
+            "connector_group": instances_list.attribute_of(instance.get("instance_name"), "connector_group"),
             "parent_csys_instance_name": instance.get("instance_name")
         })
         flagnote_counter += 1

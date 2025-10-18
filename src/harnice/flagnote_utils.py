@@ -166,8 +166,8 @@ def assign_output_csys():
                             "location_is_node_or_segment": "Node",
                             "parent_csys_outputcsys_name": f"flagnote-leader-{flagnote_counter}",
                             "absolute_rotation": 0,
-                            "cluster": instances_list.attribute_of(
-                                instance.get("instance_name"), "cluster"
+                            "connector_group": instances_list.attribute_of(
+                                instance.get("instance_name"), "connector_group"
                             ),
                         },
                     )
