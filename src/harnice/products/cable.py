@@ -3,55 +3,53 @@ import csv
 from harnice import fileio
 import json
 
+
 def render():
     fileio.verify_revision_structure(product_type="cable")
 
     default_attributes = {
-        "jacket":{
-            "properties":{
+        "jacket": {
+            "properties": {
                 "color": "gray",
                 "material": "pvc",
                 "od": "0.204in",
                 "thickness": "0.028in",
             },
-            "shield":{
-                "properties":{
-                    "type": "foil",
-                    "coverage": "100%"
-                },
-                "drain_wire":{
+            "shield": {
+                "properties": {"type": "foil", "coverage": "100%"},
+                "drain_wire": {
                     "conductor": True,
-                    "properties":{
+                    "properties": {
                         "gauge": "20AWG",
                         "construction": "7x28",
-                    }
+                    },
                 },
-                "pair_1":{
-                    "properties":{
+                "pair_1": {
+                    "properties": {
                         "twists": "12 per inch",
                     },
-                    "black":{
+                    "black": {
                         "conductor": True,
-                        "properties":{
+                        "properties": {
                             "insulation material": "polyethylene",
                             "od": "0.017in",
                             "gauge": "20AWG",
                             "construction": "7x28",
                             "material": "copper",
-                        }
+                        },
                     },
-                    "white":{
+                    "white": {
                         "conductor": True,
-                        "properties":{
+                        "properties": {
                             "insulation material": "polyethylene",
                             "od": "0.017in",
                             "gauge": "20AWG",
                             "construction": "7x28",
                             "material": "copper",
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         }
     }
 
@@ -73,8 +71,6 @@ def render():
         attrs = default_attributes.copy()
         with open(attributes_path, "w", encoding="utf-8") as f:
             json.dump(attrs, f, indent=4)
-
-
 
     # ========== write conductor list from json ==========
     rows = []
@@ -105,7 +101,9 @@ def render():
 
     # Write to TSV
     with open(fileio.path("conductor list"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=headers, delimiter="\t", lineterminator="\n")
+        writer = csv.DictWriter(
+            f, fieldnames=headers, delimiter="\t", lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(rows)
 
