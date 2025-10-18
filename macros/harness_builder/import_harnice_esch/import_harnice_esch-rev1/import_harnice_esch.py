@@ -1,11 +1,7 @@
 import re  # for regex matching like re.match and re.fullmatch
 import yaml
 import os
-from harnice import (
-    instances_list,
-    fileio,
-    circuit_instance
-)
+from harnice import instances_list, fileio, circuit_instance
 
 build_macro_mpn = "import_harnice_esch"
 
@@ -26,7 +22,7 @@ with open(path("harness yaml"), "r", encoding="utf-8") as f:
 
 # Iterate over the circuits and their associated ports
 for circuit_id, ports in harness_yaml.items():
-    instances_list.add_unless_exists(circuit_id, {"item_type": "Circuit"})
+    instances_list.new_instance(circuit_id, {"item_type": "Circuit"})
     port_counter = 0
     contact_counter = 0  # Automatically number contacts like contact1, contact2, etc.
 
@@ -43,7 +39,7 @@ for circuit_id, ports in harness_yaml.items():
             if value == "TXPA20":
                 lib_repo = "https://github.com/kenyonshutt/harnice-library-public"
 
-            instances_list.add_unless_exists(
+            instances_list.new_instance(
                 instance_name,
                 {
                     "item_type": "Contact",
@@ -60,7 +56,7 @@ for circuit_id, ports in harness_yaml.items():
             # Check the label of the port to decide what kind of part it is.
             # By default, anything starting with "X" or "W" is treated as a Connector.
             if re.match(r"X[^.]+", port_label):
-                instances_list.add_unless_exists(
+                instances_list.new_instance(
                     port_label,
                     {
                         "item_type": "Connector",
@@ -68,7 +64,7 @@ for circuit_id, ports in harness_yaml.items():
                         "location_is_node_or_segment": "Node",
                     },
                 )
-                instances_list.add_unless_exists(
+                instances_list.new_instance(
                     f"{port_label}.node",
                     {
                         "item_type": "Node",
@@ -79,7 +75,7 @@ for circuit_id, ports in harness_yaml.items():
                     },
                 )
             elif re.match(r"C[^.]+", port_label):
-                instances_list.add_unless_exists(
+                instances_list.new_instance(
                     port_label,
                     {"item_type": "Cable", "location_is_node_or_segment": "Segment"},
                 )
@@ -93,7 +89,7 @@ for circuit_id, ports in harness_yaml.items():
                     # If the field is "cavity", add a cavity under this connector
                     if subkey == "cavity":
                         instance_name = f"{port_label}.cavity{subval}"
-                        instances_list.add_unless_exists(
+                        instances_list.new_instance(
                             instance_name,
                             {
                                 "print_name": subval,
@@ -109,7 +105,7 @@ for circuit_id, ports in harness_yaml.items():
                     # If the field is "conductor", add a conductor under this wire
                     elif subkey == "conductor":
                         instance_name = f"{port_label}.conductor{subval}"
-                        instances_list.add_unless_exists(
+                        instances_list.new_instance(
                             instance_name,
                             {
                                 "print_name": subval,
@@ -184,7 +180,7 @@ for instance in instances_list.read_instance_rows():
         mpn = instance.get("mpn")
         if re.fullmatch(r"D38999_26ZA.+", mpn):
             if instance.get("print_name") not in ["P3", "J1"]:
-                instances_list.add_unless_exists(
+                instances_list.new_instance(
                     f"{instance_name}.bs",
                     {
                         "mpn": "M85049-88_9Z03",
