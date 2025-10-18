@@ -10,6 +10,7 @@ from harnice.products import (
     tblock,
     system,
     disconnect,
+    cable,
 )
 
 
@@ -46,6 +47,7 @@ def main():
             "disconnect",
             "tblock",
             "titleblock",
+            "cable",
         ],
         help="Render a product type",
     )
@@ -69,6 +71,7 @@ def main():
             "flagnote": flagnote.render,
             "device": device.render,
             "disconnect": disconnect.render,
+            "cable": cable.render,
             "tblock": tblock.render,
             "titleblock": tblock.render,  # alias
         }
