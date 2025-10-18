@@ -149,6 +149,13 @@ def harnice_file_structure():
                 "mapped_disconnect_channels.txt": "mapped disconnect channels set",
             },
         }
+    elif product_type == "cable":
+        return {
+            f"{partnumber('pn-rev')}-attributes.json": "attributes",
+            f"{partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
+        }
+    else:
+        raise ValueError(f"Invalid product type: {product_type}")
 
 
 def generate_structure():
