@@ -27,14 +27,14 @@ for instance in instances_list.read_instance_rows():
     parent_csys_outputcsys_name = None
 
     if instance.get("item_type") == "Connector":
-        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("connector_group"), ".bs")
+        parent_csys = instances_list.instance_in_connector_group_with_suffix(instance.get("connector_group"), ".bs")
         parent_csys_outputcsys_name = "connector"
         if parent_csys is None:
-            parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("connector_group"), ".node")
+            parent_csys = instances_list.instance_in_connector_group_with_suffix(instance.get("connector_group"), ".node")
             parent_csys_outputcsys_name = "origin"
 
     elif instance.get("item_type") == "Backshell":
-        parent_csys = instances_list.instance_in_cluster_with_suffix(instance.get("connector_group"), ".node")
+        parent_csys = instances_list.instance_in_connector_group_with_suffix(instance.get("connector_group"), ".node")
         parent_csys_outputcsys_name = "origin"
     else:
         continue

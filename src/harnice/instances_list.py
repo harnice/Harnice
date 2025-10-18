@@ -14,7 +14,7 @@ INSTANCES_LIST_COLUMNS = [
     "item_type",  # connector, backshell, whatever
     "parent_instance",  # general purpose reference
     "location_is_node_or_segment",  # each instance is either better represented by one or ther other
-    "cluster",  # a group of co-located parts (connectors, backshells, nodes)
+    "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
     "circuit_id",  # which signal this component is electrically connected to
     "circuit_port_number",  # the sequential id of this item in its signal chain
     "from_channel_type_id",
@@ -212,15 +212,19 @@ def attribute_of(target_instance, attribute):
             return instance.get(attribute)
 
 
-def instance_in_cluster_with_suffix(cluster, suffix):
+def instance_in_connector_group_with_suffix(connector_group, suffix):
+    if connector_group in ["", None]:
+        raise ValueError(f"Connector group '{connector_group}' is blank")
+    if suffix in ["", None]:
+        raise ValueError(f"Suffix '{suffix}' is blank")
     match = None
     for instance in read_instance_rows():
-        if instance.get("cluster") == cluster:
+        if instance.get("connector_group") == connector_group:
             instance_name = instance.get("instance_name", "")
             if instance_name.endswith(suffix):
                 if match is not None:
                     raise ValueError(
-                        f"We found multiple instances in cluster '{cluster}' with the suffix '{suffix}'."
+                        f"Multiple instances found in connector_group '{connector_group}' with the suffix '{suffix}'."
                     )
                 match = instance_name
     return match
@@ -264,24 +268,30 @@ def add_connector_contact_nodes_and_circuits():
 
         to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_contact')}"
 
-        new_instance(
-            from_connector_node,
-            {
-                "net": circuit.get("net"),
-                "item_type": "Node",
-                "location_is_node_or_segment": "Node",
-                "cluster": from_connector_key,
-            },
-        )
-        new_instance(
-            from_connector,
-            {
-                "net": circuit.get("net"),
-                "item_type": "Connector",
-                "location_is_node_or_segment": "Node",
-                "cluster": from_connector_key,
-            },
-        )
+        try: #if this node already exists, no need to add it again
+            new_instance(
+                from_connector_node,
+                {
+                    "net": circuit.get("net"),
+                    "item_type": "Node",
+                    "location_is_node_or_segment": "Node",
+                    "connector_group": from_connector_key,
+                    },
+                )
+        except ValueError:
+            pass
+        try: #if this connector already exists, no need to add it again
+            new_instance(
+                from_connector,
+                {
+                    "net": circuit.get("net"),
+                    "item_type": "Connector",
+                    "location_is_node_or_segment": "Node",
+                    "connector_group": from_connector_key,
+                    },
+                )
+        except ValueError:
+            pass
         new_instance(
             from_cavity,
             {
@@ -289,30 +299,35 @@ def add_connector_contact_nodes_and_circuits():
                 "item_type": "Connector cavity",
                 "parent_instance": from_connector,
                 "location_is_node_or_segment": "Node",
-                "cluster": from_connector_key,
+                "connector_group": from_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 0,
             },
         )
-
-        new_instance(
-            to_connector_node,
-            {
-                "net": circuit.get("net"),
-                "item_type": "Node",
-                "location_is_node_or_segment": "Node",
-                "cluster": to_connector_key,
-            },
-        )
-        new_instance(
-            to_connector,
-            {
-                "net": circuit.get("net"),
-                "item_type": "Connector",
-                "location_is_node_or_segment": "Node",
-                "cluster": to_connector_key,
-            },
-        )
+        try: #if this node already exists, no need to add it again
+            new_instance(
+                to_connector_node,
+                {
+                    "net": circuit.get("net"),
+                    "item_type": "Node",
+                    "location_is_node_or_segment": "Node",
+                    "connector_group": to_connector_key,
+                    },
+                )
+        except ValueError:
+            pass
+        try: #if this connector already exists, no need to add it again
+            new_instance(
+                    to_connector,
+                    {
+                        "net": circuit.get("net"),
+                        "item_type": "Connector",
+                        "location_is_node_or_segment": "Node",
+                        "connector_group": to_connector_key,
+                        },
+                    )
+        except ValueError:
+            pass
         new_instance(
             to_cavity,
             {
@@ -320,7 +335,7 @@ def add_connector_contact_nodes_and_circuits():
                 "item_type": "Connector cavity",
                 "parent_instance": to_connector,
                 "location_is_node_or_segment": "Node",
-                "cluster": to_connector_key,
+                "connector_group": to_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 1,
             },
@@ -361,9 +376,9 @@ def add_connector_contact_nodes_and_circuits():
 
 def assign_cable_conductor(
     cable_instance_name,  # unique identifier for the cable in your project
-    cable_conductor_id,   # (container, identifier) tuple identifying the conductor in the cable being imported
-    conductor_instance,   # instance name of the conductor in your project
-    library_info,         # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev, item_name}
+    cable_conductor_id,  # (container, identifier) tuple identifying the conductor in the cable being imported
+    conductor_instance,  # instance name of the conductor in your project
+    library_info,  # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev, item_name}
 ):
     instances = read_instance_rows()
 
@@ -380,7 +395,7 @@ def assign_cable_conductor(
         destination_directory = os.path.join(
             fileio.dirpath("imported_instances"), cable_instance_name
         )
-    
+
         os.makedirs(destination_directory, exist_ok=True)
 
         component_library.pull_item_from_library(
@@ -407,7 +422,9 @@ def assign_cable_conductor(
         if instance.get("cable_group") == cable_instance_name:
             if instance.get("cable_container") == cable_conductor_id[0]:
                 if instance.get("cable_identifier") == cable_conductor_id[1]:
-                    raise ValueError(f"Conductor {cable_conductor_id} has already been assigned to {instance.get('instance_name')}")
+                    raise ValueError(
+                        f"Conductor {cable_conductor_id} has already been assigned to {instance.get('instance_name')}"
+                    )
 
     # --- Make sure conductor instance has not already been assigned to a cable
     for instance in instances:
