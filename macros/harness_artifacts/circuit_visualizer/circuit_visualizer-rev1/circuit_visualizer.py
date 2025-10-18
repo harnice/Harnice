@@ -1,4 +1,5 @@
 import os
+import re
 from harnice import fileio, instances_list, circuit_instance
 
 artifact_mpn = "circuit_visualizer"
@@ -165,6 +166,12 @@ for instance in instances_list.read_instance_rows():
     if instance.get("item_type") != "Circuit":
         continue
 
+    #IF YOU ONLY WANT TO VISUALIZE SOME CIRCUITS, ADD FILTER HERE
+    #if instance.get("circuit_id") not in ["circuit-1", "circuit-2"]:
+    #    continue
+    # if re.match(r"^X1", instance.get("node_at_end_a", "")):
+    #    continue
+
     circuit_id = instance.get("circuit_id")
     print_name = instance.get("print_name", "")
     ports = circuit_instance.instances_of_circuit(circuit_id)
@@ -251,5 +258,3 @@ with open(output_path, "w", encoding="utf-8") as f:
     f.write("</g>\n")
     f.write(f'<g id="{artifact_id}-circuit-visualizer-contents-end"/>\n')
     f.write(SVG_FOOTER)
-
-print(f"SVG written to: {output_path}")
