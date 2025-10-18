@@ -60,7 +60,7 @@ for circuit_id, ports in harness_yaml.items():
                     port_label,
                     {
                         "item_type": "Connector",
-                        "cluster": port_label,
+                        "connector_group": port_label,
                         "location_is_node_or_segment": "Node",
                     },
                 )
@@ -68,7 +68,7 @@ for circuit_id, ports in harness_yaml.items():
                     f"{port_label}.node",
                     {
                         "item_type": "Node",
-                        "cluster": port_label,
+                        "connector_group": port_label,
                         "location_is_node_or_segment": "Node",
                         "parent_csys_instance_name": "origin",
                         "parent_csys_outputcsys_name": "origin",
@@ -95,7 +95,7 @@ for circuit_id, ports in harness_yaml.items():
                                 "print_name": subval,
                                 "item_type": "Connector cavity",
                                 "parent_instance": port_label,
-                                "cluster": port_label,
+                                "connector_group": port_label,
                                 "location_is_node_or_segment": "Node",
                                 "circuit_id": circuit_id,
                                 "circuit_port_number": port_counter,
@@ -189,7 +189,7 @@ for instance in instances_list.read_instance_rows():
                         "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
                         "item_type": "Backshell",
                         "parent_instance": instance.get("instance_name"),
-                        "cluster": instance_name,
+                        "connector_group": instance_name,
                         "location_is_node_or_segment": "Node",
                     },
                 )
@@ -216,7 +216,9 @@ for instance in instances_list.read_instance_rows():
                 instance_name,
                 {
                     "parent_instance": prev_port,
-                    "cluster": instances_list.attribute_of(prev_port, "cluster"),
+                    "connector_group": instances_list.attribute_of(
+                        prev_port, "connector_group"
+                    ),
                 },
             )
         elif (
@@ -227,7 +229,9 @@ for instance in instances_list.read_instance_rows():
                 instance_name,
                 {
                     "parent_instance": next_port,
-                    "cluster": instances_list.attribute_of(prev_port, "cluster"),
+                    "connector_group": instances_list.attribute_of(
+                        prev_port, "connector_group"
+                    ),
                 },
             )
         else:
