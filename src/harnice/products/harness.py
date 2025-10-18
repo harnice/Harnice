@@ -54,7 +54,7 @@ featuretree_utils.update_translate_content()
 for instance in instances_list.read_instance_rows():
     if instance.get("item_type") == "Circuit":
         circuit_id = instance.get("circuit_id")
-        conductor_name = f"{circuit_id}-conductor"
+        conductor_name = f"conductor-{circuit_id}"
         instances_list.add_unless_exists(conductor_name, {
             "item_type": "Conductor",
             "location_is_node_or_segment": "Segment",
@@ -98,6 +98,25 @@ formboard_utils.make_segment_drawings()
 #                   ASSIGN BOM LINE NUMBERS
 #===========================================================================
 instances_list.assign_bom_line_numbers()
+
+
+#===========================================================================
+#                   ASSIGN PRINT NAMES
+#===========================================================================
+for instance in instances_list.read_instance_rows():
+    if instance.get("item_type") == "Contact":
+        instances_list.modify(instance.get("instance_name"), {
+            "print_name": instance.get("mpn")
+            })
+    elif instance.get("item_type") == "Connector cavity":
+        instance_name = instance.get("instance_name", "")
+        print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
+        instances_list.modify(instance_name, {"print_name": print_name})
+    else:
+        instances_list.modify(instance.get("instance_name"), {
+            "print_name": instance.get("instance_name")
+            })
+
 
 #===========================================================================
 #                   ASSIGN FLAGNOTES
@@ -256,7 +275,7 @@ def render(build_macro="", output_macro_dict=None):
         if output_macro_dict is None:
             output_macro_contents = """featuretree_utils.run_macro("bom_exporter_bottom_up", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom1")
 featuretree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="formboard1", scale=scales.get("A"))
-featuretree_utils.run_macro("wirelist_exporter", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="wirelist1")
+featuretree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="circuitviz1")
 featuretree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="revhistory1")
 featuretree_utils.run_macro("buildnotes_table", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="buildnotestable1")
 featuretree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="drawing1", scales=scales)
