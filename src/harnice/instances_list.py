@@ -94,8 +94,8 @@ def new_instance(instance_name, instance_data):
     instance_data["debug"] = get_call_chain_str()
     instance_data["debug_cutoff"] = " "
 
-    # add argumet to data added 
-    instance_data["instance_name"] = instance_name 
+    # add argumet to data added
+    instance_data["instance_name"] = instance_name
 
     with open(fileio.path("instances list"), "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter="\t")

@@ -276,7 +276,7 @@ def validate_nodes():
         )
 
     for node in nodes_from_formboard_definition:
-        try: #if this node already exists, that's ok we don't have to add it again
+        try:  # if this node already exists, that's ok we don't have to add it again
             instances_list.new_instance(
                 node,
                 {
@@ -533,10 +533,8 @@ def map_instance_to_segments(instance):
         )
 
     # Find terminal nodes from the ports
-    zero_port, max_port = (
-        circuit_instance.end_ports_of_circuit(
-            instance.get("circuit_id")
-        )
+    zero_port, max_port = circuit_instance.end_ports_of_circuit(
+        instance.get("circuit_id")
     )
     zero_port_node = instances_list.instance_in_cluster_with_suffix(
         instances_list.attribute_of(zero_port, "cluster"), ".node"
