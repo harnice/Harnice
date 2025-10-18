@@ -72,7 +72,7 @@ def add_unless_exists(instance_name, instance_data):
                     instance_data["instance_name"] disagree.
     """
     if not instance_name:
-        raise ValueError("Missing required argument: 'instance_name'")
+        raise ValueError("Argument 'instance_name' is blank and reqired to idenitify a unique instance")
 
     if (
         "instance_name" in instance_data

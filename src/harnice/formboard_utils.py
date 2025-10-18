@@ -42,9 +42,15 @@ def write_segment_rows(rows):
 
 
 def add_segment_to_formboard_def(segment_id, segment_data):
+    if not segment_id:
+        raise ValueError("Argument 'segment_id' is blank and required to identify a unique segment")
+
     segments = read_segment_rows()
     if any(row.get("segment_id") == segment_id for row in segments):
         return True
+
+    # Ensure the segment_id is included in the data
+    segment_data["segment_id"] = segment_id
 
     path = fileio.path("formboard graph definition")
 
@@ -110,12 +116,9 @@ def validate_nodes():
 
     # --- Case 1: No segments exist in formboard definition yet, build from scratch ---
     if not read_segment_rows():
-        # if there are 3 or more nodes already defined by the instances list (probably by a connector or something)
         if len(nodes_from_instances_list) > 2:
-            # add a center origin node
             origin_node = "node1"
             node_counter = 0
-            # add one segment per node connecting to the origin node
             for instance in instances_list.read_instance_rows():
                 if instance.get("item_type") == "Node":
                     segment_id = instance.get("instance_name") + "_leg"
@@ -141,12 +144,8 @@ def validate_nodes():
                     )
                     node_counter += 1
 
-        # else, if there are only two nodes already defined by the instances list (two connectors)
         elif len(nodes_from_instances_list) == 2:
-            # make one segment
             segment_id = "segment"
-
-            # that has two ends of the two nodes in the instances list
             segment_ends = []
             for instance in instances_list.read_instance_rows():
                 if instance.get("item_type") == "Node":
@@ -167,7 +166,7 @@ def validate_nodes():
         else:
             raise ValueError("Fewer than two nodes defined, cannot build segments.")
 
-    # --- Case 2: Some nodes exist in the formboard definition tsv but not all of them---
+    # --- Case 2: Some nodes exist in the formboard definition but not all ---
     else:
         nodes_from_instances_list_not_in_formboard_def = (
             nodes_from_instances_list - nodes_from_formboard_definition
@@ -201,10 +200,8 @@ def validate_nodes():
                         },
                     )
 
-                    # Create a new segment connecting the missing node to an existing one
                     segment_id = f"{missing_node}_leg"
 
-                    # Pick any existing node to attach to (avoid self-connection)
                     whatever_node_to_attach_new_leg_to = ""
                     for instance in instances_list.read_instance_rows():
                         if (
@@ -233,6 +230,32 @@ def validate_nodes():
                         },
                     )
 
+    # === CLEANUP: remove obsolete one-leg nodes ===
+    # These nodes represent old connectors that no longer exist in the harness definition.
+    segments = read_segment_rows()
+    node_occurrences = defaultdict(int)
+    for seg in segments:
+        node_occurrences[seg.get("node_at_end_a")] += 1
+        node_occurrences[seg.get("node_at_end_b")] += 1
+
+    # Find nodes that appear in exactly one segment and are not in the current instances list
+    obsolete_nodes = [
+        node for node, count in node_occurrences.items()
+        if count == 1 and node not in nodes_from_instances_list
+    ]
+
+    if obsolete_nodes:
+        cleaned_segments = []
+        for seg in segments:
+            if (
+                seg.get("node_at_end_a") in obsolete_nodes
+                or seg.get("node_at_end_b") in obsolete_nodes
+            ):
+                continue  # delete this segment
+            cleaned_segments.append(seg)
+        write_segment_rows(cleaned_segments)
+
+    # === Sync formboard definition with instances list ===
     for segment in read_segment_rows():
         instances_list.add_unless_exists(
             segment.get("segment_id"),
@@ -260,8 +283,7 @@ def validate_nodes():
             },
         )
 
-    # === Detect loops (from instances list) ===
-    # Build adjacency from segments in instances list
+    # === Detect loops ===
     adjacency = defaultdict(list)
     for instance in instances_list.read_instance_rows():
         if instance.get("item_type") == "Segment":
@@ -271,7 +293,6 @@ def validate_nodes():
                 adjacency[node_a].append(node_b)
                 adjacency[node_b].append(node_a)
 
-    # DFS to detect cycles
     visited = set()
 
     def dfs(node, parent):
@@ -291,18 +312,14 @@ def validate_nodes():
                     "Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet."
                 )
 
-    # === Detect disconnected or dangling nodes ===
-    # Collect all nodes referenced by segments
+    # === Detect dangling/disconnected nodes ===
     all_nodes_in_segments = set(adjacency.keys())
-
-    # Any nodes in instances_list but not in any segment?
     nodes_without_segments = nodes_from_instances_list - all_nodes_in_segments
     if nodes_without_segments:
         raise Exception(
             f"Dangling nodes with no connections found: {', '.join(sorted(nodes_without_segments))}"
         )
 
-    # Detect disconnected subgraphs (multiple components)
     def bfs(start):
         q = deque([start])
         seen = {start}
