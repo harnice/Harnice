@@ -168,69 +168,43 @@ def validate_nodes():
         else:
             raise ValueError("Fewer than two nodes defined, cannot build segments.")
 
-    # --- Case 2: Some nodes exist in the formboard definition but not all ---
+    # --- Case 2: Some nodes from instances list exist in the formboard definition but not all of them ---
     else:
         nodes_from_instances_list_not_in_formboard_def = (
             nodes_from_instances_list - nodes_from_formboard_definition
         )
 
         if nodes_from_instances_list_not_in_formboard_def:
-            if len(nodes_from_instances_list) > 2:
-                addon_node = ""
+            for missing_node in nodes_from_instances_list_not_in_formboard_def:
+                segment_id = f"{missing_node}_leg"
+
+                node_to_attach_new_leg_to = ""
                 for instance in instances_list.read_instance_rows():
                     if (
                         instance.get("item_type") == "Node"
-                        and instance.get("parent_instance") == ""
+                        and instance.get("instance_name") != missing_node
                     ):
-                        addon_node = instance.get("instance_name")
-                        break
-                if not addon_node:
-                    for instance in instances_list.read_instance_rows():
-                        if instance.get("item_type") == "Node":
-                            addon_node = instance.get("instance_name")
-                            break
-
-                for missing_node in nodes_from_instances_list_not_in_formboard_def:
-                    instances_list.new_instance(
-                        missing_node,
-                        {
-                            "instance_name": missing_node,
-                            "item_type": "Node",
-                            "location_is_node_or_segment": "Node",
-                            "parent_csys_instance_name": "origin",
-                            "parent_csys_outputcsys_name": "origin",
-                        },
-                    )
-
-                    segment_id = f"{missing_node}_leg"
-
-                    whatever_node_to_attach_new_leg_to = ""
-                    for instance in instances_list.read_instance_rows():
-                        if (
-                            instance.get("item_type") == "Node"
-                            and instance.get("instance_name") != missing_node
-                        ):
-                            whatever_node_to_attach_new_leg_to = instance.get(
-                                "instance_name"
-                            )
-                            break
-
-                    if not whatever_node_to_attach_new_leg_to:
-                        raise ValueError(
-                            f"No existing node found to connect {missing_node} to."
+                        node_to_attach_new_leg_to = instance.get(
+                            "instance_name"
                         )
+                        break
 
-                    add_segment_to_formboard_def(
-                        segment_id,
-                        {
-                            "segment_id": segment_id,
-                            "node_at_end_a": missing_node,
-                            "node_at_end_b": whatever_node_to_attach_new_leg_to,
-                            "length": str(random.randint(6, 18)),
-                            "angle": str(random.randint(0, 359)),
-                            "diameter": 0.1,
-                        },
+                if not node_to_attach_new_leg_to:
+                    raise ValueError(
+                        f"No existing node found to connect {missing_node} to."
                     )
+
+                add_segment_to_formboard_def(
+                    segment_id,
+                    {
+                        "segment_id": segment_id,
+                        "node_at_end_a": missing_node,
+                        "node_at_end_b": node_to_attach_new_leg_to,
+                        "length": str(random.randint(6, 18)),
+                        "angle": str(random.randint(0, 359)),
+                        "diameter": 0.1,
+                    },
+                )
 
     # === CLEANUP: remove obsolete one-leg nodes ===
     # These nodes represent old connectors that no longer exist in the harness definition.

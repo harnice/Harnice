@@ -40,7 +40,7 @@ for instance in instances_list.read_instance_rows():
         continue
 
     instances_list.modify(instance.get("instance_name"), {
-        "parent_csys_instance_name": parent_csys,
+        "parent_csys_instance_name": parent_csys.get("instance_name"),
         "parent_csys_outputcsys_name": parent_csys_outputcsys_name
     })
 
