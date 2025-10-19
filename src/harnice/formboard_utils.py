@@ -532,16 +532,11 @@ def map_instance_to_segments(instance):
             f"You're trying to map a non segment-based instance {instance.get('instance_name')} across segments."
         )
 
-    # Find terminal nodes from the ports
-    zero_port, max_port = circuit_instance.end_ports_of_circuit(
-        instance.get("circuit_id")
-    )
-    zero_port_node = instances_list.instance_in_cluster_with_suffix(
-        instances_list.attribute_of(zero_port, "connector_group"), ".node"
-    )
-    max_port_node = instances_list.instance_in_cluster_with_suffix(
-        instances_list.attribute_of(max_port, "connector_group"), ".node"
-    )
+    # Ensure instance has a start and end node
+    if instance.get("node_at_end_a") is None or instance.get("node_at_end_b") is None:
+        raise ValueError(
+            f"Instance {instance.get('instance_name')} has no start or end node."
+        )
 
     # Build graph of segments
     segments = [
@@ -563,10 +558,23 @@ def map_instance_to_segments(instance):
         graph.setdefault(b, set()).add(a)
         segment_lookup[frozenset([a, b])] = seg_name
 
-    # BFS to find a node path
-    from collections import deque
+    start_node = instances_list.instance_in_connector_group_with_item_type(
+        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"),
+        "Node",
+    )
+    if start_node == 0:
+        raise ValueError(f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get("instance_name"), "connector_group")}")
+    end_node = instances_list.instance_in_connector_group_with_item_type(
+        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
+        "Node",
+    )
+    if end_node == 0:
+        raise ValueError(f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get("instance_name"), "connector_group")}")
 
-    queue = deque([(zero_port_node, [zero_port_node])])
+    start_node = start_node.get("instance_name")
+    end_node = end_node.get("instance_name")
+
+    queue = deque([(start_node, [start_node])])
     visited = set()
 
     while queue:
@@ -575,7 +583,7 @@ def map_instance_to_segments(instance):
             continue
         visited.add(current)
 
-        if current == max_port_node:
+        if current == end_node:
             # Convert node path to segment names
             segment_path = []
             for i in range(len(path) - 1):
@@ -588,9 +596,7 @@ def map_instance_to_segments(instance):
             if neighbor not in visited:
                 queue.append((neighbor, path + [neighbor]))
     else:
-        raise ValueError(
-            f"No segment path found between {zero_port_node} and {max_port_node}"
-        )
+        raise ValueError(f"No segment path found between {start_node} and {end_node}")
 
     # Add a new instance for each connected segment
     for seg_name in segment_path:
