@@ -184,9 +184,7 @@ def validate_nodes():
                         instance.get("item_type") == "Node"
                         and instance.get("instance_name") != missing_node
                     ):
-                        node_to_attach_new_leg_to = instance.get(
-                            "instance_name"
-                        )
+                        node_to_attach_new_leg_to = instance.get("instance_name")
                         break
 
                 if not node_to_attach_new_leg_to:
@@ -537,13 +535,17 @@ def map_instance_to_segments(instance):
         "Node",
     )
     if start_node == 0:
-        raise ValueError(f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get("instance_name"), "connector_group")}")
+        raise ValueError(
+            f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get("instance_name"), "connector_group")}"
+        )
     end_node = instances_list.instance_in_connector_group_with_item_type(
         instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
         "Node",
     )
     if end_node == 0:
-        raise ValueError(f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get("instance_name"), "connector_group")}")
+        raise ValueError(
+            f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get("instance_name"), "connector_group")}"
+        )
 
     start_node = start_node.get("instance_name")
     end_node = end_node.get("instance_name")

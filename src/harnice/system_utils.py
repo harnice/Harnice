@@ -735,7 +735,11 @@ def make_circuits_list():
             if channel_id
             else ""
         )
-        cavity = signals_list.cavity_of_signal(channel_id, signal, device_signals_list_path) if channel_id else ""
+        cavity = (
+            signals_list.cavity_of_signal(channel_id, signal, device_signals_list_path)
+            if channel_id
+            else ""
+        )
         return {
             "refdes": refdes,
             "channel_id": channel_id,
@@ -753,12 +757,17 @@ def make_circuits_list():
         row = None
         for disconnect_signal_row in disconnect_signals_list:
             if disconnect_signal_row.get("signal", "").strip() == signal.strip():
-                if disconnect_signal_row.get("channel", "").strip() == channel_id.strip():
+                if (
+                    disconnect_signal_row.get("channel", "").strip()
+                    == channel_id.strip()
+                ):
                     row = disconnect_signal_row
                     break
 
         if row is None:
-            raise ValueError(f"Signal {signal} of channel {channel_id} not found in {discconnect_signals_list_path}")
+            raise ValueError(
+                f"Signal {signal} of channel {channel_id} not found in {discconnect_signals_list_path}"
+            )
 
         cavity = (row.get(f"{side}_cavity") or "").strip()
         return {

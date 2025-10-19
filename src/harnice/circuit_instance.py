@@ -113,13 +113,18 @@ def instance_of_circuit_port_number(circuit_id, circuit_port_number):
         raise ValueError("Circuit ID is blank")
     if circuit_port_number in ["", None]:
         raise ValueError("Circuit port number is blank")
-        
+
     for instance in instances_list.read_instance_rows():
         if instance.get("circuit_id").strip() == str(circuit_id).strip():
-            if instance.get("circuit_port_number").strip() == str(circuit_port_number).strip():
+            if (
+                instance.get("circuit_port_number").strip()
+                == str(circuit_port_number).strip()
+            ):
                 return instance.get("instance_name")
-    
-    raise ValueError(f"No instance found for circuit {circuit_id} and port number {circuit_port_number}")
+
+    raise ValueError(
+        f"No instance found for circuit {circuit_id} and port number {circuit_port_number}"
+    )
 
 
 def of_instance(instance_name):

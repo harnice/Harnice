@@ -1,6 +1,7 @@
 import csv
 import os
 import inspect
+from threading import Lock
 from harnice import component_library, fileio
 
 RECOGNIZED_ITEM_TYPES = {"Segment", "Node", "Flagnote", "Flagnote leader", "Location"}
@@ -15,6 +16,7 @@ INSTANCES_LIST_COLUMNS = [
     "parent_instance",  # general purpose reference
     "location_is_node_or_segment",  # each instance is either better represented by one or ther other
     "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
+    "channel_group",
     "circuit_id",  # which signal this component is electrically connected to
     "circuit_port_number",  # the sequential id of this item in its signal chain
     "node_at_end_a",  # derived from formboard definition
@@ -41,21 +43,19 @@ INSTANCES_LIST_COLUMNS = [
     "lib_datemodified",
     "lib_datereleased",
     "lib_drawnby",
-    "this_instance_mating_device_refdes",  # if connector, refdes of the device it plugs into 
-    "this_instance_mating_device_connector", # if connector, name of the connector it plugs into
-    "this_instance_mating_device_connector_mpn", # if connector, mpn of the connector it plugs into
+    "this_instance_mating_device_refdes",  # if connector, refdes of the device it plugs into
+    "this_instance_mating_device_connector",  # if connector, name of the connector it plugs into
+    "this_instance_mating_device_connector_mpn",  # if connector, mpn of the connector it plugs into
     "this_net_from_device_refdes",
     "this_net_from_device_channel_id",
     "this_net_from_device_connector_name",
     "this_net_to_device_refdes",
     "this_net_to_device_channel_id",
     "this_net_to_device_connector_name",
-    "this_channel_from_device_refdes", # if channel, refdes of the device on one side of the channel
+    "this_channel_from_device_refdes",  # if channel, refdes of the device on one side of the channel
     "this_channel_from_device_channel_id",
-    "this_channel_from_device_connector_name", # if channel, name of the connector on one side of the channel
-    "this_channel_to_device_refdes", # if channel, refdes of the device on the other side of the channel
+    "this_channel_to_device_refdes",  # if channel, refdes of the device on the other side of the channel
     "this_channel_to_device_channel_id",
-    "this_channel_to_device_connector_name",
     "this_channel_from_channel_type_id",
     "this_channel_to_channel_type_id",
     "signal_of_channel_type",
@@ -69,23 +69,7 @@ def read_instance_rows():
         return list(csv.DictReader(f, delimiter="\t"))
 
 
-def new_instance(instance_name, instance_data):
-    """
-    Adds a new instance to the instances list TSV, unless one with the same
-    name already exists.
-
-    Args:
-        instance_name (str): The name of the instance to add.
-        instance_data (dict): Dictionary of instance attributes. May include "instance_name".
-
-    Returns:
-        bool: True if the instance already existed (no write performed),
-              False if a new row was written.
-
-    Raises:
-        ValueError: If instance_name is missing, or if instance_name and
-                    instance_data["instance_name"] disagree.
-    """
+def new_instance(instance_name, instance_data, ignore_duplicates=False):
     if instance_name in ["", None]:
         raise ValueError(
             "Argument 'instance_name' is blank and reqired to idenitify a unique instance"
@@ -100,7 +84,12 @@ def new_instance(instance_name, instance_data):
         )
 
     if any(row.get("instance_name") == instance_name for row in read_instance_rows()):
-        raise ValueError(f"An instance with the name '{instance_name}' already exists")
+        if not ignore_duplicates:
+            raise ValueError(
+                f"An instance with the name '{instance_name}' already exists"
+            )
+        else:
+            return -1
 
     if fileio.get_net() and fileio.product_type == "harness":
         instance_data["net"] = fileio.get_net()
@@ -119,52 +108,33 @@ def new_instance(instance_name, instance_data):
         )
 
 
+_instances_lock = Lock()
+
+
 def modify(instance_name, instance_data):
-    """
-    Modifies an existing instance in the instances list TSV.
+    with _instances_lock:
+        path = fileio.path("instances list")
+        with open(path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            rows = list(reader)
+            fieldnames = reader.fieldnames
 
-    Args:
-        instance_name (str): The name of the instance to modify.
-        instance_data (dict): A dictionary of fieldnames and new values to update.
+        for row in rows:
+            if row.get("instance_name") == instance_name:
+                row.update(instance_data)
+                break
+        else:
+            raise ValueError(f"Instance '{instance_name}' not found")
 
-    Raises:
-        ValueError: If the instance is not found, or if instance_name conflicts with instance_data["instance_name"].
-    """
-    # Sanity check: ensure instance_name is consistent
-    if "instance_name" in instance_data:
-        if instance_data["instance_name"] != instance_name:
-            raise ValueError(
-                f"Mismatch between argument instance_name ('{instance_name}') "
-                f"and instance_data['instance_name'] ('{instance_data['instance_name']}')."
-            )
-    else:
-        instance_data["instance_name"] = instance_name
+        tmp = path + ".tmp"
+        with open(tmp, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
+            f.flush()
+            os.fsync(f.fileno())
 
-    path = fileio.path("instances list")
-
-    with open(path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        rows = list(reader)
-        fieldnames = reader.fieldnames
-
-    modified = False
-    for row in rows:
-        if row.get("instance_name") == instance_name:
-            row.update(instance_data)
-            modified = True
-            break
-
-    if not modified:
-        raise ValueError(f"Instance '{instance_name}' not found in the instances list.")
-
-    # Add debug call chain
-    instance_data["debug"] = get_call_chain_str()
-    instance_data["debug_cutoff"] = " "
-
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
-        writer.writeheader()
-        writer.writerows(rows)
+        os.replace(tmp, path)
 
 
 def make_new_list():
@@ -241,7 +211,7 @@ def instance_in_connector_group_with_item_type(connector_group, item_type):
     if match > 1:
         raise ValueError(
             f"Multiple instances found in connector_group '{connector_group}' with item type '{item_type}'."
-    )
+        )
     return output
 
 
@@ -265,14 +235,11 @@ def add_connector_contact_nodes_channels_and_circuits():
         circuits_list = list(csv.DictReader(f, delimiter="\t"))
 
     for circuit in circuits_list:
-        # add connectors and contacts
-
         from_connector_key = (
             f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
         )
         from_connector_node = f"{from_connector_key}.node"
         from_connector = f"{from_connector_key}.conn"
-
         from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_cavity')}"
 
         to_connector_key = (
@@ -280,33 +247,28 @@ def add_connector_contact_nodes_channels_and_circuits():
         )
         to_connector_node = f"{to_connector_key}.node"
         to_connector = f"{to_connector_key}.conn"
-
         to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_cavity')}"
 
-        try: #if this node already exists, no need to add it again
-            new_instance(
-                from_connector_node,
-                {
-                    "net": circuit.get("net"),
-                    "item_type": "Node",
-                    "location_is_node_or_segment": "Node",
-                    "connector_group": from_connector_key,
-                    },
-                )
-        except ValueError:
-            pass
-        try: #if this connector already exists, no need to add it again
-            new_instance(
-                from_connector,
-                {
-                    "net": circuit.get("net"),
-                    "item_type": "Connector",
-                    "location_is_node_or_segment": "Node",
-                    "connector_group": from_connector_key,
-                    },
-                )
-        except ValueError:
-            pass
+        new_instance(
+            from_connector_node,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Node",
+                "location_is_node_or_segment": "Node",
+                "connector_group": from_connector_key,
+            },
+            ignore_duplicates=True,
+        )
+        new_instance(
+            from_connector,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Connector",
+                "location_is_node_or_segment": "Node",
+                "connector_group": from_connector_key,
+            },
+            ignore_duplicates=True,
+        )
         new_instance(
             from_cavity,
             {
@@ -318,31 +280,28 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 0,
             },
+            ignore_duplicates=True,
         )
-        try: #if this node already exists, no need to add it again
-            new_instance(
-                to_connector_node,
-                {
-                    "net": circuit.get("net"),
-                    "item_type": "Node",
-                    "location_is_node_or_segment": "Node",
-                    "connector_group": to_connector_key,
-                    },
-                )
-        except ValueError:
-            pass
-        try: #if this connector already exists, no need to add it again
-            new_instance(
-                    to_connector,
-                    {
-                        "net": circuit.get("net"),
-                        "item_type": "Connector",
-                        "location_is_node_or_segment": "Node",
-                        "connector_group": to_connector_key,
-                        },
-                    )
-        except ValueError:
-            pass
+        new_instance(
+            to_connector_node,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Node",
+                "location_is_node_or_segment": "Node",
+                "connector_group": to_connector_key,
+            },
+            ignore_duplicates=True,
+        )
+        new_instance(
+            to_connector,
+            {
+                "net": circuit.get("net"),
+                "item_type": "Connector",
+                "location_is_node_or_segment": "Node",
+                "connector_group": to_connector_key,
+            },
+            ignore_duplicates=True,
+        )
         new_instance(
             to_cavity,
             {
@@ -353,33 +312,82 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "connector_group": to_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 1,
-            }
+            },
+            ignore_duplicates=True,
         )
 
         # add circuit
-        new_instance(f"circuit-{circuit.get('circuit_id')}", {
-            "net": circuit.get("net"),
-            "item_type": "Circuit",
-            "circuit_id": circuit.get("circuit_id"),
-            "from_channel_type_id": circuit.get("from_channel_type_id"),
-            "to_channel_type_id": circuit.get("to_channel_type_id"),
-            "signal_of_channel_type": circuit.get("signal"),
-            "node_at_end_a": from_cavity,
-            "node_at_end_b": to_cavity,
-        })
+        new_instance(
+            f"circuit-{circuit.get('circuit_id')}",
+            {
+                "net": circuit.get("net"),
+                "item_type": "Circuit",
+                "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+                "circuit_id": circuit.get("circuit_id"),
+                "node_at_end_a": from_cavity,
+                "node_at_end_b": to_cavity,
+                "this_net_from_device_refdes": circuit.get("net_from_refdes"),
+                "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
+                "this_net_from_device_connector_name": circuit.get(
+                    "net_from_connector_name"
+                ),
+                "this_net_to_device_refdes": circuit.get("net_to_refdes"),
+                "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
+                "this_net_to_device_connector_name": circuit.get(
+                    "net_to_connector_name"
+                ),
+                "this_channel_from_device_refdes": circuit.get(
+                    "from_side_device_refdes"
+                ),
+                "this_channel_from_device_channel_id": circuit.get(
+                    "from_side_device_chname"
+                ),
+                "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
+                "this_channel_to_device_channel_id": circuit.get(
+                    "to_side_device_chname"
+                ),
+                "this_channel_from_channel_type_id": circuit.get(
+                    "from_channel_type_id"
+                ),
+                "this_channel_to_channel_type_id": circuit.get("to_channel_type_id"),
+                "signal_of_channel_type": circuit.get("signal"),
+            },
+            ignore_duplicates=True,
+        )
 
-        # add channel
-        try:
-            new_instance(f"channel-{circuit.get('circuit_id')}", {
+        new_instance(
+            f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+            {
                 "net": circuit.get("net"),
                 "item_type": "Channel",
-                "circuit_id": circuit.get("circuit_id"),
-                "from_channel_type_id": circuit.get("from_channel_type_id"),
-                "to_channel_type_id": circuit.get("to_channel_type_id"),
-                "signal_of_channel_type": circuit.get("signal"),
-            })
-        except ValueError:
-            pass
+                "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+                "this_net_from_device_refdes": circuit.get("net_from_refdes"),
+                "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
+                "this_net_from_device_connector_name": circuit.get(
+                    "net_from_connector_name"
+                ),
+                "this_net_to_device_refdes": circuit.get("net_to_refdes"),
+                "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
+                "this_net_to_device_connector_name": circuit.get(
+                    "net_to_connector_name"
+                ),
+                "this_channel_from_device_refdes": circuit.get(
+                    "from_side_device_refdes"
+                ),
+                "this_channel_from_device_channel_id": circuit.get(
+                    "from_side_device_chname"
+                ),
+                "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
+                "this_channel_to_device_channel_id": circuit.get(
+                    "to_side_device_chname"
+                ),
+                "this_channel_from_channel_type_id": circuit.get(
+                    "from_channel_type_id"
+                ),
+                "this_channel_to_channel_type_id": circuit.get("to_channel_type_id"),
+            },
+            ignore_duplicates=True,
+        )
 
     with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
         connector_list = list(csv.DictReader(f, delimiter="\t"))
@@ -393,6 +401,9 @@ def add_connector_contact_nodes_channels_and_circuits():
                     "mating_device_connector": connector.get("connector"),
                     "mating_device_connector_mpn": connector.get("connector_mpn"),
                 },
+            )
+            print(
+                f"[new_instance] Current file size: {os.path.getsize(fileio.path('instances list'))}"
             )
         except ValueError:
             # a connextor exists in your system but isn't part of a harness and thus has not been assigned an instance to modify

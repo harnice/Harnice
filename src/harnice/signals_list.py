@@ -177,7 +177,9 @@ def cavity_of_signal(channel_id, signal, path_to_signals_list):
             if row.get("signal", "").strip() == signal.strip():
                 if row.get("channel", "").strip() == channel_id.strip():
                     return row.get("cavity", "").strip()
-        raise ValueError(f"Signal {signal} of channel {channel_id} not found in {path_to_signals_list}")
+        raise ValueError(
+            f"Signal {signal} of channel {channel_id} not found in {path_to_signals_list}"
+        )
 
 
 def connector_name_of_channel(channel_id, path_to_signals_list):
