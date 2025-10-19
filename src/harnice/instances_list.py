@@ -17,16 +17,8 @@ INSTANCES_LIST_COLUMNS = [
     "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
     "circuit_id",  # which signal this component is electrically connected to
     "circuit_port_number",  # the sequential id of this item in its signal chain
-    "from_channel_type_id",
-    "to_channel_type_id",
-    "signal_of_channel_type",
-    "length",  # derived from formboard definition, the length of a segment
-    "diameter",  # apparent diameter of a segment <---------- change to print_diameter
     "node_at_end_a",  # derived from formboard definition
     "node_at_end_b",  # derived from formboard definition
-    "mating_device_refdes",
-    "mating_device_connector",
-    "mating_device_connector_mpn",
     "parent_csys_instance_name",  # the other instance upon which this instance's location is based
     "parent_csys_outputcsys_name",  # the specific output coordinate system of the parent that this instance's location is based
     "translate_x",  # derived from parent_csys and parent_csys_name
@@ -36,6 +28,8 @@ INSTANCES_LIST_COLUMNS = [
     "cable_group",
     "cable_container",
     "cable_identifier",
+    "length",  # derived from formboard definition, the length of a segment
+    "diameter",  # apparent diameter of a segment <---------- change to print_diameter
     "note_type",
     "note_number",  # <--------- merge with parent_csys and import instances of child csys?
     "bubble_text",
@@ -47,6 +41,24 @@ INSTANCES_LIST_COLUMNS = [
     "lib_datemodified",
     "lib_datereleased",
     "lib_drawnby",
+    "this_instance_mating_device_refdes",  # if connector, refdes of the device it plugs into 
+    "this_instance_mating_device_connector", # if connector, name of the connector it plugs into
+    "this_instance_mating_device_connector_mpn", # if connector, mpn of the connector it plugs into
+    "this_net_from_device_refdes",
+    "this_net_from_device_channel_id",
+    "this_net_from_device_connector_name",
+    "this_net_to_device_refdes",
+    "this_net_to_device_channel_id",
+    "this_net_to_device_connector_name",
+    "this_channel_from_device_refdes", # if channel, refdes of the device on one side of the channel
+    "this_channel_from_device_channel_id",
+    "this_channel_from_device_connector_name", # if channel, name of the connector on one side of the channel
+    "this_channel_to_device_refdes", # if channel, refdes of the device on the other side of the channel
+    "this_channel_to_device_channel_id",
+    "this_channel_to_device_connector_name",
+    "this_channel_from_channel_type_id",
+    "this_channel_to_channel_type_id",
+    "signal_of_channel_type",
     "debug",
     "debug_cutoff",
 ]
@@ -248,7 +260,7 @@ def get_call_chain_str():
     return " -> ".join(chain_parts)
 
 
-def add_connector_contact_nodes_and_circuits():
+def add_connector_contact_nodes_channels_and_circuits():
     with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
         circuits_list = list(csv.DictReader(f, delimiter="\t"))
 
@@ -341,12 +353,11 @@ def add_connector_contact_nodes_and_circuits():
                 "connector_group": to_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 1,
-            },
+            }
         )
 
         # add circuit
-        circuit_id = f"circuit-{circuit.get('circuit_id')}"
-        circuit_data = {
+        new_instance(f"circuit-{circuit.get('circuit_id')}", {
             "net": circuit.get("net"),
             "item_type": "Circuit",
             "circuit_id": circuit.get("circuit_id"),
@@ -355,9 +366,20 @@ def add_connector_contact_nodes_and_circuits():
             "signal_of_channel_type": circuit.get("signal"),
             "node_at_end_a": from_cavity,
             "node_at_end_b": to_cavity,
-        }
+        })
 
-        new_instance(circuit_id, circuit_data)
+        # add channel
+        try:
+            new_instance(f"channel-{circuit.get('circuit_id')}", {
+                "net": circuit.get("net"),
+                "item_type": "Channel",
+                "circuit_id": circuit.get("circuit_id"),
+                "from_channel_type_id": circuit.get("from_channel_type_id"),
+                "to_channel_type_id": circuit.get("to_channel_type_id"),
+                "signal_of_channel_type": circuit.get("signal"),
+            })
+        except ValueError:
+            pass
 
     with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
         connector_list = list(csv.DictReader(f, delimiter="\t"))
