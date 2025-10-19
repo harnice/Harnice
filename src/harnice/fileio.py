@@ -519,3 +519,41 @@ def get_path_to_project(traceable_key):
             return os.path.expanduser(local_path)
 
     raise ValueError(f"Could not find library repo id {traceable_key}")
+
+
+def newrev():
+    """
+    Create a new revision directory by copying the current revision's contents
+    and updating filenames to reflect the new revision number.
+    """
+    # Ensure revision structure is valid and get context
+    verify_revision_structure()
+
+    # Prompt user for new revision number
+    new_rev_number = cli.prompt(
+        f"Current rev number: {partnumber("R")}. Enter new rev number:",
+        default=str(int(partnumber("R")) + 1),
+    )
+
+    # Construct new revision directory path
+    new_rev_dir = os.path.join(part_directory(), f"{partnumber("pn")}-rev{new_rev_number}")
+
+    # Ensure target directory does not already exist
+    if os.path.exists(new_rev_dir):
+        raise FileExistsError(f"Revision directory already exists: {new_rev_dir}")
+
+    shutil.copytree(rev_directory(), new_rev_dir)
+
+    # Walk the new directory and rename all files containing the old rev number
+    for root, _, files in os.walk(new_rev_dir):
+        for filename in files:
+            new_suffix = f"rev{new_rev_number}"
+
+            if partnumber("rev") in filename:
+                old_path = os.path.join(root, filename)
+                new_name = filename.replace(partnumber("rev"), new_suffix)
+                new_path = os.path.join(root, new_name)
+
+                os.rename(old_path, new_path)
+
+    print(f"Successfully created new revision: {partnumber('pn-rev')}. Please cd into it.")

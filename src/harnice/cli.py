@@ -57,9 +57,20 @@ def main():
         choices=["device"],
         help="Render a product type quickly without performing all checks",
     )
+    group.add_argument(
+        "--newrev",
+        action="store_true",
+        help="Create a new revision in the current working directory",
+    )
+
     args = parser.parse_args()
 
-    # figure out which product type string to use
+    # Handle new revision creation
+    if args.newrev:
+        fileio.newrev()
+        return
+
+    # Figure out which product type string to use
     product_type = args.render or args.lightweight
     fileio.set_product_type(product_type.lower())
 
