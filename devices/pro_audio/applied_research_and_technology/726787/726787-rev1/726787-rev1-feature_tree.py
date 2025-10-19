@@ -36,7 +36,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
             channel=channel_name,
             signal=signal,
             connector_name=connector_name,
-            contact=xlr_pinout.get(signal),
+            cavity=xlr_pinout.get(signal),
             channel_type_id=channel_type_id,
             connector_mpn=connector_mpn,
         )
@@ -46,7 +46,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
         channel=f"{channel_name}-shield",
         signal="chassis",
         connector_name=connector_name,
-        contact=xlr_pinout.get("chassis"),
+        cavity=xlr_pinout.get("chassis"),
         channel_type_id=ch_type_ids["chassis"],
         connector_mpn=connector_mpn,
     )

@@ -19,7 +19,7 @@ ch_type_ids = {
 
 cn_mpns = {"A": "DB25F", "B": "DB25M"}
 
-contact_number = {
+cavity_number = {
     "ch0": {"pos": 24, "neg": 12, "chassis": 25},
     "ch1": {"pos": 10, "neg": 23, "chassis": 11},
     "ch2": {"pos": 21, "neg": 9, "chassis": 22},
@@ -41,10 +41,10 @@ for channel in range(8):
         signals_list.write_signal(
             channel=channel_name,
             signal=signal,
-            A_contact=contact_number[channel_name][signal],
+            A_cavity=cavity_number[channel_name][signal],
             A_connector_mpn=cn_mpns["A"],
             A_channel_type_id=ch_type_ids["A"]["balanced audio mic level in"],
-            B_contact=contact_number[channel_name][signal],
+            B_cavity=cavity_number[channel_name][signal],
             B_connector_mpn=cn_mpns["B"],
             B_channel_type_id=ch_type_ids["B"]["balanced audio mic level out"],
         )
@@ -53,10 +53,10 @@ for channel in range(8):
         signals_list.write_signal(
             channel=f"{channel_name}-shield",
             signal=signal,
-            A_contact=contact_number[channel_name][signal],
+            A_cavity=cavity_number[channel_name][signal],
             A_connector_mpn=cn_mpns["A"],
             A_channel_type_id=ch_type_ids["A"]["chassis"],
-            B_contact=contact_number[channel_name][signal],
+            B_cavity=cavity_number[channel_name][signal],
             B_connector_mpn=cn_mpns["B"],
             B_channel_type_id=ch_type_ids["B"]["chassis"],
         )
