@@ -32,9 +32,12 @@ for instance in instances_list.read_instance_rows():
         if parent_csys == 0:
             parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "Node")
             parent_csys_outputcsys_name = "origin"
+        else:
+            parent_csys = parent_csys.get("instance_name")
 
     elif instance.get("item_type") == "Backshell":
         parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "Node")
+        parent_csys = parent_csys.get("instance_name")
         parent_csys_outputcsys_name = "origin"
     else:
         continue
