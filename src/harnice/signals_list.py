@@ -9,7 +9,7 @@ DEVICE_SIGNALS_HEADERS = [
     "channel",
     "signal",
     "connector_name",
-    "contact",
+    "cavity",
     "connector_mpn",
     "channel_type_id",
     "compatible_channel_type_ids",
@@ -18,8 +18,8 @@ DEVICE_SIGNALS_HEADERS = [
 DISCONNECT_SIGNALS_HEADERS = [
     "channel",
     "signal",
-    "A_contact",
-    "B_contact",
+    "A_cavity",
+    "B_cavity",
     "A_connector_mpn",
     "A_channel_type_id",
     "A_compatible_channel_type_ids",
@@ -170,13 +170,14 @@ def compatible_channel_types(channel_type_id):
     return []
 
 
-def pin_of_signal(signal, path_to_signals_list):
+def cavity_of_signal(channel_id, signal, path_to_signals_list):
     with open(path_to_signals_list, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
             if row.get("signal", "").strip() == signal.strip():
-                return row.get("contact", "").strip()
-        raise ValueError(f"Signal {signal} not found in {path_to_signals_list}")
+                if row.get("channel", "").strip() == channel_id.strip():
+                    return row.get("cavity", "").strip()
+        raise ValueError(f"Signal {signal} of channel {channel_id} not found in {path_to_signals_list}")
 
 
 def connector_name_of_channel(channel_id, path_to_signals_list):
@@ -322,17 +323,17 @@ def validate_for_disconnect():
 
     seen_A = set()
     for signal in signals_list:
-        A_contact = signal.get("A_contact")
-        if A_contact in seen_A:
-            raise ValueError(f"Duplicate A_contact found in disconnect: {A_contact}")
-        seen_A.add(A_contact)
+        A_cavity = signal.get("A_cavity")
+        if A_cavity in seen_A:
+            raise ValueError(f"Duplicate A_cavity found in disconnect: {A_cavity}")
+        seen_A.add(A_cavity)
 
     # Check duplicates for B side
     seen_B = set()
     for signal in signals_list:
-        B_contact = signal.get("B_contact")
-        if B_contact in seen_B:
-            raise ValueError(f"Duplicate B_contact found in disconnect: {B_contact}")
-        seen_B.add(B_contact)
+        B_cavity = signal.get("B_cavity")
+        if B_cavity in seen_B:
+            raise ValueError(f"Duplicate B_cavity found in disconnect: {B_cavity}")
+        seen_B.add(B_cavity)
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")

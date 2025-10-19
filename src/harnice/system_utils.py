@@ -52,11 +52,11 @@ CIRCUITS_LIST_COLUMNS = [
     "net_from_refdes",
     "net_from_channel_id",
     "net_from_connector_name",
-    "net_from_contact",
+    "net_from_cavity",
     "net_to_refdes",
     "net_to_channel_id",
     "net_to_connector_name",
-    "net_to_contact",
+    "net_to_cavity",
     "from_side_device_refdes",
     "from_side_device_chname",
     "to_side_device_refdes",
@@ -727,42 +727,45 @@ def make_circuits_list():
 
     # --- resolvers ---
     def resolve_device_endpoint(refdes, channel_id, signal):
-        slp = os.path.join(
+        device_signals_list_path = os.path.join(
             fileio.dirpath("devices"), refdes, f"{refdes}-signals_list.tsv"
         )
         connector_name = (
-            signals_list.connector_name_of_channel(channel_id, slp)
+            signals_list.connector_name_of_channel(channel_id, device_signals_list_path)
             if channel_id
             else ""
         )
-        contact = signals_list.pin_of_signal(signal, slp) if channel_id else ""
+        cavity = signals_list.cavity_of_signal(channel_id, signal, device_signals_list_path) if channel_id else ""
         return {
             "refdes": refdes,
             "channel_id": channel_id,
             "connector_name": connector_name,
-            "contact": contact,
+            "cavity": cavity,
         }
 
     def resolve_disconnect_endpoint(refdes, side, signal, channel_id):
-        slp = os.path.join(
+        discconnect_signals_list_path = os.path.join(
             fileio.dirpath("disconnects"), refdes, f"{refdes}-signals_list.tsv"
         )
-        with open(slp, newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f, delimiter="\t"))
+        with open(discconnect_signals_list_path, newline="", encoding="utf-8") as f:
+            disconnect_signals_list = list(csv.DictReader(f, delimiter="\t"))
 
-        row = next(
-            r
-            for r in rows
-            if r.get("signal", "").strip() == signal
-            and r.get("channel", "").strip() == channel_id
-        )
+        row = None
+        for disconnect_signal_row in disconnect_signals_list:
+            if disconnect_signal_row.get("signal", "").strip() == signal.strip():
+                if disconnect_signal_row.get("channel", "").strip() == channel_id.strip():
+                    row = disconnect_signal_row
+                    break
 
-        contact = (row.get(f"{side}_contact") or "").strip()
+        if row is None:
+            raise ValueError(f"Signal {signal} of channel {channel_id} not found in {discconnect_signals_list_path}")
+
+        cavity = (row.get(f"{side}_cavity") or "").strip()
         return {
             "refdes": refdes,
             "channel_id": channel_id,
             "connector_name": side,
-            "contact": contact,
+            "cavity": cavity,
         }
 
     # --- iterate channel map rows ---
@@ -847,11 +850,11 @@ def make_circuits_list():
                             "net_from_refdes": left["refdes"],
                             "net_from_channel_id": left["channel_id"],
                             "net_from_connector_name": left["connector_name"],
-                            "net_from_contact": left["contact"],
+                            "net_from_cavity": left["cavity"],
                             "net_to_refdes": right["refdes"],
                             "net_to_channel_id": right["channel_id"],
                             "net_to_connector_name": right["connector_name"],
-                            "net_to_contact": right["contact"],
+                            "net_to_cavity": right["cavity"],
                             "from_side_device_refdes": from_refdes,
                             "from_side_device_chname": from_channel_id,
                             "to_side_device_refdes": to_refdes,
@@ -887,11 +890,11 @@ def make_circuits_list():
                             "net_from_refdes": left["refdes"],
                             "net_from_channel_id": left["channel_id"],
                             "net_from_connector_name": left["connector_name"],
-                            "net_from_contact": left["contact"],
+                            "net_from_cavity": left["cavity"],
                             "net_to_refdes": right["refdes"],
                             "net_to_channel_id": right["channel_id"],
                             "net_to_connector_name": right["connector_name"],
-                            "net_to_contact": right["contact"],
+                            "net_to_cavity": right["cavity"],
                             "from_side_device_refdes": from_refdes,
                             "from_side_device_chname": from_channel_id,
                             "to_side_device_refdes": to_refdes,

@@ -273,7 +273,7 @@ def add_connector_contact_nodes_channels_and_circuits():
         from_connector_node = f"{from_connector_key}.node"
         from_connector = f"{from_connector_key}.conn"
 
-        from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_contact')}"
+        from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_cavity')}"
 
         to_connector_key = (
             f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
@@ -281,7 +281,7 @@ def add_connector_contact_nodes_channels_and_circuits():
         to_connector_node = f"{to_connector_key}.node"
         to_connector = f"{to_connector_key}.conn"
 
-        to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_contact')}"
+        to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_cavity')}"
 
         try: #if this node already exists, no need to add it again
             new_instance(
