@@ -558,8 +558,21 @@ def map_instance_to_segments(instance):
         graph.setdefault(b, set()).add(a)
         segment_lookup[frozenset([a, b])] = seg_name
 
-    start_node = instances_list.instance_in_connector_group_with_suffix(instance.get("node_at_end_a"), ".node")
-    end_node = instances_list.instance_in_connector_group_with_suffix(instance.get("node_at_end_b"), ".node")
+    start_node = instances_list.instance_in_connector_group_with_item_type(
+        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"),
+        "Node",
+    )
+    if start_node == 0:
+        raise ValueError(f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get("instance_name"), "connector_group")}")
+    end_node = instances_list.instance_in_connector_group_with_item_type(
+        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
+        "Node",
+    )
+    if end_node == 0:
+        raise ValueError(f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get("instance_name"), "connector_group")}")
+
+    start_node = start_node.get("instance_name")
+    end_node = end_node.get("instance_name")
 
     queue = deque([(start_node, [start_node])])
     visited = set()
@@ -583,9 +596,7 @@ def map_instance_to_segments(instance):
             if neighbor not in visited:
                 queue.append((neighbor, path + [neighbor]))
     else:
-        raise ValueError(
-            f"No segment path found between {start_node} and {end_node}"
-        )
+        raise ValueError(f"No segment path found between {start_node} and {end_node}")
 
     # Add a new instance for each connected segment
     for seg_name in segment_path:

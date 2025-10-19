@@ -212,22 +212,25 @@ def attribute_of(target_instance, attribute):
             return instance.get(attribute)
 
 
-def instance_in_connector_group_with_suffix(connector_group, suffix):
+def instance_in_connector_group_with_item_type(connector_group, item_type):
     if connector_group in ["", None]:
-        raise ValueError(f"Connector group '{connector_group}' is blank")
-    if suffix in ["", None]:
-        raise ValueError(f"Suffix '{suffix}' is blank")
-    match = None
+        raise ValueError("Connector group is blank")
+    if item_type in ["", None]:
+        raise ValueError("Suffix is blank")
+    match = 0
+    output = None
     for instance in read_instance_rows():
         if instance.get("connector_group") == connector_group:
-            instance_name = instance.get("instance_name", "")
-            if instance_name.endswith(suffix):
-                if match is not None:
-                    raise ValueError(
-                        f"Multiple instances found in connector_group '{connector_group}' with the suffix '{suffix}'."
-                    )
-                match = instance_name
-    return match
+            if instance.get("item_type") == item_type:
+                match = match + 1
+                output = instance
+    if match == 0:
+        return 0
+    if match > 1:
+        raise ValueError(
+            f"Multiple instances found in connector_group '{connector_group}' with item type '{item_type}'."
+    )
+    return output
 
 
 def get_call_chain_str():
