@@ -60,3 +60,5 @@ def render():
     runpy.run_path(fileio.path("feature tree"))
 
     system_utils.update_post_harness_instances_list()
+
+    print("\nSystem rendered successfully!\n")

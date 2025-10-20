@@ -2,7 +2,7 @@ import csv
 import os
 import inspect
 from threading import Lock
-from harnice import component_library, fileio
+from harnice import component_library, fileio, signals_list
 
 RECOGNIZED_ITEM_TYPES = {"Segment", "Node", "Flagnote", "Flagnote leader", "Location"}
 
@@ -231,6 +231,9 @@ def get_call_chain_str():
 
 
 def add_connector_contact_nodes_channels_and_circuits():
+    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
+        connectors_list = list(csv.DictReader(f, delimiter="\t"))
+
     with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
         circuits_list = list(csv.DictReader(f, delimiter="\t"))
 
@@ -238,19 +241,17 @@ def add_connector_contact_nodes_channels_and_circuits():
         from_connector_key = (
             f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
         )
-        from_connector_node = f"{from_connector_key}.node"
-        from_connector = f"{from_connector_key}.conn"
         from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_cavity')}"
+        
+        from_connector_mpn = ""
+        for connector in connectors_list:
+            if connector.get("device_refdes") == circuit.get("net_from_refdes") and connector.get("connector") == circuit.get("net_from_connector_name"):
+                from_connector_mpn = connector.get("connector_mpn")
+                break
 
-        to_connector_key = (
-            f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
-        )
-        to_connector_node = f"{to_connector_key}.node"
-        to_connector = f"{to_connector_key}.conn"
-        to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_cavity')}"
-
+        #from connector node
         new_instance(
-            from_connector_node,
+            f"{from_connector_key}.node",
             {
                 "net": circuit.get("net"),
                 "item_type": "Node",
@@ -259,22 +260,29 @@ def add_connector_contact_nodes_channels_and_circuits():
             },
             ignore_duplicates=True,
         )
+
+        #from connector
         new_instance(
-            from_connector,
+            f"{from_connector_key}.conn",
             {
                 "net": circuit.get("net"),
                 "item_type": "Connector",
                 "location_is_node_or_segment": "Node",
                 "connector_group": from_connector_key,
+                "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
+                "this_instance_mating_device_connector": circuit.get("net_from_connector_name"),
+                "this_instance_mating_device_connector_mpn": from_connector_mpn,
             },
             ignore_duplicates=True,
         )
+
+        #from connector cavity
         new_instance(
             from_cavity,
             {
                 "net": circuit.get("net"),
                 "item_type": "Connector cavity",
-                "parent_instance": from_connector,
+                "parent_instance": f"{from_connector_key}.conn", #from connector instance
                 "location_is_node_or_segment": "Node",
                 "connector_group": from_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
@@ -282,8 +290,21 @@ def add_connector_contact_nodes_channels_and_circuits():
             },
             ignore_duplicates=True,
         )
+
+        to_connector_key = (
+            f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
+        )
+        to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_cavity')}"
+
+        to_connector_mpn = ""
+        for connector in connectors_list:
+            if connector.get("device_refdes") == circuit.get("net_to_refdes") and connector.get("connector") == circuit.get("net_to_connector_name"):
+                to_connector_mpn = connector.get("connector_mpn")
+                break
+
+        #to connector node
         new_instance(
-            to_connector_node,
+            f"{to_connector_key}.node",
             {
                 "net": circuit.get("net"),
                 "item_type": "Node",
@@ -292,22 +313,29 @@ def add_connector_contact_nodes_channels_and_circuits():
             },
             ignore_duplicates=True,
         )
+
+        #to connector
         new_instance(
-            to_connector,
+            f"{to_connector_key}.conn",
             {
                 "net": circuit.get("net"),
                 "item_type": "Connector",
                 "location_is_node_or_segment": "Node",
                 "connector_group": to_connector_key,
+                "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
+                "this_instance_mating_device_connector": circuit.get("net_from_connector_name"),
+                "this_instance_mating_device_connector_mpn": to_connector_mpn,
             },
             ignore_duplicates=True,
         )
+
+        #to connector cavity
         new_instance(
             to_cavity,
             {
                 "net": circuit.get("net"),
                 "item_type": "Connector cavity",
-                "parent_instance": to_connector,
+                "parent_instance": f"{to_connector_key}.conn", #to connector instance
                 "location_is_node_or_segment": "Node",
                 "connector_group": to_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
@@ -402,13 +430,8 @@ def add_connector_contact_nodes_channels_and_circuits():
                     "mating_device_connector_mpn": connector.get("connector_mpn"),
                 },
             )
-            print(
-                f"[new_instance] Current file size: {os.path.getsize(fileio.path('instances list'))}"
-            )
         except ValueError:
-            # a connextor exists in your system but isn't part of a harness and thus has not been assigned an instance to modify
             pass
-
 
 def assign_cable_conductor(
     cable_instance_name,  # unique identifier for the cable in your project
