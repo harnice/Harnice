@@ -64,12 +64,6 @@ INSTANCES_LIST_COLUMNS = [
     "debug_cutoff",
 ]
 
-
-def fileio.read_tsv("instances list"):
-    with open(fileio.path("instances list"), newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f, delimiter="\t"))
-
-
 def new_instance(instance_name, instance_data, ignore_duplicates=False):
     if instance_name in ["", None]:
         raise ValueError(

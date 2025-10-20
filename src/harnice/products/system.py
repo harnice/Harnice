@@ -46,14 +46,20 @@ system_utils.make_circuits_list()
 instances_list.make_new_list()
 instances_list.add_connector_contact_nodes_channels_and_circuits()
 
+#assign mating connectors
+#for instance in fileio.read_tsv("instances list"):
+    #if instance.get("item_type") == "Connector":
+        #if instance.get("this_instance_mating_device_connector_mpn") == "XLR3M":
+            #instances_list.modify(instance.get("instance_name"),{
+                #`"mpn":"D38999_26ZA98PN",
+                "lib_repo":"https://github.com/kenyonshutt/harnice-library-public"
+            #})
+
 #===========================================================================
 #                   SYSTEM DESIGN CHECKS
 #===========================================================================
-#check for connectors with no circuits
-with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
-    connector_list = list(csv.DictReader(f, delimiter="\t"))
-with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
-    circuits_list = list(csv.DictReader(f, delimiter="\t"))
+connector_list = fileio.read_tsv("system connector list")
+circuits_list = fileio.read_tsv("circuits list")
 
 #check for circuits with no connectors
 system_utils.find_connector_with_no_circuit(connector_list, circuits_list)
