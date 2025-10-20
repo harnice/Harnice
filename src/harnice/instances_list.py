@@ -14,7 +14,7 @@ INSTANCES_LIST_COLUMNS = [
     "mpn",  # unique part identifier (manufacturer + part number concatenated)
     "item_type",  # connector, backshell, whatever
     "parent_instance",  # general purpose reference
-    "location_is_node_or_segment",  # each instance is either better represented by one or ther other
+    "location_type",  # each instance is either better represented by one or ther other
     "segment_group",  # the group of segments that this instance is part of
     "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
     "channel_group",
@@ -258,7 +258,7 @@ def add_connector_contact_nodes_channels_and_circuits():
             {
                 "net": circuit.get("net"),
                 "item_type": "Node",
-                "location_is_node_or_segment": "Node",
+                "location_type": "Node",
                 "connector_group": from_connector_key,
             },
             ignore_duplicates=True,
@@ -270,7 +270,7 @@ def add_connector_contact_nodes_channels_and_circuits():
             {
                 "net": circuit.get("net"),
                 "item_type": "Connector",
-                "location_is_node_or_segment": "Node",
+                "location_type": "Node",
                 "connector_group": from_connector_key,
                 "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
                 "this_instance_mating_device_connector": circuit.get(
@@ -288,7 +288,7 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "net": circuit.get("net"),
                 "item_type": "Connector cavity",
                 "parent_instance": f"{from_connector_key}.conn",  # from connector instance
-                "location_is_node_or_segment": "Node",
+                "location_type": "Node",
                 "connector_group": from_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 0,
@@ -315,7 +315,7 @@ def add_connector_contact_nodes_channels_and_circuits():
             {
                 "net": circuit.get("net"),
                 "item_type": "Node",
-                "location_is_node_or_segment": "Node",
+                "location_type": "Node",
                 "connector_group": to_connector_key,
             },
             ignore_duplicates=True,
@@ -327,7 +327,7 @@ def add_connector_contact_nodes_channels_and_circuits():
             {
                 "net": circuit.get("net"),
                 "item_type": "Connector",
-                "location_is_node_or_segment": "Node",
+                "location_type": "Node",
                 "connector_group": to_connector_key,
                 "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
                 "this_instance_mating_device_connector": circuit.get(
@@ -345,7 +345,7 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "net": circuit.get("net"),
                 "item_type": "Connector cavity",
                 "parent_instance": f"{to_connector_key}.conn",  # to connector instance
-                "location_is_node_or_segment": "Node",
+                "location_type": "Node",
                 "connector_group": to_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 1,
@@ -399,9 +399,9 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "net": circuit.get("net"),
                 "item_type": "Channel",
                 "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
-                "location_is_node_or_segment": "Segment",
-                "node_at_end_a": f"{circuit.get("net_from_refdes")}.{circuit.get("net_from_connector_name")}.conn",
-                "node_at_end_b": f"{circuit.get("net_to_refdes")}.{circuit.get("net_to_connector_name")}.conn",
+                "location_type": "Segment",
+                "node_at_end_a": f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.conn",
+                "node_at_end_b": f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.conn",
                 "this_net_from_device_refdes": circuit.get("net_from_refdes"),
                 "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
                 "this_net_from_device_connector_name": circuit.get(
@@ -485,7 +485,7 @@ def assign_cable_conductor(
             cable_instance_name,
             {
                 "item_type": "Cable",
-                "location_is_node_or_segment": "Segment",
+                "location_type": "Segment",
                 "cable_group": cable_instance_name,
             },
         )
