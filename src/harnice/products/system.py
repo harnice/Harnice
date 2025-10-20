@@ -51,8 +51,8 @@ instances_list.add_connector_contact_nodes_channels_and_circuits()
     #if instance.get("item_type") == "Connector":
         #if instance.get("this_instance_mating_device_connector_mpn") == "XLR3M":
             #instances_list.modify(instance.get("instance_name"),{
-                #`"mpn":"D38999_26ZA98PN",
-                "lib_repo":"https://github.com/kenyonshutt/harnice-library-public"
+                #"mpn":"D38999_26ZA98PN",
+                #"lib_repo":"https://github.com/kenyonshutt/harnice-library-public"
             #})
 
 #===========================================================================
