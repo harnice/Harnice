@@ -1,4 +1,4 @@
-from harnice import instances_list
+from harnice import instances_list, fileio
 
 
 def instance_names_of_adjacent_ports(target_instance):
