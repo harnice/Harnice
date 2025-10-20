@@ -65,7 +65,7 @@ INSTANCES_LIST_COLUMNS = [
 ]
 
 
-def read_instance_rows():
+def fileio.read_tsv("instances list"):
     with open(fileio.path("instances list"), newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f, delimiter="\t"))
 
@@ -84,7 +84,7 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
             f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'"
         )
 
-    if any(row.get("instance_name") == instance_name for row in read_instance_rows()):
+    if any(row.get("instance_name") == instance_name for row in fileio.read_tsv("instances list")):
         if not ignore_duplicates:
             raise ValueError(
                 f"An instance with the name '{instance_name}' already exists"
@@ -147,7 +147,7 @@ def make_new_list():
 
 def assign_bom_line_numbers():
     bom = []
-    for instance in read_instance_rows():
+    for instance in fileio.read_tsv("instances list"):
         if instance.get("bom_line_number") == "True":
             if instance.get("mpn") == "":
                 raise ValueError(
@@ -158,7 +158,7 @@ def assign_bom_line_numbers():
 
     bom_line_number = 1
     for bom_item in bom:
-        for instance in read_instance_rows():
+        for instance in fileio.read_tsv("instances list"):
             if instance.get("mpn") == bom_item:
                 modify(
                     instance.get("instance_name"), {"bom_line_number": bom_line_number}
@@ -190,7 +190,7 @@ def add_revhistory_of_imported_part(instance_name, rev_data):
 
 
 def attribute_of(target_instance, attribute):
-    for instance in read_instance_rows():
+    for instance in fileio.read_tsv("instances list"):
         if instance.get("instance_name") == target_instance:
             return instance.get(attribute)
 
@@ -202,7 +202,7 @@ def instance_in_connector_group_with_item_type(connector_group, item_type):
         raise ValueError("Suffix is blank")
     match = 0
     output = None
-    for instance in read_instance_rows():
+    for instance in fileio.read_tsv("instances list"):
         if instance.get("connector_group") == connector_group:
             if instance.get("item_type") == item_type:
                 match = match + 1
@@ -453,7 +453,7 @@ def assign_cable_conductor(
     conductor_instance,  # instance name of the conductor in your project
     library_info,  # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev, item_name}
 ):
-    instances = read_instance_rows()
+    instances = fileio.read_tsv("instances list")
 
     # --- Check if cable is already imported ---
     already_imported = any(

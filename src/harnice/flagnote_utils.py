@@ -40,7 +40,7 @@ def read_revhistory():
 
 
 def make_note_drawings(formboard_dir):
-    instances = instances_list.read_instance_rows()
+    instances = instances_list.fileio.read_tsv("instances list")
 
     for instance in instances:
         if instance.get("item_type", "").lower() != "flagnote":
@@ -83,7 +83,7 @@ def make_note_drawings(formboard_dir):
 
 def compile_buildnotes():
     # add buildnote itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if (
             instance.get("item_type") == "Flagnote"
             and instance.get("note_type") == "buildnote"
@@ -93,7 +93,7 @@ def compile_buildnotes():
                 {"note_number": instance.get("bubble_text")},
             )
 
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if (
             instance.get("item_type") == "Flagnote"
             and instance.get("note_type") == "buildnote"
@@ -103,7 +103,7 @@ def compile_buildnotes():
 
             # does this buildnote exist as an instance yet?
             already_exists = False
-            for instance2 in instances_list.read_instance_rows():
+            for instance2 in instances_list.fileio.read_tsv("instances list"):
                 if (
                     instance2.get("item_type") == "Buildnote"
                     and instance2.get("note_text") == buildnote_text
@@ -132,7 +132,9 @@ def compile_buildnotes():
 
 
 def assign_output_csys():
-    for current_affected_instance_candidate in instances_list.read_instance_rows():
+    for current_affected_instance_candidate in instances_list.fileio.read_tsv(
+        "instances list"
+    ):
         processed_affected_instances = []
         current_affected_instance = None
         if current_affected_instance_candidate.get("item_type") == "Flagnote":
@@ -146,7 +148,7 @@ def assign_output_csys():
 
         # now that you have a not-yet traversed affected instance
         flagnote_counter = 1
-        for instance in instances_list.read_instance_rows():
+        for instance in instances_list.fileio.read_tsv("instances list"):
             if instance.get("item_type") == "Flagnote":
                 if instance.get("parent_instance") == current_affected_instance:
                     instances_list.modify(

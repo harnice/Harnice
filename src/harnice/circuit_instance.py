@@ -2,7 +2,7 @@ from harnice import instances_list
 
 
 def instance_names_of_adjacent_ports(target_instance):
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if instance.get("instance_name") == target_instance:
             # assign parents to contacts based on the assumption that one of the two adjacent items in the circuit will be a node-item
             if (
@@ -18,7 +18,7 @@ def instance_names_of_adjacent_ports(target_instance):
             prev_port = ""
             next_port = ""
 
-            for instance2 in instances_list.read_instance_rows():
+            for instance2 in instances_list.fileio.read_tsv("instances list"):
                 if instance2.get("circuit_id") == circuit_id:
                     if (
                         int(instance2.get("circuit_port_number"))
@@ -41,7 +41,7 @@ def end_ports_of_circuit(circuit_id):
         raise ValueError(f"Pass an integer circuit_id, not '{circuit_id}'")
     zero_port = ""
     max_port = ""
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
             if instance.get("circuit_port_number") == 0:
                 zero_port = instance.get("instance_name")
@@ -54,7 +54,7 @@ def end_ports_of_circuit(circuit_id):
 
 def max_port_number_in_circuit(circuit_id):
     max_port_number = 0
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
             if instance.get("circuit_port_number") == "":
                 if instance.get("item_type") == "Circuit":
@@ -71,7 +71,7 @@ def max_port_number_in_circuit(circuit_id):
 def squeeze_instance_between_ports_in_circuit(
     instance_name, circuit_id, new_circuit_port_number
 ):
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
             if instance.get("item_type") == "Circuit":
                 continue
@@ -96,7 +96,7 @@ def squeeze_instance_between_ports_in_circuit(
 
 def instances_of_circuit(circuit_id):
     instances = []
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
             if instance.get("item_type") == "Circuit":
                 continue
@@ -114,7 +114,7 @@ def instance_of_circuit_port_number(circuit_id, circuit_port_number):
     if circuit_port_number in ["", None]:
         raise ValueError("Circuit port number is blank")
 
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if instance.get("circuit_id").strip() == str(circuit_id).strip():
             if (
                 instance.get("circuit_port_number").strip()
@@ -129,7 +129,7 @@ def instance_of_circuit_port_number(circuit_id, circuit_port_number):
 
 def of_instance(instance_name):
     circuit_instance_name = ""
-    instance_rows = instances_list.read_instance_rows()
+    instance_rows = instances_list.fileio.read_tsv("instances list")
     for instance in instance_rows:
         if instance.get("instance_name") == instance_name:
             circuit_instance_name = instance.get("circuit_id")

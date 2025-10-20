@@ -105,7 +105,7 @@ def validate_nodes():
     # Collect node names from the instance list
     nodes_from_instances_list = {
         instance.get("instance_name")
-        for instance in instances_list.read_instance_rows()
+        for instance in instances_list.fileio.read_tsv("instances list")
         if instance.get("item_type") == "Node"
     }
 
@@ -121,7 +121,7 @@ def validate_nodes():
         if len(nodes_from_instances_list) > 2:
             origin_node = "node1"
             node_counter = 0
-            for instance in instances_list.read_instance_rows():
+            for instance in instances_list.fileio.read_tsv("instances list"):
                 if instance.get("item_type") == "Node":
                     segment_id = instance.get("instance_name") + "_leg"
                     add_segment_to_formboard_def(
@@ -149,7 +149,7 @@ def validate_nodes():
         elif len(nodes_from_instances_list) == 2:
             segment_id = "segment"
             segment_ends = []
-            for instance in instances_list.read_instance_rows():
+            for instance in instances_list.fileio.read_tsv("instances list"):
                 if instance.get("item_type") == "Node":
                     segment_ends.append(instance.get("instance_name"))
 
@@ -179,7 +179,7 @@ def validate_nodes():
                 segment_id = f"{missing_node}_leg"
 
                 node_to_attach_new_leg_to = ""
-                for instance in instances_list.read_instance_rows():
+                for instance in instances_list.fileio.read_tsv("instances list"):
                     if (
                         instance.get("item_type") == "Node"
                         and instance.get("instance_name") != missing_node
@@ -264,7 +264,7 @@ def validate_nodes():
 
     # === Detect loops ===
     adjacency = defaultdict(list)
-    for instance in instances_list.read_instance_rows():
+    for instance in instances_list.fileio.read_tsv("instances list"):
         if instance.get("item_type") == "Segment":
             node_a = instance.get("node_at_end_a")
             node_b = instance.get("node_at_end_b")
@@ -331,7 +331,7 @@ def validate_nodes():
 
 def generate_node_coordinates():
     # === Step 1: Load segments and nodes from instances_list ===
-    instances = instances_list.read_instance_rows()
+    instances = instances_list.fileio.read_tsv("instances list")
 
     segments = [inst for inst in instances if inst.get("item_type") == "Segment"]
     nodes = [inst for inst in instances if inst.get("item_type") == "Node"]
@@ -565,7 +565,7 @@ def map_instance_to_segments(instance):
     # Build graph of segments
     segments = [
         inst
-        for inst in instances_list.read_instance_rows()
+        for inst in instances_list.fileio.read_tsv("instances list")
         if inst.get("item_type") == "Segment"
     ]
 
@@ -643,7 +643,7 @@ def map_instance_to_segments(instance):
 def make_segment_drawings():
     # =================================================
     # FIRST, UPDATE SEGMENT INSTANCES
-    instances = instances_list.read_instance_rows()
+    instances = instances_list.fileio.read_tsv("instances list")
 
     for instance in instances:
         if instance.get("item_type") == "Segment":
