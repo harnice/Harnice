@@ -166,8 +166,8 @@ for instance in instances_list.read_instance_rows():
     if instance.get("item_type") != "Circuit":
         continue
 
-    #IF YOU ONLY WANT TO VISUALIZE SOME CIRCUITS, ADD FILTER HERE
-    #if instance.get("circuit_id") not in ["circuit-1", "circuit-2"]:
+    # IF YOU ONLY WANT TO VISUALIZE SOME CIRCUITS, ADD FILTER HERE
+    # if instance.get("circuit_id") not in ["circuit-1", "circuit-2"]:
     #    continue
     # if re.match(r"^X1", instance.get("node_at_end_a", "")):
     #    continue
@@ -178,8 +178,8 @@ for instance in instances_list.read_instance_rows():
     local_group = []
 
     # Collect node/segment data
-    nodes = [p for p in ports if p.get("location_is_node_or_segment") == "Node"]
-    segments = [p for p in ports if p.get("location_is_node_or_segment") == "Segment"]
+    nodes = [p for p in ports if p.get("location_type") == "Node"]
+    segments = [p for p in ports if p.get("location_type") == "Segment"]
     num_nodes = len(nodes)
     num_segments = len(segments)
 
@@ -204,7 +204,7 @@ for instance in instances_list.read_instance_rows():
     # Draw schematic contents
     x = NODE_MARGIN_X
     for port in ports:
-        kind = port.get("location_is_node_or_segment")
+        kind = port.get("location_type")
         if kind == "Node":
             plot_node(port, x, ROW_HEIGHT / 2, uniform_node_width, local_group)
             x += uniform_node_width

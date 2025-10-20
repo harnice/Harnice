@@ -46,7 +46,7 @@ for circuit_id, ports in harness_yaml.items():
                     "bom_line_number": True,
                     "mpn": value,
                     "lib_repo": lib_repo,
-                    "location_is_node_or_segment": "Node",
+                    "location_type": "Node",
                     "circuit_id": circuit_id,
                     "circuit_port_number": port_counter,
                 },
@@ -61,7 +61,7 @@ for circuit_id, ports in harness_yaml.items():
                     {
                         "item_type": "Connector",
                         "connector_group": port_label,
-                        "location_is_node_or_segment": "Node",
+                        "location_type": "Node",
                     },
                 )
                 instances_list.new_instance(
@@ -69,7 +69,7 @@ for circuit_id, ports in harness_yaml.items():
                     {
                         "item_type": "Node",
                         "connector_group": port_label,
-                        "location_is_node_or_segment": "Node",
+                        "location_type": "Node",
                         "parent_csys_instance_name": "origin",
                         "parent_csys_outputcsys_name": "origin",
                     },
@@ -77,7 +77,7 @@ for circuit_id, ports in harness_yaml.items():
             elif re.match(r"C[^.]+", port_label):
                 instances_list.new_instance(
                     port_label,
-                    {"item_type": "Cable", "location_is_node_or_segment": "Segment"},
+                    {"item_type": "Cable", "location_type": "Segment"},
                 )
             else:
                 raise ValueError(f"Please define item {port_label}!")
@@ -96,7 +96,7 @@ for circuit_id, ports in harness_yaml.items():
                                 "item_type": "Connector cavity",
                                 "parent_instance": port_label,
                                 "connector_group": port_label,
-                                "location_is_node_or_segment": "Node",
+                                "location_type": "Node",
                                 "circuit_id": circuit_id,
                                 "circuit_port_number": port_counter,
                             },
@@ -111,7 +111,7 @@ for circuit_id, ports in harness_yaml.items():
                                 "print_name": subval,
                                 "item_type": "Conductor",
                                 "parent_instance": port_label,
-                                "location_is_node_or_segment": "Segment",
+                                "location_type": "Segment",
                                 "circuit_id": circuit_id,
                                 "circuit_port_number": port_counter,
                             },
@@ -190,7 +190,7 @@ for instance in instances_list.read_instance_rows():
                         "item_type": "Backshell",
                         "parent_instance": instance.get("instance_name"),
                         "connector_group": instance_name,
-                        "location_is_node_or_segment": "Node",
+                        "location_type": "Node",
                     },
                 )
 
@@ -202,16 +202,13 @@ for instance in instances_list.read_instance_rows():
         prev_port, next_port = circuit_instance.instance_names_of_adjacent_ports(
             instance_name
         )
-        prev_port_location_is_node_or_segment = instances_list.attribute_of(
-            prev_port, "location_is_node_or_segment"
+        prev_port_location_type = instances_list.attribute_of(
+            prev_port, "location_type"
         )
-        next_port_location_is_node_or_segment = instances_list.attribute_of(
-            next_port, "location_is_node_or_segment"
+        next_port_location_type = instances_list.attribute_of(
+            next_port, "location_type"
         )
-        if (
-            prev_port_location_is_node_or_segment == "Node"
-            and next_port_location_is_node_or_segment == "Segment"
-        ):
+        if prev_port_location_type == "Node" and next_port_location_type == "Segment":
             instances_list.modify(
                 instance_name,
                 {
@@ -221,10 +218,7 @@ for instance in instances_list.read_instance_rows():
                     ),
                 },
             )
-        elif (
-            prev_port_location_is_node_or_segment == "Segment"
-            and next_port_location_is_node_or_segment == "Node"
-        ):
+        elif prev_port_location_type == "Segment" and next_port_location_type == "Node":
             instances_list.modify(
                 instance_name,
                 {
