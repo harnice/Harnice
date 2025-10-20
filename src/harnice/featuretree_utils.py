@@ -80,7 +80,7 @@ def lookup_outputcsys_from_lib_used(lib_name, outputcsys):
 
 def update_translate_content():
     # this looks through parent csys and finds its output csys and recommends its translate_x and translate_y
-    for instance in instances_list.fileio.read_tsv("instances list"):
+    for instance in fileio.read_tsv("instances list"):
         if instance.get("parent_csys_instance_name") in ["", None]:
             continue  # skip if there isn't a parent defined
 
