@@ -15,6 +15,7 @@ INSTANCES_LIST_COLUMNS = [
     "item_type",  # connector, backshell, whatever
     "parent_instance",  # general purpose reference
     "location_is_node_or_segment",  # each instance is either better represented by one or ther other
+    "segment_group",  # the group of segments that this instance is part of
     "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
     "channel_group",
     "circuit_id",  # which signal this component is electrically connected to

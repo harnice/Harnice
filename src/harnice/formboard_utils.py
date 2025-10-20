@@ -237,6 +237,7 @@ def validate_nodes():
             {
                 "item_type": "Segment",
                 "location_is_node_or_segment": "Segment",
+                "segment_group": segment.get("segment_id"),
                 "length": segment.get("length"),
                 "diameter": segment.get("diameter"),
                 "parent_csys_instance_name": segment.get("node_at_end_a"),
@@ -498,6 +499,9 @@ def generate_node_coordinates():
 
 
 def map_instance_to_segments(instance):
+    # note to user: we're actually mapping to nodes in same connector group as the "end nodes". 
+    # so if your to/from nodes are item_type==Cavity, for example, this function will return paths of segments between the item_type==Node instance where those cavities are
+
     # Ensure you're trying to map an instance that is segment-based.
     if instance.get("location_is_node_or_segment") != "Segment":
         raise ValueError(
@@ -509,6 +513,42 @@ def map_instance_to_segments(instance):
         raise ValueError(
             f"Instance {instance.get('instance_name')} has no start or end node."
         )
+
+    # Ensure each endpoint are actually location_type==node
+    if instances_list.attribute_of(instance.get("node_at_end_a"), "location_is_node_or_segment") != "Node":
+        raise ValueError(
+            f"Location type of {instance.get('node_at_end_a')} is not a node."
+        )
+    if instances_list.attribute_of(instance.get("node_at_end_b"), "location_is_node_or_segment") != "Node":
+        raise ValueError(
+            f"Location type of {instance.get('node_at_end_b')} is not a node."
+        )
+
+    # Ensure there's a node in the connector group for each end node
+    start_node = instances_list.instance_in_connector_group_with_item_type(instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"), "Node")
+    try:
+        if start_node == 0:
+            raise ValueError(
+                f"No 'Node' type item found in connector group {instance.get('connector_group')}"
+            )
+        if start_node > 1:
+            raise ValueError(
+                f"Multiple 'Node' type items found in connector group {instance.get('connector_group')}"
+            )
+    except TypeError:
+        pass
+    end_node = instances_list.instance_in_connector_group_with_item_type(instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"), "Node")
+    try:
+        if end_node == 0:
+            raise ValueError(
+                f"No 'Node' type item found in connector group {instance.get('connector_group')}"
+            )
+        if end_node > 1:
+            raise ValueError(
+                f"Multiple 'Node' type items found in connector group {instance.get('connector_group')}"
+            )
+    except TypeError:
+        pass
 
     # Build graph of segments
     segments = [
@@ -579,8 +619,8 @@ def map_instance_to_segments(instance):
         instances_list.new_instance(
             f"{instance.get('instance_name')}.{seg_name}",
             {
-                "item_type": "Hardware segment",
-                "parent_instance": instance.get("instance_name"),
+                "item_type": f"{instance.get('item_type')}-segment",
+                "segment_group": seg_name,
                 "parent_csys": seg_name,
                 "location_is_node_or_segment": "Segment",
                 "length": instances_list.attribute_of(seg_name, "length"),
