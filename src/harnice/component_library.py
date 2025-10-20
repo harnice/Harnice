@@ -139,43 +139,42 @@ def pull_item_from_library(
     return library_rev, revhistory_row
 
 
-def pull_part(instance_name):
-    instances = instances_list.read_instance_rows()
+def pull_part(instance):
+    mpn = instance.get("mpn", "")
+    destination_directory = os.path.join(
+        fileio.dirpath("imported_instances"), instance.get("instance_name")
+    )
 
-    for instance in instances:
-        item_name = instance.get("instance_name")
-        if not item_name == instance_name:
-            continue
+    # Determine rev from existing folders
+    revs_found = []
+    lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
+    if os.path.exists(lib_used_path):
+        for entry in os.listdir(lib_used_path):
+            match = re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", entry)
+            if match:
+                revs_found.append(int(match.group(1)))
 
-        lib_repo = instance.get("lib_repo")
-        mpn = instance.get("mpn", "")
-        destination_directory = os.path.join(
-            fileio.dirpath("imported_instances"), item_name
-        )
+    desired_rev = str(max(revs_found)) if revs_found else "latest"
+    used_rev = desired_rev if desired_rev != "latest" else None
 
-        # Determine rev from existing folders
-        revs_found = []
-        lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
-        if os.path.exists(lib_used_path):
-            for entry in os.listdir(lib_used_path):
-                match = re.fullmatch(rf"{re.escape(mpn)}-rev(\d+)", entry)
-                if match:
-                    revs_found.append(int(match.group(1)))
-
-        desired_rev = str(max(revs_found)) if revs_found else "latest"
-        used_rev = desired_rev if desired_rev != "latest" else None
-
+    try:
         returned_rev, revhistory_row = pull_item_from_library(
-            lib_repo=lib_repo,
+            lib_repo=instance.get("lib_repo"),
             product="parts",
-            mpn=mpn,
+            mpn=instance.get("mpn"),
             destination_directory=destination_directory,
             used_rev=used_rev,
-            item_name=item_name,
+            item_name=instance.get("instance_name"),
             quiet=False,
         )
+    except ValueError as e:
+        raise ValueError(
+            f"While importing instance '{instance.get("instance_name")}': {e}"
+        ) from e
 
-        instances_list.add_revhistory_of_imported_part(item_name, revhistory_row)
+    instances_list.add_revhistory_of_imported_part(
+        instance.get("instance_name"), revhistory_row
+    )
 
 
 def get_local_path(lib_repo):

@@ -536,7 +536,9 @@ def newrev():
     )
 
     # Construct new revision directory path
-    new_rev_dir = os.path.join(part_directory(), f"{partnumber("pn")}-rev{new_rev_number}")
+    new_rev_dir = os.path.join(
+        part_directory(), f"{partnumber("pn")}-rev{new_rev_number}"
+    )
 
     # Ensure target directory does not already exist
     if os.path.exists(new_rev_dir):
@@ -556,4 +558,6 @@ def newrev():
 
                 os.rename(old_path, new_path)
 
-    print(f"Successfully created new revision: {partnumber('pn-rev')}. Please cd into it.")
+    print(
+        f"Successfully created new revision: {partnumber('pn-rev')}. Please cd into it."
+    )

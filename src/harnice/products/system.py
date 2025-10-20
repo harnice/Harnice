@@ -43,7 +43,7 @@ system_utils.make_circuits_list()
 #                   INSTANCES LIST
 #===========================================================================
 instances_list.make_new_list()
-instances_list.add_connector_contact_nodes_and_circuits()
+instances_list.add_connector_contact_nodes_channels_and_circuits()
 """
 
 
@@ -60,3 +60,5 @@ def render():
     runpy.run_path(fileio.path("feature tree"))
 
     system_utils.update_post_harness_instances_list()
+
+    print("\nSystem rendered successfully!\n")
