@@ -36,7 +36,15 @@ column_keys = [
     "datestarted",
     "datemodified",
 ]
-column_widths = [0.35 * 96, 2.5 * 96, 0.6 * 96, 0.6 * 96, 0.6 * 96, 0.45 * 96, 0.45 * 96]
+column_widths = [
+    0.35 * 96,
+    2.5 * 96,
+    0.6 * 96,
+    0.6 * 96,
+    0.6 * 96,
+    0.45 * 96,
+    0.45 * 96,
+]
 header_row_height = 0.16 * 96  # Height for the header row
 normal_row_height = 0.16 * 96  # Default height for rows without bubbles
 bubble_row_height = 0.4 * 96  # Height for rows with bubbles
