@@ -15,6 +15,7 @@ INSTANCES_LIST_COLUMNS = [
     "item_type",  # connector, backshell, whatever
     "parent_instance",  # general purpose reference
     "location_is_node_or_segment",  # each instance is either better represented by one or ther other
+    "segment_group",  # the group of segments that this instance is part of
     "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
     "channel_group",
     "circuit_id",  # which signal this component is electrically connected to
@@ -391,12 +392,16 @@ def add_connector_contact_nodes_channels_and_circuits():
             ignore_duplicates=True,
         )
 
+        # add channel
         new_instance(
             f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
             {
                 "net": circuit.get("net"),
                 "item_type": "Channel",
                 "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+                "location_is_node_or_segment": "Segment",
+                "node_at_end_a": f"{circuit.get("net_from_refdes")}.{circuit.get("net_from_connector_name")}.conn",
+                "node_at_end_b": f"{circuit.get("net_to_refdes")}.{circuit.get("net_to_connector_name")}.conn",
                 "this_net_from_device_refdes": circuit.get("net_from_refdes"),
                 "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
                 "this_net_from_device_connector_name": circuit.get(
