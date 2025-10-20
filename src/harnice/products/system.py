@@ -2,7 +2,8 @@ from harnice import fileio, mapped_channels, mapped_disconnect_channels, system_
 import runpy
 import os
 
-system_feature_tree_default = """from harnice import featuretree_utils, system_utils, instances_list
+system_feature_tree_default = """import csv
+from harnice import featuretree_utils, system_utils, instances_list, fileio
 
 #===========================================================================
 #                   KICAD PROCESSING
@@ -44,6 +45,18 @@ system_utils.make_circuits_list()
 #===========================================================================
 instances_list.make_new_list()
 instances_list.add_connector_contact_nodes_channels_and_circuits()
+
+#===========================================================================
+#                   SYSTEM DESIGN CHECKS
+#===========================================================================
+#check for connectors with no circuits
+with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
+    connector_list = list(csv.DictReader(f, delimiter="\t"))
+with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
+    circuits_list = list(csv.DictReader(f, delimiter="\t"))
+
+#check for circuits with no connectors
+system_utils.find_connector_with_no_circuit(connector_list, circuits_list)
 """
 
 

@@ -1078,3 +1078,39 @@ def update_post_harness_instances_list():
         writer.writeheader()
         for instance in post_harness_instances:
             writer.writerow({k: instance.get(k, "") for k in INSTANCES_LIST_COLUMNS})
+
+
+def find_connector_with_no_circuit(connector_list, circuits_list):
+    for connector in connector_list:
+        device_refdes = connector.get("device_refdes", "").strip()
+        connector_name = connector.get("connector", "").strip()
+
+        # skip if either key is missing
+        if not device_refdes or not connector_name:
+            continue
+
+        # skip device if net name contains "unconnected"
+        if "unconnected" in connector.get("net", "").strip():
+            continue
+
+        found_match = False
+        for circuit in circuits_list:
+            from_device_refdes = circuit.get("net_from_refdes", "").strip()
+            from_connector_name = circuit.get("net_from_connector_name", "").strip()
+            to_device_refdes = circuit.get("net_to_refdes", "").strip()
+            to_connector_name = circuit.get("net_to_connector_name", "").strip()
+
+            if (
+                from_device_refdes == device_refdes
+                and from_connector_name == connector_name
+            ) or (
+                to_device_refdes == device_refdes
+                and to_connector_name == connector_name
+            ):
+                found_match = True
+                break
+
+        if not found_match:
+            raise ValueError(
+                f"Connector '{connector_name}' of device '{device_refdes}' does not contain any circuits"
+            )
