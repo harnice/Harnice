@@ -10,7 +10,7 @@ print()
 print("Importing parts from library")
 print(f'{"ITEM NAME":<24}  STATUS')
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     instance_name = instance.get("instance_name")
     mpn = instance.get("mpn")
 
@@ -22,7 +22,7 @@ for instance in instances_list.read_instance_rows():
 #===========================================================================
 #                   LOCATE PARTS PER COORDINATE SYSTEMS
 #===========================================================================
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     parent_csys = None
     parent_csys_outputcsys_name = None
 
@@ -51,7 +51,7 @@ featuretree_utils.update_translate_content()
 #===========================================================================
 #assume the only existing ports at this point are cavities 0 and 1
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Circuit":
         circuit_id = instance.get("circuit_id")
         conductor_name = f"conductor-{circuit_id}"
@@ -68,23 +68,23 @@ for instance in instances_list.read_instance_rows():
 #===========================================================================
 formboard_utils.validate_nodes()
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Conductor":
         formboard_utils.map_instance_to_segments(instance)
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Conductor":
         conductor_length = 0
-        for instance2 in instances_list.read_instance_rows():
+        for instance2 in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
                 if instance2.get("length", "").strip():
                     conductor_length += int(instance2.get("length").strip())
         instances_list.modify(instance.get("instance_name"), {"length": conductor_length})
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Cable":
         cable_length = 0
-        for instance2 in instances_list.read_instance_rows():
+        for instance2 in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
                 child_length = int(instance2.get("length", "").strip())
                 if child_length > cable_length:
@@ -103,7 +103,7 @@ instances_list.assign_bom_line_numbers()
 #===========================================================================
 #                   ASSIGN PRINT NAMES
 #===========================================================================
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Contact":
         instances_list.modify(instance.get("instance_name"), {
             "print_name": instance.get("mpn")
@@ -163,7 +163,7 @@ for rev_row in flagnote_utils.read_revhistory():
             })
             flagnote_counter += 1
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["Contact", "Cable"]:
         continue
     if instance.get("bom_line_number") != "":
@@ -179,7 +179,7 @@ for instance in instances_list.read_instance_rows():
         })
         flagnote_counter += 1
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["Connector", "Backshell"]:
         bubble_text = instance.get("print_name") or instance.get("instance_name")
         instances_list.new_instance(f"flagnote-{flagnote_counter}", {
@@ -195,7 +195,7 @@ for instance in instances_list.read_instance_rows():
         flagnote_counter += 1
 
 contact_flagnote_conversion_happened = False
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Flagnote":
         if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
             instances_list.new_instance(f"flagnote-{flagnote_counter}", {
@@ -217,7 +217,7 @@ flagnote_utils.assign_output_csys()
 featuretree_utils.update_translate_content()
 flagnote_utils.compile_buildnotes()
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("absolute_rotation") not in ["", None]:
         instances_list.modify(instance.get("instance_name"), {
             "rotate_csys": instance.get("absolute_rotation")

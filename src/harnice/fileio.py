@@ -274,39 +274,6 @@ def dirpath(target_key):
     return os.path.join(rev_directory(), *path_key)
 
 
-def name(target_value):
-    # returns the filename of a filekey.
-    """
-    Recursively searches for a value in a nested JSON structure and returns the key containing that value.
-
-    Args:
-        target_value (str): The value to search for.
-
-    Returns:
-        str: The key containing the target value, or None if not found.
-    """
-
-    def recursive_search(data):
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if value == target_value:
-                    return key
-                result = recursive_search(value)
-                if result:
-                    return result
-        elif isinstance(data, list):
-            for item in data:
-                result = recursive_search(item)
-                if result:
-                    return result
-        return None
-
-    if not recursive_search(harnice_file_structure()):
-        raise TypeError(f"Could not find filename of key {target_value}.")
-
-    return recursive_search(harnice_file_structure())
-
-
 def verify_revision_structure(product_type=None):
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
@@ -561,3 +528,8 @@ def newrev():
     print(
         f"Successfully created new revision: {partnumber('pn-rev')}. Please cd into it."
     )
+
+
+def read_tsv(filekey):
+    with open(path(filekey), newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f, delimiter="\t"))
