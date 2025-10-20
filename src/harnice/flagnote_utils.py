@@ -163,7 +163,7 @@ def assign_output_csys():
                             "parent_csys_instance_name": current_affected_instance,
                             "parent_instance": instance.get("instance_name"),
                             "item_type": "flagnote-leader",
-                            "location_is_node_or_segment": "Node",
+                            "location_type": "Node",
                             "parent_csys_outputcsys_name": f"flagnote-leader-{flagnote_counter}",
                             "absolute_rotation": 0,
                             "connector_group": instances_list.attribute_of(

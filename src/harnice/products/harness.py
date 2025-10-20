@@ -57,7 +57,7 @@ for instance in instances_list.read_instance_rows():
         conductor_name = f"conductor-{circuit_id}"
         instances_list.new_instance(conductor_name, {
             "item_type": "Conductor",
-            "location_is_node_or_segment": "Segment",
+            "location_type": "Segment",
             "node_at_end_a": circuit_instance.instance_of_circuit_port_number(circuit_id, 0),
             "node_at_end_b": circuit_instance.instance_of_circuit_port_number(circuit_id, 1)
         })
@@ -330,7 +330,7 @@ featuretree_utils.copy_pdfs_to_cwd()
         {
             "instance_name": "origin",
             "item_type": "Origin",
-            "location_is_node_or_segment": "Node",
+            "location_type": "Node",
         },
     )
 
