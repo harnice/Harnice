@@ -242,14 +242,16 @@ def add_connector_contact_nodes_channels_and_circuits():
             f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
         )
         from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_cavity')}"
-        
+
         from_connector_mpn = ""
         for connector in connectors_list:
-            if connector.get("device_refdes") == circuit.get("net_from_refdes") and connector.get("connector") == circuit.get("net_from_connector_name"):
+            if connector.get("device_refdes") == circuit.get(
+                "net_from_refdes"
+            ) and connector.get("connector") == circuit.get("net_from_connector_name"):
                 from_connector_mpn = connector.get("connector_mpn")
                 break
 
-        #from connector node
+        # from connector node
         new_instance(
             f"{from_connector_key}.node",
             {
@@ -261,7 +263,7 @@ def add_connector_contact_nodes_channels_and_circuits():
             ignore_duplicates=True,
         )
 
-        #from connector
+        # from connector
         new_instance(
             f"{from_connector_key}.conn",
             {
@@ -270,19 +272,21 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "location_is_node_or_segment": "Node",
                 "connector_group": from_connector_key,
                 "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
-                "this_instance_mating_device_connector": circuit.get("net_from_connector_name"),
+                "this_instance_mating_device_connector": circuit.get(
+                    "net_from_connector_name"
+                ),
                 "this_instance_mating_device_connector_mpn": from_connector_mpn,
             },
             ignore_duplicates=True,
         )
 
-        #from connector cavity
+        # from connector cavity
         new_instance(
             from_cavity,
             {
                 "net": circuit.get("net"),
                 "item_type": "Connector cavity",
-                "parent_instance": f"{from_connector_key}.conn", #from connector instance
+                "parent_instance": f"{from_connector_key}.conn",  # from connector instance
                 "location_is_node_or_segment": "Node",
                 "connector_group": from_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
@@ -298,11 +302,13 @@ def add_connector_contact_nodes_channels_and_circuits():
 
         to_connector_mpn = ""
         for connector in connectors_list:
-            if connector.get("device_refdes") == circuit.get("net_to_refdes") and connector.get("connector") == circuit.get("net_to_connector_name"):
+            if connector.get("device_refdes") == circuit.get(
+                "net_to_refdes"
+            ) and connector.get("connector") == circuit.get("net_to_connector_name"):
                 to_connector_mpn = connector.get("connector_mpn")
                 break
 
-        #to connector node
+        # to connector node
         new_instance(
             f"{to_connector_key}.node",
             {
@@ -314,7 +320,7 @@ def add_connector_contact_nodes_channels_and_circuits():
             ignore_duplicates=True,
         )
 
-        #to connector
+        # to connector
         new_instance(
             f"{to_connector_key}.conn",
             {
@@ -323,19 +329,21 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "location_is_node_or_segment": "Node",
                 "connector_group": to_connector_key,
                 "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
-                "this_instance_mating_device_connector": circuit.get("net_from_connector_name"),
+                "this_instance_mating_device_connector": circuit.get(
+                    "net_from_connector_name"
+                ),
                 "this_instance_mating_device_connector_mpn": to_connector_mpn,
             },
             ignore_duplicates=True,
         )
 
-        #to connector cavity
+        # to connector cavity
         new_instance(
             to_cavity,
             {
                 "net": circuit.get("net"),
                 "item_type": "Connector cavity",
-                "parent_instance": f"{to_connector_key}.conn", #to connector instance
+                "parent_instance": f"{to_connector_key}.conn",  # to connector instance
                 "location_is_node_or_segment": "Node",
                 "connector_group": to_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
@@ -432,6 +440,7 @@ def add_connector_contact_nodes_channels_and_circuits():
             )
         except ValueError:
             pass
+
 
 def assign_cable_conductor(
     cable_instance_name,  # unique identifier for the cable in your project

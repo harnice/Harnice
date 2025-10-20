@@ -168,9 +168,13 @@ def pull_part(instance):
             quiet=False,
         )
     except ValueError as e:
-        raise ValueError(f"While importing instance '{instance.get("instance_name")}': {e}") from e
+        raise ValueError(
+            f"While importing instance '{instance.get("instance_name")}': {e}"
+        ) from e
 
-    instances_list.add_revhistory_of_imported_part(instance.get("instance_name"), revhistory_row)
+    instances_list.add_revhistory_of_imported_part(
+        instance.get("instance_name"), revhistory_row
+    )
 
 
 def get_local_path(lib_repo):
