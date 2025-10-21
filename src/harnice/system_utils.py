@@ -16,11 +16,9 @@ CHANNEL_MAP_COLUMNS = [
     "from_device_refdes",
     "from_device_channel_id",
     "from_channel_type",
-    "from_compatible_channel_types",
     "to_device_refdes",
     "to_device_channel_id",
     "to_channel_type",
-    "to_compatible_channel_types",
     "multi_ch_junction_id",
     "disconnect_refdes_requirement",
     "chain_of_nets",
@@ -31,17 +29,13 @@ DISCONNECT_CHANNEL_MAP_COLUMNS = [
     "A-side_device_refdes",
     "A-side_device_channel_id",
     "A-side_device_channel_type",
-    "A-side_device_compatible_channel_types",
     "B-side_device_refdes",
     "B-side_device_channel_id",
     "B-side_device_channel_type",
-    "B-side_device_compatible_channel_types",
     "disconnect_refdes",
     "disconnect_channel_id",
     "A-port_channel_type",
-    "A-port_compatible_channel_types",
     "B-port_channel_type",
-    "B-port_compatible_channel_types",
     "manual_map_channel_python_equiv",
 ]
 
@@ -214,9 +208,6 @@ def new_blank_channel_map():
             channel_map_row = {
                 "merged_net": connector.get("merged_net", ""),
                 "from_channel_type": signal.get("channel_type", ""),
-                "from_compatible_channel_types": signal.get(
-                    "compatible_channel_types", ""
-                ),
                 "from_device_refdes": device_refdes,
                 "from_device_channel_id": sig_channel,
             }
@@ -257,28 +248,16 @@ def new_blank_disconnect_map():
                 a_refdes = channel.get("from_device_refdes", "")
                 a_chan_id = channel.get("from_device_channel_id", "")
                 a_chan_type_id = channel.get("from_channel_type", "")
-                a_chan_compatible_channel_types = channel.get(
-                    "from_compatible_channel_types", ""
-                )
                 b_refdes = channel.get("to_device_refdes", "")
                 b_chan_id = channel.get("to_device_channel_id", "")
                 b_chan_type_id = channel.get("to_channel_type", "")
-                b_chan_compatible_channel_types = channel.get(
-                    "to_compatible_channel_types", ""
-                )
             elif (first_port, second_port) == ("B", "A"):
                 b_refdes = channel.get("from_device_refdes", "")
                 b_chan_id = channel.get("from_device_channel_id", "")
                 b_chan_type_id = channel.get("from_channel_type", "")
-                b_chan_compatible_channel_types = channel.get(
-                    "from_compatible_channel_types", ""
-                )
                 a_refdes = channel.get("to_device_refdes", "")
                 a_chan_id = channel.get("to_device_channel_id", "")
                 a_chan_type_id = channel.get("to_channel_type", "")
-                a_chan_compatible_channel_types = channel.get(
-                    "to_compatible_channel_types", ""
-                )
             else:
                 raise ValueError(f"Unexpected port order: {requirement}")
 
@@ -287,11 +266,9 @@ def new_blank_disconnect_map():
                     "A-side_device_refdes": a_refdes,
                     "A-side_device_channel_id": a_chan_id,
                     "A-side_device_channel_type": a_chan_type_id,
-                    "A-side_device_compatible_channel_types": a_chan_compatible_channel_types,
                     "B-side_device_refdes": b_refdes,
                     "B-side_device_channel_id": b_chan_id,
                     "B-side_device_channel_type": b_chan_type_id,
-                    "B-side_device_compatible_channel_types": b_chan_compatible_channel_types,
                     "disconnect_refdes": refdes.strip(),
                 }
             )
@@ -321,13 +298,7 @@ def new_blank_disconnect_map():
                         "disconnect_refdes": item.get("device_ref_des"),
                         "disconnect_channel_id": signal.get("channel_id"),
                         "A-port_channel_type": signal.get("A_channel_type"),
-                        "A-port_compatible_channel_types": signal.get(
-                            "A_compatible_channel_types"
-                        ),
                         "B-port_channel_type": signal.get("B_channel_type"),
-                        "B-port_compatible_channel_types": signal.get(
-                            "B_compatible_channel_types"
-                        ),
                     }
                 )
 
@@ -381,9 +352,6 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
             from_channel["to_device_refdes"] = to_key[0]
             from_channel["to_device_channel_id"] = to_key[1]
             from_channel["to_channel_type"] = to_channel.get("from_channel_type")
-            from_channel["to_compatible_channel_types"] = to_channel.get(
-                "from_compatible_channel_types"
-            )
             if multi_ch_junction_key:
                 from_channel["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
@@ -443,14 +411,7 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
         ):
             row["disconnect_channel_id"] = disconnect_key[1]
             row["A-port_channel_type"] = disconnect_info.get("A-port_channel_type", "")
-            row["A-port_compatible_channel_types"] = disconnect_info.get(
-                "A-port_compatible_channel_types", ""
-            )
             row["B-port_channel_type"] = disconnect_info.get("B-port_channel_type", "")
-            row["B-port_compatible_channel_types"] = disconnect_info.get(
-                "B-port_compatible_channel_types", ""
-            )
-
             row["manual_map_channel_python_equiv"] = (
                 f"system_utils.map_and_record_disconnect({a_side_key}, {disconnect_key})"
             )

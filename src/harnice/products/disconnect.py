@@ -104,8 +104,9 @@ def render():
     fileio.verify_revision_structure(product_type="device")  # identical for now
 
     if not os.path.exists(fileio.path("signals list")):
-        with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
-            f.write(disconnect_feature_tree_default)
+        if not os.path.exists(fileio.path("feature tree")):
+            with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
+                f.write(disconnect_feature_tree_default)
 
     if os.path.exists(fileio.path("feature tree")):
         runpy.run_path(fileio.path("feature tree"))
