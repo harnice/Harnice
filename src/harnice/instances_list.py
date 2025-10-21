@@ -64,6 +64,7 @@ INSTANCES_LIST_COLUMNS = [
     "debug_cutoff",
 ]
 
+
 def new_instance(instance_name, instance_data, ignore_duplicates=False):
     if instance_name in ["", None]:
         raise ValueError(
@@ -78,7 +79,10 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
             f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'"
         )
 
-    if any(row.get("instance_name") == instance_name for row in fileio.read_tsv("instances list")):
+    if any(
+        row.get("instance_name") == instance_name
+        for row in fileio.read_tsv("instances list")
+    ):
         if not ignore_duplicates:
             raise ValueError(
                 f"An instance with the name '{instance_name}' already exists"
@@ -225,7 +229,7 @@ def get_call_chain_str():
     return " -> ".join(chain_parts)
 
 
-def add_connector_contact_nodes_channels_and_circuits():
+def add_connectors_cavities_nodes_channels_and_circuits():
     with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
         connectors_list = list(csv.DictReader(f, delimiter="\t"))
 

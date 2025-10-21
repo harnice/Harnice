@@ -625,7 +625,7 @@ def device_render(lightweight=False):
                 connector_name="J1",
                 channel_type_id=0,
                 signal="placeholder",
-                contact=1,
+                cavity=1,
                 connector_mpn="DB9_F",
             )
 
