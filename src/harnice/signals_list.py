@@ -91,15 +91,11 @@ def write_signal(**kwargs):
         ]
     elif fileio.product_type == "disconnect":
         required = [
-            "A_channel_id",
-            "A_signal",
-            "A_connector_name",
+            "channel_id",
+            "signal",
             "A_cavity",
             "A_connector_mpn",
             "A_channel_type",
-            "B_channel_id",
-            "B_signal",
-            "B_connector_name",
             "B_cavity",
             "B_connector_mpn",
             "B_channel_type",

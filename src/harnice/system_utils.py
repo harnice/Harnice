@@ -195,7 +195,7 @@ def new_blank_channel_map():
             signals = list(csv.DictReader(f, delimiter="\t"))
 
         for signal in signals:
-            sig_channel = signal.get("channel")
+            sig_channel = signal.get("channel_id")
 
             # check if this channel is already in channel_map
             already = any(
@@ -312,14 +312,14 @@ def new_blank_disconnect_map():
 
             available_disconnect_channels = set()
             for signal in disconnect_signals:
-                if signal.get("channel") in available_disconnect_channels:
+                if signal.get("channel_id") in available_disconnect_channels:
                     continue
-                available_disconnect_channels.add(signal.get("channel"))
+                available_disconnect_channels.add(signal.get("channel_id"))
 
                 disconnect_map.append(
                     {
                         "disconnect_refdes": item.get("device_ref_des"),
-                        "disconnect_channel_id": signal.get("channel"),
+                        "disconnect_channel_id": signal.get("channel_id"),
                         "A-port_channel_type": signal.get("A_channel_type"),
                         "A-port_compatible_channel_types": signal.get(
                             "A_compatible_channel_types"
@@ -491,7 +491,7 @@ def connector_of_channel(key):
     with open(device_signals_list_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if row.get("channel", "").strip() == channel_id.strip():
+            if row.get("channel_id", "").strip() == channel_id.strip():
                 return row.get("connector_name", "").strip()
 
     raise ValueError(f"Connector not found for channel {key}")
@@ -701,7 +701,7 @@ def make_circuits_list():
 
         disconnect_refdes = first_nonempty(row, "disconnect_refdes")
         disconnect_channel_id = first_nonempty(
-            row, "disconnect_channel_id", "disconnect_channel"
+            row, "disconnect_channel_id", "disconnect_channel_id"
         )
 
         key_forward = (
@@ -748,17 +748,17 @@ def make_circuits_list():
         }
 
     def resolve_disconnect_endpoint(refdes, side, signal, channel_id):
-        discconnect_signals_list_path = os.path.join(
+        disconnect_signals_list_path = os.path.join(
             fileio.dirpath("disconnects"), refdes, f"{refdes}-signals_list.tsv"
         )
-        with open(discconnect_signals_list_path, newline="", encoding="utf-8") as f:
+        with open(disconnect_signals_list_path, newline="", encoding="utf-8") as f:
             disconnect_signals_list = list(csv.DictReader(f, delimiter="\t"))
 
         row = None
         for disconnect_signal_row in disconnect_signals_list:
             if disconnect_signal_row.get("signal", "").strip() == signal.strip():
                 if (
-                    disconnect_signal_row.get("channel", "").strip()
+                    disconnect_signal_row.get("channel_id", "").strip()
                     == channel_id.strip()
                 ):
                     row = disconnect_signal_row
@@ -766,7 +766,7 @@ def make_circuits_list():
 
         if row is None:
             raise ValueError(
-                f"Signal {signal} of channel {channel_id} not found in {discconnect_signals_list_path}"
+                f"Signal {signal} of channel {channel_id} not found in {disconnect_signals_list_path}"
             )
 
         cavity = (row.get(f"{side}_cavity") or "").strip()
@@ -811,9 +811,17 @@ def make_circuits_list():
         connection_steps = disconnect_chain + [(to_refdes, None, None)]
 
         if len(connection_steps) != len(nets):
+            step_labels = [s[0] for s in connection_steps]
             raise ValueError(
-                f"Mismatch: {len(connection_steps)} steps but {len(nets)} nets "
-                f"for {from_refdes}->{to_refdes}"
+                f"While building circuits from channel_id '{from_channel_id}' of device '{from_refdes}' "
+                f"to channel_id '{to_channel_id}' of device '{to_refdes}', "
+                f"found {len(connection_steps)} connection steps: "
+                f"{', '.join(step_labels) or 'none'}, "
+                f"but expected {len(nets)} because there are {len(nets)} nets "
+                f"from channel end '{from_channel_id}' to channel end '{to_channel_id}' "
+                f"({'; '.join(nets) or 'no nets listed'}). "
+                "Each net should correspond to one physical connection segment between devices or disconnects. "
+                "Check the channel map for missing or unexpected info in cells, or if the disconnect requirements match the disconnect map."
             )
 
         # --- iterate signals ---
