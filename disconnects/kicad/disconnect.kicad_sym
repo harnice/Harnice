@@ -62,7 +62,7 @@
 				(hide yes)
 			)
 		)
-		(property "channel_type_id" ""
+		(property "channel_type" ""
 			(at 0 -3.048 0)
 			(do_not_autoplace)
 			(effects

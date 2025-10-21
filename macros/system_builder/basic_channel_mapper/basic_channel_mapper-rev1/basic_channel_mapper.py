@@ -45,11 +45,11 @@ for merged_net in unique_merged_nets:
             continue
 
         # Parse channel types
-        from_type = signals_list.parse_channel_type_id(
-            from_channel.get("from_channel_type_id")
+        from_type = signals_list.parse_channel_type(
+            from_channel.get("from_channel_type")
         )
         compatibles_from = signals_list.compatible_channel_types(
-            from_channel.get("from_channel_type_id")
+            from_channel.get("from_channel_type")
         )
 
         for to_channel_candidate in net_channels:
@@ -68,11 +68,11 @@ for merged_net in unique_merged_nets:
                 continue
 
             # Parse "to" type and its compatibles
-            to_type = signals_list.parse_channel_type_id(
-                to_channel_candidate.get("from_channel_type_id")
+            to_type = signals_list.parse_channel_type(
+                to_channel_candidate.get("from_channel_type")
             )
             compatibles_to = signals_list.compatible_channel_types(
-                to_channel_candidate.get("from_channel_type_id")
+                to_channel_candidate.get("from_channel_type")
             )
 
             # Backwards-compatible check: either side may declare compatibility

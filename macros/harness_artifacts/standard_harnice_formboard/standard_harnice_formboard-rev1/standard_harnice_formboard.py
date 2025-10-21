@@ -12,11 +12,11 @@ def path(target_value):
     # artifact_path gets passed in as a global from the caller
     if target_value == "output svg":
         return os.path.join(
-            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-master.svg"
+            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-master.svg"
         )
     if target_value == "show hide":
         return os.path.join(
-            artifact_path, f"{fileio.partnumber("pn-rev")}-{artifact_id}-showhide.json"
+            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-showhide.json"
         )
     if target_value == "flagnotes":
         return os.path.join(artifact_path, f"{artifact_id}-flagnotes")
@@ -32,7 +32,7 @@ def update_showhide():
 
 
 def calculate_formboard_location(instance_name, origin):
-    instances = instances_list.read_instance_rows()
+    instances = fileio.read_tsv("instances list")
     instances_lookup = {row["instance_name"]: row for row in instances}
 
     chain = []
@@ -73,7 +73,7 @@ def calculate_formboard_location(instance_name, origin):
 
 # ==========================
 fileio.silentremove(path("flagnotes"))
-instances = instances_list.read_instance_rows()
+instances = fileio.read_tsv("instances list")
 printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
 
 if "Flagnote" in printable_item_types:
@@ -181,7 +181,7 @@ for item_type, items in grouped_instances.items():
                 f'        <polygon points="{tip_x},{tip_y} {left_x},{left_y} {right_x},{right_y}" fill="black"/>'
             )
             content_lines.append(
-                f'        <g id="{instance_name}-rotate" transform="rotate({-1*angle})">'
+                f'        <g id="{instance_name}-rotate" transform="rotate({-1 * angle})">'
             )
             content_lines.append(
                 f'          <g id="{instance_name}-scale" transform="scale({1 / scale})">'
@@ -198,7 +198,7 @@ for item_type, items in grouped_instances.items():
             content_lines.append(f"      </g>")
         else:
             content_lines.append(
-                f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({-1*angle})">'
+                f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({-1 * angle})">'
             )
             content_lines.append("      </g>")
             content_lines.append(
@@ -228,7 +228,6 @@ with open(path("output svg"), "w") as f:
 for instance in instances:
     item_type = instance.get("item_type", "").strip()
     if item_type and item_type in printable_item_types:
-
         # === Cancel if instance matches any hide filter ===
         should_hide = False
         if not hide_filters == []:
@@ -245,19 +244,19 @@ for instance in instances:
             instance_data_dir = os.path.join(
                 path("flagnotes"),
                 instance.get("instance_name"),
-                f"{instance.get("instance_name")}-drawing.svg",
+                f"{instance.get('instance_name')}-drawing.svg",
             )
         elif item_type == "Segment":
             instance_data_dir = os.path.join(
                 fileio.dirpath("generated_instances_do_not_edit"),
                 instance.get("instance_name"),
-                f"{instance.get("instance_name")}-drawing.svg",
+                f"{instance.get('instance_name')}-drawing.svg",
             )
         else:
             instance_data_dir = os.path.join(
                 fileio.dirpath("imported_instances"),
                 instance.get("instance_name"),
-                f"{instance.get("instance_name")}-drawing.svg",
+                f"{instance.get('instance_name')}-drawing.svg",
             )
 
         svg_utils.find_and_replace_svg_group(

@@ -42,7 +42,7 @@ def add_line_to_bom(line_data):
 
 
 highest_bom_number = 0
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if not instance.get("bom_line_number") == "":
         if int(instance.get("bom_line_number")) > highest_bom_number:
             highest_bom_number = int(instance.get("bom_line_number"))
@@ -55,7 +55,7 @@ for i in range(1, highest_bom_number + 1):
     total_length_exact = 0
     total_length_plus_margin = 0
 
-    for instance in instances_list.read_instance_rows():
+    for instance in fileio.read_tsv("instances list"):
         if not instance.get("bom_line_number") == "":
             if int(instance.get("bom_line_number")) == i:
                 mpn = instance.get("mpn")

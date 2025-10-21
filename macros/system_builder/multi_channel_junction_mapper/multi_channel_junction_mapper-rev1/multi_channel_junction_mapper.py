@@ -50,8 +50,8 @@ for from_channel in rows:
         system_utils.map_and_record(from_key, multi_ch_junction_key)
         continue
 
-    # don't map if the channel if it doesn't have the multi_ch_junction_channel_type_id we're looking for
-    if str(from_channel["channel_type_id"]) not in [
+    # don't map if the channel if it doesn't have the multi_ch_junction_channel_type we're looking for
+    if str(from_channel["channel_type"]) not in [
         str(x) for x in multi_ch_junction_type_ids
     ]:
         continue

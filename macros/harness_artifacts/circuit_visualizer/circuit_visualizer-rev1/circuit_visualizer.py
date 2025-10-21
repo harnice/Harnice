@@ -162,7 +162,7 @@ def build_header():
 row_index = 0
 y_offset = HEADER_HEIGHT
 
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") != "Circuit":
         continue
 

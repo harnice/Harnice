@@ -22,31 +22,31 @@ signals_list.new_list("device")
 
 for connector_name in ["in1", "in2", "out1", "out2"]:
     if connector_name.startswith("in"):
-        channel_type_id = ch_type_ids["in"]
+        channel_type = ch_type_ids["in"]
     elif connector_name.startswith("out"):
-        channel_type_id = ch_type_ids["out"]
+        channel_type = ch_type_ids["out"]
     else:
         continue
 
     channel_name = connector_name
     connector_mpn = mpn_for_connector(connector_name)
 
-    for signal in signals_list.signals_of_channel_type_id(channel_type_id):
+    for signal in signals_list.signals_of_channel_type(channel_type):
         signals_list.write_signal(
-            channel=channel_name,
+            channel_id=channel_name,
             signal=signal,
             connector_name=connector_name,
             cavity=xlr_pinout.get(signal),
-            channel_type_id=channel_type_id,
+            channel_type=channel_type,
             connector_mpn=connector_mpn,
         )
 
     # Add shield row
     signals_list.write_signal(
-        channel=f"{channel_name}-shield",
+        channel_id=f"{channel_name}-shield",
         signal="chassis",
         connector_name=connector_name,
         cavity=xlr_pinout.get("chassis"),
-        channel_type_id=ch_type_ids["chassis"],
+        channel_type=ch_type_ids["chassis"],
         connector_mpn=connector_mpn,
     )

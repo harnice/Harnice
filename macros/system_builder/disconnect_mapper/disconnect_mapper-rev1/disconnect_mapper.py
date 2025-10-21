@@ -34,17 +34,17 @@ for required_channel in disconnect_map():
     ]
 
     required_ch_attributes = {
-        "A-side_device_channel_type_id": required_channel.get(
-            "A-side_device_channel_type_id"
+        "A-side_device_channel_type": required_channel.get(
+            "A-side_device_channel_type"
         ),
-        "A-side_device_compatible_channel_type_ids": required_channel.get(
-            "A-side_device_compatible_channel_type_ids"
+        "A-side_device_compatible_channel_types": required_channel.get(
+            "A-side_device_compatible_channel_types"
         ),
-        "B-side_device_channel_type_id": required_channel.get(
-            "B-side_device_channel_type_id"
+        "B-side_device_channel_type": required_channel.get(
+            "B-side_device_channel_type"
         ),
-        "B-side_device_compatible_channel_type_ids": required_channel.get(
-            "B-side_device_compatible_channel_type_ids"
+        "B-side_device_compatible_channel_types": required_channel.get(
+            "B-side_device_compatible_channel_types"
         ),
     }
 
@@ -54,13 +54,9 @@ for required_channel in disconnect_map():
         channel_id = c.get("disconnect_channel_id")
         candidate_ch_attributes[channel_id] = {
             "A-port_channel_type": c.get("A-port_channel_type"),
-            "A-port_compatible_channel_type_ids": c.get(
-                "A-port_compatible_channel_type_ids"
-            ),
+            "A-port_compatible_channel_types": c.get("A-port_compatible_channel_types"),
             "B-port_channel_type": c.get("B-port_channel_type"),
-            "B-port_compatible_channel_type_ids": c.get(
-                "B-port_compatible_channel_type_ids"
-            ),
+            "B-port_compatible_channel_types": c.get("B-port_compatible_channel_types"),
         }
 
     # decide what to map
@@ -78,7 +74,7 @@ for required_channel in disconnect_map():
                 f"     Checking candidate {candidate.get('disconnect_channel_id')} of {candidate.get('disconnect_refdes')}"
             )
 
-        if required_ch_attributes.get("A-side_device_channel_type_id") == candidate.get(
+        if required_ch_attributes.get("A-side_device_channel_type") == candidate.get(
             "B-port_channel_type"
         ):
             map_mode = 1
@@ -87,10 +83,10 @@ for required_channel in disconnect_map():
 
         if extra_verbose:
             print(
-                f"          Channel type of A-side device {required_ch_attributes.get('A-side_device_channel_type_id')} does not match channel type of B-port of disconnect {candidate.get('B-port_channel_type')}"
+                f"          Channel type of A-side device {required_ch_attributes.get('A-side_device_channel_type')} does not match channel type of B-port of disconnect {candidate.get('B-port_channel_type')}"
             )
 
-        if required_ch_attributes.get("B-side_device_channel_type_id") == candidate.get(
+        if required_ch_attributes.get("B-side_device_channel_type") == candidate.get(
             "A-port_channel_type"
         ):
             map_mode = 2
@@ -99,11 +95,11 @@ for required_channel in disconnect_map():
 
         if extra_verbose:
             print(
-                f"          Channel type of B-side device {required_ch_attributes.get('B-side_device_channel_type_id')} does not match channel type of A-port of disconnect {candidate.get('A-port_channel_type')}"
+                f"          Channel type of B-side device {required_ch_attributes.get('B-side_device_channel_type')} does not match channel type of A-port of disconnect {candidate.get('A-port_channel_type')}"
             )
 
         if required_ch_attributes.get(
-            "A-side_device_channel_type_id"
+            "A-side_device_channel_type"
         ) in signals_list.compatible_channel_types(
             candidate.get("B-port_channel_type")
         ):
@@ -113,11 +109,11 @@ for required_channel in disconnect_map():
 
         if extra_verbose:
             print(
-                f"          Channel type of A-side device {required_ch_attributes.get('A-side_device_channel_type_id')} is not found in compatibles of channel type of B-port of disconnect {signals_list.compatible_channel_types(candidate.get('B-port_channel_type'))}"
+                f"          Channel type of A-side device {required_ch_attributes.get('A-side_device_channel_type')} is not found in compatibles of channel type of B-port of disconnect {signals_list.compatible_channel_types(candidate.get('B-port_channel_type'))}"
             )
 
         if required_ch_attributes.get(
-            "B-side_device_channel_type_id"
+            "B-side_device_channel_type"
         ) in signals_list.compatible_channel_types(
             candidate.get("A-port_channel_type")
         ):
@@ -127,13 +123,13 @@ for required_channel in disconnect_map():
 
         if extra_verbose:
             print(
-                f"          Channel type of B-side device {required_ch_attributes.get('B-side_device_channel_type_id')} is not found in compatibles of channel type of A-port of disconnect {signals_list.compatible_channel_types(candidate.get('A-port_channel_type'))}"
+                f"          Channel type of B-side device {required_ch_attributes.get('B-side_device_channel_type')} is not found in compatibles of channel type of A-port of disconnect {signals_list.compatible_channel_types(candidate.get('A-port_channel_type'))}"
             )
 
         if candidate.get(
             "A-port_channel_type"
         ) in signals_list.compatible_channel_types(
-            required_ch_attributes.get("B-side_device_channel_type_id")
+            required_ch_attributes.get("B-side_device_channel_type")
         ):
             map_mode = 5
             map_message = "Channel type of A-port of disconnect is found in compatibles of channel type of B-side device"
@@ -141,13 +137,13 @@ for required_channel in disconnect_map():
 
         if extra_verbose:
             print(
-                f"          Channel type of A-port of disconnect {candidate.get('A-port_channel_type')} is not found in compatibles of channel type of B-side device {signals_list.compatible_channel_types(required_ch_attributes.get('B-side_device_channel_type_id'))}"
+                f"          Channel type of A-port of disconnect {candidate.get('A-port_channel_type')} is not found in compatibles of channel type of B-side device {signals_list.compatible_channel_types(required_ch_attributes.get('B-side_device_channel_type'))}"
             )
 
         if candidate.get(
             "B-port_channel_type"
         ) in signals_list.compatible_channel_types(
-            required_ch_attributes.get("A-side_device_channel_type_id")
+            required_ch_attributes.get("A-side_device_channel_type")
         ):
             map_mode = 6
             map_message = "Channel type of B-port of disconnect is found in compatibles of channel type of A-side device"
@@ -155,7 +151,7 @@ for required_channel in disconnect_map():
 
         if extra_verbose:
             print(
-                f"          Channel type of B-port of disconnect {candidate.get('B-port_channel_type')} is not found in compatibles of channel type of A-side device {signals_list.compatible_channel_types(required_ch_attributes.get('A-side_device_channel_type_id'))}"
+                f"          Channel type of B-port of disconnect {candidate.get('B-port_channel_type')} is not found in compatibles of channel type of A-side device {signals_list.compatible_channel_types(required_ch_attributes.get('A-side_device_channel_type'))}"
             )
 
     if map_mode == 0:

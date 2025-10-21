@@ -30,7 +30,7 @@ line_width = 0.008 * 96  # Define line_width before it is used
 data_rows = []
 
 # Read instances for buildnotes
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Buildnote":
         buildnote_number = instance.get("note_number")
         note = instance.get("note_text")
