@@ -1,4 +1,4 @@
-channel_type	status	description	direction	signals	compatible_channel_types	linked documentation	lower limit	upper limit	limit units	capacity	capacity units
+channel_type_id	status	description	direction	signals	compatible_channel_types	linked documentation	lower limit	upper limit	limit units	capacity	capacity units
 0		placeholder		placeholder	"(0, 'https://github.com/kenyonshutt/harnice-library-public')"						
 1		balanced audio mic level	in	"pos,neg"	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"						
 2		balanced audio mic level	out	"pos,neg"	"(1, 'https://github.com/kenyonshutt/harnice-library-public')"						
