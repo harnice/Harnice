@@ -37,26 +37,18 @@ for required_channel in disconnect_map():
         "A-side_device_channel_type": required_channel.get(
             "A-side_device_channel_type"
         ),
-        "A-side_device_compatible_channel_types": required_channel.get(
-            "A-side_device_compatible_channel_types"
-        ),
         "B-side_device_channel_type": required_channel.get(
             "B-side_device_channel_type"
-        ),
-        "B-side_device_compatible_channel_types": required_channel.get(
-            "B-side_device_compatible_channel_types"
         ),
     }
 
     # dict keyed by disconnect_channel_id only
     candidate_ch_attributes = {}
-    for c in available_candidates:
-        channel_id = c.get("disconnect_channel_id")
+    for candidate in available_candidates:
+        channel_id = candidate.get("disconnect_channel_id")
         candidate_ch_attributes[channel_id] = {
-            "A-port_channel_type": c.get("A-port_channel_type"),
-            "A-port_compatible_channel_types": c.get("A-port_compatible_channel_types"),
-            "B-port_channel_type": c.get("B-port_channel_type"),
-            "B-port_compatible_channel_types": c.get("B-port_compatible_channel_types"),
+            "A-port_channel_type": candidate.get("A-port_channel_type"),
+            "B-port_channel_type": candidate.get("B-port_channel_type"),
         }
 
     # decide what to map
