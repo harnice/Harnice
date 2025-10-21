@@ -1,4 +1,4 @@
-channel_id	signal	A_cavity	B_cavity	A_connector_mpn	A_channel_type_id	A_compatible_channel_type_ids	B_connector_mpn	B_channel_type_id	B_compatible_channel_type_ids
+channel_id	signal	A_cavity	B_cavity	A_connector_mpn	A_channel_type	A_compatible_channel_types	B_connector_mpn	B_channel_type	B_compatible_channel_types
 	pos	24	24	DB25F	(1, 'https://github.com/kenyonshutt/harnice-library-public')	(2, 'https://github.com/kenyonshutt/harnice-library-public')	DB25M	(2, 'https://github.com/kenyonshutt/harnice-library-public')	(1, 'https://github.com/kenyonshutt/harnice-library-public')
 	neg	12	12	DB25F	(1, 'https://github.com/kenyonshutt/harnice-library-public')	(2, 'https://github.com/kenyonshutt/harnice-library-public')	DB25M	(2, 'https://github.com/kenyonshutt/harnice-library-public')	(1, 'https://github.com/kenyonshutt/harnice-library-public')
 	chassis	25	25	DB25F	(5, 'https://github.com/kenyonshutt/harnice-library-public')	(5, 'https://github.com/kenyonshutt/harnice-library-public')	DB25M	(5, 'https://github.com/kenyonshutt/harnice-library-public')	(5, 'https://github.com/kenyonshutt/harnice-library-public')

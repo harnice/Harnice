@@ -1,4 +1,4 @@
-channel_id	signal	connector_name	cavity	connector_mpn	channel_type_id	compatible_channel_type_ids
+channel_id	signal	connector_name	cavity	connector_mpn	channel_type	compatible_channel_types
 in1	pos	in1	2	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')	(2, 'https://github.com/kenyonshutt/harnice-library-public')
 in1	neg	in1	3	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')	(2, 'https://github.com/kenyonshutt/harnice-library-public')
 in1-shield	chassis	in1	1	XLR3F	(5, 'https://github.com/kenyonshutt/harnice-library-public')	(5, 'https://github.com/kenyonshutt/harnice-library-public')
