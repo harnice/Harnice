@@ -44,7 +44,7 @@ system_utils.make_circuits_list()
 #                   INSTANCES LIST
 #===========================================================================
 instances_list.make_new_list()
-instances_list.add_connector_contact_nodes_channels_and_circuits()
+instances_list.add_connectors_cavities_nodes_channels_and_circuits()
 
 #assign mating connectors
 #for instance in fileio.read_tsv("instances list"):

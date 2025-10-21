@@ -57,12 +57,13 @@ INSTANCES_LIST_COLUMNS = [
     "this_channel_from_device_channel_id",
     "this_channel_to_device_refdes",  # if channel, refdes of the device on the other side of the channel
     "this_channel_to_device_channel_id",
-    "this_channel_from_channel_type_id",
-    "this_channel_to_channel_type_id",
+    "this_channel_from_channel_type",
+    "this_channel_to_channel_type",
     "signal_of_channel_type",
     "debug",
     "debug_cutoff",
 ]
+
 
 def new_instance(instance_name, instance_data, ignore_duplicates=False):
     if instance_name in ["", None]:
@@ -78,7 +79,10 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
             f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'"
         )
 
-    if any(row.get("instance_name") == instance_name for row in fileio.read_tsv("instances list")):
+    if any(
+        row.get("instance_name") == instance_name
+        for row in fileio.read_tsv("instances list")
+    ):
         if not ignore_duplicates:
             raise ValueError(
                 f"An instance with the name '{instance_name}' already exists"
@@ -225,7 +229,7 @@ def get_call_chain_str():
     return " -> ".join(chain_parts)
 
 
-def add_connector_contact_nodes_channels_and_circuits():
+def add_connectors_cavities_nodes_channels_and_circuits():
     with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
         connectors_list = list(csv.DictReader(f, delimiter="\t"))
 
@@ -377,10 +381,8 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "this_channel_to_device_channel_id": circuit.get(
                     "to_side_device_chname"
                 ),
-                "this_channel_from_channel_type_id": circuit.get(
-                    "from_channel_type_id"
-                ),
-                "this_channel_to_channel_type_id": circuit.get("to_channel_type_id"),
+                "this_channel_from_channel_type": circuit.get("from_channel_type"),
+                "this_channel_to_channel_type": circuit.get("to_channel_type"),
                 "signal_of_channel_type": circuit.get("signal"),
             },
             ignore_duplicates=True,
@@ -416,10 +418,8 @@ def add_connector_contact_nodes_channels_and_circuits():
                 "this_channel_to_device_channel_id": circuit.get(
                     "to_side_device_chname"
                 ),
-                "this_channel_from_channel_type_id": circuit.get(
-                    "from_channel_type_id"
-                ),
-                "this_channel_to_channel_type_id": circuit.get("to_channel_type_id"),
+                "this_channel_from_channel_type": circuit.get("from_channel_type"),
+                "this_channel_to_channel_type": circuit.get("to_channel_type"),
             },
             ignore_duplicates=True,
         )

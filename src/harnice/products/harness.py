@@ -104,22 +104,21 @@ instances_list.assign_bom_line_numbers()
 #                   ASSIGN PRINT NAMES
 #===========================================================================
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Contact":
-        instances_list.modify(instance.get("instance_name"), {
-            "print_name": instance.get("mpn")
-            })
-    elif instance.get("item_type") == "Connector cavity":
-        instance_name = instance.get("instance_name", "")
-        print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
-        instances_list.modify(instance_name, {"print_name": print_name})
-    elif instance.get("item_type") == "Conductor":
-        instances_list.modify(instance.get("instance_name"), {
-            "print_name": f"{instance.get("cable_identifier")}"
-        })
+    if instance.get("print_name") not in ["", None]:
+        pass
     else:
-        instances_list.modify(instance.get("instance_name"), {
-            "print_name": instance.get("instance_name")
+        if instance.get("item_type") == "Connector cavity":
+            instance_name = instance.get("instance_name", "")
+            print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
+            instances_list.modify(instance_name, {"print_name": print_name})
+        elif instance.get("item_type") == "Conductor":
+            instances_list.modify(instance.get("instance_name"), {
+                "print_name": f"{instance.get("cable_identifier")}"
             })
+        else:
+            instances_list.modify(instance.get("instance_name"), {
+                "print_name": instance.get("instance_name")
+                })
 
 
 #===========================================================================
@@ -164,7 +163,7 @@ for rev_row in flagnote_utils.read_revhistory():
             flagnote_counter += 1
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["Contact", "Cable"]:
+    if instance.get("item_type") in ["Cavity", "Cable"]:
         continue
     if instance.get("bom_line_number") != "":
         instances_list.new_instance(f"flagnote-{flagnote_counter}", {
@@ -194,10 +193,10 @@ for instance in fileio.read_tsv("instances list"):
         })
         flagnote_counter += 1
 
-contact_flagnote_conversion_happened = False
+cavity_flagnote_conversion_happened = False
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Flagnote":
-        if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Contact":
+        if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Cavity":
             instances_list.new_instance(f"flagnote-{flagnote_counter}", {
                 "item_type": "Flagnote",
                 "note_type": "buildnote",
@@ -206,11 +205,11 @@ for instance in fileio.read_tsv("instances list"):
                 "bubble_text": buildnote_counter,
                 "parent_instance": instance.get("parent_instance"),
                 "parent_csys_instance_name": instance.get("parent_instance"),
-                "note_text": "Special contacts used in this connector. Refer to wirelist for details"
+                "note_text": "Special cavitiesused in this connector. Refer to wirelist for details"
             })
             flagnote_counter += 1
-            contact_flagnote_conversion_happened = True
-if contact_flagnote_conversion_happened:
+            cavity_flagnote_conversion_happened = True
+if cavity_flagnote_conversion_happened:
     buildnote_counter += 1
 
 flagnote_utils.assign_output_csys()

@@ -21,7 +21,7 @@ cn_mpns = {
     "B": "DB25M"
 }
 
-contact_number = {
+cavity_number = {
     "ch0": {
         "pos": 24,
         "neg": 12,
@@ -69,32 +69,32 @@ signals_list.new_list("disconnect")
 for channel in range(8):
     channel_name = f"ch{channel}"
 
-    for signal in signals_list.signals_of_channel_type_id(ch_type_ids["A"]["balanced audio mic level in"]):
+    for signal in signals_list.signals_of_channel_type(ch_type_ids["A"]["balanced audio mic level in"]):
         signals_list.write_signal(
             channel=channel_name,
             signal=signal,
 
-            A_contact=contact_number[channel_name][signal],
+            A_cavity=cavity_number[channel_name][signal],
             A_connector_mpn=cn_mpns["A"],
-            A_channel_type_id=ch_type_ids["A"]["balanced audio mic level in"],
+            A_channel_type=ch_type_ids["A"]["balanced audio mic level in"],
 
-            B_contact=contact_number[channel_name][signal],
+            B_cavity=cavity_number[channel_name][signal],
             B_connector_mpn=cn_mpns["B"],
-            B_channel_type_id=ch_type_ids["B"]["balanced audio mic level out"],
+            B_channel_type=ch_type_ids["B"]["balanced audio mic level out"],
         )
 
-    for signal in signals_list.signals_of_channel_type_id(ch_type_ids["A"]["chassis"]):
+    for signal in signals_list.signals_of_channel_type(ch_type_ids["A"]["chassis"]):
         signals_list.write_signal(
             channel=f"{channel_name}-shield",
             signal=signal,
 
-            A_contact=contact_number[channel_name][signal],
+            A_cavity=cavity_number[channel_name][signal],
             A_connector_mpn=cn_mpns["A"],
-            A_channel_type_id=ch_type_ids["A"]["chassis"],
+            A_channel_type=ch_type_ids["A"]["chassis"],
 
-            B_contact=contact_number[channel_name][signal],
+            B_cavity=cavity_number[channel_name][signal],
             B_connector_mpn=cn_mpns["B"],
-            B_channel_type_id=ch_type_ids["B"]["chassis"],
+            B_channel_type=ch_type_ids["B"]["chassis"],
         )
 
 """
