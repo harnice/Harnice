@@ -6,26 +6,26 @@ from harnice import fileio, component_library
 
 # Signals list column headers to match source of truth + compatibility change
 DEVICE_SIGNALS_HEADERS = [
-    "channel_id", # unique identifier for the channel
+    "channel_id",  # unique identifier for the channel
     "signal",
     "connector_name",
     "cavity",
     "connector_mpn",
-    "channel_type_id",
-    "compatible_channel_type_ids",
+    "channel_type",
+    "compatible_channel_types",
 ]
 
 DISCONNECT_SIGNALS_HEADERS = [
-    "channel_id", # unique identifier for the channel
+    "channel_id",  # unique identifier for the channel
     "signal",
     "A_cavity",
     "B_cavity",
     "A_connector_mpn",
-    "A_channel_type_id",
-    "A_compatible_channel_type_ids",
+    "A_channel_type",
+    "A_compatible_channel_types",
     "B_connector_mpn",
-    "B_channel_type_id",
-    "B_compatible_channel_type_ids",
+    "B_channel_type",
+    "B_compatible_channel_types",
 ]
 
 global headers
@@ -68,10 +68,10 @@ def write_signal(**kwargs):
 
     Required kwargs:
         For 'device':
-            channel_id, signal, connector_name, cavity, connector_mpn, channel_type_id
+            channel_id, signal, connector_name, cavity, connector_mpn, channel_type
         For 'disconnect':
-            A_channel_id, A_signal, A_connector_name, A_cavity, A_connector_mpn, A_channel_type_id,
-            B_channel_id, B_signal, B_connector_name, B_cavity, B_connector_mpn, B_channel_type_id
+            A_channel_id, A_signal, A_connector_name, A_cavity, A_connector_mpn, A_channel_type,
+            B_channel_id, B_signal, B_connector_name, B_cavity, B_connector_mpn, B_channel_type
     """
     signals_path = fileio.path("signals list")
 
@@ -87,12 +87,22 @@ def write_signal(**kwargs):
             "connector_name",
             "cavity",
             "connector_mpn",
-            "channel_type_id",
+            "channel_type",
         ]
     elif fileio.product_type == "disconnect":
         required = [
-            "A_channel_id", "A_signal", "A_connector_name", "A_cavity", "A_connector_mpn", "A_channel_type_id",
-            "B_channel_id", "B_signal", "B_connector_name", "B_cavity", "B_connector_mpn", "B_channel_type_id",
+            "A_channel_id",
+            "A_signal",
+            "A_connector_name",
+            "A_cavity",
+            "A_connector_mpn",
+            "A_channel_type",
+            "B_channel_id",
+            "B_signal",
+            "B_connector_name",
+            "B_cavity",
+            "B_connector_mpn",
+            "B_channel_type",
         ]
     else:
         required = []
@@ -106,9 +116,9 @@ def write_signal(**kwargs):
 
     # --- Handle compatibility fields ---
     if fileio.product_type == "device":
-        channel_type_id = kwargs.get("channel_type_id", "")
-        compat_list = compatible_channel_types(channel_type_id)
-        kwargs["compatible_channel_type_ids"] = (
+        channel_type = kwargs.get("channel_type", "")
+        compat_list = compatible_channel_types(channel_type)
+        kwargs["compatible_channel_types"] = (
             ",".join(str(x) for x in compat_list)
             if isinstance(compat_list, list)
             else ""
@@ -116,9 +126,9 @@ def write_signal(**kwargs):
 
     elif fileio.product_type == "disconnect":
         for prefix in ("A_", "B_"):
-            channel_type_id = kwargs.get(f"{prefix}channel_type_id", "")
-            compat_list = compatible_channel_types(channel_type_id)
-            kwargs[f"{prefix}compatible_channel_type_ids"] = (
+            channel_type = kwargs.get(f"{prefix}channel_type", "")
+            compat_list = compatible_channel_types(channel_type)
+            kwargs[f"{prefix}compatible_channel_types"] = (
                 ",".join(str(x) for x in compat_list)
                 if isinstance(compat_list, list)
                 else ""
@@ -134,14 +144,14 @@ def write_signal(**kwargs):
 
 
 # search channel_types.tsv
-def signals_of_channel_type_id(channel_type_id):
-    chid, lib_repo = parse_channel_type_id(channel_type_id)
-    tsv_path = path_of_channel_type_id((chid, lib_repo))
+def signals_of_channel_type(channel_type):
+    chid, lib_repo = parse_channel_type(channel_type)
+    tsv_path = path_of_channel_type((chid, lib_repo))
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if str(row.get("channel_type_id", "")).strip() == str(chid):
+            if str(row.get("channel_type", "")).strip() == str(chid):
                 return [
                     sig.strip()
                     for sig in row.get("signals", "").split(",")
@@ -165,28 +175,28 @@ def signals_of_channel(channel_id, device_refdes):
     return signals
 
 
-def compatible_channel_types(channel_type_id):
+def compatible_channel_types(channel_type):
     """
-    Look up compatible channel_type_ids for the given channel_type_id.
+    Look up compatible channel_types for the given channel_type.
     Splits the TSV field by commas and parses each entry into (chid, lib_repo).
     """
-    chid, lib_repo = parse_channel_type_id(channel_type_id)
-    tsv_path = path_of_channel_type_id((chid, lib_repo))
+    chid, lib_repo = parse_channel_type(channel_type)
+    tsv_path = path_of_channel_type((chid, lib_repo))
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if str(chid) != str(row.get("channel_type_id")):
+            if str(chid) != str(row.get("channel_type")):
                 continue
 
-            signals_str = row.get("compatible_channel_type_ids", "").strip()
+            signals_str = row.get("compatible_channel_types", "").strip()
             if not signals_str:
                 return []
 
             values = [v.strip() for v in signals_str.split(";") if v.strip()]
             parsed = []
             for v in values:
-                parsed.append(parse_channel_type_id(v))
+                parsed.append(parse_channel_type(v))
             return parsed
 
     return []
@@ -215,17 +225,17 @@ def connector_name_of_channel(channel_id, path_to_signals_list):
                 return row.get("connector_name", "").strip()
 
 
-def path_of_channel_type_id(channel_type_id):
+def path_of_channel_type(channel_type):
     """
     Args:
-        channel_type_id: tuple like (chid, lib_repo) or string like "(5, '...')"
+        channel_type: tuple like (chid, lib_repo) or string like "(5, '...')"
     """
-    chid, lib_repo = parse_channel_type_id(channel_type_id)
+    chid, lib_repo = parse_channel_type(channel_type)
     base_dir = component_library.get_local_path(lib_repo)
     return os.path.join(base_dir, "channel_types", "channel_types.tsv")
 
 
-def parse_channel_type_id(val):
+def parse_channel_type(val):
     """Convert stored string into a tuple (chid:int, supplier:str)."""
     if not val:
         return None
@@ -262,8 +272,8 @@ def validate_for_device():
     counter = 2
     for signal in signals_list:
         print("Looking at csv row:", counter)
-        channel_type_id = parse_channel_type_id(signal.get("channel_type_id"))
-        expected_signals = signals_of_channel_type_id(channel_type_id)
+        channel_type = parse_channel_type(signal.get("channel_type"))
+        expected_signals = signals_of_channel_type(channel_type)
         found_signals = set()
         connector_names = set()
 
@@ -319,14 +329,14 @@ def validate_for_disconnect():
     counter = 2
     for signal in signals_list:
         print("Looking at csv row:", counter)
-        A_channel_type_id = parse_channel_type_id(signal.get("A_channel_type_id"))
-        B_channel_type_id = parse_channel_type_id(signal.get("B_channel_type_id"))
+        A_channel_type = parse_channel_type(signal.get("A_channel_type"))
+        B_channel_type = parse_channel_type(signal.get("B_channel_type"))
 
-        if B_channel_type_id not in compatible_channel_types(A_channel_type_id):
-            if A_channel_type_id not in compatible_channel_types(B_channel_type_id):
+        if B_channel_type not in compatible_channel_types(A_channel_type):
+            if A_channel_type not in compatible_channel_types(B_channel_type):
                 raise ValueError("A and B channel types are not compatible")
 
-        expected_signals = signals_of_channel_type_id(A_channel_type_id)
+        expected_signals = signals_of_channel_type(A_channel_type)
         found_signals = set()
 
         for expected_signal in expected_signals:

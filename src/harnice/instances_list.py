@@ -57,8 +57,8 @@ INSTANCES_LIST_COLUMNS = [
     "this_channel_from_device_channel_id",
     "this_channel_to_device_refdes",  # if channel, refdes of the device on the other side of the channel
     "this_channel_to_device_channel_id",
-    "this_channel_from_channel_type_id",
-    "this_channel_to_channel_type_id",
+    "this_channel_from_channel_type",
+    "this_channel_to_channel_type",
     "signal_of_channel_type",
     "debug",
     "debug_cutoff",
@@ -381,10 +381,8 @@ def add_connectors_cavities_nodes_channels_and_circuits():
                 "this_channel_to_device_channel_id": circuit.get(
                     "to_side_device_chname"
                 ),
-                "this_channel_from_channel_type_id": circuit.get(
-                    "from_channel_type_id"
-                ),
-                "this_channel_to_channel_type_id": circuit.get("to_channel_type_id"),
+                "this_channel_from_channel_type": circuit.get("from_channel_type"),
+                "this_channel_to_channel_type": circuit.get("to_channel_type"),
                 "signal_of_channel_type": circuit.get("signal"),
             },
             ignore_duplicates=True,
@@ -420,10 +418,8 @@ def add_connectors_cavities_nodes_channels_and_circuits():
                 "this_channel_to_device_channel_id": circuit.get(
                     "to_side_device_chname"
                 ),
-                "this_channel_from_channel_type_id": circuit.get(
-                    "from_channel_type_id"
-                ),
-                "this_channel_to_channel_type_id": circuit.get("to_channel_type_id"),
+                "this_channel_from_channel_type": circuit.get("from_channel_type"),
+                "this_channel_to_channel_type": circuit.get("to_channel_type"),
             },
             ignore_duplicates=True,
         )
