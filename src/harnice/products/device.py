@@ -45,20 +45,20 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 
     for signal in signals_list.signals_of_channel_type_id(channel_type_id):
         signals_list.write_signal(
-            channel=channel_name,
+            channel_id=channel_name,
             signal=signal,
             connector_name=connector_name,
-            contact=xlr_pinout.get(signal),
+            cavity=xlr_pinout.get(signal),
             channel_type_id=channel_type_id,
             connector_mpn=connector_mpn
         )
 
     # Add shield row
     signals_list.write_signal(
-        channel=f"{channel_name}-shield",
+        channel_id=f"{channel_name}-shield",
         signal="chassis",
         connector_name=connector_name,
-        contact=xlr_pinout.get("chassis"),
+        cavity=xlr_pinout.get("chassis"),
         channel_type_id=ch_type_ids["chassis"],
         connector_mpn=connector_mpn
     )
