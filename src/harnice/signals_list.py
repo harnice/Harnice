@@ -124,7 +124,7 @@ def signals_of_channel_type(channel_type):
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if str(row.get("channel_type", "")).strip() == str(chid):
+            if str(row.get("channel_type_id", "")).strip() == str(chid):
                 return [
                     sig.strip()
                     for sig in row.get("signals", "").split(",")
@@ -334,5 +334,8 @@ def validate_for_disconnect():
         if B_cavity in seen_B:
             raise ValueError(f"Duplicate B_cavity found in disconnect: {B_cavity}")
         seen_B.add(B_cavity)
+
+    if counter == 2:
+        raise ValueError("No signals have been specified. Check your feature tree or add rows manually.")
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
