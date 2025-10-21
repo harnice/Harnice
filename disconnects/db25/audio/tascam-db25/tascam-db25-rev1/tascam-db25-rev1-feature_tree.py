@@ -39,7 +39,7 @@ for channel in range(8):
         ch_type_ids["A"]["balanced audio mic level in"]
     ):
         signals_list.write_signal(
-            channel=channel_name,
+            channel_id=channel_name,
             signal=signal,
             A_cavity=cavity_number[channel_name][signal],
             A_connector_mpn=cn_mpns["A"],
@@ -51,7 +51,7 @@ for channel in range(8):
 
     for signal in signals_list.signals_of_channel_type(ch_type_ids["A"]["chassis"]):
         signals_list.write_signal(
-            channel=f"{channel_name}-shield",
+            channel_id=f"{channel_name}-shield",
             signal=signal,
             A_cavity=cavity_number[channel_name][signal],
             A_connector_mpn=cn_mpns["A"],
