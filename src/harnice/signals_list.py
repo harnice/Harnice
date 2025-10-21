@@ -49,7 +49,8 @@ def new_list(headers_arg):
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(headers)
 
-#TODO-442
+
+# TODO-442
 def read_list():
     signals_path = fileio.path("signals list")
     with open(signals_path, newline="", encoding="utf-8") as f:
@@ -219,7 +220,7 @@ def parse_channel_type(val):
     return (int(chid), str(supplier).strip())
 
 
-#TODO-448 i don't think users should be calling this
+# TODO-448 i don't think users should be calling this
 def validate_for_device():
     print("--------------------------------")
     print("Validating signals list...")
@@ -276,7 +277,8 @@ def validate_for_device():
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
-#TODO-448 i don't think users should be calling this
+
+# TODO-448 i don't think users should be calling this
 def validate_for_disconnect():
     print("--------------------------------")
     print("Validating signals list...")
@@ -336,6 +338,8 @@ def validate_for_disconnect():
         seen_B.add(B_cavity)
 
     if counter == 2:
-        raise ValueError("No signals have been specified. Check your feature tree or add rows manually.")
+        raise ValueError(
+            "No signals have been specified. Check your feature tree or add rows manually."
+        )
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
