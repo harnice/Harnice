@@ -131,7 +131,7 @@ for circuit_id, ports in harness_yaml.items():
 
 
 # ================ ASSIGN MPNS TO CONNECTORS #===============
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     instance_name = instance.get("instance_name")
     if instance.get("item_type") == "Connector":
         if instance_name == "X1":
@@ -155,7 +155,7 @@ for instance in instances_list.read_instance_rows():
 
 
 # ================ ASSIGN PRINT NAMES TO CONNECTORS #===============
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     instance_name = instance.get("instance_name")
     if instance_name == "X1":
         instances_list.modify(instance_name, {"print_name": "P1"})
@@ -174,7 +174,7 @@ for instance in instances_list.read_instance_rows():
 
 
 # ================ ASSIGN BACKSHELLS AND ACCESSORIES TO CONNECTORS #===============
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     instance_name = instance.get("instance_name")
     if instance.get("item_type") == "Connector":
         mpn = instance.get("mpn")
@@ -196,7 +196,7 @@ for instance in instances_list.read_instance_rows():
 
 
 # =============== ASSIGN PARENTS TO WEIRD PARTS LIKE CONTACTS #===============
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Contact":
         instance_name = instance.get("instance_name")
         prev_port, next_port = circuit_instance.instance_names_of_adjacent_ports(
@@ -236,7 +236,7 @@ for instance in instances_list.read_instance_rows():
 
 # ================ ASSIGN MPNS TO CABLES #===============
 # TODO: UPDATE THIS PER https://github.com/kenyonshutt/harnice/issues/69
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "Cable":
         instances_list.modify(
             instance.get("instance_name"), {"mpn": "test", "bom_line_number": "True"}

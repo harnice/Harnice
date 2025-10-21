@@ -58,7 +58,7 @@ def add(row_data):
 
 
 # =============== POPULATE TSV ===============
-for instance in instances_list.read_instance_rows():
+for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") != "Circuit":
         continue
 
@@ -75,7 +75,7 @@ for instance in instances_list.read_instance_rows():
 
     # Locate connector cavities
     connector_cavity_counter = 0
-    for instance3 in instances_list.read_instance_rows():
+    for instance3 in fileio.read_tsv("instances list"):
         if (
             instance3.get("circuit_id") == circuit_id
             and instance3.get("item_type") == "Connector cavity"
@@ -98,7 +98,7 @@ for instance in instances_list.read_instance_rows():
             connector_cavity_counter += 1
 
     # Locate special contacts
-    for instance4 in instances_list.read_instance_rows():
+    for instance4 in fileio.read_tsv("instances list"):
         if (
             instance4.get("circuit_id") == circuit_id
             and instance4.get("item_type") == "Contact"
@@ -110,7 +110,7 @@ for instance in instances_list.read_instance_rows():
                 to_special_contact = instance4.get("instance_name")
 
     # Locate conductor
-    for instance5 in instances_list.read_instance_rows():
+    for instance5 in fileio.read_tsv("instances list"):
         if (
             instance5.get("circuit_id") == circuit_id
             and instance5.get("item_type") == "Conductor"

@@ -1,13 +1,13 @@
-channel	signal	connector_name	cavity	connector_mpn	channel_type_id	compatible_channel_type_ids
-in1	pos	in1	2	XLR3F	"(1, 'https://github.com/kenyonshutt/harnice-library-public')"	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"
-in1	neg	in1	3	XLR3F	"(1, 'https://github.com/kenyonshutt/harnice-library-public')"	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"
-in1-shield	chassis	in1	1	XLR3F	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"
-in2	pos	in2	2	XLR3F	"(1, 'https://github.com/kenyonshutt/harnice-library-public')"	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"
-in2	neg	in2	3	XLR3F	"(1, 'https://github.com/kenyonshutt/harnice-library-public')"	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"
-in2-shield	chassis	in2	1	XLR3F	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"
-out1	pos	out1	2	XLR3M	"(4, 'https://github.com/kenyonshutt/harnice-library-public')"	"(3, 'https://github.com/kenyonshutt/harnice-library-public')"
-out1	neg	out1	3	XLR3M	"(4, 'https://github.com/kenyonshutt/harnice-library-public')"	"(3, 'https://github.com/kenyonshutt/harnice-library-public')"
-out1-shield	chassis	out1	1	XLR3M	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"
-out2	pos	out2	2	XLR3M	"(4, 'https://github.com/kenyonshutt/harnice-library-public')"	"(3, 'https://github.com/kenyonshutt/harnice-library-public')"
-out2	neg	out2	3	XLR3M	"(4, 'https://github.com/kenyonshutt/harnice-library-public')"	"(3, 'https://github.com/kenyonshutt/harnice-library-public')"
-out2-shield	chassis	out2	1	XLR3M	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"
+channel_id	signal	connector_name	cavity	connector_mpn	channel_type_id	compatible_channel_type_ids
+in1	pos	in1	2	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')	(2, 'https://github.com/kenyonshutt/harnice-library-public')
+in1	neg	in1	3	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')	(2, 'https://github.com/kenyonshutt/harnice-library-public')
+in1-shield	chassis	in1	1	XLR3F	(5, 'https://github.com/kenyonshutt/harnice-library-public')	(5, 'https://github.com/kenyonshutt/harnice-library-public')
+in2	pos	in2	2	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')	(2, 'https://github.com/kenyonshutt/harnice-library-public')
+in2	neg	in2	3	XLR3F	(1, 'https://github.com/kenyonshutt/harnice-library-public')	(2, 'https://github.com/kenyonshutt/harnice-library-public')
+in2-shield	chassis	in2	1	XLR3F	(5, 'https://github.com/kenyonshutt/harnice-library-public')	(5, 'https://github.com/kenyonshutt/harnice-library-public')
+out1	pos	out1	2	XLR3M	(4, 'https://github.com/kenyonshutt/harnice-library-public')	(3, 'https://github.com/kenyonshutt/harnice-library-public')
+out1	neg	out1	3	XLR3M	(4, 'https://github.com/kenyonshutt/harnice-library-public')	(3, 'https://github.com/kenyonshutt/harnice-library-public')
+out1-shield	chassis	out1	1	XLR3M	(5, 'https://github.com/kenyonshutt/harnice-library-public')	(5, 'https://github.com/kenyonshutt/harnice-library-public')
+out2	pos	out2	2	XLR3M	(4, 'https://github.com/kenyonshutt/harnice-library-public')	(3, 'https://github.com/kenyonshutt/harnice-library-public')
+out2	neg	out2	3	XLR3M	(4, 'https://github.com/kenyonshutt/harnice-library-public')	(3, 'https://github.com/kenyonshutt/harnice-library-public')
+out2-shield	chassis	out2	1	XLR3M	(5, 'https://github.com/kenyonshutt/harnice-library-public')	(5, 'https://github.com/kenyonshutt/harnice-library-public')
