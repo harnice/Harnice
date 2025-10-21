@@ -104,7 +104,7 @@ instances_list.assign_bom_line_numbers()
 #                   ASSIGN PRINT NAMES
 #===========================================================================
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("print_name") in ["", None]:
+    if instance.get("print_name") not in ["", None]:
         pass
     else:
         if instance.get("item_type") == "Connector cavity":
