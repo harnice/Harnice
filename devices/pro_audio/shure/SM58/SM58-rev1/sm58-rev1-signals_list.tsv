@@ -1,4 +1,4 @@
-channel_id	signal	connector_name	cavity	connector_mpn	channel_type	channel_type_status	channel_type_description	compatible_channel_types
-out1	pos	out1	2	XLR3M	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"			"(1, 'https://github.com/kenyonshutt/harnice-library-public')"
-out1	neg	out1	3	XLR3M	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"			"(1, 'https://github.com/kenyonshutt/harnice-library-public')"
-out1-shield	chassis	out1	1	XLR3M	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"			"(5, 'https://github.com/kenyonshutt/harnice-library-public')"
+channel_id	signal	connector_name	cavity	connector_mpn	channel_type
+out1	pos	out1	2	XLR3M	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"
+out1	neg	out1	3	XLR3M	"(2, 'https://github.com/kenyonshutt/harnice-library-public')"
+out1-shield	chassis	out1	1	XLR3M	"(5, 'https://github.com/kenyonshutt/harnice-library-public')"
