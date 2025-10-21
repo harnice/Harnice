@@ -12,7 +12,6 @@ DEVICE_SIGNALS_HEADERS = [
     "cavity",
     "connector_mpn",
     "channel_type",
-    "compatible_channel_types",
 ]
 
 DISCONNECT_SIGNALS_HEADERS = [
@@ -22,10 +21,8 @@ DISCONNECT_SIGNALS_HEADERS = [
     "B_cavity",
     "A_connector_mpn",
     "A_channel_type",
-    "A_compatible_channel_types",
     "B_connector_mpn",
     "B_channel_type",
-    "B_compatible_channel_types",
 ]
 
 global headers
@@ -52,7 +49,7 @@ def new_list(headers_arg):
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(headers)
 
-
+#TODO-442
 def read_list():
     signals_path = fileio.path("signals list")
     with open(signals_path, newline="", encoding="utf-8") as f:
@@ -110,26 +107,6 @@ def write_signal(**kwargs):
             f"Missing required signal fields for {fileio.product_type}: {', '.join(missing)}"
         )
 
-    # --- Handle compatibility fields ---
-    if fileio.product_type == "device":
-        channel_type = kwargs.get("channel_type", "")
-        compat_list = compatible_channel_types(channel_type)
-        kwargs["compatible_channel_types"] = (
-            ",".join(str(x) for x in compat_list)
-            if isinstance(compat_list, list)
-            else ""
-        )
-
-    elif fileio.product_type == "disconnect":
-        for prefix in ("A_", "B_"):
-            channel_type = kwargs.get(f"{prefix}channel_type", "")
-            compat_list = compatible_channel_types(channel_type)
-            kwargs[f"{prefix}compatible_channel_types"] = (
-                ",".join(str(x) for x in compat_list)
-                if isinstance(compat_list, list)
-                else ""
-            )
-
     # --- Fill row in header order ---
     row = [kwargs.get(col, "") for col in headers]
 
@@ -176,13 +153,13 @@ def compatible_channel_types(channel_type):
     Look up compatible channel_types for the given channel_type.
     Splits the TSV field by commas and parses each entry into (chid, lib_repo).
     """
-    chid, lib_repo = parse_channel_type(channel_type)
-    tsv_path = path_of_channel_type((chid, lib_repo))
+    channel_type_id, lib_repo = parse_channel_type(channel_type)
+    tsv_path = path_of_channel_type((channel_type_id, lib_repo))
 
     with open(tsv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            if str(chid) != str(row.get("channel_type")):
+            if str(channel_type_id) != str(row.get("channel_type_id")):
                 continue
 
             signals_str = row.get("compatible_channel_types", "").strip()
@@ -242,15 +219,7 @@ def parse_channel_type(val):
     return (int(chid), str(supplier).strip())
 
 
-def assert_unique(values, label):
-    """Raise ValueError if duplicates are found in values."""
-    seen = set()
-    for v in values:
-        if v in seen:
-            raise ValueError(f"Duplicate {label} found: {v}")
-        seen.add(v)
-
-
+#TODO-448 i don't think users should be calling this
 def validate_for_device():
     print("--------------------------------")
     print("Validating signals list...")
@@ -307,7 +276,7 @@ def validate_for_device():
 
     print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
 
-
+#TODO-448 i don't think users should be calling this
 def validate_for_disconnect():
     print("--------------------------------")
     print("Validating signals list...")
