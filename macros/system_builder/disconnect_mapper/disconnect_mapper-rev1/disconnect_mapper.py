@@ -1,5 +1,7 @@
 import csv
-from harnice import fileio, signals_list, system_utils, mapped_disconnect_channels
+from harnice import fileio
+from harnice.lists import mapped_disconnect_channels, signals_list
+from harnice.utils import system_utils
 
 verbose = False
 extra_verbose = False

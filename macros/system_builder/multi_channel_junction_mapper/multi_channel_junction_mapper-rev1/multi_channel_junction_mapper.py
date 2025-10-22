@@ -8,7 +8,9 @@ args:
 - from_keys: list of tuples of [[device_refdes, channel_id], ...]
 """
 
-from harnice import system, mapped_channels, system_utils
+from harnice import system
+from harnice.lists import mapped_channels
+from harnice.utils import system_utils
 
 # Track mapped channels as (device_refdes, channel_id) tuples
 rows = list(system.read_channel_map())

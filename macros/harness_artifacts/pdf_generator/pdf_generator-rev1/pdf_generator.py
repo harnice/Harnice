@@ -1,7 +1,8 @@
 import os
 import json
 import subprocess
-from harnice import fileio, rev_history, component_library, svg_utils
+from harnice import fileio, component_library, rev_history
+from harnice.utils import svg_utils
 
 artifact_mpn = "pdf_generator"
 

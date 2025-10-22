@@ -1,7 +1,8 @@
 import os
 import csv
 import re
-from harnice import fileio, component_library, svg_utils
+from harnice import fileio, component_library
+from harnice.utils import svg_utils
 
 artifact_mpn = "revision_history_table"
 

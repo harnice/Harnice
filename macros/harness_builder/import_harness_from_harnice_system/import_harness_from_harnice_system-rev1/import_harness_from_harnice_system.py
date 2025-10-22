@@ -1,6 +1,8 @@
 import csv
 import os
-from harnice import instances_list, fileio, system_utils
+from harnice import fileio
+from harnice.lists import instances_list
+from harnice.utils import system_utils
 
 # args:
 # system_pn_rev = [pn, rev]

@@ -1,7 +1,7 @@
 import os
-import csv
 import re
-from harnice import fileio, component_library, svg_utils, instances_list
+from harnice import fileio, component_library
+from harnice.utils import svg_utils
 
 artifact_mpn = "buildnotes_table"
 
