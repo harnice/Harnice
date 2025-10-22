@@ -134,21 +134,6 @@ def signals_of_channel_type(channel_type):
     return []
 
 
-# search a known imported device's signals list
-def signals_of_channel(channel_id, device_refdes):
-    signals_list_path = os.path.join(
-        fileio.dirpath("devices"), device_refdes, f"{device_refdes}-signals_list.tsv"
-    )
-
-    signals = []
-    with open(signals_list_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if row.get("channel_id", "").strip() == channel_id.strip():
-                signals.append(row.get("signal", "").strip())
-    return signals
-
-
 def compatible_channel_types(channel_type):
     """
     Look up compatible channel_types for the given channel_type.
