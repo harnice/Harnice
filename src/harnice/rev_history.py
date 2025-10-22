@@ -32,44 +32,31 @@ def revision_info():
     if not os.path.exists(rev_path):
         return "file not found"
 
-    with open(rev_path, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if row.get("rev") == fileio.partnumber("R"):
-                return {k: (v or "").strip() for k, v in row.items()}
+    for row in fileio.read_tsv("revision history"):
+        if row.get("rev") == fileio.partnumber("R"):
+            return {k: (v or "").strip() for k, v in row.items()}
 
     return "row not found"
 
 
 def status(rev):
-    with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if str(row.get("rev")) == str(rev):
-                return row.get("status")
+    for row in fileio.read_tsv("revision history"):
+        if str(row.get("rev")) == str(rev):
+            return row.get("status")
 
 
 def initial_release_exists():
-    try:
-        with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f, delimiter="\t")
-            for row in reader:
-                if str(row.get("revisionupdates", "")).strip() == "INITIAL RELEASE":
-                    return True
-    except FileNotFoundError:
-        return False
-    return False
+    for row in fileio.read_tsv("revision history"):
+        if str(row.get("revisionupdates", "")).strip() == "INITIAL RELEASE":
+            return True
+        else:
+            return False
 
 
 def initial_release_desc():
-    try:
-        with open(fileio.path("revision history"), "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f, delimiter="\t")
-            for row in reader:
-                if row.get("revisionupdates") == "INITIAL RELEASE":
-                    return row.get("desc")
-    except FileNotFoundError:
-        pass
+    for row in fileio.read_tsv("revision history"):
+        if row.get("revisionupdates") == "INITIAL RELEASE":
+            return row.get("desc")
 
 
 def update_datemodified():

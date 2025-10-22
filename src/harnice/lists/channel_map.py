@@ -20,11 +20,7 @@ COLUMNS = [
 def new():
     channel_map = []
 
-    # load connector list
-    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
-        connector_list = list(csv.DictReader(f, delimiter="\t"))
-
-    for connector in connector_list:
+    for connector in fileio.read_tsv("system connector list"):
         device_refdes = connector.get("device_refdes")
 
         # signals list path
@@ -38,11 +34,7 @@ def new():
                 f"{device_refdes}-signals_list.tsv",
             )
 
-        # load signals list
-        with open(device_signals_list_path, newline="", encoding="utf-8") as f:
-            signals = list(csv.DictReader(f, delimiter="\t"))
-
-        for signal in signals:
+        for signal in fileio.read_tsv(device_signals_list_path):
             sig_channel = signal.get("channel_id")
 
             # check if this channel is already in channel_map

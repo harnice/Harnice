@@ -114,7 +114,7 @@ def modify(instance_name, instance_data):
             rows = list(reader)
             fieldnames = reader.fieldnames
 
-        for row in rows:
+        for row in fileio.read_tsv("instances list"):
             if row.get("instance_name") == instance_name:
                 row.update(instance_data)
                 break
@@ -226,13 +226,9 @@ def get_call_chain_str():
 
 
 def add_connectors_cavities_nodes_channels_and_circuits():
-    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
-        connectors_list = list(csv.DictReader(f, delimiter="\t"))
+    connectors_list = fileio.read_tsv("system connector list")
 
-    with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
-        circuits_list = list(csv.DictReader(f, delimiter="\t"))
-
-    for circuit in circuits_list:
+    for circuit in fileio.read_tsv("circuits list"):
         from_connector_key = (
             f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
         )
@@ -420,10 +416,7 @@ def add_connectors_cavities_nodes_channels_and_circuits():
             ignore_duplicates=True,
         )
 
-    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
-        connector_list = list(csv.DictReader(f, delimiter="\t"))
-
-    for connector in connector_list:
+    for connector in fileio.read_tsv("system connector list"):
         try:
             modify(
                 f"{connector.get('device_refdes')}.{connector.get('connector')}.conn",

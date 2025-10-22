@@ -78,11 +78,9 @@ def connector_of_channel(key):
         refdes,
         f"{refdes}-signals_list.tsv",
     )
-    with open(device_signals_list_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if row.get("channel_id", "").strip() == channel_id.strip():
-                return row.get("connector_name", "").strip()
+    for row in fileio.read_tsv(device_signals_list_path):
+        if row.get("channel_id", "").strip() == channel_id.strip():
+            return row.get("connector_name", "").strip()
 
     raise ValueError(f"Connector not found for channel {key}")
 

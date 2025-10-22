@@ -17,19 +17,6 @@ FORMBOARD_TSV_COLUMNS = [
 ]
 
 
-def read_segment_rows():
-    """
-    Reads all rows from the formboard graph definition TSV.
-
-    Returns:
-        List[dict]: Each row as a dictionary with keys from FORMBOARD_TSV_COLUMNS.
-    """
-    with open(
-        fileio.path("formboard graph definition"), newline="", encoding="utf-8"
-    ) as f:
-        return list(csv.DictReader(f, delimiter="\t"))
-
-
 def write_segment_rows(rows):
     with open(
         fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8"
@@ -48,7 +35,7 @@ def add_segment_to_formboard_def(segment_id, segment_data):
             "Argument 'segment_id' is blank and required to identify a unique segment"
         )
 
-    segments = read_segment_rows()
+    segments = fileio.read_tsv("formboard graph definition")
     if any(row.get("segment_id") == segment_id for row in segments):
         return True
 
@@ -88,7 +75,7 @@ def segment_attribute_of(segment_id, key):
     Returns:
         str or None: The value of the attribute, or None if not found.
     """
-    for row in read_segment_rows():
+    for row in fileio.read_tsv("formboard graph definition"):
         if row.get("segment_id") == segment_id:
             return row.get(key)
     return None
@@ -112,13 +99,13 @@ def validate_nodes():
 
     # Extract nodes already involved in segments in formboard definition
     nodes_from_formboard_definition = set()
-    for row in read_segment_rows():
+    for row in fileio.read_tsv("formboard graph definition"):
         nodes_from_formboard_definition.add(row.get("node_at_end_a", ""))
         nodes_from_formboard_definition.add(row.get("node_at_end_b", ""))
     nodes_from_formboard_definition.discard("")
 
     # --- Case 1: No segments exist in formboard definition yet, build from scratch ---
-    if not read_segment_rows():
+    if not fileio.read_tsv("formboard graph definition"):
         if len(nodes_from_instances_list) > 2:
             origin_node = "node1"
             node_counter = 0
@@ -207,7 +194,7 @@ def validate_nodes():
 
     # === CLEANUP: remove obsolete one-leg nodes ===
     # These nodes represent old connectors that no longer exist in the harness definition.
-    segments = read_segment_rows()
+    segments = fileio.read_tsv("formboard graph definition")
     node_occurrences = defaultdict(int)
     for seg in segments:
         node_occurrences[seg.get("node_at_end_a")] += 1
@@ -232,7 +219,7 @@ def validate_nodes():
         write_segment_rows(cleaned_segments)
 
     # === Sync formboard definition with instances list ===
-    for segment in read_segment_rows():
+    for segment in fileio.read_tsv("formboard graph definition"):
         instances_list.new_instance(
             segment.get("segment_id"),
             {

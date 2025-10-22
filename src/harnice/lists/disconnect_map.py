@@ -22,11 +22,7 @@ COLUMNS = [
 def new():
     disconnect_map = []
 
-    # load channel map
-    with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
-        channel_map = list(csv.DictReader(f, delimiter="\t"))
-
-    for channel in channel_map:
+    for channel in fileio.read_tsv("channel map"):
         raw = (channel.get("disconnect_refdes_requirement") or "").strip()
         if not raw:
             continue
@@ -70,22 +66,18 @@ def new():
                 }
             )
 
-    # load BOM
-    with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
-        bom = list(csv.DictReader(f, delimiter="\t"))
 
-    for item in bom:
+
+    for item in fileio.read_tsv("bom"):
         if item.get("disconnect"):
             disconnect_signals_list_path = os.path.join(
                 fileio.dirpath("disconnects"),
                 item.get("device_ref_des"),
                 f"{item.get('device_ref_des')}-signals_list.tsv",
             )
-            with open(disconnect_signals_list_path, newline="", encoding="utf-8") as f:
-                disconnect_signals = list(csv.DictReader(f, delimiter="\t"))
 
             available_disconnect_channels = set()
-            for signal in disconnect_signals:
+            for signal in fileio.read_tsv(disconnect_signals_list_path):
                 if signal.get("channel_id") in available_disconnect_channels:
                     continue
                 available_disconnect_channels.add(signal.get("channel_id"))
@@ -106,9 +98,7 @@ def new():
 
 
 def assign(a_side_key, disconnect_key):
-    # Load all rows
-    with open(fileio.path("disconnect map"), "r", encoding="utf-8") as f:
-        channels = list(csv.DictReader(f, delimiter="\t"))
+    channels = fileio.read_tsv("disconnect map")
 
     # Find the disconnect row we want to merge
     disconnect_info = None
@@ -163,11 +153,7 @@ def find_shortest_chain():
     """
 
     # --- Load tables ---
-    with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
-        channel_map = list(csv.DictReader(f, delimiter="\t"))
-
-    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
-        connector_list = list(csv.DictReader(f, delimiter="\t"))
+    channel_map = fileio.read_tsv("channel map")
 
     # --- Build indexes from connector_list ---
     by_device = {}  # device_refdes -> [connector,...]
@@ -175,7 +161,7 @@ def find_shortest_chain():
     net_of = {}  # (device_refdes, connector) -> net
     is_disconnect = set()  # devices flagged as disconnect
 
-    for row in connector_list:
+    for row in fileio.read_tsv("system connector list"):
         dev = (row.get("device_refdes") or "").strip()
         con = (row.get("connector") or "").strip()
         net = (row.get("net") or "").strip()

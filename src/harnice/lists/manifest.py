@@ -13,10 +13,8 @@ def new():
       - Preserve all other column data for nets that still exist
     """
     # Load connector list and extract unique nets
-    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
-        connector_list = list(csv.DictReader(f, delimiter="\t"))
     connector_nets = {
-        row.get("net", "").strip() for row in connector_list if row.get("net")
+        row.get("net", "").strip() for row in fileio.read_tsv("system connector list") if row.get("net")
     }
 
     manifest_path = fileio.path("system manifest")
@@ -25,14 +23,11 @@ def new():
     existing_manifest = []
     manifest_nets = set()
     try:
-        with open(manifest_path, newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f, delimiter="\t")
-            existing_manifest = list(reader)
-            manifest_nets = {
-                row.get("net", "").strip()
-                for row in existing_manifest
-                if row.get("net")
-            }
+        manifest_nets = {
+            row.get("net", "").strip()
+            for row in fileio.read_tsv("system manifest")
+            if row.get("net")
+        }
     except FileNotFoundError:
         existing_manifest = []
         manifest_nets = set()

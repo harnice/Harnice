@@ -50,14 +50,6 @@ def new():
         writer.writerow(headers)
 
 
-# TODO-442
-def read_list():
-    signals_path = fileio.path("signals list")
-    with open(signals_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        return list(reader)
-
-
 def write_signal(**kwargs):
     """
     Appends a new row to the signals TSV file.
@@ -120,17 +112,14 @@ def write_signal(**kwargs):
 # search channel_types.tsv
 def signals_of_channel_type(channel_type):
     chid, lib_repo = parse_channel_type(channel_type)
-    tsv_path = path_of_channel_type((chid, lib_repo))
 
-    with open(tsv_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if str(row.get("channel_type_id", "")).strip() == str(chid):
-                return [
-                    sig.strip()
-                    for sig in row.get("signals", "").split(",")
-                    if sig.strip()
-                ]
+    for row in fileio.read_tsv(path_of_channel_type((chid, lib_repo))):
+        if str(row.get("channel_type_id", "")).strip() == str(chid):
+            return [
+                sig.strip()
+                for sig in row.get("signals", "").split(",")
+                if sig.strip()
+            ]
     return []
 
 
@@ -140,37 +129,31 @@ def compatible_channel_types(channel_type):
     Splits the TSV field by commas and parses each entry into (chid, lib_repo).
     """
     channel_type_id, lib_repo = parse_channel_type(channel_type)
-    tsv_path = path_of_channel_type((channel_type_id, lib_repo))
+    for row in fileio.read_tsv(path_of_channel_type((channel_type_id, lib_repo))):
+        if str(channel_type_id) != str(row.get("channel_type_id")):
+            continue
 
-    with open(tsv_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if str(channel_type_id) != str(row.get("channel_type_id")):
-                continue
+        signals_str = row.get("compatible_channel_types", "").strip()
+        if not signals_str:
+            return []
 
-            signals_str = row.get("compatible_channel_types", "").strip()
-            if not signals_str:
-                return []
-
-            values = [v.strip() for v in signals_str.split(";") if v.strip()]
-            parsed = []
-            for v in values:
-                parsed.append(parse_channel_type(v))
-            return parsed
+        values = [v.strip() for v in signals_str.split(";") if v.strip()]
+        parsed = []
+        for v in values:
+            parsed.append(parse_channel_type(v))
+        return parsed
 
     return []
 
 
 def cavity_of_signal(channel_id, signal, path_to_signals_list):
-    with open(path_to_signals_list, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if row.get("signal", "").strip() == signal.strip():
-                if row.get("channel_id", "").strip() == channel_id.strip():
-                    return row.get("cavity", "").strip()
-        raise ValueError(
-            f"Signal {signal} of channel_id {channel_id} not found in {path_to_signals_list}"
-        )
+    for row in fileio.read_tsv(path_to_signals_list):
+        if row.get("signal", "").strip() == signal.strip():
+            if row.get("channel_id", "").strip() == channel_id.strip():
+                return row.get("cavity", "").strip()
+    raise ValueError(
+        f"Signal {signal} of channel_id {channel_id} not found in {path_to_signals_list}"
+    )
 
 
 def connector_name_of_channel(channel_id, path_to_signals_list):

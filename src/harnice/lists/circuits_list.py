@@ -25,10 +25,6 @@ COLUMNS = [
 
 
 def new():
-    # --- load channel map ---
-    with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
-        channel_map = list(csv.DictReader(f, delimiter="\t"))
-
     # --- helper: first non-empty field ---
     def first_nonempty(row, *candidate_names):
         for name in candidate_names:
@@ -39,10 +35,8 @@ def new():
 
     # --- load disconnect map and build index ---
     disconnect_index = {}
-    with open(fileio.path("disconnect map"), newline="", encoding="utf-8") as f:
-        disconnect_rows = list(csv.DictReader(f, delimiter="\t"))
 
-    for row in disconnect_rows:
+    for row in fileio.read_tsv("disconnect map"):
         a_refdes = first_nonempty(
             row,
             "A-side_device_refdes",
@@ -123,11 +117,9 @@ def new():
         disconnect_signals_list_path = os.path.join(
             fileio.dirpath("disconnects"), refdes, f"{refdes}-signals_list.tsv"
         )
-        with open(disconnect_signals_list_path, newline="", encoding="utf-8") as f:
-            disconnect_signals_list = list(csv.DictReader(f, delimiter="\t"))
 
         row = None
-        for disconnect_signal_row in disconnect_signals_list:
+        for disconnect_signal_row in fileio.read_tsv(disconnect_signals_list_path):
             if disconnect_signal_row.get("signal", "").strip() == signal.strip():
                 if (
                     disconnect_signal_row.get("channel_id", "").strip()
@@ -150,7 +142,7 @@ def new():
         }
 
     # --- iterate channel map rows ---
-    for row in channel_map:
+    for row in fileio.read_tsv("channel map"):
         if not row.get("from_device_channel_id"):
             continue
         if not row.get("to_device_refdes") and not row.get("multi_ch_junction_id"):
