@@ -60,7 +60,7 @@ cavity_number = {
     },
 }
 
-signals_list.new_list("disconnect")
+signals_list.new()
 
 for channel in range(8):
     channel_name = f"ch{channel}"

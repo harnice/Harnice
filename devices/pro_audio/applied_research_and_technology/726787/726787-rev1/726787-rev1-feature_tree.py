@@ -18,7 +18,7 @@ def mpn_for_connector(connector_name):
     return None
 
 
-signals_list.new_list("device")
+signals_list.new()
 
 for connector_name in ["in1", "in2", "out1", "out2"]:
     if connector_name.startswith("in"):
