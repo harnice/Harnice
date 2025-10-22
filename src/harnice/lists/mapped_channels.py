@@ -1,6 +1,7 @@
 # mapped_channels_set.py
 from harnice import fileio
 import os
+from harnice.utils import system_utils
 
 
 def new_set():
@@ -36,3 +37,9 @@ def _write(items):
     with open(path, "w", encoding="utf-8") as f:
         for item in sorted(items):
             f.write(f"{item}\n")
+
+
+def map_and_record(from_key, to_key):
+    system_utils.map_channel(from_key, to_key)
+    append(from_key)
+    append(to_key)
