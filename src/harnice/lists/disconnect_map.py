@@ -1,4 +1,10 @@
-DISCONNECT_CHANNEL_MAP_COLUMNS = [
+import os
+import csv
+from collections import deque
+from harnice import fileio
+from harnice.utils import system_utils
+
+COLUMNS = [
     "A-side_device_refdes",
     "A-side_device_channel_id",
     "A-side_device_channel_type",
@@ -12,7 +18,8 @@ DISCONNECT_CHANNEL_MAP_COLUMNS = [
     "manual_map_channel_python_equiv",
 ]
 
-def new_blank_disconnect_map():
+
+def new():
     disconnect_map = []
 
     # load channel map
@@ -93,14 +100,12 @@ def new_blank_disconnect_map():
                 )
 
     with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=DISCONNECT_CHANNEL_MAP_COLUMNS, delimiter="\t"
-        )
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(disconnect_map)
 
 
-def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
+def assign(a_side_key, disconnect_key):
     # Load all rows
     with open(fileio.path("disconnect map"), "r", encoding="utf-8") as f:
         channels = list(csv.DictReader(f, delimiter="\t"))
@@ -129,7 +134,7 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
             row["A-port_channel_type"] = disconnect_info.get("A-port_channel_type", "")
             row["B-port_channel_type"] = disconnect_info.get("B-port_channel_type", "")
             row["manual_map_channel_python_equiv"] = (
-                f"system_utils.map_and_record_disconnect({a_side_key}, {disconnect_key})"
+                f"disconnect_map.assign_and_record({a_side_key}, {disconnect_key})"
             )
 
         elif (
@@ -143,13 +148,12 @@ def map_channel_to_disconnect_channel(a_side_key, disconnect_key):
 
     # Write the updated table back
     with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=DISCONNECT_CHANNEL_MAP_COLUMNS, delimiter="\t"
-        )
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(updated_channels)
 
-def find_shortest_disconnect_chain():
+
+def find_shortest_chain():
     """
     For each (from_device/channel) -> (to_device/channel) in the channel map,
     find the SHORTEST series chain of disconnect devices between them and
@@ -271,8 +275,8 @@ def find_shortest_disconnect_chain():
         if not from_key[0] or not from_key[1] or not to_key[0] or not to_key[1]:
             continue
 
-        from_cn = (from_key[0], connector_of_channel(from_key))
-        to_cn = (to_key[0], connector_of_channel(to_key))
+        from_cn = (from_key[0], system_utils.connector_of_channel(from_key))
+        to_cn = (to_key[0], system_utils.connector_of_channel(to_key))
 
         n_from = net_of.get(from_cn)
         n_to = net_of.get(to_cn)

@@ -1,4 +1,8 @@
-CHANNEL_MAP_COLUMNS = [
+import csv
+import os
+from harnice import fileio
+
+COLUMNS = [
     "merged_net",
     "from_device_refdes",
     "from_device_channel_id",
@@ -12,7 +16,8 @@ CHANNEL_MAP_COLUMNS = [
     "manual_map_channel_python_equiv",
 ]
 
-def new_blank_channel_map():
+
+def new():
     channel_map = []
 
     # load connector list
@@ -64,16 +69,15 @@ def new_blank_channel_map():
 
     # write channel map TSV
     with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(channel_map)
 
     return channel_map
 
 
-
-def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
-    channels = read_channel_map()
+def map(from_key, to_key=None, multi_ch_junction_key=""):
+    channels = fileio.read_tsv("channel map")
 
     to_channel = None
     for channel in channels:
@@ -136,6 +140,6 @@ def map_channel(from_key, to_key=None, multi_ch_junction_key=""):
         raise ValueError(f"to_key {to_key} not found in channel map")
 
     with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=CHANNEL_MAP_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(updated_channels)

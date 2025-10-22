@@ -1,13 +1,16 @@
 import runpy
 import os
 from harnice import fileio
-from harnice.lists import mapped_channels, mapped_disconnect_channels
-from harnice.utils import system_utils
+from harnice.lists import (
+    mapped_channels,
+    mapped_disconnect_channels,
+    post_harness_instances_list,
+)
 
 system_feature_tree_default = """import csv
 from harnice import fileio, feature_tree
 from harnice.utils import system_utils
-from harnice.lists import instances_list
+from harnice.lists import instances_list, manifest, channel_map, circuits_list
 
 #===========================================================================
 #                   KICAD PROCESSING
@@ -21,8 +24,8 @@ feature_tree.run_macro("kicad_sch_to_pdf", "system_artifacts", "https://github.c
 #                   CHANNEL MAPPING
 #===========================================================================
 feature_tree.run_macro("kicad_pro_to_system_connector_list", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
-system_utils.new_manifest()
-system_utils.new_blank_channel_map()
+manifest.new()
+channel_map.new()
 
 #add manual channel map commands here. key=(from_device_refdes, from_device_channel_id)
 #system_utils.map_and_record({from_key}, {to_key})
@@ -31,10 +34,10 @@ system_utils.new_blank_channel_map()
 feature_tree.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
 #if mapped channels must connect via disconnects, add the list of disconnects to the channel map
-system_utils.find_shortest_disconnect_chain()
+disconnect_map.find_shortest_chain()
 
 #map channels that must pass through disconnects to available channels inside disconnects
-system_utils.new_blank_disconnect_map()
+disconnect_map.new()
 
 #add manual disconnect map commands here
 
@@ -42,7 +45,7 @@ system_utils.new_blank_disconnect_map()
 feature_tree.run_macro("disconnect_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
 #process channel and disconnect maps to make a list of every circuit in your system
-system_utils.make_circuits_list()
+circuits_list.new()
 
 #===========================================================================
 #                   INSTANCES LIST
@@ -82,6 +85,7 @@ def render():
 
     runpy.run_path(fileio.path("feature tree"))
 
-    system_utils.update_post_harness_instances_list()
 
-    print("\nSystem rendered successfully!\n")
+post_harness_instances_list.update()
+
+print("\nSystem rendered successfully!\n")

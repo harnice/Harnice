@@ -2,7 +2,16 @@ import argparse
 import os
 import sys
 from harnice import fileio
-from harnice.products import device, harness, part, flagnote, tblock, system, disconnect, cable
+from harnice.products import (
+    device,
+    harness,
+    part,
+    flagnote,
+    tblock,
+    system,
+    disconnect,
+    cable,
+)
 
 
 def ensure_cwd_exists():
@@ -24,7 +33,6 @@ def main():
     parser = argparse.ArgumentParser(
         prog="harnice", description="Wire harness automation CLI"
     )
-
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         "-r",

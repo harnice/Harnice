@@ -1,6 +1,12 @@
-MANIFEST_COLUMNS = ["net", "harness_pn"]
+import os
+import csv
+import shutil
+from harnice import fileio
 
-def new_manifest():
+COLUMNS = ["net", "harness_pn"]
+
+
+def new():
     """
     Synchronize the system manifest with the system connector list:
       - Remove nets that no longer exist in the connector list
@@ -51,15 +57,14 @@ def new_manifest():
 
     # Write updated manifest
     with open(manifest_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=MANIFEST_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         for row in updated_manifest:
-            full_row = {col: row.get(col, "") for col in MANIFEST_COLUMNS}
+            full_row = {col: row.get(col, "") for col in COLUMNS}
             writer.writerow(full_row)
 
-def update_upstream_manifest(
-    path_to_system_rev, system_pn_rev, manifest_nets, harness_pn
-):
+
+def update_upstream(path_to_system_rev, system_pn_rev, manifest_nets, harness_pn):
     manifest_path = os.path.join(
         path_to_system_rev,
         "lists",
@@ -89,11 +94,3 @@ def update_upstream_manifest(
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
         writer.writerows(manifest)
-
-
-def push_harness_instances_list_to_upstream_system(path_to_system_rev, system_pn_rev):
-    path_to_harness_dir_of_system = os.path.join(
-        path_to_system_rev, f"{system_pn_rev[0]}-{system_pn_rev[1]}", "harnesses"
-    )
-    shutil.copy(fileio.path("instances list"), path_to_harness_dir_of_system)
-

@@ -1,7 +1,7 @@
 # mapped_disconnect_channels_set.py
 import os
 from harnice import fileio
-from harnice.utils import system_utils
+from harnice.lists import disconnect_map
 
 
 def new_set():
@@ -38,6 +38,7 @@ def _write(items):
         for item in sorted(items):
             f.write(f"{item}\n")
 
-def map_and_record_disconnect(a_side_key, disconnect_key):
-    system_utils.map_channel_to_disconnect_channel(a_side_key, disconnect_key)
+
+def assign_and_record(a_side_key, disconnect_key):
+    disconnect_map.assign(a_side_key, disconnect_key)
     append(disconnect_key)

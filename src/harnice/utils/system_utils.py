@@ -1,9 +1,6 @@
 import os
 import csv
-from collections import deque
-import shutil
 from harnice import fileio, component_library
-from harnice.lists import signals_list, instances_list
 
 
 def pull_devices_from_library():
@@ -88,6 +85,15 @@ def connector_of_channel(key):
                 return row.get("connector_name", "").strip()
 
     raise ValueError(f"Connector not found for channel {key}")
+
+
+def disconnects_in_net(net):
+    disconnects = []
+    for connector in fileio.read_tsv("system connector list"):
+        if connector.get("net") == net:
+            if connector.get("disconnect") == "TRUE":
+                disconnects.append(connector.get("device_refdes"))
+    return disconnects
 
 
 def find_connector_with_no_circuit(connector_list, circuits_list):

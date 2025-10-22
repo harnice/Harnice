@@ -1,7 +1,7 @@
 # mapped_channels_set.py
 from harnice import fileio
 import os
-from harnice.utils import system_utils
+from harnice.lists import channel_map
 
 
 def new_set():
@@ -40,6 +40,6 @@ def _write(items):
 
 
 def map_and_record(from_key, to_key):
-    system_utils.map_channel(from_key, to_key)
+    channel_map.map(from_key, to_key)
     append(from_key)
     append(to_key)

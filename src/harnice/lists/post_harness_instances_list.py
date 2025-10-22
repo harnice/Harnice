@@ -1,4 +1,11 @@
-def update_post_harness_instances_list():
+import os
+import csv
+import shutil
+from harnice import fileio
+from harnice.lists import instances_list
+
+
+def update():
     """
     Build the 'post harness instances list' by merging instance data from:
       - Each harness's instances list if the harness_pn is defined and file exists
@@ -53,8 +60,18 @@ def update_post_harness_instances_list():
     # --- write output ---
     output_path = fileio.path("post harness instances list")
     with open(output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=instances_list.INSTANCES_LIST_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(
+            f, fieldnames=instances_list.INSTANCES_LIST_COLUMNS, delimiter="\t"
+        )
         writer.writeheader()
         for instance in post_harness_instances:
-            writer.writerow({k: instance.get(k, "") for k in instances_list.INSTANCES_LIST_COLUMNS})
+            writer.writerow(
+                {k: instance.get(k, "") for k in instances_list.INSTANCES_LIST_COLUMNS}
+            )
 
+
+def push(path_to_system_rev, system_pn_rev):
+    path_to_harness_dir_of_system = os.path.join(
+        path_to_system_rev, f"{system_pn_rev[0]}-{system_pn_rev[1]}", "harnesses"
+    )
+    shutil.copy(fileio.path("instances list"), path_to_harness_dir_of_system)

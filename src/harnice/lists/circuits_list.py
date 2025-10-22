@@ -1,4 +1,9 @@
-CIRCUITS_LIST_COLUMNS = [
+import os
+import csv
+from harnice import fileio
+from harnice.lists import signals_list
+
+COLUMNS = [
     "net",
     "circuit_id",
     "signal",
@@ -18,7 +23,8 @@ CIRCUITS_LIST_COLUMNS = [
     "to_channel_type",
 ]
 
-def make_circuits_list():
+
+def new():
     # --- load channel map ---
     with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
         channel_map = list(csv.DictReader(f, delimiter="\t"))
@@ -288,6 +294,6 @@ def make_circuits_list():
 
     # --- write circuits list ---
     with open(fileio.path("circuits list"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=CIRCUITS_LIST_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(circuits_list)

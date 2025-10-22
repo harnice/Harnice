@@ -5,7 +5,7 @@ import ast
 from harnice import fileio, component_library
 
 # Signals list column headers to match source of truth + compatibility change
-DEVICE_SIGNALS_HEADERS = [
+DEVICE_COLUMNS = [
     "channel_id",  # unique identifier for the channel
     "signal",
     "connector_name",
@@ -14,7 +14,7 @@ DEVICE_SIGNALS_HEADERS = [
     "channel_type",
 ]
 
-DISCONNECT_SIGNALS_HEADERS = [
+DISCONNECT_COLUMNS = [
     "channel_id",  # unique identifier for the channel
     "signal",
     "A_cavity",
@@ -31,9 +31,9 @@ global headers
 def new():
     global headers
     if fileio.product_type == "device":
-        headers = DEVICE_SIGNALS_HEADERS
+        headers = DEVICE_COLUMNS
     elif fileio.product_type == "disconnect":
-        headers = DISCONNECT_SIGNALS_HEADERS
+        headers = DISCONNECT_COLUMNS
 
     """
     Creates a new signals TSV file at fileio.path("signals list") with only the header row.
