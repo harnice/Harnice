@@ -2,7 +2,6 @@ import runpy
 import os
 from harnice import fileio, cli
 from harnice.lists import instances_list
-from harnice.utils import circuit_utils
 
 harness_feature_tree_default = """
 #===========================================================================

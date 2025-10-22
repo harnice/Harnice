@@ -1,6 +1,5 @@
 import os
 import csv
-import shutil
 from harnice import fileio
 
 COLUMNS = ["net", "harness_pn"]
@@ -40,7 +39,6 @@ def new():
 
     # Determine differences
     nets_to_add = connector_nets - manifest_nets
-    nets_to_remove = manifest_nets - connector_nets
     nets_to_keep = manifest_nets & connector_nets
 
     # Preserve existing info for kept nets
