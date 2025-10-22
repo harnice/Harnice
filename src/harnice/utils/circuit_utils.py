@@ -1,4 +1,5 @@
-from harnice import instances_list, fileio
+from harnice import fileio
+from harnice.lists import instances_list
 
 
 def end_ports_of_circuit(circuit_id):

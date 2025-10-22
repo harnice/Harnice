@@ -1,11 +1,12 @@
-# mapped_channels_set.py
-from harnice import fileio
+# mapped_disconnect_channels_set.py
 import os
+from harnice import fileio
+from harnice.lists import disconnect_map
 
 
 def new_set():
     """Create or reset the file to represent an empty set."""
-    with open(fileio.path("mapped channels set"), "w", encoding="utf-8"):
+    with open(fileio.path("mapped disconnect channels set"), "w", encoding="utf-8"):
         pass
 
 
@@ -23,7 +24,7 @@ def check(item):
 
 def return_set():
     """Return the full set of items."""
-    path = fileio.path("mapped channels set")
+    path = fileio.path("mapped disconnect channels set")
     if not os.path.exists(path):
         return set()
     with open(path, "r", encoding="utf-8") as f:
@@ -32,7 +33,12 @@ def return_set():
 
 def _write(items):
     """Internal: write a set of items to file."""
-    path = fileio.path("mapped channels set")
+    path = fileio.path("mapped disconnect channels set")
     with open(path, "w", encoding="utf-8") as f:
         for item in sorted(items):
             f.write(f"{item}\n")
+
+
+def assign_and_record(a_side_key, disconnect_key):
+    disconnect_map.assign(a_side_key, disconnect_key)
+    append(disconnect_key)

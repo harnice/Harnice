@@ -2,11 +2,9 @@ import csv
 import os
 import inspect
 from threading import Lock
-from harnice import component_library, fileio, signals_list
+from harnice import component_library, fileio
 
-RECOGNIZED_ITEM_TYPES = {"Segment", "Node", "Flagnote", "Flagnote leader", "Location"}
-
-INSTANCES_LIST_COLUMNS = [
+COLUMNS = [
     "net",
     "instance_name",
     "print_name",
@@ -101,10 +99,8 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
     instance_data["instance_name"] = instance_name
 
     with open(fileio.path("instances list"), "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter="\t")
-        writer.writerow(
-            {key: instance_data.get(key, "") for key in INSTANCES_LIST_COLUMNS}
-        )
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
+        writer.writerow({key: instance_data.get(key, "") for key in COLUMNS})
 
 
 _instances_lock = Lock()
@@ -136,9 +132,9 @@ def modify(instance_name, instance_data):
         os.replace(tmp, path)
 
 
-def make_new_list():
+def new():
     with open(fileio.path("instances list"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows([])
 

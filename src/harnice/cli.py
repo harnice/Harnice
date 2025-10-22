@@ -33,7 +33,6 @@ def main():
     parser = argparse.ArgumentParser(
         prog="harnice", description="Wire harness automation CLI"
     )
-
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         "-r",
@@ -98,7 +97,3 @@ def prompt(text, default=None):
         p += f" [{default}]"
     p += ": "
     return input(p).strip() or default
-
-
-if __name__ == "__main__":
-    main()

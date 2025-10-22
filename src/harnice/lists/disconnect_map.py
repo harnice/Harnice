@@ -1,0 +1,299 @@
+import os
+import csv
+from collections import deque
+from harnice import fileio
+from harnice.utils import system_utils
+
+COLUMNS = [
+    "A-side_device_refdes",
+    "A-side_device_channel_id",
+    "A-side_device_channel_type",
+    "B-side_device_refdes",
+    "B-side_device_channel_id",
+    "B-side_device_channel_type",
+    "disconnect_refdes",
+    "disconnect_channel_id",
+    "A-port_channel_type",
+    "B-port_channel_type",
+    "manual_map_channel_python_equiv",
+]
+
+
+def new():
+    disconnect_map = []
+
+    # load channel map
+    with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
+        channel_map = list(csv.DictReader(f, delimiter="\t"))
+
+    for channel in channel_map:
+        raw = (channel.get("disconnect_refdes_requirement") or "").strip()
+        if not raw:
+            continue
+
+        # split on semicolon -> one row per disconnect_refdes requirement
+        disconnects = [item.strip() for item in raw.split(";") if item.strip()]
+
+        for requirement in disconnects:
+            # requirement looks like "X1(A,B)" or "X2(B,A)"
+            refdes, ports = requirement.split("(")
+            ports = ports.rstrip(")")
+            first_port, second_port = [p.strip() for p in ports.split(",")]
+
+            # orientation: (A,B) means from_device is A-side, (B,A) means from_device is B-side
+            if (first_port, second_port) == ("A", "B"):
+                a_refdes = channel.get("from_device_refdes", "")
+                a_chan_id = channel.get("from_device_channel_id", "")
+                a_chan_type_id = channel.get("from_channel_type", "")
+                b_refdes = channel.get("to_device_refdes", "")
+                b_chan_id = channel.get("to_device_channel_id", "")
+                b_chan_type_id = channel.get("to_channel_type", "")
+            elif (first_port, second_port) == ("B", "A"):
+                b_refdes = channel.get("from_device_refdes", "")
+                b_chan_id = channel.get("from_device_channel_id", "")
+                b_chan_type_id = channel.get("from_channel_type", "")
+                a_refdes = channel.get("to_device_refdes", "")
+                a_chan_id = channel.get("to_device_channel_id", "")
+                a_chan_type_id = channel.get("to_channel_type", "")
+            else:
+                raise ValueError(f"Unexpected port order: {requirement}")
+
+            disconnect_map.append(
+                {
+                    "A-side_device_refdes": a_refdes,
+                    "A-side_device_channel_id": a_chan_id,
+                    "A-side_device_channel_type": a_chan_type_id,
+                    "B-side_device_refdes": b_refdes,
+                    "B-side_device_channel_id": b_chan_id,
+                    "B-side_device_channel_type": b_chan_type_id,
+                    "disconnect_refdes": refdes.strip(),
+                }
+            )
+
+    # load BOM
+    with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
+        bom = list(csv.DictReader(f, delimiter="\t"))
+
+    for item in bom:
+        if item.get("disconnect"):
+            disconnect_signals_list_path = os.path.join(
+                fileio.dirpath("disconnects"),
+                item.get("device_ref_des"),
+                f"{item.get('device_ref_des')}-signals_list.tsv",
+            )
+            with open(disconnect_signals_list_path, newline="", encoding="utf-8") as f:
+                disconnect_signals = list(csv.DictReader(f, delimiter="\t"))
+
+            available_disconnect_channels = set()
+            for signal in disconnect_signals:
+                if signal.get("channel_id") in available_disconnect_channels:
+                    continue
+                available_disconnect_channels.add(signal.get("channel_id"))
+
+                disconnect_map.append(
+                    {
+                        "disconnect_refdes": item.get("device_ref_des"),
+                        "disconnect_channel_id": signal.get("channel_id"),
+                        "A-port_channel_type": signal.get("A_channel_type"),
+                        "B-port_channel_type": signal.get("B_channel_type"),
+                    }
+                )
+
+    with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(disconnect_map)
+
+
+def assign(a_side_key, disconnect_key):
+    # Load all rows
+    with open(fileio.path("disconnect map"), "r", encoding="utf-8") as f:
+        channels = list(csv.DictReader(f, delimiter="\t"))
+
+    # Find the disconnect row we want to merge
+    disconnect_info = None
+    for row in channels:
+        if (
+            row.get("disconnect_refdes") == disconnect_key[0]
+            and row.get("disconnect_channel_id") == disconnect_key[1]
+            and row.get("A-side_device_refdes")
+            in [None, ""]  # otherwise it might find an already mapped channel
+        ):
+            disconnect_info = row
+            break
+
+    updated_channels = []
+    for row in channels:
+        # Case 1: row matches the A-side device/channel -> update it with disconnect info
+        if (
+            row.get("A-side_device_refdes") == a_side_key[0]
+            and row.get("A-side_device_channel_id") == a_side_key[1]
+            and row.get("disconnect_refdes") == disconnect_key[0]
+        ):
+            row["disconnect_channel_id"] = disconnect_key[1]
+            row["A-port_channel_type"] = disconnect_info.get("A-port_channel_type", "")
+            row["B-port_channel_type"] = disconnect_info.get("B-port_channel_type", "")
+            row["manual_map_channel_python_equiv"] = (
+                f"disconnect_map.assign_and_record({a_side_key}, {disconnect_key})"
+            )
+
+        elif (
+            row.get("disconnect_refdes") == disconnect_key[0]
+            and row.get("disconnect_channel_id") == disconnect_key[1]
+            and row.get("A-side_device_refdes") in [None, ""]
+        ):
+            continue
+
+        updated_channels.append(row)
+
+    # Write the updated table back
+    with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(updated_channels)
+
+
+def find_shortest_chain():
+    """
+    For each (from_device/channel) -> (to_device/channel) in the channel map,
+    find the SHORTEST series chain of disconnect devices between them and
+    write it to:
+      - 'disconnect_refdes_requirement' (like "X1(A,B);X2(B,A)")
+      - 'chain_of_nets' (like "WH-1;WH-2;WH-3" or a single net if no disconnects)
+    """
+
+    # --- Load tables ---
+    with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
+        channel_map = list(csv.DictReader(f, delimiter="\t"))
+
+    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
+        connector_list = list(csv.DictReader(f, delimiter="\t"))
+
+    # --- Build indexes from connector_list ---
+    by_device = {}  # device_refdes -> [connector,...]
+    by_net = {}  # net -> [(device_refdes, connector), ...]
+    net_of = {}  # (device_refdes, connector) -> net
+    is_disconnect = set()  # devices flagged as disconnect
+
+    for row in connector_list:
+        dev = (row.get("device_refdes") or "").strip()
+        con = (row.get("connector") or "").strip()
+        net = (row.get("net") or "").strip()
+
+        if not dev or not con:
+            continue
+
+        by_device.setdefault(dev, []).append(con)
+        if net:
+            by_net.setdefault(net, []).append((dev, con))
+            net_of[(dev, con)] = net
+
+        if (row.get("disconnect") or "").strip().upper() == "TRUE":
+            is_disconnect.add(dev)
+
+    # --- shortest-path search ---
+    def _shortest_disconnect_chain(from_cn_key, to_cn_key):
+        start, goal = from_cn_key, to_cn_key
+
+        q = deque([start])
+        seen = {start}
+        prev = {}
+
+        while q:
+            cur = q.popleft()
+            if cur == goal:
+                break
+
+            # neighbors on the SAME NET
+            net = net_of.get(cur)
+            if net:
+                for nxt in by_net.get(net, []):
+                    if nxt not in seen:
+                        seen.add(nxt)
+                        prev[nxt] = cur
+                        q.append(nxt)
+
+            # neighbors on the SAME DEVICE (only for disconnects)
+            dev, _ = cur
+            if dev in is_disconnect:
+                for other_con in by_device.get(dev, []):
+                    nxt = (dev, other_con)
+                    if nxt not in seen:
+                        seen.add(nxt)
+                        prev[nxt] = cur
+                        q.append(nxt)
+
+        if start != goal and goal not in prev:
+            return [], []
+
+        # reconstruct connector-node path
+        path = [goal]
+        while path[-1] != start:
+            path.append(prev[path[-1]])
+        path.reverse()
+
+        # collect disconnect devices and nets
+        chain = []
+        net_chain = []
+
+        for a, b in zip(path, path[1:]):
+            # record nets between steps
+            net_a = net_of.get(a)
+            net_b = net_of.get(b)
+            if net_a and net_b and net_a == net_b:
+                if not net_chain or net_chain[-1] != net_a:
+                    net_chain.append(net_a)
+
+            # record disconnect traversals
+            if a[0] == b[0] and a[0] in is_disconnect:
+                dev = a[0]
+                port_a, port_b = a[1], b[1]
+
+                # enforce A/B only
+                for port in (port_a, port_b):
+                    if port not in {"A", "B"}:
+                        raise ValueError(
+                            f"Disconnect {dev} has invalid port name '{port}'. "
+                            "Only 'A' and 'B' are allowed."
+                        )
+
+                if port_a == port_b:
+                    raise ValueError(
+                        f"Disconnect {dev} has invalid same-port traversal: {port_a}"
+                    )
+
+                chain.append(f"{dev}({port_a},{port_b})")
+
+        return chain, net_chain
+
+    # --- run for each row in channel map ---
+    for row in channel_map:
+        from_key = (row.get("from_device_refdes"), row.get("from_device_channel_id"))
+        to_key = (row.get("to_device_refdes"), row.get("to_device_channel_id"))
+
+        # skip incomplete rows
+        if not from_key[0] or not from_key[1] or not to_key[0] or not to_key[1]:
+            continue
+
+        from_cn = (from_key[0], system_utils.connector_of_channel(from_key))
+        to_cn = (to_key[0], system_utils.connector_of_channel(to_key))
+
+        n_from = net_of.get(from_cn)
+        n_to = net_of.get(to_cn)
+
+        if n_from and n_to and n_from == n_to:
+            # same-net: no disconnect devices required in between
+            row["disconnect_refdes_requirement"] = ""
+            row["chain_of_nets"] = n_from  # singular net
+            continue
+
+        chain, net_chain = _shortest_disconnect_chain(from_cn, to_cn)
+        if chain or net_chain:
+            row["disconnect_refdes_requirement"] = ";".join(chain)
+            row["chain_of_nets"] = ";".join(net_chain)
+
+    # --- write back ---
+    with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=channel_map[0].keys(), delimiter="\t")
+        writer.writeheader()
+        writer.writerows(channel_map)

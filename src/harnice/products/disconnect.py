@@ -1,9 +1,10 @@
 import runpy
 import os
-from harnice import fileio, signals_list
+from harnice import fileio
+from harnice.lists import signals_list
 
 disconnect_feature_tree_default = """
-from harnice import signals_list
+from harnice.lists import signals_list
 
 ch_type_ids = {
     "A": {
@@ -64,7 +65,7 @@ cavity_number = {
     },
 }
 
-signals_list.new_list("disconnect")
+signals_list.new()
 
 for channel in range(8):
     channel_name = f"ch{channel}"
