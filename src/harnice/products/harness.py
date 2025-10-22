@@ -323,7 +323,7 @@ featuretree_utils.copy_pdfs_to_cwd()
             dst.write(feature_tree)
 
     # Step 3: initialize instances list
-    instances_list.make_new_list()
+    instances_list.new()
     instances_list.new_instance(
         "origin",
         {

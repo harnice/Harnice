@@ -28,11 +28,11 @@ DISCONNECT_SIGNALS_HEADERS = [
 global headers
 
 
-def new_list(headers_arg):
+def new():
     global headers
-    if headers_arg == "device":
+    if fileio.product_type == "device":
         headers = DEVICE_SIGNALS_HEADERS
-    elif headers_arg == "disconnect":
+    elif fileio.product_type == "disconnect":
         headers = DISCONNECT_SIGNALS_HEADERS
 
     """
@@ -75,7 +75,7 @@ def write_signal(**kwargs):
 
     # Create the signals list file if it doesn't exist
     if not os.path.exists(signals_path):
-        new_list()
+        new()
 
     # --- Define required fields based on product type ---
     if fileio.product_type == "device":

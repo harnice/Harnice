@@ -30,7 +30,7 @@ def mpn_for_connector(connector_name):
             return mpn
     return None
 
-signals_list.new_list("device")
+signals_list.new()
 
 for connector_name in ["in1", "in2", "out1", "out2"]:
     if connector_name.startswith("in"):
@@ -620,7 +620,7 @@ def device_render(lightweight=False):
                 f.write(device_feature_tree_default)
     else:
         if not os.path.exists(fileio.path("signals list")):
-            signals_list.new_list()
+            signals_list.new()
             signals_list.write_signal(
                 connector_name="J1",
                 channel_type=0,

@@ -43,7 +43,7 @@ system_utils.make_circuits_list()
 #===========================================================================
 #                   INSTANCES LIST
 #===========================================================================
-instances_list.make_new_list()
+instances_list.new()
 instances_list.add_connectors_cavities_nodes_channels_and_circuits()
 
 #assign mating connectors
