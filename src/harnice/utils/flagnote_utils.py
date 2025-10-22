@@ -48,7 +48,6 @@ def make_note_drawings(formboard_dir):
             continue
 
         instance_name = instance.get("instance_name")
-        parent_instance = instance.get("parent_instance", "").strip()
 
         destination_directory = os.path.join(
             formboard_dir, instance.get("instance_name")
@@ -112,7 +111,7 @@ def compile_buildnotes():
                     already_exists = True
 
             # if not, make it
-            if already_exists == False:
+            if not already_exists:
                 instances_list.new_instance(
                     f"buildnote-{instance.get('bubble_text')}",
                     {
