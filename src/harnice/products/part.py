@@ -2,8 +2,8 @@ import os
 import json
 import random
 import math
-
-from harnice import svg_utils, fileio
+from harnice import fileio
+from harnice.utils import svg_utils
 
 
 def render():

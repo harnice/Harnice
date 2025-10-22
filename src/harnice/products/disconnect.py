@@ -1,9 +1,10 @@
 import runpy
 import os
-from harnice import fileio, signals_list
+from harnice import fileio
+from harnice.lists import signals_list
 
 disconnect_feature_tree_default = """
-from harnice import signals_list
+from harnice.lists import signals_list
 
 ch_type_ids = {
     "A": {

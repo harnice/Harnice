@@ -1,11 +1,12 @@
 import os
 import runpy
-from harnice import fileio, signals_list, rev_history
 import sexpdata
 import json
+from harnice import fileio, rev_history
+from harnice.lists import signals_list
 
 device_feature_tree_default = """
-from harnice import signals_list
+from harnice.lists import signals_list
 
 ch_type_ids = {
     "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),

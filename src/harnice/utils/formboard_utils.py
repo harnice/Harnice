@@ -4,7 +4,8 @@ import math
 import csv
 from PIL import Image, ImageDraw, ImageFont
 from collections import defaultdict, deque
-from harnice import instances_list, fileio, circuit_instance
+from harnice import fileio
+from harnice.lists import instances_list
 
 FORMBOARD_TSV_COLUMNS = [
     "segment_id",

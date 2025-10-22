@@ -2,7 +2,8 @@ import os
 import csv
 import re
 import shutil
-from harnice import fileio, instances_list
+from harnice import fileio
+from harnice.lists import instances_list
 
 
 def pull_item_from_library(

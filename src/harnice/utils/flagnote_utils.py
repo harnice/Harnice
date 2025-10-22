@@ -1,7 +1,8 @@
 import os
 import csv
 import re
-from harnice import fileio, instances_list, component_library
+from harnice import fileio, component_library
+from harnice.lists import instances_list
 
 # === Global Columns Definition ===
 MANUAL_FLAGNOTES_COLUMNS = [

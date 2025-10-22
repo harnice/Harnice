@@ -2,7 +2,7 @@ import csv
 import os
 import inspect
 from threading import Lock
-from harnice import component_library, fileio, signals_list
+from harnice import component_library, fileio
 
 RECOGNIZED_ITEM_TYPES = {"Segment", "Node", "Flagnote", "Flagnote leader", "Location"}
 

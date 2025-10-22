@@ -3,7 +3,8 @@ import runpy
 import math
 import json
 import shutil
-from harnice import fileio, component_library, instances_list
+from harnice import fileio, component_library
+from harnice.lists import instances_list
 
 
 def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):

@@ -2,16 +2,7 @@ import argparse
 import os
 import sys
 from harnice import fileio
-from harnice.products import (
-    device,
-    harness,
-    part,
-    flagnote,
-    tblock,
-    system,
-    disconnect,
-    cable,
-)
+from harnice.products import device, harness, part, flagnote, tblock, system, disconnect, cable
 
 
 def ensure_cwd_exists():

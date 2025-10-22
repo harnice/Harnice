@@ -1,14 +1,9 @@
-from harnice import (
-    fileio,
-    component_library,
-    mapped_channels,
-    mapped_disconnect_channels,
-    signals_list,
-)
 import os
 import csv
 from collections import deque
 import shutil
+from harnice import fileio, component_library
+from harnice.lists import mapped_channels, mapped_disconnect_channels, signals_list, instances_list
 
 
 CHANNEL_MAP_COLUMNS = [
@@ -995,7 +990,6 @@ def update_post_harness_instances_list():
 
     Writes a clean TSV with INSTANCES_LIST_COLUMNS.
     """
-    from harnice.instances_list import INSTANCES_LIST_COLUMNS
 
     post_harness_instances = []
 
@@ -1043,10 +1037,10 @@ def update_post_harness_instances_list():
     # --- write output ---
     output_path = fileio.path("post harness instances list")
     with open(output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=INSTANCES_LIST_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=instances_list.INSTANCES_LIST_COLUMNS, delimiter="\t")
         writer.writeheader()
         for instance in post_harness_instances:
-            writer.writerow({k: instance.get(k, "") for k in INSTANCES_LIST_COLUMNS})
+            writer.writerow({k: instance.get(k, "") for k in instances_list.INSTANCES_LIST_COLUMNS})
 
 
 def find_connector_with_no_circuit(connector_list, circuits_list):
