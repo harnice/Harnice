@@ -14,7 +14,9 @@ def new():
     """
     # Load connector list and extract unique nets
     connector_nets = {
-        row.get("net", "").strip() for row in fileio.read_tsv("system connector list") if row.get("net")
+        row.get("net", "").strip()
+        for row in fileio.read_tsv("system connector list")
+        if row.get("net")
     }
 
     manifest_path = fileio.path("system manifest")

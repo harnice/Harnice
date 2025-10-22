@@ -357,7 +357,7 @@ def verify_revision_structure(product_type=None):
         library_subpath = ""
         cwd = str(os.getcwd()).lower().strip("~")
 
-        for row in read_tsv("library locations", delimiter=','):
+        for row in read_tsv("library locations", delimiter=","):
             local_path = str(row.get("local_path", "")).lower().strip("~")
             if local_path and local_path in cwd:
                 library_repo = row.get("url")
@@ -468,7 +468,7 @@ def get_path_to_project(traceable_key):
     # takes in a project repo traceable key and returns the expanded local path
     # traceable key is some unique identifier for this project (project part number, github url, etc)
 
-    for project in read_tsv("project locations", delimiter=','):
+    for project in read_tsv("project locations", delimiter=","):
         if project.get("traceable_key").strip() == traceable_key.strip():
             local_path = project.get("local_path")
             if not local_path:
@@ -520,8 +520,8 @@ def newrev():
     )
 
 
-def read_tsv(filekey, delimeter='\t', path="fileio"):
-    #TODO#263 when filei.path is generalized, shouldn't need this
+def read_tsv(filekey, delimeter="\t", path="fileio"):
+    # TODO#263 when filei.path is generalized, shouldn't need this
     if path != "fileio":
         path_to_open = path
     else:

@@ -66,8 +66,6 @@ def new():
                 }
             )
 
-
-
     for item in fileio.read_tsv("bom"):
         if item.get("disconnect"):
             disconnect_signals_list_path = os.path.join(

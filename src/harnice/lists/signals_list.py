@@ -116,9 +116,7 @@ def signals_of_channel_type(channel_type):
     for row in fileio.read_tsv(path_of_channel_type((chid, lib_repo))):
         if str(row.get("channel_type_id", "")).strip() == str(chid):
             return [
-                sig.strip()
-                for sig in row.get("signals", "").split(",")
-                if sig.strip()
+                sig.strip() for sig in row.get("signals", "").split(",") if sig.strip()
             ]
     return []
 

@@ -175,7 +175,7 @@ def pull_part(instance):
 
 
 def get_local_path(lib_repo):
-    for lib in fileio.read_tsv("library locations", delimiter=','):
+    for lib in fileio.read_tsv("library locations", delimiter=","):
         if lib.get("url") == lib_repo:
             local_path = lib.get("local_path")
             if not local_path:
