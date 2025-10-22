@@ -5,7 +5,7 @@ from harnice import fileio
 from harnice.lists import instances_list
 
 
-def update():
+def rebuild():
     """
     Build the 'post harness instances list' by merging instance data from:
       - Each harness's instances list if the harness_pn is defined and file exists
