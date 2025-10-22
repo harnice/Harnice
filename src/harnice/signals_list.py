@@ -210,14 +210,14 @@ def path_of_channel_type(channel_type):
 
 
 def parse_channel_type(val):
-    """Convert stored string into a tuple (chid:int, supplier:str)."""
+    """Convert stored string into a tuple (chid:int, lib_repo:str)."""
     if not val:
         return None
     if isinstance(val, tuple):
-        chid, supplier = val
+        chid, lib_repo = val
     else:
-        chid, supplier = ast.literal_eval(str(val))
-    return (int(chid), str(supplier).strip())
+        chid, lib_repo = ast.literal_eval(str(val))
+    return (int(chid), str(lib_repo).strip())
 
 
 # TODO-448 i don't think users should be calling this
