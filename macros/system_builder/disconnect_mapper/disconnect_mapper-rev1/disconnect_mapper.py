@@ -1,19 +1,11 @@
-import csv
 from harnice import fileio
-from harnice.lists import mapped_disconnect_channels, signals_list
-from harnice.utils import system_utils
+from harnice.lists import mapped_disconnect_channels, signals_list, disconnect_map
 
 verbose = False
 extra_verbose = False
 
 
-def disconnect_map():
-    """Always reloads the disconnect map from TSV."""
-    with open(fileio.path("disconnect map"), newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f, delimiter="\t"))
-
-
-for required_channel in disconnect_map():
+for required_channel in fileio.read_tsv("disconnect map"):
     # skip available channel rows (A-side empty)
     if required_channel.get("A-side_device_refdes") in [None, ""]:
         continue
@@ -30,7 +22,7 @@ for required_channel in disconnect_map():
     # collect available candidates for the same disconnect_refdes
     available_candidates = [
         c
-        for c in disconnect_map()
+        for c in fileio.read_tsv("disconnect map")
         if c.get("A-side_device_refdes") in [None, ""]
         and c.get("disconnect_refdes") == disconnect_refdes
     ]
@@ -162,7 +154,7 @@ for required_channel in disconnect_map():
             candidate.get("disconnect_refdes"),
             candidate.get("disconnect_channel_id"),
         )
-        system_utils.map_and_record_disconnect(a_side_key, disconnect_key)
+        mapped_disconnect_channels.assign_and_record(a_side_key, disconnect_key)
 
         if verbose:
             print(

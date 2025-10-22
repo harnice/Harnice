@@ -1,7 +1,6 @@
 import csv
 from harnice import fileio
 from harnice.lists import mapped_channels, signals_list
-from harnice.utils import system_utils
 
 verbose = False
 
@@ -95,5 +94,5 @@ for merged_net in unique_merged_nets:
 
             if verbose:
                 print("                    ********* MAPPED *********")
-            system_utils.map_and_record(from_key, to_key)
+            mapped_channels.map_and_record(from_key, to_key)
             break  # Stop after first compatible partner
