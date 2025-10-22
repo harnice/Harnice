@@ -520,8 +520,14 @@ def newrev():
     )
 
 
-def read_tsv(filekey, delimeter='\t'):
+def read_tsv(filekey, delimeter='\t', path="fileio"):
+    #TODO#263 when filei.path is generalized, shouldn't need this
+    if path != "fileio":
+        path_to_open = path
+    else:
+        path_to_open = path(filekey)
+
     if not os.path.exists(filekey):
-        raise FileNotFoundError(f"Expected .tsv file at: {filekey}")
-    with open(path(filekey), newline="", encoding="utf-8") as f:
+        raise FileNotFoundError(f"Expected .tsv file at: {path_to_open}")
+    with open(path_to_open, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f, delimiter="\t"))
