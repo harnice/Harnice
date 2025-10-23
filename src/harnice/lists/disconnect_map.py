@@ -20,7 +20,7 @@ COLUMNS = [
 
 
 def new():
-    disconnect_map = []
+    disconnect_map_rows = []
 
     for channel in fileio.read_tsv("channel map"):
         raw = (channel.get("disconnect_refdes_requirement") or "").strip()
@@ -54,7 +54,7 @@ def new():
             else:
                 raise ValueError(f"Unexpected port order: {requirement}")
 
-            disconnect_map.append(
+            disconnect_map_rows.append(
                 {
                     "A-side_device_refdes": a_refdes,
                     "A-side_device_channel_id": a_chan_id,
@@ -80,7 +80,7 @@ def new():
                     continue
                 available_disconnect_channels.add(signal.get("channel_id"))
 
-                disconnect_map.append(
+                disconnect_map_rows.append(
                     {
                         "disconnect_refdes": item.get("device_ref_des"),
                         "disconnect_channel_id": signal.get("channel_id"),
@@ -92,7 +92,7 @@ def new():
     with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
-        writer.writerows(disconnect_map)
+        writer.writerows(disconnect_map_rows)
 
 
 def assign(a_side_key, disconnect_key):

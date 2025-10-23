@@ -46,20 +46,22 @@ def rebuild():
                 if system_instance.get("net", "").strip() == net:
                     post_harness_instances.append(system_instance)
 
-    # --- write output ---
-    output_path = fileio.path("post harness instances list")
-    with open(output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=instances_list.INSTANCES_LIST_COLUMNS, delimiter="\t"
-        )
+    # --- Determine fieldnames dynamically ---
+    fieldnames = set()
+    for instance in post_harness_instances:
+        fieldnames.update(instance.keys())
+
+    # --- Write TSV file ---
+    with open(
+        fileio.path("post harness instances list"), "w", newline="", encoding="utf-8"
+    ) as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
         for instance in post_harness_instances:
-            writer.writerow(
-                {k: instance.get(k, "") for k in instances_list.INSTANCES_LIST_COLUMNS}
-            )
+            writer.writerow({k: instance.get(k, "") for k in fieldnames})
 
 
-def push(path_to_system_rev, system_pn_rev):
+def append(path_to_system_rev, system_pn_rev):
     path_to_harness_dir_of_system = os.path.join(
         path_to_system_rev, f"{system_pn_rev[0]}-{system_pn_rev[1]}", "harnesses"
     )

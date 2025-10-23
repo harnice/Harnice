@@ -2,6 +2,7 @@ import os
 import csv
 from harnice import fileio
 from harnice.lists import signals_list
+from harnice.products import chtype
 
 COLUMNS = [
     "net",
@@ -153,7 +154,7 @@ def new():
         to_refdes = row["to_device_refdes"].strip()
         to_channel_id = row["to_device_channel_id"].strip()
 
-        signals = signals_list.signals_of_channel_type(row.get("from_channel_type"))
+        signals = chtype.signals(row.get("from_channel_type"))
 
         # --- parse disconnect requirement ---
         disconnect_chain = []
