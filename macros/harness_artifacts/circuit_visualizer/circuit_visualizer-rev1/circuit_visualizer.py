@@ -1,6 +1,7 @@
 import os
-import re
-from harnice import fileio, instances_list, circuit_instance
+from harnice import fileio
+from harnice.lists import instances_list
+from harnice.utils import circuit_utils
 
 artifact_mpn = "circuit_visualizer"
 
@@ -174,7 +175,7 @@ for instance in fileio.read_tsv("instances list"):
 
     circuit_id = instance.get("circuit_id")
     print_name = instance.get("print_name", "")
-    ports = circuit_instance.instances_of_circuit(circuit_id)
+    ports = circuit_utils.instances_of_circuit(circuit_id)
     local_group = []
 
     # Collect node/segment data

@@ -1,5 +1,7 @@
 import csv
-from harnice import fileio, mapped_channels, signals_list, system_utils
+from harnice import fileio
+from harnice.lists import mapped_channels, signals_list
+from harnice.products import chtype
 
 verbose = False
 
@@ -45,10 +47,10 @@ for merged_net in unique_merged_nets:
             continue
 
         # Parse channel types
-        from_type = signals_list.parse_channel_type(
+        from_type = chtype.parse(
             from_channel.get("from_channel_type")
         )
-        compatibles_from = signals_list.compatible_channel_types(
+        compatibles_from = chtype.compatibles(
             from_channel.get("from_channel_type")
         )
 
@@ -68,10 +70,10 @@ for merged_net in unique_merged_nets:
                 continue
 
             # Parse "to" type and its compatibles
-            to_type = signals_list.parse_channel_type(
+            to_type = chtype.parse(
                 to_channel_candidate.get("from_channel_type")
             )
-            compatibles_to = signals_list.compatible_channel_types(
+            compatibles_to = chtype.compatibles(
                 to_channel_candidate.get("from_channel_type")
             )
 
@@ -93,5 +95,5 @@ for merged_net in unique_merged_nets:
 
             if verbose:
                 print("                    ********* MAPPED *********")
-            system_utils.map_and_record(from_key, to_key)
+            mapped_channels.map_and_record(from_key, to_key)
             break  # Stop after first compatible partner

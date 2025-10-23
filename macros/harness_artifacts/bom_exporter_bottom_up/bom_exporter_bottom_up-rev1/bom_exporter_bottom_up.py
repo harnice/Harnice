@@ -1,6 +1,7 @@
 import os
 import csv
-from harnice import instances_list, fileio
+from harnice import fileio
+from harnice.lists import instances_list
 
 
 # =============== PATHS ===============

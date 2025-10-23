@@ -1,7 +1,8 @@
 import os
 import json
 import subprocess
-from harnice import fileio, rev_history, component_library, svg_utils
+from harnice import fileio, harnice_library, rev_history
+from harnice.utils import svg_utils
 
 artifact_mpn = "pdf_generator"
 
@@ -99,7 +100,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         destination_directory = os.path.join(path("tblock svgs"), page_name)
 
         # === Pull from library ===
-        component_library.pull_item_from_library(
+        harnice_library.pull_item_from_library(
             lib_repo=tblock_data.get("lib_repo"),
             product="titleblocks",
             mpn=titleblock,
@@ -359,7 +360,7 @@ def produce_multipage_pdf(page_setup_contents):
 
 page_setup_contents = update_page_setup_json()
 
-prep_tblocks(page_setup_contents, rev_history.revision_info())
+prep_tblocks(page_setup_contents, rev_history.current_info())
 
 prep_master(page_setup_contents)
 # merges all building blocks into one main support_do_not_edit master svg file

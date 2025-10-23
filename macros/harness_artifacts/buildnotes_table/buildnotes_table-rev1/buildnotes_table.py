@@ -1,7 +1,7 @@
 import os
-import csv
 import re
-from harnice import fileio, component_library, svg_utils, instances_list
+from harnice import fileio, harnice_library
+from harnice.utils import svg_utils
 
 artifact_mpn = "buildnotes_table"
 
@@ -44,7 +44,7 @@ for instance in fileio.read_tsv("instances list"):
 
         # Pull bubble from the library if there is a shape
         if has_shape and shape and lib_repo:
-            component_library.pull_item_from_library(
+            harnice_library.pull_item_from_library(
                 lib_repo=lib_repo,
                 product="flagnotes",
                 mpn=shape,
