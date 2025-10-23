@@ -165,7 +165,7 @@ def pull_part(instance):
         )
     except ValueError as e:
         raise ValueError(
-            f"While importing instance '{instance.get("instance_name")}': {e}"
+            f"While importing instance '{instance.get('instance_name')}': {e}"
         ) from e
 
     instances_list.add_revhistory_of_imported_part(
@@ -174,7 +174,7 @@ def pull_part(instance):
 
 
 def get_local_path(lib_repo):
-    for lib in fileio.read_tsv("library locations", delimeter=","):
+    for lib in fileio.read_tsv("library locations", delimiter=","):
         if lib.get("url") == lib_repo:
             local_path = lib.get("local_path")
             if not local_path:

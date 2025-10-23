@@ -468,7 +468,7 @@ def get_path_to_project(traceable_key):
     # takes in a project repo traceable key and returns the expanded local path
     # traceable key is some unique identifier for this project (project part number, github url, etc)
 
-    for project in read_tsv("project locations", delimeter=","):
+    for project in read_tsv("project locations", delimiter=","):
         if project.get("traceable_key").strip() == traceable_key.strip():
             local_path = project.get("local_path")
             if not local_path:
@@ -520,7 +520,7 @@ def newrev():
     )
 
 
-def read_tsv(filekey, delimeter="\t"):
+def read_tsv(filekey, delimiter="\t"):
     try:
         path_to_open = path(filekey)
     except TypeError:
@@ -528,7 +528,7 @@ def read_tsv(filekey, delimeter="\t"):
 
     if not os.path.exists(path_to_open):
         raise FileNotFoundError(
-            f"Expected tsv file with delimeter '{delimeter}' at: {path_to_open}"
+            f"Expected tsv file with delimiter '{delimiter}' at: {path_to_open}"
         )
     with open(path_to_open, newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f, delimiter=delimeter))
+        return list(csv.DictReader(f, delimiter=delimiter))
