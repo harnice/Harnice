@@ -2,7 +2,6 @@ import runpy
 import os
 import csv
 from harnice import fileio
-from harnice.lists import signals_list
 from harnice.products import chtype
 
 disconnect_feature_tree_utils_default = """
