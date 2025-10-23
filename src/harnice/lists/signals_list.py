@@ -23,6 +23,7 @@ DISCONNECT_COLUMNS = [
     "B_channel_type",
 ]
 
+
 def new():
     global headers
     if fileio.product_type == "device":

@@ -112,6 +112,7 @@ def circuit_instance_of_instance(instance_name):
         f"Circuit instance {circuit_instance_name} of instance {instance_name} not found"
     )
 
+
 def assign_cable_conductor(
     cable_instance_name,  # unique identifier for the cable in your project
     cable_conductor_id,  # (container, identifier) tuple identifying the conductor in the cable being imported

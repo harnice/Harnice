@@ -6,6 +6,7 @@ import csv
 from harnice import fileio
 from harnice.lists import signals_list, rev_history
 from harnice.products import chtype
+
 device_feature_tree_utils_default = """
 from harnice.lists import signals_list
 from harnice.products import chtype
@@ -634,7 +635,7 @@ def _validate_signals_list():
         found_signals = set()
         connector_names = set()
 
-        #make sure all the fields are there
+        # make sure all the fields are there
         if signal.get("channel_id") in ["", None]:
             raise ValueError("channel_id is blank")
         if signal.get("signal") in ["", None]:
@@ -648,11 +649,13 @@ def _validate_signals_list():
         if signal.get("channel_type") in ["", None]:
             raise ValueError("channel_type is blank")
 
-        #make sure signal is a valid signal of its channel type
+        # make sure signal is a valid signal of its channel type
         if signal.get("signal") not in chtype.signals(channel_type):
-            raise ValueError(f"Signal {signal.get('signal')} is not a valid signal of its channel type")
+            raise ValueError(
+                f"Signal {signal.get('signal')} is not a valid signal of its channel type"
+            )
 
-        #make sure all the signals of each channel type are present
+        # make sure all the signals of each channel type are present
         for expected_signal in expected_signals:
             for signal2 in signals_list:
                 if (
@@ -668,7 +671,7 @@ def _validate_signals_list():
                 f"Channel {signal.get('channel_id')} is missing signals: {', '.join(missing_signals)}"
             )
 
-        #make sure no channels are spread across multiple connectors
+        # make sure no channels are spread across multiple connectors
         if len(connector_names) > 1:
             raise ValueError(
                 f"Channel {signal.get('channel_id')} has signals spread across multiple connectors: "
@@ -677,8 +680,7 @@ def _validate_signals_list():
 
         counter += 1
 
-
-    #make sure no duplicate cavities are present
+    # make sure no duplicate cavities are present
     seen_cavities = set()
     for signal in signals_list:
         cavity_key = f"{signal.get('connector_name')}-{signal.get('cavity')}"

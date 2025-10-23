@@ -101,6 +101,7 @@ for channel in range(8):
 
 """
 
+
 # TODO-448 i don't think users should be calling this
 def _validate_signals_list():
     print("--------------------------------")
@@ -122,8 +123,7 @@ def _validate_signals_list():
         A_channel_type = chtype.parse(signal.get("A_channel_type"))
         B_channel_type = chtype.parse(signal.get("B_channel_type"))
 
-
-        #make sure all the fields are there
+        # make sure all the fields are there
         if signal.get("channel_id") in ["", None]:
             raise ValueError("A_channel_id is blank")
         if signal.get("signal") in ["", None]:
@@ -141,11 +141,13 @@ def _validate_signals_list():
         if signal.get("B_channel_type") in ["", None]:
             raise ValueError("B_channel_type is blank")
 
-        #make sure signal is a valid signal of its channel type
+        # make sure signal is a valid signal of its channel type
         if signal.get("signal") not in chtype.signals(A_channel_type):
-            raise ValueError(f"Signal {signal.get('A_signal')} is not a valid signal of its channel type")
+            raise ValueError(
+                f"Signal {signal.get('A_signal')} is not a valid signal of its channel type"
+            )
 
-        #make sure A and B sides are compatible
+        # make sure A and B sides are compatible
         if B_channel_type not in chtype.compatibles(A_channel_type):
             if A_channel_type not in chtype.compatibles(B_channel_type):
                 raise ValueError("A and B channel types are not compatible")
@@ -153,7 +155,7 @@ def _validate_signals_list():
         expected_signals = chtype.signals(A_channel_type)
         found_signals = set()
 
-        #make sure all the signals of each channel type are present
+        # make sure all the signals of each channel type are present
         for expected_signal in expected_signals:
             for signal2 in signals_list:
                 if (
@@ -170,7 +172,7 @@ def _validate_signals_list():
 
         counter += 1
 
-    #make sure no duplicate A-side cavities are present
+    # make sure no duplicate A-side cavities are present
     seen_A = set()
     for signal in signals_list:
         A_cavity = signal.get("A_cavity")
@@ -178,7 +180,7 @@ def _validate_signals_list():
             raise ValueError(f"Duplicate A_cavity found in disconnect: {A_cavity}")
         seen_A.add(A_cavity)
 
-    #make sure no duplicate B-side cavities are present
+    # make sure no duplicate B-side cavities are present
     seen_B = set()
     for signal in signals_list:
         B_cavity = signal.get("B_cavity")

@@ -148,7 +148,7 @@ def harnice_file_structure():
             "macros": {},
             "maps": {
                 f"{partnumber('pn-rev')}-channel_map.tsv": "channel map",
-                f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map"
+                f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
             },
         }
     elif product_type == "cable":
@@ -210,12 +210,18 @@ def path(target_value):
 
     if target_value == "library locations":
         import harnice
-        harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
+
+        harnice_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(harnice.__file__))
+        )
         return os.path.join(harnice_root, "library_locations.csv")
 
     if target_value == "project locations":
         import harnice
-        harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
+
+        harnice_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(harnice.__file__))
+        )
         return os.path.join(harnice_root, "project_locations.csv")
 
     # FILES OUTSIDE OF PRODUCT DIRECTORY
