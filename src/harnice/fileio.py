@@ -141,13 +141,14 @@ def harnice_file_structure():
                 f"{partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
                 f"{partnumber('pn-rev')}-system_manifest.tsv": "system manifest",
                 f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
+                f"{partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
+                f"{partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnects set",
+                f"{partnumber('pn-rev')}-mapped_a_channels_through_disconnects_set.tsv": "mapped A-side channels through disconnects set",
             },
             "macros": {},
             "maps": {
                 f"{partnumber('pn-rev')}-channel_map.tsv": "channel map",
-                f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
-                f"{partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
-                f"{partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnect channels set",
+                f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map"
             },
         }
     elif product_type == "cable":

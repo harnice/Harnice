@@ -23,9 +23,9 @@ feature_tree_utils.run_macro("kicad_pro_to_system_connector_list", "system_build
 manifest.new()
 channel_map.new()
 
-#add manual channel map commands here. key=(from_device_refdes, from_device_channel_id)
-#channel_map.map({from_key}, {to_key})
-#channel_map.already_mapped_set_append({key})
+#add manual channel map commands here. key=(device_refdes, device_channel_id)
+#channel_map.map(from_key, to_key)
+#channel_map.already_mapped_set_append(key)
 
 #map channels to other compatible channels by sorting alphabetically then mapping compatibles
 feature_tree_utils.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
@@ -37,8 +37,8 @@ disconnect_map.add_shortest_chain_to_channel_map()
 disconnect_map.new()
 
 #add manual disconnect map commands here
-#disconnect_map.assign({a_side_key}, {disconnect_key})
-#disconnect_map.already_assigned_set_append({key})
+#disconnect_map.assign(a_side_key, disconnect_key)
+#already_assigned_disconnects_set_append()
 
 #map channels passing through disconnects to available channels inside disconnects
 feature_tree_utils.run_macro("disconnect_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
