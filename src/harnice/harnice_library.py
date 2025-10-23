@@ -1,5 +1,4 @@
 import os
-import csv
 import re
 import shutil
 from harnice import fileio
@@ -127,15 +126,11 @@ def pull_item_from_library(
     # === Load revision row from revision history TSV in source library ===
     revhistory_row = None
     revhistory_path = os.path.join(base_path, f"{mpn}-revision_history.tsv")
-    if not os.path.exists(revhistory_path):
-        raise FileNotFoundError(f"Expected revision history TSV at: {revhistory_path}")
 
-    with open(revhistory_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if row.get("rev", "").strip() == library_rev:
-                revhistory_row = row
-                break
+    for row in fileio.read_tsv(revhistory_path):
+        if row.get("rev", "").strip() == library_rev:
+            revhistory_row = row
+            break
 
     return library_rev, revhistory_row
 
@@ -179,15 +174,9 @@ def pull_part(instance):
 
 
 def get_local_path(lib_repo):
-    # takes in a library repo url and returns the expanded local path
-    with open(fileio.path("library locations"), newline="", encoding="utf-8") as f:
-        lib_info_list = list(csv.DictReader(f, delimiter=","))
-
-    for lib in lib_info_list:
+    for lib in fileio.read_tsv("library locations", delimeter=","):
         if lib.get("url") == lib_repo:
             local_path = lib.get("local_path")
             if not local_path:
                 raise ValueError(f"No local_path found for {lib_repo}")
             return os.path.expanduser(local_path)
-
-    raise ValueError(f"Could not find library repo id {lib_repo}")

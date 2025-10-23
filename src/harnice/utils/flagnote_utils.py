@@ -1,7 +1,7 @@
 import os
 import csv
 import re
-from harnice import fileio, component_library
+from harnice import fileio, harnice_library
 from harnice.lists import instances_list
 
 # === Global Columns Definition ===
@@ -26,20 +26,6 @@ def ensure_manual_list_exists():
             writer.writeheader()
 
 
-def read_manual_list():
-    with open(
-        fileio.path("flagnotes manual"), newline="", encoding="utf-8"
-    ) as f_manual:
-        return list(csv.DictReader(f_manual, delimiter="\t"))
-
-
-def read_revhistory():
-    with open(fileio.path("revision history"), newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            yield row
-
-
 def make_note_drawings(formboard_dir):
     instances = fileio.read_tsv("instances list")
 
@@ -55,7 +41,7 @@ def make_note_drawings(formboard_dir):
         os.makedirs(destination_directory, exist_ok=True)
 
         # === Pull library item ===
-        component_library.pull_item_from_library(
+        harnice_library.pull_item_from_library(
             lib_repo=instance.get("lib_repo"),
             product="flagnotes",
             mpn=instance.get("mpn"),

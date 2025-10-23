@@ -1,6 +1,6 @@
 import os
 import csv
-from harnice import fileio, component_library
+from harnice import fileio, harnice_library
 
 
 def pull_devices_from_library():
@@ -29,7 +29,7 @@ def pull_devices_from_library():
                         f"MPN is required for disconnect refdes {refdes['device_ref_des']}"
                     )
                 else:
-                    component_library.pull_item_from_library(
+                    harnice_library.pull_item_from_library(
                         lib_repo=refdes["lib_repo"],
                         product="disconnects",
                         lib_subpath=refdes["lib_subpath"],
@@ -48,7 +48,7 @@ def pull_devices_from_library():
                     os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]),
                     exist_ok=True,
                 )
-                component_library.pull_item_from_library(
+                harnice_library.pull_item_from_library(
                     lib_repo=refdes["lib_repo"],
                     product="devices",
                     lib_subpath=refdes["lib_subpath"],
@@ -78,11 +78,9 @@ def connector_of_channel(key):
         refdes,
         f"{refdes}-signals_list.tsv",
     )
-    with open(device_signals_list_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        for row in reader:
-            if row.get("channel_id", "").strip() == channel_id.strip():
-                return row.get("connector_name", "").strip()
+    for row in fileio.read_tsv(device_signals_list_path):
+        if row.get("channel_id", "").strip() == channel_id.strip():
+            return row.get("connector_name", "").strip()
 
     raise ValueError(f"Connector not found for channel {key}")
 

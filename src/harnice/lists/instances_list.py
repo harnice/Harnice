@@ -2,7 +2,7 @@ import csv
 import os
 import inspect
 from threading import Lock
-from harnice import component_library, fileio
+from harnice import harnice_library, fileio
 
 COLUMNS = [
     "net",
@@ -109,18 +109,25 @@ _instances_lock = Lock()
 def modify(instance_name, instance_data):
     with _instances_lock:
         path = fileio.path("instances list")
+
+        # --- Read once ---
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t")
             rows = list(reader)
             fieldnames = reader.fieldnames
 
+        # --- Modify in-place ---
+        found = False
         for row in rows:
             if row.get("instance_name") == instance_name:
                 row.update(instance_data)
+                found = True
                 break
-        else:
+
+        if not found:
             raise ValueError(f"Instance '{instance_name}' not found")
 
+        # --- Write atomically ---
         tmp = path + ".tmp"
         with open(tmp, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
@@ -130,6 +137,7 @@ def modify(instance_name, instance_data):
             os.fsync(f.fileno())
 
         os.replace(tmp, path)
+
 
 
 def new():
@@ -226,13 +234,9 @@ def get_call_chain_str():
 
 
 def add_connectors_cavities_nodes_channels_and_circuits():
-    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
-        connectors_list = list(csv.DictReader(f, delimiter="\t"))
+    connectors_list = fileio.read_tsv("system connector list")
 
-    with open(fileio.path("circuits list"), newline="", encoding="utf-8") as f:
-        circuits_list = list(csv.DictReader(f, delimiter="\t"))
-
-    for circuit in circuits_list:
+    for circuit in fileio.read_tsv("circuits list"):
         from_connector_key = (
             f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
         )
@@ -420,10 +424,7 @@ def add_connectors_cavities_nodes_channels_and_circuits():
             ignore_duplicates=True,
         )
 
-    with open(fileio.path("system connector list"), newline="", encoding="utf-8") as f:
-        connector_list = list(csv.DictReader(f, delimiter="\t"))
-
-    for connector in connector_list:
+    for connector in fileio.read_tsv("system connector list"):
         try:
             modify(
                 f"{connector.get('device_refdes')}.{connector.get('connector')}.conn",
@@ -461,7 +462,7 @@ def assign_cable_conductor(
 
         os.makedirs(destination_directory, exist_ok=True)
 
-        component_library.pull_item_from_library(
+        harnice_library.pull_item_from_library(
             lib_repo=library_info.get("lib_repo"),
             product="cables",
             mpn=library_info.get("mpn"),

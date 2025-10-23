@@ -297,12 +297,7 @@ def verify_revision_structure(product_type=None):
         append_revision_row(filepath, pn, rev)
 
     def append_revision_row(filepath, pn, rev):
-        if not os.path.exists(filepath):
-            return "file not found"
-
-        with open(filepath, newline="", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f, delimiter="\t"))
-
+        rows = read_tsv(filepath)
         rev = int(rev)
 
         desc = ""
@@ -362,10 +357,7 @@ def verify_revision_structure(product_type=None):
         library_subpath = ""
         cwd = str(os.getcwd()).lower().strip("~")
 
-        with open(path("library locations"), newline="", encoding="utf-8") as f:
-            lib_info_list = list(csv.DictReader(f, delimiter=","))
-
-        for row in lib_info_list:
+        for row in read_tsv("library locations", delimiter=","):
             local_path = str(row.get("local_path", "")).lower().strip("~")
             if local_path and local_path in cwd:
                 library_repo = row.get("url")
@@ -448,8 +440,8 @@ def verify_revision_structure(product_type=None):
         pn = cwd_name
         rev = prompt_new_part(cwd, pn)  # changes the cwd to the new rev folder
 
-    # if everything looks good but the tsv isn't
-    x = rev_history.revision_info()
+    # if everything looks good but the tsv isn't there
+    x = rev_history.current_info()
     if x == "row not found":
         append_revision_row(path("revision history"), pn, rev)
     elif x == "file not found":
@@ -475,10 +467,8 @@ def today():
 def get_path_to_project(traceable_key):
     # takes in a project repo traceable key and returns the expanded local path
     # traceable key is some unique identifier for this project (project part number, github url, etc)
-    with open(path("project locations"), newline="", encoding="utf-8") as f:
-        project_list = list(csv.DictReader(f, delimiter=","))
 
-    for project in project_list:
+    for project in read_tsv("project locations", delimeter=","):
         if project.get("traceable_key").strip() == traceable_key.strip():
             local_path = project.get("local_path")
             if not local_path:
@@ -498,13 +488,13 @@ def newrev():
 
     # Prompt user for new revision number
     new_rev_number = cli.prompt(
-        f"Current rev number: {partnumber("R")}. Enter new rev number:",
+        f"Current rev number: {partnumber('R')}. Enter new rev number:",
         default=str(int(partnumber("R")) + 1),
     )
 
     # Construct new revision directory path
     new_rev_dir = os.path.join(
-        part_directory(), f"{partnumber("pn")}-rev{new_rev_number}"
+        part_directory(), f"{partnumber('pn')}-rev{new_rev_number}"
     )
 
     # Ensure target directory does not already exist
@@ -530,6 +520,15 @@ def newrev():
     )
 
 
-def read_tsv(filekey):
-    with open(path(filekey), newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f, delimiter="\t"))
+def read_tsv(filekey, delimeter="\t"):
+    try:
+        path_to_open = path(filekey)
+    except TypeError:
+        path_to_open = filekey
+
+    if not os.path.exists(path_to_open):
+        raise FileNotFoundError(
+            f"Expected tsv file with delimeter '{delimeter}' at: {path_to_open}"
+        )
+    with open(path_to_open, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f, delimiter=delimeter))

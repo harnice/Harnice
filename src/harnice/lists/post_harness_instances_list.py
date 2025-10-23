@@ -16,17 +16,8 @@ def rebuild():
 
     post_harness_instances = []
 
-    # --- load manifest ---
-    manifest_path = fileio.path("system manifest")
-    with open(manifest_path, newline="", encoding="utf-8") as f:
-        manifest = list(csv.DictReader(f, delimiter="\t"))
-
-    # --- load system-level instances ---
-    with open(fileio.path("instances list"), newline="", encoding="utf-8") as f:
-        system_instances_list = list(csv.DictReader(f, delimiter="\t"))
-
     # --- iterate through manifest rows ---
-    for harness in manifest:
+    for harness in fileio.read_tsv("system manifest"):
         harness_pn = (harness.get("harness_pn") or "").strip()
         net = (harness.get("net") or "").strip()
         if not net:
@@ -34,7 +25,7 @@ def rebuild():
 
         # Case 1: harness_pn missing -> import from system instances
         if not harness_pn:
-            for system_instance in system_instances_list:
+            for system_instance in fileio.read_tsv("instances list"):
                 if system_instance.get("net", "").strip() == net:
                     post_harness_instances.append(system_instance)
             continue
@@ -48,26 +39,26 @@ def rebuild():
         )
 
         if os.path.exists(harness_instances_list_path):
-            with open(harness_instances_list_path, newline="", encoding="utf-8") as f:
-                harness_instances_list = list(csv.DictReader(f, delimiter="\t"))
-            post_harness_instances.extend(harness_instances_list)
+            post_harness_instances.extend(fileio.read_tsv(harness_instances_list_path))
         else:
             # Fallback to system-level instances for same net
-            for system_instance in system_instances_list:
+            for system_instance in fileio.read("instances list"):
                 if system_instance.get("net", "").strip() == net:
                     post_harness_instances.append(system_instance)
 
-    # --- write output ---
-    output_path = fileio.path("post harness instances list")
-    with open(output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=instances_list.INSTANCES_LIST_COLUMNS, delimiter="\t"
-        )
+    # --- Determine fieldnames dynamically ---
+    fieldnames = set()
+    for instance in post_harness_instances:
+        fieldnames.update(instance.keys())
+
+    # --- Write TSV file ---
+    with open(
+        fileio.path("post harness instances list"), "w", newline="", encoding="utf-8"
+    ) as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
         for instance in post_harness_instances:
-            writer.writerow(
-                {k: instance.get(k, "") for k in instances_list.INSTANCES_LIST_COLUMNS}
-            )
+            writer.writerow({k: instance.get(k, "") for k in fieldnames})
 
 
 def push(path_to_system_rev, system_pn_rev):

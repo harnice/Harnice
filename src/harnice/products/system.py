@@ -10,7 +10,7 @@ from harnice.lists import (
 system_feature_tree_default = """import csv
 from harnice import fileio, feature_tree
 from harnice.utils import system_utils
-from harnice.lists import instances_list, manifest, channel_map, circuits_list
+from harnice.lists import instances_list, manifest, channel_map, circuits_list, disconnect_map
 
 #===========================================================================
 #                   KICAD PROCESSING
@@ -85,6 +85,6 @@ def render():
 
     runpy.run_path(fileio.path("feature tree"))
 
-    post_harness_instances_list.append()
+    post_harness_instances_list.rebuild()
 
     print("\nSystem rendered successfully!\n")

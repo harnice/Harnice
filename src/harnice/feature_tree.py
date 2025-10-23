@@ -3,7 +3,7 @@ import runpy
 import math
 import json
 import shutil
-from harnice import fileio, component_library
+from harnice import fileio, harnice_library
 from harnice.lists import instances_list
 
 
@@ -18,7 +18,7 @@ def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
         )
     os.makedirs(macro_dirpath, exist_ok=True)
 
-    component_library.pull_item_from_library(
+    harnice_library.pull_item_from_library(
         lib_repo=lib_repo,
         product="macros",
         lib_subpath=lib_subpath,

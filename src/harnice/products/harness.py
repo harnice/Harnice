@@ -12,13 +12,10 @@ print("Importing parts from library")
 print(f'{"ITEM NAME":<24}  STATUS')
 
 for instance in fileio.read_tsv("instances list"):
-    instance_name = instance.get("instance_name")
-    mpn = instance.get("mpn")
-
     if instance.get("item_type") in ["Connector", "Backshell"]:
-        if instance_name not in ["X100"]:
-            if mpn not in ["TXPA20"]:
-                component_library.pull_part(instance_name)
+        if instance.get("instance_name") not in ["X100"]:
+            if instance.get("mpn") not in ["TXPA20"]:
+                harnice_library.pull_part(instance)
 
 #===========================================================================
 #                   LOCATE PARTS PER COORDINATE SYSTEMS
@@ -129,7 +126,7 @@ flagnote_counter = 1
 buildnote_counter = 1
 
 flagnote_utils.ensure_manual_list_exists()
-for manual_note in flagnote_utils.read_manual_list():
+for manual_note in fileio.read_tsv("flagnotes manual"):
     affected_list = manual_note.get("affectedinstances", "").strip().split(",")
     for affected in affected_list:
         instances_list.new_instance(f"flagnote-{flagnote_counter}", {
@@ -147,7 +144,7 @@ for manual_note in flagnote_utils.read_manual_list():
     if manual_note.get("note_type") == "buildnote":
         buildnote_counter += 1
 
-for rev_row in flagnote_utils.read_revhistory():
+for rev_row in fileio.read_tsv("revision history"):
     affected_raw = rev_row.get("affectedinstances", "").strip()
     if affected_raw:
         for affected in [a.strip() for a in affected_raw.split(",") if a.strip()]:
@@ -291,9 +288,9 @@ feature_tree.run_macro("pdf_generator", "harness_artifacts", "https://github.com
 import yaml
 import re
 import runpy
-from harnice import fileio, component_library, rev_history, feature_tree
+from harnice import fileio, harnice_library, rev_history, feature_tree
 from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, flagnote_utils
-from harnice.lists import instances_list, post_harness_instances_list.push
+from harnice.lists import instances_list, post_harness_instances_list
 
 #===========================================================================
 #                   build_macro SCRIPTING
