@@ -61,7 +61,9 @@ def new():
         writer.writerows(channel_map)
 
     # initialize mapped channels set TSV (empty, single column)
-    with open(fileio.path("mapped channels set"), "w", newline="", encoding="utf-8") as f:
+    with open(
+        fileio.path("mapped channels set"), "w", newline="", encoding="utf-8"
+    ) as f:
         pass
 
     return channel_map
@@ -142,7 +144,9 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
 def already_mapped_set_append(key):
     items = already_mapped_set()
     items.add(str(key))
-    with open(fileio.path("mapped channels set"), "w", newline="", encoding="utf-8") as f:
+    with open(
+        fileio.path("mapped channels set"), "w", newline="", encoding="utf-8"
+    ) as f:
         writer = csv.writer(f, delimiter="\t")
         for item in sorted(items):
             writer.writerow([item])

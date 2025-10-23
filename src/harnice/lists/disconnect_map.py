@@ -95,7 +95,9 @@ def new():
         writer.writerows(disconnect_map_rows)
 
     # initialize mapped disconnect channels set (empty TSV)
-    with open(fileio.path("mapped disconnect channels set"), "w", newline="", encoding="utf-8") as f:
+    with open(
+        fileio.path("mapped disconnect channels set"), "w", newline="", encoding="utf-8"
+    ) as f:
         pass
 
 
@@ -147,7 +149,9 @@ def assign(a_side_key, disconnect_key):
 def already_assigned_set_append(key):
     items = already_assigned_set()
     items.add(str(key))
-    with open(fileio.path("mapped disconnect channels set"), "w", newline="", encoding="utf-8") as f:
+    with open(
+        fileio.path("mapped disconnect channels set"), "w", newline="", encoding="utf-8"
+    ) as f:
         writer = csv.writer(f, delimiter="\t")
         for item in sorted(items):
             writer.writerow([item])
@@ -157,7 +161,9 @@ def already_assigned_set():
     """Return the full set of items."""
     if not os.path.exists(fileio.path("mapped disconnect channels set")):
         return set()
-    with open(fileio.path("mapped disconnect channels set"), newline="", encoding="utf-8") as f:
+    with open(
+        fileio.path("mapped disconnect channels set"), newline="", encoding="utf-8"
+    ) as f:
         reader = csv.reader(f, delimiter="\t")
         return set(row[0] for row in reader if row)
 
