@@ -14,10 +14,15 @@ for required_channel in fileio.read_tsv("disconnect map"):
     # Don't map a channel if the disconnect channel has already been mapped
     disconnect_refdes = required_channel.get("disconnect_refdes")
     disconnect_channel_id = required_channel.get("disconnect_channel_id")
-    disconnect_key = (disconnect_refdes, disconnect_channel_id)
-    if disconnect_map.already_assigned(disconnect_key):
+    a_side_channel_key = (required_channel.get("A-side_device_refdes"), required_channel.get("A-side_device_channel_id"))
+
+    if disconnect_map.channel_is_already_assigned_through_disconnect(
+        a_side_channel_key, disconnect_refdes
+    ):
         if verbose:
-            print(f"Skipping disconnect channel {disconnect_key} - already assigned")
+            print(
+                f"Skipping channel {a_side_channel_key} through disconnect {disconnect_refdes} - already assigned"
+            )
         continue
 
     # collect available candidates for the same disconnect_refdes
@@ -56,6 +61,15 @@ for required_channel in fileio.read_tsv("disconnect map"):
         )
 
     for candidate in available_candidates:
+        if disconnect_map.disconnect_is_already_assigned(
+            (candidate.get("disconnect_refdes"),candidate.get("disconnect_channel_id"))
+        ):
+            if verbose:
+                print(
+                    f"Skipping candidate {candidate.get('disconnect_channel_id')} of {candidate.get('disconnect_refdes')} - already assigned"
+                )
+            continue
+
         if extra_verbose:
             print(
                 f"     Checking candidate {candidate.get('disconnect_channel_id')} of {candidate.get('disconnect_refdes')}"
@@ -87,9 +101,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
 
         if required_ch_attributes.get(
             "A-side_device_channel_type"
-        ) in chtype.compatibles(
-            candidate.get("B-port_channel_type")
-        ):
+        ) in chtype.compatibles(candidate.get("B-port_channel_type")):
             map_mode = 3
             map_message = "Channel type of A-side device is found in compatibles of channel type of B-port of disconnect"
             break
@@ -101,9 +113,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
 
         if required_ch_attributes.get(
             "B-side_device_channel_type"
-        ) in chtype.compatibles(
-            candidate.get("A-port_channel_type")
-        ):
+        ) in chtype.compatibles(candidate.get("A-port_channel_type")):
             map_mode = 4
             map_message = "Channel type of B-side device is found in compatibles of channel type of A-port of disconnect"
             break
@@ -113,9 +123,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
                 f"          Channel type of B-side device {required_ch_attributes.get('B-side_device_channel_type')} is not found in compatibles of channel type of A-port of disconnect {chtype.compatibles(candidate.get('A-port_channel_type'))}"
             )
 
-        if candidate.get(
-            "A-port_channel_type"
-        ) in chtype.compatibles(
+        if candidate.get("A-port_channel_type") in chtype.compatibles(
             required_ch_attributes.get("B-side_device_channel_type")
         ):
             map_mode = 5
@@ -127,9 +135,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
                 f"          Channel type of A-port of disconnect {candidate.get('A-port_channel_type')} is not found in compatibles of channel type of B-side device {chtype.compatibles(required_ch_attributes.get('B-side_device_channel_type'))}"
             )
 
-        if candidate.get(
-            "B-port_channel_type"
-        ) in chtype.compatibles(
+        if candidate.get("B-port_channel_type") in chtype.compatibles(
             required_ch_attributes.get("A-side_device_channel_type")
         ):
             map_mode = 6

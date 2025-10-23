@@ -40,7 +40,7 @@ for merged_net in unique_merged_nets:
         if verbose:
             print(f"     From key: {from_key}")
 
-        # Don't map a channel if the "from" has already been mapped
+        # Don't map if the from has already been mapped
         if channel_map.already_mapped(from_key):
             if verbose:
                 print("          From key already mapped")
@@ -63,6 +63,12 @@ for merged_net in unique_merged_nets:
             if verbose:
                 print(f"          To key candidate: {to_key}")
 
+                        # Don't map if to key is already mapped
+            if channel_map.already_mapped(to_key):
+                if verbose:
+                    print("               To key candidate already mapped")
+                continue
+
             # Don't map a channel to itself
             if to_channel_candidate == from_channel:
                 if verbose:
@@ -81,16 +87,6 @@ for merged_net in unique_merged_nets:
             if not (to_type in compatibles_from or from_type in compatibles_to):
                 if verbose:
                     print("               To key candidate is not compatible")
-                continue
-
-            # Don't map a channel if it's already been mapped
-            if channel_map.already_mapped(to_key):
-                if verbose:
-                    print("               To key candidate already mapped")
-                continue
-            if channel_map.already_mapped(from_key):
-                if verbose:
-                    print("               From key candidate already mapped")
                 continue
 
             if verbose:
