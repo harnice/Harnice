@@ -4,7 +4,8 @@ import datetime
 import shutil
 import re
 import csv
-from harnice import rev_history, cli
+from harnice import cli
+from harnice.lists import rev_history
 
 # standard punctuation:
 #  .  separates between name hierarchy levels
@@ -85,7 +86,7 @@ def harnice_file_structure():
 
     if product_type == "harness":
         return {
-            f"{partnumber('pn-rev')}-feature_tree_utils.py": "feature tree",
+            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             f"{partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
             "instance_data": {
@@ -116,19 +117,19 @@ def harnice_file_structure():
         }
     elif product_type == "device":
         return {
-            f"{partnumber('pn-rev')}-feature_tree_utils.py": "feature tree",
+            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
             f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
             f"{partnumber('pn-rev')}-attributes.json": "attributes",
         }
     elif product_type == "disconnect":
         return {
-            f"{partnumber('pn-rev')}-feature_tree_utils.py": "feature tree",
+            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
             f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
             f"{partnumber('pn-rev')}-attributes.json": "attributes",
         }
     elif product_type == "system":
         return {
-            f"{partnumber('pn-rev')}-feature_tree_utils.py": "feature tree",
+            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "devices": {},
             "disconnects": {},
@@ -205,14 +206,15 @@ def path(target_value):
         return file_path
 
     # FILES DEPENDENT ON HARNICE ROOT
-    import harnice
-
-    harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
 
     if target_value == "library locations":
+        import harnice
+        harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
         return os.path.join(harnice_root, "library_locations.csv")
 
     if target_value == "project locations":
+        import harnice
+        harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
         return os.path.join(harnice_root, "project_locations.csv")
 
     # FILES OUTSIDE OF PRODUCT DIRECTORY

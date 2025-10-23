@@ -4,8 +4,8 @@ from harnice import fileio
 from harnice.lists import post_harness_instances_list
 
 system_feature_tree_utils_default = """import csv
-from harnice import fileio, feature_tree_utils
-from harnice.utils import system_utils
+from harnice import fileio
+from harnice.utils import system_utils, feature_tree_utils
 from harnice.lists import instances_list, manifest, channel_map, circuits_list, disconnect_map
 
 #===========================================================================

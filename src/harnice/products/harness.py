@@ -223,7 +223,6 @@ for instance in fileio.read_tsv("instances list"):
 
 
 def render(build_macro="", output_macro_dict=None):
-    print("Thanks for using Harnice!")
 
     # Step 1: revision structure
     fileio.verify_revision_structure(product_type="harness")
@@ -288,9 +287,9 @@ feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://gith
 import yaml
 import re
 import runpy
-from harnice import fileio, library_utils, rev_history, feature_tree_utils
-from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, flagnote_utils
-from harnice.lists import instances_list, post_harness_instances_list
+from harnice import fileio
+from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, flagnote_utils, library_utils, feature_tree_utils
+from harnice.lists import instances_list, post_harness_instances_list, rev_history
 
 #===========================================================================
 #                   build_macro SCRIPTING

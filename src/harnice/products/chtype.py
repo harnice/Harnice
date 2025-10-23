@@ -1,6 +1,7 @@
 import os
 import ast
-from harnice import library_utils, fileio
+from harnice import fileio
+from harnice.utils import library_utils
 
 
 def path(channel_type):

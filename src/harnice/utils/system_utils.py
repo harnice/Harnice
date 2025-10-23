@@ -1,5 +1,6 @@
 import os
-from harnice import fileio, library_utils
+from harnice import fileio
+from harnice.utils import library_utils
 
 
 def pull_devices_from_library():

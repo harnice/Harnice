@@ -2,8 +2,8 @@ import os
 import runpy
 import sexpdata
 import json
-from harnice import fileio, rev_history
-from harnice.lists import signals_list
+from harnice import fileio
+from harnice.lists import signals_list, rev_history
 
 device_feature_tree_utils_default = """
 from harnice.lists import signals_list

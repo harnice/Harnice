@@ -2,7 +2,8 @@ import csv
 import os
 import inspect
 from threading import Lock
-from harnice import library_utils, fileio
+from harnice import fileio
+from harnice.utils import library_utils
 
 COLUMNS = [
     "net",

@@ -1,7 +1,7 @@
 import os
 import csv
-from harnice import fileio
 import json
+from harnice import fileio
 
 
 def render():
