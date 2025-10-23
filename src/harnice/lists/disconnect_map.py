@@ -94,8 +94,8 @@ def new():
         writer.writeheader()
         writer.writerows(disconnect_map_rows)
 
-    # write mapped disconnect channels set
-    with open(fileio.path("mapped disconnect channels set"), "w", encoding="utf-8"):
+    # initialize mapped disconnect channels set (empty TSV)
+    with open(fileio.path("mapped disconnect channels set"), "w", newline="", encoding="utf-8") as f:
         pass
 
 
@@ -108,15 +108,13 @@ def assign(a_side_key, disconnect_key):
         if (
             row.get("disconnect_refdes") == disconnect_key[0]
             and row.get("disconnect_channel_id") == disconnect_key[1]
-            and row.get("A-side_device_refdes")
-            in [None, ""]  # otherwise it might find an already mapped channel
+            and row.get("A-side_device_refdes") in [None, ""]
         ):
             disconnect_info = row
             break
 
     updated_channels = []
     for row in channels:
-        # Case 1: row matches the A-side device/channel -> update it with disconnect info
         if (
             row.get("A-side_device_refdes") == a_side_key[0]
             and row.get("A-side_device_channel_id") == a_side_key[1]
@@ -140,7 +138,6 @@ def assign(a_side_key, disconnect_key):
 
     already_assigned_set_append(disconnect_key)
 
-    # Write the updated table back
     with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
@@ -150,21 +147,19 @@ def assign(a_side_key, disconnect_key):
 def already_assigned_set_append(key):
     items = already_assigned_set()
     items.add(str(key))
-    with open(
-        fileio.path("mapped disconnect channels set"), "w", encoding="utf-8"
-    ) as f:
+    with open(fileio.path("mapped disconnect channels set"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter="\t")
         for item in sorted(items):
-            f.write(f"{item}\n")
+            writer.writerow([item])
 
 
 def already_assigned_set():
     """Return the full set of items."""
     if not os.path.exists(fileio.path("mapped disconnect channels set")):
         return set()
-    with open(
-        fileio.path("mapped disconnect channels set"), "r", encoding="utf-8"
-    ) as f:
-        return set(line.strip() for line in f if line.strip())
+    with open(fileio.path("mapped disconnect channels set"), newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        return set(row[0] for row in reader if row)
 
 
 def already_assigned(item):
@@ -181,14 +176,12 @@ def add_shortest_chain_to_channel_map():
       - 'chain_of_nets' (like "WH-1;WH-2;WH-3" or a single net if no disconnects)
     """
 
-    # --- Load tables ---
     channel_map = fileio.read_tsv("channel map")
 
-    # --- Build indexes from connector_list ---
-    by_device = {}  # device_refdes -> [connector,...]
-    by_net = {}  # net -> [(device_refdes, connector), ...]
-    net_of = {}  # (device_refdes, connector) -> net
-    is_disconnect = set()  # devices flagged as disconnect
+    by_device = {}
+    by_net = {}
+    net_of = {}
+    is_disconnect = set()
 
     for row in fileio.read_tsv("system connector list"):
         dev = (row.get("device_refdes") or "").strip()
@@ -206,10 +199,8 @@ def add_shortest_chain_to_channel_map():
         if (row.get("disconnect") or "").strip().upper() == "TRUE":
             is_disconnect.add(dev)
 
-    # --- shortest-path search ---
     def _shortest_disconnect_chain(from_cn_key, to_cn_key):
         start, goal = from_cn_key, to_cn_key
-
         q = deque([start])
         seen = {start}
         prev = {}
@@ -219,7 +210,6 @@ def add_shortest_chain_to_channel_map():
             if cur == goal:
                 break
 
-            # neighbors on the SAME NET
             net = net_of.get(cur)
             if net:
                 for nxt in by_net.get(net, []):
@@ -228,7 +218,6 @@ def add_shortest_chain_to_channel_map():
                         prev[nxt] = cur
                         q.append(nxt)
 
-            # neighbors on the SAME DEVICE (only for disconnects)
             dev, _ = cur
             if dev in is_disconnect:
                 for other_con in by_device.get(dev, []):
@@ -241,35 +230,29 @@ def add_shortest_chain_to_channel_map():
         if start != goal and goal not in prev:
             return [], []
 
-        # reconstruct connector-node path
         path = [goal]
         while path[-1] != start:
             path.append(prev[path[-1]])
         path.reverse()
 
-        # collect disconnect devices and nets
         chain = []
         net_chain = []
 
         for a, b in zip(path, path[1:]):
-            # record nets between steps
             net_a = net_of.get(a)
             net_b = net_of.get(b)
             if net_a and net_b and net_a == net_b:
                 if not net_chain or net_chain[-1] != net_a:
                     net_chain.append(net_a)
 
-            # record disconnect traversals
             if a[0] == b[0] and a[0] in is_disconnect:
                 dev = a[0]
                 port_a, port_b = a[1], b[1]
 
-                # enforce A/B only
                 for port in (port_a, port_b):
                     if port not in {"A", "B"}:
                         raise ValueError(
-                            f"Disconnect {dev} has invalid port name '{port}'. "
-                            "Only 'A' and 'B' are allowed."
+                            f"Disconnect {dev} has invalid port name '{port}'. Only 'A' and 'B' are allowed."
                         )
 
                 if port_a == port_b:
@@ -281,12 +264,10 @@ def add_shortest_chain_to_channel_map():
 
         return chain, net_chain
 
-    # --- run for each row in channel map ---
     for row in channel_map:
         from_key = (row.get("from_device_refdes"), row.get("from_device_channel_id"))
         to_key = (row.get("to_device_refdes"), row.get("to_device_channel_id"))
 
-        # skip incomplete rows
         if not from_key[0] or not from_key[1] or not to_key[0] or not to_key[1]:
             continue
 
@@ -297,9 +278,8 @@ def add_shortest_chain_to_channel_map():
         n_to = net_of.get(to_cn)
 
         if n_from and n_to and n_from == n_to:
-            # same-net: no disconnect devices required in between
             row["disconnect_refdes_requirement"] = ""
-            row["chain_of_nets"] = n_from  # singular net
+            row["chain_of_nets"] = n_from
             continue
 
         chain, net_chain = _shortest_disconnect_chain(from_cn, to_cn)
@@ -307,7 +287,6 @@ def add_shortest_chain_to_channel_map():
             row["disconnect_refdes_requirement"] = ";".join(chain)
             row["chain_of_nets"] = ";".join(net_chain)
 
-    # --- write back ---
     with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=channel_map[0].keys(), delimiter="\t")
         writer.writeheader()
