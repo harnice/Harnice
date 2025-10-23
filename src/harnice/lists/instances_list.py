@@ -109,18 +109,25 @@ _instances_lock = Lock()
 def modify(instance_name, instance_data):
     with _instances_lock:
         path = fileio.path("instances list")
+
+        # --- Read once ---
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t")
             rows = list(reader)
             fieldnames = reader.fieldnames
 
-        for row in fileio.read_tsv("instances list"):
+        # --- Modify in-place ---
+        found = False
+        for row in rows:
             if row.get("instance_name") == instance_name:
                 row.update(instance_data)
+                found = True
                 break
-        else:
+
+        if not found:
             raise ValueError(f"Instance '{instance_name}' not found")
 
+        # --- Write atomically ---
         tmp = path + ".tmp"
         with open(tmp, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
@@ -130,6 +137,7 @@ def modify(instance_name, instance_data):
             os.fsync(f.fileno())
 
         os.replace(tmp, path)
+
 
 
 def new():

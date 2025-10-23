@@ -61,7 +61,7 @@ def rebuild():
             writer.writerow({k: instance.get(k, "") for k in fieldnames})
 
 
-def append(path_to_system_rev, system_pn_rev):
+def push(path_to_system_rev, system_pn_rev):
     path_to_harness_dir_of_system = os.path.join(
         path_to_system_rev, f"{system_pn_rev[0]}-{system_pn_rev[1]}", "harnesses"
     )
