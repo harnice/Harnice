@@ -376,7 +376,7 @@ def generate_node_coordinates():
     # === Step 5: Compute and assign average node angles ===
     for node in nodes:
         node_name = node.get("instance_name")
-        total_angle = 0
+        sum_x, sum_y = 0.0, 0.0
         count = 0
 
         for seg in segments:
@@ -384,17 +384,33 @@ def generate_node_coordinates():
                 seg.get("node_at_end_a") == node_name
                 or seg.get("node_at_end_b") == node_name
             ):
-                angle_raw = seg.get("absolute_rotation", "")
-                angle = float(angle_raw)
+                angle_to_add_raw = seg.get("absolute_rotation", "")
+                if not angle_to_add_raw:
+                    continue
+                angle_to_add = float(angle_to_add_raw)
 
-                # Flip angle if node is at segment_end_a
-                if seg.get("node_at_end_a") == node_name:
-                    angle = (angle + 180) % 360
+                # Flip 180° if node is at segment_end_b
+                if seg.get("node_at_end_b") == node_name:
+                    angle_to_add = (angle_to_add + 180) % 360
 
-                total_angle += angle
+                # Convert degrees → radians for trig functions
+                angle_rad = math.radians(angle_to_add)
+                sum_x += math.cos(angle_rad)
+                sum_y += math.sin(angle_rad)
                 count += 1
 
-        average_angle = round(total_angle / count, 2) if count else ""
+        if count:
+            # Flip 180° (connector points away from average cable vector)
+            avg_x, avg_y = -sum_x, -sum_y
+
+            # Compute angle in degrees, normalized to [0, 360)
+            average_angle = math.degrees(math.atan2(avg_y, avg_x)) % 360
+
+            # Round to nearest 0.01 degree
+            average_angle = round(average_angle, 2)
+        else:
+            average_angle = ""
+
         translate_x, translate_y = node_coordinates.get(node_name, ("", ""))
 
         instances_list.modify(
@@ -405,6 +421,7 @@ def generate_node_coordinates():
                 "absolute_rotation": average_angle,
             },
         )
+
 
     # === Step 6: Generate PNG ===
     padding = 50
