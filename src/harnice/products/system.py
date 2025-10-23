@@ -2,8 +2,8 @@ import runpy
 import os
 from harnice import fileio
 from harnice.lists import (
-    mapped_channels,
-    mapped_disconnect_channels,
+    channel_map,
+    disconnect_map,
     post_harness_instances_list,
 )
 
@@ -34,7 +34,7 @@ channel_map.new()
 feature_tree.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
 #if mapped channels must connect via disconnects, add the list of disconnects to the channel map
-disconnect_map.find_shortest_chain()
+disconnect_map.add_shortest_chain_to_channel_map()
 
 #map channels that must pass through disconnects to available channels inside disconnects
 disconnect_map.new()
@@ -78,10 +78,6 @@ def render():
     if not os.path.exists(fileio.path("feature tree")):
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
             f.write(system_feature_tree_default)
-
-    # keep track of what we've already mapped
-    mapped_channels.new_set()
-    mapped_disconnect_channels.new_set()
 
     runpy.run_path(fileio.path("feature tree"))
 

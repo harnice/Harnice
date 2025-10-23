@@ -94,6 +94,10 @@ def new():
         writer.writeheader()
         writer.writerows(disconnect_map_rows)
 
+    # write mapped disconnect channels set
+    with open(fileio.path("mapped disconnect channels set"), "w", encoding="utf-8"):
+        pass
+
 
 def assign(a_side_key, disconnect_key):
     channels = fileio.read_tsv("disconnect map")
@@ -134,6 +138,8 @@ def assign(a_side_key, disconnect_key):
 
         updated_channels.append(row)
 
+    already_assigned_set_append(disconnect_key)
+
     # Write the updated table back
     with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
@@ -141,7 +147,32 @@ def assign(a_side_key, disconnect_key):
         writer.writerows(updated_channels)
 
 
-def find_shortest_chain():
+def already_assigned_set_append(key):
+    items = already_assigned_set()
+    items.add(str(key))
+    with open(
+        fileio.path("mapped disconnect channels set"), "w", encoding="utf-8"
+    ) as f:
+        for item in sorted(items):
+            f.write(f"{item}\n")
+
+
+def already_assigned_set():
+    """Return the full set of items."""
+    if not os.path.exists(fileio.path("mapped disconnect channels set")):
+        return set()
+    with open(
+        fileio.path("mapped disconnect channels set"), "r", encoding="utf-8"
+    ) as f:
+        return set(line.strip() for line in f if line.strip())
+
+
+def already_assigned(item):
+    """Return True if item is in the set, False otherwise."""
+    return str(item) in already_assigned_set()
+
+
+def add_shortest_chain_to_channel_map():
     """
     For each (from_device/channel) -> (to_device/channel) in the channel map,
     find the SHORTEST series chain of disconnect devices between them and

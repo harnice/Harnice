@@ -65,6 +65,10 @@ def new():
         writer.writeheader()
         writer.writerows(channel_map)
 
+    # write mapped channels set
+    with open(fileio.path("mapped channels set"), "w", encoding="utf-8"):
+        pass
+
     return channel_map
 
 
@@ -131,7 +135,29 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
     if require_to and not found_to:
         raise ValueError(f"to_key {to_key} not found in channel map")
 
+    already_mapped_set_append(from_key)
+    if to_key:
+        already_mapped_set_append(to_key)
+
     with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(updated_channels)
+
+def already_mapped_set_append(key):
+    items = already_mapped_set()
+    items.add(str(key))
+    with open(fileio.path("mapped channels set"), "w", encoding="utf-8") as f:
+        for item in sorted(items):
+            f.write(f"{item}\n")
+
+
+def already_mapped_set():
+    if not os.path.exists(fileio.path("mapped channels set")):
+        return set()
+    with open(fileio.path("mapped channels set"), "r", encoding="utf-8") as f:
+        return set(line.strip() for line in f if line.strip())
+
+def already_mapped(item):
+    """Return True if item is in the set, False otherwise."""
+    return str(item) in already_mapped_set()
