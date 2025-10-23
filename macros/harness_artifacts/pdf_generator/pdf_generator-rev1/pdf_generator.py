@@ -1,8 +1,9 @@
 import os
 import json
 import subprocess
-from harnice import fileio, harnice_library, rev_history
-from harnice.utils import svg_utils
+from harnice import fileio
+from harnice.utils import svg_utils, library_utils
+from harnice.lists import rev_history
 
 artifact_mpn = "pdf_generator"
 
@@ -100,7 +101,7 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         destination_directory = os.path.join(path("tblock svgs"), page_name)
 
         # === Pull from library ===
-        harnice_library.pull_item_from_library(
+        library_utils.pull_item_from_library(
             lib_repo=tblock_data.get("lib_repo"),
             product="titleblocks",
             mpn=titleblock,
