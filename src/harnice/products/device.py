@@ -7,7 +7,7 @@ from harnice.lists import signals_list
 
 device_feature_tree_default = """
 from harnice.lists import signals_list
-from harnice products import chtype
+from harnice.products import chtype
 
 ch_type_ids = {
     "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
@@ -46,7 +46,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
     connector_mpn = mpn_for_connector(connector_name)
 
     for signal in chtype.signals(channel_type):
-        signals_list.write_signal(
+        signals_list.append(
             channel_id=channel_name,
             signal=signal,
             connector_name=connector_name,
@@ -56,7 +56,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
         )
 
     # Add shield row
-    signals_list.write_signal(
+    signals_list.append(
         channel_id=f"{channel_name}-shield",
         signal="chassis",
         connector_name=connector_name,
@@ -529,7 +529,7 @@ def validate_kicad_library():
 
     # Step 1. Collect unique connectors from the signals list
     unique_connectors_in_signals_list = set()
-    for signal in signals_list.read_list():
+    for signal in fileio.read_tsv("signals list"):
         connector_name = signal.get("connector_name")
         if connector_name:
             unique_connectors_in_signals_list.add(connector_name)
