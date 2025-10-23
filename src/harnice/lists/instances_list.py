@@ -139,7 +139,6 @@ def modify(instance_name, instance_data):
         os.replace(tmp, path)
 
 
-
 def new():
     with open(fileio.path("instances list"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
