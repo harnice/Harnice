@@ -70,6 +70,11 @@ def new():
 
 
 def map(from_key, to_key=None, multi_ch_junction_key=""):
+    if from_key in already_mapped_set():
+        raise ValueError(f"from_key {from_key} already mapped")
+    if to_key and to_key in already_mapped_set():
+        raise ValueError(f"to_key {to_key} already mapped")
+
     channels = fileio.read_tsv("channel map")
 
     to_channel = None
@@ -111,11 +116,11 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
 
             if require_to:
                 from_channel["manual_map_channel_python_equiv"] = (
-                    f"system_utils.map_and_record({from_key}, {to_key})"
+                    f"channel_map.map({from_key}, {to_key})"
                 )
             elif multi_ch_junction_key:
                 from_channel["manual_map_channel_python_equiv"] = (
-                    f"system_utils.map_and_record({from_key}, multi_ch_junction_key={multi_ch_junction_key})"
+                    f"channel_map.map({from_key}, multi_ch_junction_key={multi_ch_junction_key})"
                 )
         elif (
             require_to
@@ -132,8 +137,7 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
         raise ValueError(f"to_key {to_key} not found in channel map")
 
     already_mapped_set_append(from_key)
-    if to_key:
-        already_mapped_set_append(to_key)
+    already_mapped_set_append(to_key)
 
     with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
@@ -143,6 +147,8 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
 
 def already_mapped_set_append(key):
     items = already_mapped_set()
+    if str(key) in items:
+        raise ValueError(f"key {key} already mapped")
     items.add(str(key))
     with open(
         fileio.path("mapped channels set"), "w", newline="", encoding="utf-8"
@@ -160,6 +166,8 @@ def already_mapped_set():
         return set(row[0] for row in reader if row)
 
 
-def already_mapped(item):
-    """Return True if item is in the set, False otherwise."""
-    return str(item) in already_mapped_set()
+def already_mapped(key):
+    if str(key) in already_mapped_set():
+        return True
+    else:
+        return False

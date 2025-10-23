@@ -96,13 +96,23 @@ def new():
 
     # initialize mapped disconnect channels set (empty TSV)
     with open(
-        fileio.path("mapped disconnect channels set"), "w", newline="", encoding="utf-8"
+        fileio.path("mapped disconnects set"), "w", newline="", encoding="utf-8"
+    ) as f:
+        pass
+    with open(
+        fileio.path("mapped A-side channels through disconnects set"), "w", newline="", encoding="utf-8"
     ) as f:
         pass
 
 
 def assign(a_side_key, disconnect_key):
+    #a_side is the (device refdes, channel_id) that is on the A-side of the disconnect
     channels = fileio.read_tsv("disconnect map")
+    if channel_is_already_assigned_through_disconnect(a_side_key, disconnect_key[0]):
+        raise ValueError(f"disconnect_key {disconnect_key} already assigned")
+
+    if disconnect_is_already_assigned(disconnect_key):
+        raise ValueError(f"disconnect {disconnect_key} already assigned")
 
     # Find the disconnect row we want to merge
     disconnect_info = None
@@ -126,7 +136,7 @@ def assign(a_side_key, disconnect_key):
             row["A-port_channel_type"] = disconnect_info.get("A-port_channel_type", "")
             row["B-port_channel_type"] = disconnect_info.get("B-port_channel_type", "")
             row["manual_map_channel_python_equiv"] = (
-                f"disconnect_map.assign_and_record({a_side_key}, {disconnect_key})"
+                f"disconnect_map.assign({a_side_key}, {disconnect_key})"
             )
 
         elif (
@@ -138,7 +148,8 @@ def assign(a_side_key, disconnect_key):
 
         updated_channels.append(row)
 
-    already_assigned_set_append(disconnect_key)
+    already_assigned_channels_through_disconnects_set_append(a_side_key, disconnect_key[0])
+    already_assigned_disconnects_set_append(disconnect_key)
 
     with open(fileio.path("disconnect map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
@@ -146,31 +157,47 @@ def assign(a_side_key, disconnect_key):
         writer.writerows(updated_channels)
 
 
-def already_assigned_set_append(key):
-    items = already_assigned_set()
+def already_assigned_channels_through_disconnects_set_append(key, disconnect_refdes):
+    item = f"{key}:{disconnect_refdes}"
+    items = set(already_assigned_channels_through_disconnects_set())
+    if item in items:
+        raise ValueError(f"channel {key} through disconnect {disconnect_refdes} already assigned")
+    with open(
+        fileio.path("mapped A-side channels through disconnects set"), "a", newline="", encoding="utf-8"
+    ) as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow([item])
+
+def already_assigned_disconnects_set_append(key):
+    items = set(already_assigned_disconnects_set())
+    if str(key) in items:
+        raise ValueError(f"disconnect {key} already assigned to a channel")
     items.add(str(key))
     with open(
-        fileio.path("mapped disconnect channels set"), "w", newline="", encoding="utf-8"
+        fileio.path("mapped disconnects set"), "w", newline="", encoding="utf-8"
     ) as f:
         writer = csv.writer(f, delimiter="\t")
         for item in sorted(items):
             writer.writerow([item])
 
 
-def already_assigned_set():
-    """Return the full set of items."""
-    if not os.path.exists(fileio.path("mapped disconnect channels set")):
-        return set()
-    with open(
-        fileio.path("mapped disconnect channels set"), newline="", encoding="utf-8"
-    ) as f:
+def already_assigned_channels_through_disconnects_set():
+    items = []
+    with open(fileio.path("mapped A-side channels through disconnects set"), newline="", encoding="utf-8") as f:
         reader = csv.reader(f, delimiter="\t")
-        return set(row[0] for row in reader if row)
+        for row in reader:
+            if row and row[0].strip():  # skip blank lines
+                items.append(row[0].strip())
+    return items
 
-
-def already_assigned(item):
-    """Return True if item is in the set, False otherwise."""
-    return str(item) in already_assigned_set()
+def already_assigned_disconnects_set():
+    items = []
+    with open(fileio.path("mapped disconnects set"), newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        for row in reader:
+            if row and row[0].strip():
+                items.append(row[0].strip())
+    return items
 
 
 def add_shortest_chain_to_channel_map():
@@ -297,3 +324,15 @@ def add_shortest_chain_to_channel_map():
         writer = csv.DictWriter(f, fieldnames=channel_map[0].keys(), delimiter="\t")
         writer.writeheader()
         writer.writerows(channel_map)
+
+def channel_is_already_assigned_through_disconnect(key, disconnect_refdes):
+    if f"{str(key)}:{disconnect_refdes}" in already_assigned_channels_through_disconnects_set():
+        return True
+    else:
+        return False
+
+def disconnect_is_already_assigned(key):
+    if str(key) in already_assigned_disconnects_set():
+        return True
+    else:
+        return False
