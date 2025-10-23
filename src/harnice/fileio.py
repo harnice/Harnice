@@ -143,10 +143,10 @@ def harnice_file_structure():
             },
             "macros": {},
             "maps": {
-                f"{partnumber('pn-rev')}-chmap.tsv": "channel map",
+                f"{partnumber('pn-rev')}-channel_map.tsv": "channel map",
                 f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
-                "mapped_channels.txt": "mapped channels set",
-                "mapped_disconnect_channels.txt": "mapped disconnect channels set",
+                f"{partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
+                f"{partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnect channels set",
             },
         }
     elif product_type == "cable":

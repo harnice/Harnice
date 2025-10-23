@@ -2,7 +2,6 @@ import os
 import csv
 import shutil
 from harnice import fileio
-from harnice.lists import instances_list
 
 
 def rebuild():

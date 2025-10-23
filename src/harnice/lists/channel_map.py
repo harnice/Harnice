@@ -23,21 +23,18 @@ def new():
     for connector in fileio.read_tsv("system connector list"):
         device_refdes = connector.get("device_refdes")
 
-        # signals list path
         if connector.get("disconnect") == "TRUE":
-            # don't want disconnects to show up in channel map
             continue
-        else:
-            device_signals_list_path = os.path.join(
-                fileio.dirpath("devices"),
-                device_refdes,
-                f"{device_refdes}-signals_list.tsv",
-            )
+
+        device_signals_list_path = os.path.join(
+            fileio.dirpath("devices"),
+            device_refdes,
+            f"{device_refdes}-signals_list.tsv",
+        )
 
         for signal in fileio.read_tsv(device_signals_list_path):
             sig_channel = signal.get("channel_id")
 
-            # check if this channel is already in channel_map
             already = any(
                 row.get("from_device_refdes") == device_refdes
                 and row.get("from_device_channel_id") == sig_channel
@@ -46,11 +43,9 @@ def new():
             if already:
                 continue
 
-            # only concerned with signals on connectors from the connector list
             if not signal.get("connector_name") == connector.get("connector"):
                 continue
 
-            # build row
             channel_map_row = {
                 "merged_net": connector.get("merged_net", ""),
                 "from_channel_type": signal.get("channel_type", ""),
@@ -64,6 +59,10 @@ def new():
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(channel_map)
+
+    # initialize mapped channels set TSV (empty, single column)
+    with open(fileio.path("mapped channels set"), "w", newline="", encoding="utf-8") as f:
+        pass
 
     return channel_map
 
@@ -89,12 +88,11 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
             from_channel = channel
             break
 
-    # you have to have at least a to channel or a multi_ch_junction_key, can't map from to nothing
-    if not to_channel and multi_ch_junction_key == (""):
+    if not to_channel and multi_ch_junction_key == "":
         raise ValueError(f"to_key {to_key} not found in channel map")
     else:
         require_to = bool(to_key[0] or to_key[1])
-    # find the a compatible channel and write it to the from channel
+
     updated_channels, found_from, found_to = [], False, False
 
     for from_channel in channels:
@@ -108,7 +106,7 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
             if multi_ch_junction_key:
                 from_channel["multi_ch_junction_id"] = multi_ch_junction_key
             found_from = True
-            # add python equivalent to channel map to help user grab this map and force its use here or elsewhere
+
             if require_to:
                 from_channel["manual_map_channel_python_equiv"] = (
                     f"system_utils.map_and_record({from_key}, {to_key})"
@@ -123,7 +121,7 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
             and from_channel.get("from_device_channel_id") == to_key[1]
         ):
             found_to = True
-            continue  # do not add the to channel as another line in the channel map (it only exists in the from channel's row)
+            continue
         updated_channels.append(from_channel)
 
     if not found_from:
@@ -131,7 +129,33 @@ def map(from_key, to_key=None, multi_ch_junction_key=""):
     if require_to and not found_to:
         raise ValueError(f"to_key {to_key} not found in channel map")
 
+    already_mapped_set_append(from_key)
+    if to_key:
+        already_mapped_set_append(to_key)
+
     with open(fileio.path("channel map"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(updated_channels)
+
+
+def already_mapped_set_append(key):
+    items = already_mapped_set()
+    items.add(str(key))
+    with open(fileio.path("mapped channels set"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter="\t")
+        for item in sorted(items):
+            writer.writerow([item])
+
+
+def already_mapped_set():
+    if not os.path.exists(fileio.path("mapped channels set")):
+        return set()
+    with open(fileio.path("mapped channels set"), newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        return set(row[0] for row in reader if row)
+
+
+def already_mapped(item):
+    """Return True if item is in the set, False otherwise."""
+    return str(item) in already_mapped_set()
