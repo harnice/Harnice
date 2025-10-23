@@ -50,7 +50,7 @@ circuits_list.new()
 #                   INSTANCES LIST
 #===========================================================================
 instances_list.new()
-instances_list.add_connectors_cavities_nodes_channels_and_circuits()
+system_utils.make_instances_for_connectors_cavities_nodes_channels_circuits()
 
 #assign mating connectors
 #for instance in fileio.read_tsv("instances list"):

@@ -3,7 +3,6 @@ import os
 import inspect
 from threading import Lock
 from harnice import fileio
-from harnice.utils import library_utils
 
 COLUMNS = [
     "net",
@@ -93,7 +92,7 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
         instance_data["net"] = fileio.get_net()
 
     # Add debug call chain
-    instance_data["debug"] = get_call_chain_str()
+    instance_data["debug"] = _get_call_chain_str()
     instance_data["debug_cutoff"] = " "
 
     # add argumet to data added
@@ -115,7 +114,16 @@ def modify(instance_name, instance_data):
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t")
             rows = list(reader)
-            fieldnames = reader.fieldnames
+            fieldnames = reader.fieldnames or []
+
+        # --- Add debug info before updating ---
+        instance_data["debug"] = _get_call_chain_str()
+        instance_data["debug_cutoff"] = " "
+
+        # Ensure any new keys are part of the header
+        for key in instance_data:
+            if key not in fieldnames:
+                fieldnames.append(key)
 
         # --- Modify in-place ---
         found = False
@@ -218,7 +226,7 @@ def instance_in_connector_group_with_item_type(connector_group, item_type):
     return output
 
 
-def get_call_chain_str():
+def _get_call_chain_str():
     """
     Returns the call chain as a readable string:
     filename:line in function -> filename:line in function ...
@@ -231,288 +239,3 @@ def get_call_chain_str():
         function = frame_info.function
         chain_parts.append(f"{filename}:{lineno} in {function}()")
     return " -> ".join(chain_parts)
-
-
-def add_connectors_cavities_nodes_channels_and_circuits():
-    connectors_list = fileio.read_tsv("system connector list")
-
-    for circuit in fileio.read_tsv("circuits list"):
-        from_connector_key = (
-            f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}"
-        )
-        from_cavity = f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.{circuit.get('net_from_cavity')}"
-
-        from_connector_mpn = ""
-        for connector in connectors_list:
-            if connector.get("device_refdes") == circuit.get(
-                "net_from_refdes"
-            ) and connector.get("connector") == circuit.get("net_from_connector_name"):
-                from_connector_mpn = connector.get("connector_mpn")
-                break
-
-        # from connector node
-        new_instance(
-            f"{from_connector_key}.node",
-            {
-                "net": circuit.get("net"),
-                "item_type": "Node",
-                "location_type": "Node",
-                "connector_group": from_connector_key,
-            },
-            ignore_duplicates=True,
-        )
-
-        # from connector
-        new_instance(
-            f"{from_connector_key}.conn",
-            {
-                "net": circuit.get("net"),
-                "item_type": "Connector",
-                "location_type": "Node",
-                "connector_group": from_connector_key,
-                "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
-                "this_instance_mating_device_connector": circuit.get(
-                    "net_from_connector_name"
-                ),
-                "this_instance_mating_device_connector_mpn": from_connector_mpn,
-            },
-            ignore_duplicates=True,
-        )
-
-        # from connector cavity
-        new_instance(
-            from_cavity,
-            {
-                "net": circuit.get("net"),
-                "item_type": "Connector cavity",
-                "parent_instance": f"{from_connector_key}.conn",  # from connector instance
-                "location_type": "Node",
-                "connector_group": from_connector_key,
-                "circuit_id": circuit.get("circuit_id"),
-                "circuit_port_number": 0,
-            },
-            ignore_duplicates=True,
-        )
-
-        to_connector_key = (
-            f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}"
-        )
-        to_cavity = f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.{circuit.get('net_to_cavity')}"
-
-        to_connector_mpn = ""
-        for connector in connectors_list:
-            if connector.get("device_refdes") == circuit.get(
-                "net_to_refdes"
-            ) and connector.get("connector") == circuit.get("net_to_connector_name"):
-                to_connector_mpn = connector.get("connector_mpn")
-                break
-
-        # to connector node
-        new_instance(
-            f"{to_connector_key}.node",
-            {
-                "net": circuit.get("net"),
-                "item_type": "Node",
-                "location_type": "Node",
-                "connector_group": to_connector_key,
-            },
-            ignore_duplicates=True,
-        )
-
-        # to connector
-        new_instance(
-            f"{to_connector_key}.conn",
-            {
-                "net": circuit.get("net"),
-                "item_type": "Connector",
-                "location_type": "Node",
-                "connector_group": to_connector_key,
-                "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
-                "this_instance_mating_device_connector": circuit.get(
-                    "net_from_connector_name"
-                ),
-                "this_instance_mating_device_connector_mpn": to_connector_mpn,
-            },
-            ignore_duplicates=True,
-        )
-
-        # to connector cavity
-        new_instance(
-            to_cavity,
-            {
-                "net": circuit.get("net"),
-                "item_type": "Connector cavity",
-                "parent_instance": f"{to_connector_key}.conn",  # to connector instance
-                "location_type": "Node",
-                "connector_group": to_connector_key,
-                "circuit_id": circuit.get("circuit_id"),
-                "circuit_port_number": 1,
-            },
-            ignore_duplicates=True,
-        )
-
-        # add circuit
-        new_instance(
-            f"circuit-{circuit.get('circuit_id')}",
-            {
-                "net": circuit.get("net"),
-                "item_type": "Circuit",
-                "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
-                "circuit_id": circuit.get("circuit_id"),
-                "node_at_end_a": from_cavity,
-                "node_at_end_b": to_cavity,
-                "this_net_from_device_refdes": circuit.get("net_from_refdes"),
-                "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
-                "this_net_from_device_connector_name": circuit.get(
-                    "net_from_connector_name"
-                ),
-                "this_net_to_device_refdes": circuit.get("net_to_refdes"),
-                "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
-                "this_net_to_device_connector_name": circuit.get(
-                    "net_to_connector_name"
-                ),
-                "this_channel_from_device_refdes": circuit.get(
-                    "from_side_device_refdes"
-                ),
-                "this_channel_from_device_channel_id": circuit.get(
-                    "from_side_device_chname"
-                ),
-                "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
-                "this_channel_to_device_channel_id": circuit.get(
-                    "to_side_device_chname"
-                ),
-                "this_channel_from_channel_type": circuit.get("from_channel_type"),
-                "this_channel_to_channel_type": circuit.get("to_channel_type"),
-                "signal_of_channel_type": circuit.get("signal"),
-            },
-            ignore_duplicates=True,
-        )
-
-        # add channel
-        new_instance(
-            f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
-            {
-                "net": circuit.get("net"),
-                "item_type": "Channel",
-                "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
-                "location_type": "Segment",
-                "node_at_end_a": f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.conn",
-                "node_at_end_b": f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.conn",
-                "this_net_from_device_refdes": circuit.get("net_from_refdes"),
-                "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
-                "this_net_from_device_connector_name": circuit.get(
-                    "net_from_connector_name"
-                ),
-                "this_net_to_device_refdes": circuit.get("net_to_refdes"),
-                "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
-                "this_net_to_device_connector_name": circuit.get(
-                    "net_to_connector_name"
-                ),
-                "this_channel_from_device_refdes": circuit.get(
-                    "from_side_device_refdes"
-                ),
-                "this_channel_from_device_channel_id": circuit.get(
-                    "from_side_device_chname"
-                ),
-                "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
-                "this_channel_to_device_channel_id": circuit.get(
-                    "to_side_device_chname"
-                ),
-                "this_channel_from_channel_type": circuit.get("from_channel_type"),
-                "this_channel_to_channel_type": circuit.get("to_channel_type"),
-            },
-            ignore_duplicates=True,
-        )
-
-    for connector in fileio.read_tsv("system connector list"):
-        try:
-            modify(
-                f"{connector.get('device_refdes')}.{connector.get('connector')}.conn",
-                {
-                    "mating_device_refdes": connector.get("device_refdes"),
-                    "mating_device_connector": connector.get("connector"),
-                    "mating_device_connector_mpn": connector.get("connector_mpn"),
-                },
-            )
-        except ValueError:
-            pass
-
-
-def assign_cable_conductor(
-    cable_instance_name,  # unique identifier for the cable in your project
-    cable_conductor_id,  # (container, identifier) tuple identifying the conductor in the cable being imported
-    conductor_instance,  # instance name of the conductor in your project
-    library_info,  # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev, item_name}
-):
-    instances = fileio.read_tsv("instances list")
-
-    # --- Check if cable is already imported ---
-    already_imported = any(
-        inst.get("instance_name") == cable_instance_name for inst in instances
-    )
-
-    # --- Import from library if not already imported ---
-    if not already_imported:
-        lib_subpath = library_info.get("lib_subpath", "")
-        used_rev = library_info.get("used_rev", "")
-
-        destination_directory = os.path.join(
-            fileio.dirpath("imported_instances"), cable_instance_name
-        )
-
-        os.makedirs(destination_directory, exist_ok=True)
-
-        library_utils.pull_item_from_library(
-            lib_repo=library_info.get("lib_repo"),
-            product="cables",
-            mpn=library_info.get("mpn"),
-            destination_directory=destination_directory,
-            lib_subpath=lib_subpath,
-            used_rev=used_rev,
-            item_name=cable_instance_name,
-        )
-
-        new_instance(
-            cable_instance_name,
-            {
-                "item_type": "Cable",
-                "location_type": "Segment",
-                "cable_group": cable_instance_name,
-            },
-        )
-
-    # --- Make sure conductor of cable has not been assigned yet
-    for instance in instances:
-        if instance.get("cable_group") == cable_instance_name:
-            if instance.get("cable_container") == cable_conductor_id[0]:
-                if instance.get("cable_identifier") == cable_conductor_id[1]:
-                    raise ValueError(
-                        f"Conductor {cable_conductor_id} has already been assigned to {instance.get('instance_name')}"
-                    )
-
-    # --- Make sure conductor instance has not already been assigned to a cable
-    for instance in instances:
-        if instance.get("instance_name") == conductor_instance:
-            if (
-                instance.get("cable_group") not in ["", None]
-                or instance.get("cable_container") not in ["", None]
-                or instance.get("cable_identifier") not in ["", None]
-            ):
-                raise ValueError(
-                    f"Conductor '{conductor_instance}' has already been assigned "
-                    f"to '{instance.get('cable_identifier')}' of cable '{instance.get('cable_group')}'"
-                )
-
-    # --- assign conductor
-    for instance in instances:
-        if instance.get("instance_name") == conductor_instance:
-            modify(
-                conductor_instance,
-                {
-                    "parent_instance": cable_instance_name,
-                    "cable_group": cable_instance_name,
-                    "cable_container": cable_conductor_id[0],
-                    "cable_identifier": cable_conductor_id[1],
-                },
-            )
-            break
