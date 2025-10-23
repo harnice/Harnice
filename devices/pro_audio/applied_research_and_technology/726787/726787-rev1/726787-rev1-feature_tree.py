@@ -1,4 +1,5 @@
 from harnice.lists import signals_list
+from harnice.products import chtype
 
 ch_type_ids = {
     "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
@@ -31,8 +32,8 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
     channel_name = connector_name
     connector_mpn = mpn_for_connector(connector_name)
 
-    for signal in signals_list.signals_of_channel_type(channel_type):
-        signals_list.write_signal(
+    for signal in chtype.signals(channel_type):
+        signals_list.append(
             channel_id=channel_name,
             signal=signal,
             connector_name=connector_name,
@@ -42,7 +43,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
         )
 
     # Add shield row
-    signals_list.write_signal(
+    signals_list.append(
         channel_id=f"{channel_name}-shield",
         signal="chassis",
         connector_name=connector_name,

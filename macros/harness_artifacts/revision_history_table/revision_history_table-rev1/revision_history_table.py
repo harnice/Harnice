@@ -1,7 +1,7 @@
 import os
 import csv
 import re
-from harnice import fileio, component_library
+from harnice import fileio, harnice_library
 from harnice.utils import svg_utils
 
 artifact_mpn = "revision_history_table"
@@ -61,7 +61,7 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
         rev = row.get("rev", "").strip()
         has_bubble = bool(row.get("affectedinstances", "").strip())
         if has_bubble:
-            component_library.pull_item_from_library(
+            harnice_library.pull_item_from_library(
                 lib_repo="https://github.com/kenyonshutt/harnice-library-public",
                 product="flagnotes",
                 mpn="rev_change_callout",  # Assumed the bubble shape for all rows
@@ -135,7 +135,7 @@ for row_index, row in enumerate(data_rows):
         # Pull the bubble from the library
         rev = row["rev"]
         bubble_name = f"bubble{rev}"
-        component_library.pull_item_from_library(
+        harnice_library.pull_item_from_library(
             lib_repo="https://github.com/kenyonshutt/harnice-library-public",
             product="flagnotes",
             mpn="rev_change_callout",  # Assumed the bubble shape for all rows

@@ -1,5 +1,6 @@
 from harnice import fileio
-from harnice.lists import mapped_disconnect_channels, signals_list, disconnect_map
+from harnice.lists import mapped_disconnect_channels, disconnect_map
+from harnice.products import chtype
 
 verbose = False
 extra_verbose = False
@@ -86,7 +87,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
 
         if required_ch_attributes.get(
             "A-side_device_channel_type"
-        ) in signals_list.compatible_channel_types(
+        ) in chtype.compatibles(
             candidate.get("B-port_channel_type")
         ):
             map_mode = 3
@@ -95,12 +96,12 @@ for required_channel in fileio.read_tsv("disconnect map"):
 
         if extra_verbose:
             print(
-                f"          Channel type of A-side device {required_ch_attributes.get('A-side_device_channel_type')} is not found in compatibles of channel type of B-port of disconnect {signals_list.compatible_channel_types(candidate.get('B-port_channel_type'))}"
+                f"          Channel type of A-side device {required_ch_attributes.get('A-side_device_channel_type')} is not found in compatibles of channel type of B-port of disconnect {chtype.compatibles(candidate.get('B-port_channel_type'))}"
             )
 
         if required_ch_attributes.get(
             "B-side_device_channel_type"
-        ) in signals_list.compatible_channel_types(
+        ) in chtype.compatibles(
             candidate.get("A-port_channel_type")
         ):
             map_mode = 4
@@ -109,12 +110,12 @@ for required_channel in fileio.read_tsv("disconnect map"):
 
         if extra_verbose:
             print(
-                f"          Channel type of B-side device {required_ch_attributes.get('B-side_device_channel_type')} is not found in compatibles of channel type of A-port of disconnect {signals_list.compatible_channel_types(candidate.get('A-port_channel_type'))}"
+                f"          Channel type of B-side device {required_ch_attributes.get('B-side_device_channel_type')} is not found in compatibles of channel type of A-port of disconnect {chtype.compatibles(candidate.get('A-port_channel_type'))}"
             )
 
         if candidate.get(
             "A-port_channel_type"
-        ) in signals_list.compatible_channel_types(
+        ) in chtype.compatibles(
             required_ch_attributes.get("B-side_device_channel_type")
         ):
             map_mode = 5
@@ -123,12 +124,12 @@ for required_channel in fileio.read_tsv("disconnect map"):
 
         if extra_verbose:
             print(
-                f"          Channel type of A-port of disconnect {candidate.get('A-port_channel_type')} is not found in compatibles of channel type of B-side device {signals_list.compatible_channel_types(required_ch_attributes.get('B-side_device_channel_type'))}"
+                f"          Channel type of A-port of disconnect {candidate.get('A-port_channel_type')} is not found in compatibles of channel type of B-side device {chtype.compatibles(required_ch_attributes.get('B-side_device_channel_type'))}"
             )
 
         if candidate.get(
             "B-port_channel_type"
-        ) in signals_list.compatible_channel_types(
+        ) in chtype.compatibles(
             required_ch_attributes.get("A-side_device_channel_type")
         ):
             map_mode = 6
@@ -137,7 +138,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
 
         if extra_verbose:
             print(
-                f"          Channel type of B-port of disconnect {candidate.get('B-port_channel_type')} is not found in compatibles of channel type of A-side device {signals_list.compatible_channel_types(required_ch_attributes.get('A-side_device_channel_type'))}"
+                f"          Channel type of B-port of disconnect {candidate.get('B-port_channel_type')} is not found in compatibles of channel type of A-side device {chtype.compatibles(required_ch_attributes.get('A-side_device_channel_type'))}"
             )
 
     if map_mode == 0:
