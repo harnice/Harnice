@@ -31,7 +31,7 @@ channel_map.new()
 feature_tree_utils.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
 #if mapped channels must connect via disconnects, add the list of disconnects to the channel map
-disconnect_map.add_shortest_chain_to_channel_map()
+system_utils.add_shortest_disconnect_chain_to_channel_map()
 
 #map channels that must pass through disconnects to available channels inside disconnects
 disconnect_map.new()
@@ -50,7 +50,7 @@ circuits_list.new()
 #                   INSTANCES LIST
 #===========================================================================
 instances_list.new()
-instances_list.add_connectors_cavities_nodes_channels_and_circuits()
+system_utils.make_instances_for_connectors_cavities_nodes_channels_circuits()
 
 #assign mating connectors
 #for instance in fileio.read_tsv("instances list"):

@@ -2,8 +2,8 @@ import os
 import random
 import math
 import csv
-from PIL import Image, ImageDraw, ImageFont
 from collections import defaultdict, deque
+from PIL import Image, ImageDraw, ImageFont
 from harnice import fileio
 from harnice.lists import instances_list
 
@@ -421,7 +421,6 @@ def generate_node_coordinates():
                 "absolute_rotation": average_angle,
             },
         )
-
 
     # === Step 6: Generate PNG ===
     padding = 50

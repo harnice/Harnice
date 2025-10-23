@@ -2,8 +2,10 @@ import os
 import runpy
 import sexpdata
 import json
+import csv
 from harnice import fileio
 from harnice.lists import signals_list, rev_history
+from harnice.products import chtype
 
 device_feature_tree_utils_default = """
 from harnice.lists import signals_list
@@ -611,6 +613,86 @@ def _get_attribute(attribute_key):
             return json.load(f).get(attribute_key)
 
 
+def _validate_signals_list():
+    print("--------------------------------")
+    print("Validating signals list...")
+    if not os.path.exists(fileio.path("signals list")):
+        raise FileNotFoundError("Signals list was not generated.")
+
+    with open(fileio.path("signals list"), "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        headers = reader.fieldnames
+        signals_list = list(reader)
+
+    if not headers:
+        raise ValueError("Signals list has no header row.")
+
+    counter = 2
+    for signal in signals_list:
+        print("Looking at csv row:", counter)
+        channel_type = chtype.parse(signal.get("channel_type"))
+        expected_signals = chtype.signals(channel_type)
+        found_signals = set()
+        connector_names = set()
+
+        # make sure all the fields are there
+        if signal.get("channel_id") in ["", None]:
+            raise ValueError("channel_id is blank")
+        if signal.get("signal") in ["", None]:
+            raise ValueError("signal is blank")
+        if signal.get("connector_name") in ["", None]:
+            raise ValueError("connector_name is blank")
+        if signal.get("cavity") in ["", None]:
+            raise ValueError("cavity is blank")
+        if signal.get("connector_mpn") in ["", None]:
+            raise ValueError("connector_mpn is blank")
+        if signal.get("channel_type") in ["", None]:
+            raise ValueError("channel_type is blank")
+
+        # make sure signal is a valid signal of its channel type
+        if signal.get("signal") not in chtype.signals(channel_type):
+            raise ValueError(
+                f"Signal {signal.get('signal')} is not a valid signal of its channel type"
+            )
+
+        # make sure all the signals of each channel type are present
+        for expected_signal in expected_signals:
+            for signal2 in signals_list:
+                if (
+                    signal2.get("channel_id") == signal.get("channel_id")
+                    and signal2.get("signal") == expected_signal
+                ):
+                    found_signals.add(expected_signal)
+                    connector_names.add(signal2.get("connector_name"))
+
+        missing_signals = set(expected_signals) - found_signals
+        if missing_signals:
+            raise ValueError(
+                f"Channel {signal.get('channel_id')} is missing signals: {', '.join(missing_signals)}"
+            )
+
+        # make sure no channels are spread across multiple connectors
+        if len(connector_names) > 1:
+            raise ValueError(
+                f"Channel {signal.get('channel_id')} has signals spread across multiple connectors: "
+                f"{', '.join(connector_names)}"
+            )
+
+        counter += 1
+
+    # make sure no duplicate cavities are present
+    seen_cavities = set()
+    for signal in signals_list:
+        cavity_key = f"{signal.get('connector_name')}-{signal.get('cavity')}"
+        if cavity_key in seen_cavities:
+            raise ValueError(
+                f"Duplicate cavity '{signal.get('cavity')}' found on connector '{signal.get('connector_name')}'"
+            )
+        seen_cavities.add(cavity_key)
+
+    print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
+
+
 def _device_render(lightweight=False):
     fileio.verify_revision_structure(product_type="device")
 
@@ -636,7 +718,7 @@ def _device_render(lightweight=False):
         print("Successfully rebuilt signals list per feature tree.")
 
     if not lightweight:
-        signals_list.validate_for_device()
+        _validate_signals_list()
 
     print(
         f"Kicad nickname:       harnice-devices/{rev_history.current_info().get('library_subpath')}{fileio.partnumber('pn')}"
