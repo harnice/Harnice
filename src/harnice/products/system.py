@@ -1,11 +1,7 @@
 import runpy
 import os
 from harnice import fileio
-from harnice.lists import (
-    channel_map,
-    disconnect_map,
-    post_harness_instances_list,
-)
+from harnice.lists import post_harness_instances_list
 
 system_feature_tree_default = """import csv
 from harnice import fileio, feature_tree
