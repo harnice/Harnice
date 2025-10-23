@@ -4,7 +4,8 @@ import datetime
 import shutil
 import re
 import csv
-from harnice import rev_history, cli
+from harnice import cli
+from harnice.lists import rev_history
 
 # standard punctuation:
 #  .  separates between name hierarchy levels
@@ -205,14 +206,15 @@ def path(target_value):
         return file_path
 
     # FILES DEPENDENT ON HARNICE ROOT
-    import harnice
-
-    harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
 
     if target_value == "library locations":
+        import harnice
+        harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
         return os.path.join(harnice_root, "library_locations.csv")
 
     if target_value == "project locations":
+        import harnice
+        harnice_root = os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
         return os.path.join(harnice_root, "project_locations.csv")
 
     # FILES OUTSIDE OF PRODUCT DIRECTORY

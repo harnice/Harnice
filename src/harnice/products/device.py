@@ -2,10 +2,10 @@ import os
 import runpy
 import sexpdata
 import json
-from harnice import fileio, rev_history
-from harnice.lists import signals_list
+from harnice import fileio
+from harnice.lists import signals_list, rev_history
 
-device_feature_tree_default = """
+device_feature_tree_utils_default = """
 from harnice.lists import signals_list
 from harnice.products import chtype
 
@@ -619,7 +619,7 @@ def device_render(lightweight=False):
     if not lightweight:
         if not os.path.exists(fileio.path("signals list")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
-                f.write(device_feature_tree_default)
+                f.write(device_feature_tree_utils_default)
     else:
         if not os.path.exists(fileio.path("signals list")):
             signals_list.new()

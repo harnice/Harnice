@@ -1,6 +1,7 @@
 import os
 import ast
-from harnice import harnice_library, fileio
+from harnice import fileio
+from harnice.utils import library_utils
 
 
 def path(channel_type):
@@ -9,7 +10,7 @@ def path(channel_type):
         channel_type: tuple like (chid, lib_repo) or string like "(5, '...')"
     """
     chid, lib_repo = parse(channel_type)
-    base_dir = harnice_library.get_local_path(lib_repo)
+    base_dir = library_utils.get_local_path(lib_repo)
     return os.path.join(base_dir, "channel_types", "channel_types.tsv")
 
 
@@ -52,7 +53,7 @@ def signals(channel_type):
     chid, lib_repo = parse(channel_type)
 
     ch_types_tsv_path = os.path.join(
-        harnice_library.get_local_path(lib_repo), "channel_types", "channel_types.tsv"
+        library_utils.get_local_path(lib_repo), "channel_types", "channel_types.tsv"
     )
 
     for row in fileio.read_tsv(ch_types_tsv_path):
