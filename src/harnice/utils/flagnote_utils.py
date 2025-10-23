@@ -1,7 +1,7 @@
 import os
 import csv
 import re
-from harnice import fileio, component_library
+from harnice import fileio, harnice_library
 from harnice.lists import instances_list
 
 # === Global Columns Definition ===
@@ -41,7 +41,7 @@ def make_note_drawings(formboard_dir):
         os.makedirs(destination_directory, exist_ok=True)
 
         # === Pull library item ===
-        component_library.pull_item_from_library(
+        harnice_library.pull_item_from_library(
             lib_repo=instance.get("lib_repo"),
             product="flagnotes",
             mpn=instance.get("mpn"),

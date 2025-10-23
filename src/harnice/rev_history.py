@@ -27,14 +27,14 @@ def revision_history_columns():
     return REVISION_HISTORY_COLUMNS
 
 
-def revision_info():
+def current_info():
     rev_path = fileio.path("revision history")
     if not os.path.exists(rev_path):
         return "file not found"
 
     for row in fileio.read_tsv("revision history"):
         if row.get("rev") == fileio.partnumber("R"):
-            return {k: (v or "").strip() for k, v in row.items()}
+            return row
 
     return "row not found"
 

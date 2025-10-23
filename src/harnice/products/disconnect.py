@@ -71,7 +71,7 @@ for channel in range(8):
     channel_name = f"ch{channel}"
 
     for signal in signals_list.signals_of_channel_type(ch_type_ids["A"]["balanced audio mic level in"]):
-        signals_list.write_signal(
+        signals_list.append(
             channel=channel_name,
             signal=signal,
 
@@ -85,7 +85,7 @@ for channel in range(8):
         )
 
     for signal in signals_list.signals_of_channel_type(ch_type_ids["A"]["chassis"]):
-        signals_list.write_signal(
+        signals_list.append(
             channel=f"{channel_name}-shield",
             signal=signal,
 

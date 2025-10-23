@@ -1,5 +1,4 @@
 import os
-import csv
 import re
 import shutil
 from harnice import fileio
@@ -175,11 +174,9 @@ def pull_part(instance):
 
 
 def get_local_path(lib_repo):
-    for lib in fileio.read_tsv("library locations", delimiter=","):
+    for lib in fileio.read_tsv("library locations", delimeter=","):
         if lib.get("url") == lib_repo:
             local_path = lib.get("local_path")
             if not local_path:
                 raise ValueError(f"No local_path found for {lib_repo}")
             return os.path.expanduser(local_path)
-
-    raise ValueError(f"Could not find library repo id {lib_repo}")

@@ -18,7 +18,7 @@ for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["Connector", "Backshell"]:
         if instance_name not in ["X100"]:
             if mpn not in ["TXPA20"]:
-                component_library.pull_part(instance_name)
+                harnice_library.pull_part(instance_name)
 
 #===========================================================================
 #                   LOCATE PARTS PER COORDINATE SYSTEMS
@@ -291,7 +291,7 @@ feature_tree.run_macro("pdf_generator", "harness_artifacts", "https://github.com
 import yaml
 import re
 import runpy
-from harnice import fileio, component_library, rev_history, feature_tree
+from harnice import fileio, harnice_library, rev_history, feature_tree
 from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, flagnote_utils
 from harnice.lists import instances_list, post_harness_instances_list.push
 

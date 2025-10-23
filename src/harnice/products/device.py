@@ -7,6 +7,7 @@ from harnice.lists import signals_list
 
 device_feature_tree_default = """
 from harnice.lists import signals_list
+from harnice products import chtype
 
 ch_type_ids = {
     "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
@@ -44,7 +45,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
     channel_name = connector_name
     connector_mpn = mpn_for_connector(connector_name)
 
-    for signal in signals_list.signals_of_channel_type(channel_type):
+    for signal in chtype.signals(channel_type):
         signals_list.write_signal(
             channel_id=channel_name,
             signal=signal,
@@ -602,8 +603,8 @@ def validate_attributes_json():
 def get_attribute(attribute_key):
     # find an attribute from either revision history tsv or attributes json
     if attribute_key in rev_history.revision_history_columns():
-        revision_info = rev_history.revision_info()
-        return revision_info.get(attribute_key)
+        current_info = rev_history.current_info()
+        return current_info.get(attribute_key)
 
     else:
         with open(fileio.path("attributes"), "r", encoding="utf-8") as f:
@@ -638,7 +639,7 @@ def device_render(lightweight=False):
         signals_list.validate_for_device()
 
     print(
-        f"Kicad nickname:       harnice-devices/{rev_history.revision_info().get('library_subpath')}{fileio.partnumber('pn')}"
+        f"Kicad nickname:       harnice-devices/{rev_history.current_info().get('library_subpath')}{fileio.partnumber('pn')}"
     )
 
     validate_kicad_library()

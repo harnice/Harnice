@@ -440,8 +440,8 @@ def verify_revision_structure(product_type=None):
         pn = cwd_name
         rev = prompt_new_part(cwd, pn)  # changes the cwd to the new rev folder
 
-    # if everything looks good but the tsv isn't
-    x = rev_history.revision_info()
+    # if everything looks good but the tsv isn't there
+    x = rev_history.current_info()
     if x == "row not found":
         append_revision_row(path("revision history"), pn, rev)
     elif x == "file not found":
@@ -488,13 +488,13 @@ def newrev():
 
     # Prompt user for new revision number
     new_rev_number = cli.prompt(
-        f"Current rev number: {partnumber("R")}. Enter new rev number:",
+        f"Current rev number: {partnumber('R')}. Enter new rev number:",
         default=str(int(partnumber("R")) + 1),
     )
 
     # Construct new revision directory path
     new_rev_dir = os.path.join(
-        part_directory(), f"{partnumber("pn")}-rev{new_rev_number}"
+        part_directory(), f"{partnumber('pn')}-rev{new_rev_number}"
     )
 
     # Ensure target directory does not already exist
@@ -520,14 +520,15 @@ def newrev():
     )
 
 
-def read_tsv(filekey, delimeter="\t", path="fileio"):
-    # TODO#263 when filei.path is generalized, shouldn't need this
-    if path != "fileio":
-        path_to_open = path
-    else:
+def read_tsv(filekey, delimeter="\t"):
+    try:
         path_to_open = path(filekey)
+    except TypeError:
+        path_to_open = filekey
 
-    if not os.path.exists(filekey):
-        raise FileNotFoundError(f"Expected .tsv file at: {path_to_open}")
+    if not os.path.exists(path_to_open):
+        raise FileNotFoundError(
+            f"Expected tsv file with delimeter '{delimeter}' at: {path_to_open}"
+        )
     with open(path_to_open, newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f, delimiter="\t"))
+        return list(csv.DictReader(f, delimiter=delimeter))
