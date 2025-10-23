@@ -3,7 +3,7 @@ import os
 from harnice import fileio
 from harnice.lists import signals_list
 
-disconnect_feature_tree_default = """
+disconnect_feature_tree_utils_default = """
 from harnice.lists import signals_list
 
 ch_type_ids = {
@@ -107,7 +107,7 @@ def render():
     if not os.path.exists(fileio.path("signals list")):
         if not os.path.exists(fileio.path("feature tree")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
-                f.write(disconnect_feature_tree_default)
+                f.write(disconnect_feature_tree_utils_default)
 
     if os.path.exists(fileio.path("feature tree")):
         runpy.run_path(fileio.path("feature tree"))

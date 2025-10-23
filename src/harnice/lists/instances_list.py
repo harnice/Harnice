@@ -2,7 +2,7 @@ import csv
 import os
 import inspect
 from threading import Lock
-from harnice import harnice_library, fileio
+from harnice import library_utils, fileio
 
 COLUMNS = [
     "net",
@@ -461,7 +461,7 @@ def assign_cable_conductor(
 
         os.makedirs(destination_directory, exist_ok=True)
 
-        harnice_library.pull_item_from_library(
+        library_utils.pull_item_from_library(
             lib_repo=library_info.get("lib_repo"),
             product="cables",
             mpn=library_info.get("mpn"),

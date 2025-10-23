@@ -1,5 +1,5 @@
 import os
-from harnice import fileio, harnice_library
+from harnice import fileio, library_utils
 
 
 def pull_devices_from_library():
@@ -28,7 +28,7 @@ def pull_devices_from_library():
                         f"MPN is required for disconnect refdes {refdes['device_ref_des']}"
                     )
                 else:
-                    harnice_library.pull_item_from_library(
+                    library_utils.pull_item_from_library(
                         lib_repo=refdes["lib_repo"],
                         product="disconnects",
                         lib_subpath=refdes["lib_subpath"],
@@ -47,7 +47,7 @@ def pull_devices_from_library():
                     os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]),
                     exist_ok=True,
                 )
-                harnice_library.pull_item_from_library(
+                library_utils.pull_item_from_library(
                     lib_repo=refdes["lib_repo"],
                     product="devices",
                     lib_subpath=refdes["lib_subpath"],

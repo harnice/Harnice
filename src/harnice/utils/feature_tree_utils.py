@@ -3,7 +3,7 @@ import runpy
 import math
 import json
 import shutil
-from harnice import fileio, harnice_library
+from harnice import fileio, library_utils
 from harnice.lists import instances_list
 
 
@@ -18,7 +18,7 @@ def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
         )
     os.makedirs(macro_dirpath, exist_ok=True)
 
-    harnice_library.pull_item_from_library(
+    library_utils.pull_item_from_library(
         lib_repo=lib_repo,
         product="macros",
         lib_subpath=lib_subpath,
@@ -119,12 +119,12 @@ def copy_pdfs_to_cwd():
                     print(f"[ERROR] Could not copy {source_path}: {e}")
 
 
-def run_feature_for_relative(project_key, referenced_pn_rev, feature_tree_name):
+def run_feature_for_relative(project_key, referenced_pn_rev, feature_tree_utils_name):
     project_path = fileio.get_path_to_project(project_key)
-    feature_tree_path = os.path.join(
+    feature_tree_utils_path = os.path.join(
         project_path,
         f"{referenced_pn_rev[0]}-{referenced_pn_rev[1]}",
         "features_for_relatives",
-        feature_tree_name,
+        feature_tree_utils_name,
     )
-    runpy.run_path(feature_tree_path, run_name="__main__")
+    runpy.run_path(feature_tree_utils_path, run_name="__main__")

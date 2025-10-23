@@ -85,7 +85,7 @@ def harnice_file_structure():
 
     if product_type == "harness":
         return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
+            f"{partnumber('pn-rev')}-feature_tree_utils.py": "feature tree",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             f"{partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
             "instance_data": {
@@ -116,19 +116,19 @@ def harnice_file_structure():
         }
     elif product_type == "device":
         return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
+            f"{partnumber('pn-rev')}-feature_tree_utils.py": "feature tree",
             f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
             f"{partnumber('pn-rev')}-attributes.json": "attributes",
         }
     elif product_type == "disconnect":
         return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
+            f"{partnumber('pn-rev')}-feature_tree_utils.py": "feature tree",
             f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
             f"{partnumber('pn-rev')}-attributes.json": "attributes",
         }
     elif product_type == "system":
         return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
+            f"{partnumber('pn-rev')}-feature_tree_utils.py": "feature tree",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
             "devices": {},
             "disconnects": {},
