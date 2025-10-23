@@ -1,6 +1,6 @@
 import csv
 from harnice import fileio
-from harnice.lists import mapped_channels, signals_list
+from harnice.lists import channel_map
 from harnice.products import chtype
 
 verbose = False
@@ -41,7 +41,7 @@ for merged_net in unique_merged_nets:
             print(f"     From key: {from_key}")
 
         # Don't map a channel if the "from" has already been mapped
-        if mapped_channels.check(from_key):
+        if channel_map.already_mapped(from_key):
             if verbose:
                 print("          From key already mapped")
             continue
@@ -84,16 +84,16 @@ for merged_net in unique_merged_nets:
                 continue
 
             # Don't map a channel if it's already been mapped
-            if mapped_channels.check(to_key):
+            if channel_map.already_mapped(to_key):
                 if verbose:
                     print("               To key candidate already mapped")
                 continue
-            if mapped_channels.check(from_key):
+            if channel_map.already_mapped(from_key):
                 if verbose:
                     print("               From key candidate already mapped")
                 continue
 
             if verbose:
                 print("                    ********* MAPPED *********")
-            mapped_channels.map_and_record(from_key, to_key)
+            channel_map.map(from_key, to_key)
             break  # Stop after first compatible partner

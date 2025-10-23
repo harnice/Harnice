@@ -1,5 +1,5 @@
 from harnice import fileio
-from harnice.lists import mapped_disconnect_channels, disconnect_map
+from harnice.lists import disconnect_map
 from harnice.products import chtype
 
 verbose = False
@@ -15,9 +15,9 @@ for required_channel in fileio.read_tsv("disconnect map"):
     disconnect_refdes = required_channel.get("disconnect_refdes")
     disconnect_channel_id = required_channel.get("disconnect_channel_id")
     disconnect_key = (disconnect_refdes, disconnect_channel_id)
-    if mapped_disconnect_channels.check(disconnect_key):
+    if disconnect_map.already_assigned(disconnect_key):
         if verbose:
-            print(f"Skipping disconnect channel {disconnect_key} - already mapped")
+            print(f"Skipping disconnect channel {disconnect_key} - already assigned")
         continue
 
     # collect available candidates for the same disconnect_refdes
@@ -155,7 +155,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
             candidate.get("disconnect_refdes"),
             candidate.get("disconnect_channel_id"),
         )
-        mapped_disconnect_channels.assign_and_record(a_side_key, disconnect_key)
+        disconnect_map.assign(a_side_key, disconnect_key)
 
         if verbose:
             print(
