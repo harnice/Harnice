@@ -68,7 +68,7 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 """
 
 
-def make_new_library_file():
+def _make_new_library_file():
     """Create a bare .kicad_sym file with only library header info."""
 
     symbol_lib = [
@@ -82,7 +82,7 @@ def make_new_library_file():
         sexpdata.dump(symbol_lib, f, pretty=True)
 
 
-def parse_kicad_sym_file():
+def _parse_kicad_sym_file():
     """
     Load a KiCad .kicad_sym file and return its parsed sexp data.
     """
@@ -91,7 +91,7 @@ def parse_kicad_sym_file():
     return data
 
 
-def symbol_exists(kicad_library_data, target_symbol_name):
+def _symbol_exists(kicad_library_data, target_symbol_name):
     """
     Check if a symbol with a given name exists in a KiCad library.
 
@@ -111,7 +111,7 @@ def symbol_exists(kicad_library_data, target_symbol_name):
     return False
 
 
-def make_property(name, value, id_counter=None, hide=False):
+def _make_property(name, value, id_counter=None, hide=False):
     # adds a property to the current rev symbol of the library
     builtins = {"Reference", "Value", "Footprint", "Datasheet", "Description"}
     prop = [
@@ -134,7 +134,7 @@ def make_property(name, value, id_counter=None, hide=False):
     return prop
 
 
-def add_blank_symbol(sym_name, value="", footprint="", datasheet="", description=""):
+def _add_blank_symbol(sym_name, value="", footprint="", datasheet="", description=""):
     """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
 
     lib_path = fileio.path("library file")
@@ -150,22 +150,22 @@ def add_blank_symbol(sym_name, value="", footprint="", datasheet="", description
         [sexpdata.Symbol("exclude_from_sim"), sexpdata.Symbol("no")],
         [sexpdata.Symbol("in_bom"), sexpdata.Symbol("yes")],
         [sexpdata.Symbol("on_board"), sexpdata.Symbol("yes")],
-        make_property("Reference", get_attribute("default_refdes")),
-        make_property("Value", value),
-        make_property("Footprint", footprint, hide=True),
-        make_property("Datasheet", datasheet, hide=True),
-        make_property("Description", get_attribute("desc"), hide=True),
-        make_property("MFG", get_attribute("manufacturer"), hide=False, id_counter=0),
-        make_property(
-            "MPN", get_attribute("manufacturer_part_number"), hide=False, id_counter=1
+        _make_property("Reference", _get_attribute("default_refdes")),
+        _make_property("Value", value),
+        _make_property("Footprint", footprint, hide=True),
+        _make_property("Datasheet", datasheet, hide=True),
+        _make_property("Description", _get_attribute("desc"), hide=True),
+        _make_property("MFG", _get_attribute("manufacturer"), hide=False, id_counter=0),
+        _make_property(
+            "MPN", _get_attribute("manufacturer_part_number"), hide=False, id_counter=1
         ),
-        make_property(
-            "lib_repo", get_attribute("library_repo"), hide=True, id_counter=2
+        _make_property(
+            "lib_repo", _get_attribute("library_repo"), hide=True, id_counter=2
         ),
-        make_property(
-            "lib_subpath", get_attribute("library_subpath"), hide=True, id_counter=3
+        _make_property(
+            "lib_subpath", _get_attribute("library_subpath"), hide=True, id_counter=3
         ),
-        make_property("rev", fileio.partnumber("rev"), hide=True, id_counter=4),
+        _make_property("rev", fileio.partnumber("rev"), hide=True, id_counter=4),
         [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")],
     ]
 
@@ -177,7 +177,7 @@ def add_blank_symbol(sym_name, value="", footprint="", datasheet="", description
         sexpdata.dump(data, f, pretty=True)
 
 
-def overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
+def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
     """
     Overwrite or create a property inside the target symbol block
     in the KiCad .kicad_sym library file.
@@ -238,7 +238,7 @@ def overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
 
         # If missing, create new one with next id
         new_id = next_id(symbol)
-        new_prop = make_property(prop_name, value, id_counter=new_id, hide=hide)
+        new_prop = _make_property(prop_name, value, id_counter=new_id, hide=hide)
         symbol.append(new_prop)
         return symbol
 
@@ -257,7 +257,7 @@ def overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
         sexpdata.dump(data, f)
 
 
-def extract_pins_from_symbol(kicad_lib, symbol_name):
+def _extract_pins_from_symbol(kicad_lib, symbol_name):
     """
     Extract all pin info for the given symbol (and its subsymbols).
     Returns a list of dicts like {"name": ..., "number": ..., "type": ..., "shape": ...}.
@@ -313,7 +313,7 @@ def extract_pins_from_symbol(kicad_lib, symbol_name):
     return pins
 
 
-def validate_pins(pins, unique_connectors_in_signals_list):
+def _validate_pins(pins, unique_connectors_in_signals_list):
     """Validate pins for uniqueness, type conformity, and check required pins.
 
     Returns:
@@ -361,7 +361,7 @@ def validate_pins(pins, unique_connectors_in_signals_list):
     return missing, seen_numbers
 
 
-def append_missing_pin(pin_name, pin_number, spacing=3.81):
+def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     """
     Append a pin to a KiCad symbol if it's missing, auto-spacing vertically.
     Immediately writes the updated symbol back to fileio.path("library file").
@@ -499,7 +499,7 @@ def append_missing_pin(pin_name, pin_number, spacing=3.81):
     return symbol_data
 
 
-def next_free_number(seen_numbers, start=1):
+def _next_free_number(seen_numbers, start=1):
     """Find the next unused pin number as a string."""
     n = start
     while True:
@@ -508,7 +508,7 @@ def next_free_number(seen_numbers, start=1):
         n += 1
 
 
-def validate_kicad_library():
+def _validate_kicad_library():
     """
     Validate that the KiCad .kicad_sym library has:
     0. The .kicad_sym file exists (create if missing).
@@ -518,12 +518,12 @@ def validate_kicad_library():
 
     if not os.path.exists(fileio.path("library file")):
         print(f"Making a new Kicad symbol at {fileio.path('library file')}")
-        make_new_library_file()
+        _make_new_library_file()
 
-    kicad_library_data = parse_kicad_sym_file()
+    kicad_library_data = _parse_kicad_sym_file()
 
-    if not symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
-        add_blank_symbol(
+    if not _symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
+        _add_blank_symbol(
             sym_name=fileio.partnumber("pn-rev"),
         )
 
@@ -535,40 +535,40 @@ def validate_kicad_library():
             unique_connectors_in_signals_list.add(connector_name)
 
     # Step 2. Validate pins
-    kicad_lib = parse_kicad_sym_file()
-    pins = extract_pins_from_symbol(kicad_lib, fileio.partnumber("pn-rev"))
-    missing, seen_numbers = validate_pins(pins, unique_connectors_in_signals_list)
+    kicad_lib = _parse_kicad_sym_file()
+    pins = _extract_pins_from_symbol(kicad_lib, fileio.partnumber("pn-rev"))
+    missing, seen_numbers = _validate_pins(pins, unique_connectors_in_signals_list)
 
-    kicad_library_data = parse_kicad_sym_file()
+    kicad_library_data = _parse_kicad_sym_file()
 
     # Step 3. Append missing pins
     for pin_name in missing:
         # find the next available number
-        pin_number = next_free_number(seen_numbers)
+        pin_number = _next_free_number(seen_numbers)
         # append it
-        append_missing_pin(pin_name, pin_number)
+        _append_missing_pin(pin_name, pin_number)
         # mark number as used
         seen_numbers.add(pin_number)
 
     # Step 4. Overwrite symbol properties
-    overwrite_or_create_property_in_symbol(
-        "Reference", get_attribute("default_refdes"), hide=False
+    _overwrite_or_create_property_in_symbol(
+        "Reference", _get_attribute("default_refdes"), hide=False
     )
-    overwrite_or_create_property_in_symbol(
-        "Description", get_attribute("desc"), hide=False
+    _overwrite_or_create_property_in_symbol(
+        "Description", _get_attribute("desc"), hide=False
     )
-    overwrite_or_create_property_in_symbol("MFG", get_attribute("mfg"), hide=True)
-    overwrite_or_create_property_in_symbol("MPN", get_attribute("pn"), hide=False)
-    overwrite_or_create_property_in_symbol(
-        "lib_repo", get_attribute("library_repo"), hide=True
+    _overwrite_or_create_property_in_symbol("MFG", _get_attribute("mfg"), hide=True)
+    _overwrite_or_create_property_in_symbol("MPN", _get_attribute("pn"), hide=False)
+    _overwrite_or_create_property_in_symbol(
+        "lib_repo", _get_attribute("library_repo"), hide=True
     )
-    overwrite_or_create_property_in_symbol(
-        "lib_subpath", get_attribute("library_subpath"), hide=True
+    _overwrite_or_create_property_in_symbol(
+        "lib_subpath", _get_attribute("library_subpath"), hide=True
     )
-    overwrite_or_create_property_in_symbol("rev", fileio.partnumber("rev"), hide=True)
+    _overwrite_or_create_property_in_symbol("rev", fileio.partnumber("rev"), hide=True)
 
 
-def validate_attributes_json():
+def _validate_attributes_json():
     """Ensure an attributes JSON file exists with default values if missing."""
 
     default_attributes = {"default_refdes": "DEVICE"}
@@ -600,7 +600,7 @@ def validate_attributes_json():
             print(f"Updated attributes file with missing defaults at {attributes_path}")
 
 
-def get_attribute(attribute_key):
+def _get_attribute(attribute_key):
     # find an attribute from either revision history tsv or attributes json
     if attribute_key in rev_history.revision_history_columns():
         current_info = rev_history.current_info()
@@ -611,10 +611,10 @@ def get_attribute(attribute_key):
             return json.load(f).get(attribute_key)
 
 
-def device_render(lightweight=False):
+def _device_render(lightweight=False):
     fileio.verify_revision_structure(product_type="device")
 
-    validate_attributes_json()
+    _validate_attributes_json()
 
     if not lightweight:
         if not os.path.exists(fileio.path("signals list")):
@@ -642,12 +642,12 @@ def device_render(lightweight=False):
         f"Kicad nickname:       harnice-devices/{rev_history.current_info().get('library_subpath')}{fileio.partnumber('pn')}"
     )
 
-    validate_kicad_library()
+    _validate_kicad_library()
 
 
 def lightweight_render():
-    device_render(lightweight=True)
+    _device_render(lightweight=True)
 
 
 def render():
-    device_render(lightweight=False)
+    _device_render(lightweight=False)
