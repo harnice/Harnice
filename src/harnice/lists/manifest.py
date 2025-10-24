@@ -25,9 +25,10 @@ def new():
     existing_manifest = []
     manifest_nets = set()
     try:
+        existing_manifest = fileio.read_tsv("system manifest")
         manifest_nets = {
             row.get("net", "").strip()
-            for row in fileio.read_tsv("system manifest")
+            for row in existing_manifest
             if row.get("net")
         }
     except FileNotFoundError:

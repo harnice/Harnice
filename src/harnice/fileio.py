@@ -138,7 +138,7 @@ def harnice_file_structure():
                 f"{partnumber('pn-rev')}-bom.tsv": "bom",
                 f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
                 f"{partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
-                f"{partnumber('pn-rev')}-system_manifest.tsv": "system manifest",
+                f"{partnumber('pn-rev')}-harness_manifest.tsv": "system manifest",
                 f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
                 f"{partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
                 f"{partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnects set",
