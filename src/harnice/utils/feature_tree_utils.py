@@ -9,7 +9,7 @@ from harnice.utils import library_utils
 
 
 def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
-    macro_dirpath = library_utils.pull(
+    library_utils.pull(
         {
             "mpn": macro_name,
             "lib_repo": lib_repo,
@@ -19,6 +19,7 @@ def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
         }
     )
 
+    macro_dirpath = os.path.join(fileio.dirpath("imported_instances"), "Macro", macro_name)
     script_path = os.path.join(macro_dirpath, f"{macro_name}.py")
 
     # always pass the basics, but let kwargs override/extend

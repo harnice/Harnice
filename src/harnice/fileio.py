@@ -95,8 +95,7 @@ def harnice_file_structure():
             "interactive_files": {
                 f"{partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
                 f"{partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
-            },
-            "macros": {},
+            }
         }
     elif product_type == "part":
         return {
@@ -165,7 +164,6 @@ def generate_structure():
         silentremove(dirpath("generated_instances_do_not_edit"))
         os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
         os.makedirs(dirpath("interactive_files"), exist_ok=True)
-        os.makedirs(dirpath("macros"), exist_ok=True)
     if product_type == "device":
         os.makedirs(dirpath("kicad"), exist_ok=True)
     if product_type == "system":
