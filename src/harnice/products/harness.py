@@ -15,7 +15,7 @@ for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["Connector", "Backshell"]:
         if instance.get("instance_name") not in ["X100"]:
             if instance.get("mpn") not in ["TXPA20"]:
-                library_utils.pull_part(instance)
+                library_utils.pull_instance(instance)
 
 #===========================================================================
 #                   LOCATE PARTS PER COORDINATE SYSTEMS

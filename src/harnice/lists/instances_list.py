@@ -36,12 +36,18 @@ COLUMNS = [
     "bubble_text",
     "note_text",
     "lib_repo",
+    "lib_subpath"
+    "lib_desc",
     "lib_latest_rev",
     "lib_rev_used_here",
     "lib_status",
+    "lib_releaseticket",
+    "lib_datestarted",
     "lib_datemodified",
     "lib_datereleased",
     "lib_drawnby",
+    "lib_checkedby",
+    "project_editable_lib_modified",
     "this_instance_mating_device_refdes",  # if connector, refdes of the device it plugs into
     "this_instance_mating_device_connector",  # if connector, name of the connector it plugs into
     "this_instance_mating_device_connector_mpn",  # if connector, mpn of the connector it plugs into

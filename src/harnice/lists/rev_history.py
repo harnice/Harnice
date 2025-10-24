@@ -23,26 +23,20 @@ REVISION_HISTORY_COLUMNS = [
 ]
 
 
-def revision_history_columns():
-    return REVISION_HISTORY_COLUMNS
-
-
-def current_info():
-    rev_path = fileio.path("revision history")
-    if not os.path.exists(rev_path):
+def info(rev=None,path=fileio.path("revision history")):
+    if not os.path.exists(path):
         return "file not found"
 
-    for row in fileio.read_tsv("revision history"):
-        if row.get("rev") == fileio.partnumber("R"):
+    if rev:
+        rev = str(rev)
+    else:
+        rev = fileio.partnumber("R")
+
+    for row in fileio.read_tsv(path):
+        if row.get("rev") == rev:
             return row
 
-    return "row not found"
-
-
-def status(rev):
-    for row in fileio.read_tsv("revision history"):
-        if str(row.get("rev")) == str(rev):
-            return row.get("status")
+    return f"rev row '{rev}' not found in '{path}'"
 
 
 def initial_release_exists():

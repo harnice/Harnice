@@ -137,15 +137,12 @@ def assign_cable_conductor(
 
         os.makedirs(destination_directory, exist_ok=True)
 
-        library_utils.pull_item_from_library(
-            lib_repo=library_info.get("lib_repo"),
-            product="cables",
-            mpn=library_info.get("mpn"),
-            destination_directory=destination_directory,
-            lib_subpath=lib_subpath,
-            used_rev=used_rev,
-            item_name=cable_instance_name,
-        )
+        library_utils.pull_instance({
+            "lib_repo": library_info.get("lib_repo"),
+            "item_type": "Cable",
+            "mpn": library_info.get("mpn"),
+            "instance_name": cable_instance_name,
+        })
 
         instances_list.new_instance(
             cable_instance_name,
