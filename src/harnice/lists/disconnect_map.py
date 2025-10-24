@@ -67,9 +67,10 @@ def new():
     for item in fileio.read_tsv("bom"):
         if item.get("disconnect"):
             disconnect_signals_list_path = os.path.join(
-                fileio.dirpath("disconnects"),
-                item.get("device_ref_des"),
-                f"{item.get('device_ref_des')}-signals_list.tsv",
+                fileio.dirpath("imported_instances"),
+                "disconnect",
+                item.get("device_refdes"),
+                f"{item.get('device_refdes')}-signals_list.tsv",
             )
 
             available_disconnect_channels = set()
@@ -80,7 +81,7 @@ def new():
 
                 disconnect_map_rows.append(
                     {
-                        "disconnect_refdes": item.get("device_ref_des"),
+                        "disconnect_refdes": item.get("device_refdes"),
                         "disconnect_channel_id": signal.get("channel_id"),
                         "A-port_channel_type": signal.get("A_channel_type"),
                         "B-port_channel_type": signal.get("B_channel_type"),

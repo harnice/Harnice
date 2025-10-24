@@ -9,6 +9,7 @@ COLUMNS = [
     "instance_name",
     "print_name",
     "bom_line_number",
+    "mfg",
     "mpn",  # unique part identifier (manufacturer + part number concatenated)
     "item_type",  # connector, backshell, whatever
     "parent_instance",  # general purpose reference
@@ -183,7 +184,7 @@ def assign_bom_line_numbers():
 
 
 def add_revhistory_of_imported_part(instance_name, rev_data):
-    # Expected rev_data is a dict with keys from REVISION_HISTORY_COLUMNS
+    # Expected rev_data is a dict with keys from rev_history.COLUMNS
     with open(fileio.path("instances list"), newline="") as f:
         reader = csv.DictReader(f, delimiter="\t")
         rows = list(reader)

@@ -1,4 +1,3 @@
-import os
 from harnice import fileio
 from harnice.lists import instances_list
 from harnice.utils import library_utils
@@ -131,12 +130,14 @@ def assign_cable_conductor(
     )
 
     # --- Import cable from library ---
-    library_utils.pull_instance({
-        "lib_repo": library_info.get("lib_repo"),
-        "item_type": "Cable",
-        "mpn": library_info.get("mpn"),
-        "instance_name": cable_instance_name,
-    })
+    library_utils.pull(
+        {
+            "lib_repo": library_info.get("lib_repo"),
+            "item_type": "Cable",
+            "mpn": library_info.get("mpn"),
+            "instance_name": cable_instance_name,
+        }
+    )
 
     # --- Make sure conductor of cable has not been assigned yet
     for instance in instances:

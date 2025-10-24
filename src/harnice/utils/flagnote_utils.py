@@ -42,12 +42,14 @@ def make_note_drawings(formboard_dir):
         os.makedirs(destination_directory, exist_ok=True)
 
         # === Pull library item ===
-        library_utils.pull_instance({
-            "lib_repo": instance.get("lib_repo"),
-            "item_type": "Flagnote",
-            "mpn": instance.get("mpn"),
-            "instance_name": instance_name,
-        })
+        library_utils.pull(
+            {
+                "lib_repo": instance.get("lib_repo"),
+                "item_type": "Flagnote",
+                "mpn": instance.get("mpn"),
+                "instance_name": instance_name,
+            }
+        )
 
         # === Replace placeholder in SVG ===
         drawing_path = os.path.join(

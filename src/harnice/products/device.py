@@ -604,7 +604,7 @@ def _validate_attributes_json():
 
 def _get_attribute(attribute_key):
     # find an attribute from either revision history tsv or attributes json
-    if attribute_key in rev_history.REVISION_HISTORY_COLUMNS:
+    if attribute_key in rev_history.COLUMNS:
         return rev_history.info(field=attribute_key)
 
     else:

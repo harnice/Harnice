@@ -9,23 +9,15 @@ from harnice.utils import library_utils
 
 
 def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
-    if artifact_id == "":
-        macro_dirpath = os.path.join(
-            fileio.dirpath("macros"), lib_subpath, f"{macro_name}"
-        )
-    else:
-        macro_dirpath = os.path.join(
-            fileio.dirpath("macros"), lib_subpath, f"{macro_name}-{artifact_id}"
-        )
-    os.makedirs(macro_dirpath, exist_ok=True)
-
-    library_utils.pull_instance({
-        "lib_repo": lib_repo,
-        "item_type": "Macro",
-        "lib_subpath": lib_subpath,
-        "mpn": macro_name,
-        "instance_name": macro_name,
-    })
+    macro_dirpath = library_utils.pull(
+        {
+            "mpn": macro_name,
+            "lib_repo": lib_repo,
+            "lib_subpath": lib_subpath,
+            "item_type": "Macro",
+            "instance_name": macro_name,
+        }
+    )
 
     script_path = os.path.join(macro_dirpath, f"{macro_name}.py")
 

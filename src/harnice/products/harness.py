@@ -15,7 +15,7 @@ for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["Connector", "Backshell"]:
         if instance.get("instance_name") not in ["X100"]:
             if instance.get("mpn") not in ["TXPA20"]:
-                library_utils.pull_instance(instance)
+                library_utils.pull(instance)
 
 #===========================================================================
 #                   LOCATE PARTS PER COORDINATE SYSTEMS
@@ -223,7 +223,6 @@ for instance in fileio.read_tsv("instances list"):
 
 
 def render(build_macro="", output_macro_dict=None):
-
     # Step 1: revision structure
     fileio.verify_revision_structure(product_type="harness")
 

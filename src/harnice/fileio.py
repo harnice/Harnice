@@ -130,7 +130,7 @@ def harnice_file_structure():
         return {
             f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
             f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
-            "devices": {},
+            "imported_instances": {},
             "disconnects": {},
             "features_for_relatives": {},
             "harnesses": {},
@@ -138,13 +138,12 @@ def harnice_file_structure():
                 f"{partnumber('pn-rev')}-bom.tsv": "bom",
                 f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
                 f"{partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
-                f"{partnumber('pn-rev')}-system_manifest.tsv": "system manifest",
+                f"{partnumber('pn-rev')}-harness_manifest.tsv": "system manifest",
                 f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
                 f"{partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
                 f"{partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnects set",
                 f"{partnumber('pn-rev')}-mapped_a_channels_through_disconnects_set.tsv": "mapped A-side channels through disconnects set",
             },
-            "macros": {},
             "maps": {
                 f"{partnumber('pn-rev')}-channel_map.tsv": "channel map",
                 f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
@@ -170,12 +169,11 @@ def generate_structure():
     if product_type == "device":
         os.makedirs(dirpath("kicad"), exist_ok=True)
     if product_type == "system":
-        os.makedirs(dirpath("devices"), exist_ok=True)
+        os.makedirs(dirpath("imported_instances"), exist_ok=True)
         os.makedirs(dirpath("disconnects"), exist_ok=True)
         os.makedirs(dirpath("features_for_relatives"), exist_ok=True)
         os.makedirs(dirpath("harnesses"), exist_ok=True)
         os.makedirs(dirpath("lists"), exist_ok=True)
-        os.makedirs(dirpath("macros"), exist_ok=True)
         os.makedirs(dirpath("maps"), exist_ok=True)
 
 
@@ -299,7 +297,7 @@ def verify_revision_structure(product_type=None):
         return any(pattern.fullmatch(d) for d in os.listdir(path))
 
     def make_new_rev_tsv(filepath, pn, rev):
-        columns = rev_history.revision_history_columns()
+        columns = rev_history.COLUMNS
         with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
             writer.writeheader()
@@ -411,7 +409,7 @@ def verify_revision_structure(product_type=None):
             }
         )
 
-        columns = rev_history.revision_history_columns()
+        columns = rev_history.COLUMNS
         with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
             writer.writeheader()

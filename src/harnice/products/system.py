@@ -1,20 +1,22 @@
 import runpy
 import os
 from harnice import fileio
-from harnice.lists import post_harness_instances_list
+from harnice.lists import post_harness_instances_list, instances_list
 
-system_feature_tree_utils_default = """import csv
-from harnice import fileio
+system_feature_tree_utils_default = """from harnice import fileio
 from harnice.utils import system_utils, feature_tree_utils
 from harnice.lists import instances_list, manifest, channel_map, circuits_list, disconnect_map
 
 #===========================================================================
 #                   KICAD PROCESSING
 #===========================================================================
-feature_tree_utils.run_macro("kicad_pro_to_bom", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
-system_utils.pull_devices_from_library()
 feature_tree_utils.run_macro("kicad_sch_to_pdf", "system_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="blockdiagram1")
+feature_tree_utils.run_macro("kicad_pro_to_bom", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
 
+#===========================================================================
+#                   COLLECT AND PULL DEVICES FROM LIBRARY
+#===========================================================================
+system_utils.make_instances_from_bom()
 
 #===========================================================================
 #                   CHANNEL MAPPING
@@ -23,9 +25,8 @@ feature_tree_utils.run_macro("kicad_pro_to_system_connector_list", "system_build
 manifest.new()
 channel_map.new()
 
-#add manual channel map commands here. key=(device_refdes, device_channel_id)
-#channel_map.map(from_key, to_key)
-#channel_map.already_mapped_set_append(key)
+#add manual channel map commands here. key=(from_device_refdes, from_device_channel_id)
+#channel_map.map(("MIC3", "out1"), ("PREAMP1", "in2"))
 
 #map channels to other compatible channels by sorting alphabetically then mapping compatibles
 feature_tree_utils.run_macro("basic_channel_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
@@ -37,8 +38,7 @@ system_utils.add_shortest_disconnect_chain_to_channel_map()
 disconnect_map.new()
 
 #add manual disconnect map commands here
-#disconnect_map.assign(a_side_key, disconnect_key)
-#already_assigned_disconnects_set_append()
+#disconnect_map.already_assigned_disconnects_set_append(('X1', 'ch0'))
 
 #map channels passing through disconnects to available channels inside disconnects
 feature_tree_utils.run_macro("disconnect_mapper", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
@@ -49,7 +49,6 @@ circuits_list.new()
 #===========================================================================
 #                   INSTANCES LIST
 #===========================================================================
-instances_list.new()
 system_utils.make_instances_for_connectors_cavities_nodes_channels_circuits()
 
 #assign mating connectors
@@ -78,6 +77,7 @@ def render():
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
             f.write(system_feature_tree_utils_default)
 
+    instances_list.new()
     runpy.run_path(fileio.path("feature tree"))
 
     post_harness_instances_list.rebuild()
