@@ -8,7 +8,7 @@ from harnice.utils import library_utils
 
 def mpn_of_device_refdes(refdes):
     for row in fileio.read_tsv("bom"):
-        if row.get("device_ref_des") == refdes:
+        if row.get("device_refdes") == refdes:
             return row.get("MFG"), row.get("MPN"), row.get("rev")
     return None, None, None
 
@@ -18,7 +18,8 @@ def connector_of_channel(key):
     refdes, channel_id = key
 
     device_signals_list_path = os.path.join(
-        fileio.dirpath("devices"),
+        fileio.dirpath("imported_instances"),
+        "device",
         refdes,
         f"{refdes}-signals_list.tsv",
     )
