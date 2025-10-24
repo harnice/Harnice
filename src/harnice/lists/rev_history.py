@@ -23,9 +23,9 @@ REVISION_HISTORY_COLUMNS = [
 ]
 
 
-def info(rev=None,path=fileio.path("revision history")):
+def info(rev=None,path=fileio.path("revision history"),field=None):
     if not os.path.exists(path):
-        return "file not found"
+        return "file not found" #exact text is looked up in downstream texts, don't make it more specific
 
     if rev:
         rev = str(rev)
@@ -34,9 +34,12 @@ def info(rev=None,path=fileio.path("revision history")):
 
     for row in fileio.read_tsv(path):
         if row.get("rev") == rev:
-            return row
+            if field:
+                return row.get(field)
+            else:
+                return row
 
-    return f"rev row '{rev}' not found in '{path}'"
+    return "row not found" #exact text is looked up in downstream texts, don't make it more specific
 
 
 def initial_release_exists():

@@ -604,9 +604,8 @@ def _validate_attributes_json():
 
 def _get_attribute(attribute_key):
     # find an attribute from either revision history tsv or attributes json
-    if attribute_key in rev_history.revision_history_columns():
-        current_info = rev_history.current_info()
-        return current_info.get(attribute_key)
+    if attribute_key in rev_history.REVISION_HISTORY_COLUMNS:
+        return rev_history.info(field=attribute_key)
 
     else:
         with open(fileio.path("attributes"), "r", encoding="utf-8") as f:
@@ -721,7 +720,7 @@ def _device_render(lightweight=False):
         _validate_signals_list()
 
     print(
-        f"Kicad nickname:       harnice-devices/{rev_history.current_info().get('library_subpath')}{fileio.partnumber('pn')}"
+        f"Kicad nickname:       harnice-devices/{rev_history.info(field="library_subpath")}{fileio.partnumber('pn')}"
     )
 
     _validate_kicad_library()

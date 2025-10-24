@@ -121,37 +121,22 @@ def assign_cable_conductor(
 ):
     instances = fileio.read_tsv("instances list")
 
-    # --- Check if cable is already imported ---
-    already_imported = any(
-        inst.get("instance_name") == cable_instance_name for inst in instances
+    instances_list.new_instance(
+        cable_instance_name,
+        {
+            "item_type": "Cable",
+            "location_type": "Segment",
+            "cable_group": cable_instance_name,
+        },
     )
 
-    # --- Import from library if not already imported ---
-    if not already_imported:
-        lib_subpath = library_info.get("lib_subpath", "")
-        used_rev = library_info.get("used_rev", "")
-
-        destination_directory = os.path.join(
-            fileio.dirpath("imported_instances"), cable_instance_name
-        )
-
-        os.makedirs(destination_directory, exist_ok=True)
-
-        library_utils.pull_instance({
-            "lib_repo": library_info.get("lib_repo"),
-            "item_type": "Cable",
-            "mpn": library_info.get("mpn"),
-            "instance_name": cable_instance_name,
-        })
-
-        instances_list.new_instance(
-            cable_instance_name,
-            {
-                "item_type": "Cable",
-                "location_type": "Segment",
-                "cable_group": cable_instance_name,
-            },
-        )
+    # --- Import cable from library ---
+    library_utils.pull_instance({
+        "lib_repo": library_info.get("lib_repo"),
+        "item_type": "Cable",
+        "mpn": library_info.get("mpn"),
+        "instance_name": cable_instance_name,
+    })
 
     # --- Make sure conductor of cable has not been assigned yet
     for instance in instances:
