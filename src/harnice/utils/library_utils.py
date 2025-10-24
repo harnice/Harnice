@@ -24,7 +24,7 @@ def pull(instance, update_instances_list=True):
         raise ValueError(f"when importing {instance.get('instance_name')} 'item_type' is required but blank")
 
     #determine destination directory
-    destination_directory = os.path.join(fileio.dirpath("imported_instances"), instance.get("item_type"), instance.get("lib_subpath", ""), f"{instance.get("mpn")}-{instance.get("instance_name")}")
+    destination_directory = os.path.join(fileio.dirpath("imported_instances"), instance.get("item_type"), instance.get("instance_name"))
 
     #determine source library path
     source_lib_path = os.path.join(get_local_path(instance.get("lib_repo")), instance.get("item_type"), instance.get("lib_subpath", ""), instance.get("mpn"))
@@ -99,11 +99,12 @@ def pull(instance, update_instances_list=True):
                     f.write(content)
 
     # === Load revision row from revision history TSV in source library ===
-    if update_instances_list:
-        revhistory_path = os.path.join(source_lib_path, f"{instance.get('mpn')}-revision_history.tsv")
-        revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
+    revhistory_path = os.path.join(source_lib_path, f"{instance.get('mpn')}-revision_history.tsv")
+    revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
 
+    if update_instances_list or not instance.get("item_type")=="Macro":
         update_contents = {
+            "item_type": instance.get("item_type"),
             "lib_desc": revhistory_row.get("desc"),
             "lib_latest_rev": highest_source_rev,
             "lib_rev_used_here": rev_to_use,

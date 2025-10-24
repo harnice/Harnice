@@ -411,4 +411,4 @@ def make_instances_from_bom():
             "lib_repo": device.get("lib_repo"),
             "lib_subpath": device.get("lib_subpath"),
             "lib_rev_used_here": device.get("rev")
-        }, update_instances_list=True)
+        })

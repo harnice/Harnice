@@ -16,8 +16,7 @@ def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
             "lib_subpath": lib_subpath,
             "item_type": "Macro",
             "instance_name": macro_name,
-        },
-        update_instances_list=False,
+        }
     )
 
     script_path = os.path.join(macro_dirpath, f"{macro_name}.py")
