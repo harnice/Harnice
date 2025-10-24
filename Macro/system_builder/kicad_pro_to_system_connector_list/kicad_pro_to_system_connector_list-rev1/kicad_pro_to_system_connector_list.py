@@ -84,11 +84,8 @@ def find_disconnects() -> set[str]:
     disconnects = set()
     with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f, delimiter="\t"):
-            print(f"!!!!!!!87: Checking row: {row}")
             if str(row.get("disconnect", "")).strip().lower() not in ["", None]:
                 disconnects.add(row.get("device_refdes", "").strip())
-                print(f"!!!!!!!89: Found disconnect: {row.get('device_refdes', '')}")
-    print(f"!!!!!!!91: Disconnects: {disconnects}")
     return disconnects
 
 
@@ -140,7 +137,6 @@ def main():
         nets = parse_nets_from_export(f.read())
 
     disconnect_refdes = find_disconnects()
-    print(f"Disconnect refdes: {disconnect_refdes}")
     merged_nets = merge_disconnect_nets(nets, disconnect_refdes)
 
     output_path = fileio.path("system connector list")
@@ -158,14 +154,8 @@ def main():
         writer.writeheader()
 
         for merged_net, conns in merged_nets.items():
-            print("\n!!!!!!----------------------")
-            print(f"Working on merged net: {merged_net}")
-            print(f"Connections: {conns}")
             for conn, orig_net in conns:
                 device_refdes, pinfunction = (conn.split(":", 1) + [""])[:2]
-                print("      ----------------------")
-                print(f"Device refdes: {device_refdes}")
-                print(f"Pinfunction: {pinfunction}")
                 disconnect_flag = "TRUE" if device_refdes in disconnect_refdes else ""
                 connector_mpn = ""
 
