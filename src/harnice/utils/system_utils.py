@@ -2,68 +2,7 @@ import os
 import csv
 from collections import deque
 from harnice import fileio
-from harnice.utils import library_utils
 from harnice.lists import instances_list
-
-
-def pull_devices_from_library():
-    imported_devices = []
-    for refdes in fileio.read_tsv("bom"):
-        if refdes not in imported_devices:
-            if refdes.get("disconnect") == "TRUE":
-                if refdes.get("MPN") in [None, ""]:
-                    raise ValueError(
-                        f"MPN is required to be able to import disconnect {refdes['device_ref_des']}"
-                    )
-                if refdes.get("lib_repo") in [None, ""]:
-                    raise ValueError(
-                        f"lib_repo is required to be able to import disconnect {refdes['device_ref_des']}"
-                    )
-                os.makedirs(
-                    os.path.join(
-                        fileio.dirpath("disconnects"), refdes["device_ref_des"]
-                    ),
-                    exist_ok=True,
-                )
-                if refdes.get("lib_repo") == "local":
-                    continue
-                if not refdes.get("MPN"):
-                    raise ValueError(
-                        f"MPN is required for disconnect refdes {refdes['device_ref_des']}"
-                    )
-                else:
-                    library_utils.pull_item_from_library(
-                        lib_repo=refdes["lib_repo"],
-                        product="disconnects",
-                        lib_subpath=refdes["lib_subpath"],
-                        mpn=refdes["MPN"],
-                        destination_directory=os.path.join(
-                            fileio.dirpath("disconnects"), refdes["device_ref_des"]
-                        ),
-                        used_rev=None,
-                        item_name=refdes["device_ref_des"],
-                        quiet=False,
-                    )
-                continue
-
-            else:
-                os.makedirs(
-                    os.path.join(fileio.dirpath("devices"), refdes["device_ref_des"]),
-                    exist_ok=True,
-                )
-                library_utils.pull_item_from_library(
-                    lib_repo=refdes["lib_repo"],
-                    product="devices",
-                    lib_subpath=refdes["lib_subpath"],
-                    mpn=refdes["MPN"],
-                    destination_directory=os.path.join(
-                        fileio.dirpath("devices"), refdes["device_ref_des"]
-                    ),
-                    used_rev=None,
-                    item_name=refdes["device_ref_des"],
-                    quiet=False,
-                )
-        imported_devices.append(refdes)
 
 
 def mpn_of_device_refdes(refdes):

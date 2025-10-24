@@ -5,7 +5,6 @@ import shutil
 import re
 import csv
 from harnice import cli
-from harnice.lists import rev_history
 
 # standard punctuation:
 #  .  separates between name hierarchy levels
@@ -284,6 +283,7 @@ def dirpath(target_key):
 
 
 def verify_revision_structure(product_type=None):
+    from harnice.lists import rev_history
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
@@ -450,14 +450,14 @@ def verify_revision_structure(product_type=None):
         rev = prompt_new_part(cwd, pn)  # changes the cwd to the new rev folder
 
     # if everything looks good but the tsv isn't there
-    x = rev_history.current_info()
+    x = rev_history.info()
     if x == "row not found":
         append_revision_row(path("revision history"), pn, rev)
     elif x == "file not found":
         make_new_rev_tsv(path("revision history"), pn, rev)
 
     # now we’re in a revision folder, with pn, rev, temp_tsv_path set
-    if not rev_history.status(rev) == "":
+    if not rev_history.info(field="status") == "":
         raise RuntimeError(
             f"Revision {rev} status is not clear. Harnice will only let you render revs with a blank status."
         )

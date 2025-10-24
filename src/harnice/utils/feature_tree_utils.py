@@ -19,15 +19,13 @@ def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
         )
     os.makedirs(macro_dirpath, exist_ok=True)
 
-    library_utils.pull_item_from_library(
-        lib_repo=lib_repo,
-        product="macros",
-        lib_subpath=lib_subpath,
-        mpn=macro_name,
-        destination_directory=macro_dirpath,
-        used_rev=None,
-        item_name=macro_name,
-    )
+    library_utils.pull_instance({
+        "lib_repo": lib_repo,
+        "item_type": "Macro",
+        "lib_subpath": lib_subpath,
+        "mpn": macro_name,
+        "instance_name": macro_name,
+    })
 
     script_path = os.path.join(macro_dirpath, f"{macro_name}.py")
 
