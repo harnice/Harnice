@@ -101,14 +101,12 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         destination_directory = os.path.join(path("tblock svgs"), page_name)
 
         # === Pull from library ===
-        library_utils.pull_item_from_library(
-            lib_repo=tblock_data.get("lib_repo"),
-            product="titleblocks",
-            mpn=titleblock,
-            destination_directory=destination_directory,
-            used_rev=None,
-            item_name=titleblock,
-        )
+        library_utils.pull_instance({
+            "lib_repo": tblock_data.get("lib_repo"),
+            "item_type": "Titleblock",
+            "mpn": titleblock,
+            "instance_name": titleblock,
+        })
 
         # === Access pulled files ===
         attr_path = os.path.join(destination_directory, f"{page_name}-attributes.json")

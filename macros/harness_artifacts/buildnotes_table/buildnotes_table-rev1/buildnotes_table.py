@@ -44,14 +44,14 @@ for instance in fileio.read_tsv("instances list"):
 
         # Pull bubble from the library if there is a shape
         if has_shape and shape and lib_repo:
-            library_utils.pull_item_from_library(
-                lib_repo=lib_repo,
-                product="flagnotes",
-                mpn=shape,
-                destination_directory=path("buildnotes table bubbles"),
-                item_name=f"bubble{buildnote_number}",
-                quiet=True,
-            )
+            library_utils.pull_instance({
+                "lib_repo": lib_repo,
+                "item_type": "Flagnote",
+                "mpn": shape,
+                "instance_name": f"bubble{buildnote_number}",
+                "destination_directory": path("buildnotes table bubbles"),
+                "quiet": True,
+            })
 
         # Append row information only if it contains valid data
         data_rows.append(

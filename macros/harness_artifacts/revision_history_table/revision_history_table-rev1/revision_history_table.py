@@ -61,14 +61,14 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
         rev = row.get("rev", "").strip()
         has_bubble = bool(row.get("affectedinstances", "").strip())
         if has_bubble:
-            library_utils.pull_item_from_library(
-                lib_repo="https://github.com/kenyonshutt/harnice-library-public",
-                product="flagnotes",
-                mpn="rev_change_callout",  # Assumed the bubble shape for all rows
-                destination_directory=path("revision table bubbles"),
-                item_name=f"bubble{rev}",
-                quiet=True,
-            )
+            library_utils.pull_instance({
+                "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
+                "item_type": "Flagnote",
+                "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
+                "instance_name": f"bubble{rev}",
+                "destination_directory": path("revision table bubbles"),
+                "quiet": True,
+            })
         row["has_bubble"] = has_bubble
         data_rows.append(row)
 
@@ -135,14 +135,14 @@ for row_index, row in enumerate(data_rows):
         # Pull the bubble from the library
         rev = row["rev"]
         bubble_name = f"bubble{rev}"
-        library_utils.pull_item_from_library(
-            lib_repo="https://github.com/kenyonshutt/harnice-library-public",
-            product="flagnotes",
-            mpn="rev_change_callout",  # Assumed the bubble shape for all rows
-            destination_directory=path("revision table bubbles"),
-            item_name=bubble_name,
-            quiet=True,
-        )
+        library_utils.pull_instance({
+            "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
+            "item_type": "Flagnote",
+            "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
+            "instance_name": bubble_name,
+            "destination_directory": path("revision table bubbles"),
+            "quiet": True,
+        })
 
         # Inject the bubble into the SVG at the correct position
         bubble_x = (
