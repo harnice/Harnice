@@ -3,7 +3,7 @@ import csv
 from harnice import fileio
 
 # === Global Columns Definition ===
-REVISION_HISTORY_COLUMNS = [
+COLUMNS = [
     "mfg",
     "pn",
     "desc",
@@ -32,15 +32,17 @@ def info(rev=None,path=fileio.path("revision history"),field=None):
     else:
         rev = fileio.partnumber("R")
 
-    for row in fileio.read_tsv(path):
-        if row.get("rev") == rev:
-            if field:
-                return row.get(field)
-            else:
-                return row
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        rows = list(reader)
+        for row in rows:
+            if row.get("rev") == rev:
+                if field:
+                    return row.get(field)
+                else:
+                    return row
 
     return "row not found" #exact text is looked up in downstream texts, don't make it more specific
-
 
 def initial_release_exists():
     for row in fileio.read_tsv("revision history"):
@@ -74,7 +76,7 @@ def update_datemodified():
         fileio.path("revision history"), "w", newline="", encoding="utf-8"
     ) as f_out:
         writer = csv.DictWriter(
-            f_out, fieldnames=REVISION_HISTORY_COLUMNS, delimiter="\t"
+            f_out, fieldnames=COLUMNS, delimiter="\t"
         )
         writer.writeheader()
         writer.writerows(rows)

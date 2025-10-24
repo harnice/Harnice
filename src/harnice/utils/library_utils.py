@@ -4,8 +4,17 @@ import shutil
 from harnice import fileio
 from harnice.lists import instances_list, rev_history
 
+"""
+imported_instances
+    lib_subpath
+        destination_directory
+            lib_used
+                lib_used_rev
 
-def pull_instance(instance):
+"""
+
+
+def pull(instance, update_instances_list=True):
     #throw errors if required fields are blank
     if instance.get("lib_repo") in [None, ""]:
         raise ValueError(f"when importing {instance.get('instance_name')} 'lib_repo' is required but blank")
@@ -15,8 +24,7 @@ def pull_instance(instance):
         raise ValueError(f"when importing {instance.get('instance_name')} 'item_type' is required but blank")
 
     #determine destination directory
-    destination_directory = os.path.join(fileio.dirpath("imported_instances"), instance.get("item_type"), instance.get("lib_subpath", ""), instance.get("instance_name"))
-    lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
+    destination_directory = os.path.join(fileio.dirpath("imported_instances"), instance.get("item_type"), instance.get("lib_subpath", ""), f"{instance.get("mpn")}-{instance.get("instance_name")}")
 
     #determine source library path
     source_lib_path = os.path.join(get_local_path(instance.get("lib_repo")), instance.get("item_type"), instance.get("lib_subpath", ""), instance.get("mpn"))
@@ -33,10 +41,9 @@ def pull_instance(instance):
     highest_source_rev = str(
         max(int(re.search(r"rev(\d+)", name).group(1)) for name in source_revision_folders)
     )
-
     # === Decide which rev to use
     if instance.get("lib_rev_used_here"):
-        rev_to_use = instance.get("lib_rev_used_here")
+        rev_to_use = int(instance.get("lib_rev_used_here").strip().lower().replace("rev", ""))
         if int(highest_source_rev) > int(rev_to_use):
             status = (
                 f"newer rev exists   (rev{rev_to_use} used, rev{highest_source_rev} available)"
@@ -48,14 +55,16 @@ def pull_instance(instance):
         status = f"imported latest (rev{rev_to_use})"
 
     # === Import library contents freshly every time
-    source_lib_path = os.path.join(source_lib_path, f"{instance.get('mpn')}-rev{rev_to_use}")
-    destination_lib_path = os.path.join(lib_used_path, f"{instance.get('mpn')}-rev{rev_to_use}")
-    os.makedirs(lib_used_path, exist_ok=True)
+    lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
+    os.makedirs(lib_used_path,exist_ok=True)
+    
+    lib_used_rev_path = os.path.join(lib_used_path, f"{instance.get('mpn')}-rev{rev_to_use}")
+    if os.path.exists(lib_used_rev_path):
+        shutil.rmtree(lib_used_rev_path)
+    
+    source_lib_rev_path = os.path.join(source_lib_path, f"{instance.get('mpn')}-rev{rev_to_use}")
 
-    if os.path.exists(destination_lib_path):
-        shutil.rmtree(destination_lib_path)
-
-    shutil.copytree(source_lib_path, destination_lib_path)
+    shutil.copytree(source_lib_rev_path, lib_used_rev_path)
 
     # === Copy editable files into the editable directory only if not already present
     rename_suffixes = [
@@ -66,11 +75,8 @@ def pull_instance(instance):
         "-feature_tree.py",
         "-conductor_list.tsv",
     ]
-
-    for filename in os.listdir(source_lib_path):
-        lib_used_do_not_edit_file = os.path.join(source_lib_path, filename)
-        if not os.path.isfile(lib_used_do_not_edit_file):
-            continue
+    for filename in os.listdir(lib_used_rev_path):
+        lib_used_do_not_edit_file = os.path.join(lib_used_rev_path, filename)
 
         new_name = filename
         for suffix in rename_suffixes:
@@ -78,38 +84,46 @@ def pull_instance(instance):
                 new_name = f"{instance.get('instance_name')}{suffix}"
                 break
 
-        editable_file = os.path.join(destination_directory, new_name)
-        if not os.path.exists(editable_file):
-            shutil.copy2(lib_used_do_not_edit_file, editable_file)
+        editable_file_path = os.path.join(destination_directory, new_name)
+        if not os.path.exists(editable_file_path):
+            shutil.copy2(lib_used_do_not_edit_file, editable_file_path)
 
             #special rules for copying svg
             if new_name.endswith(".svg"):
-                with open(editable_file, "r", encoding="utf-8") as f:
+                with open(editable_file_path, "r", encoding="utf-8") as f:
                     content = f.read()
                 content = content.replace(
                     f"{instance.get('mpn')}-drawing-contents-start", f"{instance.get('instance_name')}-contents-start"
                 ).replace(f"{instance.get('mpn')}-drawing-contents-end", f"{instance.get('instance_name')}-contents-end")
-                with open(editable_file, "w", encoding="utf-8") as f:
+                with open(editable_file_path, "w", encoding="utf-8") as f:
                     f.write(content)
 
     # === Load revision row from revision history TSV in source library ===
-    revhistory_path = os.path.join(source_lib_path, f"{instance.get('mpn')}-revision_history.tsv")
+    if update_instances_list:
+        revhistory_path = os.path.join(source_lib_path, f"{instance.get('mpn')}-revision_history.tsv")
+        revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
 
-    revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
+        update_contents = {
+            "lib_desc": revhistory_row.get("desc"),
+            "lib_latest_rev": highest_source_rev,
+            "lib_rev_used_here": rev_to_use,
+            "lib_status": revhistory_row.get("status"),
+            "lib_releaseticket": revhistory_row.get("releaseticket"),
+            "lib_datestarted": revhistory_row.get("datestarted"),
+            "lib_datemodified": revhistory_row.get("datemodified"),
+            "lib_datereleased": revhistory_row.get("datereleased"),
+            "lib_drawnby": revhistory_row.get("drawnby"),
+            "lib_checkedby": revhistory_row.get("checkedby"),
+            "project_editable_lib_modified": "TODO"
+        }
 
-    instances_list.modify(instance.get("instance_name"), {
-        "lib_desc": revhistory_row.get("desc"),
-        "lib_latest_rev": highest_source_rev,
-        "lib_rev_used_here": rev_to_use,
-        "lib_status": revhistory_row.get("status"),
-        "lib_releaseticket": revhistory_row.get("releaseticket"),
-        "lib_datestarted": revhistory_row.get("datestarted"),
-        "lib_datemodified": revhistory_row.get("datemodified"),
-        "lib_datereleased": revhistory_row.get("datereleased"),
-        "lib_drawnby": revhistory_row.get("drawnby"),
-        "lib_checkedby": revhistory_row.get("checkedby"),
-        "project_editable_lib_modified": "TODO"
-    })
+        try:
+            instances_list.modify(instance.get("instance_name"),update_contents)
+        except ValueError:
+            instances_list.new_instance(instance.get("instance_name"), update_contents)
+    
+    print(f"Importing from library: {instance.get('instance_name'):<40}{instance.get('item_type'):<20}{status}")
+    return destination_directory
 
 
 def get_local_path(lib_repo):

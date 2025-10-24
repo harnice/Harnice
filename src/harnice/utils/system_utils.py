@@ -3,6 +3,7 @@ import csv
 from collections import deque
 from harnice import fileio
 from harnice.lists import instances_list
+from harnice.utils import library_utils
 
 
 def mpn_of_device_refdes(refdes):
@@ -12,6 +13,7 @@ def mpn_of_device_refdes(refdes):
     return None, None, None
 
 
+#TODO: #480
 def connector_of_channel(key):
     refdes, channel_id = key
 
@@ -25,15 +27,6 @@ def connector_of_channel(key):
             return row.get("connector_name", "").strip()
 
     raise ValueError(f"Connector not found for channel {key}")
-
-
-def disconnects_in_net(net):
-    disconnects = []
-    for connector in fileio.read_tsv("system connector list"):
-        if connector.get("net") == net:
-            if connector.get("disconnect") == "TRUE":
-                disconnects.append(connector.get("device_refdes"))
-    return disconnects
 
 
 def find_connector_with_no_circuit(connector_list, circuits_list):
@@ -401,3 +394,21 @@ def add_shortest_disconnect_chain_to_channel_map():
         writer = csv.DictWriter(f, fieldnames=channel_map[0].keys(), delimiter="\t")
         writer.writeheader()
         writer.writerows(channel_map)
+
+
+def make_instances_from_bom():
+    for device in fileio.read_tsv("bom"):
+        if device.get("disconnect"):
+            item_type = "disconnect"
+        else:
+            item_type = "device"
+
+        library_utils.pull({
+            "instance_name": device.get("device_refdes"),
+            "mfg": device.get("MFG"),
+            "mpn": device.get("MPN"),
+            "item_type": item_type,
+            "lib_repo": device.get("lib_repo"),
+            "lib_subpath": device.get("lib_subpath"),
+            "lib_rev_used_here": device.get("rev")
+        }, update_instances_list=True)

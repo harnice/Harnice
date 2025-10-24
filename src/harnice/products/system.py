@@ -1,7 +1,7 @@
 import runpy
 import os
 from harnice import fileio
-from harnice.lists import post_harness_instances_list
+from harnice.lists import post_harness_instances_list, instances_list
 
 system_feature_tree_utils_default = """import csv
 from harnice import fileio
@@ -12,9 +12,8 @@ from harnice.lists import instances_list, manifest, channel_map, circuits_list, 
 #                   KICAD PROCESSING
 #===========================================================================
 feature_tree_utils.run_macro("kicad_pro_to_bom", "system_builder", "https://github.com/kenyonshutt/harnice-library-public")
-system_utils.pull_devices_from_library()
 feature_tree_utils.run_macro("kicad_sch_to_pdf", "system_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="blockdiagram1")
-
+system_utils.make_instances_from_bom()
 
 #===========================================================================
 #                   CHANNEL MAPPING
@@ -49,7 +48,6 @@ circuits_list.new()
 #===========================================================================
 #                   INSTANCES LIST
 #===========================================================================
-instances_list.new()
 system_utils.make_instances_for_connectors_cavities_nodes_channels_circuits()
 
 #assign mating connectors
@@ -78,6 +76,7 @@ def render():
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
             f.write(system_feature_tree_utils_default)
 
+    instances_list.new()
     runpy.run_path(fileio.path("feature tree"))
 
     post_harness_instances_list.rebuild()
