@@ -8,31 +8,33 @@ from harnice.lists import rev_history
 
 artifact_mpn = "pdf_generator"
 
-def file_structure(page_name=None, page_counter=None):
+def file_structure(pg_name=None, page_counter=None):
     return {
-        "imported_instances":{
-            "Titleblock":{
-                f"{artifact_id}-{page_name}":{
-                    f"{artifact_id}-{page_name}-attributes.json": "project titleblock attributes",
-                    f"{artifact_id}-{page_name}-drawing.svg": "project titleblock drawing"
-                }
-            },
-            "Macro":{
-                artifact_id:{
-                    f"{fileio.partnumber("pn-rev")}-{artifact_id}-page_setup.json": "page setup",
-                    f"{artifact_id}-mastercontents.svg": "master contents svg",
-                    f"{artifact_mpn}.py": "macro script",
-                    f"{fileio.partnumber("pn-rev")}-{artifact_id}.pdf": "output pdf",
-                    "library_used_do_not_edit":{
-                        "Titleblocks":{
-                            f"{artifact_id}-{page_name}":{
-                                f"{artifact_id}-{page_name}-attributes.json": "macro titleblock attributes",
-                                f"{artifact_id}-{page_name}-drawing.svg": "macro titleblock drawing"
-                            }
+        "instance_data":{
+            "imported_instances":{
+                "Titleblock":{
+                    f"{artifact_id}-{pg_name}":{
+                        f"{artifact_id}-{pg_name}-attributes.json": "project titleblock attributes",
+                        f"{artifact_id}-{pg_name}-drawing.svg": "project titleblock drawing"
+                    }
+                },
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber("pn-rev")}-{artifact_id}-page_setup.json": "page setup",
+                        f"{artifact_id}-mastercontents.svg": "master contents svg",
+                        f"{artifact_mpn}.py": "macro script",
+                        f"{fileio.partnumber("pn-rev")}-{artifact_id}.pdf": "output pdf",
+                        "library_used_do_not_edit":{
+                            "Titleblock":{
+                                f"macro-{artifact_id}-{pg_name}":{
+                                    f"{artifact_id}-{pg_name}-attributes.json": "macro titleblock attributes",
+                                    f"{artifact_id}-{pg_name}-drawing.svg": "macro titleblock drawing"
+                                }
+                            },
                         },
-                    },
-                    "page_svgs":{
-                        f"{page_counter}-{page_name}-drawing.svg": "page svg"
+                        "page_svgs":{
+                            f"{page_counter}-{pg_name}-drawing.svg": "page svg"
+                        }
                     }
                 }
             }
@@ -40,11 +42,11 @@ def file_structure(page_name=None, page_counter=None):
     }
 
 def generate_file_structure():
-    os.makedirs(fileio.dirpath("imported instances", structure_dict=file_structure()), exist_ok=True)
+    os.makedirs(fileio.dirpath("imported_instances", structure_dict=file_structure()), exist_ok=True)
     os.makedirs(fileio.dirpath("Macro", structure_dict=file_structure()), exist_ok=True)
     fileio.silentremove(fileio.dirpath(artifact_id, structure_dict=file_structure()))
     os.makedirs(fileio.dirpath("library_used_do_not_edit", structure_dict=file_structure()), exist_ok=True)
-    os.makedirs(fileio.dirpath("Titleblocks", structure_dict=file_structure()), exist_ok=True)
+    os.makedirs(fileio.dirpath("Titleblock", structure_dict=file_structure()), exist_ok=True)
 
 
 def update_page_setup_json():
@@ -85,8 +87,6 @@ def update_page_setup_json():
             page_data = blank_setup
 
     # Always write back a valid version
-    TODO: FIGURE OUT WHY THIS IS NOT DUMPING JSON
-    print(f"!!!!!!!!!!Page setup path: {fileio.path('page setup', structure_dict=file_structure())}")
     with open(fileio.path("page setup", structure_dict=file_structure()), "w", encoding="utf-8") as f:
         json.dump(page_data, f, indent=4)
 
@@ -111,8 +111,6 @@ def prep_tblocks(page_setup_contents, revhistory_data):
                 f"[ERROR] Titleblock '{page_name}' not found in harnice output contents"
             )
 
-        titleblock = page.get("titleblock")
-
         # === Pull from library ===
         library_utils.pull(
             {
@@ -124,9 +122,19 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         )
 
         # === Copy from imported instances to this macro's library_used_do_not_edit directory ===
+        os.makedirs(fileio.dirpath("Titleblock", structure_dict=file_structure()), exist_ok=True)
+        os.makedirs(fileio.dirpath(f"macro-{artifact_id}-{page_name}", structure_dict=file_structure(pg_name=page_name)), exist_ok=True)=
+        print(f"!!!!!!!!!!Project titleblock attributes path: {fileio.path("project titleblock attributes", structure_dict=file_structure(page_name))}")
+        print(f"!!!!!!!!!!Project titleblock attributes path: {os.path.exists(fileio.path("project titleblock attributes", structure_dict=file_structure(page_name)))}")
+        print(f"!!!!!!!!!!Macro titleblock attributes path: {fileio.path("macro titleblock attributes", structure_dict=file_structure(page_name))}")
+        print(f"!!!!!!!!!!Macro titleblock attributes path: {os.path.exists(fileio.path("macro titleblock attributes", structure_dict=file_structure(page_name)))}")
+        shutil.copy(
+            fileio.path("project titleblock attributes", structure_dict=file_structure(page_name)),
+            fileio.path("macro titleblock attributes", structure_dict=file_structure(page_name))
+        )
         #TODO: #486
 
-        with open(fileio.path("titleblock attributes", structure_dict=file_structure(page_name)), "r", encoding="utf-8") as f:
+        with open(fileio.path("macro titleblock attributes", structure_dict=file_structure(page_name)), "r", encoding="utf-8") as f:
             tblock_attributes = json.load(f)
 
         # === Page size in pixels ===
@@ -338,7 +346,8 @@ def produce_multipage_pdf(page_setup_contents):
     for temp in temp_pdfs:
         os.remove(temp)
 
-
+# main function
+generate_file_structure()
 page_setup_contents = update_page_setup_json()
 
 prep_tblocks(page_setup_contents, rev_history.info())
