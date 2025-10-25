@@ -25,7 +25,8 @@ def pull(input_dict, update_instances_list=True):
 
     #determine destination directory
     destination_directory = os.path.join(fileio.dirpath("imported_instances"), input_dict.get("item_type"), input_dict.get("instance_name"))
-
+    os.makedirs(destination_directory, exist_ok=True)
+    
     #determine source library path
     source_lib_path = os.path.join(get_local_path(input_dict.get("lib_repo")), input_dict.get("item_type"), input_dict.get("lib_subpath", ""), input_dict.get("mpn"))
 

@@ -8,10 +8,17 @@ from harnice.lists import instances_list
 from harnice.utils import library_utils
 
 
-def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
+def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
+    if artifact_id is None:
+        raise ValueError("artifact_id is required")
+    if macro_part_number is None:
+        raise ValueError("macro_part_number is required")
+    if lib_repo is None:
+        raise ValueError("lib_repo is required")
+
     library_utils.pull(
         {
-            "mpn": macro_name,
+            "mpn": macro_part_number,
             "lib_repo": lib_repo,
             "lib_subpath": lib_subpath,
             "item_type": "Macro",
@@ -19,8 +26,8 @@ def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
         }
     )
 
-    macro_dirpath = os.path.join(fileio.dirpath("imported_instances"), "Macro", macro_name)
-    script_path = os.path.join(macro_dirpath, f"{macro_name}.py")
+    macro_dirpath = os.path.join(fileio.dirpath("imported_instances"), "Macro", artifact_id)
+    script_path = os.path.join(macro_dirpath, f"{macro_part_number}.py")
 
     # always pass the basics, but let kwargs override/extend
     init_globals = {
