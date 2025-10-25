@@ -23,7 +23,10 @@ COLUMNS = [
 ]
 
 
-def info(rev=None,path=fileio.path("revision history"),field=None):
+def info(rev=None,path=None,field=None):
+    if path is None:
+        path = fileio.path("revision history")
+        
     if not os.path.exists(path):
         return "file not found" #exact text is looked up in downstream texts, don't make it more specific
 

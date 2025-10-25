@@ -15,7 +15,7 @@ def run_macro(macro_name, lib_subpath, lib_repo, artifact_id="", **kwargs):
             "lib_repo": lib_repo,
             "lib_subpath": lib_subpath,
             "item_type": "Macro",
-            "instance_name": macro_name,
+            "instance_name": artifact_id,
         }
     )
 

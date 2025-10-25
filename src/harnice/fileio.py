@@ -4,7 +4,6 @@ import datetime
 import shutil
 import re
 import csv
-from harnice import cli
 
 # standard punctuation:
 #  .  separates between name hierarchy levels
@@ -12,9 +11,15 @@ from harnice import cli
 #  -  if multiple instances are found at the same hierarchy level with the same name,
 # this separates name from unique instance identifier
 
-product_type = ""
-net = ""
+def set_file_structure(x):
+    from harnice import cli
+    cli.set_file_structure(x)
 
+def file_structure():
+    from harnice import cli
+    return cli.file_structure
+    
+net = ""
 pn = ""
 rev = 0
 
@@ -25,11 +30,6 @@ def part_directory():
 
 def rev_directory():
     return os.getcwd()
-
-
-def set_product_type(x):
-    global product_type
-    product_type = x
 
 
 def set_net(x):
@@ -83,21 +83,7 @@ def harnice_file_structure():
     # filename is the actual file name with a suffix
     # filekey is the shorthand reference for it with no suffix
 
-    if product_type == "harness":
-        return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
-            f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
-            f"{partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
-            "instance_data": {
-                "imported_instances": {},
-                "generated_instances_do_not_edit": {},
-            },
-            "interactive_files": {
-                f"{partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
-                f"{partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
-            }
-        }
-    elif product_type == "part":
+    if product_type == "part":
         return {
             f"{partnumber('pn-rev')}-drawing.svg": "drawing",
             f"{partnumber('pn-rev')}-attributes.json": "attributes",
@@ -183,7 +169,10 @@ def silentremove(filepath):
             shutil.rmtree(filepath)  # remove directory and contents
 
 
-def path(target_value):
+def path(target_value, structure_dict=None):
+    if structure_dict is None:
+        structure_dict = file_structure()
+
     # returns the filepath/filename of a filekey.
     """
     Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
@@ -219,14 +208,6 @@ def path(target_value):
         )
         return os.path.join(harnice_root, "project_locations.csv")
 
-    # FILES OUTSIDE OF PRODUCT DIRECTORY
-    if product_type == "device":
-        if target_value == "library file":
-            return os.path.join(dirpath("kicad"), f"{partnumber('pn')}.kicad_sym")
-
-        if target_value == "library setup info":
-            return os.path.join(dirpath("kicad"), "librarybasics.txt")
-
     # FILES INSIDE OF A STRUCURE DEFINED BY FILEIO
     def recursive_search(data, path):
         if isinstance(data, dict):
@@ -245,23 +226,26 @@ def path(target_value):
                     return result
         return None
 
-    path_value = recursive_search(harnice_file_structure(), [])
+    path_value = recursive_search(structure_dict, [])
     if not path_value:
-        raise TypeError(f"Could not find filepath of {target_value}.")
+        raise TypeError(f"Could not find filepath of '{target_value}'.")
     return os.path.join(rev_directory(), *path_value)
 
 
-def dirpath(target_key):
-    # returns the path of a directory you know the name of. use that directory name as the argument.
-    if product_type == "device":
-        if target_key == "kicad":
-            return os.path.join(part_directory(), "kicad")
-
+def dirpath(target_key, structure_dict=None):
+    if structure_dict is None:
+        structure_dict = file_structure()
+    """
+    Returns the absolute path to a directory identified by its key
+    within a dict hierarchy.
+    """
     def recursive_search(data, path):
         if isinstance(data, dict):
             for key, value in data.items():
+                # if the current key matches, return its path immediately
                 if key == target_key:
                     return path + [key]
+                # otherwise, keep descending
                 result = recursive_search(value, path + [key])
                 if result:
                     return result
@@ -272,9 +256,10 @@ def dirpath(target_key):
                     return result
         return None
 
-    path_key = recursive_search(harnice_file_structure(), [])
+    path_key = recursive_search(structure_dict, [])
     if not path_key:
-        raise TypeError(f"Could not find directory {target_key}.")
+        raise TypeError(f"Could not find directory '{target_key}'.")
+    # join all levels to construct a valid path
     return os.path.join(rev_directory(), *path_key)
 
 
@@ -459,7 +444,6 @@ def verify_revision_structure(product_type=None):
         )
 
     print(f"Working on PN: {pn}, Rev: {rev}")
-    generate_structure()
     rev_history.update_datemodified()
 
     return pn, rev
@@ -481,6 +465,21 @@ def get_path_to_project(traceable_key):
             return os.path.expanduser(local_path)
 
     raise ValueError(f"Could not find library repo id {traceable_key}")
+
+
+
+def read_tsv(filekey, delimiter="\t"):
+    try:
+        path_to_open = path(filekey)
+    except TypeError:
+        path_to_open = filekey
+
+    if not os.path.exists(path_to_open):
+        raise FileNotFoundError(
+            f"Expected tsv file with delimiter '{delimiter}' at: {path_to_open}"
+        )
+    with open(path_to_open, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f, delimiter=delimiter))
 
 
 def newrev():
@@ -523,17 +522,3 @@ def newrev():
     print(
         f"Successfully created new revision: {partnumber('pn-rev')}. Please cd into it."
     )
-
-
-def read_tsv(filekey, delimiter="\t"):
-    try:
-        path_to_open = path(filekey)
-    except TypeError:
-        path_to_open = filekey
-
-    if not os.path.exists(path_to_open):
-        raise FileNotFoundError(
-            f"Expected tsv file with delimiter '{delimiter}' at: {path_to_open}"
-        )
-    with open(path_to_open, newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f, delimiter=delimiter))
