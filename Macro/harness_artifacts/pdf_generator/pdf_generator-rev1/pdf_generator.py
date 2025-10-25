@@ -1,37 +1,50 @@
 import os
 import json
 import subprocess
+import shutil
 from harnice import fileio
 from harnice.utils import svg_utils, library_utils
 from harnice.lists import rev_history
 
 artifact_mpn = "pdf_generator"
 
+def file_structure(page_name=None, page_counter=None):
+    return {
+        "imported_instances":{
+            "Titleblock":{
+                f"{artifact_id}-{page_name}":{
+                    f"{artifact_id}-{page_name}-attributes.json": "project titleblock attributes",
+                    f"{artifact_id}-{page_name}-drawing.svg": "project titleblock drawing"
+                }
+            },
+            "Macro":{
+                artifact_id:{
+                    f"{fileio.partnumber("pn-rev")}-{artifact_id}-page_setup.json": "page setup",
+                    f"{artifact_id}-mastercontents.svg": "master contents svg",
+                    f"{artifact_mpn}.py": "macro script",
+                    f"{fileio.partnumber("pn-rev")}-{artifact_id}.pdf": "output pdf",
+                    "library_used_do_not_edit":{
+                        "Titleblocks":{
+                            f"{artifact_id}-{page_name}":{
+                                f"{artifact_id}-{page_name}-attributes.json": "macro titleblock attributes",
+                                f"{artifact_id}-{page_name}-drawing.svg": "macro titleblock drawing"
+                            }
+                        },
+                    },
+                    "page_svgs":{
+                        f"{page_counter}-{page_name}-drawing.svg": "page svg"
+                    }
+                }
+            }
+        }
+    }
 
-# =============== PATHS ===============
-def path(target_value):
-    # artifact_path gets passed in as a global from the caller
-    if target_value == "page setup":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-page_setup.json"
-        )
-    if target_value == "output pdf":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-output.pdf"
-        )
-    if target_value == "master contents":
-        return os.path.join(
-            artifact_path,
-            f"{fileio.partnumber('pn-rev')}-{artifact_id}-mastercontents.svg",
-        )
-    if target_value == "page svgs":
-        os.makedirs(os.path.join(artifact_path, "page_svgs"), exist_ok=True)
-        return os.path.join(artifact_path, "page_svgs")
-    if target_value == "tblock svgs":
-        os.makedirs(os.path.join(artifact_path, "tblock_svgs"), exist_ok=True)
-        return os.path.join(artifact_path, "tblock_svgs")
-    else:
-        raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
+def generate_file_structure():
+    os.makedirs(fileio.dirpath("imported instances", structure_dict=file_structure()), exist_ok=True)
+    os.makedirs(fileio.dirpath("Macro", structure_dict=file_structure()), exist_ok=True)
+    fileio.silentremove(fileio.dirpath(artifact_id, structure_dict=file_structure()))
+    os.makedirs(fileio.dirpath("library_used_do_not_edit", structure_dict=file_structure()), exist_ok=True)
+    os.makedirs(fileio.dirpath("Titleblocks", structure_dict=file_structure()), exist_ok=True)
 
 
 def update_page_setup_json():
@@ -59,20 +72,21 @@ def update_page_setup_json():
     }
 
     # Create or load the page setup file
+    print(f"!!!!!!!!!!Page setup path: {fileio.path('page setup', structure_dict=file_structure())}")
     if (
-        not os.path.exists(path("page setup"))
-        or os.path.getsize(path("page setup")) == 0
+        not os.path.exists(fileio.path("page setup", structure_dict=file_structure()))
+        or os.path.getsize(fileio.path("page setup", structure_dict=file_structure())) == 0
     ):
         page_data = blank_setup
     else:
         try:
-            with open(path("page setup"), "r", encoding="utf-8") as f:
+            with open(fileio.path("page setup", structure_dict=file_structure()), "r", encoding="utf-8") as f:
                 page_data = json.load(f)
         except json.JSONDecodeError:
             page_data = blank_setup
 
     # Always write back a valid version
-    with open(path("page setup"), "w", encoding="utf-8") as f:
+    with open(fileio.path("page setup", structure_dict=file_structure()), "w", encoding="utf-8") as f:
         json.dump(page_data, f, indent=4)
 
     return page_data
@@ -87,40 +101,31 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             f"[ERROR] Duplicate page name(s) found: {', '.join(duplicates)}"
         )
 
+    page_counter = 0
     for page in page_setup_contents.get("pages", []):
+        page_counter += 1
         page_name = page.get("name")
-        tblock_data = page  # each item in the list *is* the tblock_data
-        if not tblock_data:
+        if not page:
             raise KeyError(
                 f"[ERROR] Titleblock '{page_name}' not found in harnice output contents"
             )
 
-        titleblock = tblock_data.get("titleblock")
-
-        # === Prepare destination directory for used files ===
-        destination_directory = os.path.join(path("tblock svgs"), page_name)
+        titleblock = page.get("titleblock")
 
         # === Pull from library ===
         library_utils.pull(
             {
-                "lib_repo": tblock_data.get("lib_repo"),
+                "instance_name": f"{artifact_id}-{page_name}",
+                "mpn": page.get("titleblock"),
+                "lib_repo": page.get("lib_repo"),
                 "item_type": "Titleblock",
-                "mpn": titleblock,
-                "instance_name": titleblock,
-            }
+            }, update_instances_list=False
         )
 
-        # === Access pulled files ===
-        attr_path = os.path.join(destination_directory, f"{page_name}-attributes.json")
-        os.rename(
-            os.path.join(destination_directory, f"{titleblock}-attributes.json"),
-            attr_path,
-        )
-        svg_path = os.path.join(destination_directory, f"{titleblock}.svg")
+        # === Copy from imported instances to this macro's library_used_do_not_edit directory ===
+        #TODO: #486
 
-        if not os.path.isfile(attr_path):
-            raise FileNotFoundError(f"[ERROR] Attribute file not found: {attr_path}")
-        with open(attr_path, "r", encoding="utf-8") as f:
+        with open(fileio.path("titleblock attributes", structure_dict=file_structure(page_name)), "r", encoding="utf-8") as f:
             tblock_attributes = json.load(f)
 
         # === Page size in pixels ===
@@ -128,8 +133,6 @@ def prep_tblocks(page_setup_contents, revhistory_data):
         page_size_px = [int(page_size_in[0] * 96), int(page_size_in[1] * 96)]
 
         # === Prepare destination SVG ===
-        project_svg_path = os.path.join(destination_directory, f"{page_name}.svg")
-
         svg = [
             '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
             f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="{page_size_px[0]}" height="{page_size_px[1]}">',
@@ -141,34 +144,16 @@ def prep_tblocks(page_setup_contents, revhistory_data):
             "</svg>",
         ]
 
-        with open(project_svg_path, "w", encoding="utf-8") as f:
+        with open(svg_build_path, "w", encoding="utf-8") as f:
             f.write("\n".join(svg))
 
         # === Import tblock and bom SVG contents ===
         svg_utils.find_and_replace_svg_group(
-            project_svg_path,
-            os.path.join(destination_directory, f"{titleblock}-drawing.svg"),
+            svg_build_path,
+            svg_destination_path,
             "tblock",
             "tblock",
         )
-        if "bom" in page.get("show_items"):
-            svg_utils.find_and_replace_svg_group(
-                project_svg_path, fileio.path("bom table master svg"), "bom", "bom"
-            )
-        if "buildnotes" in page.get("show_items"):
-            svg_utils.find_and_replace_svg_group(
-                project_svg_path,
-                fileio.path("buildnotes table svg"),
-                "buildnotes-table",
-                "buildnotes-table",
-            )
-        if "revhistory" in page.get("show_items"):
-            svg_utils.find_and_replace_svg_group(
-                project_svg_path,
-                fileio.path("revhistory master svg"),
-                "revhistory-table",
-                "revhistory-table",
-            )
 
         # === Text replacements ===
         text_map = tblock_data.get("text_replacements", {})
@@ -191,14 +176,8 @@ def prep_tblocks(page_setup_contents, revhistory_data):
                 page_names = [
                     p.get("name") for p in page_setup_contents.get("pages", [])
                 ]
-                try:
-                    page_num = page_names.index(page_name) + 1
-                except ValueError:
-                    raise ValueError(
-                        f"[ERROR] Page name '{page_name}' not found in pages list"
-                    )
                 total_pages = len(page_names)
-                new = f"{page_num} of {total_pages}"
+                new = f"{page_counter} of {total_pages}"
 
             if old not in svg:
                 print(f"[WARN] Key '{old}' not found in titleblock SVG")
@@ -361,7 +340,7 @@ def produce_multipage_pdf(page_setup_contents):
 
 page_setup_contents = update_page_setup_json()
 
-prep_tblocks(page_setup_contents, rev_history.current_info())
+prep_tblocks(page_setup_contents, rev_history.info())
 
 prep_master(page_setup_contents)
 # merges all building blocks into one main support_do_not_edit master svg file

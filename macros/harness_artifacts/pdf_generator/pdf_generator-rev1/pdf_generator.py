@@ -361,7 +361,7 @@ def produce_multipage_pdf(page_setup_contents):
 
 page_setup_contents = update_page_setup_json()
 
-prep_tblocks(page_setup_contents, rev_history.current_info())
+prep_tblocks(page_setup_contents, rev_history.info())
 
 prep_master(page_setup_contents)
 # merges all building blocks into one main support_do_not_edit master svg file
