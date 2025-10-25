@@ -72,7 +72,6 @@ def update_page_setup_json():
     }
 
     # Create or load the page setup file
-    print(f"!!!!!!!!!!Page setup path: {fileio.path('page setup', structure_dict=file_structure())}")
     if (
         not os.path.exists(fileio.path("page setup", structure_dict=file_structure()))
         or os.path.getsize(fileio.path("page setup", structure_dict=file_structure())) == 0
@@ -86,6 +85,8 @@ def update_page_setup_json():
             page_data = blank_setup
 
     # Always write back a valid version
+    TODO: FIGURE OUT WHY THIS IS NOT DUMPING JSON
+    print(f"!!!!!!!!!!Page setup path: {fileio.path('page setup', structure_dict=file_structure())}")
     with open(fileio.path("page setup", structure_dict=file_structure()), "w", encoding="utf-8") as f:
         json.dump(page_data, f, indent=4)
 
