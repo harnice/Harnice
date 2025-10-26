@@ -70,6 +70,11 @@ circuits_list = fileio.read_tsv("circuits list")
 system_utils.find_connector_with_no_circuit(connector_list, circuits_list)
 """
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 def render():
     fileio.verify_revision_structure(product_type="system")

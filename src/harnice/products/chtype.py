@@ -4,6 +4,12 @@ from harnice import fileio
 from harnice.utils import library_utils
 
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
+
 def path(channel_type):
     """
     Args:

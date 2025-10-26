@@ -103,10 +103,9 @@ def update_translate_content():
 
 
 def copy_pdfs_to_cwd():
-    artifacts_dir = fileio.dirpath("macros")
     cwd = os.getcwd()
 
-    for root, _, files in os.walk(artifacts_dir):
+    for root, _, files in os.walk(fileio.dirpath("instance_data")):
         for filename in files:
             if filename.lower().endswith(".pdf"):
                 source_path = os.path.join(root, filename)

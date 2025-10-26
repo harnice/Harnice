@@ -69,6 +69,11 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 
 """
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 def _make_new_library_file():
     """Create a bare .kicad_sym file with only library header info."""

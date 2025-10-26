@@ -101,6 +101,11 @@ for channel in range(8):
 
 """
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 # TODO-448 i don't think users should be calling this
 def _validate_signals_list():

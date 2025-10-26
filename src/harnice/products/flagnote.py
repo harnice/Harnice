@@ -4,6 +4,11 @@ import random
 import math
 from harnice import fileio, cli
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 def render():
     print(
