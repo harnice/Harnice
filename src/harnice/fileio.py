@@ -81,91 +81,6 @@ def partnumber(format):
         raise ValueError("Function 'partnumber' not presented with a valid format")
 
 
-def harnice_file_structure():
-    # syntax:
-    #   "filename": "filekey"
-
-    # filename is the actual file name with a suffix
-    # filekey is the shorthand reference for it with no suffix
-
-    if product_type == "part":
-        return {
-            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-        }
-    elif product_type == "flagnote":
-        return {
-            f"{partnumber('pn-rev')}-params.json": "params",
-            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
-        }
-    elif product_type in ("tblock", "titleblock"):
-        return {
-            f"{partnumber('pn-rev')}-params.json": "params",
-            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-        }
-    elif product_type == "device":
-        return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
-            f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-        }
-    elif product_type == "disconnect":
-        return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
-            f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-        }
-    elif product_type == "system":
-        return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
-            f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
-            "imported_instances": {},
-            "disconnects": {},
-            "features_for_relatives": {},
-            "harnesses": {},
-            "lists": {
-                f"{partnumber('pn-rev')}-bom.tsv": "bom",
-                f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
-                f"{partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
-                f"{partnumber('pn-rev')}-harness_manifest.tsv": "system manifest",
-                f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
-                f"{partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
-                f"{partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnects set",
-                f"{partnumber('pn-rev')}-mapped_a_channels_through_disconnects_set.tsv": "mapped A-side channels through disconnects set",
-            },
-            "maps": {
-                f"{partnumber('pn-rev')}-channel_map.tsv": "channel map",
-                f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
-            },
-        }
-    elif product_type == "cable":
-        return {
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-            f"{partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
-        }
-    else:
-        raise ValueError(f"Invalid product type: {product_type}")
-
-
-def generate_structure():
-    if product_type == "harness":
-        os.makedirs(dirpath("instance_data"), exist_ok=True)
-        os.makedirs(dirpath("imported_instances"), exist_ok=True)
-        silentremove(dirpath("generated_instances_do_not_edit"))
-        os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
-        os.makedirs(dirpath("interactive_files"), exist_ok=True)
-    if product_type == "device":
-        os.makedirs(dirpath("kicad"), exist_ok=True)
-    if product_type == "system":
-        os.makedirs(dirpath("imported_instances"), exist_ok=True)
-        os.makedirs(dirpath("disconnects"), exist_ok=True)
-        os.makedirs(dirpath("features_for_relatives"), exist_ok=True)
-        os.makedirs(dirpath("harnesses"), exist_ok=True)
-        os.makedirs(dirpath("lists"), exist_ok=True)
-        os.makedirs(dirpath("maps"), exist_ok=True)
-
-
 def silentremove(filepath):
     if os.path.exists(filepath):
         if os.path.isfile(filepath) or os.path.islink(filepath):
@@ -271,6 +186,7 @@ def dirpath(target_key, structure_dict=None):
 
 def verify_revision_structure(product_type=None):
     from harnice.lists import rev_history
+    from harnice import cli
 
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
@@ -489,6 +405,7 @@ def read_tsv(filekey, delimiter="\t"):
 
 
 def newrev():
+    from harnice import cli
     """
     Create a new revision directory by copying the current revision's contents
     and updating filenames to reflect the new revision number.

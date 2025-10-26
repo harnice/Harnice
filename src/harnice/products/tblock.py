@@ -6,7 +6,11 @@ from harnice import fileio, cli
 
 
 def file_structure():
-    return {}
+    return {
+        f"{fileio.partnumber('pn-rev')}-params.json": "params",
+        f"{fileio.partnumber('pn-rev')}-drawing.svg": "drawing",
+        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+    }
 
 
 def generate_structure():
@@ -47,6 +51,7 @@ def render():
     }
 
     fileio.verify_revision_structure(product_type="tblock")
+    generate_structure()
 
     # === If param file doesn't exist, create it ===
     if not os.path.exists(fileio.path("params")):

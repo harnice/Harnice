@@ -103,7 +103,11 @@ for channel in range(8):
 
 
 def file_structure():
-    return {}
+    return {
+        f"{fileio.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{fileio.partnumber('pn-rev')}-signals_list.tsv": "signals list",
+        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+    }
 
 
 def generate_structure():
@@ -206,7 +210,8 @@ def _validate_signals_list():
 
 def render():
     fileio.verify_revision_structure(product_type="device")  # identical for now
-
+    generate_structure()
+    
     if not os.path.exists(fileio.path("signals list")):
         if not os.path.exists(fileio.path("feature tree")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:

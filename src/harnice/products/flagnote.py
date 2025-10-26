@@ -6,7 +6,10 @@ from harnice import fileio, cli
 
 
 def file_structure():
-    return {}
+    return {
+        f"{fileio.partnumber('pn-rev')}-params.json": "params",
+        f"{fileio.partnumber('pn-rev')}-drawing.svg": "drawing",
+    }
 
 
 def generate_structure():
@@ -21,6 +24,7 @@ def render():
         exit()
 
     fileio.verify_revision_structure(product_type="flagnote")
+    generate_structure()
     params_path = fileio.path("params")
 
     # Geometry generators

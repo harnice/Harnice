@@ -5,7 +5,10 @@ from harnice import fileio
 
 
 def file_structure():
-    return {}
+    return {
+        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{fileio.partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
+    }
 
 
 def generate_structure():
@@ -14,7 +17,8 @@ def generate_structure():
 
 def render():
     fileio.verify_revision_structure(product_type="cable")
-
+    generate_structure()
+    
     default_attributes = {
         "jacket": {
             "properties": {
