@@ -1,7 +1,6 @@
 import argparse
 import os
 import sys
-from harnice import fileio
 from harnice.products import (
     device,
     harness,
@@ -12,6 +11,12 @@ from harnice.products import (
     disconnect,
     cable,
 )
+
+file_structure = None
+
+def set_file_structure(x):
+    global file_structure
+    file_structure = x
 
 
 def ensure_cwd_exists():
@@ -66,12 +71,9 @@ def main():
 
     # Handle new revision creation
     if args.newrev:
-        fileio.newrev()
+        raise NotImplementedError("Need to figure out how to rebuild this without circular import")
+        #fileio.newrev()
         return
-
-    # Figure out which product type string to use
-    product_type = args.render or args.lightweight
-    fileio.set_product_type(product_type.lower())
 
     if args.render:
         render_map = {

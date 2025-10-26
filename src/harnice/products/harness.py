@@ -221,13 +221,43 @@ for instance in fileio.read_tsv("instances list"):
         })
 """
 
+def file_structure(item_type=None, instance_name=None):
+    return {
+        f"{fileio.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{fileio.partnumber('pn-rev')}-instances_list.tsv": "instances list",
+        f"{fileio.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
+        "instance_data": {
+            "imported_instances": {
+                item_type:{
+                    instance_name:{
+                        "library_used_do_not_edit":{}
+                    }
+                }
+            },
+            "generated_instances_do_not_edit": {},
+        },
+        "interactive_files": {
+            f"{fileio.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
+            f"{fileio.partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
+        }
+    }
+
+def generate_structure():
+    os.makedirs(fileio.dirpath("instance_data", structure_dict=file_structure()), exist_ok=True)
+    os.makedirs(fileio.dirpath("imported_instances", structure_dict=file_structure()), exist_ok=True)
+    fileio.silentremove(fileio.dirpath("generated_instances_do_not_edit", structure_dict=file_structure()))
+    os.makedirs(fileio.dirpath("generated_instances_do_not_edit", structure_dict=file_structure()), exist_ok=True)
+    os.makedirs(fileio.dirpath("interactive_files", structure_dict=file_structure()), exist_ok=True)
+
 
 def render(build_macro="", output_macro_dict=None):
     # Step 1: revision structure
-    fileio.verify_revision_structure(product_type="harness")
+    fileio.set_file_structure(file_structure())
+    fileio.verify_revision_structure()
+    generate_structure()
 
     # Step 2: Ensure feature tree exists
-    if not os.path.exists(fileio.path("feature tree")):
+    if not os.path.exists(fileio.path("feature tree", structure_dict=file_structure())):
         if build_macro == "":
             print(
                 "Do you want to use a build_macro to help build this harness from scratch? [s]"
@@ -254,7 +284,7 @@ def render(build_macro="", output_macro_dict=None):
             target_net = cli.prompt("Enter the net you want to build this harness from")
 
             path_to_system_pn = fileio.get_path_to_project(project_location_key)
-            build_macro_contents = f'feature_tree_utils.run_macro(\n    "{build_macro_name}",\n    "harness_builder",\n    "https://github.com/kenyonshutt/harnice-library-public",\n    system_pn_rev=["{system_pn}","{system_rev}"],\n    path_to_system_rev=os.path.join("{path_to_system_pn}", "{system_pn}-{system_rev}"),\n    target_net="{target_net}",\n    manifest_nets=["{target_net}"]\n)'
+            build_macro_contents = f'feature_tree_utils.run_macro(\n    "{build_macro_name}",\n    "harness_builder",\n    "harness-from-system-1",\n    "https://github.com/kenyonshutt/harnice-library-public",\n    system_pn_rev=["{system_pn}","{system_rev}"],\n    path_to_system_rev=os.path.join("{path_to_system_pn}", "{system_pn}-{system_rev}"),\n    target_net="{target_net}",\n    manifest_nets=["{target_net}"]\n)'
             push_harness_instances_list_to_upstream_system = f'post_harness_instances_list.push("{path_to_system_pn}", ("{system_pn}","{system_rev}"))'
 
         elif build_macro == "n":
@@ -272,13 +302,12 @@ def render(build_macro="", output_macro_dict=None):
             render()
 
         if output_macro_dict is None:
-            output_macro_contents = """feature_tree_utils.run_macro("bom_exporter_bottom_up", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom1")
-feature_tree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="formboard1", scale=scales.get("A"))
-feature_tree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="circuitviz1")
-feature_tree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="revhistory1")
-feature_tree_utils.run_macro("buildnotes_table", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="buildnotestable1")
-feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="drawing1", scales=scales)
-"""
+            output_macro_contents = """feature_tree_utils.run_macro("bom_exporter_bottom_up", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="bom-1")
+feature_tree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="formboard-1", scale=scales.get("A"))
+feature_tree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="circuitviz-1")
+feature_tree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="revhistory-1")
+feature_tree_utils.run_macro("buildnotes_table", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="buildnotestable-1")
+feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/kenyonshutt/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)"""
         else:
             output_macro_contents = "\n".join(output_macro_dict)
 
