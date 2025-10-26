@@ -1,29 +1,28 @@
 import os
 import csv
 from harnice import fileio
-from harnice.lists import instances_list
 
 
 # =============== PATHS ===============
-def path(target_value):
-    raise NotImplementedError("path is not implemented for this macro")
-    # artifact_path gets passed in as a global from the caller
-    if target_value == "bom tsv":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom.tsv"
-        )
-    if target_value == "bom svg":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom-master.svg"
-        )
-    else:
-        raise KeyError(f"Filename {target_value} not found in bom_exporter file tree")
-
 def file_structure():
-    return {}
+    return {
+        "instance_data":{
+            "imported_instances":{
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg"
+                    }
+                }
+            }
+        }
+    }
 
 def generate_structure():
-    pass
+    os.makedirs(fileio.dirpath("imported_instances", structure_dict=file_structure()), exist_ok=True)
+    os.makedirs(fileio.dirpath("Macro", structure_dict=file_structure()), exist_ok=True)
+    fileio.silentremove(fileio.dirpath(artifact_id, structure_dict=file_structure()))
+    os.makedirs(fileio.dirpath(artifact_id, structure_dict=file_structure()), exist_ok=True)
 
 CABLE_MARGIN = 12
 BOM_COLUMNS = [
