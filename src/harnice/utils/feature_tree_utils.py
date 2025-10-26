@@ -26,7 +26,9 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
         }
     )
 
-    macro_dirpath = os.path.join(fileio.dirpath("imported_instances"), "Macro", artifact_id)
+    macro_dirpath = os.path.join(
+        fileio.dirpath("imported_instances"), "Macro", artifact_id
+    )
     script_path = os.path.join(macro_dirpath, f"{macro_part_number}.py")
 
     # always pass the basics, but let kwargs override/extend

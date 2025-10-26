@@ -3,11 +3,14 @@ import csv
 import json
 from harnice import fileio
 
+
 def file_structure():
     return {}
 
+
 def generate_structure():
     pass
+
 
 def render():
     fileio.verify_revision_structure(product_type="cable")

@@ -13,7 +13,7 @@ def mpn_of_device_refdes(refdes):
     return None, None, None
 
 
-#TODO: #480
+# TODO: #480
 def connector_of_channel(key):
     refdes, channel_id = key
 
@@ -404,12 +404,14 @@ def make_instances_from_bom():
         else:
             item_type = "device"
 
-        library_utils.pull({
-            "instance_name": device.get("device_refdes"),
-            "mfg": device.get("MFG"),
-            "mpn": device.get("MPN"),
-            "item_type": item_type,
-            "lib_repo": device.get("lib_repo"),
-            "lib_subpath": device.get("lib_subpath"),
-            "lib_rev_used_here": device.get("rev")
-        })
+        library_utils.pull(
+            {
+                "instance_name": device.get("device_refdes"),
+                "mfg": device.get("MFG"),
+                "mpn": device.get("MPN"),
+                "item_type": item_type,
+                "lib_repo": device.get("lib_repo"),
+                "lib_subpath": device.get("lib_subpath"),
+                "lib_rev_used_here": device.get("rev"),
+            }
+        )

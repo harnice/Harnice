@@ -5,11 +5,14 @@ import math
 from harnice import fileio
 from harnice.utils import svg_utils
 
+
 def file_structure():
     return {}
 
+
 def generate_structure():
     pass
+
 
 def render():
     fileio.verify_revision_structure(product_type="part")

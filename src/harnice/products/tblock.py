@@ -4,11 +4,14 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from harnice import fileio, cli
 
+
 def file_structure():
     return {}
 
+
 def generate_structure():
     pass
+
 
 def render():
     print(

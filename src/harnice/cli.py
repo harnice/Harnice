@@ -14,6 +14,7 @@ from harnice.products import (
 
 file_structure = None
 
+
 def set_file_structure(x):
     global file_structure
     file_structure = x
@@ -71,9 +72,11 @@ def main():
 
     # Handle new revision creation
     if args.newrev:
-        raise NotImplementedError("Need to figure out how to rebuild this without circular import")
-        #TODO: #489
-        #fileio.newrev()
+        raise NotImplementedError(
+            "Need to figure out how to rebuild this without circular import"
+        )
+        # TODO: #489
+        # fileio.newrev()
         return
 
     if args.render:

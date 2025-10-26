@@ -11,14 +11,19 @@ import csv
 #  -  if multiple instances are found at the same hierarchy level with the same name,
 # this separates name from unique instance identifier
 
+
 def set_file_structure(x):
     from harnice import cli
+
     cli.set_file_structure(x)
+
 
 def file_structure():
     from harnice import cli
+
     return cli.file_structure
-    
+
+
 net = ""
 pn = ""
 rev = 0
@@ -239,6 +244,7 @@ def dirpath(target_key, structure_dict=None):
     Returns the absolute path to a directory identified by its key
     within a dict hierarchy.
     """
+
     def recursive_search(data, path):
         if isinstance(data, dict):
             for key, value in data.items():
@@ -265,6 +271,7 @@ def dirpath(target_key, structure_dict=None):
 
 def verify_revision_structure(product_type=None):
     from harnice.lists import rev_history
+
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
@@ -465,7 +472,6 @@ def get_path_to_project(traceable_key):
             return os.path.expanduser(local_path)
 
     raise ValueError(f"Could not find library repo id {traceable_key}")
-
 
 
 def read_tsv(filekey, delimiter="\t"):
