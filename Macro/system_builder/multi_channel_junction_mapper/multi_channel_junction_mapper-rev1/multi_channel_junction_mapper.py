@@ -12,6 +12,12 @@ from harnice import system
 from harnice.lists import mapped_channels
 from harnice.utils import system_utils
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
+
 # Track mapped channels as (device_refdes, channel_id) tuples
 rows = list(system.read_channel_map())
 unique_merged_nets = sorted(set(r["merged_net"] for r in rows if r["merged_net"]))

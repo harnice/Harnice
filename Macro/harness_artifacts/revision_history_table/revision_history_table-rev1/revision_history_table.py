@@ -7,7 +7,14 @@ from harnice.utils import svg_utils, library_utils
 artifact_mpn = "revision_history_table"
 
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
+
 def path(target_value):
+    raise NotImplementedError("path is not implemented for this macro")
     if target_value == "revision table bubbles":
         return os.path.join(artifact_path, "revision_table_bubbles")
     if target_value == "revhistory master svg":

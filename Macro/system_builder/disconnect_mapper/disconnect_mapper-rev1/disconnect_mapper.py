@@ -5,6 +5,11 @@ from harnice.products import chtype
 verbose = False
 extra_verbose = False
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 for required_channel in fileio.read_tsv("disconnect map"):
     # skip available channel rows (A-side empty)

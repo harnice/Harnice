@@ -5,8 +5,14 @@ from harnice.utils import svg_utils, library_utils
 
 artifact_mpn = "buildnotes_table"
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 def path(target_value):
+    raise NotImplementedError("path is not implemented for this macro")
     if target_value == "buildnotes table bubbles":
         return os.path.join(artifact_path, "bom_table_bubbles")
     if target_value == "buildnotes table svg":

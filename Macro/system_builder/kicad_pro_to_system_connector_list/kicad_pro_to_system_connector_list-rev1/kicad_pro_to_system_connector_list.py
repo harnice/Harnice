@@ -8,8 +8,14 @@ from harnice import fileio
 
 build_macro_mpn = "kicad_pro_to_system_connector_list"
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 def path(target_value: str) -> str:
+    raise NotImplementedError("path is not implemented for this macro")
     """Return full path for schematic and netlist files."""
     if target_value == "kicad sch":
         return os.path.join(

@@ -4,8 +4,14 @@ from harnice import fileio
 
 build_macro_mpn = "kicad_pro_to_pdf"
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 def path(target_value: str) -> str:
+    raise NotImplementedError("path is not implemented for this macro")
     if target_value == "kicad sch":
         return os.path.join(
             os.getcwd(), "kicad", f"{fileio.partnumber('pn-rev')}.kicad_sch"

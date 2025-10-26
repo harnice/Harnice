@@ -41,7 +41,14 @@ svg_elements = []
 
 
 # =============== PATHS ===============
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
+
 def path(target_value):
+    raise NotImplementedError("path is not implemented for this macro")
     if target_value == "circuit visualizer svg":
         return os.path.join(
             artifact_path,

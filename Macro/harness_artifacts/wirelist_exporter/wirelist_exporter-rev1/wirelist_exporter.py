@@ -8,7 +8,14 @@ artifact_mpn = "wirelist_exporter"
 
 
 # =============== PATHS ===============
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
+
 def path(target_value):
+    raise NotImplementedError("path is not implemented for this macro")
     # artifact_path gets passed in as a global from the caller
     if target_value == "wirelist no formats":
         return os.path.join(

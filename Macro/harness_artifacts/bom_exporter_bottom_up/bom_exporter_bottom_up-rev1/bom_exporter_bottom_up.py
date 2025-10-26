@@ -6,6 +6,7 @@ from harnice.lists import instances_list
 
 # =============== PATHS ===============
 def path(target_value):
+    raise NotImplementedError("path is not implemented for this macro")
     # artifact_path gets passed in as a global from the caller
     if target_value == "bom tsv":
         return os.path.join(
@@ -18,6 +19,11 @@ def path(target_value):
     else:
         raise KeyError(f"Filename {target_value} not found in bom_exporter file tree")
 
+def file_structure():
+    return {}
+
+def generate_structure():
+    pass
 
 CABLE_MARGIN = 12
 BOM_COLUMNS = [
