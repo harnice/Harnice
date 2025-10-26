@@ -178,7 +178,6 @@ for page in page_data.get("pages", []):
         fileio.path("project titleblock drawing", structure_dict=file_structure(page_name=page_name)),
         fileio.path("macro titleblock drawing", structure_dict=file_structure(page_name=page_name))
     )
-    #TODO: #486
 
 
 
@@ -247,6 +246,34 @@ for page in page_data.get("pages", []):
     with open(fileio.path("tblock with text replacements", structure_dict=file_structure(page_counter=page_counter, page_name=page_name)), "w", encoding="utf-8") as f:
         f.write(svg)
 
+
+# ===========================================
+#      ENSURE ONLY VALID EDITABLE PAGE SVG FILES ARE PRESENT
+# ===========================================
+page_counter = 0
+valid_svg_filenames = set()
+for page_name in [p.get("name") for p in page_data.get("pages", [])]:
+    page_counter += 1
+    valid_svg_filenames.add(
+        os.path.basename(
+            fileio.path(
+                "user editable page svg",
+                structure_dict=file_structure(page_counter=page_counter, page_name=page_name)
+            )
+        )
+    )
+
+# Walk through macro page_svgs directory and clean up invalid files
+for filename in os.listdir(fileio.dirpath("page_svgs", structure_dict=file_structure())):
+    if not filename.lower().endswith(".svg"):
+        continue
+    if filename not in valid_svg_filenames:
+        full_path = os.path.join(fileio.dirpath("page_svgs", structure_dict=file_structure()), filename)
+        print(f"Removing outdated SVG: {full_path}")
+        try:
+            os.remove(full_path)
+        except Exception as e:
+            print(f"Warning: could not remove {full_path}: {e}")
 
 # ============================================
 #            PREP MASTER SVG
@@ -369,8 +396,6 @@ inkscape_bin = (
 )
 
 page_counter = 0
-print(f"!!!!!!371 {page_data}")
-print(f"!!!!!!372 {[p.get('name') for p in page_data.get('pages', [])]}")
 for page_name in [p.get("name") for p in page_data.get("pages", [])]:
     page_counter += 1
     svg_path = fileio.path("user editable page svg", structure_dict=file_structure(page_counter=page_counter, page_name=page_name))
