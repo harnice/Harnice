@@ -18,12 +18,6 @@ def file_structure():
         }
     }
 
-def generate_structure():
-    os.makedirs(fileio.dirpath("imported_instances", structure_dict=file_structure()), exist_ok=True)
-    os.makedirs(fileio.dirpath("Macro", structure_dict=file_structure()), exist_ok=True)
-    fileio.silentremove(fileio.dirpath(artifact_id, structure_dict=file_structure()))
-    os.makedirs(fileio.dirpath(artifact_id, structure_dict=file_structure()), exist_ok=True)
-
 CABLE_MARGIN = 12
 BOM_COLUMNS = [
     "bom_line_number",

@@ -50,8 +50,6 @@ def file_structure(page_name=None, page_counter=None):
 #                   MAIN FUNCTION
 # ============================================
 #generate file structure
-os.makedirs(fileio.dirpath("imported_instances", structure_dict=file_structure()), exist_ok=True)
-os.makedirs(fileio.dirpath("Macro", structure_dict=file_structure()), exist_ok=True)
 fileio.silentremove(fileio.dirpath("direct_from_project_titleblock", structure_dict=file_structure()))
 os.makedirs(fileio.dirpath("direct_from_project_titleblock", structure_dict=file_structure()), exist_ok=True)
 os.makedirs(fileio.dirpath("page_svgs", structure_dict=file_structure()), exist_ok=True)

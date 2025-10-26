@@ -5,12 +5,6 @@ from harnice.products import chtype
 
 verbose = False
 
-def file_structure():
-    return {}
-
-def generate_structure():
-    pass
-
 # Load channel map rows from the new system connector list TSV
 with open(fileio.path("channel map"), newline="", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")

@@ -9,26 +9,22 @@ artifact_mpn = "standard_harnice_formboard"
 
 # =============== PATHS ===============
 def file_structure():
-    return {}
+    return {
+        "instance_data":{
+            "imported instances":{
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-showhide.json": "show hide",
+                        "flagnotes":{},
+                    }
+                }
+            }
+        }
+    }
 
-def generate_structure():
-    pass
-
-def path(target_value):
-    raise NotImplementedError("path is not implemented for this macro")
-    # artifact_path gets passed in as a global from the caller
-    if target_value == "output svg":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-master.svg"
-        )
-    if target_value == "show hide":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-showhide.json"
-        )
-    if target_value == "flagnotes":
-        return os.path.join(artifact_path, f"{artifact_id}-flagnotes")
-    else:
-        raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
+fileio.silentremove(fileio.dirpath("flagnotes", structure_dict=file_structure()))
+os.makedirs(fileio.dirpath("flagnotes", structure_dict=file_structure()), exist_ok=True)
 
 
 def update_showhide():

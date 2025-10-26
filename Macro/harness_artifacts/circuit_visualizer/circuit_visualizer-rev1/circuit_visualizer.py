@@ -42,20 +42,17 @@ svg_elements = []
 
 # =============== PATHS ===============
 def file_structure():
-    return {}
-
-def generate_structure():
-    pass
-
-def path(target_value):
-    raise NotImplementedError("path is not implemented for this macro")
-    if target_value == "circuit visualizer svg":
-        return os.path.join(
-            artifact_path,
-            f"{fileio.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg",
-        )
-    raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
-
+    return {
+        "instance_data":{
+            "imported instances":{
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg"
+                    }
+                }
+            }
+        }
+    }
 
 # =============== DRAW HELPERS ===============
 def plot_node(node_instance, x, y, box_width, local_group):

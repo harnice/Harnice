@@ -5,22 +5,18 @@ from harnice import fileio
 build_macro_mpn = "kicad_pro_to_pdf"
 
 def file_structure():
-    return {}
-
-def generate_structure():
-    pass
-
-def path(target_value: str) -> str:
-    raise NotImplementedError("path is not implemented for this macro")
-    if target_value == "kicad sch":
-        return os.path.join(
-            os.getcwd(), "kicad", f"{fileio.partnumber('pn-rev')}.kicad_sch"
-        )
-    if target_value == "schematic pdf":
-        return os.path.join(
-            fileio.rev_directory(), f"{fileio.partnumber('pn-rev')}-{artifact_id}.pdf"
-        )
-    raise KeyError(f"Filename {target_value} not found in {build_macro_mpn} file tree")
+    return {
+        "instance_data":{
+            "imported instances":{
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-kicad_sch.kicad_sch": "kicad sch",
+                    }
+                }
+            }
+        },
+        f"{fileio.partnumber('pn-rev')}-{artifact_id}.pdf": "schematic pdf"
+    }
 
 
 """

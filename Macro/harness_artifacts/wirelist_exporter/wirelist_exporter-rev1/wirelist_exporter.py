@@ -9,32 +9,19 @@ artifact_mpn = "wirelist_exporter"
 
 # =============== PATHS ===============
 def file_structure():
-    return {}
-
-def generate_structure():
-    pass
-
-def path(target_value):
-    raise NotImplementedError("path is not implemented for this macro")
-    # artifact_path gets passed in as a global from the caller
-    if target_value == "wirelist no formats":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.tsv"
-        )
-    if target_value == "wirelist pretty":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.xls"
-        )
-    if target_value == "wirelist svg":
-        return os.path.join(
-            artifact_path,
-            f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist-master.svg",
-        )
-    else:
-        raise KeyError(
-            f"Filename {target_value} not found in wirelist_exporter file tree"
-        )
-
+    return {
+        "instance_data":{
+            "imported instances":{
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.tsv": "wirelist no formats",
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.xls": "wirelist pretty",
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist-master.svg": "wirelist svg"
+                    }
+                }
+            }
+        }
+    }
 
 # =============== WIRELIST COLUMNS ===============
 WIRELIST_COLUMNS = [

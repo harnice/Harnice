@@ -8,22 +8,21 @@ artifact_mpn = "revision_history_table"
 
 
 def file_structure():
-    return {}
+    return {
+        "instance_data":{
+            "imported instances":{
+                "Macro":{
+                    artifact_id:{
+                        "revision_table_bubbles":{},
+                        "revision-history-table-master.svg": "revision history table svg"
+                    }
+                }
+            }
+        }
+    }
 
-def generate_structure():
-    pass
-
-def path(target_value):
-    raise NotImplementedError("path is not implemented for this macro")
-    if target_value == "revision table bubbles":
-        return os.path.join(artifact_path, "revision_table_bubbles")
-    if target_value == "revhistory master svg":
-        return os.path.join(artifact_path, "revision-history-table-master.svg")
-    else:
-        raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
-
-
-os.makedirs(path("revision table bubbles"), exist_ok=True)
+fileio.silentremove(fileio.dirpath("revision_table_bubbles", structure_dict=file_structure()))
+os.makedirs(fileio.dirpath("revision_table_bubbles", structure_dict=file_structure()), exist_ok=True)
 
 # === Configuration ===
 column_headers = [

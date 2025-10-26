@@ -6,24 +6,23 @@ from harnice.utils import svg_utils, library_utils
 artifact_mpn = "buildnotes_table"
 
 def file_structure():
-    return {}
+    return {
+        "instance_data":{
+            "imported instances":{
+                "Macro":{
+                    artifact_id:{
+                        "bom_table_bubbles":{},
+                        "buildnotes-table-master.svg": "buildnotes table svg",
+                        "buildnotes-list.tsv": "buildnotes list"
+                    }
+                }
+            }
+        }
+    }
 
-def generate_structure():
-    pass
+fileio.silentremove(fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()))
+os.makedirs(fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()), exist_ok=True)
 
-def path(target_value):
-    raise NotImplementedError("path is not implemented for this macro")
-    if target_value == "buildnotes table bubbles":
-        return os.path.join(artifact_path, "bom_table_bubbles")
-    if target_value == "buildnotes table svg":
-        return os.path.join(artifact_path, "buildnotes-table-master.svg")
-    if target_value == "buildnotes list":
-        return os.path.join(artifact_path, "buildnotes-list.tsv")
-    else:
-        raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
-
-
-os.makedirs(path("buildnotes table bubbles"), exist_ok=True)
 
 # === Configuration ===
 column_widths = [0.5 * 96, 3.375 * 96]  # bubble, then note

@@ -19,18 +19,11 @@ BOM_LABELS = [
     "disconnect",
 ]
 def file_structure():
-    return {}
-
-def generate_structure():
-    pass
-
-def path(target_value: str) -> str:
-    raise NotImplementedError("path is not implemented for this macro")
-    if target_value == "kicad sch":
-        return os.path.join(
-            os.getcwd(), "kicad", f"{fileio.partnumber('pn-rev')}.kicad_sch"
-        )
-    raise KeyError(f"Filename {target_value} not found in {build_macro_mpn} file tree")
+    return {
+        "kicad":{
+            "kicad_sch": f"{fileio.partnumber('pn-rev')}.kicad_sch",
+        }
+    }
 
 
 """
