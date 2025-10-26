@@ -10,7 +10,7 @@ BOM_FIELDS = ["Reference", "MFG", "MPN", "lib_repo", "lib_subpath", "rev", "Disc
 
 # output headers (labels in TSV)
 BOM_LABELS = [
-    "device_ref_des",
+    "device_refdes",
     "MFG",
     "MPN",
     "lib_repo",

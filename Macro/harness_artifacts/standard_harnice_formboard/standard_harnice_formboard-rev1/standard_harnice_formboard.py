@@ -238,26 +238,14 @@ for instance in instances:
         if should_hide:
             continue
 
-        if item_type == "Flagnote":
-            if instance.get("parent_instance") in ["", None]:
-                continue
-            instance_data_dir = os.path.join(
-                path("flagnotes"),
-                instance.get("instance_name"),
-                f"{instance.get('instance_name')}-drawing.svg",
-            )
-        elif item_type == "Segment":
-            instance_data_dir = os.path.join(
-                fileio.dirpath("generated_instances_do_not_edit"),
-                instance.get("instance_name"),
-                f"{instance.get('instance_name')}-drawing.svg",
-            )
+        #locally generated instances are stored here
+        if instance.get("item_type").strip().lower() in [
+            "segment"
+        ]:
+            instance_data_dir = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), instance.get("instance_name"), f"{instance.get('instance_name')}-drawing.svg")
+        #imported instances are here
         else:
-            instance_data_dir = os.path.join(
-                fileio.dirpath("imported_instances"),
-                instance.get("instance_name"),
-                f"{instance.get('instance_name')}-drawing.svg",
-            )
+            instance_data_dir = os.path.join(fileio.dirpath("imported_instances"), instance.get("item_type"), instance.get("instance_name"), f"{instance.get('instance_name')}-drawing.svg")
 
         svg_utils.find_and_replace_svg_group(
             path("output svg"),

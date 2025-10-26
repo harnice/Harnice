@@ -84,8 +84,8 @@ def find_disconnects() -> set[str]:
     disconnects = set()
     with open(fileio.path("bom"), newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f, delimiter="\t"):
-            if str(row.get("disconnect", "")).strip().lower() == "true":
-                disconnects.add(row.get("device_ref_des", "").strip())
+            if str(row.get("disconnect", "")).strip().lower() not in ["", None]:
+                disconnects.add(row.get("device_refdes", "").strip())
     return disconnects
 
 
@@ -160,7 +160,7 @@ def main():
                 connector_mpn = ""
 
                 # Decide directory based on disconnect flag
-                base_dir = "disconnects" if disconnect_flag else "devices"
+                base_dir = os.path.join(fileio.dirpath("imported_instances"), ("disconnect" if disconnect_flag else "device"))
                 signals_list_path = os.path.join(
                     os.getcwd(),
                     base_dir,
@@ -168,26 +168,24 @@ def main():
                     f"{device_refdes}-signals_list.tsv",
                 )
 
-                # Always record a row, even if missing file or connector
-                if os.path.exists(signals_list_path):
-                    with open(
-                        signals_list_path, newline="", encoding="utf-8"
-                    ) as sigfile:
-                        reader = csv.DictReader(sigfile, delimiter="\t")
-                        for row in reader:
-                            if disconnect_flag:
-                                if pinfunction == "A":
-                                    connector_mpn = row.get("B_connector_mpn", "")
-                                elif pinfunction == "B":
-                                    connector_mpn = row.get("A_connector_mpn", "")
+                with open(
+                    signals_list_path, newline="", encoding="utf-8"
+                ) as sigfile:
+                    reader = csv.DictReader(sigfile, delimiter="\t")
+                    for row in reader:
+                        if disconnect_flag:
+                            if pinfunction == "A":
+                                connector_mpn = row.get("B_connector_mpn", "")
+                            elif pinfunction == "B":
+                                connector_mpn = row.get("A_connector_mpn", "")
+                            break
+                        else:
+                            if (
+                                row.get("connector_name", "").strip()
+                                == pinfunction.strip()
+                            ):
+                                connector_mpn = row.get("connector_mpn", "").strip()
                                 break
-                            else:
-                                if (
-                                    row.get("connector_name", "").strip()
-                                    == pinfunction.strip()
-                                ):
-                                    connector_mpn = row.get("connector_mpn", "").strip()
-                                    break
 
                 writer.writerow(
                     {
