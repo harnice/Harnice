@@ -26,7 +26,7 @@ def max_port_number_in_circuit(circuit_id):
     for instance in fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
             if instance.get("circuit_port_number") == "":
-                if instance.get("item_type") == "Circuit":
+                if instance.get("item_type") == "circuit":
                     continue
                 raise ValueError(
                     f"Circuit port number is blank for {instance.get('instance_name')}"
@@ -42,7 +42,7 @@ def squeeze_instance_between_ports_in_circuit(
 ):
     for instance in fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
-            if instance.get("item_type") == "Circuit":
+            if instance.get("item_type") == "circuit":
                 continue
             old_port_number = instance.get("circuit_port_number")
             if int(instance.get("circuit_port_number")) < new_circuit_port_number:
@@ -67,7 +67,7 @@ def instances_of_circuit(circuit_id):
     instances = []
     for instance in fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
-            if instance.get("item_type") == "Circuit":
+            if instance.get("item_type") == "circuit":
                 continue
             instances.append(instance)
 
@@ -123,8 +123,8 @@ def assign_cable_conductor(
     instances_list.new_instance(
         cable_instance_name,
         {
-            "item_type": "Cable",
-            "location_type": "Segment",
+            "item_type": "cable",
+            "location_type": "segment",
             "cable_group": cable_instance_name,
         },
     )
@@ -133,7 +133,7 @@ def assign_cable_conductor(
     library_utils.pull(
         {
             "lib_repo": library_info.get("lib_repo"),
-            "item_type": "Cable",
+            "item_type": "cable",
             "mpn": library_info.get("mpn"),
             "instance_name": cable_instance_name,
         }

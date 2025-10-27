@@ -53,7 +53,7 @@ system_utils.make_instances_for_connectors_cavities_nodes_channels_circuits()
 
 #assign mating connectors
 #for instance in fileio.read_tsv("instances list"):
-    #if instance.get("item_type") == "Connector":
+    #if instance.get("item_type") == "connector":
         #if instance.get("this_instance_mating_device_connector_mpn") == "XLR3M":
             #instances_list.modify(instance.get("instance_name"),{
                 #"mpn":"D38999_26ZA98PN",
