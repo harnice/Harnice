@@ -12,7 +12,7 @@ print("Importing parts from library")
 print(f'{"ITEM NAME":<24}  STATUS')
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["Connector", "Backshell"]:
+    if instance.get("item_type") in ["connector", "backshell"]:
         if instance.get("instance_name") not in ["X100"]:
             if instance.get("mpn") not in ["TXPA20"]:
                 library_utils.pull(instance)
@@ -24,15 +24,15 @@ for instance in fileio.read_tsv("instances list"):
     parent_csys = None
     parent_csys_outputcsys_name = None
 
-    if instance.get("item_type") == "Connector":
-        parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "Backshell")
+    if instance.get("item_type") == "connector":
+        parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "backshell")
         parent_csys_outputcsys_name = "connector"
         if parent_csys == 0:
-            parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "Node")
+            parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "node")
             parent_csys_outputcsys_name = "origin"
 
-    elif instance.get("item_type") == "Backshell":
-        parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "Node")
+    elif instance.get("item_type") == "backshell":
+        parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "node")
         parent_csys_outputcsys_name = "origin"
     else:
         continue
@@ -50,12 +50,12 @@ feature_tree_utils.update_translate_content()
 #assume the only existing ports at this point are cavities 0 and 1
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Circuit":
+    if instance.get("item_type") == "circuit":
         circuit_id = instance.get("circuit_id")
         conductor_name = f"conductor-{circuit_id}"
         instances_list.new_instance(conductor_name, {
             "item_type": "Conductor",
-            "location_type": "Segment",
+            "location_type": "segment",
             "node_at_end_a": circuit_utils.instance_of_circuit_port_number(circuit_id, 0),
             "node_at_end_b": circuit_utils.instance_of_circuit_port_number(circuit_id, 1)
         })
@@ -80,7 +80,7 @@ for instance in fileio.read_tsv("instances list"):
         instances_list.modify(instance.get("instance_name"), {"length": conductor_length})
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Cable":
+    if instance.get("item_type") == "cable":
         cable_length = 0
         for instance2 in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
@@ -105,7 +105,7 @@ for instance in fileio.read_tsv("instances list"):
     if instance.get("print_name") not in ["", None]:
         pass
     else:
-        if instance.get("item_type") == "Connector cavity":
+        if instance.get("item_type") == "connector cavity":
             instance_name = instance.get("instance_name", "")
             print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
             instances_list.modify(instance_name, {"print_name": print_name})
@@ -130,7 +130,7 @@ for manual_note in fileio.read_tsv("flagnotes manual"):
     affected_list = manual_note.get("affectedinstances", "").strip().split(",")
     for affected in affected_list:
         instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-            "item_type": "Flagnote",
+            "item_type": "flagnote",
             "note_type": manual_note.get("note_type"),
             "mpn": manual_note.get("shape"),
             "lib_repo": manual_note.get("shape_lib_repo"),
@@ -149,7 +149,7 @@ for rev_row in fileio.read_tsv("revision history"):
     if affected_raw:
         for affected in [a.strip() for a in affected_raw.split(",") if a.strip()]:
             instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-                "item_type": "Flagnote",
+                "item_type": "flagnote",
                 "note_type": "rev_change_callout",
                 "mpn": "rev_change_callout",
                 "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
@@ -161,11 +161,11 @@ for rev_row in fileio.read_tsv("revision history"):
             flagnote_counter += 1
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["Cavity", "Cable"]:
+    if instance.get("item_type") in ["Cavity", "cable"]:
         continue
     if instance.get("bom_line_number") != "":
         instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-            "item_type": "Flagnote",
+            "item_type": "flagnote",
             "note_type": "bom_item",
             "mpn": "bom_item",
             "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
@@ -177,10 +177,10 @@ for instance in fileio.read_tsv("instances list"):
         flagnote_counter += 1
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["Connector", "Backshell"]:
+    if instance.get("item_type") in ["connector", "backshell"]:
         bubble_text = instance.get("print_name") or instance.get("instance_name")
         instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-            "item_type": "Flagnote",
+            "item_type": "flagnote",
             "note_type": "part_name",
             "mpn": "part_name",
             "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
@@ -193,10 +193,10 @@ for instance in fileio.read_tsv("instances list"):
 
 cavity_flagnote_conversion_happened = False
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Flagnote":
+    if instance.get("item_type") == "flagnote":
         if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Cavity":
             instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-                "item_type": "Flagnote",
+                "item_type": "flagnote",
                 "note_type": "buildnote",
                 "mpn": "buildnote",
                 "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
@@ -365,8 +365,8 @@ feature_tree_utils.copy_pdfs_to_cwd()
         "origin",
         {
             "instance_name": "origin",
-            "item_type": "Origin",
-            "location_type": "Node",
+            "item_type": "origin",
+            "location_type": "node",
         },
     )
 

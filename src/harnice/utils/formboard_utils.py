@@ -94,7 +94,7 @@ def validate_nodes():
     nodes_from_instances_list = {
         instance.get("instance_name")
         for instance in fileio.read_tsv("instances list")
-        if instance.get("item_type") == "Node"
+        if instance.get("item_type") == "node"
     }
 
     # Extract nodes already involved in segments in formboard definition
@@ -110,7 +110,7 @@ def validate_nodes():
             origin_node = "node1"
             node_counter = 0
             for instance in fileio.read_tsv("instances list"):
-                if instance.get("item_type") == "Node":
+                if instance.get("item_type") == "node":
                     segment_id = instance.get("instance_name") + "_leg"
                     add_segment_to_formboard_def(
                         segment_id,
@@ -138,7 +138,7 @@ def validate_nodes():
             segment_id = "segment"
             segment_ends = []
             for instance in fileio.read_tsv("instances list"):
-                if instance.get("item_type") == "Node":
+                if instance.get("item_type") == "node":
                     segment_ends.append(instance.get("instance_name"))
 
             add_segment_to_formboard_def(
@@ -169,7 +169,7 @@ def validate_nodes():
                 node_to_attach_new_leg_to = ""
                 for instance in fileio.read_tsv("instances list"):
                     if (
-                        instance.get("item_type") == "Node"
+                        instance.get("item_type") == "node"
                         and instance.get("instance_name") != missing_node
                     ):
                         node_to_attach_new_leg_to = instance.get("instance_name")
@@ -223,8 +223,8 @@ def validate_nodes():
         instances_list.new_instance(
             segment.get("segment_id"),
             {
-                "item_type": "Segment",
-                "location_type": "Segment",
+                "item_type": "segment",
+                "location_type": "segment",
                 "segment_group": segment.get("segment_id"),
                 "length": segment.get("length"),
                 "diameter": segment.get("diameter"),
@@ -241,8 +241,8 @@ def validate_nodes():
             instances_list.new_instance(
                 node,
                 {
-                    "item_type": "Node",
-                    "location_type": "Node",
+                    "item_type": "node",
+                    "location_type": "node",
                     "parent_csys_instance_name": "origin",
                     "parent_csys_outputcsys_name": "origin",
                 },
@@ -253,7 +253,7 @@ def validate_nodes():
     # === Detect loops ===
     adjacency = defaultdict(list)
     for instance in fileio.read_tsv("instances list"):
-        if instance.get("item_type") == "Segment":
+        if instance.get("item_type") == "segment":
             node_a = instance.get("node_at_end_a")
             node_b = instance.get("node_at_end_b")
             if node_a and node_b:
@@ -321,8 +321,8 @@ def generate_node_coordinates():
     # === Step 1: Load segments and nodes from instances_list ===
     instances = fileio.read_tsv("instances list")
 
-    segments = [inst for inst in instances if inst.get("item_type") == "Segment"]
-    nodes = [inst for inst in instances if inst.get("item_type") == "Node"]
+    segments = [inst for inst in instances if inst.get("item_type") == "segment"]
+    nodes = [inst for inst in instances if inst.get("item_type") == "node"]
 
     # === Step 2: Determine origin node ===
     origin_node = ""
@@ -331,7 +331,7 @@ def generate_node_coordinates():
         if origin_node:
             break
 
-    print(f"-Origin node: '{origin_node}'")
+    print(f"-origin node: '{origin_node}'")
 
     # === Step 3: Build graph from segments ===
     graph = {}
@@ -504,10 +504,10 @@ def generate_node_coordinates():
 
 def map_instance_to_segments(instance):
     # note to user: we're actually mapping to nodes in same connector group as the "end nodes".
-    # so if your to/from nodes are item_type==Cavity, for example, this function will return paths of segments between the item_type==Node instance where those cavities are
+    # so if your to/from nodes are item_type==Cavity, for example, this function will return paths of segments between the item_type==node instance where those cavities are
 
     # Ensure you're trying to map an instance that is segment-based.
-    if instance.get("location_type") != "Segment":
+    if instance.get("location_type") != "segment":
         raise ValueError(
             f"You're trying to map a non segment-based instance {instance.get('instance_name')} across segments."
         )
@@ -521,14 +521,14 @@ def map_instance_to_segments(instance):
     # Ensure each endpoint are actually location_type==node
     if (
         instances_list.attribute_of(instance.get("node_at_end_a"), "location_type")
-        != "Node"
+        != "node"
     ):
         raise ValueError(
             f"Location type of {instance.get('node_at_end_a')} is not a node."
         )
     if (
         instances_list.attribute_of(instance.get("node_at_end_b"), "location_type")
-        != "Node"
+        != "node"
     ):
         raise ValueError(
             f"Location type of {instance.get('node_at_end_b')} is not a node."
@@ -537,31 +537,31 @@ def map_instance_to_segments(instance):
     # Ensure there's a node in the connector group for each end node
     start_node = instances_list.instance_in_connector_group_with_item_type(
         instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"),
-        "Node",
+        "node",
     )
     try:
         if start_node == 0:
             raise ValueError(
-                f"No 'Node' type item found in connector group {instance.get('connector_group')}"
+                f"No 'node' type item found in connector group {instance.get('connector_group')}"
             )
         if start_node > 1:
             raise ValueError(
-                f"Multiple 'Node' type items found in connector group {instance.get('connector_group')}"
+                f"Multiple 'node' type items found in connector group {instance.get('connector_group')}"
             )
     except TypeError:
         pass
     end_node = instances_list.instance_in_connector_group_with_item_type(
         instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
-        "Node",
+        "node",
     )
     try:
         if end_node == 0:
             raise ValueError(
-                f"No 'Node' type item found in connector group {instance.get('connector_group')}"
+                f"No 'node' type item found in connector group {instance.get('connector_group')}"
             )
         if end_node > 1:
             raise ValueError(
-                f"Multiple 'Node' type items found in connector group {instance.get('connector_group')}"
+                f"Multiple 'node' type items found in connector group {instance.get('connector_group')}"
             )
     except TypeError:
         pass
@@ -570,7 +570,7 @@ def map_instance_to_segments(instance):
     segments = [
         inst
         for inst in fileio.read_tsv("instances list")
-        if inst.get("item_type") == "Segment"
+        if inst.get("item_type") == "segment"
     ]
 
     graph = {}
@@ -588,19 +588,19 @@ def map_instance_to_segments(instance):
 
     start_node = instances_list.instance_in_connector_group_with_item_type(
         instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"),
-        "Node",
+        "node",
     )
     if start_node == 0:
         raise ValueError(
-            f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get('instance_name'), 'connector_group')}"
+            f"No 'node' type item found in connector group {instances_list.attribute_of(instance.get('instance_name'), 'connector_group')}"
         )
     end_node = instances_list.instance_in_connector_group_with_item_type(
         instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
-        "Node",
+        "node",
     )
     if end_node == 0:
         raise ValueError(
-            f"No 'Node' type item found in connector group {instances_list.attribute_of(instance.get('instance_name'), 'connector_group')}"
+            f"No 'node' type item found in connector group {instances_list.attribute_of(instance.get('instance_name'), 'connector_group')}"
         )
 
     start_node = start_node.get("instance_name")
@@ -638,7 +638,7 @@ def map_instance_to_segments(instance):
                 "item_type": f"{instance.get('item_type')}-segment",
                 "segment_group": seg_name,
                 "parent_csys": seg_name,
-                "location_type": "Segment",
+                "location_type": "segment",
                 "length": instances_list.attribute_of(seg_name, "length"),
             },
         )
@@ -650,7 +650,7 @@ def make_segment_drawings():
     instances = fileio.read_tsv("instances list")
 
     for instance in instances:
-        if instance.get("item_type") == "Segment":
+        if instance.get("item_type") == "segment":
             segment_name = instance.get("instance_name", "").strip()
             if not segment_name:
                 continue

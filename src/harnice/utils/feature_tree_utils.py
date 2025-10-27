@@ -21,13 +21,13 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
             "mpn": macro_part_number,
             "lib_repo": lib_repo,
             "lib_subpath": lib_subpath,
-            "item_type": "Macro",
+            "item_type": "macro",
             "instance_name": artifact_id,
         }
     )
 
     macro_dirpath = os.path.join(
-        fileio.dirpath("imported_instances"), "Macro", artifact_id
+        fileio.dirpath("imported_instances"), "macro", artifact_id
     )
     script_path = os.path.join(macro_dirpath, f"{macro_part_number}.py")
 
@@ -86,7 +86,7 @@ def update_translate_content():
         if instance.get("parent_csys_instance_name") in ["", None]:
             continue  # skip if there isn't a parent defined
 
-        if instance.get("item_type") == "Node":
+        if instance.get("item_type") == "node":
             continue  # these are automatically assigned at start
 
         parent_csys_outputcsys_name = instance.get("parent_csys_outputcsys_name")

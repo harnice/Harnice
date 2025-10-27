@@ -13,7 +13,6 @@ def mpn_of_device_refdes(refdes):
     return None, None, None
 
 
-# TODO: #480
 def connector_of_channel(key):
     refdes, channel_id = key
 
@@ -88,8 +87,8 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             f"{from_connector_key}.node",
             {
                 "net": circuit.get("net"),
-                "item_type": "Node",
-                "location_type": "Node",
+                "item_type": "node",
+                "location_type": "node",
                 "connector_group": from_connector_key,
             },
             ignore_duplicates=True,
@@ -100,8 +99,8 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             f"{from_connector_key}.conn",
             {
                 "net": circuit.get("net"),
-                "item_type": "Connector",
-                "location_type": "Node",
+                "item_type": "connector",
+                "location_type": "node",
                 "connector_group": from_connector_key,
                 "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
                 "this_instance_mating_device_connector": circuit.get(
@@ -117,9 +116,9 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             from_cavity,
             {
                 "net": circuit.get("net"),
-                "item_type": "Connector cavity",
+                "item_type": "connector cavity",
                 "parent_instance": f"{from_connector_key}.conn",  # from connector instance
-                "location_type": "Node",
+                "location_type": "node",
                 "connector_group": from_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 0,
@@ -145,8 +144,8 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             f"{to_connector_key}.node",
             {
                 "net": circuit.get("net"),
-                "item_type": "Node",
-                "location_type": "Node",
+                "item_type": "node",
+                "location_type": "node",
                 "connector_group": to_connector_key,
             },
             ignore_duplicates=True,
@@ -157,8 +156,8 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             f"{to_connector_key}.conn",
             {
                 "net": circuit.get("net"),
-                "item_type": "Connector",
-                "location_type": "Node",
+                "item_type": "connector",
+                "location_type": "node",
                 "connector_group": to_connector_key,
                 "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
                 "this_instance_mating_device_connector": circuit.get(
@@ -174,9 +173,9 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             to_cavity,
             {
                 "net": circuit.get("net"),
-                "item_type": "Connector cavity",
+                "item_type": "connector cavity",
                 "parent_instance": f"{to_connector_key}.conn",  # to connector instance
-                "location_type": "Node",
+                "location_type": "node",
                 "connector_group": to_connector_key,
                 "circuit_id": circuit.get("circuit_id"),
                 "circuit_port_number": 1,
@@ -189,7 +188,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             f"circuit-{circuit.get('circuit_id')}",
             {
                 "net": circuit.get("net"),
-                "item_type": "Circuit",
+                "item_type": "circuit",
                 "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                 "circuit_id": circuit.get("circuit_id"),
                 "node_at_end_a": from_cavity,
@@ -226,9 +225,9 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
             {
                 "net": circuit.get("net"),
-                "item_type": "Channel",
+                "item_type": "channel",
                 "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
-                "location_type": "Segment",
+                "location_type": "segment",
                 "node_at_end_a": f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.conn",
                 "node_at_end_b": f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.conn",
                 "this_net_from_device_refdes": circuit.get("net_from_refdes"),

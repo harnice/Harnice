@@ -45,7 +45,7 @@ def make_note_drawings(formboard_dir):
         library_utils.pull(
             {
                 "lib_repo": instance.get("lib_repo"),
-                "item_type": "Flagnote",
+                "item_type": "flagnote",
                 "mpn": instance.get("mpn"),
                 "instance_name": instance_name,
             }
@@ -72,7 +72,7 @@ def compile_buildnotes():
     # add buildnote itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
     for instance in fileio.read_tsv("instances list"):
         if (
-            instance.get("item_type") == "Flagnote"
+            instance.get("item_type") == "flagnote"
             and instance.get("note_type") == "buildnote"
         ):
             instances_list.modify(
@@ -82,7 +82,7 @@ def compile_buildnotes():
 
     for instance in fileio.read_tsv("instances list"):
         if (
-            instance.get("item_type") == "Flagnote"
+            instance.get("item_type") == "flagnote"
             and instance.get("note_type") == "buildnote"
         ):
             buildnote_text = instance.get("note_text")
@@ -122,7 +122,7 @@ def assign_output_csys():
     for current_affected_instance_candidate in fileio.read_tsv("instances list"):
         processed_affected_instances = []
         current_affected_instance = None
-        if current_affected_instance_candidate.get("item_type") == "Flagnote":
+        if current_affected_instance_candidate.get("item_type") == "flagnote":
             if (
                 current_affected_instance_candidate.get("parent_instance")
                 not in processed_affected_instances
@@ -134,7 +134,7 @@ def assign_output_csys():
         # now that you have a not-yet traversed affected instance
         flagnote_counter = 1
         for instance in fileio.read_tsv("instances list"):
-            if instance.get("item_type") == "Flagnote":
+            if instance.get("item_type") == "flagnote":
                 if instance.get("parent_instance") == current_affected_instance:
                     instances_list.modify(
                         instance.get("instance_name"),
@@ -150,7 +150,7 @@ def assign_output_csys():
                             "parent_csys_instance_name": current_affected_instance,
                             "parent_instance": instance.get("instance_name"),
                             "item_type": "flagnote-leader",
-                            "location_type": "Node",
+                            "location_type": "node",
                             "parent_csys_outputcsys_name": f"flagnote-leader-{flagnote_counter}",
                             "absolute_rotation": 0,
                             "connector_group": instances_list.attribute_of(
