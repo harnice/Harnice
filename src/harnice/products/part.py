@@ -12,6 +12,7 @@ def file_structure():
         f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
+
 def generate_structure():
     pass
 

@@ -406,6 +406,7 @@ def read_tsv(filekey, delimiter="\t"):
 
 def newrev():
     from harnice import cli
+
     """
     Create a new revision directory by copying the current revision's contents
     and updating filenames to reflect the new revision number.

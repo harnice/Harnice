@@ -135,9 +135,7 @@ def pull(input_dict, update_instances_list=True):
     )
     revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
 
-    if (
-        update_instances_list
-    ):
+    if update_instances_list:
         update_contents = {
             "item_type": input_dict.get("item_type"),
             "lib_repo": input_dict.get("lib_repo"),
