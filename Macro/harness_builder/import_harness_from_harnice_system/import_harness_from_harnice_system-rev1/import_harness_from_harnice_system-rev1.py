@@ -15,6 +15,9 @@ path_to_system_instances_list = os.path.join(
 )
 
 
+fileio.set_net(target_net)
+
+
 def file_structure():
     return {
         "instance_data": {
