@@ -7,7 +7,7 @@ build_macro_mpn = "kicad_pro_to_pdf"
 def file_structure():
     return {
         "kicad":{
-            f"{fileio.partnumber('pn-rev')}-{artifact_id}-kicad_sch.kicad_sch": "kicad sch",
+            f"{fileio.partnumber('pn-rev')}.kicad_sch": "kicad sch",
         },
         f"{fileio.partnumber('pn-rev')}-{artifact_id}.pdf": "schematic pdf"
     }
@@ -20,7 +20,7 @@ Always overwrites the existing PDF.
 
 if not os.path.isfile(fileio.path("kicad sch", structure_dict=file_structure())):
     raise FileNotFoundError(
-        f"Schematic not found. Check your kicad sch exists at this name and location:\n{path('kicad sch')}"
+        f"Schematic not found. Check your kicad sch exists at this name and location:\n{fileio.path("kicad sch", structure_dict=file_structure())}"
     )
 
 cmd = [

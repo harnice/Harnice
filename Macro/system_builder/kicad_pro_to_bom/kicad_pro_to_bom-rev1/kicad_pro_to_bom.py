@@ -21,7 +21,7 @@ BOM_LABELS = [
 def file_structure():
     return {
         "kicad":{
-            "kicad_sch": f"{fileio.partnumber('pn-rev')}.kicad_sch",
+            f"{fileio.partnumber('pn-rev')}.kicad_sch": "kicad sch",
         }
     }
 

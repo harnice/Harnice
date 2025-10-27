@@ -11,7 +11,7 @@ build_macro_mpn = "kicad_pro_to_system_connector_list"
 def file_structure():
     return {
         "kicad":{
-            f"{fileio.partnumber('pn-rev')}.kicad_sch": "kicad_sch",
+            f"{fileio.partnumber('pn-rev')}.kicad_sch": "kicad sch",
             f"{fileio.partnumber('pn-rev')}.net": "netlist source",
         }
     }
@@ -48,7 +48,7 @@ def parse_nets_from_export(export_text: str) -> Dict[str, list[str]]:
 
 def export_netlist() -> str:
     """Export schematic netlist (.net) via KiCad CLI."""
-    net_file = fileio.dirpath("netlist source", structure_dict=file_structure())
+    net_file = fileio.path("netlist source", structure_dict=file_structure())
     sch_file = fileio.path("kicad sch", structure_dict=file_structure())
 
     if not os.path.exists(sch_file):
