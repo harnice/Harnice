@@ -24,7 +24,6 @@ def file_structure():
     return cli.file_structure
 
 
-net = ""
 pn = ""
 rev = 0
 
@@ -38,12 +37,15 @@ def rev_directory():
 
 
 def set_net(x):
-    global net
-    net = x
+    from harnice import cli
+
+    cli.set_net(x)
 
 
 def get_net():
-    return net
+    from harnice import cli
+
+    return cli.net
 
 
 def partnumber(format):
