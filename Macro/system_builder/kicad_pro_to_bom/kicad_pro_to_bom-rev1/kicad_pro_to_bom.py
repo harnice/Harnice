@@ -32,9 +32,9 @@ Includes columns defined in BOM_FIELDS (with BOM_LABELS as headers).
 Always overwrites the BOM file.
 """
 
-if not os.path.isfile(path("kicad sch")):
+if not os.path.isfile(fileio.path("kicad sch", structure_dict=file_structure())):
     raise FileNotFoundError(
-        f"Schematic not found. Check your kicad sch exists at this name and location: \n{path("kicad sch")}"
+        f"Schematic not found. Check your kicad sch exists at this name and location: \n{fileio.path("kicad sch", structure_dict=file_structure())}"
     )
 
 cmd = [
@@ -42,7 +42,7 @@ cmd = [
     "sch",
     "export",
     "bom",
-    path("kicad sch"),
+    fileio.path("kicad sch", structure_dict=file_structure()),
     "--fields",
     ",".join(BOM_FIELDS),
     "--labels",

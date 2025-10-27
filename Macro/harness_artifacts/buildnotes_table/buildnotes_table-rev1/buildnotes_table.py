@@ -55,7 +55,7 @@ for instance in fileio.read_tsv("instances list"):
                     "item_type": "Flagnote",
                     "mpn": shape,
                     "instance_name": f"bubble{buildnote_number}",
-                    "destination_directory": path("buildnotes table bubbles"),
+                    "destination_directory": fileio.path("bom table bubbles", structure_dict=file_structure()),
                     "quiet": True,
                 }
             )
@@ -158,7 +158,7 @@ svg_lines.append('<g id="buildnotes-table-contents-end"/>')
 svg_lines.append("</svg>")
 
 # === Write SVG Output ===
-with open(path("buildnotes table svg"), "w", encoding="utf-8") as svg_file:
+with open(fileio.path("buildnotes table svg", structure_dict=file_structure()), "w", encoding="utf-8") as svg_file:
     svg_file.write("\n".join(svg_lines))
 
 # === Inject bubble SVGs into the written file ===
@@ -168,9 +168,9 @@ for row in data_rows:
 
     buildnote_number = row["buildnote_number"]
     source_svg_filepath = os.path.join(
-        path("buildnotes table bubbles"), f"bubble{buildnote_number}-drawing.svg"
+        fileio.path("bom table bubbles", structure_dict=file_structure()), f"bubble{buildnote_number}-drawing.svg"
     )
-    target_svg_filepath = path("buildnotes table svg")
+    target_svg_filepath = fileio.path("bom table bubbles", structure_dict=file_structure())
     group_name = f"bubble{buildnote_number}"
 
     # Replace text placeholder "flagnote-text" → buildnote_number

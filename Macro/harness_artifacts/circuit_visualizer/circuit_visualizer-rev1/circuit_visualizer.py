@@ -1,4 +1,5 @@
 import os
+from turtle import st
 from harnice import fileio
 from harnice.lists import instances_list
 from harnice.utils import circuit_utils
@@ -247,7 +248,7 @@ for instance in fileio.read_tsv("instances list"):
 
 
 # =============== WRITE SVG ===============
-output_path = path("circuit visualizer svg")
+output_path = fileio.path("circuit visualizer svg", structure_dict=file_structure())
 os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
 with open(output_path, "w", encoding="utf-8") as f:

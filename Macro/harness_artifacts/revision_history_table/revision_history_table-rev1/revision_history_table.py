@@ -73,7 +73,7 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
                     "item_type": "Flagnote",
                     "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
                     "instance_name": f"bubble{rev}",
-                    "destination_directory": path("revision table bubbles"),
+                    "destination_directory": fileio.dirpath("revision table bubbles", structure_dict=file_structure()),
                     "quiet": True,
                 }
             )
@@ -149,7 +149,7 @@ for row_index, row in enumerate(data_rows):
                 "item_type": "Flagnote",
                 "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
                 "instance_name": bubble_name,
-                "destination_directory": path("revision table bubbles"),
+                "destination_directory": fileio.dirpath("revision table bubbles", structure_dict=file_structure()),
                 "quiet": True,
             }
         )
@@ -177,7 +177,7 @@ svg_lines.append('<g id="revision-history-table-contents-end"/>')
 svg_lines.append("</svg>")
 
 # Write the base SVG
-target_svg = path("revhistory master svg")
+target_svg = fileio.path("revision history table svg", structure_dict=file_structure())
 with open(target_svg, "w", encoding="utf-8") as f:
     f.write("\n".join(svg_lines))
 
@@ -188,9 +188,9 @@ for row in data_rows:
 
     rev_text = row["rev"]
     source_svg_filepath = os.path.join(
-        path("revision table bubbles"), f"bubble{rev_text}-drawing.svg"
+        fileio.dirpath("revision table bubbles", structure_dict=file_structure()), f"bubble{rev_text}-drawing.svg"
     )
-    target_svg_filepath = path("revhistory master svg")
+    target_svg_filepath = fileio.path("revision history table svg", structure_dict=file_structure())
     group_name = f"bubble{rev_text}"
 
     # Replace text placeholder "flagnote-text" → rev_text
