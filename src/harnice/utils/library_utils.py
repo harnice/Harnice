@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import filecmp
 from harnice import fileio
 from harnice.lists import instances_list, rev_history
 
@@ -102,6 +103,7 @@ def pull(input_dict, update_instances_list=True):
         "-feature_tree.py",
         "-conductor_list.tsv",
     ]
+    Modified = False
     for filename in os.listdir(lib_used_rev_path):
         lib_used_do_not_edit_file = os.path.join(lib_used_rev_path, filename)
 
@@ -129,6 +131,16 @@ def pull(input_dict, update_instances_list=True):
                 with open(editable_file_path, "w", encoding="utf-8") as f:
                     f.write(content)
 
+        else:
+            # Compare the existing editable file and the library version
+            if not filecmp.cmp(lib_used_do_not_edit_file, editable_file_path, shallow=False):
+                Modified = Modified or True 
+
+    if Modified:
+        status = f"modified at project level (rev{rev_to_use})"
+    else:
+        status = f"up to date (rev{rev_to_use})"
+
     # === Load revision row from revision history TSV in source library ===
     revhistory_path = os.path.join(
         source_lib_path, f"{input_dict.get('mpn')}-revision_history.tsv"
@@ -150,7 +162,7 @@ def pull(input_dict, update_instances_list=True):
             "lib_datereleased": revhistory_row.get("datereleased"),
             "lib_drawnby": revhistory_row.get("drawnby"),
             "lib_checkedby": revhistory_row.get("checkedby"),
-            "project_editable_lib_modified": "TODO",
+            "project_editable_lib_modified": Modified,
         }
 
         try:
@@ -161,7 +173,7 @@ def pull(input_dict, update_instances_list=True):
             )
 
     print(
-        f"Importing from library: {input_dict.get('instance_name'):<40}{input_dict.get('item_type'):<20}{status}"
+        f"Working instance: {input_dict.get('instance_name'):<40}{input_dict.get('item_type'):<20}{status}"
     )
     return destination_directory
 
