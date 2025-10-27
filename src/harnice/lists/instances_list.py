@@ -95,9 +95,8 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
         else:
             return -1
 
-    # TODO #467: re-add this when we have a way to set the net
-    # if fileio.get_net() and fileio.product_type == "harness":
-    # instance_data["net"] = fileio.get_net()
+    if fileio.get_net():
+        instance_data["net"] = fileio.get_net()
 
     # Add debug call chain
     instance_data["debug"] = _get_call_chain_str()
