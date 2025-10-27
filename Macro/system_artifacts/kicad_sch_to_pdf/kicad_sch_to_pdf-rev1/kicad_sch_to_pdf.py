@@ -4,12 +4,13 @@ from harnice import fileio
 
 build_macro_mpn = "kicad_pro_to_pdf"
 
+
 def file_structure():
     return {
-        "kicad":{
+        "kicad": {
             f"{fileio.partnumber('pn-rev')}.kicad_sch": "kicad sch",
         },
-        f"{fileio.partnumber('pn-rev')}-{artifact_id}.pdf": "schematic pdf"
+        f"{fileio.partnumber('pn-rev')}-{artifact_id}.pdf": "schematic pdf",
     }
 
 

@@ -8,9 +8,10 @@ from harnice import fileio
 
 build_macro_mpn = "kicad_pro_to_system_connector_list"
 
+
 def file_structure():
     return {
-        "kicad":{
+        "kicad": {
             f"{fileio.partnumber('pn-rev')}.kicad_sch": "kicad sch",
             f"{fileio.partnumber('pn-rev')}.net": "netlist source",
         }
@@ -156,7 +157,10 @@ def main():
                 connector_mpn = ""
 
                 # Decide directory based on disconnect flag
-                base_dir = os.path.join(fileio.dirpath("imported_instances"), ("disconnect" if disconnect_flag else "device"))
+                base_dir = os.path.join(
+                    fileio.dirpath("imported_instances"),
+                    ("disconnect" if disconnect_flag else "device"),
+                )
                 signals_list_path = os.path.join(
                     os.getcwd(),
                     base_dir,
@@ -164,9 +168,7 @@ def main():
                     f"{device_refdes}-signals_list.tsv",
                 )
 
-                with open(
-                    signals_list_path, newline="", encoding="utf-8"
-                ) as sigfile:
+                with open(signals_list_path, newline="", encoding="utf-8") as sigfile:
                     reader = csv.DictReader(sigfile, delimiter="\t")
                     for row in reader:
                         if disconnect_flag:
@@ -193,6 +195,7 @@ def main():
                         "connector_mpn": connector_mpn,
                     }
                 )
+
 
 if __name__ == "__main__":
     main()
