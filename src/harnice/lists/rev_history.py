@@ -23,12 +23,12 @@ COLUMNS = [
 ]
 
 
-def info(rev=None,path=None,field=None):
+def info(rev=None, path=None, field=None):
     if path is None:
         path = fileio.path("revision history")
-        
+
     if not os.path.exists(path):
-        return "file not found" #exact text is looked up in downstream texts, don't make it more specific
+        return "file not found"  # exact text is looked up in downstream texts, don't make it more specific
 
     if rev:
         rev = str(rev)
@@ -45,7 +45,8 @@ def info(rev=None,path=None,field=None):
                 else:
                     return row
 
-    return "row not found" #exact text is looked up in downstream texts, don't make it more specific
+    return "row not found"  # exact text is looked up in downstream texts, don't make it more specific
+
 
 def initial_release_exists():
     for row in fileio.read_tsv("revision history"):
@@ -78,8 +79,6 @@ def update_datemodified():
     with open(
         fileio.path("revision history"), "w", newline="", encoding="utf-8"
     ) as f_out:
-        writer = csv.DictWriter(
-            f_out, fieldnames=COLUMNS, delimiter="\t"
-        )
+        writer = csv.DictWriter(f_out, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(rows)

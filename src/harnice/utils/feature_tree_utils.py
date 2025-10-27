@@ -26,7 +26,9 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
         }
     )
 
-    macro_dirpath = os.path.join(fileio.dirpath("imported_instances"), "Macro", artifact_id)
+    macro_dirpath = os.path.join(
+        fileio.dirpath("imported_instances"), "Macro", artifact_id
+    )
     script_path = os.path.join(macro_dirpath, f"{macro_part_number}.py")
 
     # always pass the basics, but let kwargs override/extend
@@ -103,10 +105,9 @@ def update_translate_content():
 
 
 def copy_pdfs_to_cwd():
-    artifacts_dir = fileio.dirpath("macros")
     cwd = os.getcwd()
 
-    for root, _, files in os.walk(artifacts_dir):
+    for root, _, files in os.walk(fileio.dirpath("instance_data")):
         for filename in files:
             if filename.lower().endswith(".pdf"):
                 source_path = os.path.join(root, filename)

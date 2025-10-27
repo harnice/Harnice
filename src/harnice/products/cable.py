@@ -4,8 +4,21 @@ import json
 from harnice import fileio
 
 
+def file_structure():
+    return {
+        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{fileio.partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
+    }
+
+
+def generate_structure():
+    pass
+
+
 def render():
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="cable")
+    generate_structure()
 
     default_attributes = {
         "jacket": {

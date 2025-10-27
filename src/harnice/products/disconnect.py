@@ -102,6 +102,18 @@ for channel in range(8):
 """
 
 
+def file_structure():
+    return {
+        f"{fileio.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{fileio.partnumber('pn-rev')}-signals_list.tsv": "signals list",
+        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+    }
+
+
+def generate_structure():
+    pass
+
+
 # TODO-448 i don't think users should be calling this
 def _validate_signals_list():
     print("--------------------------------")
@@ -197,7 +209,9 @@ def _validate_signals_list():
 
 
 def render():
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="device")  # identical for now
+    generate_structure()
 
     if not os.path.exists(fileio.path("signals list")):
         if not os.path.exists(fileio.path("feature tree")):

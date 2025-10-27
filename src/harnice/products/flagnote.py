@@ -5,6 +5,17 @@ import math
 from harnice import fileio, cli
 
 
+def file_structure():
+    return {
+        f"{fileio.partnumber('pn-rev')}-params.json": "params",
+        f"{fileio.partnumber('pn-rev')}-drawing.svg": "drawing",
+    }
+
+
+def generate_structure():
+    pass
+
+
 def render():
     print(
         "Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?"
@@ -12,7 +23,9 @@ def render():
     if cli.prompt("Press enter to confirm or any key to exit") == "":
         exit()
 
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="flagnote")
+    generate_structure()
     params_path = fileio.path("params")
 
     # Geometry generators

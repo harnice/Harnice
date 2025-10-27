@@ -37,7 +37,7 @@ COLUMNS = [
     "bubble_text",
     "note_text",
     "lib_repo",
-    "lib_subpath"
+    "lib_subpath",
     "lib_desc",
     "lib_latest_rev",
     "lib_rev_used_here",
@@ -96,8 +96,8 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
             return -1
 
     # TODO #467: re-add this when we have a way to set the net
-    #if fileio.get_net() and fileio.product_type == "harness":
-        #instance_data["net"] = fileio.get_net()
+    # if fileio.get_net() and fileio.product_type == "harness":
+    # instance_data["net"] = fileio.get_net()
 
     # Add debug call chain
     instance_data["debug"] = _get_call_chain_str()

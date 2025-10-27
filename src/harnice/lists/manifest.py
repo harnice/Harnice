@@ -7,7 +7,7 @@ COLUMNS = ["net", "harness_pn"]
 
 def new():
     """
-    Synchronize the system manifest with the system connector list:
+    Synchronize the system harness manifest with the system connector list:
       - Remove nets that no longer exist in the connector list
       - Add nets that appear in the connector list but not yet in the manifest
       - Preserve all other column data for nets that still exist
@@ -19,17 +19,15 @@ def new():
         if row.get("net")
     }
 
-    manifest_path = fileio.path("system manifest")
+    manifest_path = fileio.path("harness manifest")
 
     # Load existing manifest if present
     existing_manifest = []
     manifest_nets = set()
     try:
-        existing_manifest = fileio.read_tsv("system manifest")
+        existing_manifest = fileio.read_tsv("harness manifest")
         manifest_nets = {
-            row.get("net", "").strip()
-            for row in existing_manifest
-            if row.get("net")
+            row.get("net", "").strip() for row in existing_manifest if row.get("net")
         }
     except FileNotFoundError:
         existing_manifest = []
@@ -64,7 +62,7 @@ def update_upstream(path_to_system_rev, system_pn_rev, manifest_nets, harness_pn
     manifest_path = os.path.join(
         path_to_system_rev,
         "lists",
-        f"{system_pn_rev[0]}-{system_pn_rev[1]}-system_manifest.tsv",
+        f"{system_pn_rev[0]}-{system_pn_rev[1]}-harness_manifest.tsv",
     )
 
     # Read existing manifest

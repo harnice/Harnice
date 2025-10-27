@@ -70,6 +70,18 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 """
 
 
+def file_structure():
+    return {
+        f"{fileio.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{fileio.partnumber('pn-rev')}-signals_list.tsv": "signals list",
+        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+    }
+
+
+def generate_structure():
+    os.makedirs(fileio.dirpath("kicad"), exist_ok=True)
+
+
 def _make_new_library_file():
     """Create a bare .kicad_sym file with only library header info."""
 
@@ -693,8 +705,9 @@ def _validate_signals_list():
 
 
 def _device_render(lightweight=False):
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="device")
-
+    generate_structure()
     _validate_attributes_json()
 
     if not lightweight:

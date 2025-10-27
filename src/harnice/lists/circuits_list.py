@@ -98,7 +98,7 @@ def new():
             fileio.dirpath("imported_instances"),
             "device",
             refdes,
-            f"{refdes}-signals_list.tsv"
+            f"{refdes}-signals_list.tsv",
         )
         connector_name = (
             signals_list.connector_name_of_channel(channel_id, device_signals_list_path)
@@ -119,7 +119,7 @@ def new():
 
     def resolve_disconnect_endpoint(refdes, side, signal, channel_id):
         disconnect_signals_list_path = os.path.join(
-            fileio.dirpath("disconnects"), refdes, f"{refdes}-signals_list.tsv"
+            fileio.dirpath("disconnect"), refdes, f"{refdes}-signals_list.tsv"
         )
 
         row = None

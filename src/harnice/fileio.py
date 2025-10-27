@@ -11,14 +11,19 @@ import csv
 #  -  if multiple instances are found at the same hierarchy level with the same name,
 # this separates name from unique instance identifier
 
+
 def set_file_structure(x):
     from harnice import cli
+
     cli.set_file_structure(x)
+
 
 def file_structure():
     from harnice import cli
+
     return cli.file_structure
-    
+
+
 net = ""
 pn = ""
 rev = 0
@@ -47,10 +52,10 @@ def partnumber(format):
     # given a part number "pppppp-revR"
 
     # format options:
-    # pn-rev:    returns "pppppp-revR"
-    # pn:        returns "pppppp"
-    # rev:       returns "revR"
-    # R:         returns "R"
+    # "pn-rev"    returns "pppppp-revR"
+    # "pn"        returns "pppppp"
+    # "rev"       returns "revR"
+    # "R"         returns "R"
 
     pn_rev = os.path.basename(rev_directory())
 
@@ -74,91 +79,6 @@ def partnumber(format):
 
     else:
         raise ValueError("Function 'partnumber' not presented with a valid format")
-
-
-def harnice_file_structure():
-    # syntax:
-    #   "filename": "filekey"
-
-    # filename is the actual file name with a suffix
-    # filekey is the shorthand reference for it with no suffix
-
-    if product_type == "part":
-        return {
-            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-        }
-    elif product_type == "flagnote":
-        return {
-            f"{partnumber('pn-rev')}-params.json": "params",
-            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
-        }
-    elif product_type in ("tblock", "titleblock"):
-        return {
-            f"{partnumber('pn-rev')}-params.json": "params",
-            f"{partnumber('pn-rev')}-drawing.svg": "drawing",
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-        }
-    elif product_type == "device":
-        return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
-            f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-        }
-    elif product_type == "disconnect":
-        return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
-            f"{partnumber('pn-rev')}-signals_list.tsv": "signals list",
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-        }
-    elif product_type == "system":
-        return {
-            f"{partnumber('pn-rev')}-feature_tree.py": "feature tree",
-            f"{partnumber('pn-rev')}-instances_list.tsv": "instances list",
-            "imported_instances": {},
-            "disconnects": {},
-            "features_for_relatives": {},
-            "harnesses": {},
-            "lists": {
-                f"{partnumber('pn-rev')}-bom.tsv": "bom",
-                f"{partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
-                f"{partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
-                f"{partnumber('pn-rev')}-harness_manifest.tsv": "system manifest",
-                f"{partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
-                f"{partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
-                f"{partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnects set",
-                f"{partnumber('pn-rev')}-mapped_a_channels_through_disconnects_set.tsv": "mapped A-side channels through disconnects set",
-            },
-            "maps": {
-                f"{partnumber('pn-rev')}-channel_map.tsv": "channel map",
-                f"{partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
-            },
-        }
-    elif product_type == "cable":
-        return {
-            f"{partnumber('pn-rev')}-attributes.json": "attributes",
-            f"{partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
-        }
-    else:
-        raise ValueError(f"Invalid product type: {product_type}")
-
-
-def generate_structure():
-    if product_type == "harness":
-        os.makedirs(dirpath("instance_data"), exist_ok=True)
-        os.makedirs(dirpath("imported_instances"), exist_ok=True)
-        silentremove(dirpath("generated_instances_do_not_edit"))
-        os.makedirs(dirpath("generated_instances_do_not_edit"), exist_ok=True)
-        os.makedirs(dirpath("interactive_files"), exist_ok=True)
-    if product_type == "device":
-        os.makedirs(dirpath("kicad"), exist_ok=True)
-    if product_type == "system":
-        os.makedirs(dirpath("imported_instances"), exist_ok=True)
-        os.makedirs(dirpath("disconnects"), exist_ok=True)
-        os.makedirs(dirpath("features_for_relatives"), exist_ok=True)
-        os.makedirs(dirpath("harnesses"), exist_ok=True)
-        os.makedirs(dirpath("lists"), exist_ok=True)
-        os.makedirs(dirpath("maps"), exist_ok=True)
 
 
 def silentremove(filepath):
@@ -239,6 +159,7 @@ def dirpath(target_key, structure_dict=None):
     Returns the absolute path to a directory identified by its key
     within a dict hierarchy.
     """
+
     def recursive_search(data, path):
         if isinstance(data, dict):
             for key, value in data.items():
@@ -265,6 +186,8 @@ def dirpath(target_key, structure_dict=None):
 
 def verify_revision_structure(product_type=None):
     from harnice.lists import rev_history
+    from harnice import cli
+
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
@@ -467,7 +390,6 @@ def get_path_to_project(traceable_key):
     raise ValueError(f"Could not find library repo id {traceable_key}")
 
 
-
 def read_tsv(filekey, delimiter="\t"):
     try:
         path_to_open = path(filekey)
@@ -483,6 +405,8 @@ def read_tsv(filekey, delimiter="\t"):
 
 
 def newrev():
+    from harnice import cli
+
     """
     Create a new revision directory by copying the current revision's contents
     and updating filenames to reflect the new revision number.

@@ -6,8 +6,21 @@ from harnice import fileio
 from harnice.utils import svg_utils
 
 
+def file_structure():
+    return {
+        f"{fileio.partnumber('pn-rev')}-drawing.svg": "drawing",
+        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+    }
+
+
+def generate_structure():
+    pass
+
+
 def render():
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="part")
+    generate_structure()
 
     # === ATTRIBUTES JSON DEFAULTS ===
     default_attributes = {
