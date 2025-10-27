@@ -8,20 +8,23 @@ artifact_mpn = "standard_harnice_formboard"
 
 
 # =============== PATHS ===============
-def path(target_value):
-    # artifact_path gets passed in as a global from the caller
-    if target_value == "output svg":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-master.svg"
-        )
-    if target_value == "show hide":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-showhide.json"
-        )
-    if target_value == "flagnotes":
-        return os.path.join(artifact_path, f"{artifact_id}-flagnotes")
-    else:
-        raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
+def file_structure():
+    return {
+        "instance_data":{
+            "imported_instances":{
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-showhide.json": "show hide",
+                        "flagnotes":{},
+                    }
+                }
+            }
+        }
+    }
+
+fileio.silentremove(fileio.dirpath("flagnotes", structure_dict=file_structure()))
+os.makedirs(fileio.dirpath("flagnotes", structure_dict=file_structure()), exist_ok=True)
 
 
 def update_showhide():
@@ -72,12 +75,12 @@ def calculate_formboard_location(instance_name, origin):
 
 
 # ==========================
-fileio.silentremove(path("flagnotes"))
+fileio.silentremove(fileio.dirpath("flagnotes", structure_dict=file_structure()))
 instances = fileio.read_tsv("instances list")
 printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
 
 if "Flagnote" in printable_item_types:
-    flagnote_utils.make_note_drawings(path("flagnotes"))
+    flagnote_utils.make_note_drawings(fileio.dirpath("flagnotes", structure_dict=file_structure()))
 
 rotation = 0  # TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
 if rotation == "":
@@ -208,7 +211,7 @@ for item_type, items in grouped_instances.items():
     content_lines.append("    </g>")
 
 # Write full SVG
-with open(path("output svg"), "w") as f:
+with open(fileio.path("output svg", structure_dict=file_structure()), "w") as f:
     f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
     f.write(
         '<svg xmlns="http://www.w3.org/2000/svg" '
@@ -248,7 +251,7 @@ for instance in instances:
             instance_data_dir = os.path.join(fileio.dirpath("imported_instances"), instance.get("item_type"), instance.get("instance_name"), f"{instance.get('instance_name')}-drawing.svg")
 
         svg_utils.find_and_replace_svg_group(
-            path("output svg"),
+            fileio.path("output svg", structure_dict=file_structure()),
             instance_data_dir,
             instance.get("instance_name"),
             instance.get("instance_name"),

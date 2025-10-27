@@ -5,7 +5,6 @@ from harnice.products import chtype
 verbose = False
 extra_verbose = False
 
-
 for required_channel in fileio.read_tsv("disconnect map"):
     # skip available channel rows (A-side empty)
     if required_channel.get("A-side_device_refdes") in [None, ""]:

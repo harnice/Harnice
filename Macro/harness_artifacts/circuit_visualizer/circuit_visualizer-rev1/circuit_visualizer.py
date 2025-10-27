@@ -1,4 +1,5 @@
 import os
+from turtle import st
 from harnice import fileio
 from harnice.lists import instances_list
 from harnice.utils import circuit_utils
@@ -41,14 +42,18 @@ svg_elements = []
 
 
 # =============== PATHS ===============
-def path(target_value):
-    if target_value == "circuit visualizer svg":
-        return os.path.join(
-            artifact_path,
-            f"{fileio.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg",
-        )
-    raise KeyError(f"Filename {target_value} not found in {artifact_mpn} file tree")
-
+def file_structure():
+    return {
+        "instance_data":{
+            "imported_instances":{
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg"
+                    }
+                }
+            }
+        }
+    }
 
 # =============== DRAW HELPERS ===============
 def plot_node(node_instance, x, y, box_width, local_group):
@@ -243,7 +248,7 @@ for instance in fileio.read_tsv("instances list"):
 
 
 # =============== WRITE SVG ===============
-output_path = path("circuit visualizer svg")
+output_path = fileio.path("circuit visualizer svg", structure_dict=file_structure())
 os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
 with open(output_path, "w", encoding="utf-8") as f:

@@ -8,26 +8,20 @@ artifact_mpn = "wirelist_exporter"
 
 
 # =============== PATHS ===============
-def path(target_value):
-    # artifact_path gets passed in as a global from the caller
-    if target_value == "wirelist no formats":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.tsv"
-        )
-    if target_value == "wirelist pretty":
-        return os.path.join(
-            artifact_path, f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.xls"
-        )
-    if target_value == "wirelist svg":
-        return os.path.join(
-            artifact_path,
-            f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist-master.svg",
-        )
-    else:
-        raise KeyError(
-            f"Filename {target_value} not found in wirelist_exporter file tree"
-        )
-
+def file_structure():
+    return {
+        "instance_data":{
+            "imported_instances":{
+                "Macro":{
+                    artifact_id:{
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.tsv": "wirelist no formats",
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.xls": "wirelist pretty",
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist-master.svg": "wirelist svg"
+                    }
+                }
+            }
+        }
+    }
 
 # =============== WIRELIST COLUMNS ===============
 WIRELIST_COLUMNS = [
@@ -44,7 +38,7 @@ WIRELIST_COLUMNS = [
 ]
 
 # =============== CREATE TSV ===============
-with open(path("wirelist no formats"), "w", newline="") as file:
+with open(fileio.path("wirelist no formats", structure_dict=file_structure()), "w", newline="") as file:
     writer = csv.writer(file, delimiter="\t")
     writer.writerow([col["name"] for col in WIRELIST_COLUMNS])
 
@@ -52,7 +46,7 @@ column_names = [col["name"] for col in WIRELIST_COLUMNS]
 
 
 def add(row_data):
-    with open(path("wirelist no formats"), "a", newline="", encoding="utf-8") as f:
+    with open(fileio.path("wirelist no formats", structure_dict=file_structure()), "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=column_names, delimiter="\t")
         writer.writerow({key: row_data.get(key, "") for key in column_names})
 
@@ -142,7 +136,7 @@ for instance in fileio.read_tsv("instances list"):
 workbook = xlwt.Workbook()
 sheet = workbook.add_sheet("Sheet1")
 
-with open(path("wirelist no formats"), newline="", encoding="utf-8") as tsv_file:
+with open(fileio.path("wirelist no formats", structure_dict=file_structure()), newline="", encoding="utf-8") as tsv_file:
     reader = csv.reader(tsv_file, delimiter="\t")
     headers = next(reader)
 
@@ -182,7 +176,7 @@ with open(path("wirelist no formats"), newline="", encoding="utf-8") as tsv_file
             else:
                 sheet.write(row_idx, col_idx, cell)
 
-workbook.save(path("wirelist pretty"))
+workbook.save(fileio.path("wirelist pretty", structure_dict=file_structure()))
 
 # =============== CREATE SVG ===============
 col_width = 76
@@ -192,7 +186,7 @@ font_family = "Arial"
 start_x = 0
 start_y = 0
 
-with open(path("wirelist no formats"), "r", encoding="utf-8") as f:
+with open(fileio.path("wirelist no formats", structure_dict=file_structure()), "r", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
     data_rows = list(reader)
 
@@ -226,5 +220,5 @@ svg_lines.append("</g>")
 svg_lines.append(f'<g id="{artifact_id}-wirelist-contents-end"/>')
 svg_lines.append("</svg>")
 
-with open(path("wirelist svg"), "w", encoding="utf-8") as f:
+with open(fileio.path("wirelist svg", structure_dict=file_structure()), "w", encoding="utf-8") as f:
     f.write("\n".join(svg_lines))
