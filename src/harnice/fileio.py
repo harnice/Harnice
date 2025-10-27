@@ -52,10 +52,10 @@ def partnumber(format):
     # given a part number "pppppp-revR"
 
     # format options:
-    # pn-rev:    returns "pppppp-revR"
-    # pn:        returns "pppppp"
-    # rev:       returns "revR"
-    # R:         returns "R"
+    # "pn-rev"    returns "pppppp-revR"
+    # "pn"        returns "pppppp"
+    # "rev"       returns "revR"
+    # "R"         returns "R"
 
     pn_rev = os.path.basename(rev_directory())
 
