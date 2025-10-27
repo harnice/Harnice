@@ -22,6 +22,7 @@ def set_file_structure(x):
 
 net = None
 
+
 def set_net(x):
     global net
     net = x

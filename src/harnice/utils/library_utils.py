@@ -133,8 +133,10 @@ def pull(input_dict, update_instances_list=True):
 
         else:
             # Compare the existing editable file and the library version
-            if not filecmp.cmp(lib_used_do_not_edit_file, editable_file_path, shallow=False):
-                Modified = Modified or True 
+            if not filecmp.cmp(
+                lib_used_do_not_edit_file, editable_file_path, shallow=False
+            ):
+                Modified = Modified or True
 
     if Modified:
         status = f"modified at project level (rev{rev_to_use})"
