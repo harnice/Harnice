@@ -16,9 +16,10 @@ def generate_structure():
 
 
 def render():
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="cable")
     generate_structure()
-    
+
     default_attributes = {
         "jacket": {
             "properties": {

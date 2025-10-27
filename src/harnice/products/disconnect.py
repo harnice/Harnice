@@ -209,9 +209,10 @@ def _validate_signals_list():
 
 
 def render():
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="device")  # identical for now
     generate_structure()
-    
+
     if not os.path.exists(fileio.path("signals list")):
         if not os.path.exists(fileio.path("feature tree")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:

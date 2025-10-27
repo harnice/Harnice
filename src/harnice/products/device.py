@@ -705,6 +705,7 @@ def _validate_signals_list():
 
 
 def _device_render(lightweight=False):
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="device")
     generate_structure()
     _validate_attributes_json()

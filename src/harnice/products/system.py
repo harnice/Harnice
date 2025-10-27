@@ -106,6 +106,7 @@ def generate_structure():
 
 
 def render():
+    fileio.set_file_structure(file_structure())
     fileio.verify_revision_structure(product_type="system")
     generate_structure()
     if not os.path.exists(fileio.path("feature tree")):
