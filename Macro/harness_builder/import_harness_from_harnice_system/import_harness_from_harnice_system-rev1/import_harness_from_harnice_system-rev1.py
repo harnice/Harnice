@@ -14,18 +14,20 @@ path_to_system_instances_list = os.path.join(
     path_to_system_rev, f"{system_pn_rev[0]}-{system_pn_rev[1]}-instances_list.tsv"
 )
 
+
 def file_structure():
     return {
-        "instance_data":{
-            "imported_instances":{
-                "Macro":{
-                    artifact_id:{
+        "instance_data": {
+            "imported_instances": {
+                "macro": {
+                    artifact_id: {
                         f"{fileio.partnumber('pn-rev')}-{artifact_id}-instances_list.tsv": "instances list"
                     }
                 }
             }
         }
     }
+
 
 # read the system instances list to a variable
 system_instances_list_data = []

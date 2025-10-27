@@ -9,20 +9,26 @@ artifact_mpn = "revision_history_table"
 
 def file_structure():
     return {
-        "instance_data":{
-            "imported_instances":{
-                "Macro":{
-                    artifact_id:{
-                        "revision_table_bubbles":{},
-                        "revision-history-table-master.svg": "revision history table svg"
+        "instance_data": {
+            "imported_instances": {
+                "macro": {
+                    artifact_id: {
+                        "revision_table_bubbles": {},
+                        "revision-history-table-master.svg": "revision history table svg",
                     }
                 }
             }
         }
     }
 
-fileio.silentremove(fileio.dirpath("revision_table_bubbles", structure_dict=file_structure()))
-os.makedirs(fileio.dirpath("revision_table_bubbles", structure_dict=file_structure()), exist_ok=True)
+
+fileio.silentremove(
+    fileio.dirpath("revision_table_bubbles", structure_dict=file_structure())
+)
+os.makedirs(
+    fileio.dirpath("revision_table_bubbles", structure_dict=file_structure()),
+    exist_ok=True,
+)
 
 # === Configuration ===
 column_headers = [
@@ -70,10 +76,12 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
             library_utils.pull(
                 {
                     "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
-                    "item_type": "Flagnote",
+                    "item_type": "flagnote",
                     "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
                     "instance_name": f"bubble{rev}",
-                    "destination_directory": fileio.dirpath("revision table bubbles", structure_dict=file_structure()),
+                    "destination_directory": fileio.dirpath(
+                        "revision table bubbles", structure_dict=file_structure()
+                    ),
                     "quiet": True,
                 }
             )
@@ -146,10 +154,12 @@ for row_index, row in enumerate(data_rows):
         library_utils.pull(
             {
                 "lib_repo": "https://github.com/kenyonshutt/harnice-library-public",
-                "item_type": "Flagnote",
+                "item_type": "flagnote",
                 "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
                 "instance_name": bubble_name,
-                "destination_directory": fileio.dirpath("revision table bubbles", structure_dict=file_structure()),
+                "destination_directory": fileio.dirpath(
+                    "revision table bubbles", structure_dict=file_structure()
+                ),
                 "quiet": True,
             }
         )
@@ -188,9 +198,12 @@ for row in data_rows:
 
     rev_text = row["rev"]
     source_svg_filepath = os.path.join(
-        fileio.dirpath("revision table bubbles", structure_dict=file_structure()), f"bubble{rev_text}-drawing.svg"
+        fileio.dirpath("revision table bubbles", structure_dict=file_structure()),
+        f"bubble{rev_text}-drawing.svg",
     )
-    target_svg_filepath = fileio.path("revision history table svg", structure_dict=file_structure())
+    target_svg_filepath = fileio.path(
+        "revision history table svg", structure_dict=file_structure()
+    )
     group_name = f"bubble{rev_text}"
 
     # Replace text placeholder "flagnote-text" → rev_text

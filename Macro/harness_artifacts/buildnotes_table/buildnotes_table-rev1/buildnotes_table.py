@@ -5,23 +5,29 @@ from harnice.utils import svg_utils, library_utils
 
 artifact_mpn = "buildnotes_table"
 
+
 def file_structure():
     return {
-        "instance_data":{
-            "imported_instances":{
-                "Macro":{
-                    artifact_id:{
-                        "bom_table_bubbles":{},
+        "instance_data": {
+            "imported_instances": {
+                "macro": {
+                    artifact_id: {
+                        "bom_table_bubbles": {},
                         "buildnotes-table-master.svg": "buildnotes table svg",
-                        "buildnotes-list.tsv": "buildnotes list"
+                        "buildnotes-list.tsv": "buildnotes list",
                     }
                 }
             }
         }
     }
 
-fileio.silentremove(fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()))
-os.makedirs(fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()), exist_ok=True)
+
+fileio.silentremove(
+    fileio.dirpath("bom_table_bubbles", structure_dict=file_structure())
+)
+os.makedirs(
+    fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()), exist_ok=True
+)
 
 
 # === Configuration ===
@@ -52,10 +58,12 @@ for instance in fileio.read_tsv("instances list"):
             library_utils.pull(
                 {
                     "lib_repo": lib_repo,
-                    "item_type": "Flagnote",
+                    "item_type": "flagnote",
                     "mpn": shape,
                     "instance_name": f"bubble{buildnote_number}",
-                    "destination_directory": fileio.path("bom table bubbles", structure_dict=file_structure()),
+                    "destination_directory": fileio.path(
+                        "bom table bubbles", structure_dict=file_structure()
+                    ),
                     "quiet": True,
                 }
             )
@@ -158,7 +166,11 @@ svg_lines.append('<g id="buildnotes-table-contents-end"/>')
 svg_lines.append("</svg>")
 
 # === Write SVG Output ===
-with open(fileio.path("buildnotes table svg", structure_dict=file_structure()), "w", encoding="utf-8") as svg_file:
+with open(
+    fileio.path("buildnotes table svg", structure_dict=file_structure()),
+    "w",
+    encoding="utf-8",
+) as svg_file:
     svg_file.write("\n".join(svg_lines))
 
 # === Inject bubble SVGs into the written file ===
@@ -168,9 +180,12 @@ for row in data_rows:
 
     buildnote_number = row["buildnote_number"]
     source_svg_filepath = os.path.join(
-        fileio.path("bom table bubbles", structure_dict=file_structure()), f"bubble{buildnote_number}-drawing.svg"
+        fileio.path("bom table bubbles", structure_dict=file_structure()),
+        f"bubble{buildnote_number}-drawing.svg",
     )
-    target_svg_filepath = fileio.path("bom table bubbles", structure_dict=file_structure())
+    target_svg_filepath = fileio.path(
+        "bom table bubbles", structure_dict=file_structure()
+    )
     group_name = f"bubble{buildnote_number}"
 
     # Replace text placeholder "flagnote-text" → buildnote_number

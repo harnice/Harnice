@@ -24,7 +24,7 @@ COL1_WIDTH = 72
 TABLE_STROKE = "black"
 TABLE_FILL = "white"
 
-# Node box margins (apply globally)
+# node box margins (apply globally)
 NODE_MARGIN_X = 5  # horizontal space between cell boundary and first/last node box
 NODE_MARGIN_Y = 3  # vertical space between top/bottom of cell and node box
 
@@ -44,16 +44,17 @@ svg_elements = []
 # =============== PATHS ===============
 def file_structure():
     return {
-        "instance_data":{
-            "imported_instances":{
-                "Macro":{
-                    artifact_id:{
+        "instance_data": {
+            "imported_instances": {
+                "macro": {
+                    artifact_id: {
                         f"{fileio.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg"
                     }
                 }
             }
         }
     }
+
 
 # =============== DRAW HELPERS ===============
 def plot_node(node_instance, x, y, box_width, local_group):
@@ -169,7 +170,7 @@ row_index = 0
 y_offset = HEADER_HEIGHT
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") != "Circuit":
+    if instance.get("item_type") != "circuit":
         continue
 
     # IF YOU ONLY WANT TO VISUALIZE SOME CIRCUITS, ADD FILTER HERE
@@ -184,8 +185,8 @@ for instance in fileio.read_tsv("instances list"):
     local_group = []
 
     # Collect node/segment data
-    nodes = [p for p in ports if p.get("location_type") == "Node"]
-    segments = [p for p in ports if p.get("location_type") == "Segment"]
+    nodes = [p for p in ports if p.get("location_type") == "node"]
+    segments = [p for p in ports if p.get("location_type") == "segment"]
     num_nodes = len(nodes)
     num_segments = len(segments)
 
@@ -211,10 +212,10 @@ for instance in fileio.read_tsv("instances list"):
     x = NODE_MARGIN_X
     for port in ports:
         kind = port.get("location_type")
-        if kind == "Node":
+        if kind == "node":
             plot_node(port, x, ROW_HEIGHT / 2, uniform_node_width, local_group)
             x += uniform_node_width
-        elif kind == "Segment":
+        elif kind == "segment":
             plot_segment(port, x, ROW_HEIGHT / 2, segment_length, local_group)
             x += segment_length
 

@@ -47,12 +47,8 @@ for merged_net in unique_merged_nets:
             continue
 
         # Parse channel types
-        from_type = chtype.parse(
-            from_channel.get("from_channel_type")
-        )
-        compatibles_from = chtype.compatibles(
-            from_channel.get("from_channel_type")
-        )
+        from_type = chtype.parse(from_channel.get("from_channel_type"))
+        compatibles_from = chtype.compatibles(from_channel.get("from_channel_type"))
 
         for to_channel_candidate in net_channels:
             to_key = (
@@ -63,7 +59,7 @@ for merged_net in unique_merged_nets:
             if verbose:
                 print(f"          To key candidate: {to_key}")
 
-                        # Don't map if to key is already mapped
+                # Don't map if to key is already mapped
             if channel_map.already_mapped(to_key):
                 if verbose:
                     print("               To key candidate already mapped")
@@ -76,9 +72,7 @@ for merged_net in unique_merged_nets:
                 continue
 
             # Parse "to" type and its compatibles
-            to_type = chtype.parse(
-                to_channel_candidate.get("from_channel_type")
-            )
+            to_type = chtype.parse(to_channel_candidate.get("from_channel_type"))
             compatibles_to = chtype.compatibles(
                 to_channel_candidate.get("from_channel_type")
             )

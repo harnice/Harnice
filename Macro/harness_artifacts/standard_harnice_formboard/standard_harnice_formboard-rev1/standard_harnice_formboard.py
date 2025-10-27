@@ -10,18 +10,19 @@ artifact_mpn = "standard_harnice_formboard"
 # =============== PATHS ===============
 def file_structure():
     return {
-        "instance_data":{
-            "imported_instances":{
-                "Macro":{
-                    artifact_id:{
+        "instance_data": {
+            "imported_instances": {
+                "macro": {
+                    artifact_id: {
                         f"{fileio.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
                         f"{fileio.partnumber('pn-rev')}-{artifact_id}-showhide.json": "show hide",
-                        "flagnotes":{},
+                        "flagnotes": {},
                     }
                 }
             }
         }
     }
+
 
 fileio.silentremove(fileio.dirpath("flagnotes", structure_dict=file_structure()))
 os.makedirs(fileio.dirpath("flagnotes", structure_dict=file_structure()), exist_ok=True)
@@ -77,10 +78,12 @@ def calculate_formboard_location(instance_name, origin):
 # ==========================
 fileio.silentremove(fileio.dirpath("flagnotes", structure_dict=file_structure()))
 instances = fileio.read_tsv("instances list")
-printable_item_types = {"Connector", "Backshell", "Segment", "Flagnote"}
+printable_item_types = {"connector", "backshell", "segment", "flagnote"}
 
-if "Flagnote" in printable_item_types:
-    flagnote_utils.make_note_drawings(fileio.dirpath("flagnotes", structure_dict=file_structure()))
+if "flagnote" in printable_item_types:
+    flagnote_utils.make_note_drawings(
+        fileio.dirpath("flagnotes", structure_dict=file_structure())
+    )
 
 rotation = 0  # TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
 if rotation == "":
@@ -124,20 +127,20 @@ for item_type, items in grouped_instances.items():
         px_x = x * 96
         px_y = y * 96
 
-        if instance.get("item_type") == "Segment":
+        if instance.get("item_type") == "segment":
             angle += origin[2]
 
         if instance.get("absolute_rotation") != "":
             angle = float(instance.get("absolute_rotation"))
 
-        if instance.get("item_type") == "Segment":
+        if instance.get("item_type") == "segment":
             angle += origin[2]
 
         svg_px_x = px_x
         svg_px_y = -1 * px_y
         svg_angle = -1 * angle
 
-        if item_type == "Flagnote":
+        if item_type == "flagnote":
             if instance.get("parent_instance") in ["", None]:
                 continue
 
@@ -241,14 +244,21 @@ for instance in instances:
         if should_hide:
             continue
 
-        #locally generated instances are stored here
-        if instance.get("item_type").strip().lower() in [
-            "segment"
-        ]:
-            instance_data_dir = os.path.join(fileio.dirpath("generated_instances_do_not_edit"), instance.get("instance_name"), f"{instance.get('instance_name')}-drawing.svg")
-        #imported instances are here
+        # locally generated instances are stored here
+        if instance.get("item_type").strip().lower() in ["segment"]:
+            instance_data_dir = os.path.join(
+                fileio.dirpath("generated_instances_do_not_edit"),
+                instance.get("instance_name"),
+                f"{instance.get('instance_name')}-drawing.svg",
+            )
+        # imported instances are here
         else:
-            instance_data_dir = os.path.join(fileio.dirpath("imported_instances"), instance.get("item_type"), instance.get("instance_name"), f"{instance.get('instance_name')}-drawing.svg")
+            instance_data_dir = os.path.join(
+                fileio.dirpath("imported_instances"),
+                instance.get("item_type"),
+                instance.get("instance_name"),
+                f"{instance.get('instance_name')}-drawing.svg",
+            )
 
         svg_utils.find_and_replace_svg_group(
             fileio.path("output svg", structure_dict=file_structure()),

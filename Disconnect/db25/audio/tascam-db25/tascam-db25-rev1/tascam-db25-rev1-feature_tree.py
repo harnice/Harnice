@@ -36,9 +36,7 @@ signals_list.new()
 for channel in range(8):
     channel_name = f"ch{channel}"
 
-    for signal in chtype.signals(
-        ch_type_ids["A"]["balanced audio mic level in"]
-    ):
+    for signal in chtype.signals(ch_type_ids["A"]["balanced audio mic level in"]):
         signals_list.append(
             channel_id=channel_name,
             signal=signal,

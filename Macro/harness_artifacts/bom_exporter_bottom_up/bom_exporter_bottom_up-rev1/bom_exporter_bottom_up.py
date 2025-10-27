@@ -6,17 +6,18 @@ from harnice import fileio
 # =============== PATHS ===============
 def file_structure():
     return {
-        "instance_data":{
-            "imported_instances":{
-                "Macro":{
-                    artifact_id:{
+        "instance_data": {
+            "imported_instances": {
+                "macro": {
+                    artifact_id: {
                         f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg"
+                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
                     }
                 }
             }
         }
     }
+
 
 CABLE_MARGIN = 12
 BOM_COLUMNS = [
@@ -29,14 +30,24 @@ BOM_COLUMNS = [
     "total_length_plus_margin",
 ]
 
-with open(fileio.path("bom tsv", structure_dict=file_structure()), "w", newline="", encoding="utf-8") as f:
+with open(
+    fileio.path("bom tsv", structure_dict=file_structure()),
+    "w",
+    newline="",
+    encoding="utf-8",
+) as f:
     writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
     writer.writeheader()
     writer.writerows([])
 
 
 def add_line_to_bom(line_data):
-    with open(fileio.path("bom tsv", structure_dict=file_structure()), "a", newline="", encoding="utf-8") as f:
+    with open(
+        fileio.path("bom tsv", structure_dict=file_structure()),
+        "a",
+        newline="",
+        encoding="utf-8",
+    ) as f:
         writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
         writer.writerow({key: line_data.get(key, "") for key in BOM_COLUMNS})
 
@@ -92,7 +103,12 @@ font_size = 8
 font_family = "Arial, Helvetica, sans-serif"
 line_width = 0.008 * 96
 
-with open(fileio.path("bom tsv", structure_dict=file_structure()), "r", newline="", encoding="utf-8") as tsv_file:
+with open(
+    fileio.path("bom tsv", structure_dict=file_structure()),
+    "r",
+    newline="",
+    encoding="utf-8",
+) as tsv_file:
     reader = csv.DictReader(tsv_file, delimiter="\t")
     data_rows = [
         [row.get(col, "") for col in selected_columns]
@@ -162,5 +178,7 @@ svg_lines.append("</g>")
 svg_lines.append(f'<g id="{artifact_id}-bom-contents-end"/>')
 svg_lines.append("</svg>")
 
-with open(fileio.path("bom tsv", structure_dict=file_structure()), "w", encoding="utf-8") as svg_file:
+with open(
+    fileio.path("bom tsv", structure_dict=file_structure()), "w", encoding="utf-8"
+) as svg_file:
     svg_file.write("\n".join(svg_lines))

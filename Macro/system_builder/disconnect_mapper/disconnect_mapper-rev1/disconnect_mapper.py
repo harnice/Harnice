@@ -13,7 +13,10 @@ for required_channel in fileio.read_tsv("disconnect map"):
     # Don't map a channel if the disconnect channel has already been mapped
     disconnect_refdes = required_channel.get("disconnect_refdes")
     disconnect_channel_id = required_channel.get("disconnect_channel_id")
-    a_side_channel_key = (required_channel.get("A-side_device_refdes"), required_channel.get("A-side_device_channel_id"))
+    a_side_channel_key = (
+        required_channel.get("A-side_device_refdes"),
+        required_channel.get("A-side_device_channel_id"),
+    )
 
     if disconnect_map.channel_is_already_assigned_through_disconnect(
         a_side_channel_key, disconnect_refdes
@@ -61,7 +64,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
 
     for candidate in available_candidates:
         if disconnect_map.disconnect_is_already_assigned(
-            (candidate.get("disconnect_refdes"),candidate.get("disconnect_channel_id"))
+            (candidate.get("disconnect_refdes"), candidate.get("disconnect_channel_id"))
         ):
             if verbose:
                 print(
