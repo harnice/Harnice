@@ -119,7 +119,7 @@ def new():
 
     def resolve_disconnect_endpoint(refdes, side, signal, channel_id):
         disconnect_signals_list_path = os.path.join(
-            fileio.dirpath("disconnects"), refdes, f"{refdes}-signals_list.tsv"
+            fileio.dirpath("disconnect"), refdes, f"{refdes}-signals_list.tsv"
         )
 
         row = None

@@ -16,7 +16,7 @@ def rebuild():
     post_harness_instances = []
 
     # --- iterate through manifest rows ---
-    for harness in fileio.read_tsv("system manifest"):
+    for harness in fileio.read_tsv("harness manifest"):
         harness_pn = (harness.get("harness_pn") or "").strip()
         net = (harness.get("net") or "").strip()
         if not net:
@@ -41,7 +41,7 @@ def rebuild():
             post_harness_instances.extend(fileio.read_tsv(harness_instances_list_path))
         else:
             # Fallback to system-level instances for same net
-            for system_instance in fileio.read("instances list"):
+            for system_instance in fileio.read_tsv("instances list"):
                 if system_instance.get("net", "").strip() == net:
                     post_harness_instances.append(system_instance)
 

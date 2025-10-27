@@ -137,10 +137,11 @@ def pull(input_dict, update_instances_list=True):
 
     if (
         update_instances_list
-        and not input_dict.get("item_type").strip().lower() == "macro"
     ):
         update_contents = {
             "item_type": input_dict.get("item_type"),
+            "lib_repo": input_dict.get("lib_repo"),
+            "lib_subpath": input_dict.get("lib_subpath"),
             "lib_desc": revhistory_row.get("desc"),
             "lib_latest_rev": highest_source_rev,
             "lib_rev_used_here": rev_to_use,
