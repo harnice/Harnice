@@ -80,12 +80,8 @@ def main():
 
     # Handle new revision creation
     if args.newrev:
-        raise NotImplementedError(
-            "Need to figure out how to rebuild this without circular import"
-        )
-        # TODO: #489
-        # fileio.newrev()
-        return
+        from harnice import fileio
+        fileio.newrev()
 
     if args.render:
         render_map = {
