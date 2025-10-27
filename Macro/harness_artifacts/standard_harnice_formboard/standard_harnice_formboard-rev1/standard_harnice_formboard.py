@@ -11,7 +11,7 @@ artifact_mpn = "standard_harnice_formboard"
 def file_structure():
     return {
         "instance_data":{
-            "imported instances":{
+            "imported_instances":{
                 "Macro":{
                     artifact_id:{
                         f"{fileio.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",

@@ -8,7 +8,7 @@ artifact_mpn = "buildnotes_table"
 def file_structure():
     return {
         "instance_data":{
-            "imported instances":{
+            "imported_instances":{
                 "Macro":{
                     artifact_id:{
                         "bom_table_bubbles":{},
