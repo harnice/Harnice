@@ -1,6 +1,6 @@
 import csv
 import os
-from harnice import fileio
+from harnice import fileio, state
 from harnice.lists import instances_list, manifest
 
 # args:
@@ -41,7 +41,7 @@ for instance in system_instances_list_data:
     if instance.get("net") == target_net:
         instances_list.new_instance(instance.get("instance_name"), instance)
 
-fileio.set_net(target_net)
+state.set_net(target_net)
 
 manifest.update_upstream(
     path_to_system_rev, system_pn_rev, manifest_nets, state.partnumber("pn-rev")
