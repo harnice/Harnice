@@ -3,7 +3,7 @@ import re
 import shutil
 import filecmp
 from harnice import fileio
-from harnice.lists import instances_list, rev_history
+from harnice.lists import instances_list, library_history, rev_history
 
 """
 imported_instances
@@ -149,30 +149,33 @@ def pull(input_dict, update_instances_list=True):
     )
     revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
 
-    if update_instances_list:
-        update_contents = {
-            "item_type": input_dict.get("item_type"),
-            "lib_repo": input_dict.get("lib_repo"),
-            "lib_subpath": input_dict.get("lib_subpath"),
-            "lib_desc": revhistory_row.get("desc"),
-            "lib_latest_rev": highest_source_rev,
-            "lib_rev_used_here": rev_to_use,
-            "lib_status": revhistory_row.get("status"),
-            "lib_releaseticket": revhistory_row.get("releaseticket"),
-            "lib_datestarted": revhistory_row.get("datestarted"),
-            "lib_datemodified": revhistory_row.get("datemodified"),
-            "lib_datereleased": revhistory_row.get("datereleased"),
-            "lib_drawnby": revhistory_row.get("drawnby"),
-            "lib_checkedby": revhistory_row.get("checkedby"),
-            "project_editable_lib_modified": Modified,
-        }
+    update_contents = {
+        "mpn": input_dict.get("mpn"),
+        "item_type": input_dict.get("item_type"),
+        "lib_repo": input_dict.get("lib_repo"),
+        "lib_subpath": input_dict.get("lib_subpath"),
+        "lib_desc": revhistory_row.get("desc"),
+        "lib_latest_rev": highest_source_rev,
+        "lib_rev_used_here": rev_to_use,
+        "lib_status": revhistory_row.get("status"),
+        "lib_releaseticket": revhistory_row.get("releaseticket"),
+        "lib_datestarted": revhistory_row.get("datestarted"),
+        "lib_datemodified": revhistory_row.get("datemodified"),
+        "lib_datereleased": revhistory_row.get("datereleased"),
+        "lib_drawnby": revhistory_row.get("drawnby"),
+        "lib_checkedby": revhistory_row.get("checkedby"),
+        "project_editable_lib_modified": Modified,
+    }
 
+    if update_instances_list:
         try:
             instances_list.modify(input_dict.get("instance_name"), update_contents)
         except ValueError:
             instances_list.new_instance(
                 input_dict.get("instance_name"), update_contents
             )
+
+    library_history.append(input_dict.get("instance_name"), update_contents)
 
     print(
         f"Working instance: {input_dict.get('instance_name'):<40}{input_dict.get('item_type'):<20}{status}"

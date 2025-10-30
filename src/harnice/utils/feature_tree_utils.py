@@ -23,7 +23,8 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
             "lib_subpath": lib_subpath,
             "item_type": "macro",
             "instance_name": artifact_id,
-        }
+        },
+        update_instances_list=False
     )
 
     macro_dirpath = os.path.join(
