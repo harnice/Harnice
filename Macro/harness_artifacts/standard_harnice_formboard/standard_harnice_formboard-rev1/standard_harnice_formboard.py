@@ -14,8 +14,8 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-showhide.json": "show hide",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-showhide.json": "show hide",
                         "flagnotes": {},
                     }
                 }

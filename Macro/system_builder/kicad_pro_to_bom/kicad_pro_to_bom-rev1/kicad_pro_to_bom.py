@@ -23,7 +23,7 @@ BOM_LABELS = [
 def file_structure():
     return {
         "kicad": {
-            f"{fileio.partnumber('pn-rev')}.kicad_sch": "kicad sch",
+            f"{state.partnumber('pn-rev')}.kicad_sch": "kicad sch",
         }
     }
 
@@ -36,7 +36,7 @@ Always overwrites the BOM file.
 
 if not os.path.isfile(fileio.path("kicad sch", structure_dict=file_structure())):
     raise FileNotFoundError(
-        f"Schematic not found. Check your kicad sch exists at this name and location: \n{fileio.path("kicad sch", structure_dict=file_structure())}"
+        f"Schematic not found. Check your kicad sch exists at this name and location: \n{fileio.path('kicad sch', structure_dict=file_structure())}"
     )
 
 cmd = [
