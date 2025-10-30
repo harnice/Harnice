@@ -2,14 +2,14 @@ import os
 import json
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
-from harnice import fileio, cli
+from harnice import fileio, cli, state
 
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-params.json": "params",
-        f"{fileio.partnumber('pn-rev')}-drawing.svg": "drawing",
-        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{state.partnumber('pn-rev')}-params.json": "params",
+        f"{state.partnumber('pn-rev')}-drawing.svg": "drawing",
+        f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
 
@@ -50,8 +50,7 @@ def render():
         ],
     }
 
-    fileio.set_file_structure(file_structure())
-    fileio.verify_revision_structure(product_type="tblock")
+    state.set_file_structure(file_structure())
     generate_structure()
 
     # === If param file doesn't exist, create it ===
@@ -269,5 +268,5 @@ def render():
         json.dump(periphery_json, f, indent=2)
 
     print()
-    print(f"Titleblock '{fileio.partnumber("pn")}' updated")
+    print(f"Titleblock '{state.partnumber('pn')}' updated")
     print()

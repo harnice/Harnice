@@ -3,7 +3,7 @@ import runpy
 import sexpdata
 import json
 import csv
-from harnice import fileio
+from harnice import fileio, state
 from harnice.lists import signals_list, rev_history
 from harnice.products import chtype
 
@@ -72,9 +72,9 @@ for connector_name in ["in1", "in2", "out1", "out2"]:
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-feature_tree.py": "feature tree",
-        f"{fileio.partnumber('pn-rev')}-signals_list.tsv": "signals list",
-        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{state.partnumber('pn-rev')}-signals_list.tsv": "signals list",
+        f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
 
@@ -179,7 +179,7 @@ def _add_blank_symbol(sym_name, value="", footprint="", datasheet="", descriptio
         _make_property(
             "lib_subpath", _get_attribute("library_subpath"), hide=True, id_counter=3
         ),
-        _make_property("rev", fileio.partnumber("rev"), hide=True, id_counter=4),
+        _make_property("rev", state.partnumber("rev"), hide=True, id_counter=4),
         [sexpdata.Symbol("embedded_fonts"), sexpdata.Symbol("no")],
     ]
 
@@ -197,7 +197,7 @@ def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
     in the KiCad .kicad_sym library file.
 
     - File is always fileio.path("library file")
-    - Symbol to modify is always named fileio.partnumber("pn-rev")
+    - Symbol to modify is always named state.partnumber("pn-rev")
 
     Args:
         prop_name (str): Name of the property
@@ -205,7 +205,7 @@ def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
         hide (bool): Whether to hide the property
     """
 
-    target_symbol_name = fileio.partnumber("pn-rev")
+    target_symbol_name = state.partnumber("pn-rev")
 
     # Ensure value is a string (KiCad requirement)
     if value is None:
@@ -508,7 +508,7 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     with open(file_path, "w", encoding="utf-8") as f:
         sexpdata.dump(symbol_data, f)
 
-    print(f"Appended pin {pin_name} ({pin_number}) to {fileio.partnumber('pn-rev')}")
+    print(f"Appended pin {pin_name} ({pin_number}) to {state.partnumber('pn-rev')}")
 
     return symbol_data
 
@@ -536,9 +536,9 @@ def _validate_kicad_library():
 
     kicad_library_data = _parse_kicad_sym_file()
 
-    if not _symbol_exists(kicad_library_data, fileio.partnumber("pn-rev")):
+    if not _symbol_exists(kicad_library_data, state.partnumber("pn-rev")):
         _add_blank_symbol(
-            sym_name=fileio.partnumber("pn-rev"),
+            sym_name=state.partnumber("pn-rev"),
         )
 
     # Step 1. Collect unique connectors from the signals list
@@ -550,7 +550,7 @@ def _validate_kicad_library():
 
     # Step 2. Validate pins
     kicad_lib = _parse_kicad_sym_file()
-    pins = _extract_pins_from_symbol(kicad_lib, fileio.partnumber("pn-rev"))
+    pins = _extract_pins_from_symbol(kicad_lib, state.partnumber("pn-rev"))
     missing, seen_numbers = _validate_pins(pins, unique_connectors_in_signals_list)
 
     kicad_library_data = _parse_kicad_sym_file()
@@ -579,7 +579,7 @@ def _validate_kicad_library():
     _overwrite_or_create_property_in_symbol(
         "lib_subpath", _get_attribute("library_subpath"), hide=True
     )
-    _overwrite_or_create_property_in_symbol("rev", fileio.partnumber("rev"), hide=True)
+    _overwrite_or_create_property_in_symbol("rev", state.partnumber("rev"), hide=True)
 
 
 def _validate_attributes_json():
@@ -701,12 +701,11 @@ def _validate_signals_list():
             )
         seen_cavities.add(cavity_key)
 
-    print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
+    print(f"Signals list of {state.partnumber('pn')} is valid.\n")
 
 
 def _device_render(lightweight=False):
-    fileio.set_file_structure(file_structure())
-    fileio.verify_revision_structure(product_type="device")
+    state.set_file_structure(file_structure())
     generate_structure()
     _validate_attributes_json()
 
@@ -733,7 +732,7 @@ def _device_render(lightweight=False):
         _validate_signals_list()
 
     print(
-        f"Kicad nickname:       harnice-devices/{rev_history.info(field="library_subpath")}{fileio.partnumber('pn')}"
+        f"Kicad nickname:       harnice-devices/{rev_history.info(field='library_subpath')}{state.partnumber('pn')}"
     )
 
     _validate_kicad_library()

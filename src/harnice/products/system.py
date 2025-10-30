@@ -1,6 +1,6 @@
 import runpy
 import os
-from harnice import fileio
+from harnice import fileio, state
 from harnice.lists import post_harness_instances_list, instances_list
 
 system_feature_tree_utils_default = """from harnice import fileio
@@ -73,8 +73,8 @@ system_utils.find_connector_with_no_circuit(connector_list, circuits_list)
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-feature_tree.py": "feature tree",
-        f"{fileio.partnumber('pn-rev')}-instances_list.tsv": "instances list",
+        f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
         "instance_data": {
             "imported_instances": {
                 "disconnect": {},
@@ -83,18 +83,18 @@ def file_structure():
         "features_for_relatives": {},
         "harnesses": {},
         "lists": {
-            f"{fileio.partnumber('pn-rev')}-bom.tsv": "bom",
-            f"{fileio.partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
-            f"{fileio.partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
-            f"{fileio.partnumber('pn-rev')}-harness_manifest.tsv": "harness manifest",
-            f"{fileio.partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
-            f"{fileio.partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
-            f"{fileio.partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnects set",
-            f"{fileio.partnumber('pn-rev')}-mapped_a_channels_through_disconnects_set.tsv": "mapped A-side channels through disconnects set",
+            f"{state.partnumber('pn-rev')}-bom.tsv": "bom",
+            f"{state.partnumber('pn-rev')}-circuits_list.tsv": "circuits list",
+            f"{state.partnumber('pn-rev')}-post_harness_instances_list.tsv": "post harness instances list",
+            f"{state.partnumber('pn-rev')}-harness_manifest.tsv": "harness manifest",
+            f"{state.partnumber('pn-rev')}-system_connector_list.tsv": "system connector list",
+            f"{state.partnumber('pn-rev')}-mapped_channels_set.tsv": "mapped channels set",
+            f"{state.partnumber('pn-rev')}-mapped_disconnect_channels_set.tsv": "mapped disconnects set",
+            f"{state.partnumber('pn-rev')}-mapped_a_channels_through_disconnects_set.tsv": "mapped A-side channels through disconnects set",
         },
         "maps": {
-            f"{fileio.partnumber('pn-rev')}-channel_map.tsv": "channel map",
-            f"{fileio.partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
+            f"{state.partnumber('pn-rev')}-channel_map.tsv": "channel map",
+            f"{state.partnumber('pn-rev')}-disconnect_map.tsv": "disconnect map",
         },
     }
 
@@ -110,8 +110,7 @@ def generate_structure():
 
 
 def render():
-    fileio.set_file_structure(file_structure())
-    fileio.verify_revision_structure(product_type="system")
+    state.set_file_structure(file_structure())
     generate_structure()
     if not os.path.exists(fileio.path("feature tree")):
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:

@@ -1,7 +1,7 @@
 import runpy
 import os
 import csv
-from harnice import fileio
+from harnice import fileio, state
 from harnice.products import chtype
 
 disconnect_feature_tree_utils_default = """
@@ -104,9 +104,9 @@ for channel in range(8):
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-feature_tree.py": "feature tree",
-        f"{fileio.partnumber('pn-rev')}-signals_list.tsv": "signals list",
-        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{state.partnumber('pn-rev')}-signals_list.tsv": "signals list",
+        f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
 
@@ -205,12 +205,11 @@ def _validate_signals_list():
             "No signals have been specified. Check your feature tree or add rows manually."
         )
 
-    print(f"Signals list of {fileio.partnumber('pn')} is valid.\n")
+    print(f"Signals list of {state.partnumber('pn')} is valid.\n")
 
 
 def render():
-    fileio.set_file_structure(file_structure())
-    fileio.verify_revision_structure(product_type="device")  # identical for now
+    state.set_file_structure(file_structure())
     generate_structure()
 
     if not os.path.exists(fileio.path("signals list")):

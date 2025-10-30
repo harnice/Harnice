@@ -1,13 +1,13 @@
 import os
 import csv
 import json
-from harnice import fileio
+from harnice import fileio, state
 
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
-        f"{fileio.partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
+        f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{state.partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
     }
 
 
@@ -16,8 +16,7 @@ def generate_structure():
 
 
 def render():
-    fileio.set_file_structure(file_structure())
-    fileio.verify_revision_structure(product_type="cable")
+    state.set_file_structure(file_structure())
     generate_structure()
 
     default_attributes = {
