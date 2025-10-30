@@ -18,9 +18,6 @@ def generate_structure():
 
 
 def render():
-    state.set_file_structure(file_structure())
-    generate_structure()
-
     # === ATTRIBUTES JSON DEFAULTS ===
     default_attributes = {
         "csys_parent_prefs": [".node"],

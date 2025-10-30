@@ -268,8 +268,6 @@ def generate_structure():
 
 def render(build_macro="", output_macro_dict=None):
     # Step 1: revision structure
-    state.set_file_structure(file_structure())
-    generate_structure()
     library_history.new()
 
     # Step 2: Ensure feature tree exists

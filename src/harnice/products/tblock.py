@@ -50,9 +50,6 @@ def render():
         ],
     }
 
-    state.set_file_structure(file_structure())
-    generate_structure()
-
     # === If param file doesn't exist, create it ===
     if not os.path.exists(fileio.path("params")):
         with open(fileio.path("params"), "w", encoding="utf-8") as f:

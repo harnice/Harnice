@@ -62,7 +62,7 @@ def main():
     fileio.verify_revision_structure()
 
     # -----------------------------
-    # Load product module by name (general, no lists, no maintenance)
+    # Load product module
     # -----------------------------
     try:
         product_module = __import__(
@@ -72,8 +72,23 @@ def main():
     except ModuleNotFoundError:
         sys.exit(f"Unknown product: '{product_name}'")
 
-    if not hasattr(product_module, "render"):
-        sys.exit(f"Product module '{product_name}' does not define render()")
+    # -----------------------------
+    # Set the default fileio structure dict to the product's file_structure()
+    # -----------------------------
+    if hasattr(product_module, "file_structure"):
+        structure = product_module.file_structure()
+        state.set_file_structure(structure)
+    else:
+        sys.exit(f"Product '{product_name}' must define file_structure()")
+
+    # -----------------------------
+    # Generate product file structure
+    # -----------------------------
+    if hasattr(product_module, "generate_structure"):
+        structure = product_module.generate_structure()
+        state.set_file_structure(structure)
+    else:
+        sys.exit(f"Product '{product_name}' must define generate_structure()")
 
     # -----------------------------
     # Execute render logic
