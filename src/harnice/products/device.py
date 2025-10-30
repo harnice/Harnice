@@ -3,7 +3,7 @@ import runpy
 import sexpdata
 import json
 import csv
-from harnice import fileio
+from harnice import fileio, state
 from harnice.lists import signals_list, rev_history
 from harnice.products import chtype
 

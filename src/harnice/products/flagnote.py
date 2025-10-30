@@ -2,7 +2,7 @@ import os
 import json
 import random
 import math
-from harnice import fileio, cli
+from harnice import fileio, cli, state
 
 
 def file_structure():

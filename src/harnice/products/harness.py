@@ -1,6 +1,6 @@
 import runpy
 import os
-from harnice import fileio, cli
+from harnice import fileio, cli, state
 from harnice.lists import instances_list
 
 harness_feature_tree_utils_default = """

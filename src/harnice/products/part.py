@@ -2,7 +2,7 @@ import os
 import json
 import random
 import math
-from harnice import fileio
+from harnice import fileio, state
 from harnice.utils import svg_utils
 
 

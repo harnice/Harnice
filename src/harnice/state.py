@@ -13,6 +13,10 @@ def set_net(x):
     global net
     net = x
 
+def set_product(x):
+    global product
+    product = x
+
 def set_file_structure(x):
     global file_structure
     file_structure = x

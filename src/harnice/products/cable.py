@@ -1,7 +1,7 @@
 import os
 import csv
 import json
-from harnice import fileio
+from harnice import fileio, state
 
 
 def file_structure():

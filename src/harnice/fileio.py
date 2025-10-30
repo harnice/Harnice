@@ -4,6 +4,7 @@ import datetime
 import shutil
 import re
 import csv
+from harnice import state
 
 # standard punctuation:
 #  .  separates between name hierarchy levels
@@ -30,7 +31,7 @@ def silentremove(filepath):
 
 def path(target_value, structure_dict=None):
     if structure_dict is None:
-        structure_dict = file_structure()
+        structure_dict = state.file_structure()
 
     # returns the filepath/filename of a filekey.
     """
@@ -45,7 +46,7 @@ def path(target_value, structure_dict=None):
     # FILES NOT DEPENDENT ON PRODUCT TYPE
     if target_value == "revision history":
         file_path = os.path.join(
-            part_directory(), f"{partnumber('pn')}-revision_history.tsv"
+            part_directory(), f"{state.partnumber('pn')}-revision_history.tsv"
         )
         return file_path
 
@@ -93,7 +94,7 @@ def path(target_value, structure_dict=None):
 
 def dirpath(target_key, structure_dict=None):
     if structure_dict is None:
-        structure_dict = file_structure()
+        structure_dict = state.file_structure()
     """
     Returns the absolute path to a directory identified by its key
     within a dict hierarchy.
@@ -176,9 +177,9 @@ def verify_revision_structure(product_type=None):
     # if everything looks good but the tsv isn't there
     x = rev_history.info()
     if x == "row not found":
-        append_revision_row(path("revision history"), pn, rev)
+        rev_history.append(path("revision history"), pn, rev)
     elif x == "file not found":
-        make_new_rev_tsv(path("revision history"), pn, rev)
+        rev_history.append(path("revision history"), pn, rev)
 
     # now we’re in a revision folder, with pn, rev, temp_tsv_path set
     if not rev_history.info(field="status") == "":

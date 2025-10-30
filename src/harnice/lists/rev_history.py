@@ -1,6 +1,6 @@
 import os
 import csv
-from harnice import fileio
+from harnice import fileio, state
 
 # === Global Columns Definition ===
 COLUMNS = [
@@ -131,16 +131,16 @@ def append(filepath, pn, rev):
     }
 
     # fallback in case product_type isn't in dict
-    default_desc = default_descs.get(product_type, "")
+    default_desc = default_descs.get(state.product(), "")
 
     # TODO: #478
     if desc in [None, ""]:
         desc = cli.prompt(
-            f"Enter a description of this {product_type}", default=default_desc
+            f"Enter a description of this {state.product()}", default=default_desc
         )
 
     revisionupdates = "INITIAL RELEASE"
-    if rev_history.initial_release_exists():
+    if initial_release_exists():
         revisionupdates = ""
     revisionupdates = cli.prompt(
         "Enter a description for this revision", default=revisionupdates
@@ -156,7 +156,7 @@ def append(filepath, pn, rev):
     library_subpath = ""
     cwd = str(os.getcwd()).lower().strip("~")
 
-    for row in read_tsv("library locations", delimiter=","):
+    for row in fileio.read_tsv(fileio.path("library locations")):
         local_path = str(row.get("local_path", "")).lower().strip("~")
         if local_path and local_path in cwd:
             library_repo = row.get("url")
@@ -167,7 +167,7 @@ def append(filepath, pn, rev):
             parts = remainder.split("/")
 
             # find the part number in the path
-            pn = str(partnumber("pn")).lower()
+            pn = str(state.partnumber("pn")).lower()
             if pn in parts:
                 pn_index = parts.index(pn)
                 core_parts = parts[:pn_index]  # everything before pn
@@ -193,15 +193,15 @@ def append(filepath, pn, rev):
             "desc": desc,
             "status": "",
             "library_repo": library_repo,
-            "product": product_type,
+            "product": state.product(),
             "library_subpath": library_subpath,
-            "datestarted": today(),
-            "datemodified": today(),
+            "datestarted": fileio.today(),
+            "datemodified": fileio.today(),
             "revisionupdates": revisionupdates,
         }
     )
 
-    columns = rev_history.COLUMNS
+    columns = COLUMNS
     with open(filepath, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
         writer.writeheader()
