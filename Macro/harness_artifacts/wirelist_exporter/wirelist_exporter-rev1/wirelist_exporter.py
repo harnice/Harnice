@@ -1,8 +1,6 @@
 import csv
-import os
-import yaml
 import xlwt
-from harnice import fileio, instances_list
+from harnice import fileio, instances_list, state
 
 artifact_mpn = "wirelist_exporter"
 
