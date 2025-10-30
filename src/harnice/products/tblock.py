@@ -7,9 +7,9 @@ from harnice import fileio, cli
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-params.json": "params",
-        f"{fileio.partnumber('pn-rev')}-drawing.svg": "drawing",
-        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{state.partnumber('pn-rev')}-params.json": "params",
+        f"{state.partnumber('pn-rev')}-drawing.svg": "drawing",
+        f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
 
@@ -269,5 +269,5 @@ def render():
         json.dump(periphery_json, f, indent=2)
 
     print()
-    print(f"Titleblock '{fileio.partnumber("pn")}' updated")
+    print(f"Titleblock '{state.partnumber('pn')}' updated")
     print()

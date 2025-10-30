@@ -8,8 +8,8 @@ from harnice.utils import svg_utils
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-drawing.svg": "drawing",
-        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{state.partnumber('pn-rev')}-drawing.svg": "drawing",
+        f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
 
@@ -86,7 +86,7 @@ def render():
 
     svg_width = 400
     svg_height = 400
-    group_name = f"{fileio.partnumber('pn')}-drawing"
+    group_name = f"{state.partnumber('pn')}-drawing"
 
     random_fill = "#{:06X}".format(random.randint(0, 0xFFFFFF))
     fallback_rect = f'    <rect x="0" y="-48" width="96" height="96" fill="{random_fill}" stroke="black" stroke-width="1"/>'
@@ -193,5 +193,5 @@ def render():
     os.rename(temp_svg_path, svg_path)
 
     print()
-    print(f"Part file '{fileio.partnumber('pn')}' updated")
+    print(f"Part file '{state.partnumber('pn')}' updated")
     print()

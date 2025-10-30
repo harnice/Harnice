@@ -224,9 +224,9 @@ for instance in fileio.read_tsv("instances list"):
 
 def file_structure(item_type=None, instance_name=None):
     return {
-        f"{fileio.partnumber('pn-rev')}-feature_tree.py": "feature tree",
-        f"{fileio.partnumber('pn-rev')}-instances_list.tsv": "instances list",
-        f"{fileio.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
+        f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
+        f"{state.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
         "instance_data": {
             "imported_instances": {
                 item_type: {instance_name: {"library_used_do_not_edit": {}}}
@@ -234,8 +234,8 @@ def file_structure(item_type=None, instance_name=None):
             "generated_instances_do_not_edit": {},
         },
         "interactive_files": {
-            f"{fileio.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
-            f"{fileio.partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
+            f"{state.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
+            f"{state.partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
         },
     }
 
@@ -287,7 +287,8 @@ def render(build_macro="", output_macro_dict=None):
             system_pn = cli.prompt("Enter the system part number")
             system_rev = cli.prompt("Enter the system revision id (ex. rev1)")
             project_location_key = cli.prompt(
-                "Make sure project_locations contains a link to the local path of this system. Enter the traceable key", default=system_pn
+                "Make sure project_locations contains a link to the local path of this system. Enter the traceable key",
+                default=system_pn,
             )
             target_net = cli.prompt("Enter the net you want to build this harness from")
 
@@ -366,4 +367,4 @@ feature_tree_utils.copy_pdfs_to_cwd()
     # Step 4: run feature tree
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
-    print(f"Harnice: harness {fileio.partnumber('pn')} rendered successfully!\n")
+    print(f"Harnice: harness {state.partnumber('pn')} rendered successfully!\n")

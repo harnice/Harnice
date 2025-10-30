@@ -33,7 +33,7 @@ def info(rev=None, path=None, field=None):
     if rev:
         rev = str(rev)
     else:
-        rev = fileio.partnumber("R")
+        rev = state.partnumber("R")
 
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -63,7 +63,7 @@ def initial_release_desc():
 
 
 def update_datemodified():
-    target_rev = fileio.partnumber("R")
+    target_rev = state.partnumber("R")
 
     # Read all rows
     with open(fileio.path("revision history"), newline="", encoding="utf-8") as f_in:
@@ -83,6 +83,7 @@ def update_datemodified():
         writer.writeheader()
         writer.writerows(rows)
 
+
 def new(filepath, pn, rev):
     columns = COLUMNS
     with open(filepath, "w", newline="", encoding="utf-8") as f:
@@ -90,8 +91,10 @@ def new(filepath, pn, rev):
         writer.writeheader()
     append(filepath, pn, rev)
 
+
 def append(filepath, pn, rev):
     from harnice import cli
+
     rows = fileio.read_tsv(filepath)
     rev = int(rev)
 
@@ -130,7 +133,7 @@ def append(filepath, pn, rev):
     # fallback in case product_type isn't in dict
     default_desc = default_descs.get(product_type, "")
 
-    #TODO: #478
+    # TODO: #478
     if desc in [None, ""]:
         desc = cli.prompt(
             f"Enter a description of this {product_type}", default=default_desc

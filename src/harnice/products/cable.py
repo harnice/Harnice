@@ -6,8 +6,8 @@ from harnice import fileio
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-attributes.json": "attributes",
-        f"{fileio.partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
+        f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
+        f"{state.partnumber('pn-rev')}-conductor_list.tsv": "conductor list",
     }
 
 

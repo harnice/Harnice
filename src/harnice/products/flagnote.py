@@ -7,8 +7,8 @@ from harnice import fileio, cli
 
 def file_structure():
     return {
-        f"{fileio.partnumber('pn-rev')}-params.json": "params",
-        f"{fileio.partnumber('pn-rev')}-drawing.svg": "drawing",
+        f"{state.partnumber('pn-rev')}-params.json": "params",
+        f"{state.partnumber('pn-rev')}-drawing.svg": "drawing",
     }
 
 
@@ -122,10 +122,10 @@ def render():
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{svg_width}" height="{svg_height}">',
-        f'  <g id="{fileio.partnumber('pn')}-drawing-contents-start">',
+        f'  <g id="{state.partnumber("pn")}-drawing-contents-start">',
         contents.rstrip(),
         "  </g>",
-        f'  <g id="{fileio.partnumber('pn')}-drawing-contents-end">',
+        f'  <g id="{state.partnumber("pn")}-drawing-contents-end">',
         "  </g>",
         "</svg>",
     ]
@@ -134,5 +134,5 @@ def render():
         f.write("\n".join(lines) + "\n")
 
     print()
-    print(f"Flagnote '{fileio.partnumber('pn')}' updated")
+    print(f"Flagnote '{state.partnumber('pn')}' updated")
     print()

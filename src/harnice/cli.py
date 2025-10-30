@@ -68,6 +68,7 @@ def main():
     # Handle new revision creation
     if args.newrev:
         from harnice import fileio
+
         fileio.newrev()
 
     if args.render:
@@ -108,13 +109,13 @@ def newrev():
 
     # Prompt user for new revision number
     new_rev_number = prompt(
-        f"Current rev number: {fileio.partnumber('R')}. Enter new rev number:",
-        default=str(int(fileio.partnumber("R")) + 1),
+        f"Current rev number: {state.partnumber('R')}. Enter new rev number:",
+        default=str(int(state.partnumber("R")) + 1),
     )
 
     # Construct new revision directory path
     new_rev_dir = os.path.join(
-        fileio.part_directory(), f"{fileio.partnumber('pn')}-rev{new_rev_number}"
+        fileio.part_directory(), f"{state.partnumber('pn')}-rev{new_rev_number}"
     )
 
     # Ensure target directory does not already exist
@@ -128,13 +129,13 @@ def newrev():
         for filename in files:
             new_suffix = f"rev{new_rev_number}"
 
-            if fileio.partnumber("rev") in filename:
+            if state.partnumber("rev") in filename:
                 old_path = os.path.join(root, filename)
-                new_name = filename.replace(fileio.partnumber("rev"), new_suffix)
+                new_name = filename.replace(state.partnumber("rev"), new_suffix)
                 new_path = os.path.join(root, new_name)
 
                 os.rename(old_path, new_path)
 
     print(
-        f"Successfully created new revision: {fileio.partnumber('pn-rev')}. Please cd into it."
+        f"Successfully created new revision: {state.partnumber('pn-rev')}. Please cd into it."
     )
