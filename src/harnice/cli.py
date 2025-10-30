@@ -3,19 +3,11 @@ import os
 import sys
 import shutil
 from harnice import state
-from harnice.products import (
-    device,
-    harness,
-    part,
-    flagnote,
-    tblock,
-    system,
-    disconnect,
-    cable,
-)
+from harnice import fileio
 
 
-def ensure_cwd_exists():
+def main():
+    # Ensure cwd exists
     try:
         cwd = os.getcwd()
     except (FileNotFoundError, PermissionError):
@@ -27,66 +19,74 @@ def ensure_cwd_exists():
     if not os.path.exists(cwd):
         sys.exit(f"Error: The current working directory no longer exists: {cwd}")
 
-
-def main():
-    ensure_cwd_exists()
-
+    # -----------------------------
+    # Argument parsing
+    # -----------------------------
     parser = argparse.ArgumentParser(
-        prog="harnice", description="Wire harness automation CLI"
+        prog="harnice",
+        description="Electrical system CAD",
     )
+
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "-r",
-        "--render",
-        choices=[
-            "harness",
-            "system",
-            "part",
-            "flagnote",
-            "device",
-            "disconnect",
-            "tblock",
-            "titleblock",
-            "cable",
-        ],
-        help="Render a product type",
-    )
-    group.add_argument(
-        "-l",
-        "--lightweight",
-        choices=["device"],
-        help="Render a product type quickly without performing all checks",
-    )
-    group.add_argument(
-        "--newrev",
+
+    group.add_argument("-r", "--render",
+        help="Render a product type (e.g., harness, system, device, etc.)")
+
+    group.add_argument("-l", "--lightweight",
+        help="Render a product type quickly without performing all checks")
+
+    group.add_argument("--newrev",
         action="store_true",
-        help="Create a new revision in the current working directory",
-    )
+        help="Create a new revision in the current working directory")
 
     args = parser.parse_args()
 
-    # Handle new revision creation
+    # -----------------------------
+    # Handle new revision creation and exit
+    # -----------------------------
     if args.newrev:
-        from harnice import fileio
+        newrev()
+        return
 
-        fileio.newrev()
+    # -----------------------------
+    # Determine product name from args
+    # (This is now the single source of truth)
+    # -----------------------------
+    product_name = args.render or args.lightweight
+    state.set_product(product_name)
 
-    if args.render:
-        render_map = {
-            "harness": harness.render,
-            "system": system.render,
-            "part": part.render,
-            "flagnote": flagnote.render,
-            "device": device.render,
-            "disconnect": disconnect.render,
-            "cable": cable.render,
-            "tblock": tblock.render,
-            "titleblock": tblock.render,  # alias
-        }
-        render_map[args.render.lower()]()
+    # -----------------------------
+    # Ensure we are inside a revision folder
+    # May change cwd if new PN created
+    # -----------------------------
+    fileio.verify_revision_structure()
 
-    elif args.lightweight:
-        device.lightweight_render()
+    # -----------------------------
+    # Load product module by name (general, no lists, no maintenance)
+    # -----------------------------
+    try:
+        product_module = __import__(
+            f"harnice.products.{product_name}",
+            fromlist=[product_name]
+        )
+    except ModuleNotFoundError:
+        sys.exit(f"Unknown product: '{product_name}'")
+
+    if not hasattr(product_module, "render"):
+        sys.exit(f"Product module '{product_name}' does not define render()")
+
+    # -----------------------------
+    # Execute render logic
+    # -----------------------------
+    if args.lightweight:
+        try:
+            product_module.render(lightweight=True)
+        except TypeError:
+            sys.exit(f"Product '{product_name}' does not support lightweight rendering")
+    else:
+        product_module.render()
+
+    return
 
 
 def prompt(text, default=None):

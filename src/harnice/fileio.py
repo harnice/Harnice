@@ -30,8 +30,6 @@ def silentremove(filepath):
 
 
 def path(target_value, structure_dict=None):
-    if structure_dict is None:
-        structure_dict = state.file_structure()
 
     # returns the filepath/filename of a filekey.
     """
@@ -43,6 +41,7 @@ def path(target_value, structure_dict=None):
     Returns:
         list: A list of container names leading to the element containing the target value, or None if not found.
     """
+
     # FILES NOT DEPENDENT ON PRODUCT TYPE
     if target_value == "revision history":
         file_path = os.path.join(
@@ -69,6 +68,10 @@ def path(target_value, structure_dict=None):
         return os.path.join(harnice_root, "project_locations.csv")
 
     # FILES INSIDE OF A STRUCURE DEFINED BY FILEIO
+    # look up from default structure state if not provided
+    if structure_dict is None:
+        structure_dict = state.file_structure
+
     def recursive_search(data, path):
         if isinstance(data, dict):
             for key, value in data.items():
@@ -94,7 +97,7 @@ def path(target_value, structure_dict=None):
 
 def dirpath(target_key, structure_dict=None):
     if structure_dict is None:
-        structure_dict = state.file_structure()
+        structure_dict = state.file_structure
     """
     Returns the absolute path to a directory identified by its key
     within a dict hierarchy.
@@ -125,45 +128,28 @@ def dirpath(target_key, structure_dict=None):
 
 
 def verify_revision_structure(product_type=None):
-    from harnice.lists import rev_history
     from harnice import cli
+    from harnice.lists import rev_history
 
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
-    temp_tsv_path = os.path.join(os.getcwd(), f"{cwd_name}-revision_history.tsv")
+    temp_tsv_path = os.path.join(cwd, f"{cwd_name}-revision_history.tsv")
 
-    def is_revision_folder(name, parent_name):
-        return (
-            name.startswith(f"{parent_name}-rev") and name.split("-rev")[-1].isdigit()
-        )
+    # --- 1) Already in a <PN>-revN folder? ---
+    if cwd_name.startswith(f"{parent}-rev") and cwd_name.split("-rev")[-1].isdigit():
+        state.set_pn(parent)
+        state.set_rev(int(cwd_name.split("-rev")[-1]))
 
-    def has_revision_folder_inside(path, pn):
-        pattern = re.compile(rf"{re.escape(pn)}-rev\d+")
-        return any(pattern.fullmatch(d) for d in os.listdir(path))
-
-    def prompt_new_part(part_dir, pn):
-        rev = int(cli.prompt("Enter revision number", default="1"))
-        rev_history.new(temp_tsv_path, pn, rev)
-        folder = os.path.join(part_dir, f"{pn}-rev{rev}")
-        os.makedirs(folder, exist_ok=True)
-        os.chdir(folder)
-        return rev
-
-    # 1) Already in a <PN>-revN folder?
-    if is_revision_folder(cwd_name, parent):
-        pn = parent
-        rev = int(cwd_name.split("-rev")[-1])  # already in a rev folder
-
-    # 2) In a part folder (has rev folders inside)?
-    elif has_revision_folder_inside(cwd, cwd_name):
+    # --- 2) In a part folder that contains revision folders? ---
+    elif any(
+        re.fullmatch(rf"{re.escape(cwd_name)}-rev\d+", d) for d in os.listdir(cwd)
+    ):
         print(f"This is a part folder ({cwd_name}).")
-        print(
-            f"Please `cd` into one of its revision subfolders (e.g. `{cwd_name}-rev1`) and rerun."
-        )
-        exit()  # cancels if not in a rev folder
+        print(f"Please `cd` into a revision folder (e.g. `{cwd_name}-rev1`) and rerun.")
+        exit()
 
-    # 3) Unknown – offer to initialize a new PN here
+    # --- 3) No revision structure → initialize new PN here ---
     else:
         answer = cli.prompt(
             f"No revision structure detected in '{cwd_name}'. Create new PN here?",
@@ -171,26 +157,31 @@ def verify_revision_structure(product_type=None):
         )
         if answer.lower() not in ("y", "yes", ""):
             exit()
-        pn = cwd_name
-        rev = prompt_new_part(cwd, pn)  # changes the cwd to the new rev folder
 
-    # if everything looks good but the tsv isn't there
-    x = rev_history.info()
-    if x == "row not found":
-        rev_history.append(path("revision history"), pn, rev)
-    elif x == "file not found":
-        rev_history.append(path("revision history"), pn, rev)
+        state.set_pn(cwd_name)
+        rev_history.new(temp_tsv_path)
 
-    # now we’re in a revision folder, with pn, rev, temp_tsv_path set
-    if not rev_history.info(field="status") == "":
+        # inline prompt_new_rev
+        rev = int(cli.prompt("Enter revision number", default="1"))
+        state.set_rev(rev)
+        folder = os.path.join(cwd, f"{state.pn}-rev{state.rev}")
+        os.makedirs(folder, exist_ok=True)
+        os.chdir(folder)
+
+    # --- Ensure revision_history entry exists ---
+    info_row = rev_history.info()
+    if info_row in ("row not found", "file not found"):
+        rev_history.append(fileio.path("revision history"), state.pn, state.rev)
+
+    # --- Status must be blank to proceed ---
+    if rev_history.info(field="status") != "":
         raise RuntimeError(
-            f"Revision {rev} status is not clear. Harnice will only let you render revs with a blank status."
+            f"Revision {state.rev} status is not clear. "
+            f"Harnice only renders revisions with a blank status."
         )
 
-    print(f"Working on PN: {pn}, Rev: {rev}")
+    print(f"Working on PN: {state.pn}, Rev: {state.rev}")
     rev_history.update_datemodified()
-
-    return pn, rev
 
 
 def today():
@@ -201,7 +192,7 @@ def get_path_to_project(traceable_key):
     # takes in a project repo traceable key and returns the expanded local path
     # traceable key is some unique identifier for this project (project part number, github url, etc)
 
-    for project in read_tsv("project locations", delimiter=","):
+    for project in read_tsv(path("project locations"), delimiter=","):
         if project.get("traceable_key").strip() == traceable_key.strip():
             local_path = project.get("local_path")
             if not local_path:

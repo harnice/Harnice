@@ -267,8 +267,7 @@ def generate_structure():
 
 def render(build_macro="", output_macro_dict=None):
     # Step 1: revision structure
-    fileio.set_file_structure(file_structure())
-    fileio.verify_revision_structure()
+    state.set_file_structure(file_structure())
     generate_structure()
 
     # Step 2: Ensure feature tree exists

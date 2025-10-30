@@ -1,25 +1,31 @@
 import re
 
-#not initializing these variables so that a NameError is raised if they are not set
+
+# not initializing these variables so that a NameError is raised if they are not set
 def set_pn(x):
     global pn
     pn = x
+
 
 def set_rev(x):
     global rev
     rev = x
 
+
 def set_net(x):
     global net
     net = x
+
 
 def set_product(x):
     global product
     product = x
 
+
 def set_file_structure(x):
     global file_structure
     file_structure = x
+
 
 def partnumber(format):
     # Returns part numbers in various formats based on the current working directory

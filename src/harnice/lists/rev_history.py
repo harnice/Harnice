@@ -1,6 +1,7 @@
 import os
 import csv
 from harnice import fileio, state
+from harnice.cli import newrev
 
 # === Global Columns Definition ===
 COLUMNS = [
@@ -49,11 +50,14 @@ def info(rev=None, path=None, field=None):
 
 
 def initial_release_exists():
-    for row in fileio.read_tsv(fileio.path("revision history")):
-        if str(row.get("revisionupdates", "")).strip() == "INITIAL RELEASE":
-            return True
-        else:
-            return False
+    try:
+        for row in fileio.read_tsv(fileio.path("revision history")):
+            if str(row.get("revisionupdates", "")).strip() == "INITIAL RELEASE":
+                return True
+            else:
+                return False
+    except NameError:
+        return False
 
 
 def initial_release_desc():
@@ -84,22 +88,21 @@ def update_datemodified():
         writer.writerows(rows)
 
 
-def new(filepath, pn, rev):
+def new(filepath):
     columns = COLUMNS
     with open(filepath, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
         writer.writeheader()
-    append(filepath, pn, rev)
+    append(filepath, next_rev=1)
 
 
-def append(filepath, pn, rev):
+def append(filepath, next_rev=None):
     from harnice import cli
 
     rows = fileio.read_tsv(filepath)
-    rev = int(rev)
 
     desc = ""
-    if rev != 1:
+    if next_rev != 1:
         # find the highest revision in the table
         highest_existing_rev = max(
             int(row.get("rev", 0)) for row in rows if row.get("rev")
@@ -131,12 +134,12 @@ def append(filepath, pn, rev):
     }
 
     # fallback in case product_type isn't in dict
-    default_desc = default_descs.get(state.product(), "")
+    default_desc = default_descs.get(state.product, "")
 
     # TODO: #478
     if desc in [None, ""]:
         desc = cli.prompt(
-            f"Enter a description of this {state.product()}", default=default_desc
+            f"Enter a description of this {state.product}", default=default_desc
         )
 
     revisionupdates = "INITIAL RELEASE"
@@ -188,12 +191,12 @@ def append(filepath, pn, rev):
 
     rows.append(
         {
-            "pn": pn,
-            "rev": rev,
+            "pn": state.pn,
+            "rev": next_rev,
             "desc": desc,
             "status": "",
             "library_repo": library_repo,
-            "product": state.product(),
+            "product": state.product,
             "library_subpath": library_subpath,
             "datestarted": fileio.today(),
             "datemodified": fileio.today(),

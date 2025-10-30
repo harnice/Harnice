@@ -23,8 +23,7 @@ def render():
     if cli.prompt("Press enter to confirm or any key to exit") == "":
         exit()
 
-    fileio.set_file_structure(file_structure())
-    fileio.verify_revision_structure(product_type="flagnote")
+    state.set_file_structure(file_structure())
     generate_structure()
     params_path = fileio.path("params")
 

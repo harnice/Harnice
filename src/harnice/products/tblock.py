@@ -50,8 +50,7 @@ def render():
         ],
     }
 
-    fileio.set_file_structure(file_structure())
-    fileio.verify_revision_structure(product_type="tblock")
+    state.set_file_structure(file_structure())
     generate_structure()
 
     # === If param file doesn't exist, create it ===
