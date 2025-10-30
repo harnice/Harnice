@@ -1,7 +1,7 @@
 import os
 import subprocess
 import csv
-from harnice import fileio
+from harnice import fileio, state
 
 build_macro_mpn = "kicad_pro_to_bom"
 

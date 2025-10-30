@@ -1,6 +1,6 @@
 import os
 import subprocess
-from harnice import fileio
+from harnice import fileio, state
 
 build_macro_mpn = "kicad_pro_to_pdf"
 
