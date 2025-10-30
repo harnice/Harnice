@@ -48,7 +48,7 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg"
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg"
                     }
                 }
             }

@@ -12,8 +12,8 @@ build_macro_mpn = "kicad_pro_to_system_connector_list"
 def file_structure():
     return {
         "kicad": {
-            f"{fileio.partnumber('pn-rev')}.kicad_sch": "kicad sch",
-            f"{fileio.partnumber('pn-rev')}.net": "netlist source",
+            f"{state.partnumber('pn-rev')}.kicad_sch": "kicad sch",
+            f"{state.partnumber('pn-rev')}.net": "netlist source",
         }
     }
 

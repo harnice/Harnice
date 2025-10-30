@@ -10,8 +10,8 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
                     }
                 }
             }

@@ -25,10 +25,10 @@ def file_structure(page_name=None, page_counter=None):
                 },
                 "macro": {
                     artifact_id: {
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-page_setup.json": "page setup",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-page_setup.json": "page setup",
                         f"{artifact_id}-mastercontents.svg": "master contents svg",
                         f"{artifact_mpn}.py": "macro script",
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}.pdf": "output pdf",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}.pdf": "output pdf",
                         "library_used_do_not_edit": {
                             "direct_from_project_titleblock": {
                                 f"macro-{artifact_id}-{page_name}": {
@@ -325,7 +325,7 @@ delta_x_translate = 0
 masters = []
 
 # Discover all master SVGs in macros folder
-part_prefix = fileio.partnumber("pn-rev")
+part_prefix = state.partnumber("pn-rev")
 
 for root, _, files in os.walk(fileio.dirpath("imported_instances")):
     for filename in files:

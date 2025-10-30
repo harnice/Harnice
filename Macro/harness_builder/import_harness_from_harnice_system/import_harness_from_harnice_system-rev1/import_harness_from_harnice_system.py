@@ -1,6 +1,6 @@
 import csv
 import os
-from harnice import fileio
+from harnice import fileio, state
 from harnice.lists import instances_list, manifest
 
 # args:
@@ -15,13 +15,16 @@ path_to_system_instances_list = os.path.join(
 )
 
 
+fileio.set_net(target_net)
+
+
 def file_structure():
     return {
         "instance_data": {
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-instances_list.tsv": "instances list"
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-instances_list.tsv": "instances list"
                     }
                 }
             }
@@ -38,8 +41,8 @@ for instance in system_instances_list_data:
     if instance.get("net") == target_net:
         instances_list.new_instance(instance.get("instance_name"), instance)
 
-fileio.set_net(target_net)
+state.set_net(target_net)
 
 manifest.update_upstream(
-    path_to_system_rev, system_pn_rev, manifest_nets, fileio.partnumber("pn-rev")
+    path_to_system_rev, system_pn_rev, manifest_nets, state.partnumber("pn-rev")
 )

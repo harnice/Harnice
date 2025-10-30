@@ -14,9 +14,9 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.tsv": "wirelist no formats",
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist.xls": "wirelist pretty",
-                        f"{fileio.partnumber('pn-rev')}-{artifact_id}-wirelist-master.svg": "wirelist svg",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-wirelist.tsv": "wirelist no formats",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-wirelist.xls": "wirelist pretty",
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-wirelist-master.svg": "wirelist svg",
                     }
                 }
             }
