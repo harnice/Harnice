@@ -1,6 +1,8 @@
 import argparse
 import os
 import sys
+import shutil
+from harnice import state
 from harnice.products import (
     device,
     harness,
@@ -11,21 +13,6 @@ from harnice.products import (
     disconnect,
     cable,
 )
-
-file_structure = None
-
-
-def set_file_structure(x):
-    global file_structure
-    file_structure = x
-
-
-net = None
-
-
-def set_net(x):
-    global net
-    net = x
 
 
 def ensure_cwd_exists():
@@ -107,3 +94,47 @@ def prompt(text, default=None):
         p += f" [{default}]"
     p += ": "
     return input(p).strip() or default
+
+
+def newrev():
+    from harnice import fileio
+
+    """
+    Create a new revision directory by copying the current revision's contents
+    and updating filenames to reflect the new revision number.
+    """
+    # Ensure revision structure is valid and get context
+    fileio.verify_revision_structure()
+
+    # Prompt user for new revision number
+    new_rev_number = prompt(
+        f"Current rev number: {fileio.partnumber('R')}. Enter new rev number:",
+        default=str(int(fileio.partnumber("R")) + 1),
+    )
+
+    # Construct new revision directory path
+    new_rev_dir = os.path.join(
+        fileio.part_directory(), f"{fileio.partnumber('pn')}-rev{new_rev_number}"
+    )
+
+    # Ensure target directory does not already exist
+    if os.path.exists(new_rev_dir):
+        raise FileExistsError(f"Revision directory already exists: {new_rev_dir}")
+
+    shutil.copytree(fileio.rev_directory(), new_rev_dir)
+
+    # Walk the new directory and rename all files containing the old rev number
+    for root, _, files in os.walk(new_rev_dir):
+        for filename in files:
+            new_suffix = f"rev{new_rev_number}"
+
+            if fileio.partnumber("rev") in filename:
+                old_path = os.path.join(root, filename)
+                new_name = filename.replace(fileio.partnumber("rev"), new_suffix)
+                new_path = os.path.join(root, new_name)
+
+                os.rename(old_path, new_path)
+
+    print(
+        f"Successfully created new revision: {fileio.partnumber('pn-rev')}. Please cd into it."
+    )

@@ -275,17 +275,10 @@ def render(build_macro="", output_macro_dict=None):
     if not os.path.exists(fileio.path("feature tree", structure_dict=file_structure())):
         if build_macro == "":
             print(
-                "Do you want to use a build_macro to help build this harness from scratch? [s]"
-            )
-            print(
                 "  's'   Enter 's' for system (or just hit enter) if this harness is pulling data from a system instances list"
             )
-            print("  'y'   Enter 'y' for the standard Harnice esch build_macro")
             print(
                 "  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)"
-            )
-            print(
-                "  'w'   Enter 'w' for wireviz to use the wireviz-yaml-to-instances-list build_macro"
             )
             build_macro = cli.prompt("")
 
@@ -294,7 +287,7 @@ def render(build_macro="", output_macro_dict=None):
             system_pn = cli.prompt("Enter the system part number")
             system_rev = cli.prompt("Enter the system revision id (ex. rev1)")
             project_location_key = cli.prompt(
-                "Make sure project_locations contains a link to the local path of this system. Enter the traceable key"
+                "Make sure project_locations contains a link to the local path of this system. Enter the traceable key", default=system_pn
             )
             target_net = cli.prompt("Enter the net you want to build this harness from")
 

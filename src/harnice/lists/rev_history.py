@@ -49,7 +49,7 @@ def info(rev=None, path=None, field=None):
 
 
 def initial_release_exists():
-    for row in fileio.read_tsv("revision history"):
+    for row in fileio.read_tsv(fileio.path("revision history")):
         if str(row.get("revisionupdates", "")).strip() == "INITIAL RELEASE":
             return True
         else:
@@ -57,7 +57,7 @@ def initial_release_exists():
 
 
 def initial_release_desc():
-    for row in fileio.read_tsv("revision history"):
+    for row in fileio.read_tsv(fileio.path("revision history")):
         if row.get("revisionupdates") == "INITIAL RELEASE":
             return row.get("desc")
 
@@ -80,5 +80,126 @@ def update_datemodified():
         fileio.path("revision history"), "w", newline="", encoding="utf-8"
     ) as f_out:
         writer = csv.DictWriter(f_out, fieldnames=COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(rows)
+
+def new(filepath, pn, rev):
+    columns = COLUMNS
+    with open(filepath, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
+        writer.writeheader()
+    append(filepath, pn, rev)
+
+def append(filepath, pn, rev):
+    from harnice import cli
+    rows = fileio.read_tsv(filepath)
+    rev = int(rev)
+
+    desc = ""
+    if rev != 1:
+        # find the highest revision in the table
+        highest_existing_rev = max(
+            int(row.get("rev", 0)) for row in rows if row.get("rev")
+        )
+
+        for row in rows:
+            if int(row.get("rev", 0)) == highest_existing_rev:
+                desc = row.get("desc")
+                if row.get("status") in [None, ""]:
+                    print(
+                        f"Your existing highest revision ({highest_existing_rev}) has no status. Do you want to obsolete it?"
+                    )
+                    obsolete_message = cli.prompt(
+                        "Type your message here, leave blank for 'OBSOLETE' message, or type 'n' to keep it blank.",
+                        default="OBSOLETE",
+                    )
+                    if obsolete_message == "n":
+                        obsolete_message = ""
+                    row["status"] = obsolete_message  # ← modified here
+                break
+
+    default_descs = {
+        "harness": "HARNESS, DOES A, FOR B",
+        "part": "COTS COMPONENT, SIZE, COLOR, etc.",
+        "flagnote": "FLAGNOTE, PURPOSE",
+        "tblock": "TITLEBLOCK, PAPER SIZE, DESIGN",
+        "device": "DEVICE, FUNCTION, ATTRIBUTES, etc.",
+        "system": "SYSTEM, SCOPE, etc.",
+    }
+
+    # fallback in case product_type isn't in dict
+    default_desc = default_descs.get(product_type, "")
+
+    #TODO: #478
+    if desc in [None, ""]:
+        desc = cli.prompt(
+            f"Enter a description of this {product_type}", default=default_desc
+        )
+
+    revisionupdates = "INITIAL RELEASE"
+    if rev_history.initial_release_exists():
+        revisionupdates = ""
+    revisionupdates = cli.prompt(
+        "Enter a description for this revision", default=revisionupdates
+    )
+    while not revisionupdates or not revisionupdates.strip():
+        print("Revision updates can't be blank!")
+        revisionupdates = cli.prompt(
+            "Enter a description for this revision", default=None
+        )
+
+    # add lib_repo if filepath is found in library locations
+    library_repo = ""
+    library_subpath = ""
+    cwd = str(os.getcwd()).lower().strip("~")
+
+    for row in read_tsv("library locations", delimiter=","):
+        local_path = str(row.get("local_path", "")).lower().strip("~")
+        if local_path and local_path in cwd:
+            library_repo = row.get("url")
+
+            # keep only the portion AFTER local_path
+            idx = cwd.find(local_path)
+            remainder = cwd[idx + len(local_path) :].lstrip("/")
+            parts = remainder.split("/")
+
+            # find the part number in the path
+            pn = str(partnumber("pn")).lower()
+            if pn in parts:
+                pn_index = parts.index(pn)
+                core_parts = parts[:pn_index]  # everything before pn
+            else:
+                core_parts = parts
+
+            # build library_subpath and product
+            if core_parts:
+                library_subpath = (
+                    "/".join(core_parts[1:]) + "/" if len(core_parts) > 1 else ""
+                )  # strip out the first element (product type)
+            else:
+                library_subpath = ""
+
+            break
+
+    ####
+
+    rows.append(
+        {
+            "pn": pn,
+            "rev": rev,
+            "desc": desc,
+            "status": "",
+            "library_repo": library_repo,
+            "product": product_type,
+            "library_subpath": library_subpath,
+            "datestarted": today(),
+            "datemodified": today(),
+            "revisionupdates": revisionupdates,
+        }
+    )
+
+    columns = rev_history.COLUMNS
+    with open(filepath, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
         writer.writeheader()
         writer.writerows(rows)
