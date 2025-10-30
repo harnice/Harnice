@@ -1,7 +1,7 @@
 import runpy
 import os
 from harnice import fileio, state
-from harnice.lists import post_harness_instances_list, instances_list
+from harnice.lists import post_harness_instances_list, instances_list, library_history
 
 system_feature_tree_utils_default = """from harnice import fileio
 from harnice.utils import system_utils, feature_tree_utils
@@ -75,6 +75,7 @@ def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
         f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
+        f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
         "instance_data": {
             "imported_instances": {
                 "disconnect": {},
@@ -116,6 +117,7 @@ def render():
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
             f.write(system_feature_tree_utils_default)
 
+    library_history.new()
     instances_list.new()
     runpy.run_path(fileio.path("feature tree"))
 

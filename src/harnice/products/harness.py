@@ -1,7 +1,7 @@
 import runpy
 import os
 from harnice import fileio, cli, state
-from harnice.lists import instances_list
+from harnice.lists import instances_list, library_history
 
 harness_feature_tree_utils_default = """
 #===========================================================================
@@ -227,6 +227,7 @@ def file_structure(item_type=None, instance_name=None):
         f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
         f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
         f"{state.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
+        f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
         "instance_data": {
             "imported_instances": {
                 item_type: {instance_name: {"library_used_do_not_edit": {}}}
@@ -269,6 +270,7 @@ def render(build_macro="", output_macro_dict=None):
     # Step 1: revision structure
     state.set_file_structure(file_structure())
     generate_structure()
+    library_history.new()
 
     # Step 2: Ensure feature tree exists
     if not os.path.exists(fileio.path("feature tree", structure_dict=file_structure())):
