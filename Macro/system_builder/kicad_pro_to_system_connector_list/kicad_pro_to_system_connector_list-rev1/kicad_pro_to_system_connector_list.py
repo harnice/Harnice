@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import csv
 from typing import Dict
-from harnice import fileio
+from harnice import fileio, state
 
 build_macro_mpn = "kicad_pro_to_system_connector_list"
 
