@@ -187,3 +187,4 @@ def get_local_path(lib_repo):
             if not local_path:
                 raise ValueError(f"No local_path found for {lib_repo}")
             return os.path.expanduser(local_path)
+    raise ValueError(f"No local_path found for {lib_repo}")

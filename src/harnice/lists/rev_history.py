@@ -51,7 +51,7 @@ def info(rev=None, path=None, field=None):
 
 def initial_release_exists():
     try:
-        for row in fileio.read_tsv(fileio.path("revision history")):
+        for row in fileio.read_tsv("revision history"):
             if str(row.get("revisionupdates", "")).strip() == "INITIAL RELEASE":
                 return True
             else:
@@ -61,7 +61,7 @@ def initial_release_exists():
 
 
 def initial_release_desc():
-    for row in fileio.read_tsv(fileio.path("revision history")):
+    for row in fileio.read_tsv("revision history"):
         if row.get("revisionupdates") == "INITIAL RELEASE":
             return row.get("desc")
 
@@ -159,7 +159,7 @@ def append(filepath, next_rev=None):
     library_subpath = ""
     cwd = str(os.getcwd()).lower().strip("~")
 
-    for row in fileio.read_tsv(fileio.path("library locations")):
+    for row in fileio.read_tsv("library locations"):
         local_path = str(row.get("local_path", "")).lower().strip("~")
         if local_path and local_path in cwd:
             library_repo = row.get("url")
