@@ -1,7 +1,7 @@
 import os
 import math
 from collections import defaultdict
-from harnice import fileio
+from harnice import fileio, state
 from harnice.utils import flagnote_utils, svg_utils
 
 artifact_mpn = "standard_harnice_formboard"

@@ -1,6 +1,5 @@
 import os
-from turtle import st
-from harnice import fileio
+from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import circuit_utils
 

@@ -1,6 +1,5 @@
-import os
 import csv
-from harnice import fileio
+from harnice import fileio, state
 
 
 # =============== PATHS ===============
