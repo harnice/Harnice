@@ -1,7 +1,6 @@
 import os
 import csv
 from harnice import fileio, state
-from harnice.cli import newrev
 
 # === Global Columns Definition ===
 COLUMNS = [

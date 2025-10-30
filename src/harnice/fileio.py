@@ -171,7 +171,7 @@ def verify_revision_structure(product_type=None):
     # --- Ensure revision_history entry exists ---
     info_row = rev_history.info()
     if info_row in ("row not found", "file not found"):
-        rev_history.append(fileio.path("revision history"), state.pn, state.rev)
+        rev_history.append(path("revision history"), state.pn, state.rev)
 
     # --- Status must be blank to proceed ---
     if rev_history.info(field="status") != "":
