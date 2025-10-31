@@ -77,7 +77,7 @@ blank_setup = {
                 "tblock-key-pn": "pull_from_revision_history(pn)",
                 "tblock-key-drawnby": "pull_from_revision_history(drawnby)",
                 "tblock-key-rev": "pull_from_revision_history(rev)",
-                "tblock-key-releaseticket": "",
+                "tblock-key-pagedesc": "autopagedesc",
                 "tblock-key-scale": "A",
                 "tblock-key-sheet": "autosheet",
             },
@@ -297,6 +297,11 @@ for page in page_data.get("pages", []):
             page_names = [p.get("name") for p in page_data.get("pages", [])]
             total_pages = len(page_names)
             new = f"{page_counter} of {total_pages}"
+
+        if new == "autopagedesc":
+            page_names = [p.get("name") for p in page_data.get("pages", [])]
+            total_pages = len(page_names)
+            new = page_name
 
         if old not in svg:
             print(f"[WARN] Key '{old}' not found in titleblock SVG")

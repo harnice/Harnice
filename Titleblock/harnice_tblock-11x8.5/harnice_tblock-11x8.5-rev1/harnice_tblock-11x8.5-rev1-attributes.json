@@ -1,18 +1,4 @@
 {
-  "periphery_locs": {
-    "bom_loc": [
-      1016,
-      728
-    ],
-    "buildnotes_loc": [
-      40,
-      40
-    ],
-    "revhistory_loc": [
-      1016,
-      40
-    ]
-  },
   "page_size_in": [
     11.0,
     8.5
