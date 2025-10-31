@@ -7,10 +7,6 @@ harness_feature_tree_utils_default = """
 #===========================================================================
 #                   IMPORT PARTS FROM LIBRARY
 #===========================================================================
-print()
-print("Importing parts from library")
-print(f'{"ITEM NAME":<24}  STATUS')
-
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["connector", "backshell"]:
         if instance.get("instance_name") not in ["X100"]:
@@ -54,7 +50,7 @@ for instance in fileio.read_tsv("instances list"):
         circuit_id = instance.get("circuit_id")
         conductor_name = f"conductor-{circuit_id}"
         instances_list.new_instance(conductor_name, {
-            "item_type": "Conductor",
+            "item_type": "conductor",
             "location_type": "segment",
             "node_at_end_a": circuit_utils.instance_of_circuit_port_number(circuit_id, 0),
             "node_at_end_b": circuit_utils.instance_of_circuit_port_number(circuit_id, 1)
@@ -67,11 +63,11 @@ for instance in fileio.read_tsv("instances list"):
 formboard_utils.validate_nodes()
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Conductor":
+    if instance.get("item_type") == "conductor":
         formboard_utils.map_instance_to_segments(instance)
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Conductor":
+    if instance.get("item_type") == "conductor":
         conductor_length = 0
         for instance2 in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
@@ -95,8 +91,12 @@ formboard_utils.make_segment_drawings()
 #===========================================================================
 #                   ASSIGN BOM LINE NUMBERS
 #===========================================================================
+for instance in fileio.read_tsv("instances list"):
+    if instance.get("item_type") in ["connector", "cable", "backshell"]:
+        instances_list.modify(instance.get("instance_name"),{
+            "bom_line_number": True
+        })
 instances_list.assign_bom_line_numbers()
-
 
 #===========================================================================
 #                   ASSIGN PRINT NAMES
@@ -105,11 +105,11 @@ for instance in fileio.read_tsv("instances list"):
     if instance.get("print_name") not in ["", None]:
         pass
     else:
-        if instance.get("item_type") == "connector cavity":
+        if instance.get("item_type") == "connector_cavity":
             instance_name = instance.get("instance_name", "")
             print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
             instances_list.modify(instance_name, {"print_name": print_name})
-        elif instance.get("item_type") == "Conductor":
+        elif instance.get("item_type") == "conductor":
             instances_list.modify(instance.get("instance_name"), {
                 "print_name": f"{instance.get("cable_identifier")}"
             })
@@ -125,7 +125,7 @@ for instance in fileio.read_tsv("instances list"):
 flagnote_counter = 1
 buildnote_counter = 1
 
-flagnote_utils.ensure_manual_list_exists()
+manual_flagnotes_list.ensure_exists()
 for manual_note in fileio.read_tsv("flagnotes manual"):
     affected_list = manual_note.get("affectedinstances", "").strip().split(",")
     for affected in affected_list:
@@ -313,7 +313,7 @@ import re
 import runpy
 from harnice import fileio
 from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, flagnote_utils, library_utils, feature_tree_utils
-from harnice.lists import instances_list, post_harness_instances_list, rev_history
+from harnice.lists import instances_list, post_harness_instances_list, rev_history, manual_flagnotes_list
 
 #===========================================================================
 #                   build_macro SCRIPTING
@@ -339,7 +339,7 @@ feature_tree_utils.copy_pdfs_to_cwd()
 
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as dst:
             dst.write(feature_tree_utils)
-    
+
     library_history.new()
     instances_list.new()
     instances_list.new_instance(
@@ -351,7 +351,7 @@ feature_tree_utils.copy_pdfs_to_cwd()
         },
     )
 
-   
+    cli.print_import_headers()
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
     print(f"Harnice: harness {state.partnumber('pn')} rendered successfully!\n")

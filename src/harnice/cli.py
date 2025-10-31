@@ -5,6 +5,21 @@ import shutil
 from harnice import state
 from harnice import fileio
 
+import_print_format = [
+    "{:<8}",  # margin
+    "{:<32}",  # instance_name column
+    "{:<16}",  # item_type column
+    "{:<16}",  # status column
+    "{:<16}",  # import state column
+]
+
+def print_import_headers():
+    print(f"{import_print_format[0].format('')}"
+        f"{import_print_format[1].format('INSTANCE NAME')}"
+        f"{import_print_format[2].format('ITEM TYPE')}"
+        f"{import_print_format[3].format('LIBRARY STATUS')}"
+        f"{import_print_format[4].format('IMPORT STATE')}"
+    )
 
 def main():
     # Ensure cwd exists

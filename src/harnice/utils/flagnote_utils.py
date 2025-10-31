@@ -1,70 +1,50 @@
 import os
-import csv
 import re
 from harnice import fileio
 from harnice.lists import instances_list
 from harnice.utils import library_utils
 
-# === Global Columns Definition ===
-MANUAL_FLAGNOTES_COLUMNS = [
-    "note_type",
-    "note_text",
-    "shape",
-    "shape_lib_repo",
-    "bubble_text",
-    "affectedinstances",
-]
+
+def file_structure(instance_name):
+    return {
+        "instance_data": {
+            "imported_instances": {
+                "flagnote": {
+                    instance_name: {
+                        f"{instance_name}-drawing.svg": "flagnote drawing",
+                    }
+                }
+            }
+        }
+    }
 
 
-def ensure_manual_list_exists():
-    if not os.path.exists(fileio.path("flagnotes manual")):
-        with open(
-            fileio.path("flagnotes manual"), "w", newline="", encoding="utf-8"
-        ) as f:
-            writer = csv.DictWriter(
-                f, fieldnames=MANUAL_FLAGNOTES_COLUMNS, delimiter="\t"
-            )
-            writer.writeheader()
 
 
-def make_note_drawings(formboard_dir):
+def make_note_drawings():
     instances = fileio.read_tsv("instances list")
 
     for instance in instances:
-        if instance.get("item_type", "").lower() != "flagnote":
+        if instance.get("item_type") != "flagnote":
             continue
 
         instance_name = instance.get("instance_name")
 
-        destination_directory = os.path.join(
-            formboard_dir, instance.get("instance_name")
-        )
+        destination_directory = fileio.dirpath("flagnote", structure_dict=file_structure(instance_name))
         os.makedirs(destination_directory, exist_ok=True)
 
         # === Pull library item ===
-        library_utils.pull(
-            {
-                "lib_repo": instance.get("lib_repo"),
-                "item_type": "flagnote",
-                "mpn": instance.get("mpn"),
-                "instance_name": instance_name,
-            }
-        )
+        library_utils.pull(instance)
 
         # === Replace placeholder in SVG ===
-        drawing_path = os.path.join(
-            destination_directory, f"{instance_name}-drawing.svg"
-        )
-        if not os.path.exists(drawing_path):
-            print(f"[WARN] Drawing not found: {drawing_path}")
-            continue
+        flagnote_drawing_path = fileio.path("flagnote drawing", structure_dict=file_structure(instance_name))
 
-        with open(drawing_path, "r", encoding="utf-8") as f:
+        with open(flagnote_drawing_path, "r", encoding="utf-8") as f:
             svg = f.read()
 
         svg = re.sub(r">flagnote-text<", f">{instance.get('bubble_text')}<", svg)
 
-        with open(drawing_path, "w", encoding="utf-8") as f:
+        with open(flagnote_drawing_path, "w", encoding="utf-8") as f:
             f.write(svg)
 
 
@@ -157,5 +137,6 @@ def assign_output_csys():
                                 instance.get("instance_name"), "connector_group"
                             ),
                         },
+                        ignore_duplicates=True,
                     )
                     flagnote_counter += 1

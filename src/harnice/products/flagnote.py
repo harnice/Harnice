@@ -17,12 +17,8 @@ def generate_structure():
 
 
 def render():
-    print(
-        "Warning: rendering a flagnote may clear user edits to its svg. Do you wish to proceed?"
-    )
-    if cli.prompt("Press enter to confirm or any key to exit") == "":
+    if cli.prompt("Warning: rendering a titleblock may clear user edits to its svg. Proceed?", default="yes") != "yes":
         exit()
-    params_path = fileio.path("params")
 
     # Geometry generators
     def regular_ngon(n, radius=19.2, rotation_deg=0):
@@ -60,7 +56,7 @@ def render():
     ]
 
     # === Prompt shape if no params exist ===
-    if not os.path.exists(params_path):
+    if not os.path.exists(fileio.path("params")):
         print("No flagnote params found.")
         print("Choose a shape for your flagnote:")
         for i, (label, _) in enumerate(shape_options, 1):
@@ -80,11 +76,11 @@ def render():
         if shape_func:
             params["vertices"] = shape_func()
 
-        with open(params_path, "w", encoding="utf-8") as f:
+        with open(fileio.path("params"), "w", encoding="utf-8") as f:
             json.dump(params, f, indent=2)
 
     # === Load params ===
-    with open(params_path, "r", encoding="utf-8") as f:
+    with open(fileio.path("params"), "r", encoding="utf-8") as f:
         p = json.load(f)
 
     svg_width = 6 * 96

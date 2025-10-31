@@ -4,6 +4,7 @@ import shutil
 import filecmp
 from harnice import fileio
 from harnice.lists import instances_list, library_history, rev_history
+from harnice.cli import import_print_format
 
 """
 imported_instances
@@ -71,12 +72,12 @@ def pull(input_dict, update_instances_list=True):
             input_dict.get("lib_rev_used_here").strip().lower().replace("rev", "")
         )
         if int(highest_source_rev) > int(rev_to_use):
-            status = f"newer rev exists   (rev{rev_to_use} used, rev{highest_source_rev} available)"
+            import_state = f"newer rev exists   (rev{rev_to_use} used, rev{highest_source_rev} available)"
         else:
-            status = f"library up to date (rev{rev_to_use})"
+            import_state = f"library up to date (rev{rev_to_use})"
     else:
         rev_to_use = highest_source_rev
-        status = f"imported latest (rev{rev_to_use})"
+        import_state = f"imported latest (rev{rev_to_use})"
 
     # === Import library contents freshly every time
     lib_used_path = os.path.join(destination_directory, "library_used_do_not_edit")
@@ -139,9 +140,9 @@ def pull(input_dict, update_instances_list=True):
                 Modified = Modified or True
 
     if Modified:
-        status = f"modified at project level (rev{rev_to_use})"
+        import_state = f"modified in this project (rev{rev_to_use})"
     else:
-        status = f"up to date (rev{rev_to_use})"
+        import_state = f"up to date (rev{rev_to_use})"
 
     # === Load revision row from revision history TSV in source library ===
     revhistory_path = os.path.join(
@@ -177,9 +178,14 @@ def pull(input_dict, update_instances_list=True):
 
     library_history.append(input_dict.get("instance_name"), update_contents)
 
-    print(
-        f"Working instance: {input_dict.get('instance_name'):<40}{input_dict.get('item_type'):<20}{status}"
+    line = (
+        f"{import_print_format[0].format('')}"
+        f"{import_print_format[1].format(input_dict.get('instance_name'))}"
+        f"{import_print_format[2].format(input_dict.get('item_type'))}"
+        f"{import_print_format[3].format(update_contents.get('lib_status'))}"
+        f"{import_print_format[4].format(import_state)}"
     )
+    print(line)
     return destination_directory
 
 

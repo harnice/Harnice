@@ -16,6 +16,10 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
     if lib_repo is None:
         raise ValueError("lib_repo is required")
 
+    for instance in fileio.read_tsv("library history"):
+        if instance.get("instance_name") == artifact_id:
+            raise ValueError(f"Macro with ID {artifact_id} already exists")
+
     library_utils.pull(
         {
             "mpn": macro_part_number,
@@ -42,24 +46,28 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
     runpy.run_path(script_path, run_name="__main__", init_globals=init_globals)
 
 
-def lookup_outputcsys_from_lib_used(lib_name, outputcsys):
+def lookup_outputcsys_from_lib_used(instance, outputcsys):
+    if outputcsys == "origin":
+        return 0, 0, 0
+
     attributes_path = os.path.join(
-        fileio.dirpath("imported_instances"), lib_name, f"{lib_name}-attributes.json"
+        fileio.dirpath("imported_instances"),
+        instance.get("item_type"),
+        instance.get("instance_name"),
+        f"{instance.get("instance_name")}-attributes.json"
     )
 
     try:
         with open(attributes_path, "r", encoding="utf-8") as f:
             attributes_data = json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return 0, 0, 0
+    except FileNotFoundError:
+        raise ValueError(f"Attributes file for instance {instance.get('instance_name')} not found at {attributes_path}")
 
     csys_children = attributes_data.get("csys_children", {})
-    if outputcsys == "origin":
-        return 0, 0, 0
 
     if outputcsys not in csys_children:
         raise ValueError(
-            f"[ERROR] Output coordinate system '{outputcsys}' not found in {lib_name}-attributes.json"
+            f"[ERROR] Output coordinate system '{outputcsys}' not defined in {attributes_path}"
         )
 
     child_csys = csys_children[outputcsys]
@@ -83,20 +91,21 @@ def lookup_outputcsys_from_lib_used(lib_name, outputcsys):
 
 def update_translate_content():
     # this looks through parent csys and finds its output csys and recommends its translate_x and translate_y
-    for instance in fileio.read_tsv("instances list"):
+    instances = fileio.read_tsv("instances list")
+    for instance in instances:
         if instance.get("parent_csys_instance_name") in ["", None]:
             continue  # skip if there isn't a parent defined
 
         if instance.get("item_type") == "node":
             continue  # these are automatically assigned at start
 
-        parent_csys_outputcsys_name = instance.get("parent_csys_outputcsys_name")
-
-        if not parent_csys_outputcsys_name:
-            continue  # skip if missing required info
+        for instance2 in instances:
+            if instance2.get("instance_name") == instance.get("parent_csys_instance_name"):
+                parent_csys_instance = instance2
+                break
 
         x, y, rotation = lookup_outputcsys_from_lib_used(
-            instance.get("parent_csys_instance_name"), parent_csys_outputcsys_name
+            parent_csys_instance, instance.get("parent_csys_outputcsys_name")
         )
 
         instances_list.modify(
