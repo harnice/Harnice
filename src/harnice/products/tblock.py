@@ -36,7 +36,7 @@ def render():
             [
                 ("DESCRIPTION", "tblock-key-desc"),
                 ("REV", "tblock-key-rev"),
-                ("RELEASE TICKET", "tblock-key-releaseticket"),
+                ("PAGE DESC", "tblock-key-pagedesc"),
             ],
             [
                 ("SCALE", "tblock-key-scale"),
