@@ -85,8 +85,7 @@ def main():
     # Generate product file structure
     # -----------------------------
     if hasattr(product_module, "generate_structure"):
-        structure = product_module.generate_structure()
-        state.set_file_structure(structure)
+        product_module.generate_structure()
     else:
         sys.exit(f"Product '{product_name}' must define generate_structure()")
 

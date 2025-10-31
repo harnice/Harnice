@@ -114,7 +114,6 @@ def generate_structure():
     pass
 
 
-# TODO-448 i don't think users should be calling this
 def _validate_signals_list():
     print("--------------------------------")
     print("Validating signals list...")
