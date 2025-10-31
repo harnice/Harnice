@@ -313,7 +313,7 @@ import re
 import runpy
 from harnice import fileio
 from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, flagnote_utils, library_utils, feature_tree_utils
-from harnice.lists import instances_list, post_harness_instances_list, rev_history
+from harnice.lists import instances_list, post_harness_instances_list, rev_history, manual_flagnotes_list
 
 #===========================================================================
 #                   build_macro SCRIPTING

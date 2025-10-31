@@ -87,41 +87,49 @@ def update_datemodified():
         writer.writerows(rows)
 
 
-def new(filepath):
+def new():
     columns = COLUMNS
-    with open(filepath, "w", newline="", encoding="utf-8") as f:
+    with open(fileio.path("revision history"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
         writer.writeheader()
-    append(filepath, next_rev=1)
 
 
-def append(filepath, next_rev=None):
+def append(next_rev=None):
     from harnice import cli
 
-    rows = fileio.read_tsv(filepath)
+    if not os.path.exists(fileio.path("revision history")):
+        new()
+    rows = fileio.read_tsv("revision history")
 
     desc = ""
     if next_rev != 1:
         # find the highest revision in the table
-        highest_existing_rev = max(
-            int(row.get("rev", 0)) for row in rows if row.get("rev")
-        )
+        try:
+            highest_existing_rev = max(
+                int(row.get("rev", 0)) for row in rows if row.get("rev")
+            )
+        except ValueError:
+            highest_existing_rev = None
 
-        for row in rows:
-            if int(row.get("rev", 0)) == highest_existing_rev:
-                desc = row.get("desc")
-                if row.get("status") in [None, ""]:
-                    print(
-                        f"Your existing highest revision ({highest_existing_rev}) has no status. Do you want to obsolete it?"
-                    )
-                    obsolete_message = cli.prompt(
-                        "Type your message here, leave blank for 'OBSOLETE' message, or type 'n' to keep it blank.",
-                        default="OBSOLETE",
-                    )
-                    if obsolete_message == "n":
-                        obsolete_message = ""
-                    row["status"] = obsolete_message  # ← modified here
-                break
+        print(f"!!!!!! highest_existing_rev: {highest_existing_rev}")
+        print(f"!!!!!! next_rev: {next_rev}")
+
+        if next_rev != highest_existing_rev:
+            for row in rows:
+                if int(row.get("rev", 0)) == highest_existing_rev:
+                    desc = row.get("desc")
+                    if row.get("status") in [None, ""]:
+                        print(
+                            f"Your existing highest revision ({highest_existing_rev}) has no status. Do you want to obsolete it?"
+                        )
+                        obsolete_message = cli.prompt(
+                            "Type your message here, leave blank for 'OBSOLETE' message, or type 'n' to keep it blank.",
+                            default="OBSOLETE",
+                        )
+                        if obsolete_message == "n":
+                            obsolete_message = ""
+                        row["status"] = obsolete_message  # ← modified here
+                    break
 
     default_descs = {
         "harness": "HARNESS, DOES A, FOR B",
@@ -204,7 +212,7 @@ def append(filepath, next_rev=None):
     )
 
     columns = COLUMNS
-    with open(filepath, "w", newline="", encoding="utf-8") as f:
+    with open(fileio.path("revision history"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
         writer.writeheader()
         writer.writerows(rows)
