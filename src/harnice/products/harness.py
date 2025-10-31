@@ -91,8 +91,12 @@ formboard_utils.make_segment_drawings()
 #===========================================================================
 #                   ASSIGN BOM LINE NUMBERS
 #===========================================================================
+for instance in fileio.read_tsv("instances list"):
+    if instance.get("item_type") in ["connector", "cable", "backshell"]:
+        instances_list.modify(instance.get("instance_name"),{
+            "bom_line_number": True
+        })
 instances_list.assign_bom_line_numbers()
-
 
 #===========================================================================
 #                   ASSIGN PRINT NAMES

@@ -137,5 +137,6 @@ def assign_output_csys():
                                 instance.get("instance_name"), "connector_group"
                             ),
                         },
+                        ignore_duplicates=True,
                     )
                     flagnote_counter += 1
