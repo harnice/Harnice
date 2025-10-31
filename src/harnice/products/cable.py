@@ -4,6 +4,8 @@ import json
 from harnice import fileio, state
 
 
+default_desc = "CABLE, FUNCTION, ATTRIBUTES, etc."
+
 def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-attributes.json": "attributes",

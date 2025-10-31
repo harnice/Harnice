@@ -1,9 +1,11 @@
 import os
 import csv
+import importlib
 from harnice import fileio, state
 
 # === Global Columns Definition ===
 COLUMNS = [
+    "product",
     "mfg",
     "pn",
     "desc",
@@ -11,7 +13,6 @@ COLUMNS = [
     "status",
     "releaseticket",
     "library_repo",
-    "product",
     "library_subpath",
     "datestarted",
     "datemodified",
@@ -89,6 +90,9 @@ def update_datemodified():
 
 def new():
     columns = COLUMNS
+    from harnice.cli import select_product_type
+    global product
+    product = select_product_type()
     with open(fileio.path("revision history"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
         writer.writeheader()
@@ -96,10 +100,34 @@ def new():
 
 def append(next_rev=None):
     from harnice import cli
+    global product
 
     if not os.path.exists(fileio.path("revision history")):
         new()
     rows = fileio.read_tsv("revision history")
+    product_name = None
+    if rows:
+        for row in reversed(rows):
+            candidate = (row.get("product") or "").strip()
+            if candidate:
+                product_name = candidate
+                break
+    if not product_name:
+        product_name = globals().get("product")
+    if not product_name:
+        product_name = cli.select_product_type()
+    product = product_name
+
+    default_desc = ""
+    if product_name:
+        try:
+            product_module = importlib.import_module(
+                f"harnice.products.{product_name}"
+            )
+        except ModuleNotFoundError:
+            product_module = None
+        else:
+            default_desc = getattr(product_module, "default_desc", "") or ""
 
     desc = ""
     if next_rev != 1:
@@ -110,9 +138,6 @@ def append(next_rev=None):
             )
         except ValueError:
             highest_existing_rev = None
-
-        print(f"!!!!!! highest_existing_rev: {highest_existing_rev}")
-        print(f"!!!!!! next_rev: {next_rev}")
 
         if next_rev != highest_existing_rev:
             for row in rows:
@@ -131,22 +156,10 @@ def append(next_rev=None):
                         row["status"] = obsolete_message  # ← modified here
                     break
 
-    default_descs = {
-        "harness": "HARNESS, DOES A, FOR B",
-        "part": "COTS COMPONENT, SIZE, COLOR, etc.",
-        "flagnote": "FLAGNOTE, PURPOSE",
-        "tblock": "TITLEBLOCK, PAPER SIZE, DESIGN",
-        "device": "DEVICE, FUNCTION, ATTRIBUTES, etc.",
-        "system": "SYSTEM, SCOPE, etc.",
-    }
-
-    # fallback in case product_type isn't in dict
-    default_desc = default_descs.get(state.product, "")
-
-    # TODO: #478
     if desc in [None, ""]:
         desc = cli.prompt(
-            f"Enter a description of this {state.product}", default=default_desc
+            f"Enter a description of this {product_name}",
+            default=default_desc,
         )
 
     revisionupdates = "INITIAL RELEASE"
@@ -198,12 +211,12 @@ def append(next_rev=None):
 
     rows.append(
         {
+            "product": product_name,
             "pn": state.pn,
             "rev": next_rev,
             "desc": desc,
             "status": "",
             "library_repo": library_repo,
-            "product": state.product,
             "library_subpath": library_subpath,
             "datestarted": fileio.today(),
             "datemodified": fileio.today(),

@@ -5,6 +5,8 @@ import math
 from harnice import fileio, cli, state
 
 
+default_desc = "FLAGNOTE, PURPOSE"
+
 def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-params.json": "params",
