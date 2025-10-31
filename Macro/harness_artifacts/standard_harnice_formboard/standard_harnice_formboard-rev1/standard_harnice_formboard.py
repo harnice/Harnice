@@ -6,6 +6,13 @@ from harnice.utils import flagnote_utils, svg_utils
 
 artifact_mpn = "standard_harnice_formboard"
 
+"""
+Args:
+artifact_id : "unique identifier for this instance of the macro (drawing-1)"
+scale : scale factor for the drawing
+rotation : rotation of the drawing in degrees=
+"""
+
 
 # =============== PATHS ===============
 def file_structure():
@@ -74,22 +81,18 @@ def calculate_formboard_location(instance_name, origin):
 
     return x_pos, y_pos, angle
 
-
 # ==========================
-fileio.silentremove(fileio.dirpath("flagnotes", structure_dict=file_structure()))
+# MAIN
+# ==========================
 instances = fileio.read_tsv("instances list")
 printable_item_types = {"connector", "backshell", "segment", "flagnote"}
 
-if "flagnote" in printable_item_types:
-    flagnote_utils.make_note_drawings(
-        fileio.dirpath("flagnotes", structure_dict=file_structure())
-    )
-
-rotation = 0  # TODO: FIGURE OUT HOW TO PASS THIS IN SOMEWHERE
 if rotation == "":
-    raise KeyError(
-        f"[ERROR] Rotation '{rotation}' not found in harnice output contents"
-    )
+    rotation = 0
+origin = [0, 0, rotation]
+
+flagnote_utils.make_note_drawings()
+
 origin = [0, 0, rotation]
 
 # Group instances by item_type

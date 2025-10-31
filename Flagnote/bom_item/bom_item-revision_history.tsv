@@ -1,2 +1,2 @@
-pn	desc	rev	status	releaseticket	datestarted	datemodified	datereleased	drawnby	checkedby	revisionupdates	affectedinstances
-bom_item		1			6/29/25	6/29/25				INITIAL RELEASE	
+mfg	pn	desc	rev	status	releaseticket	library_repo	product	library_subpath	datestarted	datemodified	datereleased	drawnby	checkedby	revisionupdates	affectedinstances
+	bom_item		1						6/29/25	10/31/25				INITIAL RELEASE	
