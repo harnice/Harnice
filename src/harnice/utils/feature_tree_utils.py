@@ -16,6 +16,10 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
     if lib_repo is None:
         raise ValueError("lib_repo is required")
 
+    for instance in fileio.read_tsv("library history"):
+        if instance.get("instance_name") == artifact_id:
+            raise ValueError(f"Macro with ID {artifact_id} already exists")
+
     library_utils.pull(
         {
             "mpn": macro_part_number,

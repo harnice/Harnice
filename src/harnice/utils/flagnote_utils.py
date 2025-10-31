@@ -1,6 +1,6 @@
 import os
 import re
-from harnice import fileio, state
+from harnice import fileio
 from harnice.lists import instances_list
 from harnice.utils import library_utils
 
@@ -21,7 +21,7 @@ def file_structure(instance_name):
 
 
 
-def make_note_drawings(rotation):
+def make_note_drawings():
     instances = fileio.read_tsv("instances list")
 
     for instance in instances:
