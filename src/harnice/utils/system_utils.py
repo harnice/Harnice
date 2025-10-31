@@ -116,7 +116,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             from_cavity,
             {
                 "net": circuit.get("net"),
-                "item_type": "connector cavity",
+                "item_type": "connector_cavity",
                 "parent_instance": f"{from_connector_key}.conn",  # from connector instance
                 "location_type": "node",
                 "connector_group": from_connector_key,
@@ -173,7 +173,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             to_cavity,
             {
                 "net": circuit.get("net"),
-                "item_type": "connector cavity",
+                "item_type": "connector_cavity",
                 "parent_instance": f"{to_connector_key}.conn",  # to connector instance
                 "location_type": "node",
                 "connector_group": to_connector_key,

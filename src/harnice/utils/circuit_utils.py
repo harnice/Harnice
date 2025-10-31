@@ -145,7 +145,7 @@ def assign_cable_conductor(
             if instance.get("cable_container") == cable_conductor_id[0]:
                 if instance.get("cable_identifier") == cable_conductor_id[1]:
                     raise ValueError(
-                        f"Conductor {cable_conductor_id} has already been assigned to {instance.get('instance_name')}"
+                        f"conductor {cable_conductor_id} has already been assigned to {instance.get('instance_name')}"
                     )
 
     # --- Make sure conductor instance has not already been assigned to a cable
@@ -157,7 +157,7 @@ def assign_cable_conductor(
                 or instance.get("cable_identifier") not in ["", None]
             ):
                 raise ValueError(
-                    f"Conductor '{conductor_instance}' has already been assigned "
+                    f"conductor '{conductor_instance}' has already been assigned "
                     f"to '{instance.get('cable_identifier')}' of cable '{instance.get('cable_group')}'"
                 )
 

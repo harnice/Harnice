@@ -50,7 +50,7 @@ for instance in fileio.read_tsv("instances list"):
         circuit_id = instance.get("circuit_id")
         conductor_name = f"conductor-{circuit_id}"
         instances_list.new_instance(conductor_name, {
-            "item_type": "Conductor",
+            "item_type": "conductor",
             "location_type": "segment",
             "node_at_end_a": circuit_utils.instance_of_circuit_port_number(circuit_id, 0),
             "node_at_end_b": circuit_utils.instance_of_circuit_port_number(circuit_id, 1)
@@ -63,11 +63,11 @@ for instance in fileio.read_tsv("instances list"):
 formboard_utils.validate_nodes()
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Conductor":
+    if instance.get("item_type") == "conductor":
         formboard_utils.map_instance_to_segments(instance)
 
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Conductor":
+    if instance.get("item_type") == "conductor":
         conductor_length = 0
         for instance2 in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
@@ -105,11 +105,11 @@ for instance in fileio.read_tsv("instances list"):
     if instance.get("print_name") not in ["", None]:
         pass
     else:
-        if instance.get("item_type") == "connector cavity":
+        if instance.get("item_type") == "connector_cavity":
             instance_name = instance.get("instance_name", "")
             print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
             instances_list.modify(instance_name, {"print_name": print_name})
-        elif instance.get("item_type") == "Conductor":
+        elif instance.get("item_type") == "conductor":
             instances_list.modify(instance.get("instance_name"), {
                 "print_name": f"{instance.get("cable_identifier")}"
             })
