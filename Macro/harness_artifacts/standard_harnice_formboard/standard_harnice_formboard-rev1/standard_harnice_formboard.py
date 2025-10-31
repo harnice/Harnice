@@ -34,15 +34,7 @@ def file_structure():
 fileio.silentremove(fileio.dirpath("flagnotes", structure_dict=file_structure()))
 os.makedirs(fileio.dirpath("flagnotes", structure_dict=file_structure()), exist_ok=True)
 
-
-def update_showhide():
-    # === Titleblock Defaults ===
-    blank_setup = {"hide_instances": {}, "hide_item_types": {}}
-
-    return blank_setup
-
-
-def calculate_formboard_location(instance_name, origin):
+def _calculate_formboard_location(instance_name, origin):
     instances = fileio.read_tsv("instances list")
     instances_lookup = {row["instance_name"]: row for row in instances}
 
@@ -107,28 +99,26 @@ for instance in instances:
 
 # Prepare lines for SVG content
 content_lines = []
-# TODO: fix hide stuff
-# formboard = page_setup_contents["formboards"].get(formboard_name, {})
-hide_filters = {}  # formboard_utils.get("hide_instances", {})
+
+printable_instances = set()
 
 for item_type, items in grouped_instances.items():
     content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
     for instance in items:
-        # === Cancel if instance matches any hide filter ===
-        should_hide = False
-        if not hide_filters == []:
-            for filter_conditions in hide_filters.values():
-                if all(instance.get(k) == v for k, v in filter_conditions.items()):
-                    should_hide = True
-                    break
-        if should_hide:
+        # =================================
+        if instance.get("item_type") not in printable_item_types:
             continue
 
-        instance_name = instance.get("instance_name", "")
-        if not instance_name:
-            continue
+        # call continue more times here (after some logic) if you don't want to print this instance, for example:
 
-        x, y, angle = calculate_formboard_location(instance_name, origin)
+        # if instance.get("item_type") == "flagnote" and instance.get("note_type") != "part_name":
+        #     continue
+        # =================================
+        printable_instances.add(instance.get("instance_name"))
+
+        instance_name = instance.get("instance_name")
+
+        x, y, angle = _calculate_formboard_location(instance_name, origin)
 
         px_x = x * 96
         px_y = y * 96
@@ -151,10 +141,10 @@ for item_type, items in grouped_instances.items():
                 continue
 
             # Unpack both positions
-            x_note, y_note, flagnote_orientation = calculate_formboard_location(
+            x_note, y_note, flagnote_orientation = _calculate_formboard_location(
                 instance_name, origin
             )
-            x_leader, y_leader, angle_leader = calculate_formboard_location(
+            x_leader, y_leader, angle_leader = _calculate_formboard_location(
                 f"{instance_name}.leader", origin
             )
 
@@ -239,16 +229,7 @@ with open(fileio.path("output svg", structure_dict=file_structure()), "w") as f:
 # now that the SVG has been written, copy the connector content in:
 for instance in instances:
     item_type = instance.get("item_type", "").strip()
-    if item_type and item_type in printable_item_types:
-        # === Cancel if instance matches any hide filter ===
-        should_hide = False
-        if not hide_filters == []:
-            for filter_conditions in hide_filters.values():
-                if all(instance.get(k) == v for k, v in filter_conditions.items()):
-                    should_hide = True
-                    break
-        if should_hide:
-            continue
+    if instance.get("instance_name") in printable_instances:
 
         # locally generated instances are stored here
         if instance.get("item_type").strip().lower() in ["segment"]:
