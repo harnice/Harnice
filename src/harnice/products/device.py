@@ -7,6 +7,8 @@ from harnice import fileio, state
 from harnice.lists import signals_list, rev_history
 from harnice.products import chtype
 
+default_desc = "DEVICE, FUNCTION, ATTRIBUTES, etc."
+
 device_feature_tree_utils_default = """
 from harnice.lists import signals_list
 from harnice.products import chtype

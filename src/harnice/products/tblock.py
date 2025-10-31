@@ -5,6 +5,8 @@ from xml.dom import minidom
 from harnice import fileio, cli, state
 
 
+default_desc = "TITLEBLOCK, PAPER SIZE, DESIGN"
+
 def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-params.json": "params",

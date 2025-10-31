@@ -4,6 +4,8 @@ import csv
 from harnice import fileio, state
 from harnice.products import chtype
 
+default_desc = "DISCONNECT, FUNCTION, ATTRIBUTES, etc."
+
 disconnect_feature_tree_utils_default = """
 from harnice.lists import signals_list
 

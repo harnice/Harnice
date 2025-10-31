@@ -3,6 +3,8 @@ import os
 from harnice import fileio, cli, state
 from harnice.lists import instances_list, library_history
 
+default_desc = "HARNESS, DOES A, FOR B"
+
 harness_feature_tree_utils_default = """
 #===========================================================================
 #                   IMPORT PARTS FROM LIBRARY

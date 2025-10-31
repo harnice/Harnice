@@ -152,7 +152,7 @@ def verify_revision_structure(product_type=None):
     # --- 3) No revision structure → initialize new PN here ---
     else:
         answer = cli.prompt(
-            f"No revision structure detected in '{cwd_name}'. Create new PN here?",
+            f"No valid Harnice file structure detected in '{cwd_name}'. Create new PN here?",
             default="y",
         )
         if answer.lower() not in ("y", "yes", ""):

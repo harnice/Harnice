@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import shutil
+from harnice.lists import rev_history
 from harnice import state
 from harnice import fileio
 
@@ -44,11 +45,17 @@ def main():
 
     group = parser.add_mutually_exclusive_group(required=True)
 
-    group.add_argument("-r", "--render",
-        help="Render a product type (e.g., harness, system, device, etc.)")
+    group.add_argument(
+        "-r", "--render",
+        action="store_true",
+        help="Render the product normally"
+    )
 
-    group.add_argument("-l", "--lightweight",
-        help="Render a product type quickly without performing all checks")
+    group.add_argument(
+        "-l", "--lightweight",
+        action="store_true",
+        help="Render the product quickly without performing all checks"
+    )
 
     group.add_argument("--newrev",
         action="store_true",
@@ -64,28 +71,22 @@ def main():
         return
 
     # -----------------------------
-    # Determine product name from args
-    # (This is now the single source of truth)
-    # -----------------------------
-    product_name = args.render or args.lightweight
-    state.set_product(product_name)
-
-    # -----------------------------
     # Ensure we are inside a revision folder
     # May change cwd if new PN created
     # -----------------------------
     fileio.verify_revision_structure()
+    item_type = rev_history.info(field="product")
 
     # -----------------------------
     # Load product module
     # -----------------------------
     try:
         product_module = __import__(
-            f"harnice.products.{product_name}",
-            fromlist=[product_name]
+            f"harnice.products.{item_type}",
+            fromlist=[item_type]
         )
     except ModuleNotFoundError:
-        sys.exit(f"Unknown product: '{product_name}'")
+        sys.exit(f"Unknown product: '{item_type}'")
 
     # -----------------------------
     # Set the default fileio structure dict to the product's file_structure()
@@ -94,7 +95,7 @@ def main():
         structure = product_module.file_structure()
         state.set_file_structure(structure)
     else:
-        sys.exit(f"Product '{product_name}' must define file_structure()")
+        sys.exit(f"Product '{item_type}' must define file_structure()")
 
     # -----------------------------
     # Generate product file structure
@@ -102,7 +103,7 @@ def main():
     if hasattr(product_module, "generate_structure"):
         product_module.generate_structure()
     else:
-        sys.exit(f"Product '{product_name}' must define generate_structure()")
+        sys.exit(f"Product '{item_type}' must define generate_structure()")
 
     # -----------------------------
     # Execute render logic
@@ -111,7 +112,7 @@ def main():
         try:
             product_module.render(lightweight=True)
         except TypeError:
-            sys.exit(f"Product '{product_name}' does not support lightweight rendering")
+            sys.exit(f"Product '{item_type}' does not support lightweight rendering")
     else:
         product_module.render()
 
@@ -168,3 +169,6 @@ def newrev():
     print(
         f"Successfully created new revision: {state.partnumber('pn-rev')}. Please cd into it."
     )
+
+def select_product_type():
+    return prompt("What product type are you working on? (harness, system, device, etc.)", default="harness")
