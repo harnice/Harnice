@@ -16,9 +16,6 @@ def generate_structure():
 
 
 def render():
-    state.set_file_structure(file_structure())
-    generate_structure()
-
     default_attributes = {
         "jacket": {
             "properties": {

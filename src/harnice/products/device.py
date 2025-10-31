@@ -705,8 +705,6 @@ def _validate_signals_list():
 
 
 def _device_render(lightweight=False):
-    state.set_file_structure(file_structure())
-    generate_structure()
     _validate_attributes_json()
 
     if not lightweight:

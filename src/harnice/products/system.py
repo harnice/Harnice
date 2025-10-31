@@ -111,8 +111,6 @@ def generate_structure():
 
 
 def render():
-    state.set_file_structure(file_structure())
-    generate_structure()
     if not os.path.exists(fileio.path("feature tree")):
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
             f.write(system_feature_tree_utils_default)

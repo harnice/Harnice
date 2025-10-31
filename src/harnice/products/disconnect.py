@@ -114,7 +114,6 @@ def generate_structure():
     pass
 
 
-# TODO-448 i don't think users should be calling this
 def _validate_signals_list():
     print("--------------------------------")
     print("Validating signals list...")
@@ -209,9 +208,6 @@ def _validate_signals_list():
 
 
 def render():
-    state.set_file_structure(file_structure())
-    generate_structure()
-
     if not os.path.exists(fileio.path("signals list")):
         if not os.path.exists(fileio.path("feature tree")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:

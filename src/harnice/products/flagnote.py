@@ -22,9 +22,6 @@ def render():
     )
     if cli.prompt("Press enter to confirm or any key to exit") == "":
         exit()
-
-    state.set_file_structure(file_structure())
-    generate_structure()
     params_path = fileio.path("params")
 
     # Geometry generators

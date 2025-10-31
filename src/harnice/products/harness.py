@@ -267,12 +267,6 @@ def generate_structure():
 
 
 def render(build_macro="", output_macro_dict=None):
-    # Step 1: revision structure
-    state.set_file_structure(file_structure())
-    generate_structure()
-    library_history.new()
-
-    # Step 2: Ensure feature tree exists
     if not os.path.exists(fileio.path("feature tree", structure_dict=file_structure())):
         if build_macro == "":
             print(
@@ -345,8 +339,8 @@ feature_tree_utils.copy_pdfs_to_cwd()
 
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as dst:
             dst.write(feature_tree_utils)
-
-    # Step 3: initialize instances list
+    
+    library_history.new()
     instances_list.new()
     instances_list.new_instance(
         "origin",
@@ -357,7 +351,7 @@ feature_tree_utils.copy_pdfs_to_cwd()
         },
     )
 
-    # Step 4: run feature tree
+   
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
     print(f"Harnice: harness {state.partnumber('pn')} rendered successfully!\n")
