@@ -178,6 +178,6 @@ svg_lines.append(f'<g id="{artifact_id}-bom-contents-end"/>')
 svg_lines.append("</svg>")
 
 with open(
-    fileio.path("bom tsv", structure_dict=file_structure()), "w", encoding="utf-8"
+    fileio.path("bom svg", structure_dict=file_structure()), "w", encoding="utf-8"
 ) as svg_file:
     svg_file.write("\n".join(svg_lines))
