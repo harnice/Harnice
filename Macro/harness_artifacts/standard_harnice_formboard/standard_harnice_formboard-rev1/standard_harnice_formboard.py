@@ -87,7 +87,10 @@ def calculate_formboard_location(instance_name, origin):
 instances = fileio.read_tsv("instances list")
 printable_item_types = {"connector", "backshell", "segment", "flagnote"}
 
-if rotation == "":
+try:
+    if not rotation:
+        rotation = 0
+except NameError:
     rotation = 0
 origin = [0, 0, rotation]
 

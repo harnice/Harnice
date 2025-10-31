@@ -27,7 +27,7 @@ WIRELIST_COLUMNS = [
     {"name": "circuit_id", "fill": "black", "font": "white"},
     {"name": "Length", "fill": "black", "font": "white"},
     {"name": "cable", "fill": "black", "font": "white"},
-    {"name": "Conductor_identifier", "fill": "black", "font": "white"},
+    {"name": "conductor_identifier", "fill": "black", "font": "white"},
     {"name": "From_connector", "fill": "green", "font": "white"},
     {"name": "From_connector_cavity", "fill": "green", "font": "white"},
     {"name": "From_special_contact", "fill": "green", "font": "white"},
@@ -78,7 +78,7 @@ for instance in fileio.read_tsv("instances list"):
     for instance3 in fileio.read_tsv("instances list"):
         if (
             instance3.get("circuit_id") == circuit_id
-            and instance3.get("item_type") == "connector cavity"
+            and instance3.get("item_type") == "connector_cavity"
         ):
             if connector_cavity_counter == 0:
                 from_connector_cavity = instance3.get("instance_name")
@@ -113,7 +113,7 @@ for instance in fileio.read_tsv("instances list"):
     for instance5 in fileio.read_tsv("instances list"):
         if (
             instance5.get("circuit_id") == circuit_id
-            and instance5.get("item_type") == "Conductor"
+            and instance5.get("item_type") == "conductor"
         ):
             conductor_identifier = instance5.get("print_name")
             cable = instance5.get("parent_instance")
@@ -124,7 +124,7 @@ for instance in fileio.read_tsv("instances list"):
             "circuit_id": circuit_id,
             "Length": length,
             "cable": cable,
-            "Conductor_identifier": conductor_identifier,
+            "conductor_identifier": conductor_identifier,
             "From_connector": instances_list.attribute_of(from_connector, "print_name"),
             "From_connector_cavity": instances_list.attribute_of(
                 from_connector_cavity, "print_name"
