@@ -7,10 +7,6 @@ harness_feature_tree_utils_default = """
 #===========================================================================
 #                   IMPORT PARTS FROM LIBRARY
 #===========================================================================
-print()
-print("Importing parts from library")
-print(f'{"ITEM NAME":<24}  STATUS')
-
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["connector", "backshell"]:
         if instance.get("instance_name") not in ["X100"]:
@@ -125,7 +121,7 @@ for instance in fileio.read_tsv("instances list"):
 flagnote_counter = 1
 buildnote_counter = 1
 
-flagnote_utils.ensure_manual_list_exists()
+manual_flagnotes_list.ensure_exists()
 for manual_note in fileio.read_tsv("flagnotes manual"):
     affected_list = manual_note.get("affectedinstances", "").strip().split(",")
     for affected in affected_list:
@@ -339,7 +335,7 @@ feature_tree_utils.copy_pdfs_to_cwd()
 
         with open(fileio.path("feature tree"), "w", encoding="utf-8") as dst:
             dst.write(feature_tree_utils)
-    
+
     library_history.new()
     instances_list.new()
     instances_list.new_instance(
@@ -351,7 +347,7 @@ feature_tree_utils.copy_pdfs_to_cwd()
         },
     )
 
-   
+    cli.print_import_headers()
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
     print(f"Harnice: harness {state.partnumber('pn')} rendered successfully!\n")
