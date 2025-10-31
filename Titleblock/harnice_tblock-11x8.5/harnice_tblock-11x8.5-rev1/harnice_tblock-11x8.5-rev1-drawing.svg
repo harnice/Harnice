@@ -71,10 +71,10 @@
       <text x="884" y="735.0" style="font-size:7px;font-family:Arial;font-weight:bold" text-anchor="start">REV</text>
       <text x="907.0" y="744.0" style="font-size:7px;font-family:Arial" text-anchor="middle" id="tblock-key-rev">tblock-key-rev</text>
     </g>
-    <g id="sheet-name">
+    <g id="page-desc">
       <rect x="932" y="728.0" width="84" height="24" fill="none" stroke="black" stroke-width="1"/>
-      <text x="934" y="735.0" style="font-size:7px;font-family:Arial;font-weight:bold" text-anchor="start">SHEET NAME</text>
-      <text x="974.0" y="744.0" style="font-size:7px;font-family:Arial" text-anchor="middle" id="tblock-key-sheetname">tblock-key-sheetname</text>
+      <text x="934" y="735.0" style="font-size:7px;font-family:Arial;font-weight:bold" text-anchor="start">PAGE DESC</text>
+      <text x="974.0" y="744.0" style="font-size:7px;font-family:Arial" text-anchor="middle" id="tblock-key-pagedesc">tblock-key-pagedesc</text>
     </g>
     <g id="scale">
       <rect x="618" y="752.0" width="73" height="24" fill="none" stroke="black" stroke-width="1"/>
