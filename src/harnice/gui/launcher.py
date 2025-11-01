@@ -1,6 +1,13 @@
 import os
 import subprocess
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog
+from PySide6.QtWidgets import (
+    QApplication,
+    QWidget,
+    QPushButton,
+    QFileDialog,
+    QMenu,
+    QMessageBox,
+)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QPen
 
@@ -89,12 +96,16 @@ class GridWidget(QWidget):
 class PartButton(QPushButton):
     """Button that displays a part path and can be dragged"""
 
-    def __init__(self, parent, label, path, grid_x, grid_y):
+    def __init__(self, parent, label, path, grid_x, grid_y, main_window=None):
         super().__init__(label, parent)
         self.parent_grid = parent
         self.path = path
         self.grid_x = grid_x
         self.grid_y = grid_y
+        self.main_window = (
+            main_window  # Reference to HarniceGUI for context menu actions
+        )
+        self.button_color = None  # Store current button color
 
         # Position button at grid crossing using parametrized dimensions
         self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
@@ -176,6 +187,39 @@ class PartButton(QPushButton):
         self.is_dragging = False
         super().mouseReleaseEvent(event)
 
+    def contextMenuEvent(self, event):
+        """Show context menu on right-click"""
+        if not self.main_window:
+            return
+
+        menu = QMenu(self)
+
+        # Remove button action
+        remove_action = menu.addAction("Remove button")
+        remove_action.triggered.connect(lambda: self.main_window.remove_button(self))
+
+        # Replace button action
+        replace_action = menu.addAction("Replace button")
+        replace_action.triggered.connect(lambda: self.main_window.replace_button(self))
+
+        # New rev action
+        newrev_action = menu.addAction("New rev")
+        newrev_action.triggered.connect(lambda: self.main_window.new_rev(self))
+
+        # Change button color action with submenu
+        color_menu = menu.addMenu("Change button color")
+        colors = self.main_window.get_color_list()
+        for color_name, color_value in colors.items():
+            color_action = color_menu.addAction(color_name)
+            # Use default arguments to capture loop variables correctly
+            color_action.triggered.connect(
+                lambda checked=False,
+                c=color_value,
+                n=color_name: self.main_window.change_button_color(self, c, n)
+            )
+
+        menu.exec(event.globalPos())
+
 
 class HarniceGUI(QWidget):
     """Main window with grid and buttons"""
@@ -225,7 +269,7 @@ class HarniceGUI(QWidget):
 
         # Create button with folder name as label
         label = os.path.basename(folder)
-        button = PartButton(self.grid, label, folder, grid_x, grid_y)
+        button = PartButton(self.grid, label, folder, grid_x, grid_y, main_window=self)
         button.clicked.connect(lambda checked=False, p=folder: self.render_part(p))
 
         # Store button at grid position
@@ -245,9 +289,101 @@ class HarniceGUI(QWidget):
         try:
             subprocess.run(["harnice", "-r", "harness"], cwd=cwd)
         except FileNotFoundError:
-            from PySide6.QtWidgets import QMessageBox
-
             QMessageBox.critical(self, "Error", "Could not run harnice")
+
+    def remove_button(self, button):
+        """Remove a button from the grid"""
+        # Remove from grid_buttons dictionary
+        self.grid.grid_buttons.pop((button.grid_x, button.grid_y), None)
+        # Delete the button widget
+        button.deleteLater()
+
+    def replace_button(self, button):
+        """Replace button with a new folder path"""
+        folder = QFileDialog.getExistingDirectory(self, "Select new revision folder")
+        if not folder:
+            return
+
+        # Update button properties
+        button.path = folder
+        button.setText(os.path.basename(folder))
+
+        # Disconnect old signal and connect new one
+        button.clicked.disconnect()
+        button.clicked.connect(lambda checked=False, p=folder: self.render_part(p))
+
+    def new_rev(self, button):
+        """Create a new revision by calling harnice --newrev in the button's directory"""
+        try:
+            result = subprocess.run(
+                ["harnice", "--newrev"], cwd=button.path, capture_output=True, text=True
+            )
+
+            if result.returncode == 0:
+                QMessageBox.information(
+                    self,
+                    "Success",
+                    f"New revision created successfully.\n\n{result.stdout}",
+                )
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Warning",
+                    f"New revision creation completed with warnings:\n\n{result.stderr or result.stdout}",
+                )
+        except FileNotFoundError:
+            QMessageBox.critical(self, "Error", "Could not run harnice --newrev")
+        except Exception as e:
+            QMessageBox.critical(
+                self, "Error", f"Error creating new revision: {str(e)}"
+            )
+
+    def change_button_color(self, button, color_value, color_name):
+        """Change the background color of a button"""
+        button.button_color = color_value
+        if color_value is None:
+            # Reset to default (clear stylesheet)
+            button.setStyleSheet("")
+        else:
+            button.setStyleSheet(f"background-color: {color_value};")
+
+    def get_color_list(self):
+        """Return a dictionary of common color names and their hex values"""
+        return {
+            "Default": None,
+            "Red": "#FF0000",
+            "Green": "#00FF00",
+            "Blue": "#0000FF",
+            "Yellow": "#FFFF00",
+            "Orange": "#FFA500",
+            "Purple": "#800080",
+            "Pink": "#FFC0CB",
+            "Brown": "#A52A2A",
+            "Black": "#000000",
+            "White": "#FFFFFF",
+            "Gray": "#808080",
+            "Light Gray": "#D3D3D3",
+            "Dark Gray": "#A9A9A9",
+            "Cyan": "#00FFFF",
+            "Magenta": "#FF00FF",
+            "Lime": "#00FF00",
+            "Olive": "#808000",
+            "Navy": "#000080",
+            "Teal": "#008080",
+            "Maroon": "#800000",
+            "Gold": "#FFD700",
+            "Silver": "#C0C0C0",
+            "Coral": "#FF7F50",
+            "Salmon": "#FA8072",
+            "Turquoise": "#40E0D0",
+            "Violet": "#EE82EE",
+            "Indigo": "#4B0082",
+            "Beige": "#F5F5DC",
+            "Khaki": "#F0E68C",
+            "Lavender": "#E6E6FA",
+            "Mint": "#98FB98",
+            "Peach": "#FFDAB9",
+        }
 
 
 def main():
