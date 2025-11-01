@@ -21,18 +21,17 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-showhide.json": "show hide",
-                        "flagnotes": {},
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg"
                     }
-                }
+                },
+                "flagnote": {},
             }
         }
     }
 
 
-fileio.silentremove(fileio.dirpath("flagnotes", structure_dict=file_structure()))
-os.makedirs(fileio.dirpath("flagnotes", structure_dict=file_structure()), exist_ok=True)
+fileio.silentremove(fileio.dirpath("flagnote", structure_dict=file_structure()))
+os.makedirs(fileio.dirpath("flagnote", structure_dict=file_structure()))
 
 def _calculate_formboard_location(instance_name, origin):
     instances = fileio.read_tsv("instances list")
