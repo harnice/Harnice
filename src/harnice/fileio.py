@@ -134,7 +134,6 @@ def verify_revision_structure(product_type=None):
     cwd = os.getcwd()
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
-    temp_tsv_path = os.path.join(cwd, f"{cwd_name}-revision_history.tsv")
 
     # --- 1) Already in a <PN>-revN folder? ---
     if cwd_name.startswith(f"{parent}-rev") and cwd_name.split("-rev")[-1].isdigit():
