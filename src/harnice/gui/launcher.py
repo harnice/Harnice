@@ -53,8 +53,6 @@ class HarniceGUI(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Harnice Launcher")
-        # Make window float over all other windows
-        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.Window)
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
@@ -98,7 +96,7 @@ class HarniceGUI(QWidget):
 
     def render_part(self, cwd):
         try:
-            subprocess.run(["harnice", "-r"], cwd=cwd)
+            subprocess.run(["harnice", "-r", "harness"], cwd=cwd)
         except FileNotFoundError:
             QMessageBox.critical(self, "Error", "Could not run harnice")
 
