@@ -100,6 +100,7 @@ class PartButton(QPushButton):
         self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
         self.setAcceptDrops(True)
         self.dragStartPosition = None
+        self.is_dragging = False
 
         # Make sure button is visible
         self.show()
@@ -117,6 +118,7 @@ class PartButton(QPushButton):
         """Store drag start position"""
         if event.button() == Qt.MouseButton.LeftButton:
             self.dragStartPosition = event.position().toPoint()
+            self.is_dragging = False
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -131,6 +133,9 @@ class PartButton(QPushButton):
         if (event.position().toPoint() - self.dragStartPosition).manhattanLength() < 10:
             return
 
+        # Mark as dragging
+        self.is_dragging = True
+
         # Store old position before updating
         old_grid_x = self.grid_x
         old_grid_y = self.grid_y
@@ -141,6 +146,10 @@ class PartButton(QPushButton):
         new_grid_x, new_grid_y = self.parent_grid.screen_to_grid(
             local_pos.x(), local_pos.y()
         )
+
+        # Only update if position actually changed
+        if new_grid_x == old_grid_x and new_grid_y == old_grid_y:
+            return
 
         # Move to new position if valid and not occupied
         if self.parent_grid.is_grid_occupied(new_grid_x, new_grid_y, exclude=self):
@@ -156,7 +165,15 @@ class PartButton(QPushButton):
 
     def mouseReleaseEvent(self, event):
         """Clean up drag state"""
+        if self.is_dragging:
+            # Prevent click event after dragging
+            self.dragStartPosition = None
+            self.is_dragging = False
+            self.setDown(False)  # Release button visual state
+            event.ignore()  # Don't process further
+            return
         self.dragStartPosition = None
+        self.is_dragging = False
         super().mouseReleaseEvent(event)
 
 
