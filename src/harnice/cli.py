@@ -61,7 +61,18 @@ def main():
         action="store_true",
         help="Create a new revision in the current working directory")
 
+    group.add_argument(
+        "--gui",
+        action="store_true",
+        help="Launch the Harnice GUI launcher",
+    )
+
     args = parser.parse_args()
+
+    if args.gui:
+        from harnice.gui.launcher import main as gui_main
+        gui_main()
+        return
 
     # -----------------------------
     # Handle new revision creation and exit
