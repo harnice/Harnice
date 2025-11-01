@@ -285,9 +285,17 @@ class HarniceGUI(QWidget):
         return (0, 1)  # Fallback
 
     def render_part(self, cwd):
-        """Run harnice render on the selected part"""
+        """Run harnice render on the selected part (non-blocking)"""
         try:
-            subprocess.run(["harnice", "-r"], cwd=cwd)
+            # Use Popen to run in background without blocking
+            print("!!!!!!!!!295")
+            subprocess.Popen(
+                ["harnice", "-r"],
+                cwd=cwd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True if os.name != "nt" else False,
+            )
         except FileNotFoundError:
             QMessageBox.critical(self, "Error", "Could not run harnice")
 
@@ -313,30 +321,46 @@ class HarniceGUI(QWidget):
         button.clicked.connect(lambda checked=False, p=folder: self.render_part(p))
 
     def new_rev(self, button):
-        """Create a new revision by calling harnice --newrev in the button's directory"""
+        """Create a new revision by calling harnice --newrev in the button's directory (non-blocking)"""
         try:
-            result = subprocess.run(
-                ["harnice", "--newrev"], cwd=button.path, capture_output=True, text=True
+            # Use Popen to run in background, capture output for feedback
+            process = subprocess.Popen(
+                ["harnice", "--newrev"],
+                cwd=button.path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                start_new_session=True if os.name != "nt" else False,
             )
 
-            if result.returncode == 0:
-                QMessageBox.information(
-                    self,
-                    "Success",
-                    f"New revision created successfully.\n\n{result.stdout}",
-                )
-            else:
-                QMessageBox.warning(
-                    self,
-                    "Warning",
-                    f"New revision creation completed with warnings:\n\n{result.stderr or result.stdout}",
-                )
+            # Check result after a short delay (non-blocking)
+            from PySide6.QtCore import QTimer
+
+            def check_result():
+                try:
+                    stdout, stderr = process.communicate(timeout=0.1)
+                except subprocess.TimeoutExpired:
+                    # Process still running, that's fine
+                    return
+
+                if process.returncode == 0:
+                    QMessageBox.information(
+                        self,
+                        "Success",
+                        f"New revision created successfully.\n\n{stdout}",
+                    )
+                else:
+                    error_msg = stderr or stdout or "Unknown error"
+                    QMessageBox.warning(
+                        self,
+                        "Warning",
+                        f"New revision creation completed with warnings:\n\n{error_msg}",
+                    )
+
+            # Check after a short delay
+            QTimer.singleShot(100, check_result)
         except FileNotFoundError:
             QMessageBox.critical(self, "Error", "Could not run harnice --newrev")
-        except Exception as e:
-            QMessageBox.critical(
-                self, "Error", f"Error creating new revision: {str(e)}"
-            )
 
     def change_button_color(self, button, color_value, color_name):
         """Change the background color of a button"""
