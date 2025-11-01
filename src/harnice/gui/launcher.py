@@ -1,313 +1,235 @@
-import json
 import os
 import subprocess
-from pathlib import Path
-from PySide6.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QPushButton,
-    QFileDialog,
-    QMenu,
-    QMessageBox,
-    QSizePolicy,
-)
-from PySide6.QtCore import Qt, QMimeData, QPoint
-from PySide6.QtGui import QDrag, QPixmap
-
-CONFIG_PATH = Path.home() / ".harnice-gui.json"
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPainter, QPen
 
 
-def load_config():
-    if CONFIG_PATH.exists():
-        with open(CONFIG_PATH, "r") as f:
-            return json.load(f)
-    return {"buttons": []}
+class GridWidget(QWidget):
+    """Widget with a cartesian grid background"""
 
+    # Button dimensions and margins
+    BUTTON_WIDTH = 180
+    BUTTON_WIDTH_MARGIN = 20
+    BUTTON_HEIGHT = 40
+    BUTTON_HEIGHT_MARGIN = 20
 
-def save_config(cfg):
-    with open(CONFIG_PATH, "w") as f:
-        json.dump(cfg, f, indent=2)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(True)
+        self.grid_buttons = {}  # Store buttons by their grid coordinates
+        # Set background color to make grid visible
+        self.setStyleSheet("background-color: white;")
+        self.setAutoFillBackground(True)
+
+    @property
+    def GRID_SPACING_X(self):
+        """Horizontal spacing between grid lines"""
+        return self.BUTTON_WIDTH + self.BUTTON_WIDTH_MARGIN
+
+    @property
+    def GRID_SPACING_Y(self):
+        """Vertical spacing between grid lines"""
+        return self.BUTTON_HEIGHT + self.BUTTON_HEIGHT_MARGIN
+
+    @property
+    def OFFSET_X(self):
+        """X offset for grid position (0,0)"""
+        return self.GRID_SPACING_X / 2
+
+    @property
+    def OFFSET_Y(self):
+        """Y offset for grid position (0,0)"""
+        return self.GRID_SPACING_Y / 2
+
+    def paintEvent(self, event):
+        """Draw the dotted grid lines"""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Set pen to dotted line style
+        pen = QPen(Qt.GlobalColor.gray, 1, Qt.PenStyle.DotLine)
+        painter.setPen(pen)
+
+        width = self.width()
+        height = self.height()
+
+        # Draw vertical lines
+        x = self.OFFSET_X
+        while x < width:
+            painter.drawLine(x, 0, x, height)
+            x += self.GRID_SPACING_X
+
+        # Draw horizontal lines
+        y = self.OFFSET_Y
+        while y < height:
+            painter.drawLine(0, y, width, y)
+            y += self.GRID_SPACING_Y
+
+    def grid_to_screen(self, grid_x, grid_y):
+        """Convert grid coordinates to screen pixel coordinates"""
+        return (
+            grid_x * self.GRID_SPACING_X + self.OFFSET_X,
+            grid_y * self.GRID_SPACING_Y + self.OFFSET_Y,
+        )
+
+    def screen_to_grid(self, screen_x, screen_y):
+        """Convert screen pixel coordinates to grid coordinates"""
+        return (
+            int((screen_x - self.OFFSET_X) / self.GRID_SPACING_X),
+            int((screen_y - self.OFFSET_Y) / self.GRID_SPACING_Y),
+        )
+
+    def is_grid_occupied(self, grid_x, grid_y, exclude=None):
+        """Check if a grid position is already occupied by a button"""
+        button = self.grid_buttons.get((grid_x, grid_y))
+        return button is not None and button != exclude
 
 
 class PartButton(QPushButton):
-    def __init__(self, parent, label, path):
-        super().__init__(label)
-        self.parent = parent
+    """Button that displays a part path and can be dragged"""
+
+    def __init__(self, parent, label, path, grid_x, grid_y):
+        super().__init__(label, parent)
+        self.parent_grid = parent
         self.path = path
+        self.grid_x = grid_x
+        self.grid_y = grid_y
+
+        # Position button at grid crossing using parametrized dimensions
+        self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
         self.setAcceptDrops(True)
-        self.setMinimumWidth(200)
-        self.setMaximumWidth(200)
-        self.setMinimumHeight(40)
-        self.setMaximumHeight(40)
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.dragStartPosition = QPoint()
-        self.dragging = False
+        self.dragStartPosition = None
+
+        # Make sure button is visible
+        self.show()
+
+        # Position immediately
+        self.update_position()
+
+    def update_position(self):
+        """Update button position based on its grid coordinates"""
+        screen_x, screen_y = self.parent_grid.grid_to_screen(self.grid_x, self.grid_y)
+        # Center the button on the grid crossing
+        self.move(screen_x - self.width() // 2, screen_y - self.height() // 2)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.RightButton:
-            menu = QMenu(self)
-            remove = menu.addAction("Remove Button")
-            newrev = menu.addAction("Run --newrev")
-            action = menu.exec(event.globalPos())
-            if action == remove:
-                self.parent.remove_button(self)
-            elif action == newrev:
-                subprocess.run(["harnice", "--newrev"], cwd=self.path)
-            return
-        # Store drag start position and reset dragging flag
-        self.dragStartPosition = event.position().toPoint()
-        self.dragging = False
-        # Call super to maintain normal button press behavior
+        """Store drag start position"""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.dragStartPosition = event.position().toPoint()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        # Check if we should start a drag
-        if not (event.buttons() & Qt.LeftButton):
-            return
-
-        # Only start drag if mouse has moved enough
+        """Handle dragging to move button to new grid crossing"""
         if (
-            event.position().toPoint() - self.dragStartPosition
-        ).manhattanLength() < QApplication.startDragDistance():
+            not (event.buttons() & Qt.MouseButton.LeftButton)
+            or not self.dragStartPosition
+        ):
             return
 
-        # Mark as dragging to prevent click event
-        self.dragging = True
+        # Start drag if mouse moved enough
+        if (event.position().toPoint() - self.dragStartPosition).manhattanLength() < 10:
+            return
 
-        # Create drag object
-        drag = QDrag(self)
-        mimeData = QMimeData()
+        # Store old position before updating
+        old_grid_x = self.grid_x
+        old_grid_y = self.grid_y
 
-        # Store button data
-        mimeData.setText(self.path)
-        drag.setMimeData(mimeData)
+        # Convert current position to grid coordinates
+        global_pos = self.mapToGlobal(event.position().toPoint())
+        local_pos = self.parent_grid.mapFromGlobal(global_pos)
+        new_grid_x, new_grid_y = self.parent_grid.screen_to_grid(
+            local_pos.x(), local_pos.y()
+        )
 
-        # Create pixmap of the button for drag visual
-        pixmap = QPixmap(self.size())
-        self.render(pixmap)
-        drag.setPixmap(pixmap)
+        # Move to new position if valid and not occupied
+        if self.parent_grid.is_grid_occupied(new_grid_x, new_grid_y, exclude=self):
+            return
 
-        # Create cursor offset
-        drag.setHotSpot(event.position().toPoint())
+        self.grid_x = new_grid_x
+        self.grid_y = new_grid_y
+        self.update_position()
 
-        # Start drag
-        drag.exec(Qt.MoveAction)
-
-        # Reset dragging flag and button pressed state
-        self.dragging = False
-        self.setDown(False)
+        # Mark old position as free and new as occupied
+        self.parent_grid.grid_buttons.pop((old_grid_x, old_grid_y), None)
+        self.parent_grid.grid_buttons[(self.grid_x, self.grid_y)] = self
 
     def mouseReleaseEvent(self, event):
-        # Only handle click if we're not dragging
-        if event.button() == Qt.LeftButton and not self.dragging:
-            super().mouseReleaseEvent(event)
-        else:
-            super().mouseReleaseEvent(event)
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasText():
-            event.acceptProposedAction()
-            self.setStyleSheet("background-color: lightblue;")
-
-    def dragLeaveEvent(self, event):
-        self.setStyleSheet("")
-
-    def dropEvent(self, event):
-        if event.mimeData().hasText():
-            dropped_path = event.mimeData().text()
-            event.acceptProposedAction()
-            self.setStyleSheet("")
-
-            # Reorder buttons
-            self.parent.reorder_buttons(dropped_path, self.path)
-
-
-class EmptySlot(QWidget):
-    """Empty slot widget with same dimensions as buttons"""
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.setMinimumWidth(200)
-        self.setMaximumWidth(200)
-        self.setMinimumHeight(40)
-        self.setMaximumHeight(40)
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.setAcceptDrops(True)
-        # Make it look like an empty button
-        self.setStyleSheet(
-            "background-color: rgba(128, 128, 128, 0.1); border: 1px dashed rgba(128, 128, 128, 0.3);"
-        )
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasText():
-            event.acceptProposedAction()
-            self.setStyleSheet(
-                "background-color: rgba(128, 128, 128, 0.3); border: 1px dashed rgba(128, 128, 128, 0.6);"
-            )
-
-    def dragLeaveEvent(self, event):
-        self.setStyleSheet(
-            "background-color: rgba(128, 128, 128, 0.1); border: 1px dashed rgba(128, 128, 128, 0.3);"
-        )
-
-    def dropEvent(self, event):
-        if event.mimeData().hasText():
-            event.acceptProposedAction()
-            self.setStyleSheet(
-                "background-color: rgba(128, 128, 128, 0.1); border: 1px dashed rgba(128, 128, 128, 0.3);"
-            )
-            # Get parent to handle reordering
-            dropped_path = event.mimeData().text()
-            # Find a nearby button to use as target for reordering
-            parent = self.parent()
-            if hasattr(parent, "reorder_to_slot"):
-                parent.reorder_to_slot(dropped_path, self)
+        """Clean up drag state"""
+        self.dragStartPosition = None
+        super().mouseReleaseEvent(event)
 
 
 class HarniceGUI(QWidget):
+    """Main window with grid and buttons"""
+
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Harnice Launcher")
-        # Make window float over all other windows
-        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.Window)
+        self.setWindowTitle("Harnice GUI")
 
-        self.layout = QVBoxLayout()
-        self.layout.setSpacing(8)  # 8px spacing between buttons
-        self.layout.setContentsMargins(10, 10, 10, 10)
-        self.setLayout(self.layout)
+        # Window floats on top
+        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Window)
 
-        # Track button widgets by path
-        self.button_map = {}
+        # Create grid widget first to access its spacing properties
+        self.grid = GridWidget(self)
 
-        self.cfg = load_config()
+        # Set default size to show 5 horizontal and 1 vertical grid crossings
+        default_width = self.grid.GRID_SPACING_X * 6  # 0 through 5 horizontal crosses
+        default_height = self.grid.GRID_SPACING_Y * 2  # 0 through 1 vertical cross
+        self.resize(default_width, default_height)
+        self.grid.setGeometry(0, 0, default_width, default_height)
 
-        # Add load button at top
-        self.add_new_load_button()
+        # Add "Load part for render..." button at (0, 0)
+        self.load_button = QPushButton("Load part for render...", self.grid)
+        self.load_button.setFixedSize(self.grid.BUTTON_WIDTH, self.grid.BUTTON_HEIGHT)
+        self.load_button.clicked.connect(self.pick_folder)
+        # Position button at grid crossing (0, 0)
+        screen_x, screen_y = self.grid.grid_to_screen(0, 0)
+        self.load_button.move(
+            screen_x - self.load_button.width() // 2,
+            screen_y - self.load_button.height() // 2,
+        )
 
-        # Restore saved buttons
-        for b in self.cfg["buttons"]:
-            self.add_button(b["label"], b["path"])
+        self.grid.grid_buttons[(0, 0)] = self.load_button
 
-        # Add stretch spacer at the end to absorb extra height
-        self.layout.addStretch()
-
-        # Set minimum height to 5 buttons, fixed width, allow user to resize height
-        self.setMinimumSize(220, 272)
-        self.setMaximumWidth(220)  # Keep width fixed
-
-    def add_button(self, label, path):
-        btn = PartButton(self, label, path)
-        btn.clicked.connect(lambda checked=False, p=path: self.render_part(p))
-        # Find first empty slot to replace
-        for i in range(self.layout.count()):
-            item = self.layout.itemAt(i)
-            if item and isinstance(item.widget(), EmptySlot):
-                self.layout.removeWidget(item.widget())
-                item.widget().deleteLater()
-                self.layout.insertWidget(i, btn)
-                self.button_map[path] = btn
-                return
-        # If no empty slot found, just add it
-        self.layout.addWidget(btn)
-        self.button_map[path] = btn
-
-    def add_new_load_button(self):
-        btn = QPushButton("Load part for render…")
-        btn.setMinimumWidth(200)
-        btn.setMaximumWidth(200)
-        btn.setMinimumHeight(40)
-        btn.setMaximumHeight(40)
-        btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        btn.clicked.connect(self.pick_folder)
-        self.layout.addWidget(btn)
+    def resizeEvent(self, event):
+        """Handle window resize to make grid fill the window"""
+        self.grid.setGeometry(0, 0, self.width(), self.height())
+        super().resizeEvent(event)
 
     def pick_folder(self):
+        """Open file dialog to select a folder and create a button"""
         folder = QFileDialog.getExistingDirectory(self, "Select revision folder")
         if not folder:
             return
+
+        # Find next available grid position (skip (0,0) as it's the load button)
+        grid_x, grid_y = self.find_next_grid_position()
+
+        # Create button with folder name as label
         label = os.path.basename(folder)
-        self.add_button(label, folder)
-        self.cfg["buttons"].append({"label": label, "path": folder})
-        save_config(self.cfg)
+        button = PartButton(self.grid, label, folder, grid_x, grid_y)
+        button.clicked.connect(lambda checked=False, p=folder: self.render_part(p))
 
-    def remove_button(self, button):
-        idx = self.layout.indexOf(button)
-        self.layout.takeAt(idx)
-        button.deleteLater()
-        # Remove from button_map
-        self.button_map.pop(button.path, None)
-        self.cfg["buttons"] = [
-            b for b in self.cfg["buttons"] if b["path"] != button.path
-        ]
-        save_config(self.cfg)
+        # Store button at grid position
+        self.grid.grid_buttons[(grid_x, grid_y)] = button
 
-    def reorder_buttons(self, dragged_path, target_path):
-        """Reorder buttons by moving dragged_path to position before target_path"""
-        if dragged_path == target_path:
-            return
-
-        dragged_btn = self.button_map.get(dragged_path)
-        target_btn = self.button_map.get(target_path)
-
-        if not dragged_btn or not target_btn:
-            return
-
-        # Get current indices
-        dragged_idx = self.layout.indexOf(dragged_btn)
-        target_idx = self.layout.indexOf(target_btn)
-
-        # Remove dragged button from layout
-        self.layout.takeAt(dragged_idx)
-
-        # Insert at target position (account for removed item if dragging down)
-        if dragged_idx < target_idx:
-            self.layout.insertWidget(target_idx - 1, dragged_btn)
-        else:
-            self.layout.insertWidget(target_idx, dragged_btn)
-
-        # Update config order
-        buttons = self.cfg["buttons"]
-        dragged_item = next((b for b in buttons if b["path"] == dragged_path), None)
-        if dragged_item:
-            buttons.remove(dragged_item)
-            target_idx_config = next(
-                (i for i, b in enumerate(buttons) if b["path"] == target_path),
-                len(buttons),
-            )
-            if dragged_idx < target_idx:
-                buttons.insert(target_idx_config - 1, dragged_item)
-            else:
-                buttons.insert(target_idx_config, dragged_item)
-
-        save_config(self.cfg)
-
-    def reorder_to_slot(self, dragged_path, empty_slot):
-        """Move button to empty slot position"""
-        dragged_btn = self.button_map.get(dragged_path)
-        if not dragged_btn:
-            return
-
-        # Get current indices
-        dragged_idx = self.layout.indexOf(dragged_btn)
-        slot_idx = self.layout.indexOf(empty_slot)
-
-        # Remove dragged button and empty slot
-        self.layout.takeAt(slot_idx)
-        empty_slot.deleteLater()
-        self.layout.takeAt(dragged_idx)
-
-        # Insert button at empty slot position
-        self.layout.insertWidget(slot_idx, dragged_btn)
-
-        # Add new empty slot where dragged button was
-        new_empty = EmptySlot(self)
-        self.layout.insertWidget(dragged_idx, new_empty)
+    def find_next_grid_position(self):
+        """Find the next available grid crossing"""
+        # Start searching from (0, 0) and go through rows
+        for grid_y in range(100):  # Reasonable limit
+            for grid_x in range(100):  # Reasonable limit
+                if not self.grid.is_grid_occupied(grid_x, grid_y):
+                    return (grid_x, grid_y)
+        return (0, 1)  # Fallback
 
     def render_part(self, cwd):
+        """Run harnice render on the selected part"""
         try:
             subprocess.run(["harnice", "-r", "harness"], cwd=cwd)
         except FileNotFoundError:
+            from PySide6.QtWidgets import QMessageBox
+
             QMessageBox.critical(self, "Error", "Could not run harnice")
 
 
