@@ -13,12 +13,18 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+dependencies = [
+    "PySide6>=6.6",
+]
+
 [project.urls]
 Homepage = "https://github.com/kenyonshutt/harnice"
 Issues = "https://github.com/kenyonshutt/harnice/issues"
 
 [project.scripts]
 harnice = "harnice.cli:main"
+
+harnice-gui = "harnice.gui.launcher:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
