@@ -11,21 +11,20 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread, Signal, QObject
 from PySide6.QtGui import QPainter, QPen
 
 
 def layout_config_path():
     """
-    Store layout in the root of the harnice repository.
-    (one level above the harnice package directory)
+    Save layout JSON into the root of the harnice project directory.
     """
     return Path(__file__).resolve().parents[2] / "gui_layout.json"
 
 
 def run_harnice_render(cwd, lightweight=False):
     """
-    Safely run harnice.cli.main() without sys.exit killing the GUI.
+    Safely run harnice.cli.main() without sys.exit closing the GUI.
     """
     import harnice.cli
 
@@ -42,10 +41,26 @@ def run_harnice_render(cwd, lightweight=False):
         os.chdir(old_cwd)
 
 
+class RenderWorker(QObject):
+    finished = Signal(bool)  # True = success, False = error
+
+    def __init__(self, cwd, lightweight):
+        super().__init__()
+        self.cwd = cwd
+        self.lightweight = lightweight
+
+    def run(self):
+        try:
+            run_harnice_render(self.cwd, self.lightweight)
+            self.finished.emit(True)
+        except Exception:
+            self.finished.emit(False)
+
+
 class GridWidget(QWidget):
     BUTTON_WIDTH = 180
-    BUTTON_WIDTH_MARGIN = 20
     BUTTON_HEIGHT = 40
+    BUTTON_WIDTH_MARGIN = 20
     BUTTON_HEIGHT_MARGIN = 20
 
     def __init__(self, parent=None):
@@ -102,8 +117,8 @@ class GridWidget(QWidget):
         )
 
     def is_grid_occupied(self, grid_x, grid_y, exclude=None):
-        button = self.grid_buttons.get((grid_x, grid_y))
-        return button is not None and button != exclude
+        btn = self.grid_buttons.get((grid_x, grid_y))
+        return btn is not None and btn is not exclude
 
 
 class PartButton(QPushButton):
@@ -115,6 +130,22 @@ class PartButton(QPushButton):
         self.grid_y = grid_y
         self.main_window = main_window
 
+        # ✅ Store the intended "default / unclicked" theme
+        self.default_style = """
+            QPushButton {
+                background-color: #e6e6e6;
+                border: 1px solid #666;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #f2f2f2;
+            }
+            QPushButton:pressed {
+                background-color: #d0d0d0;
+            }
+        """
+        self.setStyleSheet(self.default_style)
+
         self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
         self.dragStartPosition = None
         self.is_dragging = False
@@ -122,8 +153,8 @@ class PartButton(QPushButton):
         self.update_position()
 
     def update_position(self):
-        screen_x, screen_y = self.parent_grid.grid_to_screen(self.grid_x, self.grid_y)
-        self.move(screen_x - self.width() // 2, screen_y - self.height() // 2)
+        x, y = self.parent_grid.grid_to_screen(self.grid_x, self.grid_y)
+        self.move(x - self.width() // 2, y - self.height() // 2)
         self.raise_()
 
     def mousePressEvent(self, event):
@@ -140,13 +171,13 @@ class PartButton(QPushButton):
             return
 
         self.is_dragging = True
-        old_x, old_y = self.grid_x, self.grid_y
+        old_pos = (self.grid_x, self.grid_y)
 
         global_pos = self.mapToGlobal(event.position().toPoint())
         local_pos = self.parent_grid.mapFromGlobal(global_pos)
         new_x, new_y = self.parent_grid.screen_to_grid(local_pos.x(), local_pos.y())
 
-        if (new_x, new_y) == (old_x, old_y):
+        if (new_x, new_y) == old_pos:
             return
 
         if self.parent_grid.is_grid_occupied(new_x, new_y, exclude=self):
@@ -155,20 +186,16 @@ class PartButton(QPushButton):
         self.grid_x, self.grid_y = new_x, new_y
         self.update_position()
 
-        self.parent_grid.grid_buttons.pop((old_x, old_y), None)
-        self.parent_grid.grid_buttons[(self.grid_x, self.grid_y)] = self
+        self.parent_grid.grid_buttons.pop(old_pos, None)
+        self.parent_grid.grid_buttons[(new_x, new_y)] = self
 
     def mouseReleaseEvent(self, event):
-        was_dragging = self.is_dragging
-        self.dragStartPosition = None
-        self.is_dragging = False
-
-        if was_dragging:
+        if self.is_dragging:
             if self.main_window:
                 self.main_window.save_layout()
+            self.is_dragging = False
             event.accept()
             return
-
         super().mouseReleaseEvent(event)
 
     def contextMenuEvent(self, event):
@@ -201,12 +228,12 @@ class HarniceGUI(QWidget):
         self.load_button = QPushButton("Load part for render...", self.grid)
         self.load_button.setFixedSize(self.grid.BUTTON_WIDTH, self.grid.BUTTON_HEIGHT)
         self.load_button.clicked.connect(self.pick_folder)
+
         x, y = self.grid.grid_to_screen(0, 0)
-        self.load_button.move(x - self.load_button.width() // 2,
-                              y - self.load_button.height() // 2)
+        self.load_button.move(x - self.load_button.width() // 2, y - self.load_button.height() // 2)
         self.grid.grid_buttons[(0, 0)] = self.load_button
 
-        self.load_layout()   # <-- restore saved layout
+        self.load_layout()
 
     def resizeEvent(self, event):
         self.grid.setGeometry(0, 0, self.width(), self.height())
@@ -219,20 +246,48 @@ class HarniceGUI(QWidget):
 
         gx, gy = self.find_next_grid_position()
         label = os.path.basename(folder)
-        button = PartButton(self.grid, label, folder, gx, gy, main_window=self)
-        button.clicked.connect(lambda checked=False, p=folder: self.run_render(p))
-        self.grid.grid_buttons[(gx, gy)] = button
+
+        btn = PartButton(self.grid, label, folder, gx, gy, main_window=self)
+        btn.clicked.connect(lambda checked=False, p=folder: self.run_render(p))
+        self.grid.grid_buttons[(gx, gy)] = btn
         self.save_layout()
 
     def find_next_grid_position(self):
-        for y in range(100):
-            for x in range(100):
+        for y in range(200):
+            for x in range(200):
                 if not self.grid.is_grid_occupied(x, y):
                     return (x, y)
-        return (0, 1)
 
     def run_render(self, cwd):
-        run_harnice_render(cwd, lightweight=False)
+        btn = next(
+            (b for b in self.grid.grid_buttons.values() if isinstance(b, PartButton) and b.path == cwd),
+            None
+        )
+
+        if btn:
+            btn.setStyleSheet("background-color: #b1ffb1;")  # Green while running
+
+        self.thread = QThread()
+        self.worker = RenderWorker(cwd, False)
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(lambda success: self.on_render_finished(btn, success))
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.start()
+
+    def on_render_finished(self, btn, success):
+        if not btn:
+            return
+
+        if success:
+            # ✅ Restore original intended appearance
+            btn.setStyleSheet(btn.default_style)
+            btn.update()
+        else:
+            btn.setStyleSheet("background-color: #ffb1b1;")  # Error red
 
     def remove_button(self, button):
         self.grid.grid_buttons.pop((button.grid_x, button.grid_y), None)
@@ -240,24 +295,22 @@ class HarniceGUI(QWidget):
         self.save_layout()
 
     def new_rev(self, button):
-        run_harnice_render(button.path, lightweight=False)
+        self.run_render(button.path)
 
     def save_layout(self):
-        data = []
-        for (gx, gy), button in self.grid.grid_buttons.items():
-            if isinstance(button, PartButton):
-                data.append({
-                    "label": button.text(),
-                    "path": button.path,
-                    "grid_x": button.grid_x,
-                    "grid_y": button.grid_y,
-                })
+        data = [
+            {
+                "label": b.text(),
+                "path": b.path,
+                "grid_x": b.grid_x,
+                "grid_y": b.grid_y,
+            }
+            for (gx, gy), b in self.grid.grid_buttons.items()
+            if isinstance(b, PartButton)
+        ]
 
-        try:
-            with open(layout_config_path(), "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            print(f"Warning: Could not save GUI layout: {e}")
+        with open(layout_config_path(), "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
 
     def load_layout(self):
         cfg = layout_config_path()
@@ -265,19 +318,14 @@ class HarniceGUI(QWidget):
             return
 
         try:
-            with open(cfg, "r", encoding="utf-8") as f:
-                items = json.load(f)
+            items = json.loads(cfg.read_text(encoding="utf-8"))
         except Exception:
             return
 
         for item in items:
-            gx, gy = item["grid_x"], item["grid_y"]
-            label = item["label"]
-            path = item["path"]
-
-            button = PartButton(self.grid, label, path, gx, gy, main_window=self)
-            button.clicked.connect(lambda checked=False, p=path: self.run_render(p))
-            self.grid.grid_buttons[(gx, gy)] = button
+            btn = PartButton(self.grid, item["label"], item["path"], item["grid_x"], item["grid_y"], main_window=self)
+            btn.clicked.connect(lambda checked=False, p=item["path"]: self.run_render(p))
+            self.grid.grid_buttons[(item["grid_x"], item["grid_y"])] = btn
 
 
 def main():
