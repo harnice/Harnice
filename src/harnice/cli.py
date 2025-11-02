@@ -178,7 +178,7 @@ def newrev():
                 os.rename(old_path, new_path)
 
     print(
-        f"Successfully created new revision: {state.partnumber('pn-rev')}. Please cd into it."
+        f"Successfully created new revision: {state.partnumber('pn')}-rev{new_rev_number}. Please cd into it."
     )
 
 def select_product_type():
