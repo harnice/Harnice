@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFileDialog,
     QMenu,
-    QMessageBox,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QObject
 from PySide6.QtGui import QPainter, QPen
@@ -164,7 +163,10 @@ class PartButton(QPushButton):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if not (event.buttons() & Qt.MouseButton.LeftButton) or not self.dragStartPosition:
+        if (
+            not (event.buttons() & Qt.MouseButton.LeftButton)
+            or not self.dragStartPosition
+        ):
             return
 
         if (event.position().toPoint() - self.dragStartPosition).manhattanLength() < 8:
@@ -230,7 +232,9 @@ class HarniceGUI(QWidget):
         self.load_button.clicked.connect(self.pick_folder)
 
         x, y = self.grid.grid_to_screen(0, 0)
-        self.load_button.move(x - self.load_button.width() // 2, y - self.load_button.height() // 2)
+        self.load_button.move(
+            x - self.load_button.width() // 2, y - self.load_button.height() // 2
+        )
         self.grid.grid_buttons[(0, 0)] = self.load_button
 
         self.load_layout()
@@ -260,8 +264,12 @@ class HarniceGUI(QWidget):
 
     def run_render(self, cwd):
         btn = next(
-            (b for b in self.grid.grid_buttons.values() if isinstance(b, PartButton) and b.path == cwd),
-            None
+            (
+                b
+                for b in self.grid.grid_buttons.values()
+                if isinstance(b, PartButton) and b.path == cwd
+            ),
+            None,
         )
 
         if btn:
@@ -272,7 +280,9 @@ class HarniceGUI(QWidget):
         self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(lambda success: self.on_render_finished(btn, success))
+        self.worker.finished.connect(
+            lambda success: self.on_render_finished(btn, success)
+        )
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
@@ -295,7 +305,22 @@ class HarniceGUI(QWidget):
         self.save_layout()
 
     def new_rev(self, button):
-        self.run_render(button.path)
+        """
+        Run harnice --newrev from the button's directory.
+        """
+        import harnice.cli
+
+        old_cwd = os.getcwd()
+        os.chdir(button.path)
+
+        try:
+            sys.argv = ["harnice", "--newrev"]
+            try:
+                harnice.cli.main()
+            except SystemExit:
+                pass
+        finally:
+            os.chdir(old_cwd)
 
     def save_layout(self):
         data = [
@@ -323,8 +348,17 @@ class HarniceGUI(QWidget):
             return
 
         for item in items:
-            btn = PartButton(self.grid, item["label"], item["path"], item["grid_x"], item["grid_y"], main_window=self)
-            btn.clicked.connect(lambda checked=False, p=item["path"]: self.run_render(p))
+            btn = PartButton(
+                self.grid,
+                item["label"],
+                item["path"],
+                item["grid_x"],
+                item["grid_y"],
+                main_window=self,
+            )
+            btn.clicked.connect(
+                lambda checked=False, p=item["path"]: self.run_render(p)
+            )
             self.grid.grid_buttons[(item["grid_x"], item["grid_y"])] = btn
 
 
