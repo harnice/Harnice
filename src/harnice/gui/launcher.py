@@ -41,7 +41,7 @@ def run_harnice_render(cwd, lightweight=False):
 
 
 class RenderWorker(QObject):
-    finished = Signal(bool)  # True = success, False = error
+    finished = Signal(bool, str)  # True = success, False = error, error_message
 
     def __init__(self, cwd, lightweight):
         super().__init__()
@@ -51,9 +51,12 @@ class RenderWorker(QObject):
     def run(self):
         try:
             run_harnice_render(self.cwd, self.lightweight)
-            self.finished.emit(True)
-        except Exception:
-            self.finished.emit(False)
+            self.finished.emit(True, "")
+        except Exception as e:
+            import traceback
+
+            error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+            self.finished.emit(False, error_msg)
 
 
 class GridWidget(QWidget):
@@ -291,14 +294,14 @@ class HarniceGUI(QWidget):
 
         self.thread.started.connect(self.worker.run)
         self.worker.finished.connect(
-            lambda success: self.on_render_finished(btn, success)
+            lambda success, error_msg: self.on_render_finished(btn, success, error_msg)
         )
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
         self.thread.start()
 
-    def on_render_finished(self, btn, success):
+    def on_render_finished(self, btn, success, error_msg):
         if not btn:
             return
 
@@ -308,6 +311,19 @@ class HarniceGUI(QWidget):
             btn.update()
         else:
             btn.setStyleSheet("background-color: #ffb1b1;")  # Error red
+            # Print error message and traceback to console in color
+            if error_msg:
+                # ANSI color codes
+                RED = "\033[91m"
+                BOLD = "\033[1m"
+                RESET = "\033[0m"
+                YELLOW = "\033[93m"
+
+                print(f"\n{RED}{BOLD}{'=' * 80}{RESET}")
+                print(f"{RED}{BOLD}ERROR in {YELLOW}{btn.path}{RESET}{RED}:{RESET}")
+                print(f"{RED}{BOLD}{'=' * 80}{RESET}")
+                print(f"{RED}{error_msg}{RESET}")
+                print(f"{RED}{BOLD}{'=' * 80}{RESET}\n")
 
     def remove_button(self, button):
         self.grid.grid_buttons.pop((button.grid_x, button.grid_y), None)
