@@ -217,7 +217,7 @@ class PartButton(QPushButton):
 class HarniceGUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Harnice GUI Launcher")
+        self.setWindowTitle("Harnice")
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Window)
 
         self.grid = GridWidget(self)
@@ -237,11 +237,21 @@ class HarniceGUI(QWidget):
         )
         self.grid.grid_buttons[(0, 0)] = self.load_button
 
+        self._is_initializing = True
         self.load_layout()
+
+        # Set window size after loading layout (if any)
+        self.apply_window_size()
+        self._is_initializing = False
 
     def resizeEvent(self, event):
         self.grid.setGeometry(0, 0, self.width(), self.height())
         super().resizeEvent(event)
+        # Save layout when window is manually resized
+        if hasattr(self, "load_button") and not getattr(
+            self, "_is_initializing", False
+        ):
+            self.save_layout()
 
     def pick_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select revision folder")
@@ -323,16 +333,22 @@ class HarniceGUI(QWidget):
             os.chdir(old_cwd)
 
     def save_layout(self):
-        data = [
-            {
-                "label": b.text(),
-                "path": b.path,
-                "grid_x": b.grid_x,
-                "grid_y": b.grid_y,
-            }
-            for (gx, gy), b in self.grid.grid_buttons.items()
-            if isinstance(b, PartButton)
-        ]
+        data = {
+            "window": {
+                "width": self.width(),
+                "height": self.height(),
+            },
+            "buttons": [
+                {
+                    "label": b.text(),
+                    "path": b.path,
+                    "grid_x": b.grid_x,
+                    "grid_y": b.grid_y,
+                }
+                for (gx, gy), b in self.grid.grid_buttons.items()
+                if isinstance(b, PartButton)
+            ],
+        }
 
         with open(layout_config_path(), "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
@@ -343,9 +359,24 @@ class HarniceGUI(QWidget):
             return
 
         try:
-            items = json.loads(cfg.read_text(encoding="utf-8"))
+            data = json.loads(cfg.read_text(encoding="utf-8"))
         except Exception:
             return
+
+        # Handle old format (array of buttons) vs new format (dict with buttons and window)
+        if isinstance(data, list):
+            items = data
+            self.saved_window_size = None
+        else:
+            items = data.get("buttons", [])
+            window_info = data.get("window")
+            if window_info:
+                self.saved_window_size = (
+                    window_info.get("width"),
+                    window_info.get("height"),
+                )
+            else:
+                self.saved_window_size = None
 
         for item in items:
             btn = PartButton(
@@ -360,6 +391,12 @@ class HarniceGUI(QWidget):
                 lambda checked=False, p=item["path"]: self.run_render(p)
             )
             self.grid.grid_buttons[(item["grid_x"], item["grid_y"])] = btn
+
+    def apply_window_size(self):
+        if hasattr(self, "saved_window_size") and self.saved_window_size:
+            width, height = self.saved_window_size
+            self.resize(width, height)
+            self.grid.setGeometry(0, 0, width, height)
 
 
 def main():
