@@ -1,5 +1,8 @@
 import os
 import sys
+import json
+from pathlib import Path
+
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -12,9 +15,17 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QPen
 
 
+def layout_config_path():
+    """
+    Store layout in the root of the harnice repository.
+    (one level above the harnice package directory)
+    """
+    return Path(__file__).resolve().parents[2] / "gui_layout.json"
+
+
 def run_harnice_render(cwd, lightweight=False):
     """
-    Safely run harnice.cli.main() without letting sys.exit kill the GUI.
+    Safely run harnice.cli.main() without sys.exit killing the GUI.
     """
     import harnice.cli
 
@@ -153,6 +164,8 @@ class PartButton(QPushButton):
         self.is_dragging = False
 
         if was_dragging:
+            if self.main_window:
+                self.main_window.save_layout()
             event.accept()
             return
 
@@ -163,7 +176,6 @@ class PartButton(QPushButton):
             return
 
         menu = QMenu(self)
-
         remove = menu.addAction("Remove button")
         remove.triggered.connect(lambda: self.main_window.remove_button(self))
 
@@ -194,6 +206,8 @@ class HarniceGUI(QWidget):
                               y - self.load_button.height() // 2)
         self.grid.grid_buttons[(0, 0)] = self.load_button
 
+        self.load_layout()   # <-- restore saved layout
+
     def resizeEvent(self, event):
         self.grid.setGeometry(0, 0, self.width(), self.height())
         super().resizeEvent(event)
@@ -208,6 +222,7 @@ class HarniceGUI(QWidget):
         button = PartButton(self.grid, label, folder, gx, gy, main_window=self)
         button.clicked.connect(lambda checked=False, p=folder: self.run_render(p))
         self.grid.grid_buttons[(gx, gy)] = button
+        self.save_layout()
 
     def find_next_grid_position(self):
         for y in range(100):
@@ -222,9 +237,48 @@ class HarniceGUI(QWidget):
     def remove_button(self, button):
         self.grid.grid_buttons.pop((button.grid_x, button.grid_y), None)
         button.deleteLater()
+        self.save_layout()
 
     def new_rev(self, button):
         run_harnice_render(button.path, lightweight=False)
+
+    def save_layout(self):
+        data = []
+        for (gx, gy), button in self.grid.grid_buttons.items():
+            if isinstance(button, PartButton):
+                data.append({
+                    "label": button.text(),
+                    "path": button.path,
+                    "grid_x": button.grid_x,
+                    "grid_y": button.grid_y,
+                })
+
+        try:
+            with open(layout_config_path(), "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"Warning: Could not save GUI layout: {e}")
+
+    def load_layout(self):
+        cfg = layout_config_path()
+        if not cfg.exists():
+            return
+
+        try:
+            with open(cfg, "r", encoding="utf-8") as f:
+                items = json.load(f)
+        except Exception:
+            return
+
+        for item in items:
+            gx, gy = item["grid_x"], item["grid_y"]
+            label = item["label"]
+            path = item["path"]
+
+            button = PartButton(self.grid, label, path, gx, gy, main_window=self)
+            button.clicked.connect(lambda checked=False, p=path: self.run_render(p))
+            self.grid.grid_buttons[(gx, gy)] = button
+
 
 def main():
     app = QApplication([])
