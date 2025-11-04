@@ -50,26 +50,11 @@
         pip install PyPDF2
         
     System dependencies:
-        brew install graphviz
         brew install poppler  # for pdfunite
-
-3a. if you get errors installing graphviz related to path issues, do this:
-    1. in the same shell that you're running python from (bash or zsh), run:
-        echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.bash_profile
-    2. then apply the change:
-        source ~/.bash_profile
-    3. test it by comparing:
-        which dot
-    4. should have returned
-        /opt/homebrew/bin/dot
-    5. against
-        python3 -c "import shutil; print(shutil.which('dot'))"
-    6. should also have returned
-        /opt/homebrew/bin/dot
 
 ***********
 4. make sure you have real apps installed that interface with files that Harnice reads and writes:
-    text editor to edit the yaml
-    SVG editor (inkscape?)
-    TSV editor (excel?)
+    text editor to edit feature trees (VSCode, Cursor, Xcode, notepad++, etc)
+    SVG editor (Inkscape preferred)
+    TSV editor (Excel preferred)
     Kicad
