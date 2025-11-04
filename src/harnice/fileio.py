@@ -203,17 +203,45 @@ def get_git_hash_of_harnice_src():
 
 
 def get_path_to_project(traceable_key):
-    # takes in a project repo traceable key and returns the expanded local path
-    # traceable key is some unique identifier for this project (project part number, github url, etc)
+    """
+    Given a traceable identifier for a project (PN, URL, etc),
+    return the expanded local filesystem path.
 
-    for project in read_tsv("project locations", delimiter=","):
-        if project.get("traceable_key").strip() == traceable_key.strip():
-            local_path = project.get("local_path")
-            if not local_path:
-                raise ValueError(f"No project local path found for {traceable_key}")
-            return os.path.expanduser(local_path)
+    Expects a CSV at the root of the repo named:
+        project_locations.csv
 
-    raise ValueError(f"Could not find library repo id {traceable_key}")
+    Format (no headers):
+        traceable_key,local_path
+    """
+    from harnice import fileio
+
+    path = fileio.path("project locations")  # resolves to project_locations.csv
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            "Make a CSV at the root of your Harnice repo called project_locations.csv "
+            "with the following format (no headers):\n\n"
+            "    traceable_key,local_path\n"
+        )
+
+    traceable_key = traceable_key.strip()
+
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter=",")
+        for row in reader:
+            # skip blank or comment lines
+            if not row or len(row) < 2 or row[0].strip().startswith("#"):
+                continue
+
+            key, local = row[0].strip(), row[1].strip()
+
+            if key == traceable_key:
+                if not local:
+                    raise ValueError(f"No project local path found for '{traceable_key}'")
+                return os.path.expanduser(local)
+
+    raise ValueError(f"Could not find project traceable key '{traceable_key}'")
+
 
 
 def read_tsv(filepath, delimiter="\t"):
