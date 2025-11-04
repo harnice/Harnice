@@ -1,2 +1,2 @@
-pn	desc	rev	status	releaseticket	datestarted	datemodified	datereleased	drawnby	checkedby	revisionupdates	affectedinstances
-wirelist_exporter		1			7/20/25					INITIAL RELEASE	
+product	mfg	pn	desc	rev	status	releaseticket	library_repo	library_subpath	datestarted	datemodified	datereleased	drawnby	checkedby	revisionupdates	affectedinstances
+macro		wirelist_exporter		1					7/20/25	11/4/25				INITIAL RELEASE	
