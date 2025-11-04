@@ -18,6 +18,7 @@ dependencies = [
     "sexpdata",
     "Pillow",
     "PyYAML",
+    "xlwt",
 ]
 
 [project.urls]

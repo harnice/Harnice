@@ -32,13 +32,26 @@
 2. install python however you want
 
 *************
-3. install the following packages: (for example, install by "pip3 install x")
-    pip install xlwt
-    pip install lxml
-    pip install sexpdata
-    pip3 install PyPDF2
-    brew install graphviz
-    brew install poppler  # for pdfunite
+3. install the following packages:
+
+    Option A: Install via pip (recommended):
+        pip install -e .
+    
+    Option B: Manual installation:
+        # Core dependencies:
+        pip install PySide6>=6.6
+        pip install sexpdata
+        pip install Pillow
+        pip install PyYAML
+        
+        # Macro dependencies (used by library macros):
+        pip install xlwt
+        pip install lxml
+        pip install PyPDF2
+        
+    System dependencies:
+        brew install graphviz
+        brew install poppler  # for pdfunite
 
 3a. if you get errors installing graphviz related to path issues, do this:
     1. in the same shell that you're running python from (bash or zsh), run:
