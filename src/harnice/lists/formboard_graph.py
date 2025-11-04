@@ -58,34 +58,4 @@ def append(segment_id, segment_data):
         writer.writerow({key: segment_data.get(key, "") for key in COLUMNS})
 
     return False
-
-
-def remove(segment_id):
-    """Remove the row for the given segment_id from the formboard graph definition."""
-    if not segment_id:
-        raise ValueError("Argument 'segment_id' is blank.")
-
-    path = fileio.path("formboard graph definition")
-
-    # If the file doesn't exist, nothing to remove
-    if not os.path.exists(path):
-        return False
-
-    rows = fileio.read_tsv("formboard graph definition")
-
-    # Filter out the matching rows
-    new_rows = [row for row in rows if row.get("segment_id") != segment_id]
-
-    # If no change, return False (nothing removed)
-    if len(new_rows) == len(rows):
-        return False
-
-    # Rewrite the file with header + remaining rows
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=COLUMNS, delimiter="\t", lineterminator="\n"
-        )
-        writer.writeheader()
-        writer.writerows(new_rows)
-
-    return True
+    
