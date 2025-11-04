@@ -22,7 +22,7 @@
 
     here's an example:
     :
-        https://github.com/harnice/library-public,Users/kenyonshutt/Documents/github/harnice-library-public
+        https://github.com/harnice/harnice-library-public,Users/kenyonshutt/Documents/github/harnice-library-public
     :
     add whatever other library you need in this document. pull components from that library by referencing them by their url for traceability purposes. 
     you can use git or dropbox or whatever to control your libraries in a repo separate from harnice, as you wish.

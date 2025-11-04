@@ -209,7 +209,7 @@ def get_local_path(lib_repo):
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 
         with open(csv_path, "w", encoding="utf-8") as f:
-            f.write(f"https://github.com/harnice/library-public,{default_local_path}\n")
+            f.write(f"https://github.com/harnice/harnice-library-public,{default_local_path}\n")
 
         print(f"[harnice] Created '{csv_path}'")
         print(f"[harnice] Default library-public location: {default_local_path}")
