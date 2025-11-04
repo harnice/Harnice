@@ -95,10 +95,11 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
         else:
             return -1
 
-    try:
-        instance_data["net"] = state.net
-    except AttributeError: #no net has been set
-        pass
+    if instance_data.get("net") is None:
+        try:
+            instance_data["net"] = state.net
+        except AttributeError: #no net has been set
+            pass
 
     # Add debug call chain
     instance_data["debug"] = _get_call_chain_str()

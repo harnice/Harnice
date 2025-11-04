@@ -1,94 +1,15 @@
 import os
 import random
 import math
-import csv
 from collections import defaultdict, deque
 from PIL import Image, ImageDraw, ImageFont
 from harnice import fileio
-from harnice.lists import instances_list
-
-FORMBOARD_TSV_COLUMNS = [
-    "segment_id",
-    "node_at_end_a",
-    "node_at_end_b",
-    "length",
-    "angle",
-    "diameter",
-]
-
-
-def write_segment_rows(rows):
-    with open(
-        fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8"
-    ) as f:
-        writer = csv.DictWriter(
-            f, fieldnames=FORMBOARD_TSV_COLUMNS, delimiter="\t", lineterminator="\n"
-        )
-        writer.writeheader()
-        writer.writerows(rows)
-        f.write("\n")
-
-
-def add_segment_to_formboard_def(segment_id, segment_data):
-    if not segment_id:
-        raise ValueError(
-            "Argument 'segment_id' is blank and required to identify a unique segment"
-        )
-
-    segments = fileio.read_tsv("formboard graph definition")
-    if any(row.get("segment_id") == segment_id for row in segments):
-        return True
-
-    # Ensure the segment_id is included in the data
-    segment_data["segment_id"] = segment_id
-
-    path = fileio.path("formboard graph definition")
-
-    with open(path, "a+", encoding="utf-8") as f:
-        f.seek(0, os.SEEK_END)
-        if f.tell() > 0:
-            f.seek(f.tell() - 1)
-            if f.read(1) != "\n":
-                f.write("\n")
-
-        writer = csv.DictWriter(
-            f,
-            fieldnames=FORMBOARD_TSV_COLUMNS,
-            delimiter="\t",
-            lineterminator="\n",
-        )
-        writer.writerow(
-            {key: segment_data.get(key, "") for key in FORMBOARD_TSV_COLUMNS}
-        )
-
-    return False
-
-
-def segment_attribute_of(segment_id, key):
-    """
-    Returns the value of the specified attribute for the given segment.
-
-    Args:
-        segment_id (str): The ID of the segment to look up.
-        key (str): The attribute name to retrieve.
-
-    Returns:
-        str or None: The value of the attribute, or None if not found.
-    """
-    for row in fileio.read_tsv("formboard graph definition"):
-        if row.get("segment_id") == segment_id:
-            return row.get(key)
-    return None
-
+from harnice.lists import instances_list, formboard_graph
 
 def validate_nodes():
     # Ensure TSV exists
     if not os.path.exists(fileio.path("formboard graph definition")):
-        with open(
-            fileio.path("formboard graph definition"), "w", newline="", encoding="utf-8"
-        ) as f:
-            writer = csv.DictWriter(f, delimiter="\t", fieldnames=FORMBOARD_TSV_COLUMNS)
-            writer.writeheader()
+        formboard_graph.new()
 
     # Collect node names from the instance list
     nodes_from_instances_list = {
@@ -106,13 +27,14 @@ def validate_nodes():
 
     # --- Case 1: No segments exist in formboard definition yet, build from scratch ---
     if not fileio.read_tsv("formboard graph definition"):
+        # If there are more than two nodes, make a randomized wheel-spoke graph
         if len(nodes_from_instances_list) > 2:
             origin_node = "node1"
             node_counter = 0
             for instance in fileio.read_tsv("instances list"):
                 if instance.get("item_type") == "node":
                     segment_id = instance.get("instance_name") + "_leg"
-                    add_segment_to_formboard_def(
+                    formboard_graph.append(
                         segment_id,
                         {
                             "node_at_end_a": (
@@ -133,7 +55,7 @@ def validate_nodes():
                         },
                     )
                     node_counter += 1
-
+        # If there are exactly two nodes, make a single segment between them
         elif len(nodes_from_instances_list) == 2:
             segment_id = "segment"
             segment_ends = []
@@ -141,7 +63,7 @@ def validate_nodes():
                 if instance.get("item_type") == "node":
                     segment_ends.append(instance.get("instance_name"))
 
-            add_segment_to_formboard_def(
+            formboard_graph.append(
                 segment_id,
                 {
                     "segment_id": segment_id,
@@ -152,7 +74,7 @@ def validate_nodes():
                     "diameter": 0.1,
                 },
             )
-
+        # If there are fewer than two nodes, raise an error
         else:
             raise ValueError("Fewer than two nodes defined, cannot build segments.")
 
@@ -180,7 +102,7 @@ def validate_nodes():
                         f"No existing node found to connect {missing_node} to."
                     )
 
-                add_segment_to_formboard_def(
+                formboard_graph.append(
                     segment_id,
                     {
                         "segment_id": segment_id,
@@ -192,15 +114,18 @@ def validate_nodes():
                     },
                 )
 
-    # === CLEANUP: remove obsolete one-leg nodes ===
-    # These nodes represent old connectors that no longer exist in the harness definition.
+    # --- Remove any segments that connect to nodes that are both...
+    #        only referenced once in the formboard definition and
+    #        not in the instances list
+    # remove their nodes as well
+
     segments = fileio.read_tsv("formboard graph definition")
     node_occurrences = defaultdict(int)
+
     for seg in segments:
         node_occurrences[seg.get("node_at_end_a")] += 1
         node_occurrences[seg.get("node_at_end_b")] += 1
 
-    # Find nodes that appear in exactly one segment and are not in the current instances list
     obsolete_nodes = [
         node
         for node, count in node_occurrences.items()
@@ -208,17 +133,21 @@ def validate_nodes():
     ]
 
     if obsolete_nodes:
-        cleaned_segments = []
-        for seg in segments:
-            if (
-                seg.get("node_at_end_a") in obsolete_nodes
-                or seg.get("node_at_end_b") in obsolete_nodes
-            ):
-                continue  # delete this segment
-            cleaned_segments.append(seg)
-        write_segment_rows(cleaned_segments)
+        cleaned_segments = [
+            seg
+            for seg in segments
+            if seg.get("node_at_end_a") not in obsolete_nodes
+            and seg.get("node_at_end_b") not in obsolete_nodes
+        ]
 
-    # === Sync formboard definition with instances list ===
+        # reset the file to header only
+        formboard_graph.new()
+
+        # re-append each segment cleanly using your existing append logic
+        for seg in cleaned_segments:
+            formboard_graph.append(seg["segment_id"], seg)
+
+    # --- Ensure each valid segment from formboard definition is represented in instances list
     for segment in fileio.read_tsv("formboard graph definition"):
         instances_list.new_instance(
             segment.get("segment_id"),
@@ -279,7 +208,7 @@ def validate_nodes():
                     "Loop detected in formboard graph. Would be cool, but Harnice doesn't support that yet."
                 )
 
-    # === Detect dangling/disconnected nodes ===
+    # === Find nodes that are not connected to any segments ===
     all_nodes_in_segments = set(adjacency.keys())
     nodes_without_segments = nodes_from_instances_list - all_nodes_in_segments
     if nodes_without_segments:
@@ -287,6 +216,7 @@ def validate_nodes():
             f"Dangling nodes with no connections found: {', '.join(sorted(nodes_without_segments))}"
         )
 
+    # === Ensure each segment is part of the same graph (i.e. no disconnected components) ===
     def bfs(start):
         q = deque([start])
         seen = {start}
