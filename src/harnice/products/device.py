@@ -14,9 +14,9 @@ from harnice.lists import signals_list
 from harnice.products import chtype
 
 ch_type_ids = {
-    "in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
-    "out": (4, "https://github.com/kenyonshutt/harnice-library-public"),
-    "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public")
+    "in": (1, "https://github.com/harnice/library-public"),
+    "out": (4, "https://github.com/harnice/library-public"),
+    "chassis": (5, "https://github.com/harnice/library-public")
 }
 
 xlr_pinout = {
