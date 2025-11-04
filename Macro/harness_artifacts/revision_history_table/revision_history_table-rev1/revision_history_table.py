@@ -75,7 +75,7 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
         if has_bubble:
             library_utils.pull(
                 {
-                    "lib_repo": "https://github.com/harnice/library-public",
+                    "lib_repo": "https://github.com/harnice/harnice-library-public",
                     "item_type": "flagnote",
                     "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
                     "instance_name": f"bubble{rev}",
@@ -153,7 +153,7 @@ for row_index, row in enumerate(data_rows):
         bubble_name = f"bubble{rev}"
         library_utils.pull(
             {
-                "lib_repo": "https://github.com/harnice/library-public",
+                "lib_repo": "https://github.com/harnice/harnice-library-public",
                 "item_type": "flagnote",
                 "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
                 "instance_name": bubble_name,
