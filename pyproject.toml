@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = [
   { name="Kenyon Shutt", email="kenyonshutt@gmail.com" },
 ]
-description = "End-to-end harness generator"
+description = "Electrical System CAD"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -15,11 +15,15 @@ classifiers = [
 
 dependencies = [
     "PySide6>=6.6",
+    "sexpdata",
+    "Pillow",
+    "PyYAML",
+    "xlwt",
 ]
 
 [project.urls]
-Homepage = "https://github.com/kenyonshutt/harnice"
-Issues = "https://github.com/kenyonshutt/harnice/issues"
+Homepage = "https://github.com/harnice/Harnice"
+Issues = "https://github.com/harnice/Harnice/issues"
 
 [project.scripts]
 harnice = "harnice.cli:main"

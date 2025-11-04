@@ -1,12 +1,20 @@
 ***********
-    0: running git: 
+1. Install Homebrew (if not already):
+   https://brew.sh/
 
-    1. install homebrew: https://brew.sh/
-    2. install git: https://git-scm.com/downloads
-    3. git clone: https://github.com/kenyonshutt/harnice
+2. Install git using Homebrew (not the .pkg installer):
+   brew install git
+
+3. Configure your GitHub authentication:
+   brew install gh
+   gh auth login
+   (choose GitHub.com → HTTPS → “Login with browser”)
+
+4. Clone the repo:
+   git clone https://github.com/harnice/Harnice.git
 
 ***********
-1. update library_locations.csv to point Harnice towards your libararies. make this file, if it doesn't exist, make it in the root of your harnice repo.
+1. Update library_locations.csv to point Harnice towards your libararies. Make the file if it doesn't exist in the root of your harnice repo.
     here's the format:
     :
         repo_url,local_path
@@ -24,31 +32,29 @@
 2. install python however you want
 
 *************
-3. install the following packages: (for example, install by "pip3 install x")
-    pip install xlwt
-    pip install lxml
-    pip install sexpdata
-    pip3 install PyPDF2
-    brew install graphviz
-    brew install poppler  # for pdfunite
+3. install the following packages:
 
-3a. if you get errors installing graphviz related to path issues, do this:
-    1. in the same shell that you're running python from (bash or zsh), run:
-        echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.bash_profile
-    2. then apply the change:
-        source ~/.bash_profile
-    3. test it by comparing:
-        which dot
-    4. should have returned
-        /opt/homebrew/bin/dot
-    5. against
-        python3 -c "import shutil; print(shutil.which('dot'))"
-    6. should also have returned
-        /opt/homebrew/bin/dot
+    Option A: Install via pip (recommended):
+        pip install -e .
+    
+    Option B: Manual installation:
+        # Core dependencies:
+        pip install PySide6>=6.6
+        pip install sexpdata
+        pip install Pillow
+        pip install PyYAML
+        
+        # Macro dependencies (used by library macros):
+        pip install xlwt
+        pip install lxml
+        pip install PyPDF2
+        
+    System dependencies:
+        brew install poppler  # for pdfunite
 
 ***********
 4. make sure you have real apps installed that interface with files that Harnice reads and writes:
-    text editor to edit the yaml
-    SVG editor (inkscape?)
-    TSV editor (excel?)
+    text editor to edit feature trees (VSCode, Cursor, Xcode, notepad++, etc)
+    SVG editor (Inkscape preferred)
+    TSV editor (Excel preferred)
     Kicad
