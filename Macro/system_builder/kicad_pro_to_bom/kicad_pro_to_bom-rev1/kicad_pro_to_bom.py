@@ -69,6 +69,9 @@ with open(bom_path, "r", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
     bom = list(reader)
 
+for row in bom:
+    row["device_refdes"] = row["device_refdes"].strip('?')
+
 # Rewrite TSV
 with open(bom_path, "w", encoding="utf-8", newline="") as f:
     fieldnames = BOM_LABELS
