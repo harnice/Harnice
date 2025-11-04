@@ -66,10 +66,15 @@ def export_netlist() -> str:
             )
 
     try:
-        subprocess.run(
+        proc = subprocess.run(
             [kicad_cli, "sch", "export", "netlist", sch_file, "--output", net_file],
-            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
         )
+
+        if proc.returncode != 0:
+            raise RuntimeError(proc.stderr.strip())
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"kicad-cli export failed: {e}")
 
