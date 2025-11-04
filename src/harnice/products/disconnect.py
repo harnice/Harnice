@@ -11,12 +11,12 @@ from harnice.lists import signals_list
 
 ch_type_ids = {
     "A": {
-        "balanced audio mic level in": (1, "https://github.com/kenyonshutt/harnice-library-public"),
-        "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public")
+        "balanced audio mic level in": (1, "https://github.com/harnice/library-public"),
+        "chassis": (5, "https://github.com/harnice/library-public")
     },
     "B": {
-        "balanced audio mic level out": (2, "https://github.com/kenyonshutt/harnice-library-public"),
-        "chassis": (5, "https://github.com/kenyonshutt/harnice-library-public")
+        "balanced audio mic level out": (2, "https://github.com/harnice/library-public"),
+        "chassis": (5, "https://github.com/harnice/library-public")
     }
 }
 
