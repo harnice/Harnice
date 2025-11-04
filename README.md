@@ -1,1 +1,1 @@
-Check out pitch_deck.pdf
+Check out README.pdf
