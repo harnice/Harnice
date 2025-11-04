@@ -7,8 +7,10 @@ from harnice.lists import instances_list, library_history, rev_history
 from harnice.cli import import_print_format
 
 """
+where a part lands in a project after it's been imported:
+
 imported_instances
-    lib_subpath
+    item_type
         destination_directory
             lib_used
                 lib_used_rev
@@ -190,10 +192,48 @@ def pull(input_dict, update_instances_list=True):
 
 
 def get_local_path(lib_repo):
-    for lib in fileio.read_tsv("library locations", delimiter=","):
-        if lib.get("url") == lib_repo:
-            local_path = lib.get("local_path")
-            if not local_path:
-                raise ValueError(f"No local_path found for {lib_repo}")
-            return os.path.expanduser(local_path)
-    raise ValueError(f"No local_path found for {lib_repo}")
+    csv_path = fileio.path("library locations")  # path to library_locations.csv
+
+    # ----------------------------------------------------
+    # If file does not exist, auto-generate with default
+    # ----------------------------------------------------
+    if not os.path.exists(csv_path):
+        # Determine base directory of the Harnice repo
+        # (__file__) → .../harnice/utils/library_utils.py
+        # dirname 3 times → repo root
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+        default_local_path = os.path.join(repo_root, "harnice-library-public")
+
+        # Ensure the directory exists for the CSV
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+
+        with open(csv_path, "w", encoding="utf-8") as f:
+            f.write(f"https://github.com/harnice/library-public,{default_local_path}\n")
+
+        print(f"[harnice] Created '{csv_path}'")
+        print(f"[harnice] Default library-public location: {default_local_path}")
+
+    # ----------------------------------------------------
+    # Normal lookup (with BOM-safe decoding)
+    # ----------------------------------------------------
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            parts = line.split(",")
+            if len(parts) < 2:
+                continue
+
+            url = parts[0].strip()
+            local = parts[1].strip()
+
+            # Case-insensitive match
+            if url.lower() == lib_repo.lower().strip():
+                if not local:
+                    raise ValueError(f"No local path found for '{lib_repo}'")
+                return os.path.expanduser(local)
+
+    raise ValueError(f"'{lib_repo}' not found in library locations")
