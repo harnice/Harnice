@@ -290,7 +290,23 @@ def render(build_macro="", output_macro_dict=None):
             target_net = cli.prompt("Enter the net you want to build this harness from")
 
             path_to_system_pn = fileio.get_path_to_project(project_location_key)
-            build_macro_contents = f'feature_tree_utils.run_macro(\n    "{build_macro_name}",\n    "harness_builder",\n    "https://github.com/harnice/harnice-library-public",\n    "harness-from-system-1",\n    system_pn_rev=["{system_pn}","{system_rev}"],\n    path_to_system_rev=os.path.join("{path_to_system_pn}", "{system_pn}-{system_rev}"),\n    target_net="{target_net}",\n    manifest_nets=["{target_net}"]\n)'
+            build_macro_contents = f"""system_pn_rev = ["{system_pn}","{system_rev}"]
+target_net = "{target_net}"
+feature_tree_utils.run_macro(            
+    "{build_macro_name}",
+    "harness_builder",
+    "https://github.com/harnice/harnice-library-public",
+    "harness-from-system-1",
+    system_pn_rev=system_pn_rev,
+    path_to_system_rev=os.path.join("{path_to_system_pn}", 
+    f"{{system_pn_rev[0]}}-{{system_pn_rev[1]}}"),
+    target_net=target_net,
+    manifest_nets=[target_net]
+)
+rev_history.overwrite({{
+    "desc": f"HARNESS '{{target_net}}' FROM SYSTEM '{{system_pn_rev[0]}}-{{system_pn_rev[1]}}'",
+}})
+"""
             push_harness_instances_list_to_upstream_system = f'post_harness_instances_list.push("{path_to_system_pn}", ("{system_pn}","{system_rev}"))'
 
         else:
