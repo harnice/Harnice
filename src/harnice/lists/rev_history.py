@@ -17,6 +17,7 @@ COLUMNS = [
     "datestarted",
     "datemodified",
     "datereleased",
+    "git_hash_of_harnice_src",
     "drawnby",
     "checkedby",
     "revisionupdates",
@@ -78,6 +79,7 @@ def update_datemodified():
     for row in rows:
         if row.get("rev", "").strip() == target_rev:
             row["datemodified"] = fileio.today()
+            row["git_hash_of_harnice_src"] = fileio.get_git_hash_of_harnice_src()
 
     # Write back
     with open(

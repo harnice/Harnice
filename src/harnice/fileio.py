@@ -4,6 +4,7 @@ import datetime
 import shutil
 import re
 import csv
+import subprocess
 from harnice import state
 
 # standard punctuation:
@@ -184,6 +185,21 @@ def verify_revision_structure(product_type=None):
 
 def today():
     return datetime.date.today().strftime("%-m/%-d/%y")
+
+
+def get_git_hash_of_harnice_src():
+    try:
+        # get path to harnice package directory
+        import harnice
+        repo_dir = os.path.dirname(os.path.dirname(harnice.__file__))
+        # ask git for commit hash
+        return (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_dir)
+            .decode("utf-8")
+            .strip()
+        )
+    except Exception:
+        return "UNKNOWN"
 
 
 def get_path_to_project(traceable_key):
