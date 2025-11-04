@@ -7,4 +7,4 @@ def generate_structure():
 
 def render():
     
-    print("Macro rev history updated")
+    print("\nMacro rendered successfully!\n")
