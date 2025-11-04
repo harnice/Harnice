@@ -1,12 +1,20 @@
 ***********
-    0: running git: 
+1. Install Homebrew (if not already):
+   https://brew.sh/
 
-    1. install homebrew: https://brew.sh/
-    2. install git: https://git-scm.com/downloads
-    3. git clone: https://github.com/kenyonshutt/harnice
+2. Install git using Homebrew (not the .pkg installer):
+   brew install git
+
+3. Configure your GitHub authentication:
+   brew install gh
+   gh auth login
+   (choose GitHub.com → HTTPS → “Login with browser”)
+
+4. Clone the repo:
+   git clone https://github.com/harnice/Harnice.git
 
 ***********
-1. update library_locations.csv to point Harnice towards your libararies. make this file, if it doesn't exist, make it in the root of your harnice repo.
+1. Update library_locations.csv to point Harnice towards your libararies. Make the file if it doesn't exist in the root of your harnice repo.
     here's the format:
     :
         repo_url,local_path
