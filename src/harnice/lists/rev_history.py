@@ -25,6 +25,63 @@ COLUMNS = [
 ]
 
 
+def overwrite(content_dict):
+    PROTECTED_KEYS = [
+    "product",
+    "mfg",
+    "pn",
+    "rev",
+    "releaseticket",
+    "library_repo",
+    "library_subpath",
+    "datestarted",
+]
+    # 1) Ensure no unknown keys
+    for key in content_dict:
+        if key not in COLUMNS:
+            raise KeyError(
+                f"Harnice does not allow writing unknown key '{key}'. "
+                f"Valid columns: {', '.join(COLUMNS)}"
+            )
+
+    # 2) Ensure none of the protected keys are being modified
+    for key in PROTECTED_KEYS:
+        if key in content_dict:
+            raise KeyError(
+                f"Harnice does not allow overwriting '{key}' by script.\n"
+                f"Please edit the revision history manually."
+            )
+
+    # 3) Load or create revision history
+    path = fileio.path("revision history")
+    if not os.path.exists(path):
+        new()  # Creates a blank rev history with header
+
+    rows = fileio.read_tsv("revision history")
+
+    # 4) Determine which revision we are updating from state
+    target_rev = str(state.rev).strip()
+    if not target_rev:
+        raise RuntimeError("state.rev is not set. Did verify_revision_structure() run?")
+
+    # 5) Update matching row
+    found = False
+    for row in rows:
+        if str(row.get("rev", "")).strip() == target_rev:
+            found = True
+            for key, value in content_dict.items():
+                row[key] = value
+
+    if not found:
+        raise ValueError(f"No revision '{target_rev}' found in revision history.")
+
+    # 6) Write updated TSV
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def info(rev=None, path=None, field=None):
     if path is None:
         path = fileio.path("revision history")
