@@ -500,7 +500,7 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     return symbol_data
 
 
-def _remove_channels_from_signals_list():
+def _remove_details_from_signals_list():
     """Remove the specified channel-related columns from the signals list."""
     old_list = fileio.read_tsv("signals list")
 
@@ -737,7 +737,7 @@ def render(lightweight=False):
 
     if lightweight:
         # don't want to map things that have not been mapped completely yet
-        _remove_channels_from_signals_list()
+        _remove_details_from_signals_list()
 
     print(
         f"Kicad nickname:       harnice-devices/{rev_history.info(field='library_subpath')}{state.partnumber('pn')}"
