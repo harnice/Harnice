@@ -82,7 +82,7 @@ def file_structure():
 #define these here because they exist outside the rev folder you're currently working in and fileio.path cant handle that
 def path(target_value):
     if target_value == "library file":
-        return os.path.join(dirpath("kicad"), f"{state.partnumber('pn-rev')}.kicad_sym")
+        return os.path.join(dirpath("kicad"), f"{state.partnumber('pn')}.kicad_sym")
     return fileio.path(target_value)
 
 def dirpath(target_value):
@@ -390,107 +390,82 @@ def _validate_pins(pins, unique_connectors_in_signals_list):
 
 def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     """
-    Append a pin to a KiCad symbol if it's missing, auto-spacing vertically.
+    Append a pin to the KiCad symbol whose name matches state.partnumber('pn-rev').
     Immediately writes the updated symbol back to path("library file").
-
-    Args:
-        pin_name (str): name of the pin.
-        pin_number (str or int): number of the pin.
-        spacing (float): vertical spacing in mm (default 3.81mm).
-
-    Returns:
-        list: Updated symbol_data (sexpdata structure).
     """
     file_path = path("library file")
     pin_number = str(pin_number)
+    target_name = state.partnumber("pn-rev")
 
-    # --- Load latest file contents ---
+    import sexpdata
+
+    # --- Load file ---
     with open(file_path, "r", encoding="utf-8") as f:
         symbol_data = sexpdata.load(f)
 
-    # --- Find the main symbol ---
-    top_symbol = None
-    sub_symbol = None
+    # --- Find the symbol with matching name ---
+    target_symbol = None
     for item in symbol_data:
         if (
             isinstance(item, list)
-            and len(item) > 0
+            and len(item) >= 2
             and isinstance(item[0], sexpdata.Symbol)
+            and item[0].value() == "symbol"
         ):
-            if item[0].value() == "symbol":
-                top_symbol = item
-                for sub in item[1:]:
-                    if isinstance(sub, list) and isinstance(sub[0], sexpdata.Symbol):
-                        if sub[0].value() == "symbol":
-                            sub_symbol = sub
-                            break
+            # (symbol "Name" ...)
+            name_token = item[1]
+            if isinstance(name_token, str) and name_token.strip() == target_name:
+                target_symbol = item
+                break
 
-    # fallback: use top-level symbol if no sub-symbol found
-    target_symbol = sub_symbol if sub_symbol is not None else top_symbol
     if target_symbol is None:
-        raise ValueError("No symbol found in file to append pins into.")
+        raise ValueError(f"No symbol named '{target_name}' found in {file_path}")
 
-    # --- Check for duplicates ---
-    for elem in target_symbol[1:]:
+    # --- Skip if duplicate already present ---
+    for elem in target_symbol[2:]:
         if (
             isinstance(elem, list)
             and isinstance(elem[0], sexpdata.Symbol)
             and elem[0].value() == "pin"
         ):
             name_entry = next(
-                (
-                    x
-                    for x in elem
-                    if isinstance(x, list)
-                    and isinstance(x[0], sexpdata.Symbol)
-                    and x[0].value() == "name"
-                ),
+                (x for x in elem if isinstance(x, list) and len(x) > 1 and
+                 isinstance(x[0], sexpdata.Symbol) and x[0].value() == "name"),
                 None,
             )
             num_entry = next(
-                (
-                    x
-                    for x in elem
-                    if isinstance(x, list)
-                    and isinstance(x[0], sexpdata.Symbol)
-                    and x[0].value() == "number"
-                ),
+                (x for x in elem if isinstance(x, list) and len(x) > 1 and
+                 isinstance(x[0], sexpdata.Symbol) and x[0].value() == "number"),
                 None,
             )
             if (
-                name_entry
-                and name_entry[1] == pin_name
-                and num_entry
-                and num_entry[1] == pin_number
+                name_entry and name_entry[1] == pin_name
+                and num_entry and num_entry[1] == pin_number
             ):
-                return symbol_data  # already present, no write needed
+                return symbol_data  # already present
 
     # --- Find max Y among existing pins ---
-    max_y = -spacing  # ensures first pin goes at 0 if none exist
-    for elem in target_symbol[1:]:
+    max_y = -spacing
+    for elem in target_symbol[2:]:
         if (
             isinstance(elem, list)
             and isinstance(elem[0], sexpdata.Symbol)
             and elem[0].value() == "pin"
         ):
             at_entry = next(
-                (
-                    x
-                    for x in elem
-                    if isinstance(x, list)
-                    and isinstance(x[0], sexpdata.Symbol)
-                    and x[0].value() == "at"
-                ),
+                (x for x in elem if isinstance(x, list)
+                 and len(x) >= 3
+                 and isinstance(x[0], sexpdata.Symbol)
+                 and x[0].value() == "at"),
                 None,
             )
-            if at_entry and len(at_entry) >= 3:
+            if at_entry:
                 y_val = float(at_entry[2])
-                if y_val > max_y:
-                    max_y = y_val
+                max_y = max(max_y, y_val)
 
     new_y = max_y + spacing
 
-    # --- Build new pin block (all keywords as Symbols) ---
+    # --- Build new pin ---
     new_pin = [
         sexpdata.Symbol("pin"),
         sexpdata.Symbol("unspecified"),
@@ -517,12 +492,11 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
 
     target_symbol.append(new_pin)
 
-    # --- Write updated symbol back to file ---
+    # --- Write back ---
     with open(file_path, "w", encoding="utf-8") as f:
         sexpdata.dump(symbol_data, f)
 
-    print(f"Appended pin {pin_name} ({pin_number}) to {state.partnumber('pn-rev')}")
-
+    print(f"Appended pin {pin_name} ({pin_number}) to symbol '{target_name}' in {os.path.basename(file_path)}")
     return symbol_data
 
 
