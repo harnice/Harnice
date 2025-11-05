@@ -226,3 +226,10 @@ def _get_call_chain_str():
         function = frame_info.function
         chain_parts.append(f"{filename}:{lineno} in {function}()")
     return " -> ".join(chain_parts)
+
+
+def set_of_uniques(attribute):
+    output_set = set()
+    for instance in fileio.read_tsv("instances list"):
+        output_set.add(instance.get(attribute))
+    return output_set

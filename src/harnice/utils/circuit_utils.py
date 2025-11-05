@@ -116,7 +116,7 @@ def assign_cable_conductor(
     cable_instance_name,  # unique identifier for the cable in your project
     cable_conductor_id,  # (container, identifier) tuple identifying the conductor in the cable being imported
     conductor_instance,  # instance name of the conductor in your project
-    library_info,  # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev, item_name}
+    library_info,  # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev}
 ):
     instances = fileio.read_tsv("instances list")
 
