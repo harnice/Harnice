@@ -3,6 +3,7 @@ import os
 import csv
 from harnice import fileio, state
 from harnice.products import chtype
+from harnice.lists import signals_list
 
 default_desc = "DISCONNECT, FUNCTION, ATTRIBUTES, etc."
 
@@ -210,6 +211,7 @@ def _validate_signals_list():
 
 
 def render():
+    signals_list.list_type = "disconnect"
     if not os.path.exists(fileio.path("signals list")):
         if not os.path.exists(fileio.path("feature tree")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:

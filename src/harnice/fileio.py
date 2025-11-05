@@ -97,12 +97,13 @@ def path(target_value, structure_dict=None):
 
 
 def dirpath(target_key, structure_dict=None):
-    if structure_dict is None:
-        structure_dict = state.file_structure
     """
     Returns the absolute path to a directory identified by its key
     within a dict hierarchy.
     """
+
+    if structure_dict is None:
+        structure_dict = state.file_structure
 
     def recursive_search(data, path):
         if isinstance(data, dict):

@@ -79,9 +79,20 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
+#define these here because they exist outside the rev folder you're currently working in and fileio.path cant handle that
+def path(target_value):
+    if target_value == "library file":
+        return os.path.join(dirpath("kicad"), f"{state.partnumber('pn')}.kicad_sym")
+    return fileio.path(target_value)
+
+def dirpath(target_value):
+    if target_value == "kicad":
+        return os.path.join(fileio.part_directory(), "kicad")
+    return fileio.dirpath(target_value)
+
 
 def generate_structure():
-    os.makedirs(fileio.dirpath("kicad"), exist_ok=True)
+    os.makedirs(dirpath("kicad"), exist_ok=True)
 
 
 def _make_new_library_file():
@@ -94,7 +105,7 @@ def _make_new_library_file():
         [sexpdata.Symbol("generator_version"), "9.0"],
     ]
 
-    with open(fileio.path("library file"), "w", encoding="utf-8") as f:
+    with open(path("library file"), "w", encoding="utf-8") as f:
         sexpdata.dump(symbol_lib, f, pretty=True)
 
 
@@ -102,7 +113,7 @@ def _parse_kicad_sym_file():
     """
     Load a KiCad .kicad_sym file and return its parsed sexp data.
     """
-    with open(fileio.path("library file"), "r", encoding="utf-8") as f:
+    with open(path("library file"), "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
     return data
 
@@ -153,7 +164,7 @@ def _make_property(name, value, id_counter=None, hide=False):
 def _add_blank_symbol(sym_name, value="", footprint="", datasheet="", description=""):
     """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
 
-    lib_path = fileio.path("library file")
+    lib_path = path("library file")
 
     # Load the existing s-expression
     with open(lib_path, "r", encoding="utf-8") as f:
@@ -198,7 +209,7 @@ def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
     Overwrite or create a property inside the target symbol block
     in the KiCad .kicad_sym library file.
 
-    - File is always fileio.path("library file")
+    - File is always path("library file")
     - Symbol to modify is always named state.partnumber("pn-rev")
 
     Args:
@@ -216,7 +227,7 @@ def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
         value = str(value)
 
     # Load the library file
-    with open(fileio.path("library file"), "r", encoding="utf-8") as f:
+    with open(path("library file"), "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
 
     def next_id(symbol):
@@ -269,7 +280,7 @@ def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
             data[i] = overwrite_or_create(elem)
 
     # Save file back
-    with open(fileio.path("library file"), "w", encoding="utf-8") as f:
+    with open(path("library file"), "w", encoding="utf-8") as f:
         sexpdata.dump(data, f)
 
 
@@ -379,107 +390,82 @@ def _validate_pins(pins, unique_connectors_in_signals_list):
 
 def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     """
-    Append a pin to a KiCad symbol if it's missing, auto-spacing vertically.
-    Immediately writes the updated symbol back to fileio.path("library file").
-
-    Args:
-        pin_name (str): name of the pin.
-        pin_number (str or int): number of the pin.
-        spacing (float): vertical spacing in mm (default 3.81mm).
-
-    Returns:
-        list: Updated symbol_data (sexpdata structure).
+    Append a pin to the KiCad symbol whose name matches state.partnumber('pn-rev').
+    Immediately writes the updated symbol back to path("library file").
     """
-    file_path = fileio.path("library file")
+    file_path = path("library file")
     pin_number = str(pin_number)
+    target_name = state.partnumber("pn-rev")
 
-    # --- Load latest file contents ---
+    import sexpdata
+
+    # --- Load file ---
     with open(file_path, "r", encoding="utf-8") as f:
         symbol_data = sexpdata.load(f)
 
-    # --- Find the main symbol ---
-    top_symbol = None
-    sub_symbol = None
+    # --- Find the symbol with matching name ---
+    target_symbol = None
     for item in symbol_data:
         if (
             isinstance(item, list)
-            and len(item) > 0
+            and len(item) >= 2
             and isinstance(item[0], sexpdata.Symbol)
+            and item[0].value() == "symbol"
         ):
-            if item[0].value() == "symbol":
-                top_symbol = item
-                for sub in item[1:]:
-                    if isinstance(sub, list) and isinstance(sub[0], sexpdata.Symbol):
-                        if sub[0].value() == "symbol":
-                            sub_symbol = sub
-                            break
+            # (symbol "Name" ...)
+            name_token = item[1]
+            if isinstance(name_token, str) and name_token.strip() == target_name:
+                target_symbol = item
+                break
 
-    # fallback: use top-level symbol if no sub-symbol found
-    target_symbol = sub_symbol if sub_symbol is not None else top_symbol
     if target_symbol is None:
-        raise ValueError("No symbol found in file to append pins into.")
+        raise ValueError(f"No symbol named '{target_name}' found in {file_path}")
 
-    # --- Check for duplicates ---
-    for elem in target_symbol[1:]:
+    # --- Skip if duplicate already present ---
+    for elem in target_symbol[2:]:
         if (
             isinstance(elem, list)
             and isinstance(elem[0], sexpdata.Symbol)
             and elem[0].value() == "pin"
         ):
             name_entry = next(
-                (
-                    x
-                    for x in elem
-                    if isinstance(x, list)
-                    and isinstance(x[0], sexpdata.Symbol)
-                    and x[0].value() == "name"
-                ),
+                (x for x in elem if isinstance(x, list) and len(x) > 1 and
+                 isinstance(x[0], sexpdata.Symbol) and x[0].value() == "name"),
                 None,
             )
             num_entry = next(
-                (
-                    x
-                    for x in elem
-                    if isinstance(x, list)
-                    and isinstance(x[0], sexpdata.Symbol)
-                    and x[0].value() == "number"
-                ),
+                (x for x in elem if isinstance(x, list) and len(x) > 1 and
+                 isinstance(x[0], sexpdata.Symbol) and x[0].value() == "number"),
                 None,
             )
             if (
-                name_entry
-                and name_entry[1] == pin_name
-                and num_entry
-                and num_entry[1] == pin_number
+                name_entry and name_entry[1] == pin_name
+                and num_entry and num_entry[1] == pin_number
             ):
-                return symbol_data  # already present, no write needed
+                return symbol_data  # already present
 
     # --- Find max Y among existing pins ---
-    max_y = -spacing  # ensures first pin goes at 0 if none exist
-    for elem in target_symbol[1:]:
+    max_y = -spacing
+    for elem in target_symbol[2:]:
         if (
             isinstance(elem, list)
             and isinstance(elem[0], sexpdata.Symbol)
             and elem[0].value() == "pin"
         ):
             at_entry = next(
-                (
-                    x
-                    for x in elem
-                    if isinstance(x, list)
-                    and isinstance(x[0], sexpdata.Symbol)
-                    and x[0].value() == "at"
-                ),
+                (x for x in elem if isinstance(x, list)
+                 and len(x) >= 3
+                 and isinstance(x[0], sexpdata.Symbol)
+                 and x[0].value() == "at"),
                 None,
             )
-            if at_entry and len(at_entry) >= 3:
+            if at_entry:
                 y_val = float(at_entry[2])
-                if y_val > max_y:
-                    max_y = y_val
+                max_y = max(max_y, y_val)
 
     new_y = max_y + spacing
 
-    # --- Build new pin block (all keywords as Symbols) ---
+    # --- Build new pin ---
     new_pin = [
         sexpdata.Symbol("pin"),
         sexpdata.Symbol("unspecified"),
@@ -506,14 +492,31 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
 
     target_symbol.append(new_pin)
 
-    # --- Write updated symbol back to file ---
+    # --- Write back ---
     with open(file_path, "w", encoding="utf-8") as f:
         sexpdata.dump(symbol_data, f)
 
-    print(f"Appended pin {pin_name} ({pin_number}) to {state.partnumber('pn-rev')}")
-
+    print(f"Appended pin {pin_name} ({pin_number}) to symbol '{target_name}' in {os.path.basename(file_path)}")
     return symbol_data
 
+
+def _remove_details_from_signals_list():
+    """Remove the specified channel-related columns from the signals list."""
+    old_list = fileio.read_tsv("signals list")
+
+    COLUMNS_TO_DROP = {"channel_id", "signal", "cavity"}
+
+    new_list = []
+    for row in old_list:
+        filtered = {k: v for k, v in row.items() if k not in COLUMNS_TO_DROP}
+        new_list.append(filtered)
+
+    # Rewrite the TSV
+    path = fileio.path("signals list")
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=signals_list.COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(new_list)
 
 def _next_free_number(seen_numbers, start=1):
     """Find the next unused pin number as a string."""
@@ -532,8 +535,8 @@ def _validate_kicad_library():
     2. Pins that match the connectors in the signals list.
     """
 
-    if not os.path.exists(fileio.path("library file")):
-        print(f"Making a new Kicad symbol at {fileio.path('library file')}")
+    if not os.path.exists(path("library file")):
+        print(f"Making a new Kicad symbol at {path('library file')}")
         _make_new_library_file()
 
     kicad_library_data = _parse_kicad_sym_file()
@@ -706,15 +709,13 @@ def _validate_signals_list():
     print(f"Signals list of {state.partnumber('pn')} is valid.\n")
 
 
-def _device_render(lightweight=False):
+def render(lightweight=False):
+    signals_list.set_list_type("device")
     _validate_attributes_json()
 
-    if not lightweight:
-        if not os.path.exists(fileio.path("signals list")):
-            with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
-                f.write(device_feature_tree_utils_default)
-    else:
-        if not os.path.exists(fileio.path("signals list")):
+    # make a new signals list
+    if not os.path.exists(fileio.path("signals list")):
+        if lightweight:
             signals_list.new()
             signals_list.write_signal(
                 connector_name="J1",
@@ -723,6 +724,9 @@ def _device_render(lightweight=False):
                 cavity=1,
                 connector_mpn="DB9_F",
             )
+        else:
+            with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
+                f.write(device_feature_tree_utils_default)
 
     if os.path.exists(fileio.path("feature tree")):
         runpy.run_path(fileio.path("feature tree"))
@@ -731,16 +735,12 @@ def _device_render(lightweight=False):
     if not lightweight:
         _validate_signals_list()
 
+    if lightweight:
+        # don't want to map things that have not been mapped completely yet
+        _remove_details_from_signals_list()
+
     print(
         f"Kicad nickname:       harnice-devices/{rev_history.info(field='library_subpath')}{state.partnumber('pn')}"
     )
 
     _validate_kicad_library()
-
-
-def lightweight_render():
-    _device_render(lightweight=True)
-
-
-def render():
-    _device_render(lightweight=False)
