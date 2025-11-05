@@ -79,9 +79,20 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
+#define these here because they exist outside the rev folder you're currently working in and fileio.path cant handle that
+def path(target_value):
+    if target_value == "library file":
+        return os.path.join(dirpath("kicad"), f"{state.partnumber('pn-rev')}.kicad_sym")
+    return fileio.path(target_value)
+
+def dirpath(target_value):
+    if target_value == "kicad":
+        return os.path.join(fileio.part_directory(), "kicad")
+    return fileio.dirpath(target_value)
+
 
 def generate_structure():
-    os.makedirs(fileio.dirpath("kicad"), exist_ok=True)
+    os.makedirs(dirpath("kicad"), exist_ok=True)
 
 
 def _make_new_library_file():
@@ -94,7 +105,7 @@ def _make_new_library_file():
         [sexpdata.Symbol("generator_version"), "9.0"],
     ]
 
-    with open(fileio.path("library file"), "w", encoding="utf-8") as f:
+    with open(path("library file"), "w", encoding="utf-8") as f:
         sexpdata.dump(symbol_lib, f, pretty=True)
 
 
@@ -102,7 +113,7 @@ def _parse_kicad_sym_file():
     """
     Load a KiCad .kicad_sym file and return its parsed sexp data.
     """
-    with open(fileio.path("library file"), "r", encoding="utf-8") as f:
+    with open(path("library file"), "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
     return data
 
@@ -153,7 +164,7 @@ def _make_property(name, value, id_counter=None, hide=False):
 def _add_blank_symbol(sym_name, value="", footprint="", datasheet="", description=""):
     """Append a blank symbol into the .kicad_sym at fileio.path('library file')."""
 
-    lib_path = fileio.path("library file")
+    lib_path = path("library file")
 
     # Load the existing s-expression
     with open(lib_path, "r", encoding="utf-8") as f:
@@ -198,7 +209,7 @@ def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
     Overwrite or create a property inside the target symbol block
     in the KiCad .kicad_sym library file.
 
-    - File is always fileio.path("library file")
+    - File is always path("library file")
     - Symbol to modify is always named state.partnumber("pn-rev")
 
     Args:
@@ -216,7 +227,7 @@ def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
         value = str(value)
 
     # Load the library file
-    with open(fileio.path("library file"), "r", encoding="utf-8") as f:
+    with open(path("library file"), "r", encoding="utf-8") as f:
         data = sexpdata.load(f)
 
     def next_id(symbol):
@@ -269,7 +280,7 @@ def _overwrite_or_create_property_in_symbol(prop_name, value, hide=False):
             data[i] = overwrite_or_create(elem)
 
     # Save file back
-    with open(fileio.path("library file"), "w", encoding="utf-8") as f:
+    with open(path("library file"), "w", encoding="utf-8") as f:
         sexpdata.dump(data, f)
 
 
@@ -380,7 +391,7 @@ def _validate_pins(pins, unique_connectors_in_signals_list):
 def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     """
     Append a pin to a KiCad symbol if it's missing, auto-spacing vertically.
-    Immediately writes the updated symbol back to fileio.path("library file").
+    Immediately writes the updated symbol back to path("library file").
 
     Args:
         pin_name (str): name of the pin.
@@ -390,7 +401,7 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     Returns:
         list: Updated symbol_data (sexpdata structure).
     """
-    file_path = fileio.path("library file")
+    file_path = path("library file")
     pin_number = str(pin_number)
 
     # --- Load latest file contents ---
@@ -515,6 +526,24 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     return symbol_data
 
 
+def _remove_channels_from_signals_list():
+    """Remove the specified channel-related columns from the signals list."""
+    old_list = fileio.read_tsv("signals list")
+
+    COLUMNS_TO_DROP = {"channel_id", "signal", "cavity"}
+
+    new_list = []
+    for row in old_list:
+        filtered = {k: v for k, v in row.items() if k not in COLUMNS_TO_DROP}
+        new_list.append(filtered)
+
+    # Rewrite the TSV
+    path = fileio.path("signals list")
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=signals_list.COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(new_list)
+
 def _next_free_number(seen_numbers, start=1):
     """Find the next unused pin number as a string."""
     n = start
@@ -532,8 +561,8 @@ def _validate_kicad_library():
     2. Pins that match the connectors in the signals list.
     """
 
-    if not os.path.exists(fileio.path("library file")):
-        print(f"Making a new Kicad symbol at {fileio.path('library file')}")
+    if not os.path.exists(path("library file")):
+        print(f"Making a new Kicad symbol at {path('library file')}")
         _make_new_library_file()
 
     kicad_library_data = _parse_kicad_sym_file()
@@ -706,15 +735,13 @@ def _validate_signals_list():
     print(f"Signals list of {state.partnumber('pn')} is valid.\n")
 
 
-def _device_render(lightweight=False):
+def render(lightweight=False):
+    signals_list.set_list_type("device")
     _validate_attributes_json()
 
-    if not lightweight:
-        if not os.path.exists(fileio.path("signals list")):
-            with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
-                f.write(device_feature_tree_utils_default)
-    else:
-        if not os.path.exists(fileio.path("signals list")):
+    # make a new signals list
+    if not os.path.exists(fileio.path("signals list")):
+        if lightweight:
             signals_list.new()
             signals_list.write_signal(
                 connector_name="J1",
@@ -723,6 +750,9 @@ def _device_render(lightweight=False):
                 cavity=1,
                 connector_mpn="DB9_F",
             )
+        else:
+            with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
+                f.write(device_feature_tree_utils_default)
 
     if os.path.exists(fileio.path("feature tree")):
         runpy.run_path(fileio.path("feature tree"))
@@ -731,16 +761,12 @@ def _device_render(lightweight=False):
     if not lightweight:
         _validate_signals_list()
 
+    if lightweight:
+        # don't want to map things that have not been mapped completely yet
+        _remove_channels_from_signals_list()
+
     print(
         f"Kicad nickname:       harnice-devices/{rev_history.info(field='library_subpath')}{state.partnumber('pn')}"
     )
 
     _validate_kicad_library()
-
-
-def lightweight_render():
-    _device_render(lightweight=True)
-
-
-def render():
-    _device_render(lightweight=False)

@@ -2,6 +2,9 @@ import csv
 import os
 from harnice import fileio
 
+list_type = None
+COLUMNS = []
+
 # Signals list column headers to match source of truth + compatibility change
 DEVICE_COLUMNS = [
     "channel_id",  # unique identifier for the channel
@@ -23,13 +26,17 @@ DISCONNECT_COLUMNS = [
     "B_channel_type",
 ]
 
+def set_list_type(x):
+    global list_type
+    list_type = x
+
+    global COLUMNS
+    if list_type == "device":
+        COLUMNS = DEVICE_COLUMNS
+    elif list_type == "disconnect":
+        COLUMNS = DISCONNECT_COLUMNS
 
 def new():
-    global headers
-    if fileio.product_type == "device":
-        headers = DEVICE_COLUMNS
-    elif fileio.product_type == "disconnect":
-        headers = DISCONNECT_COLUMNS
 
     """
     Creates a new signals TSV file at fileio.path("signals list") with only the header row.
@@ -43,7 +50,7 @@ def new():
 
     with open(signals_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter="\t")
-        writer.writerow(headers)
+        writer.writerow(COLUMNS)
 
 
 def append(**kwargs):
@@ -66,7 +73,7 @@ def append(**kwargs):
         new()
 
     # --- Define required fields based on product type ---
-    if fileio.product_type == "device":
+    if list_type == "device":
         required = [
             "channel_id",
             "signal",
@@ -75,7 +82,7 @@ def append(**kwargs):
             "connector_mpn",
             "channel_type",
         ]
-    elif fileio.product_type == "disconnect":
+    elif list_type == "disconnect":
         required = [
             "channel_id",
             "signal",
@@ -93,11 +100,11 @@ def append(**kwargs):
     missing = [key for key in required if not kwargs.get(key)]
     if missing:
         raise ValueError(
-            f"Missing required signal fields for {fileio.product_type}: {', '.join(missing)}"
+            f"Missing required signal fields for '{list_type}': {', '.join(missing)}"
         )
 
     # --- Fill row in header order ---
-    row = [kwargs.get(col, "") for col in headers]
+    row = [kwargs.get(col, "") for col in COLUMNS]
 
     # --- Append to the signals list ---
     with open(signals_path, "a", newline="", encoding="utf-8") as f:

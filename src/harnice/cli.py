@@ -120,6 +120,7 @@ def main():
     # Execute render logic
     # -----------------------------
     if args.lightweight:
+        product_module.render(lightweight=True)
         try:
             product_module.render(lightweight=True)
         except TypeError:
