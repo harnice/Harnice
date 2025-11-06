@@ -118,11 +118,11 @@ def assign_cable_conductor(
     cable_conductor_id,  # (container, identifier) tuple identifying the conductor in the cable being imported
     conductor_instance,  # instance name of the conductor in your project
     library_info,  # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev}
-    net   # which net this cable belongs to
+    net,  # which net this cable belongs to
 ):
     # for cable_conductor_id, see (container, identifier) from the cable conductor list.
-    #TODO: ensure cable_conductor_id has the right format.
-    
+    # TODO: ensure cable_conductor_id has the right format.
+
     instances = fileio.read_tsv("instances list")
 
     instances_list.new_instance(
@@ -133,7 +133,7 @@ def assign_cable_conductor(
             "location_type": "segment",
             "cable_group": cable_instance_name,
         },
-        ignore_duplicates=True
+        ignore_duplicates=True,
     )
 
     # --- Import cable from library ---

@@ -8,6 +8,7 @@ from harnice.utils import svg_utils
 
 default_desc = "COTS COMPONENT, SIZE, COLOR, etc."
 
+
 def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-drawing.svg": "drawing",

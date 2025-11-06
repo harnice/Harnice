@@ -23,81 +23,79 @@ for instance in fileio.read_tsv("instances list"):
     parent_csys_outputcsys_name = None
 
     if instance.get("item_type") == "connector":
-        parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "backshell")
+        parent_csys = instances_list.instance_in_connector_group_with_item_type(
+            instance.get("connector_group"), "backshell"
+        )
         parent_csys_outputcsys_name = "connector"
         if parent_csys == 0:
-            parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "node")
+            parent_csys = instances_list.instance_in_connector_group_with_item_type(
+                instance.get("connector_group"), "node"
+            )
             parent_csys_outputcsys_name = "origin"
 
     elif instance.get("item_type") == "backshell":
-        parent_csys = instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "node")
+        parent_csys = instances_list.instance_in_connector_group_with_item_type(
+            instance.get("connector_group"), "node"
+        )
         parent_csys_outputcsys_name = "origin"
     else:
         continue
 
-    instances_list.modify(instance.get("instance_name"), {
-        "parent_csys_instance_name": parent_csys.get("instance_name"),
-        "parent_csys_outputcsys_name": parent_csys_outputcsys_name
-    })
+    instances_list.modify(
+        instance.get("instance_name"),
+        {
+            "parent_csys_instance_name": parent_csys.get("instance_name"),
+            "parent_csys_outputcsys_name": parent_csys_outputcsys_name,
+        },
+    )
 
 feature_tree_utils.update_translate_content()
 
-#===========================================================================
-#                   ASSIGN CONDUCTORS
-#===========================================================================
-#assume the only existing ports at this point are cavities 0 and 1
 
-for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "circuit":
-        circuit_id = instance.get("circuit_id")
-        conductor_name = f"conductor-{circuit_id}"
-        instances_list.new_instance(conductor_name, {
-            "item_type": "conductor",
-            "location_type": "segment",
-            "node_at_end_a": circuit_utils.instance_of_circuit_port_number(circuit_id, 0),
-            "node_at_end_b": circuit_utils.instance_of_circuit_port_number(circuit_id, 1)
-        })
-        circuit_utils.squeeze_instance_between_ports_in_circuit(conductor_name, instance.get("circuit_id"), 1)
-
-#===========================================================================
+# ===========================================================================
 #                   UPDATE FORMBOARD DATA
-#===========================================================================
+# ===========================================================================
 formboard_utils.validate_nodes()
 
+# each cable ends at the same nodes as its conductors.
+instances = fileio.read_tsv("instances list")
+for instance in instances:
+    if instance.get("item_type") == "cable":
+        for instance2 in instances:
+            if instance2.get("parent_instance") == instance.get("instance_name"):
+                if instance2.get("item_type") == "conductor":
+                    instances_list.modify(instance.get("instance_name"), {
+                        "node_at_end_a": instance2.get("node_at_end_a"),
+                        "node_at_end_b": instance2.get("node_at_end_b"),
+                    })
+                    break
+
+# make segment instances for cables and conductors
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "conductor":
+    if instance.get("item_type") in ["conductor", "cable"]:
         formboard_utils.map_instance_to_segments(instance)
 
+# sum lengths of conductors and cables
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "conductor":
-        conductor_length = 0
+    if instance.get("item_type") in ["conductor", "cable"]:
+        length = 0
         for instance2 in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
                 if instance2.get("length", "").strip():
-                    conductor_length += int(instance2.get("length").strip())
-        instances_list.modify(instance.get("instance_name"), {"length": conductor_length})
-
-for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "cable":
-        cable_length = 0
-        for instance2 in fileio.read_tsv("instances list"):
-            if instance2.get("parent_instance") == instance.get("instance_name"):
-                child_length = int(instance2.get("length", "").strip())
-                if child_length > cable_length:
-                    cable_length = child_length
-        instances_list.modify(instance.get("instance_name"), {"length": cable_length})
+                    length += int(instance2.get("length").strip())
+        instances_list.modify(
+            instance.get("instance_name"), {"length": length}
+        )
 
 formboard_utils.generate_node_coordinates()
 formboard_utils.make_segment_drawings()
 
-#===========================================================================
+# ===========================================================================
 #                   ASSIGN BOM LINE NUMBERS
-#===========================================================================
+# ===========================================================================
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["connector", "cable", "backshell"]:
-        instances_list.modify(instance.get("instance_name"),{
-            "bom_line_number": True
-        })
+        instances_list.modify(instance.get("instance_name"), {"bom_line_number": True})
 instances_list.assign_bom_line_numbers()
 
 #===========================================================================

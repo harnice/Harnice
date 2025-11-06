@@ -79,11 +79,13 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
-#define these here because they exist outside the rev folder you're currently working in and fileio.path cant handle that
+
+# define these here because they exist outside the rev folder you're currently working in and fileio.path cant handle that
 def path(target_value):
     if target_value == "library file":
         return os.path.join(dirpath("kicad"), f"{state.partnumber('pn')}.kicad_sym")
     return fileio.path(target_value)
+
 
 def dirpath(target_value):
     if target_value == "kicad":
@@ -429,18 +431,32 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
             and elem[0].value() == "pin"
         ):
             name_entry = next(
-                (x for x in elem if isinstance(x, list) and len(x) > 1 and
-                 isinstance(x[0], sexpdata.Symbol) and x[0].value() == "name"),
+                (
+                    x
+                    for x in elem
+                    if isinstance(x, list)
+                    and len(x) > 1
+                    and isinstance(x[0], sexpdata.Symbol)
+                    and x[0].value() == "name"
+                ),
                 None,
             )
             num_entry = next(
-                (x for x in elem if isinstance(x, list) and len(x) > 1 and
-                 isinstance(x[0], sexpdata.Symbol) and x[0].value() == "number"),
+                (
+                    x
+                    for x in elem
+                    if isinstance(x, list)
+                    and len(x) > 1
+                    and isinstance(x[0], sexpdata.Symbol)
+                    and x[0].value() == "number"
+                ),
                 None,
             )
             if (
-                name_entry and name_entry[1] == pin_name
-                and num_entry and num_entry[1] == pin_number
+                name_entry
+                and name_entry[1] == pin_name
+                and num_entry
+                and num_entry[1] == pin_number
             ):
                 return symbol_data  # already present
 
@@ -453,10 +469,14 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
             and elem[0].value() == "pin"
         ):
             at_entry = next(
-                (x for x in elem if isinstance(x, list)
-                 and len(x) >= 3
-                 and isinstance(x[0], sexpdata.Symbol)
-                 and x[0].value() == "at"),
+                (
+                    x
+                    for x in elem
+                    if isinstance(x, list)
+                    and len(x) >= 3
+                    and isinstance(x[0], sexpdata.Symbol)
+                    and x[0].value() == "at"
+                ),
                 None,
             )
             if at_entry:
@@ -496,7 +516,9 @@ def _append_missing_pin(pin_name, pin_number, spacing=3.81):
     with open(file_path, "w", encoding="utf-8") as f:
         sexpdata.dump(symbol_data, f)
 
-    print(f"Appended pin {pin_name} ({pin_number}) to symbol '{target_name}' in {os.path.basename(file_path)}")
+    print(
+        f"Appended pin {pin_name} ({pin_number}) to symbol '{target_name}' in {os.path.basename(file_path)}"
+    )
     return symbol_data
 
 
@@ -517,6 +539,7 @@ def _remove_details_from_signals_list():
         writer = csv.DictWriter(f, fieldnames=signals_list.COLUMNS, delimiter="\t")
         writer.writeheader()
         writer.writerows(new_list)
+
 
 def _next_free_number(seen_numbers, start=1):
     """Find the next unused pin number as a string."""

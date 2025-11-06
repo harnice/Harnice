@@ -201,7 +201,13 @@ def get_local_path(lib_repo):
         # Determine base directory of the Harnice repo
         # (__file__) → .../harnice/utils/library_utils.py
         # dirname 3 times → repo root
-        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+        repo_root = os.path.dirname(
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
+            )
+        )
 
         default_local_path = os.path.join(repo_root, "harnice-library-public")
 
@@ -209,7 +215,9 @@ def get_local_path(lib_repo):
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 
         with open(csv_path, "w", encoding="utf-8") as f:
-            f.write(f"https://github.com/harnice/harnice-library-public,{default_local_path}\n")
+            f.write(
+                f"https://github.com/harnice/harnice-library-public,{default_local_path}\n"
+            )
 
         print(f"[harnice] Created '{csv_path}'")
         print(f"[harnice] Default library-public location: {default_local_path}")

@@ -26,6 +26,7 @@ DISCONNECT_COLUMNS = [
     "B_channel_type",
 ]
 
+
 def set_list_type(x):
     global list_type
     list_type = x
@@ -36,8 +37,8 @@ def set_list_type(x):
     elif list_type == "disconnect":
         COLUMNS = DISCONNECT_COLUMNS
 
-def new():
 
+def new():
     """
     Creates a new signals TSV file at fileio.path("signals list") with only the header row.
     Overwrites any existing file.

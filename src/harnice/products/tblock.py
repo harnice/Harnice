@@ -7,6 +7,7 @@ from harnice import fileio, cli, state
 
 default_desc = "TITLEBLOCK, PAPER SIZE, DESIGN"
 
+
 def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-params.json": "params",
@@ -20,7 +21,13 @@ def generate_structure():
 
 
 def render():
-    if cli.prompt("Warning: rendering a titleblock may clear user edits to its svg. Proceed?", default="yes") != "yes":
+    if (
+        cli.prompt(
+            "Warning: rendering a titleblock may clear user edits to its svg. Proceed?",
+            default="yes",
+        )
+        != "yes"
+    ):
         exit()
 
     # === Default Parameters ===

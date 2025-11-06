@@ -15,7 +15,7 @@ def set_rev(x):
 def set_net(x):
     global net
     net = x
-    
+
 
 def set_file_structure(x):
     global file_structure

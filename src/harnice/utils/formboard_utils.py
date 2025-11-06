@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 from harnice import fileio
 from harnice.lists import instances_list, formboard_graph
 
+
 def validate_nodes():
     # Ensure TSV exists
     if not os.path.exists(fileio.path("formboard graph definition")):
@@ -566,6 +567,7 @@ def map_instance_to_segments(instance):
             f"{instance.get('instance_name')}.{seg_name}",
             {
                 "item_type": f"{instance.get('item_type')}-segment",
+                "parent_instance": instance.get("instance_name"),
                 "segment_group": seg_name,
                 "parent_csys": seg_name,
                 "location_type": "segment",
