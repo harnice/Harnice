@@ -19,8 +19,6 @@ def file_structure(instance_name):
     }
 
 
-
-
 def make_note_drawings():
     instances = fileio.read_tsv("instances list")
 
@@ -30,14 +28,18 @@ def make_note_drawings():
 
         instance_name = instance.get("instance_name")
 
-        destination_directory = fileio.dirpath("flagnote", structure_dict=file_structure(instance_name))
+        destination_directory = fileio.dirpath(
+            "flagnote", structure_dict=file_structure(instance_name)
+        )
         os.makedirs(destination_directory, exist_ok=True)
 
         # === Pull library item ===
         library_utils.pull(instance)
 
         # === Replace placeholder in SVG ===
-        flagnote_drawing_path = fileio.path("flagnote drawing", structure_dict=file_structure(instance_name))
+        flagnote_drawing_path = fileio.path(
+            "flagnote drawing", structure_dict=file_structure(instance_name)
+        )
 
         with open(flagnote_drawing_path, "r", encoding="utf-8") as f:
             svg = f.read()

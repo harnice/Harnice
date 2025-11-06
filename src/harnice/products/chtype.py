@@ -56,6 +56,14 @@ def compatibles(channel_type):
     return []
 
 
+def is_or_is_compatible_with(channel_type):
+    output = []
+    output.append(parse(channel_type))
+    for compatible in compatibles(channel_type):
+        output.append(compatible)
+    return output
+
+
 # search channel_types.tsv
 def signals(channel_type):
     chid, lib_repo = parse(channel_type)

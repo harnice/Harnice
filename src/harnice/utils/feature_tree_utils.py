@@ -28,7 +28,7 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
             "item_type": "macro",
             "instance_name": artifact_id,
         },
-        update_instances_list=False
+        update_instances_list=False,
     )
 
     macro_dirpath = os.path.join(
@@ -54,14 +54,16 @@ def lookup_outputcsys_from_lib_used(instance, outputcsys):
         fileio.dirpath("imported_instances"),
         instance.get("item_type"),
         instance.get("instance_name"),
-        f"{instance.get("instance_name")}-attributes.json"
+        f"{instance.get("instance_name")}-attributes.json",
     )
 
     try:
         with open(attributes_path, "r", encoding="utf-8") as f:
             attributes_data = json.load(f)
     except FileNotFoundError:
-        raise ValueError(f"Attributes file for instance {instance.get('instance_name')} not found at {attributes_path}")
+        raise ValueError(
+            f"Attributes file for instance {instance.get('instance_name')} not found at {attributes_path}"
+        )
 
     csys_children = attributes_data.get("csys_children", {})
 
@@ -100,7 +102,9 @@ def update_translate_content():
             continue  # these are automatically assigned at start
 
         for instance2 in instances:
-            if instance2.get("instance_name") == instance.get("parent_csys_instance_name"):
+            if instance2.get("instance_name") == instance.get(
+                "parent_csys_instance_name"
+            ):
                 parent_csys_instance = instance2
                 break
 

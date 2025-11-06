@@ -14,13 +14,16 @@ import_print_format = [
     "{:<16}",  # import state column
 ]
 
+
 def print_import_headers():
-    print(f"{import_print_format[0].format('')}"
+    print(
+        f"{import_print_format[0].format('')}"
         f"{import_print_format[1].format('INSTANCE NAME')}"
         f"{import_print_format[2].format('ITEM TYPE')}"
         f"{import_print_format[3].format('LIBRARY STATUS')}"
         f"{import_print_format[4].format('IMPORT STATE')}"
     )
+
 
 def main():
     # Ensure cwd exists
@@ -46,20 +49,21 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
 
     group.add_argument(
-        "-r", "--render",
-        action="store_true",
-        help="Render the product normally"
+        "-r", "--render", action="store_true", help="Render the product normally"
     )
 
     group.add_argument(
-        "-l", "--lightweight",
+        "-l",
+        "--lightweight",
         action="store_true",
-        help="Render the product quickly without performing all checks"
+        help="Render the product quickly without performing all checks",
     )
 
-    group.add_argument("--newrev",
+    group.add_argument(
+        "--newrev",
         action="store_true",
-        help="Create a new revision in the current working directory")
+        help="Create a new revision in the current working directory",
+    )
 
     group.add_argument(
         "--gui",
@@ -71,6 +75,7 @@ def main():
 
     if args.gui:
         from harnice.gui.launcher import main as gui_main
+
         gui_main()
         return
 
@@ -93,8 +98,7 @@ def main():
     # -----------------------------
     try:
         product_module = __import__(
-            f"harnice.products.{item_type}",
-            fromlist=[item_type]
+            f"harnice.products.{item_type}", fromlist=[item_type]
         )
     except ModuleNotFoundError:
         sys.exit(f"Unknown product: '{item_type}'")
@@ -181,5 +185,9 @@ def newrev():
         f"Successfully created new revision: {state.partnumber('pn')}-rev{new_rev_number}. Please cd into it."
     )
 
+
 def select_product_type():
-    return prompt("What product type are you working on? (harness, system, device, etc.)", default="harness")
+    return prompt(
+        "What product type are you working on? (harness, system, device, etc.)",
+        default="harness",
+    )

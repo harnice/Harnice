@@ -98,7 +98,7 @@ def new_instance(instance_name, instance_data, ignore_duplicates=False):
     if instance_data.get("net") is None:
         try:
             instance_data["net"] = state.net
-        except AttributeError: #no net has been set
+        except AttributeError:  # no net has been set
             pass
 
     # Add debug call chain
@@ -226,3 +226,12 @@ def _get_call_chain_str():
         function = frame_info.function
         chain_parts.append(f"{filename}:{lineno} in {function}()")
     return " -> ".join(chain_parts)
+
+
+def list_of_uniques(attribute):
+    output = []
+    for instance in fileio.read_tsv("instances list"):
+        if instance.get(attribute) not in output:
+            if instance.get(attribute) not in [None, ""]:
+                output.append(instance.get(attribute))
+    return output

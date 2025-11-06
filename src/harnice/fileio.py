@@ -192,6 +192,7 @@ def get_git_hash_of_harnice_src():
     try:
         # get path to harnice package directory
         import harnice
+
         repo_dir = os.path.dirname(os.path.dirname(harnice.__file__))
         # ask git for commit hash
         return (
@@ -238,11 +239,12 @@ def get_path_to_project(traceable_key):
 
             if key == traceable_key:
                 if not local:
-                    raise ValueError(f"No project local path found for '{traceable_key}'")
+                    raise ValueError(
+                        f"No project local path found for '{traceable_key}'"
+                    )
                 return os.path.expanduser(local)
 
     raise ValueError(f"Could not find project traceable key '{traceable_key}'")
-
 
 
 def read_tsv(filepath, delimiter="\t"):

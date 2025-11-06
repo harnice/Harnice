@@ -11,6 +11,7 @@ COLUMNS = [
     "diameter",
 ]
 
+
 def new():
     with open(
         fileio.path("formboard graph definition"),
@@ -33,8 +34,10 @@ def append(segment_id, segment_data):
     segment_data["segment_id"] = segment_id
 
     # Prevent duplicates
-    if any(row.get("segment_id") == segment_id
-           for row in fileio.read_tsv("formboard graph definition")):
+    if any(
+        row.get("segment_id") == segment_id
+        for row in fileio.read_tsv("formboard graph definition")
+    ):
         return True
 
     # Ensure the file exists
@@ -58,4 +61,3 @@ def append(segment_id, segment_data):
         writer.writerow({key: segment_data.get(key, "") for key in COLUMNS})
 
     return False
-    

@@ -27,15 +27,15 @@ COLUMNS = [
 
 def overwrite(content_dict):
     PROTECTED_KEYS = [
-    "product",
-    "mfg",
-    "pn",
-    "rev",
-    "releaseticket",
-    "library_repo",
-    "library_subpath",
-    "datestarted",
-]
+        "product",
+        "mfg",
+        "pn",
+        "rev",
+        "releaseticket",
+        "library_repo",
+        "library_subpath",
+        "datestarted",
+    ]
     # 1) Ensure no unknown keys
     for key in content_dict:
         if key not in COLUMNS:
@@ -150,6 +150,7 @@ def update_datemodified():
 def new():
     columns = COLUMNS
     from harnice.cli import select_product_type
+
     global product
     product = select_product_type()
     with open(fileio.path("revision history"), "w", newline="", encoding="utf-8") as f:
@@ -159,6 +160,7 @@ def new():
 
 def append(next_rev=None):
     from harnice import cli
+
     global product
 
     if not os.path.exists(fileio.path("revision history")):
@@ -180,9 +182,7 @@ def append(next_rev=None):
     default_desc = ""
     if product_name:
         try:
-            product_module = importlib.import_module(
-                f"harnice.products.{product_name}"
-            )
+            product_module = importlib.import_module(f"harnice.products.{product_name}")
         except ModuleNotFoundError:
             product_module = None
         else:
