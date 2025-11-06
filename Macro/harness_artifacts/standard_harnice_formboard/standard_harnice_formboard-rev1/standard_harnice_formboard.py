@@ -33,6 +33,7 @@ def file_structure():
 fileio.silentremove(fileio.dirpath("flagnote", structure_dict=file_structure()))
 os.makedirs(fileio.dirpath("flagnote", structure_dict=file_structure()))
 
+
 def _calculate_formboard_location(instance_name, origin):
     instances = fileio.read_tsv("instances list")
     instances_lookup = {row["instance_name"]: row for row in instances}
@@ -71,6 +72,7 @@ def _calculate_formboard_location(instance_name, origin):
         angle += rotate_csys  # update orientation after translation
 
     return x_pos, y_pos, angle
+
 
 # ==========================
 # MAIN
