@@ -23,37 +23,41 @@ def file_structure():
 instances = fileio.read_tsv("instances list")
 svg_groups = []
 
+if item_type is None:
+    raise ValueError("item_type is required: which item types are you trying to visualize?")
+
+if scale is None:
+    raise ValueError("scale is required")
+
 for segment_group in instances_list.list_of_uniques("segment_group"):
 
+    # Build group_items with optional item_type filtering
     group_items = []
     for instance in instances:
-        # Must match segment group
         if instance.get("segment_group") != segment_group:
             continue
-
-        # If item_type is specified, it must match
+        # Only filter by item_type if item_type is provided (not None)
         if instance.get("item_type") != item_type:
             continue
-
         group_items.append(instance)
 
     n = len(group_items)
     if n == 0:
         continue
 
-    # real → svg conversion:
+    # real → svg conversion (flip Y and rotation)
     tx = float(instances_list.attribute_of(segment_group, "translate_x") or 0)
     ty = float(instances_list.attribute_of(segment_group, "translate_y") or 0)
     rot = float(instances_list.attribute_of(segment_group, "absolute_rotation") or 0)
     length = float(instances_list.attribute_of(segment_group, "length") or 0) * 96
 
-    # Flip y and rotation to convert coordinate systems
-    ty_svg = -ty
-    rot_svg = -rot
+    ty_svg = -ty          # flip Y
+    rot_svg = -rot        # flip rotation to match flipped Y
 
-    # Center vertically, but invert so positive upward in real becomes downward in SVG
+    # Center vertically (positive-up in real → positive-down in SVG)
     y_offsets = [-(i - (n - 1) / 2) * segment_spacing for i in range(n)]
 
+    # Build line elements
     line_elems = []
     for y in y_offsets:
         line_elems.append(
@@ -61,10 +65,13 @@ for segment_group in instances_list.list_of_uniques("segment_group"):
             f'stroke="black" stroke-width="1"/>'
         )
 
+    # Use nested groups so translation is clearly applied, then rotation around translated origin
     svg_groups.append(
-        f'<g id="{segment_group}" transform="translate({tx:.3f},{ty_svg:.3f}) rotate({rot_svg:.3f})">'
-        + "".join(line_elems)
-        + "</g>"
+        f'<g id="{segment_group}" transform="translate({tx:.3f},{ty_svg:.3f})">'
+        f'  <g transform="rotate({rot_svg:.3f})">'
+        + "".join(line_elems) +
+        f'  </g>'
+        f'</g>'
     )
 
 
