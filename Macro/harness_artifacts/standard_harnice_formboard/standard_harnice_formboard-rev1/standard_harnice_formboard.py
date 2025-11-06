@@ -89,8 +89,6 @@ origin = [0, 0, rotation]
 
 flagnote_utils.make_note_drawings()
 
-origin = [0, 0, rotation]
-
 # Group instances by item_type
 grouped_instances = defaultdict(list)
 for instance in instances:
