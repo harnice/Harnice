@@ -228,8 +228,10 @@ def _get_call_chain_str():
     return " -> ".join(chain_parts)
 
 
-def set_of_uniques(attribute):
-    output_set = set()
+def list_of_uniques(attribute):
+    output = []
     for instance in fileio.read_tsv("instances list"):
-        output_set.add(instance.get(attribute))
-    return output_set
+        if instance.get(attribute) not in output:
+            if instance.get(attribute) not in [None, ""]:
+                output.append(instance.get(attribute))
+    return output

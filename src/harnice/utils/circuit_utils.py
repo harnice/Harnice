@@ -118,6 +118,9 @@ def assign_cable_conductor(
     conductor_instance,  # instance name of the conductor in your project
     library_info,  # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev}
 ):
+    # for cable_conductor_id, see (container, identifier) from the cable conductor list.
+    #TODO: ensure cable_conductor_id has the right format.
+    
     instances = fileio.read_tsv("instances list")
 
     instances_list.new_instance(
@@ -127,12 +130,14 @@ def assign_cable_conductor(
             "location_type": "segment",
             "cable_group": cable_instance_name,
         },
+        ignore_duplicates=True
     )
 
     # --- Import cable from library ---
     library_utils.pull(
         {
             "lib_repo": library_info.get("lib_repo"),
+            "lib_subpath": library_info.get("lib_subpath"),
             "item_type": "cable",
             "mpn": library_info.get("mpn"),
             "instance_name": cable_instance_name,
@@ -145,7 +150,8 @@ def assign_cable_conductor(
             if instance.get("cable_container") == cable_conductor_id[0]:
                 if instance.get("cable_identifier") == cable_conductor_id[1]:
                     raise ValueError(
-                        f"conductor {cable_conductor_id} has already been assigned to {instance.get('instance_name')}"
+                        f"when assingning '{cable_conductor_id} of '{cable_instance_name}' to '{conductor_instance}', "
+                        f"conductor '{cable_conductor_id}' of '{cable_instance_name}' has already been assigned to {instance.get('instance_name')}"
                     )
 
     # --- Make sure conductor instance has not already been assigned to a cable
@@ -157,7 +163,8 @@ def assign_cable_conductor(
                 or instance.get("cable_identifier") not in ["", None]
             ):
                 raise ValueError(
-                    f"conductor '{conductor_instance}' has already been assigned "
+                    f"when assingning '{cable_conductor_id} of '{cable_instance_name}' to {conductor_instance}', "
+                    f"instance '{conductor_instance}' has alredy been assigned to another cable"
                     f"to '{instance.get('cable_identifier')}' of cable '{instance.get('cable_group')}'"
                 )
 
