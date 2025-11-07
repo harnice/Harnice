@@ -562,6 +562,7 @@ def map_instance_to_segments(instance):
         raise ValueError(f"No segment path found between {start_node} and {end_node}")
 
     # Add a new instance for each connected segment
+    i = 1
     for seg_name in segment_path:
         instances_list.new_instance(
             f"{instance.get('instance_name')}.{seg_name}",
@@ -569,11 +570,13 @@ def map_instance_to_segments(instance):
                 "item_type": f"{instance.get('item_type')}-segment",
                 "parent_instance": instance.get("instance_name"),
                 "segment_group": seg_name,
+                "segment_counter": i,
                 "parent_csys": seg_name,
                 "location_type": "segment",
                 "length": instances_list.attribute_of(seg_name, "length"),
             },
         )
+        i += 1
 
 
 def make_segment_drawings():
