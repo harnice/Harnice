@@ -84,10 +84,6 @@ for inst in instances:
 for seg_name in sorted_segment_contents:
     sorted_segment_contents[seg_name].sort()
 
-print("!!!!!!!! sorted segment contents !!!!!!!!")
-print_nested(sorted_segment_contents)
-print()
-
 
 # ================================
 # collect points to pass through
@@ -160,11 +156,24 @@ for node in instances:
                     "y": y_circleintersect,
                 }
 
-print("!!!!!!!! points to pass through !!!!!!!!")
-print_nested(points_to_pass_through)
-print()
-        
+unique_parents = []
+for instance in instances:
+    if instance.get("item_type") == item_type:
+        if instance.get("parent_instance") not in unique_parents[]:
+            unique_parents.append(instance)
 
+for parent in unique_parents:
+    start_node = ""
+    for instance in instances:
+        if instance.get("parent") != parent.get("instance_name"):
+            continue
+        if instance.get("item_type") != item_type:
+            continue
+        if instance.get("segment_counter") == str(1):
+            start_node = instances_list.instance_in_connector_group_with_item_type(instances_list.attribute_of(instance.get("parent_instance"), "node_at_end_a"), "node")
+
+    for instance in instances:
+        if 
 
 # === Wrap with contents-start / contents-end, scale inside contents-start ===
 svg_output = (
