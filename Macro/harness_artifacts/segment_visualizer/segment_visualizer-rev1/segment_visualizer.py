@@ -1,4 +1,5 @@
 import math
+from operator import itemgetter
 from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
@@ -60,7 +61,37 @@ if scale is None:
 
 points_to_pass_through = {}
 
+# ================================
+# collect instances
+# ================================
 instances = fileio.read_tsv("instances list")
+
+# ================================
+# sort item_type instances alphabetically inside each segment
+# ================================
+sorted_segment_contents = {
+    seg.get("instance_name"): []
+    for seg in instances
+    if seg.get("item_type") == "segment"
+}
+
+for inst in instances:
+    if inst.get("item_type") == item_type:
+        segment_name = inst.get("segment_group")
+        if segment_name in sorted_segment_contents:
+            sorted_segment_contents[segment_name].append(inst.get("instance_name"))
+
+for seg_name in sorted_segment_contents:
+    sorted_segment_contents[seg_name].sort()
+
+print("!!!!!!!! sorted segment contents !!!!!!!!")
+print_nested(sorted_segment_contents)
+print()
+
+
+# ================================
+# collect points to pass through
+# ================================
 for node in instances:
     if node.get("item_type") == "node":
         x_px, y_px, seg_angle = formboard_utils.calculate_location(
@@ -70,6 +101,7 @@ for node in instances:
         radius_inches = 1
         radius_px = radius_inches * 96
         svg_groups.append(circle_svg(x_node, y_node, radius_px, "black"))
+
         node_segment_angles = []
         node_segments = []
         for instance in instances:
@@ -80,57 +112,58 @@ for node in instances:
                 elif instance.get("node_at_end_b") == node.get("instance_name"):
                     temp_angle = float(instance.get("absolute_rotation")) + 180
                     if temp_angle > 360:
-                        temp_angle = temp_angle - 360
+                        temp_angle -= 360
                     node_segment_angles.append(temp_angle)
                     node_segments.append(instance)
 
         for seg_angle, seg in zip(node_segment_angles, node_segments):
-            components_of_segment = []
-            for instance in instances:
-                if instance.get("item_type") == item_type:
-                    if instance.get("segment_group") == seg.get("instance_name"):
-                        components_of_segment.append(instance)
-            num_seg_components = len(components_of_segment)
-            seg_counter = 1
-            for component in components_of_segment:
+            seg_name = seg.get("instance_name")
+
+            # ✅ alphabetical instance order for this segment
+            component_names_sorted = sorted_segment_contents.get(seg_name, [])
+            num_seg_components = len(component_names_sorted)
+
+            for idx, inst_name in enumerate(component_names_sorted, start=1):
+                # lookup instance object
+                component = next(i for i in instances if i.get("instance_name") == inst_name)
+
                 center_offset_from_count_inches = (
-                    seg_counter - (num_seg_components / 2) - 0.5
+                    idx - (num_seg_components / 2) - 0.5
                 ) * segment_spacing_inches
+
                 delta_angle_from_count = (
                     math.asin(center_offset_from_count_inches / radius_inches)
                     * 180
                     / math.pi
                 )
+
                 x_circleintersect = x_node + radius_px * math.cos(
                     math.radians(seg_angle + delta_angle_from_count)
                 )
                 y_circleintersect = y_node + radius_px * math.sin(
                     math.radians(seg_angle + delta_angle_from_count)
                 )
+
                 svg_groups.append(
                     circle_svg(x_circleintersect, y_circleintersect, 0.1 * 96, "red")
                 )
-                node_name = node.get("instance_name")
-                seg_name = seg.get("instance_name")
-                count_key = str(seg_counter)
 
-                # Ensure nested structure exists
+                # ✅ store using instance_name instead of numeric counters
+                node_name = node.get("instance_name")
                 if node_name not in points_to_pass_through:
                     points_to_pass_through[node_name] = {}
                 if seg_name not in points_to_pass_through[node_name]:
                     points_to_pass_through[node_name][seg_name] = {}
-                if count_key not in points_to_pass_through[node_name][seg_name]:
-                    points_to_pass_through[node_name][seg_name][count_key] = {}
 
-                points_to_pass_through[node_name][seg_name][count_key][
-                    "x"
-                ] = x_circleintersect
-                points_to_pass_through[node_name][seg_name][count_key][
-                    "y"
-                ] = y_circleintersect
-                seg_counter = seg_counter + 1
+                points_to_pass_through[node_name][seg_name][inst_name] = {
+                    "x": x_circleintersect,
+                    "y": y_circleintersect,
+                }
 
+print("!!!!!!!! points to pass through !!!!!!!!")
 print_nested(points_to_pass_through)
+print()
+        
 
 
 # === Wrap with contents-start / contents-end, scale inside contents-start ===
