@@ -1,6 +1,13 @@
-# ===================== IMPORTS =====================
+import math
 from harnice import fileio, state
 from harnice.lists import instances_list
+from harnice.utils import formboard_utils
+
+
+def circle_svg(x, y, r, color):
+    # Flip Y because formboard coordinate system is positive-up
+    y_svg = -y
+    return f'<circle cx="{x:.3f}" cy="{y_svg:.3f}" r="{r:.3f}" fill="{color}" />'
 
 
 # ===================== FILE STRUCTURE =====================
@@ -23,57 +30,64 @@ def file_structure():
 instances = fileio.read_tsv("instances list")
 svg_groups = []
 
+try:
+    if not rotation:
+        rotation = 0
+except NameError:
+    rotation = 0
+origin = [0, 0, rotation]
+
 if item_type is None:
     raise ValueError("item_type is required: which item types are you trying to visualize?")
 
 if scale is None:
     raise ValueError("scale is required")
 
-for segment_group in instances_list.list_of_uniques("segment_group"):
+instances = fileio.read_tsv("instances list")
+for node in instances:
+    if node.get("item_type") == "node":
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print(f"{node.get("instance_name")}")
+        x_px, y_px, seg_angle = formboard_utils.calculate_location(node.get("instance_name"), origin)
+        x_node, y_node = x_px * 96, y_px * 96
+        radius_inches = 1
+        radius_px = radius_inches * 96
+        svg_groups.append(circle_svg(x_node, y_node, radius_px, "black"))
+        node_segment_angles = []
+        node_segments = []
+        for instance in instances:
+            if instance.get("item_type") == "segment":
+                if instance.get("node_at_end_a") == node.get("instance_name"):
+                    node_segment_angles.append(float(instance.get("absolute_rotation")))
+                    node_segments.append(instance)
+                elif instance.get("node_at_end_b") == node.get("instance_name"):
+                    temp_angle = float(instance.get("absolute_rotation")) + 180
+                    if temp_angle > 360:
+                        temp_angle = temp_angle - 360
+                    node_segment_angles.append(temp_angle)
+                    node_segments.append(instance)
+        
+        for seg_angle, seg in zip(node_segment_angles, node_segments):
+            print(f"    {seg.get("instance_name")}: {seg_angle}")
+            components_of_segment = []
+            for instance in instances:
+                if instance.get("item_type") == item_type:
+                    if instance.get("segment_group") == seg.get("instance_name"):
+                        components_of_segment.append(instance)
+            num_seg_components = len(components_of_segment)
+            seg_counter = 1
+            for component in components_of_segment:
+                print(f"        {component.get("instance_name")}")
+                center_offset_from_count_inches = (seg_counter - (num_seg_components / 2) - 0.5) * segment_spacing_inches
+                delta_angle_from_count = math.asin(center_offset_from_count_inches / radius_inches) * 180 / math.pi
+                print(f"            {center_offset_from_count_inches}")
+                print(f"            {delta_angle_from_count}")
+                x_circleintersect = x_node + radius_px * math.cos(math.radians(seg_angle + delta_angle_from_count))
+                y_circleintersect = y_node + radius_px * math.sin(math.radians(seg_angle + delta_angle_from_count))
+                svg_groups.append(circle_svg(x_circleintersect, y_circleintersect, 0.1*96, "red"))
+                seg_counter = seg_counter + 1
 
-    # Build group_items with optional item_type filtering
-    group_items = []
-    for instance in instances:
-        if instance.get("segment_group") != segment_group:
-            continue
-        # Only filter by item_type if item_type is provided (not None)
-        if instance.get("item_type") != item_type:
-            continue
-        group_items.append(instance)
-
-    n = len(group_items)
-    if n == 0:
-        continue
-
-    # real → svg conversion (flip Y and rotation)
-    tx = float(instances_list.attribute_of(segment_group, "translate_x") or 0)
-    ty = float(instances_list.attribute_of(segment_group, "translate_y") or 0)
-    rot = float(instances_list.attribute_of(segment_group, "absolute_rotation") or 0)
-    length = float(instances_list.attribute_of(segment_group, "length") or 0) * 96
-
-    ty_svg = -ty          # flip Y
-    rot_svg = -rot        # flip rotation to match flipped Y
-
-    # Center vertically (positive-up in real → positive-down in SVG)
-    y_offsets = [-(i - (n - 1) / 2) * segment_spacing for i in range(n)]
-
-    # Build line elements
-    line_elems = []
-    for y in y_offsets:
-        line_elems.append(
-            f'<line x1="0" y1="{y:.3f}" x2="{length:.3f}" y2="{y:.3f}" '
-            f'stroke="black" stroke-width="1"/>'
-        )
-
-    # Use nested groups so translation is clearly applied, then rotation around translated origin
-    svg_groups.append(
-        f'<g id="{segment_group}" transform="translate({tx:.3f},{ty_svg:.3f})">'
-        f'  <g transform="rotate({rot_svg:.3f})">'
-        + "".join(line_elems) +
-        f'  </g>'
-        f'</g>'
-    )
-
+print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 
 # === Wrap with contents-start / contents-end, scale inside contents-start ===
