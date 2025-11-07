@@ -34,7 +34,6 @@ fileio.silentremove(fileio.dirpath("flagnote", structure_dict=file_structure()))
 os.makedirs(fileio.dirpath("flagnote", structure_dict=file_structure()))
 
 
-
 # ==========================
 # MAIN
 # ==========================
