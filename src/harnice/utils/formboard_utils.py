@@ -620,3 +620,43 @@ def make_segment_drawings():
 
             except Exception as e:
                 print(f"Error processing segment {segment_name}: {e}")
+
+
+def calculate_location(instance_name, origin):
+    instances = fileio.read_tsv("instances list")
+    instances_lookup = {row["instance_name"]: row for row in instances}
+
+    chain = []
+    current = instance_name
+
+    # === Build chain of parents ===
+    while current:
+        chain.append(current)
+        row = instances_lookup.get(current)
+        if not row:
+            break
+        parent = row.get("parent_csys_instance_name", "").strip()
+        if not parent:
+            break
+        current = parent
+
+    x_pos, y_pos, angle = origin  # unpack origin
+
+    # Walk down the chain (excluding the instance itself)
+    for name in reversed(chain):
+        row = instances_lookup.get(name, {})
+
+        translate_x = float(row.get("translate_x", 0) or 0)
+        translate_y = float(row.get("translate_y", 0) or 0)
+        rotate_csys = float(row.get("rotate_csys", 0) or 0)
+
+        # Apply translation in the parent's local coordinates
+        rad = math.radians(angle)
+        dx = math.cos(rad) * translate_x - math.sin(rad) * translate_y
+        dy = math.sin(rad) * translate_x + math.cos(rad) * translate_y
+
+        x_pos += dx
+        y_pos += dy
+        angle += rotate_csys  # update orientation after translation
+
+    return x_pos, y_pos, angle
