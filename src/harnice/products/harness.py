@@ -57,7 +57,7 @@ feature_tree_utils.update_translate_content()
 # ===========================================================================
 formboard_utils.validate_nodes()
 
-# each cable ends at the same nodes as its conductors.
+# each cable ends at the connector at the end nodes of the cable's conductors
 instances = fileio.read_tsv("instances list")
 for instance in instances:
     if instance.get("item_type") == "cable":
@@ -65,14 +65,14 @@ for instance in instances:
             if instance2.get("parent_instance") == instance.get("instance_name"):
                 if instance2.get("item_type") == "conductor":
                     instances_list.modify(instance.get("instance_name"), {
-                        "node_at_end_a": instance2.get("node_at_end_a"),
-                        "node_at_end_b": instance2.get("node_at_end_b"),
+                        "node_at_end_a": instances_list.instance_in_connector_group_with_item_type(instances_list.attribute_of(instance2.get("node_at_end_a"), "connector_group"), "node").get("instance_name"),
+                        "node_at_end_b": instances_list.instance_in_connector_group_with_item_type(instances_list.attribute_of(instance2.get("node_at_end_b"), "connector_group"), "node").get("instance_name"),
                     })
                     break
 
-# make segment instances for cables and conductors
+# make segment instances for cables, conductors, and channels
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["conductor", "cable"]:
+    if instance.get("item_type") in ["conductor", "cable", "channel"]:
         formboard_utils.map_instance_to_segments(instance)
 
 # sum lengths of conductors and cables
@@ -319,7 +319,9 @@ feature_tree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", 
 feature_tree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="circuitviz-1")
 feature_tree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="revhistory-1")
 feature_tree_utils.run_macro("buildnotes_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="buildnotestable-1")
-feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)"""
+feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)
+feature_tree_utils.run_macro("segment_visualizer","harness_artifacts","https://github.com/harnice/harnice-library-public",artifact_id="cable_layout-1",scale=scales.get("A"),item_type="cable-segment",segment_spacing_inches=0.2,
+)"""
         else:
             output_macro_contents = "\n".join(output_macro_dict)
 
