@@ -74,7 +74,7 @@ def compile_buildnotes():
             already_exists = False
             for instance2 in fileio.read_tsv("instances list"):
                 if (
-                    instance2.get("item_type") == "Buildnote"
+                    instance2.get("item_type") == "buildnote"
                     and instance2.get("note_text") == buildnote_text
                 ):
                     already_exists = True
@@ -84,7 +84,7 @@ def compile_buildnotes():
                 instances_list.new_instance(
                     f"buildnote-{instance.get('bubble_text')}",
                     {
-                        "item_type": "Buildnote",
+                        "item_type": "buildnote",
                         "note_text": buildnote_text,
                         "note_number": note_number,
                     },
