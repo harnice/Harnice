@@ -4,7 +4,7 @@ from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
 
-print_circles_and_dots = False
+print_circles_and_dots = True
 
 def label_svg(
     x, y, angle, text,
@@ -234,10 +234,30 @@ for node in instances:
                     node_segments.append(instance)
                     flip_sort[instance.get("instance_name")] = True
 
-        node_radius_inches = math.sqrt(len(node_segments)) * segment_spacing_inches * 5
+        print(f"237!!!!{node.get("instance_name")}")
+        max_components_per_seg = 1
+        for seg in node_segments:
+            print(f"239!!!!!!! node segment: {seg.get("instance_name")}")
+            components_in_this_seg = 0
+            for item in enumerate(sorted_segment_contents.get(seg.get("instance_name"), [])):
+                components_in_this_seg += 1
+                if components_in_this_seg > max_components_per_seg:
+                    max_components_per_seg = components_in_this_seg
+                print(f"244!!!!!!!!!!!!!!!!!!!!! {components_in_this_seg} : {max_components_per_seg} : {item}")
+            print(f"245!!!!!!!!!!!!!! {components_in_this_seg} : {max_components_per_seg}")
+        print(f"246!!!!!!! {seg.get("instance_name")} : {max_components_per_seg}")
+
+        node_radius_inches = math.sqrt(max_components_per_seg) * segment_spacing_inches * 3
         node_radius_px = node_radius_inches * 96
         if print_circles_and_dots:
             svg_groups.append(circle_svg(x_node, y_node, node_radius_px, "gray"))
+
+        svg_groups.append(label_svg(
+            x_node,
+            y_node,
+            0,
+            f"max components per seg: {str(max_components_per_seg)}",
+        ))
 
         for seg_angle, seg in zip(node_segment_angles, node_segments):
             seg_name = seg.get("instance_name")
