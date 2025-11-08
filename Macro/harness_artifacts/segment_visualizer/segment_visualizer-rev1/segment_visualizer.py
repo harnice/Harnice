@@ -1,9 +1,9 @@
 import math
-from time import sleep
 from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
 
+print_circles_and_dots = False
 
 def spline_from_point_chain(chain, tangent_scale=0.5):
     """
@@ -57,18 +57,6 @@ def circle_svg(x, y, r, color):
     # Flip Y because formboard coordinate system is positive-up
     y_svg = -y
     return f'<circle cx="{x:.3f}" cy="{y_svg:.3f}" r="{r:.3f}" fill="{color}" />'
-
-
-def print_nested(data, indent=0):
-    prefix = "    " * indent
-    if isinstance(data, dict):
-        for key, value in data.items():
-            print(f"{prefix}{key}:")
-            print_nested(value, indent + 1)
-    elif isinstance(data, list):
-        print(prefix + ", ".join(str(v) for v in data))
-    else:
-        print(prefix + str(data))
 
 
 # ===================== FILE STRUCTURE =====================
@@ -144,7 +132,8 @@ for node in instances:
         x_node, y_node = x_px * 96, y_px * 96
         radius_inches = 1
         radius_px = radius_inches * 96
-        svg_groups.append(circle_svg(x_node, y_node, radius_px, "black"))
+        if print_circles_and_dots:
+            svg_groups.append(circle_svg(x_node, y_node, radius_px, "black"))
 
         node_segment_angles = []
         node_segments = []
@@ -193,9 +182,10 @@ for node in instances:
                     math.radians(seg_angle + delta_angle_from_count)
                 )
 
-                svg_groups.append(
-                    circle_svg(x_circleintersect, y_circleintersect, 0.1 * 96, "red")
-                )
+                if print_circles_and_dots:
+                    svg_groups.append(
+                        circle_svg(x_circleintersect, y_circleintersect, 0.1 * 96, "red")
+                    )
 
                 node_name = node.get("instance_name")
                 if node_name not in points_to_pass_through:
@@ -225,11 +215,15 @@ for instance1 in instances:
         segment_order += 1
         ab_lookup_key = f"{segment_order}-ab"
         ba_lookup_key = f"{segment_order}-ba"
+
+        found_this_step = False
+
         for instance2 in instances:
             if instance2.get("item_type") != item_type:
                 continue
             if instance2.get("parent_instance") != instance1.get("parent_instance"):
                 continue
+
             if instance2.get("segment_order") == ab_lookup_key:
                 tangent = float(instances_list.attribute_of(instance2.get("segment_group"), "absolute_rotation"))
                 point_chain.append({
@@ -242,7 +236,9 @@ for instance1 in instances:
                     "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
                     "tangent": tangent,
                 })
+                found_this_step = True
                 break
+
             elif instance2.get("segment_order") == ba_lookup_key:
                 tangent = float(instances_list.attribute_of(instance2.get("segment_group"), "absolute_rotation")) + 180
                 if tangent > 360:
@@ -257,16 +253,16 @@ for instance1 in instances:
                     "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
                     "tangent": tangent,
                 })
+                found_this_step = True
                 break
-            else:
-                another_segment_exists_after = False
 
-    print(instance1.get("instance_name"))
-    print(point_chain)
+        if not found_this_step:
+            another_segment_exists_after = False
+
     cleaned_chain = [pt for pt in point_chain if isinstance(pt, dict)]
     svg_groups.append(
         f'<path d="{spline_from_point_chain(cleaned_chain, tangent_scale=0.6)}" '
-        f'stroke="blue" fill="none" stroke-width="{0.1*96}"/>'
+        f'stroke="black" fill="none" stroke-width="{0.1*96}"/>'
     )
 
 # === Wrap with contents-start / contents-end, scale inside contents-start ===
