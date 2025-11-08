@@ -148,23 +148,28 @@ for node in instances:
 
         node_segment_angles = []
         node_segments = []
+        flip_sort = {}
         for instance in instances:
             if instance.get("item_type") == "segment":
                 if instance.get("node_at_end_a") == node.get("instance_name"):
                     node_segment_angles.append(float(instance.get("absolute_rotation")))
                     node_segments.append(instance)
+                    flip_sort[instance.get("instance_name")] = False
                 elif instance.get("node_at_end_b") == node.get("instance_name"):
                     temp_angle = float(instance.get("absolute_rotation")) + 180
                     if temp_angle > 360:
                         temp_angle -= 360
                     node_segment_angles.append(temp_angle)
                     node_segments.append(instance)
+                    flip_sort[instance.get("instance_name")] = True
 
         for seg_angle, seg in zip(node_segment_angles, node_segments):
             seg_name = seg.get("instance_name")
 
-            # ✅ alphabetical instance order for this segment
-            component_names_sorted = sorted_segment_contents.get(seg_name, [])
+            if flip_sort.get(seg_name):
+                component_names_sorted = sorted_segment_contents.get(seg_name, [])
+            else:
+                component_names_sorted = sorted_segment_contents.get(seg_name, [])[::-1]
             num_seg_components = len(component_names_sorted)
 
             for idx, inst_name in enumerate(component_names_sorted, start=1):
@@ -192,7 +197,6 @@ for node in instances:
                     circle_svg(x_circleintersect, y_circleintersect, 0.1 * 96, "red")
                 )
 
-                # ✅ store using instance_name instead of numeric counters
                 node_name = node.get("instance_name")
                 if node_name not in points_to_pass_through:
                     points_to_pass_through[node_name] = {}
