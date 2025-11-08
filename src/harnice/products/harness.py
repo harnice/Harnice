@@ -123,7 +123,7 @@ for instance in fileio.read_tsv("instances list"):
 #                   ASSIGN FLAGNOTES
 #===========================================================================
 flagnote_counter = 1
-buildnote_counter = 1
+build_note_counter = 1
 
 manual_flagnotes_list.ensure_exists()
 for manual_note in fileio.read_tsv("flagnotes manual"):
@@ -134,15 +134,15 @@ for manual_note in fileio.read_tsv("flagnotes manual"):
             "note_type": manual_note.get("note_type"),
             "mpn": manual_note.get("shape"),
             "lib_repo": manual_note.get("shape_lib_repo"),
-            "bubble_text": buildnote_counter,
+            "bubble_text": build_note_counter,
             "parent_instance": affected,
             "connector_group": instances_list.attribute_of(affected, "connector_group"),
             "parent_csys_instance_name": affected,
             "note_text": manual_note.get("note_text")
         })
         flagnote_counter += 1
-    if manual_note.get("note_type") == "buildnote":
-        buildnote_counter += 1
+    if manual_note.get("note_type") == "build_note":
+        build_note_counter += 1
 
 for rev_row in fileio.read_tsv("revision history"):
     affected_raw = rev_row.get("affectedinstances", "").strip()
@@ -197,10 +197,10 @@ for instance in fileio.read_tsv("instances list"):
         if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Cavity":
             instances_list.new_instance(f"flagnote-{flagnote_counter}", {
                 "item_type": "flagnote",
-                "note_type": "buildnote",
-                "mpn": "buildnote",
+                "note_type": "build_note",
+                "mpn": "build_note",
                 "lib_repo": "https://github.com/harnice/harnice-library-public",
-                "bubble_text": buildnote_counter,
+                "bubble_text": build_note_counter,
                 "parent_instance": instance.get("parent_instance"),
                 "parent_csys_instance_name": instance.get("parent_instance"),
                 "note_text": "Special cavitiesused in this connector. Refer to wirelist for details"
@@ -208,11 +208,11 @@ for instance in fileio.read_tsv("instances list"):
             flagnote_counter += 1
             cavity_flagnote_conversion_happened = True
 if cavity_flagnote_conversion_happened:
-    buildnote_counter += 1
+    build_note_counter += 1
 
 flagnote_utils.assign_output_csys()
 feature_tree_utils.update_translate_content()
-flagnote_utils.compile_buildnotes()
+flagnote_utils.compile_build_notes()
 
 for instance in fileio.read_tsv("instances list"):
     if instance.get("absolute_rotation") not in ["", None]:
@@ -318,7 +318,7 @@ rev_history.overwrite({{
 feature_tree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="formboard-1", scale=scales.get("A"))
 feature_tree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="circuitviz-1")
 feature_tree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="revhistory-1")
-feature_tree_utils.run_macro("buildnotes_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="buildnotestable-1")
+feature_tree_utils.run_macro("build_notes_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="build_notestable-1")
 feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)
 feature_tree_utils.run_macro("segment_visualizer","harness_artifacts","https://github.com/harnice/harnice-library-public",artifact_id="cable_layout-1",scale=scales.get("A"),item_type="cable-segment",segment_spacing_inches=0.2,
 )"""
