@@ -5,6 +5,54 @@ from harnice.lists import instances_list
 from harnice.utils import formboard_utils
 
 
+def spline_from_point_chain(chain, tangent_scale=0.5):
+    """
+    Returns an SVG path string using cubic Beziers,
+    matching point positions and tangent angles.
+    tangent_scale controls how 'curvy' the spline is.
+    """
+
+    if len(chain) < 2:
+        return ""
+
+    def deg_to_vec(deg):
+        rad = math.radians(deg)
+        return math.cos(rad), math.sin(rad)
+
+    # Move to the first point
+    p0 = chain[0]
+    path = f'M {p0["x"]:.3f},{-p0["y"]:.3f}'  # flip y for SVG
+
+    for i in range(len(chain) - 1):
+        p0 = chain[i]
+        p1 = chain[i + 1]
+
+        # tangent directions
+        vx0, vy0 = deg_to_vec(p0["tangent"])
+        vx1, vy1 = deg_to_vec(p1["tangent"])
+
+        # control point distances
+        # proportional to distance between points
+        dx = p1["x"] - p0["x"]
+        dy = p1["y"] - p0["y"]
+        dist = math.sqrt(dx*dx + dy*dy)
+
+        c0x = p0["x"] + vx0 * dist * tangent_scale
+        c0y = p0["y"] + vy0 * dist * tangent_scale
+        c1x = p1["x"] - vx1 * dist * tangent_scale
+        c1y = p1["y"] - vy1 * dist * tangent_scale
+
+        # Add cubic curve
+        path += (
+            f' C {c0x:.3f},{-c0y:.3f} '
+            f'{c1x:.3f},{-c1y:.3f} '
+            f'{p1["x"]:.3f},{-p1["y"]:.3f}'
+        )
+
+    return path
+
+
+
 def circle_svg(x, y, r, color):
     # Flip Y because formboard coordinate system is positive-up
     y_svg = -y
@@ -155,9 +203,6 @@ for node in instances:
                     "x": x_circleintersect,
                     "y": y_circleintersect,
                 }
-print("!!!!!!!")
-print_nested(points_to_pass_through)
-print("!!!!!!!")
 
 unique_parents = []
 instances = fileio.read_tsv("instances list")
@@ -187,7 +232,7 @@ for instance1 in instances:
                     "x": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["x"],
                     "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
                     "tangent": tangent,
-                }),
+                })
                 point_chain.append({
                     "x": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["x"],
                     "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
@@ -202,7 +247,7 @@ for instance1 in instances:
                     "x": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["x"],
                     "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
                     "tangent": tangent,
-                }),
+                })
                 point_chain.append({
                     "x": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["x"],
                     "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
@@ -212,6 +257,13 @@ for instance1 in instances:
             else:
                 another_segment_exists_after = False
 
+    print(instance1.get("instance_name"))
+    print(point_chain)
+    cleaned_chain = [pt for pt in point_chain if isinstance(pt, dict)]
+    svg_groups.append(
+        f'<path d="{spline_from_point_chain(cleaned_chain, tangent_scale=0.6)}" '
+        f'stroke="blue" fill="none" stroke-width="{0.1*96}"/>'
+    )
 
 # === Wrap with contents-start / contents-end, scale inside contents-start ===
 svg_output = (
