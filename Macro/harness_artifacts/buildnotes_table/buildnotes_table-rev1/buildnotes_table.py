@@ -12,7 +12,6 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        "bom_table_bubbles": {},
                         "buildnotes-table-master.svg": "buildnotes table svg",
                         "buildnotes-list.tsv": "buildnotes list",
                     }
@@ -42,7 +41,7 @@ data_rows = []
 
 # Read instances for buildnotes
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Buildnote":
+    if instance.get("item_type") == "buildnote":
         buildnote_number = instance.get("note_number")
         note = instance.get("note_text")
 
@@ -55,17 +54,15 @@ for instance in fileio.read_tsv("instances list"):
 
         # Pull bubble from the library if there is a shape
         if has_shape and shape and lib_repo:
+            print(f"!!!!!! {artifact_id}-bubble{buildnote_number}")
             library_utils.pull(
                 {
                     "lib_repo": lib_repo,
                     "item_type": "flagnote",
                     "mpn": shape,
-                    "instance_name": f"bubble{buildnote_number}",
-                    "destination_directory": fileio.path(
-                        "bom table bubbles", structure_dict=file_structure()
-                    ),
-                    "quiet": True,
-                }
+                    "instance_name": f"{artifact_id}-bubble{buildnote_number}",
+                },
+                update_instances_list=False
             )
 
         # Append row information only if it contains valid data
@@ -180,11 +177,11 @@ for row in data_rows:
 
     buildnote_number = row["buildnote_number"]
     source_svg_filepath = os.path.join(
-        fileio.path("bom table bubbles", structure_dict=file_structure()),
+        fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()),
         f"bubble{buildnote_number}-drawing.svg",
     )
-    target_svg_filepath = fileio.path(
-        "bom table bubbles", structure_dict=file_structure()
+    target_svg_filepath = fileio.dirpath(
+        "bom_table_bubbles", structure_dict=file_structure()
     )
     group_name = f"bubble{buildnote_number}"
 
