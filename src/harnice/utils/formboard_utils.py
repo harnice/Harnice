@@ -453,11 +453,11 @@ def map_instance_to_segments(instance):
     # Ensure each endpoint is actually location_type==node
     if instances_list.attribute_of(instance.get("node_at_end_a"), "location_type") != "node":
         raise ValueError(
-            f"Location type of {instance.get('node_at_end_a')} is not a node."
+            f"While mapping '{instance.get("instance_name")}' to segments, location type of {instance.get('node_at_end_a')} is not a node."
         )
     if instances_list.attribute_of(instance.get("node_at_end_b"), "location_type") != "node":
         raise ValueError(
-            f"Location type of {instance.get('node_at_end_b')} is not a node."
+            f"While mapping '{instance.get("instance_name")}' to segments, location type of {instance.get('node_at_end_b')} is not a node."
         )
 
     # Resolve the node (item_type=="node") for each end's connector group
