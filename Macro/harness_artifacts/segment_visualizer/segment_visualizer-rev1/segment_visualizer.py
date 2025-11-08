@@ -1,5 +1,5 @@
 import math
-from operator import itemgetter
+from time import sleep
 from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
@@ -155,25 +155,63 @@ for node in instances:
                     "x": x_circleintersect,
                     "y": y_circleintersect,
                 }
+print("!!!!!!!")
+print_nested(points_to_pass_through)
+print("!!!!!!!")
 
 unique_parents = []
-for instance in instances:
-    if instance.get("item_type") == item_type:
-        if instance.get("parent_instance") not in unique_parents[]:
-            unique_parents.append(instance)
+instances = fileio.read_tsv("instances list")
+for instance1 in instances:
+    if instance1.get("item_type") != item_type:
+        continue
+    if instance1.get("parent_instance") in unique_parents:
+        continue
+    unique_parents.append(instance1.get("parent_instance"))
 
-for parent in unique_parents:
-    start_node = ""
-    for instance in instances:
-        if instance.get("parent") != parent.get("instance_name"):
-            continue
-        if instance.get("item_type") != item_type:
-            continue
-        if instance.get("segment_counter") == str(1):
-            start_node = instances_list.instance_in_connector_group_with_item_type(instances_list.attribute_of(instance.get("parent_instance"), "node_at_end_a"), "node")
+    point_chain = []
+    segment_order = 0
+    another_segment_exists_after = True
 
-    for instance in instances:
-        if 
+    while another_segment_exists_after:
+        segment_order += 1
+        ab_lookup_key = f"{segment_order}-ab"
+        ba_lookup_key = f"{segment_order}-ba"
+        for instance2 in instances:
+            if instance2.get("item_type") != item_type:
+                continue
+            if instance2.get("parent_instance") != instance1.get("parent_instance"):
+                continue
+            if instance2.get("segment_order") == ab_lookup_key:
+                tangent = float(instances_list.attribute_of(instance2.get("segment_group"), "absolute_rotation"))
+                point_chain.append({
+                    "x": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["x"],
+                    "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
+                    "tangent": tangent,
+                }),
+                point_chain.append({
+                    "x": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["x"],
+                    "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
+                    "tangent": tangent,
+                })
+                break
+            elif instance2.get("segment_order") == ba_lookup_key:
+                tangent = float(instances_list.attribute_of(instance2.get("segment_group"), "absolute_rotation")) + 180
+                if tangent > 360:
+                    tangent -= 360
+                point_chain.append({
+                    "x": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["x"],
+                    "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_b")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
+                    "tangent": tangent,
+                }),
+                point_chain.append({
+                    "x": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["x"],
+                    "y": points_to_pass_through[instances_list.attribute_of(instance2.get("segment_group"), "node_at_end_a")][instance2.get("segment_group")][instance2.get("instance_name")]["y"],
+                    "tangent": tangent,
+                })
+                break
+            else:
+                another_segment_exists_after = False
+
 
 # === Wrap with contents-start / contents-end, scale inside contents-start ===
 svg_output = (
