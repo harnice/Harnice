@@ -12,15 +12,18 @@ except:
     #TODO: pull in info from conductor attributes
     stroke_color = "black"
 
+segment_spacing_inches_scaled = segment_spacing_inches / scale
+
 def label_svg(
     x, y, angle, text,
     text_color="black",
     background_color="white",
     outline="black",
-    font_size=10,
+    font_size=6,
     font_family="Arial, Helvetica, sans-serif;",
     font_weight="normal",
 ):
+    font_size = font_size / scale
     """
     Returns SVG snippet for a centered label (text + background rectangle).
     Uses formatting style consistent with your existing <text> usage.
@@ -250,7 +253,7 @@ for node in instances:
                     components_seen.append(instance.get("parent_instance"))
                     components_in_node += 1
 
-        node_radius_inches = math.pow(components_in_node, 1.5) * segment_spacing_inches / 2.5 #1.5th power because vibes
+        node_radius_inches = 1 + math.pow(components_in_node, 1.5) * segment_spacing_inches_scaled / 4 #1.5th power because vibes
         node_radius_px = node_radius_inches * 96
         if print_circles_and_dots:
             svg_groups.append(circle_svg(x_node, y_node, node_radius_px, "gray"))
@@ -270,7 +273,7 @@ for node in instances:
 
                 center_offset_from_count_inches = (
                     idx - (num_seg_components / 2) - 0.5
-                ) * segment_spacing_inches
+                ) * segment_spacing_inches_scaled
 
                 try:
                     delta_angle_from_count = (
@@ -401,8 +404,7 @@ for key, value in average_coords(points_to_pass_through).items():
             value.get("text"), 
             text_color="black",
             background_color="white",
-            outline="black",
-            font_size=10
+            outline="black"
         )
     )
 
