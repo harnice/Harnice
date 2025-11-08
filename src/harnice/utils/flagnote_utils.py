@@ -28,6 +28,9 @@ def make_note_drawings():
 
         instance_name = instance.get("instance_name")
 
+        if instance.get("mpn") in ["", None]:
+            continue
+
         destination_directory = fileio.dirpath(
             "flagnote", structure_dict=file_structure(instance_name)
         )
