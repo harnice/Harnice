@@ -2,7 +2,7 @@ import os
 import math
 from collections import defaultdict
 from harnice import fileio, state
-from harnice.utils import flagnote_utils, svg_utils
+from harnice.utils import flagnote_utils, formboard_utils, svg_utils
 
 artifact_mpn = "standard_harnice_formboard"
 
@@ -34,46 +34,6 @@ fileio.silentremove(fileio.dirpath("flagnote", structure_dict=file_structure()))
 os.makedirs(fileio.dirpath("flagnote", structure_dict=file_structure()))
 
 
-def _calculate_formboard_location(instance_name, origin):
-    instances = fileio.read_tsv("instances list")
-    instances_lookup = {row["instance_name"]: row for row in instances}
-
-    chain = []
-    current = instance_name
-
-    # === Build chain of parents ===
-    while current:
-        chain.append(current)
-        row = instances_lookup.get(current)
-        if not row:
-            break
-        parent = row.get("parent_csys_instance_name", "").strip()
-        if not parent:
-            break
-        current = parent
-
-    x_pos, y_pos, angle = origin  # unpack origin
-
-    # Walk down the chain (excluding the instance itself)
-    for name in reversed(chain):
-        row = instances_lookup.get(name, {})
-
-        translate_x = float(row.get("translate_x", 0) or 0)
-        translate_y = float(row.get("translate_y", 0) or 0)
-        rotate_csys = float(row.get("rotate_csys", 0) or 0)
-
-        # Apply translation in the parent's local coordinates
-        rad = math.radians(angle)
-        dx = math.cos(rad) * translate_x - math.sin(rad) * translate_y
-        dy = math.sin(rad) * translate_x + math.cos(rad) * translate_y
-
-        x_pos += dx
-        y_pos += dy
-        angle += rotate_csys  # update orientation after translation
-
-    return x_pos, y_pos, angle
-
-
 # ==========================
 # MAIN
 # ==========================
@@ -88,8 +48,6 @@ except NameError:
 origin = [0, 0, rotation]
 
 flagnote_utils.make_note_drawings()
-
-origin = [0, 0, rotation]
 
 # Group instances by item_type
 grouped_instances = defaultdict(list)
@@ -119,7 +77,7 @@ for item_type, items in grouped_instances.items():
 
         instance_name = instance.get("instance_name")
 
-        x, y, angle = _calculate_formboard_location(instance_name, origin)
+        x, y, angle = formboard_utils.calculate_location(instance_name, origin)
 
         px_x = x * 96
         px_y = y * 96
@@ -142,10 +100,10 @@ for item_type, items in grouped_instances.items():
                 continue
 
             # Unpack both positions
-            x_note, y_note, flagnote_orientation = _calculate_formboard_location(
+            x_note, y_note, flagnote_orientation = formboard_utils.calculate_location(
                 instance_name, origin
             )
-            x_leader, y_leader, angle_leader = _calculate_formboard_location(
+            x_leader, y_leader, angle_leader = formboard_utils.calculate_location(
                 f"{instance_name}.leader", origin
             )
 
