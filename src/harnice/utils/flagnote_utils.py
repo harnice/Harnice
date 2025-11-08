@@ -50,12 +50,12 @@ def make_note_drawings():
             f.write(svg)
 
 
-def compile_buildnotes():
-    # add buildnote itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
+def compile_build_notes():
+    # add build_note itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
     for instance in fileio.read_tsv("instances list"):
         if (
             instance.get("item_type") == "flagnote"
-            and instance.get("note_type") == "buildnote"
+            and instance.get("note_type") == "build_note"
         ):
             instances_list.modify(
                 instance.get("instance_name"),
@@ -65,34 +65,34 @@ def compile_buildnotes():
     for instance in fileio.read_tsv("instances list"):
         if (
             instance.get("item_type") == "flagnote"
-            and instance.get("note_type") == "buildnote"
+            and instance.get("note_type") == "build_note"
         ):
-            buildnote_text = instance.get("note_text")
+            build_note_text = instance.get("note_text")
             note_number = instance.get("note_number")
 
-            # does this buildnote exist as an instance yet?
+            # does this build_note exist as an instance yet?
             already_exists = False
             for instance2 in fileio.read_tsv("instances list"):
                 if (
-                    instance2.get("item_type") == "buildnote"
-                    and instance2.get("note_text") == buildnote_text
+                    instance2.get("item_type") == "build_note"
+                    and instance2.get("note_text") == build_note_text
                 ):
                     already_exists = True
 
             # if not, make it
             if not already_exists:
                 instances_list.new_instance(
-                    f"buildnote-{instance.get('bubble_text')}",
+                    f"build_note-{instance.get('bubble_text')}",
                     {
-                        "item_type": "buildnote",
-                        "note_text": buildnote_text,
+                        "item_type": "build_note",
+                        "note_text": build_note_text,
                         "note_number": note_number,
                     },
                 )
                 if instance.get("lib_repo") not in [None, ""]:
                     if instance.get("parent_instance") not in [None, ""]:
                         instances_list.modify(
-                            f"buildnote-{instance.get('bubble_text')}",
+                            f"build_note-{instance.get('bubble_text')}",
                             {
                                 "mpn": instance.get("mpn"),
                                 "lib_repo": instance.get("lib_repo"),
