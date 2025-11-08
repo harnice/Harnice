@@ -234,20 +234,18 @@ for node in instances:
                     node_segments.append(instance)
                     flip_sort[instance.get("instance_name")] = True
 
-        print(f"237!!!!{node.get("instance_name")}")
-        max_components_per_seg = 1
-        for seg in node_segments:
-            print(f"239!!!!!!! node segment: {seg.get("instance_name")}")
-            components_in_this_seg = 0
-            for item in enumerate(sorted_segment_contents.get(seg.get("instance_name"), [])):
-                components_in_this_seg += 1
-                if components_in_this_seg > max_components_per_seg:
-                    max_components_per_seg = components_in_this_seg
-                print(f"244!!!!!!!!!!!!!!!!!!!!! {components_in_this_seg} : {max_components_per_seg} : {item}")
-            print(f"245!!!!!!!!!!!!!! {components_in_this_seg} : {max_components_per_seg}")
-        print(f"246!!!!!!! {seg.get("instance_name")} : {max_components_per_seg}")
+        components_in_node = 0
+        components_seen = []
+        for instance in instances:
+            if instance.get("item_type") == item_type:
+                segment_candidate = instance.get("segment_group")
+                if instance.get("parent_instance") in components_seen:
+                    continue
+                if instances_list.attribute_of(segment_candidate, "node_at_end_a") == node.get("instance_name") or instances_list.attribute_of(segment_candidate, "node_at_end_b") == node.get("instance_name"):
+                    components_seen.append(instance.get("parent_instance"))
+                    components_in_node += 1
 
-        node_radius_inches = math.sqrt(max_components_per_seg) * segment_spacing_inches * 3
+        node_radius_inches = math.pow(components_in_node, 1.5) * segment_spacing_inches / 2.5 #1.5th power because vibes
         node_radius_px = node_radius_inches * 96
         if print_circles_and_dots:
             svg_groups.append(circle_svg(x_node, y_node, node_radius_px, "gray"))
@@ -256,7 +254,7 @@ for node in instances:
             x_node,
             y_node,
             0,
-            f"max components per seg: {str(max_components_per_seg)}",
+            str(components_in_node),
         ))
 
         for seg_angle, seg in zip(node_segment_angles, node_segments):
