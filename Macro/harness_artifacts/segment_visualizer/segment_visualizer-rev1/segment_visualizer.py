@@ -4,7 +4,13 @@ from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
 
-print_circles_and_dots = True
+print_circles_and_dots = False
+
+try:
+    stroke_color = wire_color
+except:
+    #TODO: pull in info from conductor attributes
+    stroke_color = "black"
 
 def label_svg(
     x, y, angle, text,
@@ -361,8 +367,12 @@ for instance1 in instances:
 
     cleaned_chain = [pt for pt in point_chain if isinstance(pt, dict)]
     svg_groups.append(
-        f'<path d="{spline_from_point_chain(cleaned_chain, tangent_scale=0.6)}" '
+        f'<path d="{spline_from_point_chain(cleaned_chain)}" '
         f'stroke="black" fill="none" stroke-width="{0.1*96}"/>'
+    )
+    svg_groups.append(
+        f'<path d="{spline_from_point_chain(cleaned_chain)}" '
+        f'stroke="{stroke_color}" fill="none" stroke-width="{0.05*96}"/>'
     )
 
 for key, value in average_coords(points_to_pass_through).items():
