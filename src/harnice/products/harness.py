@@ -57,7 +57,7 @@ feature_tree_utils.update_translate_content()
 # ===========================================================================
 formboard_utils.validate_nodes()
 
-# each cable ends at the same nodes as its conductors.
+# each cable ends at the connector at the end nodes of the cable's conductors
 instances = fileio.read_tsv("instances list")
 for instance in instances:
     if instance.get("item_type") == "cable":
@@ -65,8 +65,8 @@ for instance in instances:
             if instance2.get("parent_instance") == instance.get("instance_name"):
                 if instance2.get("item_type") == "conductor":
                     instances_list.modify(instance.get("instance_name"), {
-                        "node_at_end_a": instance2.get("node_at_end_a"),
-                        "node_at_end_b": instance2.get("node_at_end_b"),
+                        "node_at_end_a": instances_list.instance_in_connector_group_with_item_type(instances_list.attribute_of(instance2.get("node_at_end_a"), "connector_group"), "node").get("instance_name"),
+                        "node_at_end_b": instances_list.instance_in_connector_group_with_item_type(instances_list.attribute_of(instance2.get("node_at_end_b"), "connector_group"), "node").get("instance_name"),
                     })
                     break
 
