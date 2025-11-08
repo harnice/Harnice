@@ -3,7 +3,7 @@ from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
 
-print_circles_and_dots = False
+print_circles_and_dots = True
 
 def spline_from_point_chain(chain, tangent_scale=0.5):
     """
@@ -130,10 +130,6 @@ for node in instances:
             node.get("instance_name"), origin
         )
         x_node, y_node = x_px * 96, y_px * 96
-        radius_inches = 1
-        radius_px = radius_inches * 96
-        if print_circles_and_dots:
-            svg_groups.append(circle_svg(x_node, y_node, radius_px, "black"))
 
         node_segment_angles = []
         node_segments = []
@@ -151,6 +147,11 @@ for node in instances:
                     node_segment_angles.append(temp_angle)
                     node_segments.append(instance)
                     flip_sort[instance.get("instance_name")] = True
+
+        node_radius_inches = math.sqrt(len(node_segments))
+        node_radius_px = node_radius_inches * 96
+        if print_circles_and_dots:
+            svg_groups.append(circle_svg(x_node, y_node, node_radius_px, "gray"))
 
         for seg_angle, seg in zip(node_segment_angles, node_segments):
             seg_name = seg.get("instance_name")
@@ -170,15 +171,15 @@ for node in instances:
                 ) * segment_spacing_inches
 
                 delta_angle_from_count = (
-                    math.asin(center_offset_from_count_inches / radius_inches)
+                    math.asin(center_offset_from_count_inches / node_radius_inches)
                     * 180
                     / math.pi
                 )
 
-                x_circleintersect = x_node + radius_px * math.cos(
+                x_circleintersect = x_node + node_radius_px * math.cos(
                     math.radians(seg_angle + delta_angle_from_count)
                 )
-                y_circleintersect = y_node + radius_px * math.sin(
+                y_circleintersect = y_node + node_radius_px * math.sin(
                     math.radians(seg_angle + delta_angle_from_count)
                 )
 
