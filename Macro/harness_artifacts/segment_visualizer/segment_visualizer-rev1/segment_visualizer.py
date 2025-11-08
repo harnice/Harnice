@@ -374,6 +374,21 @@ for instance1 in instances:
         f'<path d="{spline_from_point_chain(cleaned_chain)}" '
         f'stroke="{stroke_color}" fill="none" stroke-width="{0.05*96}"/>'
     )
+    for order in [0, -1]:
+        if order == 0:
+            text = instances_list.attribute_of(instance1.get("parent_instance"),"node_at_end_a")
+        else:
+            text = instances_list.attribute_of(instance1.get("parent_instance"),"node_at_end_b")
+        svg_groups.append(
+            label_svg(
+                cleaned_chain[order].get("x"),
+                cleaned_chain[order].get("y"),
+                cleaned_chain[order].get("tangent"),
+                text,
+                text_color = "white",
+                background_color = "black"
+            )
+        )
 
 for key, value in average_coords(points_to_pass_through).items():
     if print_circles_and_dots:
