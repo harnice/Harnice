@@ -70,9 +70,9 @@ for instance in instances:
                     })
                     break
 
-# make segment instances for cables and conductors
+# make segment instances for cables, conductors, and channels
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["conductor", "cable"]:
+    if instance.get("item_type") in ["conductor", "cable", "channel"]:
         formboard_utils.map_instance_to_segments(instance)
 
 # sum lengths of conductors and cables
@@ -319,7 +319,9 @@ feature_tree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", 
 feature_tree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="circuitviz-1")
 feature_tree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="revhistory-1")
 feature_tree_utils.run_macro("buildnotes_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="buildnotestable-1")
-feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)"""
+feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)
+feature_tree_utils.run_macro("segment_visualizer","harness_artifacts","https://github.com/harnice/harnice-library-public",artifact_id="cable_layout-1",scale=scales.get("A"),item_type="cable-segment",segment_spacing_inches=0.2,
+)"""
         else:
             output_macro_contents = "\n".join(output_macro_dict)
 
