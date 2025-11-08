@@ -69,7 +69,6 @@ def print_nested(data, indent=0):
 
 
 def average_coords(data):
-    print_nested(data)
     sums = defaultdict(lambda: {"x": 0.0, "y": 0.0, "count": 0})
 
     for _lvl1, lvl2 in data.items():
