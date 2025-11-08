@@ -250,13 +250,6 @@ for node in instances:
         if print_circles_and_dots:
             svg_groups.append(circle_svg(x_node, y_node, node_radius_px, "gray"))
 
-        svg_groups.append(label_svg(
-            x_node,
-            y_node,
-            0,
-            str(components_in_node),
-        ))
-
         for seg_angle, seg in zip(node_segment_angles, node_segments):
             seg_name = seg.get("instance_name")
 
