@@ -1,9 +1,44 @@
 import math
+from collections import defaultdict
 from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
 
-print_circles_and_dots = True
+print_circles_and_dots = False
+
+
+def print_nested(data, indent=0):
+    prefix = "    " * indent
+    if isinstance(data, dict):
+        for key, value in data.items():
+            print(f"{prefix}{key}:")
+            print_nested(value, indent + 1)
+    elif isinstance(data, list):
+        print(prefix + ", ".join(str(v) for v in data))
+    else:
+        print(prefix + str(data))
+
+
+
+def average_coords(data):
+    sums = defaultdict(lambda: {"x": 0.0, "y": 0.0, "count": 0})
+
+    for _lvl1, lvl2 in data.items():
+        for _lvl2, lvl3 in lvl2.items():
+            for key, coords in lvl3.items():
+                sums[key]["x"] += coords["x"]
+                sums[key]["y"] += coords["y"]
+                sums[key]["count"] += 1
+
+    # convert accumulated sums into averages
+    averages = {}
+    for key, v in sums.items():
+        averages[key] = {
+            "x": v["x"] / v["count"],
+            "y": v["y"] / v["count"],
+        }
+    return averages
+
 
 def spline_from_point_chain(chain, tangent_scale=0.5):
     """
@@ -148,7 +183,7 @@ for node in instances:
                     node_segments.append(instance)
                     flip_sort[instance.get("instance_name")] = True
 
-        node_radius_inches = math.sqrt(len(node_segments))
+        node_radius_inches = math.sqrt(len(node_segments)) * segment_spacing_inches * 5
         node_radius_px = node_radius_inches * 96
         if print_circles_and_dots:
             svg_groups.append(circle_svg(x_node, y_node, node_radius_px, "gray"))
@@ -170,11 +205,14 @@ for node in instances:
                     idx - (num_seg_components / 2) - 0.5
                 ) * segment_spacing_inches
 
-                delta_angle_from_count = (
-                    math.asin(center_offset_from_count_inches / node_radius_inches)
-                    * 180
-                    / math.pi
-                )
+                try:
+                    delta_angle_from_count = (
+                        math.asin(center_offset_from_count_inches / node_radius_inches)
+                        * 180
+                        / math.pi
+                    )
+                except ValueError:
+                    raise ValueError("Node radius is too small to fit all the necessary segments onto it. Try decreasing the segment spacing.")
 
                 x_circleintersect = x_node + node_radius_px * math.cos(
                     math.radians(seg_angle + delta_angle_from_count)
@@ -266,6 +304,10 @@ for instance1 in instances:
         f'stroke="black" fill="none" stroke-width="{0.1*96}"/>'
     )
 
+for key, value in average_coords(points_to_pass_through).items():
+    if print_circles_and_dots:
+        svg_groups.append(circle_svg(value.get("x"), value.get("y"), 0.1 * 96, "green"))
+
 # === Wrap with contents-start / contents-end, scale inside contents-start ===
 svg_output = (
     '<svg xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">\n'
@@ -278,6 +320,7 @@ svg_output = (
     "</svg>\n"
 )
 
+print_nested(points_to_pass_through)
 
 # =============== WRITE OUTPUT FILE ===============
 out_path = fileio.path("segment visualizer svg", structure_dict=file_structure())
