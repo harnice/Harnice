@@ -25,7 +25,7 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
             "mpn": macro_part_number,
             "lib_repo": lib_repo,
             "lib_subpath": lib_subpath,
-            "item_type": "macro",
+            "item_type": "Macro",
             "instance_name": artifact_id,
         },
         update_instances_list=False,
