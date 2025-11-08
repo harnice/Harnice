@@ -12,21 +12,13 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        "build_notes-table-master.svg": "build_notes table svg",
+                        "build_notes-table-master.svg": "build notes table svg",
                         "build_notes-list.tsv": "build_notes list",
                     }
                 }
             }
         }
     }
-
-
-fileio.silentremove(
-    fileio.dirpath("bom_table_bubbles", structure_dict=file_structure())
-)
-os.makedirs(
-    fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()), exist_ok=True
-)
 
 
 # === Configuration ===
@@ -36,37 +28,33 @@ font_size = 8
 font_family = "Arial, Helvetica, sans-serif"
 line_width = 0.008 * 96  # Define line_width before it is used
 
-# Initialize an empty list to hold valid data rows
-data_rows = []
+# Initialize an empty list to hold buildnote svg table rows
+svg_table_data = []
 
 # Read instances for build_notes
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "build_note":
         build_note_number = instance.get("note_number")
         note = instance.get("note_text")
-
         has_shape = False
-        if instance.get("mpn") not in ["", None]:
-            has_shape = True
-        if has_shape:
-            shape = instance.get("mpn")
-            lib_repo = instance.get("lib_repo")
 
         # Pull bubble from the library if there is a shape
-        if has_shape and shape and lib_repo:
-            print(f"!!!!!! {artifact_id}-bubble{build_note_number}")
+        if instance.get("mpn") not in ["", None]:
+            has_shape = True
+        
+        if has_shape:
             library_utils.pull(
                 {
-                    "lib_repo": lib_repo,
+                    "lib_repo": instance.get("lib_repo"),
                     "item_type": "flagnote",
-                    "mpn": shape,
-                    "instance_name": f"{artifact_id}-bubble{build_note_number}",
+                    "mpn": instance.get("mpn"),
+                    "instance_name": f"bubble{build_note_number}",
                 },
                 update_instances_list=False,
             )
 
         # Append row information only if it contains valid data
-        data_rows.append(
+        svg_table_data.append(
             {
                 "build_note_number": build_note_number,
                 "note": note,
@@ -74,7 +62,7 @@ for instance in fileio.read_tsv("instances list"):
             }
         )
 
-num_rows = len(data_rows)  # Number of valid data rows
+num_rows = len(svg_table_data)  # Number of valid data rows
 svg_width = sum(column_widths)
 svg_height = num_rows * row_height
 
@@ -113,7 +101,7 @@ svg_lines.append(
 current_y = row_height  # Start from the row directly below the header
 
 # === Data Rows ===
-for row_index, row in enumerate(data_rows):
+for row_index, row in enumerate(svg_table_data):
     # Adjust row height based on whether there is a bubble
     row_height_adjusted = (
         row_height if not row["has_shape"] else 0.4 * 96
@@ -168,25 +156,27 @@ svg_lines.append("</svg>")
 
 # === Write SVG Output ===
 with open(
-    fileio.path("build_notes table svg", structure_dict=file_structure()),
+    fileio.path("build notes table svg", structure_dict=file_structure()),
     "w",
     encoding="utf-8",
 ) as svg_file:
     svg_file.write("\n".join(svg_lines))
 
 # === Inject bubble SVGs into the written file ===
-for row in data_rows:
+for row in svg_table_data:
     if not row["has_shape"]:
         continue
 
     build_note_number = row["build_note_number"]
     source_svg_filepath = os.path.join(
-        fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()),
+        fileio.dirpath("imported_instances"),
+        "flagnote",
+        f"bubble{build_note_number}",
         f"bubble{build_note_number}-drawing.svg",
     )
-    target_svg_filepath = fileio.dirpath(
-        "bom_table_bubbles", structure_dict=file_structure()
-    )
+    target_svg_filepath = os.path.join(
+        fileio.path("build notes table svg", file_structure())
+        )
     group_name = f"bubble{build_note_number}"
 
     # Replace text placeholder "flagnote-text" → build_note_number

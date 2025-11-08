@@ -206,6 +206,9 @@ for instance in instances:
                 f"{instance.get('instance_name')}-drawing.svg",
             )
 
+        if instance.get("item_type") == "flagnote" and instance.get("mpn") in [None, ""]:
+            continue
+
         svg_utils.find_and_replace_svg_group(
             fileio.path("output svg", structure_dict=file_structure()),
             instance_data_dir,
