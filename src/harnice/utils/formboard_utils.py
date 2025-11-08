@@ -435,7 +435,8 @@ def generate_node_coordinates():
 
 def map_instance_to_segments(instance):
     # note to user: we're actually mapping to nodes in same connector group as the "end nodes".
-    # so if your to/from nodes are item_type==Cavity, for example, this function will return paths of segments between the item_type==node instance where those cavities are
+    # so if your to/from nodes are item_type==Cavity, for example, this function will return paths of segments
+    # between the item_type==node instance where those cavities are
 
     # Ensure you're trying to map an instance that is segment-based.
     if instance.get("location_type") != "segment":
@@ -449,48 +450,41 @@ def map_instance_to_segments(instance):
             f"Instance {instance.get('instance_name')} has no start or end node."
         )
 
-    # Ensure each endpoint are actually location_type==node
-    if (
-        instances_list.attribute_of(instance.get("node_at_end_a"), "location_type")
-        != "node"
-    ):
+    # Ensure each endpoint is actually location_type==node
+    if instances_list.attribute_of(instance.get("node_at_end_a"), "location_type") != "node":
         raise ValueError(
             f"Location type of {instance.get('node_at_end_a')} is not a node."
         )
-    if (
-        instances_list.attribute_of(instance.get("node_at_end_b"), "location_type")
-        != "node"
-    ):
+    if instances_list.attribute_of(instance.get("node_at_end_b"), "location_type") != "node":
         raise ValueError(
             f"Location type of {instance.get('node_at_end_b')} is not a node."
         )
 
-    # Ensure there's a node in the connector group for each end node
-    start_node = instances_list.instance_in_connector_group_with_item_type(
-        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"),
-        "node",
+    # Resolve the node (item_type=="node") for each end's connector group
+    start_node_obj = instances_list.instance_in_connector_group_with_item_type(
+        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"), "node"
     )
     try:
-        if start_node == 0:
+        if start_node_obj == 0:
             raise ValueError(
                 f"No 'node' type item found in connector group {instance.get('connector_group')}"
             )
-        if start_node > 1:
+        if start_node_obj > 1:
             raise ValueError(
                 f"Multiple 'node' type items found in connector group {instance.get('connector_group')}"
             )
     except TypeError:
         pass
-    end_node = instances_list.instance_in_connector_group_with_item_type(
-        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
-        "node",
+
+    end_node_obj = instances_list.instance_in_connector_group_with_item_type(
+        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"), "node"
     )
     try:
-        if end_node == 0:
+        if end_node_obj == 0:
             raise ValueError(
                 f"No 'node' type item found in connector group {instance.get('connector_group')}"
             )
-        if end_node > 1:
+        if end_node_obj > 1:
             raise ValueError(
                 f"Multiple 'node' type items found in connector group {instance.get('connector_group')}"
             )
@@ -505,7 +499,8 @@ def map_instance_to_segments(instance):
     ]
 
     graph = {}
-    segment_lookup = {}  # frozenset({A, B}) -> instance_name
+    segment_lookup = {}         # frozenset({A, B}) -> seg_name
+    seg_endpoints = {}          # seg_name -> (A, B) with stored orientation
 
     for seg in segments:
         a = seg.get("node_at_end_a")
@@ -516,61 +511,75 @@ def map_instance_to_segments(instance):
         graph.setdefault(a, set()).add(b)
         graph.setdefault(b, set()).add(a)
         segment_lookup[frozenset([a, b])] = seg_name
+        seg_endpoints[seg_name] = (a, b)
 
-    start_node = instances_list.instance_in_connector_group_with_item_type(
-        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"),
-        "node",
+    # Re-fetch start/end nodes as instance_names
+    start_node_obj = instances_list.instance_in_connector_group_with_item_type(
+        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"), "node"
     )
-    if start_node == 0:
-        raise ValueError(
-            f"No 'node' type item found in connector group {instances_list.attribute_of(instance.get('instance_name'), 'connector_group')}"
-        )
-    end_node = instances_list.instance_in_connector_group_with_item_type(
-        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
-        "node",
-    )
-    if end_node == 0:
+    if start_node_obj == 0:
         raise ValueError(
             f"No 'node' type item found in connector group {instances_list.attribute_of(instance.get('instance_name'), 'connector_group')}"
         )
 
-    start_node = start_node.get("instance_name")
-    end_node = end_node.get("instance_name")
+    end_node_obj = instances_list.instance_in_connector_group_with_item_type(
+        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"), "node"
+    )
+    if end_node_obj == 0:
+        raise ValueError(
+            f"No 'node' type item found in connector group {instances_list.attribute_of(instance.get('instance_name'), 'connector_group')}"
+        )
 
-    queue = deque([(start_node, [start_node])])
+    start_node = start_node_obj.get("instance_name")
+    end_node = end_node_obj.get("instance_name")
+
+    # ---- BFS that records per-edge segment + direction ----
+    # pred[node] = (prev_node, seg_name, direction)
+    pred = {}
     visited = set()
+    queue = deque([start_node])
+    visited.add(start_node)
 
     while queue:
-        current, path = queue.popleft()
-        if current in visited:
-            continue
-        visited.add(current)
-
-        if current == end_node:
-            # Convert node path to segment names
-            segment_path = []
-            for i in range(len(path) - 1):
-                a, b = path[i], path[i + 1]
-                seg = segment_lookup.get(frozenset([a, b]))
-                if seg:
-                    segment_path.append(seg)
+        u = queue.popleft()
+        if u == end_node:
             break
-        for neighbor in graph.get(current, []):
-            if neighbor not in visited:
-                queue.append((neighbor, path + [neighbor]))
-    else:
+        for v in graph.get(u, []):
+            if v in visited:
+                continue
+            seg_name = segment_lookup.get(frozenset([u, v]))
+            if not seg_name:
+                continue
+            a_end, b_end = seg_endpoints[seg_name]
+            direction = "ab" if (u == a_end and v == b_end) else "ba"
+            pred[v] = (u, seg_name, direction)
+            visited.add(v)
+            queue.append(v)
+
+    if end_node not in pred and start_node != end_node:
         raise ValueError(f"No segment path found between {start_node} and {end_node}")
 
-    # Add a new instance for each connected segment
+    # Reconstruct (seg_name, direction) list from predecessors
+    segment_steps = []
+    if start_node != end_node:
+        cur = end_node
+        while cur != start_node:
+            prev, seg_name, direction = pred[cur]
+            segment_steps.append((seg_name, direction))
+            cur = prev
+        segment_steps.reverse()
+    # -------------------------------------------------------
+
+    # Add a new instance for each connected segment, preserving per-segment direction
     i = 1
-    for seg_name in segment_path:
+    for seg_name, direction in segment_steps:
         instances_list.new_instance(
             f"{instance.get('instance_name')}.{seg_name}",
             {
                 "item_type": f"{instance.get('item_type')}-segment",
                 "parent_instance": instance.get("instance_name"),
                 "segment_group": seg_name,
-                "segment_counter": i,
+                "segment_order": f"{i}-{direction}",
                 "parent_csys": seg_name,
                 "location_type": "segment",
                 "length": instances_list.attribute_of(seg_name, "length"),
