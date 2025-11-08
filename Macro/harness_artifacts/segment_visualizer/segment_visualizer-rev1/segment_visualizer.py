@@ -6,6 +6,54 @@ from harnice.utils import formboard_utils
 
 print_circles_and_dots = False
 
+def label_svg(
+    x, y, angle, text,
+    text_color="black",
+    background_color="white",
+    outline="black",
+    font_size=10,
+    font_family="Arial, Helvetica, sans-serif;",
+    font_weight="normal",
+):
+    """
+    Returns SVG snippet for a centered label (text + background rectangle).
+    Uses formatting style consistent with your existing <text> usage.
+    """
+
+    # Flip y because SVG coordinate system is positive-down
+    y_svg = -y
+
+    if angle > 90 and angle < 270:
+        angle = angle + 180
+
+    if angle > 360:
+        angle -= 360
+
+    # Background box sizing
+    char_width = font_size * 0.6
+    text_width = len(text) * char_width
+    text_height = font_size
+    padding = 4
+    width = text_width + padding * 2
+    height = text_height + padding * 2
+
+    # Centered rectangle offsets
+    rect_x = -width / 2
+    rect_y = -height / 2
+
+    return f"""
+<g transform="translate({x:.3f},{y_svg:.3f}) rotate({-angle:.3f})">
+  <rect x="{rect_x:.3f}" y="{rect_y:.3f}"
+        width="{width:.3f}" height="{height:.3f}"
+        fill="{background_color}" stroke="{outline}" stroke-width="0.8"/>
+  <text x="0" y="0" text-anchor="middle"
+        style="fill:{text_color};dominant-baseline:middle;
+               font-weight:{font_weight};font-family:{font_family};
+               font-size:{font_size}px">{text}</text>
+</g>
+""".strip()
+
+
 
 def print_nested(data, indent=0):
     prefix = "    " * indent
@@ -21,6 +69,7 @@ def print_nested(data, indent=0):
 
 
 def average_coords(data):
+    print_nested(data)
     sums = defaultdict(lambda: {"x": 0.0, "y": 0.0, "count": 0})
 
     for _lvl1, lvl2 in data.items():
@@ -37,6 +86,8 @@ def average_coords(data):
             "x": v["x"] / v["count"],
             "y": v["y"] / v["count"],
         }
+        averages[key]["angle"] = float(instances_list.attribute_of(instances_list.attribute_of(key, "segment_group"), "absolute_rotation"))
+        averages[key]["text"] = instances_list.attribute_of(key, "parent_instance") #TODO: change to print name, but that currently shows color/appearance
     return averages
 
 
@@ -307,6 +358,18 @@ for instance1 in instances:
 for key, value in average_coords(points_to_pass_through).items():
     if print_circles_and_dots:
         svg_groups.append(circle_svg(value.get("x"), value.get("y"), 0.1 * 96, "green"))
+    svg_groups.append(
+        label_svg(
+            value.get("x"), 
+            value.get("y"), 
+            value.get("angle"),
+            value.get("text"), 
+            text_color="black",
+            background_color="white",
+            outline="black",
+            font_size=10
+        )
+    )
 
 # === Wrap with contents-start / contents-end, scale inside contents-start ===
 svg_output = (
@@ -320,7 +383,6 @@ svg_output = (
     "</svg>\n"
 )
 
-print_nested(points_to_pass_through)
 
 # =============== WRITE OUTPUT FILE ===============
 out_path = fileio.path("segment visualizer svg", structure_dict=file_structure())
