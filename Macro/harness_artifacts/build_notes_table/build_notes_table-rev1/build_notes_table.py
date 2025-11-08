@@ -3,7 +3,7 @@ import re
 from harnice import fileio
 from harnice.utils import svg_utils, library_utils
 
-artifact_mpn = "buildnotes_table"
+artifact_mpn = "build_notes_table"
 
 
 def file_structure():
@@ -12,22 +12,13 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        "bom_table_bubbles": {},
-                        "buildnotes-table-master.svg": "buildnotes table svg",
-                        "buildnotes-list.tsv": "buildnotes list",
+                        "build_notes-table-master.svg": "build notes table svg",
+                        "build_notes-list.tsv": "build_notes list",
                     }
                 }
             }
         }
     }
-
-
-fileio.silentremove(
-    fileio.dirpath("bom_table_bubbles", structure_dict=file_structure())
-)
-os.makedirs(
-    fileio.dirpath("bom_table_bubbles", structure_dict=file_structure()), exist_ok=True
-)
 
 
 # === Configuration ===
@@ -37,43 +28,41 @@ font_size = 8
 font_family = "Arial, Helvetica, sans-serif"
 line_width = 0.008 * 96  # Define line_width before it is used
 
-# Initialize an empty list to hold valid data rows
-data_rows = []
+# Initialize an empty list to hold buildnote svg table rows
+svg_table_data = []
 
-# Read instances for buildnotes
+# Read instances for build_notes
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "Buildnote":
-        buildnote_number = instance.get("note_number")
+    if instance.get("item_type") == "build_note":
+        build_note_number = instance.get("note_number")
         note = instance.get("note_text")
-
         has_shape = False
-        if instance.get("mpn") not in ["", None]:
-            has_shape = True
-        if has_shape:
-            shape = instance.get("mpn")
-            lib_repo = instance.get("lib_repo")
 
         # Pull bubble from the library if there is a shape
-        if has_shape and shape and lib_repo:
+        if instance.get("mpn") not in ["", None]:
+            has_shape = True
+        
+        if has_shape:
             library_utils.pull(
                 {
-                    "lib_repo": lib_repo,
+                    "lib_repo": instance.get("lib_repo"),
                     "item_type": "flagnote",
-                    "mpn": shape,
-                    "instance_name": f"bubble{buildnote_number}",
-                    "destination_directory": fileio.path(
-                        "bom table bubbles", structure_dict=file_structure()
-                    ),
-                    "quiet": True,
-                }
+                    "mpn": instance.get("mpn"),
+                    "instance_name": f"bubble{build_note_number}",
+                },
+                update_instances_list=False,
             )
 
         # Append row information only if it contains valid data
-        data_rows.append(
-            {"buildnote_number": buildnote_number, "note": note, "has_shape": has_shape}
+        svg_table_data.append(
+            {
+                "build_note_number": build_note_number,
+                "note": note,
+                "has_shape": has_shape,
+            }
         )
 
-num_rows = len(data_rows)  # Number of valid data rows
+num_rows = len(svg_table_data)  # Number of valid data rows
 svg_width = sum(column_widths)
 svg_height = num_rows * row_height
 
@@ -81,7 +70,7 @@ svg_height = num_rows * row_height
 svg_lines = [
     f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
     f'font-family="{font_family}" font-size="{font_size}">',
-    '<g id="buildnotes-table-contents-start">',
+    '<g id="build_notes-table-contents-start">',
     f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none" stroke="black" stroke-width="{line_width}"/>',
 ]
 
@@ -112,7 +101,7 @@ svg_lines.append(
 current_y = row_height  # Start from the row directly below the header
 
 # === Data Rows ===
-for row_index, row in enumerate(data_rows):
+for row_index, row in enumerate(svg_table_data):
     # Adjust row height based on whether there is a bubble
     row_height_adjusted = (
         row_height if not row["has_shape"] else 0.4 * 96
@@ -121,7 +110,7 @@ for row_index, row in enumerate(data_rows):
     cy = y + row_height_adjusted / 2  # Center of the cell vertically
 
     # Draw the cell borders for the current row
-    for col_index, key in enumerate(["buildnote_number", "note"]):
+    for col_index, key in enumerate(["build_note_number", "note"]):
         x = sum(column_widths[:col_index])
         text = row.get(key, "").strip()
 
@@ -140,7 +129,7 @@ for row_index, row in enumerate(data_rows):
                 f'font-family:{font_family};font-size:{font_size}">{text}</text>'
             )
         else:
-            # Center the text for the buildnote number column
+            # Center the text for the build_note number column
             svg_lines.append(
                 f'<text x="{x + column_widths[col_index] / 2}" y="{cy}" text-anchor="middle" '
                 f'style="fill:black;dominant-baseline:middle;'
@@ -149,52 +138,54 @@ for row_index, row in enumerate(data_rows):
 
     # If row has a shape (bubble), add the bubble
     if row["has_shape"]:
-        buildnote_number = row["buildnote_number"]
+        build_note_number = row["build_note_number"]
         svg_lines.append(
-            f'<g id="bubble{buildnote_number}" transform="translate({bubble_x + column_widths[0] / 2},{cy})">'
+            f'<g id="bubble{build_note_number}" transform="translate({bubble_x + column_widths[0] / 2},{cy})">'
         )
-        svg_lines.append(f'  <g id="bubble{buildnote_number}-contents-start">')
+        svg_lines.append(f'  <g id="bubble{build_note_number}-contents-start">')
         svg_lines.append(f"  </g>")
-        svg_lines.append(f'  <g id="bubble{buildnote_number}-contents-end"/>')
+        svg_lines.append(f'  <g id="bubble{build_note_number}-contents-end"/>')
         svg_lines.append(f"</g>")
 
     # Update the current_y position for the next row
     current_y += row_height_adjusted  # Move down after drawing the row
 
 svg_lines.append("</g>")
-svg_lines.append('<g id="buildnotes-table-contents-end"/>')
+svg_lines.append('<g id="build_notes-table-contents-end"/>')
 svg_lines.append("</svg>")
 
 # === Write SVG Output ===
 with open(
-    fileio.path("buildnotes table svg", structure_dict=file_structure()),
+    fileio.path("build notes table svg", structure_dict=file_structure()),
     "w",
     encoding="utf-8",
 ) as svg_file:
     svg_file.write("\n".join(svg_lines))
 
 # === Inject bubble SVGs into the written file ===
-for row in data_rows:
+for row in svg_table_data:
     if not row["has_shape"]:
         continue
 
-    buildnote_number = row["buildnote_number"]
+    build_note_number = row["build_note_number"]
     source_svg_filepath = os.path.join(
-        fileio.path("bom table bubbles", structure_dict=file_structure()),
-        f"bubble{buildnote_number}-drawing.svg",
+        fileio.dirpath("imported_instances"),
+        "flagnote",
+        f"bubble{build_note_number}",
+        f"bubble{build_note_number}-drawing.svg",
     )
-    target_svg_filepath = fileio.path(
-        "bom table bubbles", structure_dict=file_structure()
-    )
-    group_name = f"bubble{buildnote_number}"
+    target_svg_filepath = os.path.join(
+        fileio.path("build notes table svg", file_structure())
+        )
+    group_name = f"bubble{build_note_number}"
 
-    # Replace text placeholder "flagnote-text" → buildnote_number
+    # Replace text placeholder "flagnote-text" → build_note_number
     if os.path.exists(source_svg_filepath):
         with open(source_svg_filepath, "r", encoding="utf-8") as f:
             svg_text = f.read()
 
         updated_text = re.sub(
-            r">\s*flagnote-text\s*<", f">{buildnote_number}<", svg_text
+            r">\s*flagnote-text\s*<", f">{build_note_number}<", svg_text
         )
 
         with open(source_svg_filepath, "w", encoding="utf-8") as f:
