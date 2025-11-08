@@ -15,7 +15,7 @@ COLUMNS = [
     "parent_instance",  # general purpose reference
     "location_type",  # each instance is either better represented by one or ther other
     "segment_group",  # the group of segments that this instance is part of
-    "segment_counter",  # the sequential id of this item in its segment group
+    "segment_order",  # the sequential id of this item in its segment group
     "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
     "channel_group",
     "circuit_id",  # which signal this component is electrically connected to
