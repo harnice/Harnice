@@ -1,8 +1,9 @@
 import os
 import math
+import re
 from collections import defaultdict
 from harnice import fileio, state
-from harnice.utils import flagnote_utils, formboard_utils, svg_utils
+from harnice.utils import library_utils, formboard_utils, svg_utils
 
 artifact_mpn = "standard_harnice_formboard"
 
@@ -15,17 +16,22 @@ rotation : rotation of the drawing in degrees=
 
 
 # =============== PATHS ===============
-def file_structure():
+def file_structure(instance_name=None):
     return {
         "instance_data": {
             "imported_instances": {
                 "macro": {
                     artifact_id: {
                         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
-                        f"{artifact_id}-imported-instances": {},
+                        f"{artifact_id}-imported-instances": {
+                            "flagnote": {
+                                instance_name: {
+                                    f"{instance_name}-drawing.svg": "flagnote drawing",
+                                }
+                            }
+                        },
                     }
-                },
-                "flagnote": {},
+                }
             }
         }
     }
@@ -33,15 +39,11 @@ def file_structure():
 
 fileio.silentremove(fileio.dirpath("flagnote", structure_dict=file_structure()))
 os.makedirs(fileio.dirpath("flagnote", structure_dict=file_structure()))
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()))
 
+instances = fileio.read_tsv("instances list") # only need to call this once
+printable_item_types = {"connector", "backshell", "segment", "flagnote"} # add content here as needed
 
-# ==========================
-# MAIN
-# ==========================
-instances = fileio.read_tsv("instances list")
-printable_item_types = {"connector", "backshell", "segment", "flagnote"}
-
+# define coordinate system
 try:
     if not rotation:
         rotation = 0
@@ -49,7 +51,35 @@ except NameError:
     rotation = 0
 origin = [0, 0, rotation]
 
-flagnote_utils.make_note_drawings()
+# ==========================
+#        MAKE FLAGNOTE DRAWINGS
+# ==========================
+instances = fileio.read_tsv("instances list")
+
+for instance in instances:
+    if instance.get("item_type") != "flagnote":
+        continue
+
+    instance_name = instance.get("instance_name")
+
+    if instance.get("mpn") in ["", None]:
+        continue
+
+    # === Pull library item ===
+    library_utils.pull(instance, destination_directory=fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure(instance_name)))
+
+    # === Replace placeholder in SVG ===
+    flagnote_drawing_path = fileio.path(
+        "flagnote drawing", structure_dict=file_structure(instance_name)
+    )
+
+    with open(flagnote_drawing_path, "r", encoding="utf-8") as f:
+        svg = f.read()
+
+    svg = re.sub(r">flagnote-text<", f">{instance.get('bubble_text')}<", svg)
+
+    with open(flagnote_drawing_path, "w", encoding="utf-8") as f:
+        f.write(svg)
 
 # Group instances by item_type
 grouped_instances = defaultdict(list)
@@ -199,7 +229,17 @@ for instance in instances:
                 instance.get("instance_name"),
                 f"{instance.get('instance_name')}-drawing.svg",
             )
-        # imported instances are here
+            
+        # locally imported instances are stored here
+        elif instance.get("item_type").strip().lower() in ["flagnote"]:
+            instance_data_dir = os.path.join(
+                fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure(instance_name)),
+                instance.get("item_type"),
+                instance.get("instance_name"),
+                f"{instance.get('instance_name')}-drawing.svg",
+            )
+
+        # project-level imported instances are here
         else:
             instance_data_dir = os.path.join(
                 fileio.dirpath("imported_instances"),
