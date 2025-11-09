@@ -1,0 +1,2 @@
+product	mfg	pn	desc	rev	status	releaseticket	library_repo	library_subpath	datestarted	datemodified	datereleased	git_hash_of_harnice_src	drawnby	checkedby	revisionupdates	affectedinstances
+macro		basic_segment_generator	GENERATES SIMPLE SVGS FOR FOMRBOARD SEGMENTS	1					11/9/25	11/9/25		163608bd7460c27ff5b7e98d201335176ba0ffdf			INITIAL RELEASE	
