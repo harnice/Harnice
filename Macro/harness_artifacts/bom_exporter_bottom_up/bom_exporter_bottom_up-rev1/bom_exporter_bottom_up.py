@@ -1,5 +1,6 @@
 import csv
 from harnice import fileio, state
+import os
 
 
 # =============== PATHS ===============
@@ -11,12 +12,15 @@ def file_structure():
                     artifact_id: {
                         f"{state.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
                         f"{state.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
+                        f"{artifact_id}-imported-instances": {},
                     }
                 }
             }
         }
     }
 
+
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 CABLE_MARGIN = 12
 BOM_COLUMNS = [

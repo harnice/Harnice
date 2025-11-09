@@ -1,5 +1,6 @@
 import math
 from collections import defaultdict
+import os
 from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
@@ -161,11 +162,14 @@ def file_structure():
                 "macro": {
                     artifact_id: {
                         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "segment visualizer svg",
+                        f"{artifact_id}-imported-instances": {},
                     }
                 }
             }
         }
     }
+
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 
 # =============== BUILD SVG CONTENT ===============
