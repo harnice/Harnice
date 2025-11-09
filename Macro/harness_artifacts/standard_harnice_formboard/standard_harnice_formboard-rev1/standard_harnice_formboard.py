@@ -21,7 +21,8 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg"
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
+                        f"{artifact_id}-imported-instances": {},
                     }
                 },
                 "flagnote": {},
@@ -32,6 +33,7 @@ def file_structure():
 
 fileio.silentremove(fileio.dirpath("flagnote", structure_dict=file_structure()))
 os.makedirs(fileio.dirpath("flagnote", structure_dict=file_structure()))
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()))
 
 
 # ==========================

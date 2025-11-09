@@ -1,5 +1,6 @@
 import csv
 import xlwt
+import os
 from harnice import fileio, instances_list, state
 
 artifact_mpn = "wirelist_exporter"
@@ -15,11 +16,14 @@ def file_structure():
                         f"{state.partnumber('pn-rev')}-{artifact_id}-wirelist.tsv": "wirelist no formats",
                         f"{state.partnumber('pn-rev')}-{artifact_id}-wirelist.xls": "wirelist pretty",
                         f"{state.partnumber('pn-rev')}-{artifact_id}-wirelist-master.svg": "wirelist svg",
+                        f"{artifact_id}-imported-instances": {},
                     }
                 }
             }
         }
     }
+
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 
 # =============== WIRELIST COLUMNS ===============

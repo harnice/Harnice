@@ -14,12 +14,15 @@ def file_structure():
                     artifact_id: {
                         "build_notes-table-master.svg": "build notes table svg",
                         "build_notes-list.tsv": "build_notes list",
+                        f"{artifact_id}-imported-instances": {},
                     }
                 }
             }
         }
     }
 
+
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 # === Configuration ===
 column_widths = [0.5 * 96, 3.375 * 96]  # bubble, then note

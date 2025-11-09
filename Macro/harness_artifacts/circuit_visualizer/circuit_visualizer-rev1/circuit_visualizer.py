@@ -47,13 +47,15 @@ def file_structure():
             "imported_instances": {
                 "macro": {
                     artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg"
+                        f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg",
+                        f"{artifact_id}-imported-instances": {},
                     }
                 }
             }
         }
     }
 
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 # =============== DRAW HELPERS ===============
 def plot_node(node_instance, x, y, box_width, local_group):

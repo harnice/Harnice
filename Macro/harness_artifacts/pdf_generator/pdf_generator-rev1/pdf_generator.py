@@ -41,11 +41,14 @@ def file_structure(page_name=None, page_counter=None):
                         "page_svgs": {
                             f"{page_counter}-{page_name}-user-editable.svg": "user editable page svg"
                         },
+                        f"{artifact_id}-imported-instances": {},
                     }
                 },
             }
         }
     }
+
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 
 # ============================================
@@ -60,6 +63,7 @@ os.makedirs(
     exist_ok=True,
 )
 os.makedirs(fileio.dirpath("page_svgs", structure_dict=file_structure()), exist_ok=True)
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 
 # ============================================

@@ -15,13 +15,14 @@ def file_structure():
                     artifact_id: {
                         "revision_table_bubbles": {},
                         "revision-history-table-master.svg": "revision history table svg",
+                        f"{artifact_id}-imported-instances": {},
                     }
                 }
             }
         }
     }
 
-
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 fileio.silentremove(
     fileio.dirpath("revision_table_bubbles", structure_dict=file_structure())
 )
