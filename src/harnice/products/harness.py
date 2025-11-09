@@ -203,7 +203,7 @@ for instance in fileio.read_tsv("instances list"):
                 "bubble_text": build_note_counter,
                 "parent_instance": instance.get("parent_instance"),
                 "parent_csys_instance_name": instance.get("parent_instance"),
-                "note_text": "Special cavitiesused in this connector. Refer to wirelist for details"
+                "note_text": "Special cavities used in this connector"
             })
             flagnote_counter += 1
             cavity_flagnote_conversion_happened = True

@@ -1,57 +1,5 @@
-import os
-import re
 from harnice import fileio
 from harnice.lists import instances_list
-from harnice.utils import library_utils
-
-
-def file_structure(instance_name):
-    return {
-        "instance_data": {
-            "imported_instances": {
-                "flagnote": {
-                    instance_name: {
-                        f"{instance_name}-drawing.svg": "flagnote drawing",
-                    }
-                }
-            }
-        }
-    }
-
-
-def make_note_drawings():
-    instances = fileio.read_tsv("instances list")
-
-    for instance in instances:
-        if instance.get("item_type") != "flagnote":
-            continue
-
-        instance_name = instance.get("instance_name")
-
-        if instance.get("mpn") in ["", None]:
-            continue
-
-        destination_directory = fileio.dirpath(
-            "flagnote", structure_dict=file_structure(instance_name)
-        )
-        os.makedirs(destination_directory, exist_ok=True)
-
-        # === Pull library item ===
-        library_utils.pull(instance)
-
-        # === Replace placeholder in SVG ===
-        flagnote_drawing_path = fileio.path(
-            "flagnote drawing", structure_dict=file_structure(instance_name)
-        )
-
-        with open(flagnote_drawing_path, "r", encoding="utf-8") as f:
-            svg = f.read()
-
-        svg = re.sub(r">flagnote-text<", f">{instance.get('bubble_text')}<", svg)
-
-        with open(flagnote_drawing_path, "w", encoding="utf-8") as f:
-            f.write(svg)
-
 
 def compile_build_notes():
     # add build_note itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
