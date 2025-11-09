@@ -18,7 +18,7 @@ imported_instances
 """
 
 
-def pull(input_dict, update_instances_list=True):
+def pull(input_dict, update_instances_list=True, destination_directory=None):
     # throw errors if required fields are blank
     if input_dict.get("lib_repo") in [None, ""]:
         raise ValueError(
@@ -34,11 +34,20 @@ def pull(input_dict, update_instances_list=True):
         )
 
     # determine destination directory
-    destination_directory = os.path.join(
-        fileio.dirpath("imported_instances"),
-        input_dict.get("item_type"),
-        input_dict.get("instance_name"),
-    )
+    if destination_directory is None:
+        instance_name_text = input_dict.get("instance_name")
+        destination_directory = os.path.join(
+            fileio.dirpath("imported_instances"),
+            input_dict.get("item_type"),
+            input_dict.get("instance_name"),
+        )
+    else:
+        instance_name_text = f"{os.path.basename(os.path.dirname(destination_directory))}:{input_dict.get('instance_name')}"
+        destination_directory = os.path.join(
+            destination_directory,
+            input_dict.get("item_type"),
+            input_dict.get("instance_name"),
+        )
     os.makedirs(destination_directory, exist_ok=True)
 
     # determine source library path
@@ -182,7 +191,7 @@ def pull(input_dict, update_instances_list=True):
 
     line = (
         f"{import_print_format[0].format('')}"
-        f"{import_print_format[1].format(input_dict.get('instance_name'))}"
+        f"{import_print_format[1].format(instance_name_text)}"
         f"{import_print_format[2].format(input_dict.get('item_type'))}"
         f"{import_print_format[3].format(update_contents.get('lib_status'))}"
         f"{import_print_format[4].format(import_state)}"
