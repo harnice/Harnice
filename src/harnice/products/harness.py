@@ -229,6 +229,12 @@ def file_structure(item_type=None, instance_name=None):
         f"{state.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
         f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
         "instance_data": {
+            item_type: {
+                instance_name: {
+                    f"{instance_name}-attributes.json": "instance attributes json",
+                    f"{instance_name}-drawing.svg": "instance drawing svg"
+                }
+            }
         },
         "interactive_files": {
             f"{state.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
