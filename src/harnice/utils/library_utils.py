@@ -37,7 +37,7 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
     if destination_directory is None:
         instance_name_text = input_dict.get("instance_name")
         destination_directory = os.path.join(
-            fileio.dirpath("imported_instances"),
+            fileio.dirpath("instance_data"),
             input_dict.get("item_type"),
             input_dict.get("instance_name"),
         )

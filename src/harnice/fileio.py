@@ -30,7 +30,7 @@ def silentremove(filepath):
             shutil.rmtree(filepath)  # remove directory and contents
 
 
-def path(target_value, structure_dict=None):
+def path(target_value, structure_dict=None, base_directory=None):
 
     # returns the filepath/filename of a filekey.
     """
@@ -91,12 +91,16 @@ def path(target_value, structure_dict=None):
         return None
 
     path_value = recursive_search(structure_dict, [])
+
     if not path_value:
         raise TypeError(f"Could not find filepath of '{target_value}'.")
-    return os.path.join(rev_directory(), *path_value)
+    if base_directory in [None, ""]:
+        return os.path.join(rev_directory(), *path_value)
+    else:
+        return os.path.join(rev_directory(), base_directory, *path_value)
 
 
-def dirpath(target_key, structure_dict=None):
+def dirpath(target_key, structure_dict=None, base_directory=None):
     """
     Returns the absolute path to a directory identified by its key
     within a dict hierarchy.
@@ -125,8 +129,10 @@ def dirpath(target_key, structure_dict=None):
     path_key = recursive_search(structure_dict, [])
     if not path_key:
         raise TypeError(f"Could not find directory '{target_key}'.")
-    # join all levels to construct a valid path
-    return os.path.join(rev_directory(), *path_key)
+    if base_directory in [None, ""]:
+        return os.path.join(rev_directory(), *path_key)
+    else:
+        return os.path.join(rev_directory(), base_directory, *path_key)
 
 
 def verify_revision_structure(product_type=None):

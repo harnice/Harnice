@@ -8,7 +8,7 @@ from harnice.lists import instances_list
 from harnice.utils import library_utils
 
 
-def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
+def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, base_directory=None, **kwargs):
     if artifact_id is None:
         raise ValueError("artifact_id is required")
     if macro_part_number is None:
@@ -20,26 +20,34 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
         if instance.get("instance_name") == artifact_id:
             raise ValueError(f"Macro with ID {artifact_id} already exists")
 
+    if base_directory is None:
+        macro_dirpath = os.path.join(
+            fileio.dirpath("instance_data"), "macro", artifact_id
+        )
+    else:
+        macro_dirpath = os.path.join(base_directory, "macro", artifact_id)
+    
+    os.makedirs(macro_dirpath, exist_ok=True)
+
     library_utils.pull(
         {
             "mpn": macro_part_number,
             "lib_repo": lib_repo,
             "lib_subpath": lib_subpath,
-            "item_type": "Macro",
+            "item_type": "macro",
             "instance_name": artifact_id,
         },
+        destination_directory=base_directory,
         update_instances_list=False,
     )
 
-    macro_dirpath = os.path.join(
-        fileio.dirpath("imported_instances"), "macro", artifact_id
-    )
     script_path = os.path.join(macro_dirpath, f"{macro_part_number}.py")
 
     # always pass the basics, but let kwargs override/extend
     init_globals = {
         "artifact_id": artifact_id,
         "artifact_path": macro_dirpath,
+        "base_directory": base_directory,
         **kwargs,  # merges/overrides
     }
 
@@ -51,7 +59,7 @@ def lookup_outputcsys_from_lib_used(instance, outputcsys):
         return 0, 0, 0
 
     attributes_path = os.path.join(
-        fileio.dirpath("imported_instances"),
+        fileio.dirpath("instance_data"),
         instance.get("item_type"),
         instance.get("instance_name"),
         f"{instance.get("instance_name")}-attributes.json",

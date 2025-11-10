@@ -588,52 +588,6 @@ def map_instance_to_segments(instance):
         i += 1
 
 
-def make_segment_drawings():
-    # =================================================
-    # FIRST, UPDATE SEGMENT INSTANCES
-    instances = fileio.read_tsv("instances list")
-
-    for instance in instances:
-        if instance.get("item_type") == "segment":
-            segment_name = instance.get("instance_name", "").strip()
-            if not segment_name:
-                continue
-
-            try:
-                length_in = float(instance.get("length", 0))
-                diameter_in = float(instance.get("diameter", 1))
-                length = 96 * length_in
-                diameter = 96 * diameter_in
-
-                outline_thickness = 0.05 * 96
-                centerline_thickness = 0.015 * 96
-                half_diameter = diameter / 2
-
-                svg_content = f"""
-                <svg xmlns="http://www.w3.org/2000/svg" width="{length}" height="{diameter}" viewBox="0 {-half_diameter} {length} {diameter}">
-                    <g id="{instance.get("instance_name")}-contents-start">
-                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" stroke-width="{diameter}" />
-                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="white" stroke-width="{diameter - outline_thickness}" />
-                        <line x1="0" y1="0" x2="{length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
-                    </g>
-                    <g id="{instance.get("instance_name")}-contents-end"></g>
-                </svg>
-                """
-                segment_dir = os.path.join(
-                    fileio.dirpath("generated_instances_do_not_edit"), segment_name
-                )
-                os.makedirs(segment_dir, exist_ok=True)
-
-                output_filename = os.path.join(
-                    segment_dir, f"{segment_name}-drawing.svg"
-                )
-                with open(output_filename, "w") as svg_file:
-                    svg_file.write(svg_content)
-
-            except Exception as e:
-                print(f"Error processing segment {segment_name}: {e}")
-
-
 def calculate_location(instance_name, origin):
     instances = fileio.read_tsv("instances list")
     instances_lookup = {row["instance_name"]: row for row in instances}
