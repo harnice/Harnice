@@ -4,12 +4,13 @@ artifact_mpn = "basic_segment_generator"
 
 # =============== PATHS ===============
 if base_directory == None:
-    base_directory = "instance_data/"
+    base_directory = "instance_data" #path between cwd and the item_type/artifact_id folder where this macro lives
 
 def macro_file_structure():
     return {
+        #base directory {
         f"{state.partnumber('pn-rev')}-{artifact_id}-drawing-master.svg": "master svg",
-        f"{artifact_id}-instance_data": {}
+        "instance_data": {}
     }
 
 try:
@@ -38,5 +39,5 @@ svg_content = f"""
 </svg>
 """
 
-with open(fileio.path("master svg", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"), "w") as svg_file:
+with open(fileio.path("master svg", structure_dict=macro_file_structure(), base_directory=base_directory), "w") as svg_file:
     svg_file.write(svg_content)
