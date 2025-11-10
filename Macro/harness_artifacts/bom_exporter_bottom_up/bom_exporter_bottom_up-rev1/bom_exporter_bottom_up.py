@@ -4,23 +4,15 @@ import os
 
 
 # =============== PATHS ===============
-def file_structure():
+if base_directory == None:
+    base_directory = "instance_data/"
+    
+def macro_file_structure():
     return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                }
-            }
-        }
+        f"{state.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
+        f"{state.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
+        "instance_data": {}
     }
-
-
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 CABLE_MARGIN = 12
 BOM_COLUMNS = [
@@ -34,7 +26,7 @@ BOM_COLUMNS = [
 ]
 
 with open(
-    fileio.path("bom tsv", structure_dict=file_structure()),
+    fileio.path("bom tsv", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"),
     "w",
     newline="",
     encoding="utf-8",
@@ -46,7 +38,7 @@ with open(
 
 def add_line_to_bom(line_data):
     with open(
-        fileio.path("bom tsv", structure_dict=file_structure()),
+        fileio.path("bom tsv", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"),
         "a",
         newline="",
         encoding="utf-8",
@@ -107,7 +99,7 @@ font_family = "Arial, Helvetica, sans-serif"
 line_width = 0.008 * 96
 
 with open(
-    fileio.path("bom tsv", structure_dict=file_structure()),
+    fileio.path("bom tsv", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"),
     "r",
     newline="",
     encoding="utf-8",
@@ -182,6 +174,6 @@ svg_lines.append(f'<g id="{artifact_id}-bom-contents-end"/>')
 svg_lines.append("</svg>")
 
 with open(
-    fileio.path("bom svg", structure_dict=file_structure()), "w", encoding="utf-8"
+    fileio.path("bom svg", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"), "w", encoding="utf-8"
 ) as svg_file:
     svg_file.write("\n".join(svg_lines))

@@ -13,42 +13,28 @@ from harnice.lists import rev_history
 artifact_mpn = "pdf_generator"
 
 
-def file_structure(page_name=None, page_counter=None):
+def macro_file_structure(page_name=None, page_counter=None):
     return {
-        "instance_data": {
-            "imported_instances": {
-                "titleblock": {
-                    f"{artifact_id}-{page_name}": {
-                        f"{artifact_id}-{page_name}-attributes.json": "project titleblock attributes",
-                        f"{artifact_id}-{page_name}-drawing.svg": "project titleblock drawing",
-                    }
-                },
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-page_setup.json": "page setup",
-                        f"{artifact_id}-mastercontents.svg": "master contents svg",
-                        f"{artifact_mpn}.py": "macro script",
-                        f"{state.partnumber('pn-rev')}-{artifact_id}.pdf": "output pdf",
-                        "library_used_do_not_edit": {
-                            "direct_from_project_titleblock": {
-                                f"macro-{artifact_id}-{page_name}": {
-                                    f"{artifact_id}-{page_name}-attributes.json": "macro titleblock attributes",
-                                    f"{artifact_id}-{page_name}-drawing.svg": "macro titleblock drawing",
-                                    f"{artifact_id}-{page_name}-drawing_with_text_replacements.svg": "tblock with text replacements",
-                                }
-                            }
-                        },
-                        "page_svgs": {
-                            f"{page_counter}-{page_name}-user-editable.svg": "user editable page svg"
-                        },
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                },
+        f"{state.partnumber('pn-rev')}-{artifact_id}-page_setup.json": "page setup",
+        f"{artifact_id}-mastercontents.svg": "master contents svg",
+        f"{artifact_mpn}.py": "macro script",
+        f"{state.partnumber('pn-rev')}-{artifact_id}.pdf": "output pdf",
+        "library_used_do_not_edit": {
+            "direct_from_project_titleblock": {
+                f"macro-{artifact_id}-{page_name}": {
+                    f"{artifact_id}-{page_name}-attributes.json": "macro titleblock attributes",
+                    f"{artifact_id}-{page_name}-drawing.svg": "macro titleblock drawing",
+                    f"{artifact_id}-{page_name}-drawing_with_text_replacements.svg": "tblock with text replacements",
+                }
             }
-        }
+        },
+        "page_svgs": {
+            f"{page_counter}-{page_name}-user-editable.svg": "user editable page svg"
+        },
+        "instance_data": {}
     }
 
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure(), base_directory=base_directory), exist_ok=True)
 
 
 # ============================================
@@ -56,14 +42,14 @@ os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=f
 # ============================================
 # generate file structure
 fileio.silentremove(
-    fileio.dirpath("direct_from_project_titleblock", structure_dict=file_structure())
+    fileio.dirpath("direct_from_project_titleblock", structure_dict=macro_file_structure(), base_directory=base_directory)
 )
 os.makedirs(
-    fileio.dirpath("direct_from_project_titleblock", structure_dict=file_structure()),
+    fileio.dirpath("direct_from_project_titleblock", structure_dict=macro_file_structure(), base_directory=base_directory),
     exist_ok=True,
 )
-os.makedirs(fileio.dirpath("page_svgs", structure_dict=file_structure()), exist_ok=True)
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
+os.makedirs(fileio.dirpath("page_svgs", structure_dict=macro_file_structure(), base_directory=base_directory), exist_ok=True)
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure(), base_directory=base_directory), exist_ok=True)
 
 
 # ============================================
@@ -90,7 +76,7 @@ blank_setup = {
     ]
 }
 
-page_setup_path = fileio.path("page setup", structure_dict=file_structure())
+page_setup_path = fileio.path("page setup", structure_dict=macro_file_structure(), base_directory=base_directory)
 
 # Create or load the page setup file
 if not os.path.exists(page_setup_path) or os.path.getsize(page_setup_path) == 0:
@@ -187,28 +173,29 @@ for page in page_data.get("pages", []):
     os.makedirs(
         fileio.dirpath(
             f"macro-{artifact_id}-{page_name}",
-            structure_dict=file_structure(page_name=page_name),
+            structure_dict=macro_file_structure(page_name=page_name),
+            base_directory=base_directory
         ),
         exist_ok=True,
     )
     shutil.copy(
         fileio.path(
             "project titleblock attributes",
-            structure_dict=file_structure(page_name=page_name),
+            structure_dict=macro_file_structure(page_name=page_name), base_directory=base_directory
         ),
         fileio.path(
             "macro titleblock attributes",
-            structure_dict=file_structure(page_name=page_name),
+            structure_dict=macro_file_structure(page_name=page_name), base_directory=base_directory
         ),
     )
     shutil.copy(
         fileio.path(
             "project titleblock drawing",
-            structure_dict=file_structure(page_name=page_name),
+            structure_dict=macro_file_structure(page_name=page_name), base_directory=base_directory
         ),
         fileio.path(
             "macro titleblock drawing",
-            structure_dict=file_structure(page_name=page_name),
+            structure_dict=macro_file_structure(page_name=page_name), base_directory=base_directory
         ),
     )
 
@@ -218,7 +205,7 @@ for page in page_data.get("pages", []):
     with open(
         fileio.path(
             "macro titleblock attributes",
-            structure_dict=file_structure(page_name=page_name),
+            structure_dict=macro_file_structure(page_name=page_name), base_directory=base_directory
         ),
         "r",
         encoding="utf-8",
@@ -244,9 +231,9 @@ for page in page_data.get("pages", []):
     with open(
         fileio.path(
             "tblock with text replacements",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
-            ),
+            ), base_directory=base_directory
         ),
         "w",
         encoding="utf-8",
@@ -257,15 +244,15 @@ for page in page_data.get("pages", []):
     svg_utils.find_and_replace_svg_group(
         fileio.path(
             "tblock with text replacements",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
-            ),
+            ), base_directory=base_directory
         ),
         fileio.path(
             "macro titleblock drawing",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
-            ),
+            ), base_directory=base_directory
         ),
         "tblock",
         "tblock",
@@ -276,9 +263,9 @@ for page in page_data.get("pages", []):
     with open(
         fileio.path(
             "tblock with text replacements",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
-            ),
+            ), base_directory=base_directory
         ),
         "r",
         encoding="utf-8",
@@ -315,7 +302,7 @@ for page in page_data.get("pages", []):
     with open(
         fileio.path(
             "tblock with text replacements",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
             ),
         ),
@@ -378,7 +365,7 @@ svg += [
     "</svg>",
 ]
 
-master_svg_path = fileio.path("master contents svg", structure_dict=file_structure())
+master_svg_path = fileio.path("master contents svg", structure_dict=macro_file_structure())
 with open(master_svg_path, "w", encoding="utf-8") as f:
     f.write("\n".join(svg))
 
@@ -402,7 +389,7 @@ for page in page_data.get("pages", []):
     with open(
         fileio.path(
             "macro titleblock attributes",
-            structure_dict=file_structure(page_name=page_name),
+            structure_dict=macro_file_structure(page_name=page_name),
         ),
         "r",
         encoding="utf-8",
@@ -414,7 +401,7 @@ for page in page_data.get("pages", []):
     if not os.path.exists(
         fileio.path(
             "user editable page svg",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
             ),
         )
@@ -422,7 +409,7 @@ for page in page_data.get("pages", []):
         with open(
             fileio.path(
                 "user editable page svg",
-                structure_dict=file_structure(
+                structure_dict=macro_file_structure(
                     page_counter=page_counter, page_name=page_name
                 ),
             ),
@@ -451,11 +438,11 @@ for page in page_data.get("pages", []):
     svg_utils.find_and_replace_svg_group(
         fileio.path(
             "user editable page svg",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
             ),
         ),
-        fileio.path("master contents svg", structure_dict=file_structure()),
+        fileio.path("master contents svg", structure_dict=macro_file_structure()),
         "svg-master",
         "svg-master",
     )
@@ -464,13 +451,13 @@ for page in page_data.get("pages", []):
     svg_utils.find_and_replace_svg_group(
         fileio.path(
             "user editable page svg",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
             ),
         ),
         fileio.path(
             "tblock with text replacements",
-            structure_dict=file_structure(
+            structure_dict=macro_file_structure(
                 page_counter=page_counter, page_name=page_name
             ),
         ),
@@ -489,7 +476,7 @@ for page_name in [p.get("name") for p in page_data.get("pages", [])]:
     page_counter += 1
     svg_path = fileio.path(
         "user editable page svg",
-        structure_dict=file_structure(page_counter=page_counter, page_name=page_name),
+        structure_dict=macro_file_structure(page_counter=page_counter, page_name=page_name),
     )
     if not os.path.exists(svg_path):
         raise FileNotFoundError(f"[ERROR] SVG not found: {svg_path}")
@@ -512,7 +499,7 @@ for page_name in [p.get("name") for p in page_data.get("pages", [])]:
 subprocess.run(
     ["pdfunite"]
     + temp_pdfs
-    + [fileio.path("output pdf", structure_dict=file_structure())],
+    + [fileio.path("output pdf", structure_dict=macro_file_structure())],
     check=True,
 )
 

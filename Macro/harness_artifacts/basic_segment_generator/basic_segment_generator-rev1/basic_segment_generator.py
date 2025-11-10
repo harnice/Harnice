@@ -1,23 +1,16 @@
-import os
-from harnice import fileio
+from harnice import fileio, state
 
 artifact_mpn = "basic_segment_generator"
 
 # =============== PATHS ===============
-def file_structure():
-    return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-drawing-master.svg": "master svg",
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                }
-            }
-        }
-    }
+if base_directory == None:
+    base_directory = "instance_data/"
 
+def macro_file_structure():
+    return {
+        f"{state.partnumber('pn-rev')}-{artifact_id}-drawing-master.svg": "master svg",
+        f"{artifact_id}-instance_data": {}
+    }
 
 try:
     instance.get("instance_name")
@@ -26,8 +19,6 @@ except:
 
 if instance.get("item_type") != "segment":
     raise ValueError(f"basic_segment_generator can only be used to generate segments, not {instance.get('item_type')}")
-
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
 
 length = 96 * float(instance.get("length", 0))
 diameter = 96 * float(instance.get("diameter", 1))
@@ -47,5 +38,5 @@ svg_content = f"""
 </svg>
 """
 
-with open(fileio.path("master svg", structure_dict=file_structure()), "w") as svg_file:
+with open(fileio.path("master svg", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"), "w") as svg_file:
     svg_file.write(svg_content)

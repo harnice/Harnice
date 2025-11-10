@@ -7,27 +7,19 @@ from harnice.utils import svg_utils, library_utils
 artifact_mpn = "revision_history_table"
 
 
-def file_structure():
+def macro_file_structure():
     return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        "revision_table_bubbles": {},
-                        "revision-history-table-master.svg": "revision history table svg",
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                }
-            }
-        }
+        "revision_table_bubbles": {},
+        "revision-history-table-master.svg": "revision history table svg",
+        "instance_data": {},
     }
 
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure()), exist_ok=True)
 fileio.silentremove(
-    fileio.dirpath("revision_table_bubbles", structure_dict=file_structure())
+    fileio.dirpath("revision_table_bubbles", structure_dict=macro_file_structure())
 )
 os.makedirs(
-    fileio.dirpath("revision_table_bubbles", structure_dict=file_structure()),
+    fileio.dirpath("revision_table_bubbles", structure_dict=macro_file_structure()),
     exist_ok=True,
 )
 
@@ -81,7 +73,7 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
                     "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
                     "instance_name": f"bubble{rev}",
                     "destination_directory": fileio.dirpath(
-                        "revision table bubbles", structure_dict=file_structure()
+                        "revision table bubbles", structure_dict=macro_file_structure()
                     ),
                     "quiet": True,
                 }
@@ -159,7 +151,7 @@ for row_index, row in enumerate(data_rows):
                 "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
                 "instance_name": bubble_name,
                 "destination_directory": fileio.dirpath(
-                    "revision table bubbles", structure_dict=file_structure()
+                    "revision table bubbles", structure_dict=macro_file_structure()
                 ),
                 "quiet": True,
             }
@@ -188,7 +180,7 @@ svg_lines.append('<g id="revision-history-table-contents-end"/>')
 svg_lines.append("</svg>")
 
 # Write the base SVG
-target_svg = fileio.path("revision history table svg", structure_dict=file_structure())
+target_svg = fileio.path("revision history table svg", structure_dict=macro_file_structure())
 with open(target_svg, "w", encoding="utf-8") as f:
     f.write("\n".join(svg_lines))
 
@@ -199,11 +191,11 @@ for row in data_rows:
 
     rev_text = row["rev"]
     source_svg_filepath = os.path.join(
-        fileio.dirpath("revision table bubbles", structure_dict=file_structure()),
+        fileio.dirpath("revision table bubbles", structure_dict=macro_file_structure()),
         f"bubble{rev_text}-drawing.svg",
     )
     target_svg_filepath = fileio.path(
-        "revision history table svg", structure_dict=file_structure()
+        "revision history table svg", structure_dict=macro_file_structure()
     )
     group_name = f"bubble{rev_text}"
 

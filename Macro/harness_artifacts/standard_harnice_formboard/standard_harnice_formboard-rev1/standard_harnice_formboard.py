@@ -3,7 +3,7 @@ import math
 import re
 from collections import defaultdict
 from harnice import fileio, state
-from harnice.utils import library_utils, formboard_utils, svg_utils
+from harnice.utils import library_utils, formboard_utils, svg_utils, feature_tree_utils
 
 artifact_mpn = "standard_harnice_formboard"
 
@@ -16,29 +16,20 @@ rotation : rotation of the drawing in degrees=
 
 
 # =============== PATHS ===============
-def file_structure(instance_name=None):
+if base_directory == None:
+    base_directory = "instance_data/"
+    
+def macro_file_structure(instance_name=None):
     return {
+        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
         "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
-                        f"{artifact_id}-imported-instances": {
-                            "flagnote": {
-                                instance_name: {
-                                    f"{instance_name}-drawing.svg": "flagnote drawing",
-                                }
-                            }
-                        },
-                    }
+            "flagnote": {
+                instance_name: {
+                    f"{instance_name}-drawing.svg": "flagnote drawing",
                 }
             }
         }
     }
-
-
-fileio.silentremove(fileio.dirpath("flagnote", structure_dict=file_structure()))
-os.makedirs(fileio.dirpath("flagnote", structure_dict=file_structure()))
 
 instances = fileio.read_tsv("instances list") # only need to call this once
 printable_item_types = {"connector", "backshell", "segment", "flagnote"} # add content here as needed
@@ -66,11 +57,22 @@ for instance in instances:
         continue
 
     # === Pull library item ===
-    library_utils.pull(instance, destination_directory=fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure(instance_name)))
+    library_utils.pull(
+        instance, 
+        destination_directory=
+            fileio.dirpath(
+                "instance_data",
+                structure_dict=macro_file_structure(),
+                base_directory=f"{base_directory}macro/{artifact_id}/"
+            )
+    )
+            
 
     # === Replace placeholder in SVG ===
     flagnote_drawing_path = fileio.path(
-        "flagnote drawing", structure_dict=file_structure(instance_name)
+        "flagnote drawing", 
+        structure_dict=macro_file_structure(instance_name),
+        base_directory=f"{base_directory}macro/{artifact_id}/"
     )
 
     with open(flagnote_drawing_path, "r", encoding="utf-8") as f:
@@ -81,6 +83,28 @@ for instance in instances:
     with open(flagnote_drawing_path, "w", encoding="utf-8") as f:
         f.write(svg)
 
+
+# ==========================
+#        MAKE SEGMENT DRAWINGS
+# ==========================
+for instance in instances:
+    if instance.get("item_type") != "segment":
+        continue
+
+    feature_tree_utils.run_macro(
+        "basic_segment_generator",
+        "harness_artifacts", 
+        "https://github.com/harnice/harnice-library-public", 
+        artifact_id=instance.get("instance_name"), 
+        instance=instance,
+        base_directory=f"{base_directory}macro/{artifact_id}/instance_data/"
+    )
+
+exit()
+
+# ==========================
+#        CONSTRUCT SVG ELEMENTS
+# ==========================
 # Group instances by item_type
 grouped_instances = defaultdict(list)
 for instance in instances:
@@ -201,7 +225,7 @@ for item_type, items in grouped_instances.items():
     content_lines.append("    </g>")
 
 # Write full SVG
-with open(fileio.path("output svg", structure_dict=file_structure()), "w") as f:
+with open(fileio.path("output svg", structure_dict=macro_file_structure()), "w") as f:
     f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
     f.write(
         '<svg xmlns="http://www.w3.org/2000/svg" '
@@ -233,7 +257,7 @@ for instance in instances:
         # locally imported instances are stored here
         elif instance.get("item_type").strip().lower() in ["flagnote"]:
             instance_data_dir = os.path.join(
-                fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure(instance_name)),
+                fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure(instance_name)),
                 instance.get("item_type"),
                 instance.get("instance_name"),
                 f"{instance.get('instance_name')}-drawing.svg",
@@ -252,7 +276,7 @@ for instance in instances:
             continue
 
         svg_utils.find_and_replace_svg_group(
-            fileio.path("output svg", structure_dict=file_structure()),
+            fileio.path("output svg", structure_dict=macro_file_structure()),
             instance_data_dir,
             instance.get("instance_name"),
             instance.get("instance_name"),

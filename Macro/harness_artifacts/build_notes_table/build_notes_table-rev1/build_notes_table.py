@@ -6,29 +6,14 @@ from harnice.utils import svg_utils, library_utils
 artifact_mpn = "build_notes_table"
 
 
-def file_structure(instance_name=None):
+def macro_file_structure(instance_name=None):
     return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        "build_notes-table-master.svg": "build notes table svg",
-                        "build_notes-list.tsv": "build_notes list",
-                        f"{artifact_id}-imported-instances": {
-                            "flagnote": {
-                                instance_name: {
-                                    f"{instance_name}-drawing.svg": "flagnote drawing",
-                                }
-                            }
-                        },
-                    }
-                }
-            }
-        }
+        "build_notes-table-master.svg": "build notes table svg",
+        "build_notes-list.tsv": "build_notes list",
+        "instance_data": {}
     }
 
-
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure(), base_directory=base_directory), exist_ok=True)
 
 # === Configuration ===
 column_widths = [0.5 * 96, 3.375 * 96]  # bubble, then note
@@ -60,7 +45,7 @@ for instance in fileio.read_tsv("instances list"):
                     "instance_name": f"bubble{build_note_number}",
                 },
                 update_instances_list=False,
-                destination_directory=fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure(instance_name=f"bubble{build_note_number}")),
+                destination_directory=fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure(instance_name=f"bubble{build_note_number}"), base_directory=base_directory),
             )
 
         # Append row information only if it contains valid data
@@ -166,7 +151,7 @@ svg_lines.append("</svg>")
 
 # === Write SVG Output ===
 with open(
-    fileio.path("build notes table svg", structure_dict=file_structure()),
+    fileio.path("build notes table svg", structure_dict=macro_file_structure()),
     "w",
     encoding="utf-8",
 ) as svg_file:
@@ -179,13 +164,13 @@ for row in svg_table_data:
 
     build_note_number = row["build_note_number"]
     source_svg_filepath = os.path.join(
-        fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure(instance_name=f"bubble{build_note_number}")),
+        fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure(instance_name=f"bubble{build_note_number}")),
         "flagnote",
         f"bubble{build_note_number}",
         f"{f"bubble{build_note_number}"}-drawing.svg",
     )
     target_svg_filepath = os.path.join(
-        fileio.path("build notes table svg", file_structure())
+        fileio.path("build notes table svg", macro_file_structure())
         )
     group_name = f"bubble{build_note_number}"
 

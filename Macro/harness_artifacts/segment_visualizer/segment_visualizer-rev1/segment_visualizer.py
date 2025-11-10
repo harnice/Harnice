@@ -155,22 +155,11 @@ def circle_svg(x, y, r, color):
 
 
 # ===================== FILE STRUCTURE =====================
-def file_structure():
+def macro_file_structure():
     return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "segment visualizer svg",
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                }
-            }
-        }
+        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "segment visualizer svg",
+        "instance_data": {},
     }
-
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
-
 
 # =============== BUILD SVG CONTENT ===============
 
@@ -426,6 +415,10 @@ svg_output = (
 
 
 # =============== WRITE OUTPUT FILE ===============
-out_path = fileio.path("segment visualizer svg", structure_dict=file_structure())
+out_path = fileio.path(
+    "segment visualizer svg", 
+    structure_dict=macro_file_structure(),
+    base_directory=f"{base_directory}macro/{artifact_id}/"
+)
 with open(out_path, "w", encoding="utf-8") as f:
     f.write(svg_output)

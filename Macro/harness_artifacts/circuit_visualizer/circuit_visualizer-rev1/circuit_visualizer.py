@@ -41,21 +41,13 @@ svg_elements = []
 
 
 # =============== PATHS ===============
-def file_structure():
+def macro_file_structure():
     return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg",
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                }
-            }
-        }
+        f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg",
+        "instance_data": {}
     }
 
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
+os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure(), base_directory=base_directory), exist_ok=True)
 
 # =============== DRAW HELPERS ===============
 def plot_node(node_instance, x, y, box_width, local_group):
@@ -250,7 +242,7 @@ for instance in fileio.read_tsv("instances list"):
 
 
 # =============== WRITE SVG ===============
-output_path = fileio.path("circuit visualizer svg", structure_dict=file_structure())
+output_path = fileio.path("circuit visualizer svg", structure_dict=macro_file_structure(), base_directory=base_directory)
 os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
 with open(output_path, "w", encoding="utf-8") as f:
