@@ -80,9 +80,9 @@ def make_new_segment_drawing(instance, location):
         "basic_segment_generator",
         "harness_artifacts", 
         "https://github.com/harnice/harnice-library-public", 
-        artifact_id=instance.get("instance_name"), 
+        artifact_id=f"{artifact_id}-{instance.get("instance_name")}", 
         instance=instance,
-        base_directory=location
+        base_directory=location,
     )
 
 
@@ -266,7 +266,7 @@ for instance in instances:
                 dirpath(None),
                 "instance_data",
                 "macro",
-                instance.get("instance_name")
+                f"{artifact_id}-{instance.get("instance_name")}"
             )
             make_new_segment_drawing(
                 instance,
@@ -276,7 +276,7 @@ for instance in instances:
                 path("output svg"),
                 os.path.join(
                     segment_location,
-                    f"{instance.get("instance_name")}-drawing.svg"
+                    f"{artifact_id}-{instance.get("instance_name")}-drawing.svg"
                 ),
                 instance.get("instance_name"),
                 instance.get("instance_name"),
