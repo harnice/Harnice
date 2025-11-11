@@ -37,17 +37,13 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
     if destination_directory is None: 
         instance_name_text = input_dict.get("instance_name")
         destination_directory = os.path.join(
-            fileio.dirpath("instance_data"),
+            fileio.dirpath(None),
+            "instance_data",
             input_dict.get("item_type"),
             input_dict.get("instance_name"),
         )
     else:
         instance_name_text = f"{os.path.basename(os.path.dirname(destination_directory))}:{input_dict.get('instance_name')}"
-        destination_directory = os.path.join(
-            destination_directory,
-            input_dict.get("item_type"),
-            input_dict.get("instance_name"),
-        )
     os.makedirs(destination_directory, exist_ok=True)
 
     # determine source library path
