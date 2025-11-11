@@ -10,15 +10,14 @@ artifact_mpn = "revision_history_table"
 # =============== PATHS ===================================================================================
 def macro_file_structure(rev_id = None):
     return {
-        "revision_table_bubbles": {
-            "flagnote": {
-                f"bubble{rev_id}": {
-                    f"bubble{rev_id}-drawing.svg": "bubble drawing svg"
-                }
+        "table_bubbles": {
+            f"bubble{rev_id}": {
+                f"bubble{rev_id}-drawing.svg": "bubble drawing svg"
             }
         },
         "revision-history-table-master.svg": "revision history table svg",
     }
+
 if base_directory is None:  #path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
@@ -30,11 +29,11 @@ def dirpath(target_value, rev_id=None):
     return fileio.dirpath(target_value, structure_dict=macro_file_structure(rev_id), base_directory=base_directory)
 
 fileio.silentremove(
-    dirpath("revision_table_bubbles")
+    dirpath("table_bubbles")
 )
 
 os.makedirs(
-    dirpath("revision_table_bubbles"),
+    dirpath("table_bubbles"),
     exist_ok=True,
 )
 # ==========================================================================================================
