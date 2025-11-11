@@ -33,10 +33,11 @@ def dirpath(target_value):
     return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
 # ==========================================================================================================
 
+# =============== GLOBAL SETTINGS ===============
 instances = fileio.read_tsv("instances list") # only need to call this once
 printable_item_types = {"connector", "backshell", "segment", "flagnote"} # add content here as needed
 
-# define coordinate system
+# =============== CSYS DEFINITION ===============
 try:
     if not rotation:
         rotation = 0
@@ -44,7 +45,7 @@ except NameError:
     rotation = 0
 origin = [0, 0, rotation]
 
-
+# =============== FUNCTIONS ===============
 def make_new_flagnote_drawing(instance, location):
     if instance.get("item_type") != "flagnote":
         raise ValueError(f"you just tried to make a flagnote drawing out of a non-flagnote instance '{instance.get("instance_name")}'")

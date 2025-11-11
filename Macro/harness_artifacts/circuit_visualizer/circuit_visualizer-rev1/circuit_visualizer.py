@@ -5,6 +5,24 @@ from harnice.utils import circuit_utils
 
 artifact_mpn = "circuit_visualizer"
 
+# =============== PATHS ===================================================================================
+def macro_file_structure():
+    return {
+        f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg",
+    }
+
+if base_directory is None:  #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
+
+def path(target_value):
+    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+
+def dirpath(target_value):
+    # target_value = None will return the root of this macro
+    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+# ==========================================================================================================
+
+
 # =============== GLOBAL SETTINGS ===============
 node_pointsize = 6
 circuit_length = 480
@@ -39,17 +57,7 @@ SVG_FOOTER = "</svg>\n"
 
 svg_elements = []
 
-
-# =============== PATHS ===============
-def macro_file_structure():
-    return {
-        f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg",
-        "instance_data": {}
-    }
-
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure(), base_directory=base_directory), exist_ok=True)
-
-# =============== DRAW HELPERS ===============
+# =============== FUNCTIONS ===============
 def plot_node(node_instance, x, y, box_width, local_group):
     """
     Draw a rectangular node box of fixed width centered vertically in its row.
@@ -158,7 +166,7 @@ def build_header():
     return header_group
 
 
-# =============== MAIN LOOP ===============
+# =============== MAIN ===============
 row_index = 0
 y_offset = HEADER_HEIGHT
 
@@ -242,10 +250,7 @@ for instance in fileio.read_tsv("instances list"):
 
 
 # =============== WRITE SVG ===============
-output_path = fileio.path("circuit visualizer svg", structure_dict=macro_file_structure(), base_directory=base_directory)
-os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-with open(output_path, "w", encoding="utf-8") as f:
+with open(path("circuit visualizer svg"), "w", encoding="utf-8") as f:
     f.write(SVG_HEADER)
     f.write(f'<g id="{artifact_id}-circuit-visualizer-contents-start">\n')
 
