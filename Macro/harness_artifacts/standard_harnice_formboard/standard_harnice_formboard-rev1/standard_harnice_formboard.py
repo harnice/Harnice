@@ -3,7 +3,6 @@ import re
 import os
 from collections import defaultdict
 from harnice import fileio, state
-from harnice.products import harness
 from harnice.utils import library_utils, formboard_utils, svg_utils, feature_tree_utils
 
 artifact_mpn = "standard_harnice_formboard"
