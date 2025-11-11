@@ -3,17 +3,25 @@ import os
 
 artifact_mpn = "basic_segment_generator"
 
-# =============== PATHS ===============
-if base_directory == None: #path between cwd and the file structure for this macro
-    base_directory = os.path.join("instance_data", "macro", artifact_id)
-
+# =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
-        f"{state.partnumber('pn-rev')}-{artifact_id}-drawing-master.svg": "master svg",
+        f"{artifact_id}-drawing.svg": "drawing",
     }
+    
+if base_directory == None:  #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
+
+def path(target_value):
+    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+
+def dirpath(target_value):
+    # target_value = None will return the root of this macro
+    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+# ==========================================================================================================
 
 # =============== INPUT CHECKS ===============
-try
+try:
     instance.get("instance_name")
 except:
     raise ValueError("please pass an instance dict as argument 'instance' to this macro")
@@ -40,5 +48,5 @@ svg_content = f"""
 </svg>
 """
 
-with open(fileio.path("master svg", structure_dict=macro_file_structure(), base_directory=base_directory), "w") as svg_file:
+with open(path("drawing"), "w") as svg_file:
     svg_file.write(svg_content)
