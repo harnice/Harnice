@@ -16,21 +16,22 @@ rotation : rotation of the drawing in degrees=
 """
 
 
-# =============== PATHS ===============
-if base_directory == None:
-    base_directory = os.path.join("instance_data", "macro", artifact_id) #path between cwd and the item_type/artifact_id folder where this macro lives
-
+# =============== PATHS ===================================================================================
 def macro_file_structure(instance_name=None, item_type=None):
     return {
         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
-        "instance_data": {
-            item_type: {
-                instance_name: {
-                    f"{instance_name}-drawing.svg": "instance drawing svg",
-                }
-            }
-        }
     }
+
+if base_directory is None:  #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
+
+def path(target_value):
+    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+
+def dirpath(target_value):
+    # target_value = None will return the root of this macro
+    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+# ==========================================================================================================
 
 instances = fileio.read_tsv("instances list") # only need to call this once
 printable_item_types = {"connector", "backshell", "segment", "flagnote"} # add content here as needed
@@ -43,9 +44,10 @@ except NameError:
     rotation = 0
 origin = [0, 0, rotation]
 
-# ==========================
+
+# ====================================================
 #        MAKE FLAGNOTE DRAWINGS
-# ==========================
+# ====================================================
 instances = fileio.read_tsv("instances list")
 
 for instance in instances:
@@ -55,26 +57,24 @@ for instance in instances:
     if instance.get("mpn") in ["", None]:
         continue
 
-    # === Pull library item ===
-    flagnote_base_dir = os.path.join(base_directory, "instance_data")
+    # === Pull drawings into this macro and define filepath ===
+    # edit this section if you want to reference different flagnote drawings)
+    flagnote_import_path = os.path.join(
+        dirpath(None),
+        "instance_data",
+        "flagnote",
+        instance.get("instance_name")
+    )
     library_utils.pull(
         instance, 
-        destination_directory=
-            fileio.dirpath(
-                None,
-                structure_dict=macro_file_structure(),
-                base_directory=fileio.dirpath(None, structure_dict=macro_file_structure(), base_directory=flagnote_base_dir)
-            )
+        destination_directory=flagnote_import_path
     )
-            
-
-    # === Replace placeholder in SVG ===
-    flagnote_drawing_path = fileio.path(
-        "instance drawing svg", 
-        structure_dict=macro_file_structure(instance_name=instance.get("instance_name"), item_type="flagnote"),
-        base_directory=base_directory
+    flagnote_drawing_path = os.path.join(
+        flagnote_import_path,
+        f"{instance.get("instance_name")}-drawing.svg"
     )
 
+    # === Perform text replacement on known drawing path ===
     with open(flagnote_drawing_path, "r", encoding="utf-8") as f:
         svg = f.read()
 
@@ -83,24 +83,24 @@ for instance in instances:
     with open(flagnote_drawing_path, "w", encoding="utf-8") as f:
         f.write(svg)
 
-# ==========================
+# ====================================================
 #        MAKE SEGMENT DRAWINGS
-# ==========================
+# ====================================================
 for instance in instances:
     if instance.get("item_type") != "segment":
         continue
 
-    segment_base_dir = os.path.join(base_directory, "instance_data", "macro", instance.get("instance_name"))
+    segment_base_dir = os.path.join(dirpath(None), "instance_data", "macro", instance.get("instance_name"))
     feature_tree_utils.run_macro(
         "basic_segment_generator",
         "harness_artifacts", 
         "https://github.com/harnice/harnice-library-public", 
         artifact_id=instance.get("instance_name"), 
         instance=instance,
-        base_directory=fileio.dirpath(None, structure_dict=macro_file_structure(), base_directory=segment_base_dir)
+        base_directory=segment_base_dir
     )
 
-exit()
+
 # ==========================
 #        CONSTRUCT SVG ELEMENTS
 # ==========================

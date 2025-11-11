@@ -3,16 +3,24 @@ from harnice import fileio, state
 import os
 
 
-# =============== PATHS ===============
-if base_directory == None:
-    base_directory = "instance_data/"
-    
+# =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
         f"{state.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
         f"{state.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
-        "instance_data": {}
     }
+    
+if base_directory == None:  #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
+
+def path(target_value):
+    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+
+def dirpath(target_value):
+    # target_value = None will return the root of this macro
+    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+# ==========================================================================================================
+
 
 CABLE_MARGIN = 12
 BOM_COLUMNS = [
@@ -26,11 +34,7 @@ BOM_COLUMNS = [
 ]
 
 with open(
-    fileio.path("bom tsv", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"),
-    "w",
-    newline="",
-    encoding="utf-8",
-) as f:
+    path("bom tsv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
     writer.writeheader()
     writer.writerows([])
@@ -38,11 +42,7 @@ with open(
 
 def add_line_to_bom(line_data):
     with open(
-        fileio.path("bom tsv", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"),
-        "a",
-        newline="",
-        encoding="utf-8",
-    ) as f:
+        path("bom tsv"), "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
         writer.writerow({key: line_data.get(key, "") for key in BOM_COLUMNS})
 
@@ -98,12 +98,7 @@ font_size = 8
 font_family = "Arial, Helvetica, sans-serif"
 line_width = 0.008 * 96
 
-with open(
-    fileio.path("bom tsv", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"),
-    "r",
-    newline="",
-    encoding="utf-8",
-) as tsv_file:
+with open(path("bom tsv"), "r", newline="", encoding="utf-8") as tsv_file:
     reader = csv.DictReader(tsv_file, delimiter="\t")
     data_rows = [
         [row.get(col, "") for col in selected_columns]
@@ -173,7 +168,5 @@ svg_lines.append("</g>")
 svg_lines.append(f'<g id="{artifact_id}-bom-contents-end"/>')
 svg_lines.append("</svg>")
 
-with open(
-    fileio.path("bom svg", structure_dict=macro_file_structure(), base_directory=f"{base_directory}macro/{artifact_id}/"), "w", encoding="utf-8"
-) as svg_file:
+with open(path("bom svg"), "w", encoding="utf-8") as svg_file:
     svg_file.write("\n".join(svg_lines))

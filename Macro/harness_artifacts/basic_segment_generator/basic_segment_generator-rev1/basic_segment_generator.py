@@ -4,15 +4,15 @@ import os
 artifact_mpn = "basic_segment_generator"
 
 # =============== PATHS ===============
-if base_directory == None:
-    base_directory = os.path.join("instance_data", "macro", artifact_id) #path between cwd and the item_type/artifact_id folder where this macro lives
+if base_directory == None: #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
 
 def macro_file_structure():
     return {
-        #base directory {
         f"{state.partnumber('pn-rev')}-{artifact_id}-drawing-master.svg": "master svg",
     }
 
+# =============== INPUT CHECKS ===============
 try
     instance.get("instance_name")
 except:
@@ -21,6 +21,7 @@ except:
 if instance.get("item_type") != "segment":
     raise ValueError(f"basic_segment_generator can only be used to generate segments, not {instance.get('item_type')}")
 
+# =============== CALCULATIONS ===============
 length = 96 * float(instance.get("length", 0))
 diameter = 96 * float(instance.get("diameter", 1))
 
