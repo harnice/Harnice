@@ -1,19 +1,19 @@
 from harnice import fileio, state
+import os
 
 artifact_mpn = "basic_segment_generator"
 
 # =============== PATHS ===============
 if base_directory == None:
-    base_directory = "instance_data" #path between cwd and the item_type/artifact_id folder where this macro lives
+    base_directory = os.path.join("instance_data", "macro", artifact_id) #path between cwd and the item_type/artifact_id folder where this macro lives
 
 def macro_file_structure():
     return {
         #base directory {
         f"{state.partnumber('pn-rev')}-{artifact_id}-drawing-master.svg": "master svg",
-        "instance_data": {}
     }
 
-try:
+try
     instance.get("instance_name")
 except:
     raise ValueError("please pass an instance dict as argument 'instance' to this macro")

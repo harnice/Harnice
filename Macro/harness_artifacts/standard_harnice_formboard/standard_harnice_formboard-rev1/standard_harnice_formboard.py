@@ -83,7 +83,6 @@ for instance in instances:
     with open(flagnote_drawing_path, "w", encoding="utf-8") as f:
         f.write(svg)
 
-exit()
 # ==========================
 #        MAKE SEGMENT DRAWINGS
 # ==========================
@@ -91,15 +90,17 @@ for instance in instances:
     if instance.get("item_type") != "segment":
         continue
 
+    segment_base_dir = os.path.join(base_directory, "instance_data", "macro", instance.get("instance_name"))
     feature_tree_utils.run_macro(
         "basic_segment_generator",
         "harness_artifacts", 
         "https://github.com/harnice/harnice-library-public", 
         artifact_id=instance.get("instance_name"), 
         instance=instance,
-        base_directory=fileio.dirpath("instance_data", structure_dict=macro_file_structure(), base_directory=base_directory)
+        base_directory=fileio.dirpath(None, structure_dict=macro_file_structure(), base_directory=segment_base_dir)
     )
 
+exit()
 # ==========================
 #        CONSTRUCT SVG ELEMENTS
 # ==========================
