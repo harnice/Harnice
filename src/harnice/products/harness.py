@@ -222,18 +222,12 @@ for instance in fileio.read_tsv("instances list"):
 """
 
 
-def file_structure(item_type=None, instance_name=None):
+def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
         f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
         f"{state.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
         f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
-        "instance_data": {
-            "imported_instances": {
-                item_type: {instance_name: {"library_used_do_not_edit": {}}}
-            },
-            "generated_instances_do_not_edit": {},
-        },
         "interactive_files": {
             f"{state.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
             f"{state.partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
@@ -242,24 +236,6 @@ def file_structure(item_type=None, instance_name=None):
 
 
 def generate_structure():
-    os.makedirs(
-        fileio.dirpath("instance_data", structure_dict=file_structure()), exist_ok=True
-    )
-    os.makedirs(
-        fileio.dirpath("imported_instances", structure_dict=file_structure()),
-        exist_ok=True,
-    )
-    fileio.silentremove(
-        fileio.dirpath(
-            "generated_instances_do_not_edit", structure_dict=file_structure()
-        )
-    )
-    os.makedirs(
-        fileio.dirpath(
-            "generated_instances_do_not_edit", structure_dict=file_structure()
-        ),
-        exist_ok=True,
-    )
     os.makedirs(
         fileio.dirpath("interactive_files", structure_dict=file_structure()),
         exist_ok=True,

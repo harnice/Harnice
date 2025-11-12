@@ -8,7 +8,7 @@ from harnice.lists import instances_list
 from harnice.utils import library_utils
 
 
-def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
+def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, base_directory=None, **kwargs):
     if artifact_id is None:
         raise ValueError("artifact_id is required")
     if macro_part_number is None:
@@ -20,50 +20,50 @@ def run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, **kwargs):
         if instance.get("instance_name") == artifact_id:
             raise ValueError(f"Macro with ID {artifact_id} already exists")
 
+    if base_directory is None:
+        base_directory = os.path.join("instance_data", "macro", artifact_id)
+    
+    os.makedirs(fileio.dirpath(None, base_directory), exist_ok=True)
+
     library_utils.pull(
         {
             "mpn": macro_part_number,
             "lib_repo": lib_repo,
             "lib_subpath": lib_subpath,
-            "item_type": "Macro",
+            "item_type": "macro",
             "instance_name": artifact_id,
         },
+        destination_directory=fileio.dirpath(None, base_directory=base_directory),
         update_instances_list=False,
     )
 
-    macro_dirpath = os.path.join(
-        fileio.dirpath("imported_instances"), "macro", artifact_id
-    )
-    script_path = os.path.join(macro_dirpath, f"{macro_part_number}.py")
+    script_path = os.path.join(fileio.dirpath(None, base_directory=base_directory), f"{macro_part_number}.py")
 
     # always pass the basics, but let kwargs override/extend
     init_globals = {
         "artifact_id": artifact_id,
-        "artifact_path": macro_dirpath,
+        "artifact_path": base_directory,
+        "base_directory": base_directory,
         **kwargs,  # merges/overrides
     }
 
     runpy.run_path(script_path, run_name="__main__", init_globals=init_globals)
 
 
-def lookup_outputcsys_from_lib_used(instance, outputcsys):
+def lookup_outputcsys_from_lib_used(instance, outputcsys, base_directory=None):
     if outputcsys == "origin":
         return 0, 0, 0
 
     attributes_path = os.path.join(
-        fileio.dirpath("imported_instances"),
+        fileio.dirpath(None, base_directory=base_directory),
+        "instance_data",
         instance.get("item_type"),
         instance.get("instance_name"),
         f"{instance.get("instance_name")}-attributes.json",
     )
 
-    try:
-        with open(attributes_path, "r", encoding="utf-8") as f:
-            attributes_data = json.load(f)
-    except FileNotFoundError:
-        raise ValueError(
-            f"Attributes file for instance {instance.get('instance_name')} not found at {attributes_path}"
-        )
+    with open(attributes_path, "r", encoding="utf-8") as f:
+        attributes_data = json.load(f)
 
     csys_children = attributes_data.get("csys_children", {})
 
@@ -121,7 +121,7 @@ def update_translate_content():
 def copy_pdfs_to_cwd():
     cwd = os.getcwd()
 
-    for root, _, files in os.walk(fileio.dirpath("instance_data")):
+    for root, _, files in os.walk(fileio.dirpath(None, base_directory="instance_data")):
         for filename in files:
             if filename.lower().endswith(".pdf"):
                 source_path = os.path.join(root, filename)
