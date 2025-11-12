@@ -7,29 +7,37 @@ from harnice.utils import svg_utils, library_utils
 artifact_mpn = "revision_history_table"
 
 
-def file_structure():
+# =============== PATHS ===================================================================================
+def macro_file_structure(rev_id = None):
     return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        "revision_table_bubbles": {},
-                        "revision-history-table-master.svg": "revision history table svg",
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                }
+        "table_bubbles": {
+            f"bubble{rev_id}": {
+                f"bubble{rev_id}-drawing.svg": "bubble drawing svg"
             }
-        }
+        },
+        "revision-history-table-master.svg": "revision history table svg",
     }
 
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
+if base_directory is None:  #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
+
+def path(target_value, rev_id=None):
+    return fileio.path(target_value, structure_dict=macro_file_structure(rev_id), base_directory=base_directory)
+
+def dirpath(target_value, rev_id=None):
+    # target_value = None will return the root of this macro
+    return fileio.dirpath(target_value, structure_dict=macro_file_structure(rev_id), base_directory=base_directory)
+
 fileio.silentremove(
-    fileio.dirpath("revision_table_bubbles", structure_dict=file_structure())
+    dirpath("table_bubbles")
 )
+
 os.makedirs(
-    fileio.dirpath("revision_table_bubbles", structure_dict=file_structure()),
+    dirpath("table_bubbles"),
     exist_ok=True,
 )
+# ==========================================================================================================
+
 
 # === Configuration ===
 column_headers = [
@@ -73,19 +81,6 @@ with open(fileio.path("revision history"), newline="", encoding="utf-8") as tsv_
     for row in reader:
         rev = row.get("rev", "").strip()
         has_bubble = bool(row.get("affectedinstances", "").strip())
-        if has_bubble:
-            library_utils.pull(
-                {
-                    "lib_repo": "https://github.com/harnice/harnice-library-public",
-                    "item_type": "flagnote",
-                    "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
-                    "instance_name": f"bubble{rev}",
-                    "destination_directory": fileio.dirpath(
-                        "revision table bubbles", structure_dict=file_structure()
-                    ),
-                    "quiet": True,
-                }
-            )
         row["has_bubble"] = has_bubble
         data_rows.append(row)
 
@@ -152,17 +147,16 @@ for row_index, row in enumerate(data_rows):
         # Pull the bubble from the library
         rev = row["rev"]
         bubble_name = f"bubble{rev}"
+        os.makedirs(dirpath(bubble_name, rev_id=rev))
         library_utils.pull(
             {
                 "lib_repo": "https://github.com/harnice/harnice-library-public",
                 "item_type": "flagnote",
                 "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
-                "instance_name": bubble_name,
-                "destination_directory": fileio.dirpath(
-                    "revision table bubbles", structure_dict=file_structure()
-                ),
-                "quiet": True,
-            }
+                "instance_name": bubble_name
+            },
+            destination_directory=dirpath(bubble_name, rev_id=rev),
+            update_instances_list=False,
         )
 
         # Inject the bubble into the SVG at the correct position
@@ -188,8 +182,7 @@ svg_lines.append('<g id="revision-history-table-contents-end"/>')
 svg_lines.append("</svg>")
 
 # Write the base SVG
-target_svg = fileio.path("revision history table svg", structure_dict=file_structure())
-with open(target_svg, "w", encoding="utf-8") as f:
+with open(path("revision history table svg"), "w", encoding="utf-8") as f:
     f.write("\n".join(svg_lines))
 
 # === Inject bubble SVGs into the written file ===
@@ -198,24 +191,18 @@ for row in data_rows:
         continue
 
     rev_text = row["rev"]
-    source_svg_filepath = os.path.join(
-        fileio.dirpath("revision table bubbles", structure_dict=file_structure()),
-        f"bubble{rev_text}-drawing.svg",
-    )
-    target_svg_filepath = fileio.path(
-        "revision history table svg", structure_dict=file_structure()
-    )
+    source_svg_filepath = path("bubble drawing svg", rev_id=row["rev"])
+    target_svg_filepath = path("revision history table svg")
     group_name = f"bubble{rev_text}"
 
     # Replace text placeholder "flagnote-text" → rev_text
-    if os.path.exists(source_svg_filepath):
-        with open(source_svg_filepath, "r", encoding="utf-8") as f:
-            svg_text = f.read()
+    with open(source_svg_filepath, "r", encoding="utf-8") as f:
+        svg_text = f.read()
 
-        updated_text = re.sub(r">\s*flagnote-text\s*<", f">{rev_text}<", svg_text)
+    updated_text = re.sub(r">\s*flagnote-text\s*<", f">{rev_text}<", svg_text)
 
-        with open(source_svg_filepath, "w", encoding="utf-8") as f:
-            f.write(updated_text)
+    with open(source_svg_filepath, "w", encoding="utf-8") as f:
+        f.write(updated_text)
 
     # Inject the bubble SVG
     svg_utils.find_and_replace_svg_group(

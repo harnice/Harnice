@@ -12,63 +12,37 @@ from harnice.lists import rev_history
 
 artifact_mpn = "pdf_generator"
 
-
-def file_structure(page_name=None, page_counter=None):
+# =============== PATHS ===================================================================================
+def macro_file_structure(page_name=None, page_counter=None):
     return {
-        "instance_data": {
-            "imported_instances": {
-                "titleblock": {
-                    f"{artifact_id}-{page_name}": {
-                        f"{artifact_id}-{page_name}-attributes.json": "project titleblock attributes",
-                        f"{artifact_id}-{page_name}-drawing.svg": "project titleblock drawing",
-                    }
-                },
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-page_setup.json": "page setup",
-                        f"{artifact_id}-mastercontents.svg": "master contents svg",
-                        f"{artifact_mpn}.py": "macro script",
-                        f"{state.partnumber('pn-rev')}-{artifact_id}.pdf": "output pdf",
-                        "library_used_do_not_edit": {
-                            "direct_from_project_titleblock": {
-                                f"macro-{artifact_id}-{page_name}": {
-                                    f"{artifact_id}-{page_name}-attributes.json": "macro titleblock attributes",
-                                    f"{artifact_id}-{page_name}-drawing.svg": "macro titleblock drawing",
-                                    f"{artifact_id}-{page_name}-drawing_with_text_replacements.svg": "tblock with text replacements",
-                                }
-                            }
-                        },
-                        "page_svgs": {
-                            f"{page_counter}-{page_name}-user-editable.svg": "user editable page svg"
-                        },
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                },
-            }
+        f"{state.partnumber('pn-rev')}-{artifact_id}-page_setup.json": "page setup",
+        f"{artifact_id}-mastercontents.svg": "master contents svg",
+        f"{state.partnumber('pn-rev')}-{artifact_id}.pdf": "output pdf",
+        "page_svgs": {
+            f"{page_counter}-{page_name}-user-editable.svg": "user editable page svg"
         }
     }
 
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
+if base_directory is None:  #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+def path(target_value, page_name=None, page_counter=None):
+    return fileio.path(target_value, structure_dict=macro_file_structure(page_name, page_counter), base_directory=base_directory)
 
-# ============================================
-#                   MAIN FUNCTION
-# ============================================
-# generate file structure
-fileio.silentremove(
-    fileio.dirpath("direct_from_project_titleblock", structure_dict=file_structure())
-)
+def dirpath(target_value, page_name=None, page_counter=None):
+    # target_value = None will return the root of this macro
+    return fileio.dirpath(target_value, structure_dict=macro_file_structure(page_name, page_counter), base_directory=base_directory)
+
 os.makedirs(
-    fileio.dirpath("direct_from_project_titleblock", structure_dict=file_structure()),
+    dirpath("page_svgs"),
     exist_ok=True,
 )
-os.makedirs(fileio.dirpath("page_svgs", structure_dict=file_structure()), exist_ok=True)
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
+# ==========================================================================================================
 
 
-# ============================================
+# ==========================================================================================================
 #              PAGE SETUP JSON
-# ============================================
+# ==========================================================================================================
 
 blank_setup = {
     "pages": [
@@ -90,7 +64,7 @@ blank_setup = {
     ]
 }
 
-page_setup_path = fileio.path("page setup", structure_dict=file_structure())
+page_setup_path = path("page setup")
 
 # Create or load the page setup file
 if not os.path.exists(page_setup_path) or os.path.getsize(page_setup_path) == 0:
@@ -128,6 +102,11 @@ for i, page in enumerate(page_data["pages"], start=1):
     if "titleblock" not in page:
         raise KeyError(f"[ERROR] Page {i} missing required key 'titleblock'")
 
+page_names = [p.get("name") for p in page_data.get("pages", [])]
+duplicates = {name for name in page_names if page_names.count(name) > 1}
+if duplicates:
+    raise ValueError(f"[ERROR] Duplicate page name(s) found: {', '.join(duplicates)}")
+
 # Always rewrite a clean version
 with open(page_setup_path, "w", encoding="utf-8") as f:
     json.dump(page_data, f, indent=4)
@@ -150,193 +129,18 @@ with open(page_setup_path, "w", encoding="utf-8") as f:
 # next(page for page in page_data.get('pages', []) if page.get('name') == "x")
 # → returns the full page dictionary whose 'name' equals "x"
 
-
-# ============================================
-#   IMPORT TITLEBLOCKS FROM LIBRARY INTO PROJECT
-# ============================================
-page_names = [p.get("name") for p in page_data.get("pages", [])]
-duplicates = {name for name in page_names if page_names.count(name) > 1}
-if duplicates:
-    raise ValueError(f"[ERROR] Duplicate page name(s) found: {', '.join(duplicates)}")
-
-page_counter = 0
-for page in page_data.get("pages", []):
-    page_counter += 1
-    page_name = page.get("name")
-    if not page:
-        raise KeyError(
-            f"[ERROR] titleblock '{page_name}' not found in harnice output contents"
-        )
-
-    # === Pull from library ===
-    library_utils.pull(
-        {
-            "instance_name": f"{artifact_id}-{page_name}",
-            "mpn": page.get("titleblock"),
-            "lib_repo": page.get("lib_repo"),
-            "item_type": "titleblock",
-        },
-        update_instances_list=False,
-    )
-
-    # ============================================
-    #     COPY TITLEBLOCKS TO MACRO DIRECTORY
-    # ============================================
-
-    # === Copy from imported instances to this macro's library_used_do_not_edit directory ===
-    os.makedirs(
-        fileio.dirpath(
-            f"macro-{artifact_id}-{page_name}",
-            structure_dict=file_structure(page_name=page_name),
-        ),
-        exist_ok=True,
-    )
-    shutil.copy(
-        fileio.path(
-            "project titleblock attributes",
-            structure_dict=file_structure(page_name=page_name),
-        ),
-        fileio.path(
-            "macro titleblock attributes",
-            structure_dict=file_structure(page_name=page_name),
-        ),
-    )
-    shutil.copy(
-        fileio.path(
-            "project titleblock drawing",
-            structure_dict=file_structure(page_name=page_name),
-        ),
-        fileio.path(
-            "macro titleblock drawing",
-            structure_dict=file_structure(page_name=page_name),
-        ),
-    )
-
-    # ============================================
-    #        PREP TEXT REPLACEMENTS SVG
-    # ============================================
-    with open(
-        fileio.path(
-            "macro titleblock attributes",
-            structure_dict=file_structure(page_name=page_name),
-        ),
-        "r",
-        encoding="utf-8",
-    ) as f:
-        tblock_attributes = json.load(f)
-
-    # === Page size in pixels ===
-    page_size_in = tblock_attributes.get("page_size_in", [11, 8.5])
-    page_size_px = [int(page_size_in[0] * 96), int(page_size_in[1] * 96)]
-
-    # === Prepare text replacements SVG ===
-    svg = [
-        '<?xml version="1.0" encoding="UTF-8" standalone="no"?>',
-        f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="{page_size_px[0]}" height="{page_size_px[1]}">',
-        f'  <g id="{page_counter}-{page_name}-contents-start">',
-        f'    <g id="tblock-contents-start"></g>',
-        f'    <g id="tblock-contents-end"></g>',
-        f"  </g>",
-        f'  <g id="{page_counter}-{page_name}-contents-end"></g>',
-        "</svg>",
-    ]
-
-    with open(
-        fileio.path(
-            "tblock with text replacements",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        ),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        f.write("\n".join(svg))
-
-    # === Import tblock and bom SVG contents ===
-    svg_utils.find_and_replace_svg_group(
-        fileio.path(
-            "tblock with text replacements",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        ),
-        fileio.path(
-            "macro titleblock drawing",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        ),
-        "tblock",
-        "tblock",
-    )
-
-    # === Text replacements ===
-    text_map = page.get("text_replacements", {})
-    with open(
-        fileio.path(
-            "tblock with text replacements",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        ),
-        "r",
-        encoding="utf-8",
-    ) as f:
-        svg = f.read()
-
-    for old, new in text_map.items():
-        if new.startswith("pull_from_revision_history(") and new.endswith(")"):
-            field_name = new[len("pull_from_revision_history(") : -1]
-            if field_name not in rev_history.info():
-                raise ValueError(
-                    f"[ERROR] Field '{field_name}' is missing from revision history"
-                )
-            new = rev_history.info().get(field_name, "").strip()
-
-        if "scale" in old.lower():
-            new = f"{scales.get(new, 0):.3f}" if new in scales else ""
-
-        if new == "autosheet":
-            page_names = [p.get("name") for p in page_data.get("pages", [])]
-            total_pages = len(page_names)
-            new = f"{page_counter} of {total_pages}"
-
-        if new == "autopagedesc":
-            page_names = [p.get("name") for p in page_data.get("pages", [])]
-            total_pages = len(page_names)
-            new = page_name
-
-        if old not in svg:
-            print(f"[WARN] Key '{old}' not found in titleblock SVG")
-
-        svg = svg.replace(old, new)
-
-    with open(
-        fileio.path(
-            "tblock with text replacements",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        ),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        f.write(svg)
-
-
-# ============================================
+# ==========================================================================================================
 #            PREP MASTER SVG
 # searches imported_instances for anything that ends in -master.svg and adds it to this file
-# ============================================
-translate = [0, -3200]
-delta_x_translate = 0
+# ==========================================================================================================
+masters_translate = [0, -3200]
 masters = []
 
-# Discover all master SVGs in macros folder
+# Discover all master SVGs in a folder of the entire project (output of the other macros)
 part_prefix = state.partnumber("pn-rev")
+directory_to_search = os.path.join(fileio.dirpath(None), "instance_data", )
 
-for root, _, files in os.walk(fileio.dirpath("imported_instances")):
+for root, _, files in os.walk(directory_to_search):
     for filename in files:
         if filename.endswith("-master.svg"):
             # Remove the "-master.svg" suffix
@@ -363,14 +167,13 @@ svg = [
 ]
 
 for master_name, _ in masters:
-    translate_str = f"translate({translate[0]},{translate[1]})"
+    translate_str = f"translate({masters_translate[0]},{masters_translate[1]})"
     svg += [
         f'    <g id="{master_name}" transform="{translate_str}">',
         f'      <g id="{master_name}-contents-start"></g>',
         f'      <g id="{master_name}-contents-end"></g>',
         f"    </g>",
     ]
-    translate[0] += delta_x_translate
 
 svg += [
     "  </g>",  # Close svg-master-contents-start
@@ -378,104 +181,121 @@ svg += [
     "</svg>",
 ]
 
-master_svg_path = fileio.path("master contents svg", structure_dict=file_structure())
-with open(master_svg_path, "w", encoding="utf-8") as f:
+with open(path("master contents svg"), "w", encoding="utf-8") as f:
     f.write("\n".join(svg))
 
 # fetch content from each -master.svg into the master contents svg
 for master_name, source_svg_path in masters:
     svg_utils.find_and_replace_svg_group(
-        master_svg_path, source_svg_path, master_name, master_name
+        path("master contents svg"), source_svg_path, master_name, master_name
     )
 
-
-# ============================================
-#         PREPARE USER EDITABLE PAGE SVGS
-# these are the ones the user should edit to place their content
-# ============================================
+# ==========================================================================================================
+#             PREP USER EDITABLE PAGE SVGS
+# ==========================================================================================================
 page_counter = 0
 for page in page_data.get("pages", []):
-    page_name = page.get("name")
     page_counter += 1
+    page_name = page.get("name")
 
-    # pull PDF size from json in library
-    with open(
-        fileio.path(
-            "macro titleblock attributes",
-            structure_dict=file_structure(page_name=page_name),
-        ),
-        "r",
-        encoding="utf-8",
-    ) as f:
+    # if you want to import one or more pages into different locations, do that here
+    # to import into the project root:
+    #     titleblock_location = os.path.join(fileio.dirpath(None), "instance_data", "titleblock", f"{artifact_id}-{page_name}")
+    # to import into this macro:
+    lib_imported_dirpath = os.path.join(dirpath(None), "instance_data", "titleblock", f"{artifact_id}-{page_name}")
+    
+    # if you're manually editing the titleblock before it gets imported, remove this line, though replacements won't work
+    fileio.silentremove(lib_imported_dirpath)
+
+    lib_imported_drawing_filepath = os.path.join(lib_imported_dirpath, f"{artifact_id}-{page_name}-drawing.svg")
+    lib_imported_attributes_filepath = os.path.join(lib_imported_dirpath, f"{artifact_id}-{page_name}-attributes.json")
+
+    # === Pull from library ===
+    library_utils.pull(
+        {
+            "instance_name": f"{artifact_id}-{page_name}",
+            "mpn": page.get("titleblock"),
+            "lib_repo": page.get("lib_repo"),
+            "item_type": "titleblock",
+        },
+        update_instances_list=False,
+        destination_directory=lib_imported_dirpath
+    )
+
+    # === Perform text replacements in imported titleblock ===
+    text_map = page.get("text_replacements", {})
+    with open(lib_imported_drawing_filepath, "r", encoding="utf-8",) as f:
+        svg = f.read()
+
+    for old, new in text_map.items():
+        if new.startswith("pull_from_revision_history(") and new.endswith(")"):
+            field_name = new[len("pull_from_revision_history(") : -1]
+            if field_name not in rev_history.info():
+                raise ValueError(
+                    f"[ERROR] Field '{field_name}' is missing from revision history"
+                )
+            new = rev_history.info().get(field_name, "").strip()
+
+        if "scale" in old.lower():
+            new = f"{scales.get(new, 0):.3f}" if new in scales else ""
+
+        if new == "autosheet":
+            page_names = [p.get("name") for p in page_data.get("pages", [])]
+            total_pages = len(page_names)
+            new = f"{page_counter} of {total_pages}"
+
+        if new == "autopagedesc":
+            page_names = [p.get("name") for p in page_data.get("pages", [])]
+            total_pages = len(page_names)
+            new = page_name
+
+        svg = svg.replace(old, new)
+
+    with open(lib_imported_drawing_filepath, "w", encoding="utf-8") as f:
+        f.write(svg)
+
+    # === Make user editable page if doesn't exist ===
+    with open(lib_imported_attributes_filepath) as f:
         tblock_attributes = json.load(f)
-    page_size_in = tblock_attributes.get("page_size_in", {})
-    page_size_px = [page_size_in[0] * 96, page_size_in[1] * 96]
 
-    if not os.path.exists(
-        fileio.path(
-            "user editable page svg",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        )
-    ):
-        with open(
-            fileio.path(
-                "user editable page svg",
-                structure_dict=file_structure(
-                    page_counter=page_counter, page_name=page_name
-                ),
-            ),
-            "w",
-            encoding="utf-8",
-        ) as f:
+    # === Page size in pixels ===
+    page_size_in = tblock_attributes.get("page_size_in")
+    page_size_px = [int(page_size_in[0] * 96), int(page_size_in[1] * 96)]
+
+    if not os.path.exists(path("user editable page svg", page_name=page_name, page_counter=page_counter)):
+        with open(path("user editable page svg", page_name=page_name, page_counter=page_counter), "w", encoding="utf-8") as f:
             f.write(
                 # <?xml version="1.0" encoding="UTF-8" standalone="no"?>
                 f"""
-    <svg xmlns="http://www.w3.org/2000/svg"
-        xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-        version="1.1"
-        width="{page_size_px[0]}"
-        height="{page_size_px[1]}">
-        <g id="tblock-svg-contents-start">
-        </g>
-        <g id="tblock-svg-contents-end"></g>
-        <g id="svg-master-contents-start">
-        </g>
-        <g id="svg-master-contents-end"></g>
-    </svg>
-    """
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+                    version="1.1"
+                    width="{page_size_px[0]}"
+                    height="{page_size_px[1]}">
+                    <g id="tblock-contents-start">
+                    </g>
+                    <g id="tblock-contents-end"></g>
+                    <g id="svg-master-contents-start">
+                    </g>
+                    <g id="svg-master-contents-end"></g>
+                </svg>
+                """
             )
+
+    # === replace tblock contents ===
+    svg_utils.find_and_replace_svg_group(
+        path("user editable page svg", page_name=page_name, page_counter=page_counter),
+        lib_imported_drawing_filepath,
+        "tblock",
+        "tblock",
+    )
 
     # replace the master svg
     svg_utils.find_and_replace_svg_group(
-        fileio.path(
-            "user editable page svg",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        ),
-        fileio.path("master contents svg", structure_dict=file_structure()),
+        path("user editable page svg", page_name=page_name, page_counter=page_counter),
+        path("master contents svg"),
         "svg-master",
         "svg-master",
-    )
-
-    # replace the titleblock
-    svg_utils.find_and_replace_svg_group(
-        fileio.path(
-            "user editable page svg",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        ),
-        fileio.path(
-            "tblock with text replacements",
-            structure_dict=file_structure(
-                page_counter=page_counter, page_name=page_name
-            ),
-        ),
-        f"{page_counter}-{page_name}",
-        "tblock-svg",
     )
 
 # ============================================
@@ -487,13 +307,7 @@ inkscape_bin = "/Applications/Inkscape.app/Contents/MacOS/inkscape"  # adjust if
 page_counter = 0
 for page_name in [p.get("name") for p in page_data.get("pages", [])]:
     page_counter += 1
-    svg_path = fileio.path(
-        "user editable page svg",
-        structure_dict=file_structure(page_counter=page_counter, page_name=page_name),
-    )
-    if not os.path.exists(svg_path):
-        raise FileNotFoundError(f"[ERROR] SVG not found: {svg_path}")
-
+    svg_path = path("user editable page svg", page_name=page_name, page_counter=page_counter)
     pdf_path = svg_path.replace(".svg", ".temp.pdf")
 
     subprocess.run(
@@ -512,7 +326,7 @@ for page_name in [p.get("name") for p in page_data.get("pages", [])]:
 subprocess.run(
     ["pdfunite"]
     + temp_pdfs
-    + [fileio.path("output pdf", structure_dict=file_structure())],
+    + [path("output pdf")],
     check=True,
 )
 

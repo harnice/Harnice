@@ -5,16 +5,36 @@ from harnice import fileio, state
 from harnice.lists import instances_list
 from harnice.utils import formboard_utils
 
-print_circles_and_dots = False
 
+# =============== PATHS ===================================================================================
+def macro_file_structure():
+    return {
+        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "segment visualizer svg",
+    }
+    
+if base_directory == None:  #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
+
+def path(target_value):
+    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+
+def dirpath(target_value):
+    # target_value = None will return the root of this macro
+    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+# ==========================================================================================================
+
+# =============== GLOBAL SETTINGS ===============
+print_circles_and_dots = False
+segment_spacing_inches_scaled = segment_spacing_inches / scale
+
+# =============== INPUT CHECKS ===============
 try:
     stroke_color = wire_color
 except:
     #TODO: pull in info from conductor attributes
     stroke_color = "black"
 
-segment_spacing_inches_scaled = segment_spacing_inches / scale
-
+# =============== FUNCTIONS ===============
 def label_svg(
     x, y, angle, text,
     text_color="black",
@@ -154,26 +174,7 @@ def circle_svg(x, y, r, color):
     return f'<circle cx="{x:.3f}" cy="{y_svg:.3f}" r="{r:.3f}" fill="{color}" />'
 
 
-# ===================== FILE STRUCTURE =====================
-def file_structure():
-    return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "segment visualizer svg",
-                        f"{artifact_id}-imported-instances": {},
-                    }
-                }
-            }
-        }
-    }
-
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure()), exist_ok=True)
-
-
 # =============== BUILD SVG CONTENT ===============
-
 instances = fileio.read_tsv("instances list")
 svg_groups = []
 
@@ -195,14 +196,9 @@ if scale is None:
 
 points_to_pass_through = {}
 
-# ================================
-# collect instances
-# ================================
 instances = fileio.read_tsv("instances list")
 
-# ================================
 # sort item_type instances alphabetically inside each segment
-# ================================
 sorted_segment_contents = {
     seg.get("instance_name"): []
     for seg in instances
@@ -219,9 +215,7 @@ for seg_name in sorted_segment_contents:
     sorted_segment_contents[seg_name].sort()
 
 
-# ================================
 # collect points to pass through
-# ================================
 for node in instances:
     if node.get("item_type") == "node":
         x_px, y_px, seg_angle = formboard_utils.calculate_location(
@@ -426,6 +420,5 @@ svg_output = (
 
 
 # =============== WRITE OUTPUT FILE ===============
-out_path = fileio.path("segment visualizer svg", structure_dict=file_structure())
-with open(out_path, "w", encoding="utf-8") as f:
+with open(path("segment visualizer svg"), "w", encoding="utf-8") as f:
     f.write(svg_output)

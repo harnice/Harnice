@@ -1,9 +1,9 @@
-import os
 import math
 import re
+import os
 from collections import defaultdict
 from harnice import fileio, state
-from harnice.utils import library_utils, formboard_utils, svg_utils
+from harnice.utils import library_utils, formboard_utils, svg_utils, feature_tree_utils
 
 artifact_mpn = "standard_harnice_formboard"
 
@@ -15,35 +15,28 @@ rotation : rotation of the drawing in degrees=
 """
 
 
-# =============== PATHS ===============
-def file_structure(instance_name=None):
+# =============== PATHS ===================================================================================
+def macro_file_structure(instance_name=None, item_type=None):
     return {
-        "instance_data": {
-            "imported_instances": {
-                "macro": {
-                    artifact_id: {
-                        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
-                        f"{artifact_id}-imported-instances": {
-                            "flagnote": {
-                                instance_name: {
-                                    f"{instance_name}-drawing.svg": "flagnote drawing",
-                                }
-                            }
-                        },
-                    }
-                }
-            }
-        }
+        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
     }
 
+if base_directory is None:  #path between cwd and the file structure for this macro
+    base_directory = os.path.join("instance_data", "macro", artifact_id)
 
-fileio.silentremove(fileio.dirpath("flagnote", structure_dict=file_structure()))
-os.makedirs(fileio.dirpath("flagnote", structure_dict=file_structure()))
+def path(target_value):
+    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
 
+def dirpath(target_value):
+    # target_value = None will return the root of this macro
+    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+# ==========================================================================================================
+
+# =============== GLOBAL SETTINGS ===============
 instances = fileio.read_tsv("instances list") # only need to call this once
 printable_item_types = {"connector", "backshell", "segment", "flagnote"} # add content here as needed
 
-# define coordinate system
+# =============== CSYS DEFINITION ===============
 try:
     if not rotation:
         rotation = 0
@@ -51,28 +44,25 @@ except NameError:
     rotation = 0
 origin = [0, 0, rotation]
 
-# ==========================
-#        MAKE FLAGNOTE DRAWINGS
-# ==========================
-instances = fileio.read_tsv("instances list")
-
-for instance in instances:
+# =============== FUNCTIONS ===============
+def make_new_flagnote_drawing(instance, location):
     if instance.get("item_type") != "flagnote":
-        continue
+        raise ValueError(f"you just tried to make a flagnote drawing out of a non-flagnote instance '{instance.get("instance_name")}'")
 
-    instance_name = instance.get("instance_name")
+    if instance.get("item_type") != "flagnote":
+        raise ValueError(f"you just tried to make a flagnote drawing without specifying flagnote type by 'mpn' field on '{instance.get("instance_name")}'")
 
-    if instance.get("mpn") in ["", None]:
-        continue
-
-    # === Pull library item ===
-    library_utils.pull(instance, destination_directory=fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure(instance_name)))
-
-    # === Replace placeholder in SVG ===
-    flagnote_drawing_path = fileio.path(
-        "flagnote drawing", structure_dict=file_structure(instance_name)
+    # === Pull drawing into this macro ===
+    library_utils.pull(
+        instance, 
+        destination_directory=location
+    )
+    flagnote_drawing_path = os.path.join(
+        location,
+        f"{instance.get("instance_name")}-drawing.svg"
     )
 
+    # === Perform text replacement on known drawing path ===
     with open(flagnote_drawing_path, "r", encoding="utf-8") as f:
         svg = f.read()
 
@@ -81,11 +71,29 @@ for instance in instances:
     with open(flagnote_drawing_path, "w", encoding="utf-8") as f:
         f.write(svg)
 
+
+def make_new_segment_drawing(instance, location):
+    if instance.get("item_type") != "segment":
+        raise ValueError(f"you just tried to make a segment drawing out of a non-segment instance '{instance.get("instance_name")}'")
+
+    feature_tree_utils.run_macro(
+        "basic_segment_generator",
+        "harness_artifacts", 
+        "https://github.com/harnice/harnice-library-public", 
+        artifact_id=f"{artifact_id}-{instance.get("instance_name")}", 
+        instance=instance,
+        base_directory=location,
+    )
+
+
+# ====================================================
+#        CONSTRUCT SVG BACKBONE
+# ====================================================
 # Group instances by item_type
 grouped_instances = defaultdict(list)
 for instance in instances:
     item_type = instance.get("item_type", "").strip()
-    if item_type and item_type in printable_item_types:
+    if item_type in printable_item_types:
         grouped_instances[item_type].append(instance)
 
 # Prepare lines for SVG content
@@ -200,8 +208,7 @@ for item_type, items in grouped_instances.items():
 
     content_lines.append("    </g>")
 
-# Write full SVG
-with open(fileio.path("output svg", structure_dict=file_structure()), "w") as f:
+with open(path("output svg"), "w") as f:
     f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
     f.write(
         '<svg xmlns="http://www.w3.org/2000/svg" '
@@ -217,43 +224,74 @@ with open(fileio.path("output svg", structure_dict=file_structure()), "w") as f:
     f.write("  </g>\n")
     f.write("</svg>\n")
 
-# now that the SVG has been written, copy the connector content in:
+
+# ====================================================
+#        COPY IN INSTANCE CONTENT
+# ====================================================
+
 for instance in instances:
     item_type = instance.get("item_type", "").strip()
     if instance.get("instance_name") in printable_instances:
 
-        # locally generated instances are stored here
-        if instance.get("item_type").strip().lower() in ["segment"]:
-            instance_data_dir = os.path.join(
-                fileio.dirpath("generated_instances_do_not_edit"),
-                instance.get("instance_name"),
-                f"{instance.get('instance_name')}-drawing.svg",
+        # === handle flagnotes ===
+        if instance.get("item_type") == "flagnote":
+            # make as needed, edit this section to reference other flagnote drawings
+            flagnote_location = os.path.join(
+                dirpath(None),
+                "instance_data",
+                "flagnote",
+                instance.get("instance_name")
             )
-            
-        # locally imported instances are stored here
-        elif instance.get("item_type").strip().lower() in ["flagnote"]:
-            instance_data_dir = os.path.join(
-                fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=file_structure(instance_name)),
-                instance.get("item_type"),
+            if instance.get("mpn") in [None, ""]:
+                continue
+            else:
+                make_new_flagnote_drawing(
+                    instance,
+                    flagnote_location
+                )
+            svg_utils.find_and_replace_svg_group(
+                path("output svg"),
+                os.path.join(
+                    flagnote_location,
+                    f"{instance.get("instance_name")}-drawing.svg"
+                ),
                 instance.get("instance_name"),
-                f"{instance.get('instance_name')}-drawing.svg",
+                instance.get("instance_name"),
             )
 
-        # project-level imported instances are here
-        else:
-            instance_data_dir = os.path.join(
-                fileio.dirpath("imported_instances"),
-                instance.get("item_type"),
+        # === handle segments ===
+        elif instance.get("item_type") in ["segment", "flagnote"]:
+            # make as needed, edit this section to reference other segment drawings
+            segment_location = os.path.join(
+                dirpath(None),
+                "instance_data",
+                "macro",
+                f"{artifact_id}-{instance.get("instance_name")}"
+            )
+            make_new_segment_drawing(
+                instance,
+                segment_location
+            )
+            svg_utils.find_and_replace_svg_group(
+                path("output svg"),
+                os.path.join(
+                    segment_location,
+                    f"{artifact_id}-{instance.get("instance_name")}-drawing.svg"
+                ),
                 instance.get("instance_name"),
-                f"{instance.get('instance_name')}-drawing.svg",
+                instance.get("instance_name"),
             )
 
-        if instance.get("item_type") == "flagnote" and instance.get("mpn") in [None, ""]:
-            continue
-
-        svg_utils.find_and_replace_svg_group(
-            fileio.path("output svg", structure_dict=file_structure()),
-            instance_data_dir,
-            instance.get("instance_name"),
-            instance.get("instance_name"),
-        )
+        else: #pull from project-level instance_data
+            svg_utils.find_and_replace_svg_group(
+                path("output svg"),
+                os.path.join(
+                    fileio.dirpath(None), # project root
+                    "instance_data",
+                    instance.get("item_type"),
+                    instance.get("instance_name"),
+                    f"{instance.get("instance_name")}-drawing.svg"
+                ),
+                instance.get("instance_name"),
+                instance.get("instance_name"),
+            )
