@@ -345,7 +345,7 @@ feature_tree_utils.copy_pdfs_to_cwd()
         },
     )
 
-    cli.print_import_headers()
+    cli.print_import_status_headers()
     runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
     print(f"Harnice: harness {state.partnumber('pn')} rendered successfully!\n")

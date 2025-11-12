@@ -4,7 +4,7 @@ import shutil
 import filecmp
 from harnice import fileio
 from harnice.lists import instances_list, library_history, rev_history
-from harnice.cli import import_print_format
+from harnice.cli import print_import_status
 
 """
 where a part lands in a project after it's been imported:
@@ -35,15 +35,12 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
 
     # determine destination directory
     if destination_directory is None: 
-        instance_name_text = input_dict.get("instance_name")
         destination_directory = os.path.join(
             fileio.dirpath(None),
             "instance_data",
             input_dict.get("item_type"),
             input_dict.get("instance_name"),
         )
-    else:
-        instance_name_text = f"{os.path.basename(os.path.dirname(destination_directory))}:{input_dict.get('instance_name')}"
     os.makedirs(destination_directory, exist_ok=True)
 
     # determine source library path
@@ -185,14 +182,13 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
 
     library_history.append(input_dict.get("instance_name"), update_contents)
 
-    line = (
-        f"{import_print_format[0].format('')}"
-        f"{import_print_format[1].format(instance_name_text)}"
-        f"{import_print_format[2].format(input_dict.get('item_type'))}"
-        f"{import_print_format[3].format(update_contents.get('lib_status'))}"
-        f"{import_print_format[4].format(import_state)}"
+    print_import_status(
+        input_dict.get("instance_name"),
+        input_dict.get('item_type'),
+        update_contents.get('lib_status'),
+        import_state,
+        os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(destination_directory))))
     )
-    print(line)
     return destination_directory
 
 
