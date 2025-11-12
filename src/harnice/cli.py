@@ -6,24 +6,19 @@ from harnice.lists import rev_history
 from harnice import state
 from harnice import fileio
 
-import_print_format = [
-    "{:<8}",  # margin
-    "{:<32}",  # instance_name column
-    "{:<16}",  # item_type column
-    "{:<16}",  # status column
-    "{:<16}",  # import state column
-]
 
-
-def print_import_headers():
+def print_import_status(instance_name, item_type, library_status, import_state, called_from_base_directory):
     print(
-        f"{import_print_format[0].format('')}"
-        f"{import_print_format[1].format('INSTANCE NAME')}"
-        f"{import_print_format[2].format('ITEM TYPE')}"
-        f"{import_print_format[3].format('LIBRARY STATUS')}"
-        f"{import_print_format[4].format('IMPORT STATE')}"
+        f"{'':<4}"
+        f"{instance_name:<40}"
+        f"{item_type:<16}"
+        f"{library_status:<16}"
+        f"{import_state:<32}"
+        f"{called_from_base_directory:<32}"
     )
 
+def print_import_status_headers():
+    print_import_status("INSTANCE NAME", "ITEM TYPE", "LIBRARY STATUS", "IMPORT STATE", "CALLED FROM BASE DIRECTORY")
 
 def main():
     # Ensure cwd exists

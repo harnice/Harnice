@@ -121,7 +121,7 @@ def render():
 
     library_history.new()
     instances_list.new()
-    cli.print_import_headers()
+    cli.print_import_status_headers()
     runpy.run_path(fileio.path("feature tree"))
 
     post_harness_instances_list.rebuild()
