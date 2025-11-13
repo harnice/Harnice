@@ -173,15 +173,14 @@ for instance in fileio.read_tsv("instances list"):
     circuit_id = instance.get("circuit_id")
     print_name = instance.get("print_name", "")
     ports = circuit_utils.instances_of_circuit(circuit_id)
-    local_group = []
 
-    # Collect node/segment data
+    # --- Collect data by type ---
     nodes = [p for p in ports if p.get("location_type") == "node"]
     segments = [p for p in ports if p.get("location_type") == "segment"]
     num_nodes = len(nodes)
     num_segments = len(segments)
 
-    # Compute uniform node width
+    # --- Layout math ---
     max_text_width = 0
     for node in nodes:
         line1 = node.get("item_type", "")
@@ -191,48 +190,80 @@ for instance in fileio.read_tsv("instances list"):
         max_text_width = max(max_text_width, text_width)
     uniform_node_width = max_text_width + 16
 
-    # Compute segment lengths
     usable_width = COL2_WIDTH - (2 * NODE_MARGIN_X)
     total_node_width = num_nodes * uniform_node_width
     remaining_space = usable_width - total_node_width
     segment_length = remaining_space / max(num_segments, 1) if num_segments else 0
     segment_length = max(segment_length, 0)
 
-    # Draw schematic contents
-    x = NODE_MARGIN_X
-    for port in ports:
-        if port.get("location_type") == "node":
-            plot_node(port, x, ROW_HEIGHT / 2, uniform_node_width, local_group)
-            x += uniform_node_width
-        elif port.get("location_type") == "segment":
-            plot_segment(port, x, ROW_HEIGHT / 2, segment_length, local_group)
-            x += segment_length
-
-    # Draw cell outlines
+    # --- Build per-row SVG groups ---
     y_row_top = y_offset + (row_index * ROW_HEIGHT)
-    svg_elements.append(
+    group_x = COL1_WIDTH
+    group_y = y_row_top
+
+    table_group = []   # cell outlines
+    segment_group = [] # segments (behind nodes)
+    node_group = []    # boxes (on top of segments)
+    text_group = []    # text labels (topmost)
+
+    # Table cells
+    table_group.append(
         f'<rect x="0" y="{y_row_top}" width="{COL1_WIDTH}" height="{ROW_HEIGHT}" '
         f'fill="{TABLE_FILL}" stroke="{TABLE_STROKE}" />'
     )
-    svg_elements.append(
+    table_group.append(
         f'<rect x="{COL1_WIDTH}" y="{y_row_top}" width="{COL2_WIDTH}" height="{ROW_HEIGHT}" '
         f'fill="{TABLE_FILL}" stroke="{TABLE_STROKE}" />'
     )
 
-    # Left cell label
-    svg_elements.append(
+    # Left cell label (belongs in text layer)
+    text_group.append(
         f'<text x="{COL1_WIDTH / 2}" y="{y_row_top + ROW_HEIGHT / 2}" '
         f'fill="{FONT_COLOR}" text-anchor="middle" dominant-baseline="middle" '
         f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE}">{print_name}</text>'
     )
 
-    # Content group
-    group_x = COL1_WIDTH
-    group_y = y_row_top
+    # --- Draw schematic contents ---
+    x = NODE_MARGIN_X
+    for port in ports:
+        if port.get("location_type") == "segment":
+            plot_segment(port, x, ROW_HEIGHT / 2, segment_length, segment_group)
+            x += segment_length
+        elif port.get("location_type") == "node":
+            # Split plot_node into shape + text so we can control layer
+            box_width = uniform_node_width
+            # Shape
+            node_group.append(
+                f'<rect x="{x}" y="{(ROW_HEIGHT/2)-(ROW_HEIGHT-(2*NODE_MARGIN_Y))/2}" '
+                f'width="{box_width}" height="{ROW_HEIGHT-(2*NODE_MARGIN_Y)}" '
+                f'fill="white" stroke="black" stroke-width="1"/>'
+            )
+            # Text
+            line1 = port.get("item_type", "")
+            line2 = instances_list.attribute_of(port.get("parent_instance"), "print_name")
+            line3 = port.get("print_name", "")
+            lines = [line1, line2, line3]
+            text_x = x + (box_width / 2)
+            total_text_height = len(lines) * line_spacing
+            start_y = (ROW_HEIGHT / 2) - (total_text_height / 2) + (FONT_SIZE / 2)
+            for i, text in enumerate(lines):
+                ty = start_y + i * line_spacing
+                text_group.append(
+                    f'<text x="{group_x + text_x}" y="{group_y + ty}" fill="{FONT_COLOR}" '
+                    f'text-anchor="middle" font-family="{FONT_FAMILY}" '
+                    f'font-size="{FONT_SIZE}">{text}</text>'
+                )
+            x += uniform_node_width
+
+    # --- Add to main SVG in correct order ---
+    svg_elements.extend(table_group)
     svg_elements.append(f'<g transform="translate({group_x},{group_y})">')
-    for element in local_group:
-        svg_elements.append(f"  {element}")
+    for s in segment_group:
+        svg_elements.append(f"  {s}")
+    for n in node_group:
+        svg_elements.append(f"  {n}")
     svg_elements.append("</g>")
+    svg_elements.extend(text_group)
 
     row_index += 1
 
