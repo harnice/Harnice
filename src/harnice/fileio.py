@@ -104,7 +104,7 @@ def dirpath(target_key, structure_dict=None, base_directory=None):
     Returns the absolute path to a directory identified by its key
     within a dict hierarchy.
     """
-    if target_key == None:
+    if target_key is None:
         if base_directory in [None, ""]:
             return os.path.join(rev_directory())
         else:
