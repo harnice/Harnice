@@ -16,6 +16,11 @@
                 "properties": {
                     "gauge": "20AWG",
                     "construction": "7x28"
+                },
+                "appearance":{
+                    "base_color":"white",
+                    "twisted":"RH"
+
                 }
             },
             "pair_1": {
@@ -28,8 +33,11 @@
                         "insulation material": "polyethylene",
                         "od": "0.017in",
                         "gauge": "20AWG",
-                        "construction": "7x29",
+                        "construction": "7x28",
                         "material": "copper"
+                    },
+                    "appearance":{
+                        "base_color":"black"
                     }
                 },
                 "white": {
@@ -40,6 +48,10 @@
                         "gauge": "20AWG",
                         "construction": "7x28",
                         "material": "copper"
+                    },
+                    "appearance":{
+                        "base_color":"white",
+                        "outline_color":"black"
                     }
                 }
             }
