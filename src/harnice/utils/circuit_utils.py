@@ -188,7 +188,6 @@ def assign_cable_conductor(
                     and row.get("identifier") == cable_conductor_id[1]
                 ):
                     appearance = row.get("appearance")
-                    print(f"\n\nMatched appearance for {cable_conductor_id}: {appearance}")
                     break
 
             instances_list.modify(
