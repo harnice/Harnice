@@ -19,6 +19,7 @@ dependencies = [
     "Pillow",
     "PyYAML",
     "xlwt",
+    "webcolors"
 ]
 
 [project.urls]
