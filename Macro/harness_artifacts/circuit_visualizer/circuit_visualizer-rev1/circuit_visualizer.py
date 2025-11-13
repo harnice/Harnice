@@ -1,7 +1,8 @@
 import os
+import math
 from harnice import fileio, state
 from harnice.lists import instances_list
-from harnice.utils import circuit_utils
+from harnice.utils import circuit_utils, appearance
 
 artifact_mpn = "circuit_visualizer"
 
@@ -96,13 +97,132 @@ def plot_node(node_instance, x, y, box_width, local_group):
     return box_width
 
 
-def plot_segment(segment_instance, x, y, length, local_group):
-    """Draw horizontal segment centered vertically in row."""
-    rect_height = 2
-    rect_y = y - rect_height / 2
-    rect = f'<rect x="{x}" y="{rect_y}" width="{length}" height="{rect_height}" fill="black"/>'
+import math
 
-    # Labels
+def add_hatch_lines(x1, x2, y1, y2, hatch_angle, stroke_width, local_group):
+    """
+    Draws hatch lines crossing the main line (x1,y1)-(x2,y2),
+    extending from one side of the stroke width to the other.
+    hatch_angle = angle of hatch lines relative to the main line, in degrees.
+    """
+    dx = x2 - x1
+    dy = y2 - y1
+    line_length = math.hypot(dx, dy)
+
+    # Unit vector along main line
+    ux = dx / line_length
+    uy = dy / line_length
+
+    # Normal vector (perpendicular to main line)
+    nx = -uy
+    ny = ux
+
+    # Rotate normal by hatch_angle around the line direction
+    theta = math.radians(hatch_angle)
+    hx = nx * math.cos(theta) - ny * math.sin(theta)
+    hy = nx * math.sin(theta) + ny * math.cos(theta)
+
+    # Spacing between hatch centers
+    spacing = stroke_width * 1.5  # tweak for density if needed
+
+    # --- key fix: hatch length should fully span the stroke width ---
+    # The hatch direction (hx, hy) crosses the line at angle theta relative to the normal.
+    # The perpendicular distance between endpoints should equal stroke_width.
+    # That requires total hatch length = stroke_width / abs(math.cos(theta)).
+    hatch_length = stroke_width / abs(math.cos(theta))
+
+    num_hatches = int(line_length // spacing) + 1
+    for i in range(num_hatches):
+        t = i * spacing
+        cx = x1 + ux * t
+        cy = y1 + uy * t
+
+        hx1 = cx - hx * (hatch_length / 2)
+        hy1 = cy - hy * (hatch_length / 2)
+        hx2 = cx + hx * (hatch_length / 2)
+        hy2 = cy + hy * (hatch_length / 2)
+
+        line = (
+            f'<line x1="{hx1:.2f}" y1="{hy1:.2f}" '
+            f'x2="{hx2:.2f}" y2="{hy2:.2f}" '
+            f'stroke="black" stroke-width="0.2" />'
+        )
+        local_group.append(line)
+
+
+def plot_segment(segment_instance, x, y, length, local_group):
+    """Draw horizontal segment as explicit <line> elements, ready for appearance styling."""
+    # --- Geometry
+    x1 = x
+    x2 = x + length
+    y_mid = y
+
+    # --- Line element with line appearance styling
+    stroke_width = 4
+
+    appearance_dict = appearance.parse(segment_instance.get("appearance", "{}"))
+    if not appearance_dict:
+        base_color = "black"
+    else:
+        # print anything below base line
+        base_color = appearance_dict.get("base_color")
+    
+        if appearance_dict.get("outline_color"):
+            line = (
+                f'<line x1="{x1}" y1="{y_mid}" x2="{x2}" y2="{y_mid}" '
+                f'stroke="{appearance_dict.get("outline_color")}" stroke-width="{stroke_width}" />'
+            )
+            local_group.append(line)
+
+            stroke_width = stroke_width - 1.5
+
+    # print base line
+    line = (
+        f'<line x1="{x1}" y1="{y_mid}" x2="{x2}" y2="{y_mid}" '
+        f'stroke="{base_color}" stroke-width="{stroke_width}" />'
+    )
+    local_group.append(line)
+
+    # print anything on top of base line
+    if appearance_dict:
+        if appearance_dict.get("parallelstripe"):
+            num_stripes = len(appearance_dict.get("parallelstripe"))
+            stripe_thickness = 0.5
+            stripe_spacing = stroke_width / num_stripes
+            stripe_height_offset = - (num_stripes - 1) * stripe_spacing / 2
+            for i in range(num_stripes):
+                line = (
+                    f'<line x1="{x1}" y1="{y_mid + stripe_height_offset}" x2="{x2}" y2="{y_mid + stripe_height_offset}" '
+                    f'stroke="{appearance_dict.get("parallelstripe")[i]}" stroke-width="{stripe_thickness}" />'
+                )
+                local_group.append(line)
+                stripe_height_offset = stripe_height_offset + stripe_spacing
+        if appearance_dict.get("perpstripe"):
+            num_stripes = len(appearance_dict.get("perpstripe"))
+            pattern_length = 30
+            dash = pattern_length / (num_stripes + 1)
+            gap = pattern_length - dash
+            offset = 0
+            for i in range(len(appearance_dict.get("perpstripe"))):
+                offset = offset + dash
+                line = (
+                    f'<line x1="{x1}" y1="{y_mid}" '
+                    f'x2="{x2}" y2="{y_mid}" '
+                    f'stroke="{appearance_dict.get("perpstripe")[i]}" '
+                    f'stroke-width="{stroke_width}" '
+                    f'stroke-dasharray="{dash},{gap}" '
+                    f'stroke-dashoffset="{offset}" />'
+                )
+                local_group.append(line)
+
+        print("!!!!!!", appearance_dict)
+
+        if appearance_dict.get("twisted") == "RH":
+            add_hatch_lines(x1, x2, y_mid, y_mid, 70, stroke_width, local_group)
+        elif appearance_dict.get("twisted") == "LH":
+            add_hatch_lines(x1, x2, y_mid, y_mid, -70, stroke_width, local_group)
+
+    # --- Label block (unchanged)
     line1 = instances_list.attribute_of(
         segment_instance.get("instance_name"), "parent_instance"
     )
@@ -112,7 +232,7 @@ def plot_segment(segment_instance, x, y, length, local_group):
     line1_y = label_y_center - (line_spacing / 2)
     line2_y = label_y_center + (line_spacing / 2)
 
-    # Background
+    # Background rectangle
     text_padding_x = 3
     text_padding_y = 2
     try:
@@ -125,7 +245,7 @@ def plot_segment(segment_instance, x, y, length, local_group):
     label_bg = (
         f'<rect x="{bg_x}" y="{bg_y}" '
         f'width="{text_width + 2 * text_padding_x}" '
-        f'height="{text_height}" fill="white"/>'
+        f'height="{text_height}" fill="white" />'
     )
 
     text_template = (
@@ -136,7 +256,6 @@ def plot_segment(segment_instance, x, y, length, local_group):
     label1 = text_template.format(x=label_x, y=line1_y, text=line1)
     label2 = text_template.format(x=label_x, y=line2_y, text=line2)
 
-    local_group.append(rect)
     local_group.append(label_bg)
     local_group.extend([label1, label2])
 
