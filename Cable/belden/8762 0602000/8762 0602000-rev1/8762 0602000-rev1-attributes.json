@@ -17,10 +17,9 @@
                     "gauge": "20AWG",
                     "construction": "7x28"
                 },
-                "appearance":{
-                    "base_color":"white",
-                    "twisted":"RH"
-
+                "appearance": {
+                    "base_color": "white",
+                    "twisted": "RH"
                 }
             },
             "pair_1": {
@@ -36,8 +35,8 @@
                         "construction": "7x28",
                         "material": "copper"
                     },
-                    "appearance":{
-                        "base_color":"black"
+                    "appearance": {
+                        "base_color": "black"
                     }
                 },
                 "white": {
@@ -49,9 +48,9 @@
                         "construction": "7x28",
                         "material": "copper"
                     },
-                    "appearance":{
-                        "base_color":"white",
-                        "outline_color":"black"
+                    "appearance": {
+                        "base_color": "white",
+                        "outline_color": "black"
                     }
                 }
             }
