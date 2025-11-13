@@ -124,7 +124,8 @@ def render():
 
                 # Convert appearance to JSON string (compact)
                 row["appearance"] = (
-                    json.dumps(appearance, separators=(",", ":"))
+                    json.dumps(appearance, separators=(",", ":"), ensure_ascii=False)
+                    .replace('"', "'")
                     if appearance
                     else ""
                 )
