@@ -102,7 +102,7 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
 
     if not appearance_dict:
         print(f"!!!!! no appearance dict provided {stroke_width_inches}")
-        appearance_dict = appearance.parse("{'base_color':'white', 'perpstripe':['gray']}")
+        appearance_dict = appearance.parse("{'base_color':'pink', 'perpstripe':['gray']}")
         stroke_width_inches = 0.01
     else:
         print("!!!!! ")
@@ -136,7 +136,6 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
     # ---------------------------------------------------------------------
     def draw_slash_lines(points, slash_lines_dict):
         if slash_lines_dict.get("direction") in ("RH", "LH"):
-            direction = 1 if slash_lines_dict.get("direction") == "LH" else -1
             if slash_lines_dict.get("angle") is not None:
                 angle_slant = slash_lines_dict.get("angle")
             else:
@@ -144,14 +143,17 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
             if slash_lines_dict.get("step") is not None:
                 step_dist = slash_lines_dict.get("step")
             else:
-                step_dist = stroke_width * 2.0
+                step_dist = stroke_width * 10.0
+            if slash_lines_dict.get("color") is not None:
+                color_line = slash_lines_dict.get("color")
+            else:
+                color_line = "black"
             if slash_lines_dict.get("color") is not None:
                 color_line = slash_lines_dict.get("color")
             else:
                 color_line = "black"
 
         line_elements = []
-        offset_dist = stroke_width / 2
 
         def bezier_eval(p0, c1, c2, p1, t):
             mt = 1 - t
@@ -206,27 +208,46 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
             step_dist_actual = L / num_steps  # uniform spacing
 
             for z in range(num_steps + 1):
+                # ------------------------------------------------------------------
+                # 1. Evaluate point along Bézier curve
+                # ------------------------------------------------------------------
                 t_norm = min(1.0, (z * step_dist_actual) / L)
                 P = bezier_eval(p0, c1, c2, p1, t_norm)
 
-                # Tangent and normal vectors
-                tx = math.cos(math.radians(P["tangent"]))
-                ty = math.sin(math.radians(P["tangent"]))
-                nx = -ty
-                ny = tx
+                # Centerpoint on spline
+                center = (P["x"], P["y"])
 
-                # --- Compute slanted hatch direction ---
-                # Rotate the normal by ±angle_slant relative to tangent
-                rot = math.radians(angle_slant * direction)
-                sx = tx * math.sin(rot) + nx * math.cos(rot)
-                sy = ty * math.sin(rot) + ny * math.cos(rot)
+                # ------------------------------------------------------------------
+                # 2. Tangent and hatch angle computation
+                # ------------------------------------------------------------------
+                # Tangent direction of the spline at this point (radians)
+                tangent_angle = math.radians(P["tangent"])
 
-                # Hatch line endpoints (crosses through the wire)
-                x1 = P["x"] - sx * offset_dist
-                y1 = P["y"] - sy * offset_dist
-                x2 = P["x"] + sx * offset_dist
-                y2 = P["y"] + sy * offset_dist
+                # LH vs RH determines whether we add or subtract the slant
+                if slash_lines_dict.get("direction") == "LH":
+                    line_angle = tangent_angle + math.radians(angle_slant)
+                else:  # "RH"
+                    line_angle = tangent_angle - math.radians(angle_slant)
 
+                # ------------------------------------------------------------------
+                # 3. Compute hatch line geometry
+                # ------------------------------------------------------------------
+                # Shorter lines at steep slant; normalize by cos(slant)
+                line_length = stroke_width / math.sin(math.radians(angle_slant))
+
+                # Vector along hatch direction
+                dx = math.cos(line_angle) * (line_length / 2)
+                dy = math.sin(line_angle) * (line_length / 2)
+
+                # Line endpoints
+                x1 = center[0] - dx
+                y1 = center[1] - dy
+                x2 = center[0] + dx
+                y2 = center[1] + dy
+
+                # ------------------------------------------------------------------
+                # 4. Append SVG element
+                # ------------------------------------------------------------------
                 line_elements.append(
                     f'<line x1="{x1:.2f}" y1="{-y1:.2f}" '
                     f'x2="{x2:.2f}" y2="{-y2:.2f}" '
