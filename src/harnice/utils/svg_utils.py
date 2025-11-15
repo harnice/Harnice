@@ -95,9 +95,14 @@ def find_and_replace_svg_group(
 
 def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_group):
     """
-    Draws a spline path with appearance styling.
-    Supports left-hand (LH) and right-hand (RH) twisted wire hatching
-    with uniform line density and consistent diagonal direction.
+    Adds a styled spline path to the local group.
+    Call as if you were appending any other element to an svg group.
+
+    Spline points are a list of dictionaries with x and y coordinates. [{"x": 0, "y": 0, "tangent": 0}, {"x": 1, "y": 1, "tangent": 0}]
+    Appearance dictionary is a dictionary with the following keys: base_color, outline_color, parallelstripe, perpstripe, slash_lines
+    Slash lines dictionary is a dictionary with the following keys: direction, angle, step, color, slash_width_inches
+
+    If no appearance dictionary is provided, a rainbow spline will be drawn in place of the path.
     """
 
     if not appearance_dict:
@@ -107,7 +112,7 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
         appearance_dict = appearance.parse(appearance_dict)
 
     # ---------------------------------------------------------------------
-    # --- helper: spline_to_path
+    # --- spline_to_path
     # ---------------------------------------------------------------------
     def spline_to_path(points):
         if len(points) < 2:
@@ -128,7 +133,7 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
         return path
 
     # ---------------------------------------------------------------------
-    # --- helper: draw consistent slanted hatches (twisted wire)
+    # --- draw consistent slanted hatches (twisted wire)
     # ---------------------------------------------------------------------
     def draw_slash_lines(points, slash_lines_dict):
         if slash_lines_dict.get("direction") in ("RH", "LH"):
