@@ -19,6 +19,7 @@ def generate_structure():
 
 
 def render():
+    # ========== Default JSON ==========
     default_attributes = {
         "jacket": {
             "properties": {
@@ -31,15 +32,11 @@ def render():
                 "properties": {"type": "foil", "coverage": "100%"},
                 "drain_wire": {
                     "conductor": True,
-                    "properties": {
-                        "gauge": "20AWG",
-                        "construction": "7x28",
-                    },
+                    "properties": {"gauge": "20AWG", "construction": "7x28"},
+                    "appearance": {"outline_color":"gray","slash_lines":{"direction": "RH","color":"gray"}},
                 },
                 "pair_1": {
-                    "properties": {
-                        "twists": "12 per inch",
-                    },
+                    "properties": {"twists": "12 per inch"},
                     "black": {
                         "conductor": True,
                         "properties": {
@@ -49,6 +46,7 @@ def render():
                             "construction": "7x28",
                             "material": "copper",
                         },
+                        "appearance": {"base_color": "black"},
                     },
                     "white": {
                         "conductor": True,
@@ -59,6 +57,7 @@ def render():
                             "construction": "7x28",
                             "material": "copper",
                         },
+                        "appearance": {"base_color": "white", "outline_color": "black"},
                     },
                 },
             },
@@ -67,56 +66,84 @@ def render():
 
     attributes_path = fileio.path("attributes")
 
-    # ========= add default to attributes, if already exists, return it as attrs
-    # Load or create attributes.json
+    # ========== Load or create attributes.json ==========
     if os.path.exists(attributes_path):
         try:
             with open(attributes_path, "r", encoding="utf-8") as f:
                 attrs = json.load(f)
         except Exception as e:
             print(f"[WARNING] Could not load existing attributes.json: {e}")
-            attrs = default_attributes.copy()
-            # Re-write with defaults to fix the bad file
+            attrs = default_attributes
             with open(attributes_path, "w", encoding="utf-8") as f:
                 json.dump(attrs, f, indent=4)
     else:
-        attrs = default_attributes.copy()
+        attrs = default_attributes
         with open(attributes_path, "w", encoding="utf-8") as f:
             json.dump(attrs, f, indent=4)
 
-    # ========== write conductor list from json ==========
+    # ========== Traverse and build TSV ==========
     rows = []
-    all_headers = set()
+    all_headers = {"appearance"}  # ensure it exists
 
-    def recurse(obj, grandparent_key=None, parent_key=None):
+    def recurse(obj, parent_chain=None):
+        """Walk through nested dicts, recording conductor rows."""
+        if parent_chain is None:
+            parent_chain = []
+
         if isinstance(obj, dict):
-            # Check if this dict defines a conductor
+            # Found conductor
             if obj.get("conductor") is True:
                 props = obj.get("properties", {})
-                row = {"container": grandparent_key, "identifier": parent_key}
+                appearance = obj.get("appearance", {})
+
+                # Use previous parent chain to fill in context
+                container = parent_chain[-2] if len(parent_chain) >= 2 else ""
+                identifier = parent_chain[-1] if len(parent_chain) >= 1 else ""
+
+                row = {"container": container, "identifier": identifier}
+
                 for k, v in props.items():
                     row[k] = v
                     all_headers.add(k)
+
+                # Convert appearance to JSON string (compact)
+                row["appearance"] = (
+                    json.dumps(
+                        appearance, separators=(",", ":"), ensure_ascii=False
+                    ).replace('"', "'")
+                    if appearance
+                    else ""
+                )
+
                 rows.append(row)
-            else:
-                # Keep traversing
-                for k, v in obj.items():
-                    recurse(v, grandparent_key=parent_key, parent_key=k)
+
+            # Continue traversing deeper
+            for k, v in obj.items():
+                if isinstance(v, (dict, list)):
+                    recurse(v, parent_chain + [k])
+
         elif isinstance(obj, list):
             for item in obj:
-                recurse(item, grandparent_key=grandparent_key, parent_key=parent_key)
+                recurse(item, parent_chain)
 
     recurse(attrs)
+
+    if not rows:
+        print("[WARNING] No conductor entries found.")
+        return
 
     # Define header order
     headers = ["container", "identifier"] + sorted(all_headers)
 
     # Write to TSV
-    with open(fileio.path("conductor list"), "w", newline="", encoding="utf-8") as f:
+    conductor_list_path = fileio.path("conductor list")
+    with open(conductor_list_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f, fieldnames=headers, delimiter="\t", lineterminator="\n"
         )
         writer.writeheader()
         writer.writerows(rows)
 
-    print("\ncable rendered successfully!\n")
+    print(
+        f"\ncable rendered successfully! wrote {len(rows)} rows to:\n{conductor_list_path}\n"
+    )

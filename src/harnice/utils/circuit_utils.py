@@ -1,6 +1,7 @@
 from harnice import fileio
 from harnice.lists import instances_list
 from harnice.utils import library_utils
+import os
 
 
 def end_ports_of_circuit(circuit_id):
@@ -124,28 +125,6 @@ def assign_cable_conductor(
 
     instances = fileio.read_tsv("instances list")
 
-    instances_list.new_instance(
-        cable_instance_name,
-        {
-            "net": net,
-            "item_type": "cable",
-            "location_type": "segment",
-            "cable_group": cable_instance_name,
-        },
-        ignore_duplicates=True,
-    )
-
-    # --- Import cable from library ---
-    library_utils.pull(
-        {
-            "lib_repo": library_info.get("lib_repo"),
-            "lib_subpath": library_info.get("lib_subpath"),
-            "item_type": "cable",
-            "mpn": library_info.get("mpn"),
-            "instance_name": cable_instance_name,
-        }
-    )
-
     # --- Make sure conductor of cable has not been assigned yet
     for instance in instances:
         if instance.get("cable_group") == cable_instance_name:
@@ -170,9 +149,50 @@ def assign_cable_conductor(
                     f"to '{instance.get('cable_identifier')}' of cable '{instance.get('cable_group')}'"
                 )
 
+    cable_destination_directory = os.path.join(
+        fileio.dirpath(None), "instance_data", "cable", cable_instance_name
+    )
+
+    instances_list.new_instance(
+        cable_instance_name,
+        {
+            "net": net,
+            "item_type": "cable",
+            "location_type": "segment",
+            "cable_group": cable_instance_name,
+        },
+        ignore_duplicates=True,
+    )
+
+    # --- Import cable from library ---
+    library_utils.pull(
+        {
+            "lib_repo": library_info.get("lib_repo"),
+            "lib_subpath": library_info.get("lib_subpath"),
+            "item_type": "cable",
+            "mpn": library_info.get("mpn"),
+            "instance_name": cable_instance_name,
+        },
+        destination_directory=cable_destination_directory,
+    )
+
+    cable_attributes_path = os.path.join(
+        cable_destination_directory, f"{cable_instance_name}-conductor_list.tsv"
+    )
+    cable_attributes = fileio.read_tsv(cable_attributes_path)
+
     # --- assign conductor
     for instance in instances:
         if instance.get("instance_name") == conductor_instance:
+            appearance = None
+            for row in cable_attributes:
+                if (
+                    row.get("container") == cable_conductor_id[0]
+                    and row.get("identifier") == cable_conductor_id[1]
+                ):
+                    appearance = row.get("appearance")
+                    break
+
             instances_list.modify(
                 conductor_instance,
                 {
@@ -180,6 +200,7 @@ def assign_cable_conductor(
                     "cable_group": cable_instance_name,
                     "cable_container": cable_conductor_id[0],
                     "cable_identifier": cable_conductor_id[1],
+                    "appearance": appearance,
                 },
             )
             break

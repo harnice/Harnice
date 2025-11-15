@@ -7,7 +7,9 @@ from harnice import state
 from harnice import fileio
 
 
-def print_import_status(instance_name, item_type, library_status, import_state, called_from_base_directory):
+def print_import_status(
+    instance_name, item_type, library_status, import_state, called_from_base_directory
+):
     print(
         f"{'':<4}"
         f"{instance_name:<40}"
@@ -17,8 +19,16 @@ def print_import_status(instance_name, item_type, library_status, import_state, 
         f"{called_from_base_directory:<32}"
     )
 
+
 def print_import_status_headers():
-    print_import_status("INSTANCE NAME", "ITEM TYPE", "LIBRARY STATUS", "IMPORT STATE", "CALLED FROM BASE DIRECTORY")
+    print_import_status(
+        "INSTANCE NAME",
+        "ITEM TYPE",
+        "LIBRARY STATUS",
+        "IMPORT STATE",
+        "CALLED FROM BASE DIRECTORY",
+    )
+
 
 def main():
     # Ensure cwd exists

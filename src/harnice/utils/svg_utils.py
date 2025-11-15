@@ -1,5 +1,7 @@
 import os
 import re
+import math
+from harnice.utils import appearance
 
 
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
@@ -90,3 +92,233 @@ def find_and_replace_svg_group(
         updated_file.write(updated_svg_content)
 
     return 1
+
+
+def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_group):
+    """
+    Adds a styled spline path to the local group.
+    Call as if you were appending any other element to an svg group.
+
+    Spline points are a list of dictionaries with x and y coordinates. [{"x": 0, "y": 0, "tangent": 0}, {"x": 1, "y": 1, "tangent": 0}]
+    Appearance dictionary is a dictionary with the following keys: base_color, outline_color, parallelstripe, perpstripe, slash_lines
+    Slash lines dictionary is a dictionary with the following keys: direction, angle, step, color, slash_width_inches
+
+    If no appearance dictionary is provided, a rainbow spline will be drawn in place of the path.
+    """
+
+    if not appearance_dict:
+        appearance_dict = appearance.parse(
+            "{'base_color':'red', 'perpstripe':['orange','yellow','green','blue','purple']}"
+        )
+        stroke_width_inches = 0.01
+    else:
+        appearance_dict = appearance.parse(appearance_dict)
+
+    # ---------------------------------------------------------------------
+    # --- spline_to_path
+    # ---------------------------------------------------------------------
+    def spline_to_path(points):
+        if len(points) < 2:
+            return ""
+        path = f"M {points[0]['x']:.3f},{-points[0]['y']:.3f}"
+        for i in range(len(points) - 1):
+            p0, p1 = points[i], points[i + 1]
+            t0, t1 = math.radians(p0.get("tangent", 0)), math.radians(
+                p1.get("tangent", 0)
+            )
+            d = math.hypot(p1["x"] - p0["x"], p1["y"] - p0["y"])
+            ctrl_dist = d * 0.5
+            c1x = p0["x"] + math.cos(t0) * ctrl_dist
+            c1y = p0["y"] + math.sin(t0) * ctrl_dist
+            c2x = p1["x"] - math.cos(t1) * ctrl_dist
+            c2y = p1["y"] - math.sin(t1) * ctrl_dist
+            path += f" C {c1x:.3f},{-c1y:.3f} {c2x:.3f},{-c2y:.3f} {p1['x']:.3f},{-p1['y']:.3f}"
+        return path
+
+    # ---------------------------------------------------------------------
+    # --- draw consistent slanted hatches (twisted wire)
+    # ---------------------------------------------------------------------
+    def draw_slash_lines(points, slash_lines_dict):
+        if slash_lines_dict.get("direction") in ("RH", "LH"):
+            if slash_lines_dict.get("angle") is not None:
+                angle_slant = slash_lines_dict.get("angle")
+            else:
+                angle_slant = 20
+            if slash_lines_dict.get("step") is not None:
+                step_dist = slash_lines_dict.get("step")
+            else:
+                step_dist = stroke_width * 3
+            if slash_lines_dict.get("color") is not None:
+                color_line = slash_lines_dict.get("color")
+            else:
+                color_line = "black"
+            if slash_lines_dict.get("color") is not None:
+                color_line = slash_lines_dict.get("color")
+            else:
+                color_line = "black"
+            if slash_lines_dict.get("slash_width_inches") is not None:
+                slash_width = slash_lines_dict.get("slash_width_inches") * 96
+            else:
+                slash_width = 0.25
+
+        line_elements = []
+
+        def bezier_eval(p0, c1, c2, p1, t):
+            mt = 1 - t
+            x = (
+                (mt**3) * p0[0]
+                + 3 * (mt**2) * t * c1[0]
+                + 3 * mt * (t**2) * c2[0]
+                + (t**3) * p1[0]
+            )
+            y = (
+                (mt**3) * p0[1]
+                + 3 * (mt**2) * t * c1[1]
+                + 3 * mt * (t**2) * c2[1]
+                + (t**3) * p1[1]
+            )
+            dx = (
+                3 * (mt**2) * (c1[0] - p0[0])
+                + 6 * mt * t * (c2[0] - c1[0])
+                + 3 * (t**2) * (p1[0] - c2[0])
+            )
+            dy = (
+                3 * (mt**2) * (c1[1] - p0[1])
+                + 6 * mt * t * (c2[1] - c1[1])
+                + 3 * (t**2) * (p1[1] - c2[1])
+            )
+            return {"x": x, "y": y, "tangent": math.degrees(math.atan2(dy, dx))}
+
+        def bezier_length(p0, c1, c2, p1, samples=80):
+            prev = bezier_eval(p0, c1, c2, p1, 0)
+            L = 0.0
+            for i in range(1, samples + 1):
+                t = i / samples
+                pt = bezier_eval(p0, c1, c2, p1, t)
+                L += math.hypot(pt["x"] - prev["x"], pt["y"] - prev["y"])
+                prev = pt
+            return L
+
+        # -------------------------------------------------------------
+        # Iterate through Bézier segments
+        for i in range(len(points) - 1):
+            p0 = (points[i]["x"], points[i]["y"])
+            p1 = (points[i + 1]["x"], points[i + 1]["y"])
+            t0 = math.radians(points[i].get("tangent", 0))
+            t1 = math.radians(points[i + 1].get("tangent", 0))
+            d = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+            ctrl_dist = d * 0.5
+            c1 = (p0[0] + math.cos(t0) * ctrl_dist, p0[1] + math.sin(t0) * ctrl_dist)
+            c2 = (p1[0] - math.cos(t1) * ctrl_dist, p1[1] - math.sin(t1) * ctrl_dist)
+
+            L = bezier_length(p0, c1, c2, p1)
+            num_steps = max(1, int(L / step_dist))
+            step_dist_actual = L / num_steps  # uniform spacing
+
+            for z in range(num_steps + 1):
+                # ------------------------------------------------------------------
+                # 1. Evaluate point along Bézier curve
+                # ------------------------------------------------------------------
+                t_norm = min(1.0, (z * step_dist_actual) / L)
+                P = bezier_eval(p0, c1, c2, p1, t_norm)
+
+                # Centerpoint on spline
+                center = (P["x"], P["y"])
+
+                # ------------------------------------------------------------------
+                # 2. Tangent and hatch angle computation
+                # ------------------------------------------------------------------
+                # Tangent direction of the spline at this point (radians)
+                tangent_angle = math.radians(P["tangent"])
+
+                # LH vs RH determines whether we add or subtract the slant
+                if slash_lines_dict.get("direction") == "LH":
+                    line_angle = tangent_angle + math.radians(angle_slant)
+                else:  # "RH"
+                    line_angle = tangent_angle - math.radians(angle_slant)
+
+                # ------------------------------------------------------------------
+                # 3. Compute hatch line geometry
+                # ------------------------------------------------------------------
+                # Shorter lines at steep slant; normalize by cos(slant)
+                line_length = stroke_width / math.sin(math.radians(angle_slant))
+
+                # Vector along hatch direction
+                dx = math.cos(line_angle) * (line_length / 2)
+                dy = math.sin(line_angle) * (line_length / 2)
+
+                # Line endpoints
+                x1 = center[0] - dx
+                y1 = center[1] - dy
+                x2 = center[0] + dx
+                y2 = center[1] + dy
+
+                # ------------------------------------------------------------------
+                # 4. Append SVG element
+                # ------------------------------------------------------------------
+                line_elements.append(
+                    f'<line x1="{x1:.2f}" y1="{-y1:.2f}" '
+                    f'x2="{x2:.2f}" y2="{-y2:.2f}" '
+                    f'stroke="{color_line}" stroke-width="{slash_width}" />'
+                )
+
+        local_group.extend(line_elements)
+
+    # ---------------------------------------------------------------------
+    # --- Main body rendering
+    # ---------------------------------------------------------------------
+    base_color = appearance_dict.get("base_color", "white")
+    outline_color = appearance_dict.get("outline_color")
+    path_d = spline_to_path(spline_points)
+
+    # outline path
+    stroke_width = stroke_width_inches * 96
+    if outline_color:
+        local_group.append(
+            f'<path d="{path_d}" stroke="{outline_color}" stroke-width="{stroke_width}" '
+            f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+        )
+        stroke_width = stroke_width - 0.5
+
+    # base path
+    local_group.append(
+        f'<path d="{path_d}" stroke="{base_color}" stroke-width="{stroke_width}" '
+        f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+    )
+
+    # ---------------------------------------------------------------------
+    # --- Add pattern overlays
+    # ---------------------------------------------------------------------
+    if appearance_dict.get("parallelstripe"):
+        stripes = appearance_dict["parallelstripe"]
+        num = len(stripes)
+        stripe_thickness = stroke_width / num
+        stripe_spacing = stroke_width / num
+        offset = -(num - 1) * stripe_spacing / 2
+        for color in stripes:
+            local_group.append(
+                f'<path d="{path_d}" stroke="{color}" '
+                f'stroke-width="{stripe_thickness}" fill="none" '
+                f'transform="translate(0,{offset:.2f})"/>'
+            )
+            offset += stripe_spacing
+
+    if appearance_dict.get("perpstripe"):
+        stripes = appearance_dict["perpstripe"]
+        num = len(stripes)
+        pattern_length = 30
+        dash = pattern_length / (num + 1)
+        gap = pattern_length - dash
+        offset = 0
+        for color in stripes:
+            offset += dash
+            local_group.append(
+                f'<path d="{path_d}" stroke="{color}" stroke-width="{stroke_width}" '
+                f'stroke-dasharray="{dash},{gap}" stroke-dashoffset="{offset}" '
+                f'fill="none" />'
+            )
+
+    # --- Slash lines ---
+    if appearance_dict.get("slash_lines") is not None:
+        slash_lines_dict = appearance_dict.get("slash_lines")
+        draw_slash_lines(spline_points, slash_lines_dict)
