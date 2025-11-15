@@ -2,6 +2,7 @@ import os
 import re
 import math
 
+
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     if os.path.exists(filepath):
         try:
@@ -92,9 +93,6 @@ def find_and_replace_svg_group(
     return 1
 
 
-
-import math
-
 def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
     """
     Draws a spline path with appearance styling.
@@ -114,7 +112,9 @@ def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
         path = f"M {points[0]['x']:.3f},{-points[0]['y']:.3f}"
         for i in range(len(points) - 1):
             p0, p1 = points[i], points[i + 1]
-            t0, t1 = math.radians(p0.get("tangent", 0)), math.radians(p1.get("tangent", 0))
+            t0, t1 = math.radians(p0.get("tangent", 0)), math.radians(
+                p1.get("tangent", 0)
+            )
             d = math.hypot(p1["x"] - p0["x"], p1["y"] - p0["y"])
             ctrl_dist = d * 0.5
             c1x = p0["x"] + math.cos(t0) * ctrl_dist
@@ -134,10 +134,28 @@ def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
 
         def bezier_eval(p0, c1, c2, p1, t):
             mt = 1 - t
-            x = (mt**3)*p0[0] + 3*(mt**2)*t*c1[0] + 3*mt*(t**2)*c2[0] + (t**3)*p1[0]
-            y = (mt**3)*p0[1] + 3*(mt**2)*t*c1[1] + 3*mt*(t**2)*c2[1] + (t**3)*p1[1]
-            dx = 3*(mt**2)*(c1[0]-p0[0]) + 6*mt*t*(c2[0]-c1[0]) + 3*(t**2)*(p1[0]-c2[0])
-            dy = 3*(mt**2)*(c1[1]-p0[1]) + 6*mt*t*(c2[1]-c1[1]) + 3*(t**2)*(p1[1]-c2[1])
+            x = (
+                (mt**3) * p0[0]
+                + 3 * (mt**2) * t * c1[0]
+                + 3 * mt * (t**2) * c2[0]
+                + (t**3) * p1[0]
+            )
+            y = (
+                (mt**3) * p0[1]
+                + 3 * (mt**2) * t * c1[1]
+                + 3 * mt * (t**2) * c2[1]
+                + (t**3) * p1[1]
+            )
+            dx = (
+                3 * (mt**2) * (c1[0] - p0[0])
+                + 6 * mt * t * (c2[0] - c1[0])
+                + 3 * (t**2) * (p1[0] - c2[0])
+            )
+            dy = (
+                3 * (mt**2) * (c1[1] - p0[1])
+                + 6 * mt * t * (c2[1] - c1[1])
+                + 3 * (t**2) * (p1[1] - c2[1])
+            )
             return {"x": x, "y": y, "tangent": math.degrees(math.atan2(dy, dx))}
 
         def bezier_length(p0, c1, c2, p1, samples=80):

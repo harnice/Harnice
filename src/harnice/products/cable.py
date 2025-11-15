@@ -26,28 +26,17 @@ def render():
                 "color": "gray",
                 "material": "pvc",
                 "od": "0.204in",
-                "thickness": "0.028in"
+                "thickness": "0.028in",
             },
             "shield": {
-                "properties": {
-                    "type": "foil",
-                    "coverage": "100%"
-                },
+                "properties": {"type": "foil", "coverage": "100%"},
                 "drain_wire": {
                     "conductor": True,
-                    "properties": {
-                        "gauge": "20AWG",
-                        "construction": "7x28"
-                    },
-                    "appearance": {
-                        "base_color": "white",
-                        "twisted": "RH"
-                    }
+                    "properties": {"gauge": "20AWG", "construction": "7x28"},
+                    "appearance": {"base_color": "white", "twisted": "RH"},
                 },
                 "pair_1": {
-                    "properties": {
-                        "twists": "12 per inch"
-                    },
+                    "properties": {"twists": "12 per inch"},
                     "black": {
                         "conductor": True,
                         "properties": {
@@ -55,11 +44,9 @@ def render():
                             "od": "0.017in",
                             "gauge": "20AWG",
                             "construction": "7x28",
-                            "material": "copper"
+                            "material": "copper",
                         },
-                        "appearance": {
-                            "base_color": "black"
-                        }
+                        "appearance": {"base_color": "black"},
                     },
                     "white": {
                         "conductor": True,
@@ -68,15 +55,12 @@ def render():
                             "od": "0.017in",
                             "gauge": "20AWG",
                             "construction": "7x28",
-                            "material": "copper"
+                            "material": "copper",
                         },
-                        "appearance": {
-                            "base_color": "white",
-                            "outline_color": "black"
-                        }
-                    }
-                }
-            }
+                        "appearance": {"base_color": "white", "outline_color": "black"},
+                    },
+                },
+            },
         }
     }
 
@@ -124,8 +108,9 @@ def render():
 
                 # Convert appearance to JSON string (compact)
                 row["appearance"] = (
-                    json.dumps(appearance, separators=(",", ":"), ensure_ascii=False)
-                    .replace('"', "'")
+                    json.dumps(
+                        appearance, separators=(",", ":"), ensure_ascii=False
+                    ).replace('"', "'")
                     if appearance
                     else ""
                 )
@@ -153,8 +138,12 @@ def render():
     # Write to TSV
     conductor_list_path = fileio.path("conductor list")
     with open(conductor_list_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=headers, delimiter="\t", lineterminator="\n")
+        writer = csv.DictWriter(
+            f, fieldnames=headers, delimiter="\t", lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"\ncable rendered successfully! wrote {len(rows)} rows to:\n{conductor_list_path}\n")
+    print(
+        f"\ncable rendered successfully! wrote {len(rows)} rows to:\n{conductor_list_path}\n"
+    )

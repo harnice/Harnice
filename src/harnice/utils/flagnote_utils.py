@@ -1,6 +1,7 @@
 from harnice import fileio
 from harnice.lists import instances_list
 
+
 def compile_build_notes():
     # add build_note itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
     for instance in fileio.read_tsv("instances list"):

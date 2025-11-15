@@ -451,18 +451,25 @@ def map_instance_to_segments(instance):
         )
 
     # Ensure each endpoint is actually location_type==node
-    if instances_list.attribute_of(instance.get("node_at_end_a"), "location_type") != "node":
+    if (
+        instances_list.attribute_of(instance.get("node_at_end_a"), "location_type")
+        != "node"
+    ):
         raise ValueError(
             f"While mapping '{instance.get("instance_name")}' to segments, location type of {instance.get('node_at_end_a')} is not a node."
         )
-    if instances_list.attribute_of(instance.get("node_at_end_b"), "location_type") != "node":
+    if (
+        instances_list.attribute_of(instance.get("node_at_end_b"), "location_type")
+        != "node"
+    ):
         raise ValueError(
             f"While mapping '{instance.get("instance_name")}' to segments, location type of {instance.get('node_at_end_b')} is not a node."
         )
 
     # Resolve the node (item_type=="node") for each end's connector group
     start_node_obj = instances_list.instance_in_connector_group_with_item_type(
-        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"), "node"
+        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"),
+        "node",
     )
     try:
         if start_node_obj == 0:
@@ -477,7 +484,8 @@ def map_instance_to_segments(instance):
         pass
 
     end_node_obj = instances_list.instance_in_connector_group_with_item_type(
-        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"), "node"
+        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
+        "node",
     )
     try:
         if end_node_obj == 0:
@@ -499,8 +507,8 @@ def map_instance_to_segments(instance):
     ]
 
     graph = {}
-    segment_lookup = {}         # frozenset({A, B}) -> seg_name
-    seg_endpoints = {}          # seg_name -> (A, B) with stored orientation
+    segment_lookup = {}  # frozenset({A, B}) -> seg_name
+    seg_endpoints = {}  # seg_name -> (A, B) with stored orientation
 
     for seg in segments:
         a = seg.get("node_at_end_a")
@@ -515,7 +523,8 @@ def map_instance_to_segments(instance):
 
     # Re-fetch start/end nodes as instance_names
     start_node_obj = instances_list.instance_in_connector_group_with_item_type(
-        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"), "node"
+        instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group"),
+        "node",
     )
     if start_node_obj == 0:
         raise ValueError(
@@ -523,7 +532,8 @@ def map_instance_to_segments(instance):
         )
 
     end_node_obj = instances_list.instance_in_connector_group_with_item_type(
-        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"), "node"
+        instances_list.attribute_of(instance.get("node_at_end_b"), "connector_group"),
+        "node",
     )
     if end_node_obj == 0:
         raise ValueError(

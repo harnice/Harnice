@@ -149,7 +149,9 @@ def assign_cable_conductor(
                     f"to '{instance.get('cable_identifier')}' of cable '{instance.get('cable_group')}'"
                 )
 
-    cable_destination_directory = os.path.join(fileio.dirpath(None), "instance_data", "cable", cable_instance_name)
+    cable_destination_directory = os.path.join(
+        fileio.dirpath(None), "instance_data", "cable", cable_instance_name
+    )
 
     instances_list.new_instance(
         cable_instance_name,
@@ -174,9 +176,10 @@ def assign_cable_conductor(
         destination_directory=cable_destination_directory,
     )
 
-    cable_attributes_path = os.path.join(cable_destination_directory, f"{cable_instance_name}-conductor_list.tsv")
+    cable_attributes_path = os.path.join(
+        cable_destination_directory, f"{cable_instance_name}-conductor_list.tsv"
+    )
     cable_attributes = fileio.read_tsv(cable_attributes_path)
-
 
     # --- assign conductor
     for instance in instances:
@@ -201,4 +204,3 @@ def assign_cable_conductor(
                 },
             )
             break
-

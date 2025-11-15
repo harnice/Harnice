@@ -19,6 +19,7 @@ format: design your macros to be able to parse this, define your cables to confo
     
 """
 
+
 def parse(val):
     """
     Convert stored string like:
@@ -38,7 +39,13 @@ def parse(val):
     data = val if isinstance(val, dict) else ast.literal_eval(str(val))
     result = {}
 
-    for key in ("base_color", "parallelstripe", "perpstripe", "outline_color", "twisted"):
+    for key in (
+        "base_color",
+        "parallelstripe",
+        "perpstripe",
+        "outline_color",
+        "twisted",
+    ):
         if key not in data:
             # lists for stripe keys, None for single-value keys
             if key in ("parallelstripe", "perpstripe"):
@@ -58,7 +65,9 @@ def parse(val):
             elif str(value).upper() in ("RH", "LH"):
                 result[key] = str(value).upper()
             else:
-                raise ValueError(f"Invalid twisted value: '{value}'. Expected 'RH', 'LH', or None.")
+                raise ValueError(
+                    f"Invalid twisted value: '{value}'. Expected 'RH', 'LH', or None."
+                )
             continue
 
         # --- handle color lists ---

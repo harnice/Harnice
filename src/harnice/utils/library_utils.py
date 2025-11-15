@@ -34,7 +34,7 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
         )
 
     # determine destination directory
-    if destination_directory is None: 
+    if destination_directory is None:
         destination_directory = os.path.join(
             fileio.dirpath(None),
             "instance_data",
@@ -184,10 +184,12 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
 
     print_import_status(
         input_dict.get("instance_name"),
-        input_dict.get('item_type'),
-        update_contents.get('lib_status'),
+        input_dict.get("item_type"),
+        update_contents.get("lib_status"),
         import_state,
-        os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(destination_directory))))
+        os.path.basename(
+            os.path.dirname(os.path.dirname(os.path.dirname(destination_directory)))
+        ),
     )
     return destination_directory
 
