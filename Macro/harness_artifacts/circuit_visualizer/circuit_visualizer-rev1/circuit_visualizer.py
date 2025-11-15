@@ -5,21 +5,35 @@ from harnice.utils import circuit_utils, appearance, svg_utils
 
 artifact_mpn = "circuit_visualizer"
 
+
 # =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
         f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg",
     }
 
+
 if base_directory is None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+
 def path(target_value):
-    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.path(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
 
 def dirpath(target_value):
     # target_value = None will return the root of this macro
-    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.dirpath(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
+
 # ==========================================================================================================
 
 
@@ -63,7 +77,9 @@ def plot_node(node_instance, x, y, box_width, local_group):
     """Draw a rectangular node box of fixed width centered vertically in its row."""
     # Text lines
     line1 = node_instance.get("item_type", "")
-    line2 = instances_list.attribute_of(node_instance.get("parent_instance"), "print_name")
+    line2 = instances_list.attribute_of(
+        node_instance.get("parent_instance"), "print_name"
+    )
     line3 = node_instance.get("print_name", "")
     lines = [line1, line2, line3]
 
@@ -100,13 +116,17 @@ def plot_segment(segment_instance, x, y, length, local_group):
     y_for_path = -y
 
     spline_points = [
-        {"x": x,           "y": y_for_path, "tangent": 0},
-        {"x": x + length,  "y": y_for_path, "tangent": 0},
+        {"x": x, "y": y_for_path, "tangent": 0},
+        {"x": x + length, "y": y_for_path, "tangent": 0},
     ]
-    svg_utils.draw_styled_path(spline_points, stroke_width, appearance_dict, local_group)
+    svg_utils.draw_styled_path(
+        spline_points, stroke_width, appearance_dict, local_group
+    )
 
     # Labels (normal SVG Y, don't negate)
-    line1 = instances_list.attribute_of(segment_instance.get("instance_name"), "parent_instance")
+    line1 = instances_list.attribute_of(
+        segment_instance.get("instance_name"), "parent_instance"
+    )
     line2 = segment_instance.get("print_name")
     label_x = x + (length / 2)
     label_y_center = y
@@ -201,10 +221,10 @@ for instance in fileio.read_tsv("instances list"):
     group_x = COL1_WIDTH
     group_y = y_row_top
 
-    table_group = []   # cell outlines
-    segment_group = [] # segments (behind nodes)
-    node_group = []    # boxes (on top of segments)
-    text_group = []    # text labels (topmost)
+    table_group = []  # cell outlines
+    segment_group = []  # segments (behind nodes)
+    node_group = []  # boxes (on top of segments)
+    text_group = []  # text labels (topmost)
 
     # Table cells
     table_group.append(
@@ -240,7 +260,9 @@ for instance in fileio.read_tsv("instances list"):
             )
             # Text
             line1 = port.get("item_type", "")
-            line2 = instances_list.attribute_of(port.get("parent_instance"), "print_name")
+            line2 = instances_list.attribute_of(
+                port.get("parent_instance"), "print_name"
+            )
             line3 = port.get("print_name", "")
             lines = [line1, line2, line3]
             text_x = x + (box_width / 2)

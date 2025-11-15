@@ -9,16 +9,29 @@ def macro_file_structure():
         f"{state.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
         f"{state.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
     }
-    
-if base_directory == None:  #path between cwd and the file structure for this macro
+
+
+if base_directory == None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+
 def path(target_value):
-    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.path(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
 
 def dirpath(target_value):
     # target_value = None will return the root of this macro
-    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.dirpath(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
+
 # ==========================================================================================================
 
 
@@ -33,16 +46,14 @@ BOM_COLUMNS = [
     "total_length_plus_margin",
 ]
 
-with open(
-    path("bom tsv"), "w", newline="", encoding="utf-8") as f:
+with open(path("bom tsv"), "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
     writer.writeheader()
     writer.writerows([])
 
 
 def add_line_to_bom(line_data):
-    with open(
-        path("bom tsv"), "a", newline="", encoding="utf-8") as f:
+    with open(path("bom tsv"), "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
         writer.writerow({key: line_data.get(key, "") for key in BOM_COLUMNS})
 

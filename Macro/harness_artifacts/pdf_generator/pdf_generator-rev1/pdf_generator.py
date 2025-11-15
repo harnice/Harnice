@@ -12,6 +12,7 @@ from harnice.lists import rev_history
 
 artifact_mpn = "pdf_generator"
 
+
 # =============== PATHS ===================================================================================
 def macro_file_structure(page_name=None, page_counter=None):
     return {
@@ -20,18 +21,30 @@ def macro_file_structure(page_name=None, page_counter=None):
         f"{state.partnumber('pn-rev')}-{artifact_id}.pdf": "output pdf",
         "page_svgs": {
             f"{page_counter}-{page_name}-user-editable.svg": "user editable page svg"
-        }
+        },
     }
 
-if base_directory is None:  #path between cwd and the file structure for this macro
+
+if base_directory is None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+
 def path(target_value, page_name=None, page_counter=None):
-    return fileio.path(target_value, structure_dict=macro_file_structure(page_name, page_counter), base_directory=base_directory)
+    return fileio.path(
+        target_value,
+        structure_dict=macro_file_structure(page_name, page_counter),
+        base_directory=base_directory,
+    )
+
 
 def dirpath(target_value, page_name=None, page_counter=None):
     # target_value = None will return the root of this macro
-    return fileio.dirpath(target_value, structure_dict=macro_file_structure(page_name, page_counter), base_directory=base_directory)
+    return fileio.dirpath(
+        target_value,
+        structure_dict=macro_file_structure(page_name, page_counter),
+        base_directory=base_directory,
+    )
+
 
 os.makedirs(
     dirpath("page_svgs"),
@@ -138,7 +151,10 @@ masters = []
 
 # Discover all master SVGs in a folder of the entire project (output of the other macros)
 part_prefix = state.partnumber("pn-rev")
-directory_to_search = os.path.join(fileio.dirpath(None), "instance_data", )
+directory_to_search = os.path.join(
+    fileio.dirpath(None),
+    "instance_data",
+)
 
 for root, _, files in os.walk(directory_to_search):
     for filename in files:
@@ -202,13 +218,19 @@ for page in page_data.get("pages", []):
     # to import into the project root:
     #     titleblock_location = os.path.join(fileio.dirpath(None), "instance_data", "titleblock", f"{artifact_id}-{page_name}")
     # to import into this macro:
-    lib_imported_dirpath = os.path.join(dirpath(None), "instance_data", "titleblock", f"{artifact_id}-{page_name}")
-    
+    lib_imported_dirpath = os.path.join(
+        dirpath(None), "instance_data", "titleblock", f"{artifact_id}-{page_name}"
+    )
+
     # if you're manually editing the titleblock before it gets imported, remove this line, though replacements won't work
     fileio.silentremove(lib_imported_dirpath)
 
-    lib_imported_drawing_filepath = os.path.join(lib_imported_dirpath, f"{artifact_id}-{page_name}-drawing.svg")
-    lib_imported_attributes_filepath = os.path.join(lib_imported_dirpath, f"{artifact_id}-{page_name}-attributes.json")
+    lib_imported_drawing_filepath = os.path.join(
+        lib_imported_dirpath, f"{artifact_id}-{page_name}-drawing.svg"
+    )
+    lib_imported_attributes_filepath = os.path.join(
+        lib_imported_dirpath, f"{artifact_id}-{page_name}-attributes.json"
+    )
 
     # === Pull from library ===
     library_utils.pull(
@@ -219,12 +241,16 @@ for page in page_data.get("pages", []):
             "item_type": "titleblock",
         },
         update_instances_list=False,
-        destination_directory=lib_imported_dirpath
+        destination_directory=lib_imported_dirpath,
     )
 
     # === Perform text replacements in imported titleblock ===
     text_map = page.get("text_replacements", {})
-    with open(lib_imported_drawing_filepath, "r", encoding="utf-8",) as f:
+    with open(
+        lib_imported_drawing_filepath,
+        "r",
+        encoding="utf-8",
+    ) as f:
         svg = f.read()
 
     for old, new in text_map.items():
@@ -262,8 +288,16 @@ for page in page_data.get("pages", []):
     page_size_in = tblock_attributes.get("page_size_in")
     page_size_px = [int(page_size_in[0] * 96), int(page_size_in[1] * 96)]
 
-    if not os.path.exists(path("user editable page svg", page_name=page_name, page_counter=page_counter)):
-        with open(path("user editable page svg", page_name=page_name, page_counter=page_counter), "w", encoding="utf-8") as f:
+    if not os.path.exists(
+        path("user editable page svg", page_name=page_name, page_counter=page_counter)
+    ):
+        with open(
+            path(
+                "user editable page svg", page_name=page_name, page_counter=page_counter
+            ),
+            "w",
+            encoding="utf-8",
+        ) as f:
             f.write(
                 # <?xml version="1.0" encoding="UTF-8" standalone="no"?>
                 f"""
@@ -307,7 +341,9 @@ inkscape_bin = "/Applications/Inkscape.app/Contents/MacOS/inkscape"  # adjust if
 page_counter = 0
 for page_name in [p.get("name") for p in page_data.get("pages", [])]:
     page_counter += 1
-    svg_path = path("user editable page svg", page_name=page_name, page_counter=page_counter)
+    svg_path = path(
+        "user editable page svg", page_name=page_name, page_counter=page_counter
+    )
     pdf_path = svg_path.replace(".svg", ".temp.pdf")
 
     subprocess.run(
@@ -324,9 +360,7 @@ for page_name in [p.get("name") for p in page_data.get("pages", [])]:
 
 # Merge all PDFs
 subprocess.run(
-    ["pdfunite"]
-    + temp_pdfs
-    + [path("output pdf")],
+    ["pdfunite"] + temp_pdfs + [path("output pdf")],
     check=True,
 )
 

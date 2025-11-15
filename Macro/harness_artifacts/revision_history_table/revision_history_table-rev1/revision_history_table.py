@@ -8,29 +8,37 @@ artifact_mpn = "revision_history_table"
 
 
 # =============== PATHS ===================================================================================
-def macro_file_structure(rev_id = None):
+def macro_file_structure(rev_id=None):
     return {
         "table_bubbles": {
-            f"bubble{rev_id}": {
-                f"bubble{rev_id}-drawing.svg": "bubble drawing svg"
-            }
+            f"bubble{rev_id}": {f"bubble{rev_id}-drawing.svg": "bubble drawing svg"}
         },
         "revision-history-table-master.svg": "revision history table svg",
     }
 
-if base_directory is None:  #path between cwd and the file structure for this macro
+
+if base_directory is None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+
 def path(target_value, rev_id=None):
-    return fileio.path(target_value, structure_dict=macro_file_structure(rev_id), base_directory=base_directory)
+    return fileio.path(
+        target_value,
+        structure_dict=macro_file_structure(rev_id),
+        base_directory=base_directory,
+    )
+
 
 def dirpath(target_value, rev_id=None):
     # target_value = None will return the root of this macro
-    return fileio.dirpath(target_value, structure_dict=macro_file_structure(rev_id), base_directory=base_directory)
+    return fileio.dirpath(
+        target_value,
+        structure_dict=macro_file_structure(rev_id),
+        base_directory=base_directory,
+    )
 
-fileio.silentremove(
-    dirpath("table_bubbles")
-)
+
+fileio.silentremove(dirpath("table_bubbles"))
 
 os.makedirs(
     dirpath("table_bubbles"),
@@ -153,7 +161,7 @@ for row_index, row in enumerate(data_rows):
                 "lib_repo": "https://github.com/harnice/harnice-library-public",
                 "item_type": "flagnote",
                 "mpn": "rev_change_callout",  # Assumed the bubble shape for all rows
-                "instance_name": bubble_name
+                "instance_name": bubble_name,
             },
             destination_directory=dirpath(bubble_name, rev_id=rev),
             update_instances_list=False,

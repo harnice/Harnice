@@ -12,15 +12,28 @@ def macro_file_structure():
         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "segment visualizer svg",
     }
 
+
 if base_directory is None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+
 def path(target_value):
-    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.path(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
 
 def dirpath(target_value):
     # target_value = None will return the root of this macro
-    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.dirpath(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
+
 # ==========================================================================================================
 
 # =============== GLOBAL SETTINGS ===============
@@ -33,9 +46,13 @@ try:
 except:
     stroke_color = "black"
 
+
 # =============== FUNCTIONS ===============
 def label_svg(
-    x, y, angle, text,
+    x,
+    y,
+    angle,
+    text,
     text_color="black",
     background_color="white",
     outline="black",
@@ -99,12 +116,12 @@ def average_coords(data):
             "x": v["x"] / v["count"],
             "y": v["y"] / v["count"],
         }
-        averages[key]["angle"] = float(instances_list.attribute_of(
-            instances_list.attribute_of(key, "segment_group"), "absolute_rotation"
-        ))
-        averages[key]["text"] = instances_list.attribute_of(
-            key, "parent_instance"
+        averages[key]["angle"] = float(
+            instances_list.attribute_of(
+                instances_list.attribute_of(key, "segment_group"), "absolute_rotation"
+            )
         )
+        averages[key]["text"] = instances_list.attribute_of(key, "parent_instance")
     return averages
 
 
@@ -125,7 +142,9 @@ except NameError:
 origin = [0, 0, rotation]
 
 if item_type is None:
-    raise ValueError("item_type is required: which item types are you trying to visualize?")
+    raise ValueError(
+        "item_type is required: which item types are you trying to visualize?"
+    )
 if scale is None:
     raise ValueError("scale is required")
 
@@ -133,7 +152,9 @@ points_to_pass_through = {}
 
 # sort item_type instances alphabetically inside each segment
 sorted_segment_contents = {
-    seg.get("instance_name"): [] for seg in instances if seg.get("item_type") == "segment"
+    seg.get("instance_name"): []
+    for seg in instances
+    if seg.get("item_type") == "segment"
 }
 for inst in instances:
     if inst.get("item_type") == item_type:
@@ -146,7 +167,9 @@ for seg_name in sorted_segment_contents:
 # collect points to pass through
 for node in instances:
     if node.get("item_type") == "node":
-        x_px, y_px, seg_angle = formboard_utils.calculate_location(node.get("instance_name"), origin)
+        x_px, y_px, seg_angle = formboard_utils.calculate_location(
+            node.get("instance_name"), origin
+        )
         x_node, y_node = x_px * 96, y_px * 96
 
         node_segment_angles = []
@@ -173,12 +196,19 @@ for node in instances:
                 segment_candidate = instance.get("segment_group")
                 if instance.get("parent_instance") in components_seen:
                     continue
-                if instances_list.attribute_of(segment_candidate, "node_at_end_a") == node.get("instance_name") or \
-                   instances_list.attribute_of(segment_candidate, "node_at_end_b") == node.get("instance_name"):
+                if instances_list.attribute_of(
+                    segment_candidate, "node_at_end_a"
+                ) == node.get("instance_name") or instances_list.attribute_of(
+                    segment_candidate, "node_at_end_b"
+                ) == node.get(
+                    "instance_name"
+                ):
                     components_seen.append(instance.get("parent_instance"))
                     components_in_node += 1
 
-        node_radius_inches = 1 + math.pow(components_in_node, 1.5) * segment_spacing_inches_scaled / 4
+        node_radius_inches = (
+            1 + math.pow(components_in_node, 1.5) * segment_spacing_inches_scaled / 4
+        )
         node_radius_px = node_radius_inches * 96
         if print_circles_and_dots:
             svg_groups.append(circle_svg(x_node, y_node, node_radius_px, "gray"))
@@ -193,24 +223,40 @@ for node in instances:
             num_seg_components = len(component_names_sorted)
 
             for idx, inst_name in enumerate(component_names_sorted, start=1):
-                component = next(i for i in instances if i.get("instance_name") == inst_name)
-                center_offset_from_count_inches = (idx - (num_seg_components / 2) - 0.5) * segment_spacing_inches_scaled
+                component = next(
+                    i for i in instances if i.get("instance_name") == inst_name
+                )
+                center_offset_from_count_inches = (
+                    idx - (num_seg_components / 2) - 0.5
+                ) * segment_spacing_inches_scaled
 
                 try:
                     delta_angle_from_count = math.degrees(
                         math.asin(center_offset_from_count_inches / node_radius_inches)
                     )
                 except ValueError:
-                    raise ValueError("Node radius too small to fit all segments. Try decreasing spacing.")
+                    raise ValueError(
+                        "Node radius too small to fit all segments. Try decreasing spacing."
+                    )
 
-                x_circleintersect = x_node + node_radius_px * math.cos(math.radians(seg_angle + delta_angle_from_count))
-                y_circleintersect = y_node + node_radius_px * math.sin(math.radians(seg_angle + delta_angle_from_count))
+                x_circleintersect = x_node + node_radius_px * math.cos(
+                    math.radians(seg_angle + delta_angle_from_count)
+                )
+                y_circleintersect = y_node + node_radius_px * math.sin(
+                    math.radians(seg_angle + delta_angle_from_count)
+                )
 
                 if print_circles_and_dots:
-                    svg_groups.append(circle_svg(x_circleintersect, y_circleintersect, 0.1 * 96, "red"))
+                    svg_groups.append(
+                        circle_svg(
+                            x_circleintersect, y_circleintersect, 0.1 * 96, "red"
+                        )
+                    )
 
                 node_name = node.get("instance_name")
-                points_to_pass_through.setdefault(node_name, {}).setdefault(seg_name, {})[inst_name] = {
+                points_to_pass_through.setdefault(node_name, {}).setdefault(
+                    seg_name, {}
+                )[inst_name] = {
                     "x": x_circleintersect,
                     "y": y_circleintersect,
                 }
@@ -243,38 +289,63 @@ for instance1 in instances:
 
             seg_group = instance2.get("segment_group")
             if instance2.get("segment_order") == ab_lookup_key:
-                tangent = float(instances_list.attribute_of(seg_group, "absolute_rotation"))
-                point_chain.extend([
-                    {
-                        "x": points_to_pass_through[instances_list.attribute_of(seg_group, "node_at_end_a")][seg_group][instance2.get("instance_name")]["x"],
-                        "y": points_to_pass_through[instances_list.attribute_of(seg_group, "node_at_end_a")][seg_group][instance2.get("instance_name")]["y"],
-                        "tangent": tangent,
-                    },
-                    {
-                        "x": points_to_pass_through[instances_list.attribute_of(seg_group, "node_at_end_b")][seg_group][instance2.get("instance_name")]["x"],
-                        "y": points_to_pass_through[instances_list.attribute_of(seg_group, "node_at_end_b")][seg_group][instance2.get("instance_name")]["y"],
-                        "tangent": tangent,
-                    },
-                ])
+                tangent = float(
+                    instances_list.attribute_of(seg_group, "absolute_rotation")
+                )
+                point_chain.extend(
+                    [
+                        {
+                            "x": points_to_pass_through[
+                                instances_list.attribute_of(seg_group, "node_at_end_a")
+                            ][seg_group][instance2.get("instance_name")]["x"],
+                            "y": points_to_pass_through[
+                                instances_list.attribute_of(seg_group, "node_at_end_a")
+                            ][seg_group][instance2.get("instance_name")]["y"],
+                            "tangent": tangent,
+                        },
+                        {
+                            "x": points_to_pass_through[
+                                instances_list.attribute_of(seg_group, "node_at_end_b")
+                            ][seg_group][instance2.get("instance_name")]["x"],
+                            "y": points_to_pass_through[
+                                instances_list.attribute_of(seg_group, "node_at_end_b")
+                            ][seg_group][instance2.get("instance_name")]["y"],
+                            "tangent": tangent,
+                        },
+                    ]
+                )
                 found_this_step = True
                 break
 
             elif instance2.get("segment_order") == ba_lookup_key:
-                tangent = float(instances_list.attribute_of(seg_group, "absolute_rotation")) + 180
+                tangent = (
+                    float(instances_list.attribute_of(seg_group, "absolute_rotation"))
+                    + 180
+                )
                 if tangent > 360:
                     tangent -= 360
-                point_chain.extend([
-                    {
-                        "x": points_to_pass_through[instances_list.attribute_of(seg_group, "node_at_end_b")][seg_group][instance2.get("instance_name")]["x"],
-                        "y": points_to_pass_through[instances_list.attribute_of(seg_group, "node_at_end_b")][seg_group][instance2.get("instance_name")]["y"],
-                        "tangent": tangent,
-                    },
-                    {
-                        "x": points_to_pass_through[instances_list.attribute_of(seg_group, "node_at_end_a")][seg_group][instance2.get("instance_name")]["x"],
-                        "y": points_to_pass_through[instances_list.attribute_of(seg_group, "node_at_end_a")][seg_group][instance2.get("instance_name")]["y"],
-                        "tangent": tangent,
-                    },
-                ])
+                point_chain.extend(
+                    [
+                        {
+                            "x": points_to_pass_through[
+                                instances_list.attribute_of(seg_group, "node_at_end_b")
+                            ][seg_group][instance2.get("instance_name")]["x"],
+                            "y": points_to_pass_through[
+                                instances_list.attribute_of(seg_group, "node_at_end_b")
+                            ][seg_group][instance2.get("instance_name")]["y"],
+                            "tangent": tangent,
+                        },
+                        {
+                            "x": points_to_pass_through[
+                                instances_list.attribute_of(seg_group, "node_at_end_a")
+                            ][seg_group][instance2.get("instance_name")]["x"],
+                            "y": points_to_pass_through[
+                                instances_list.attribute_of(seg_group, "node_at_end_a")
+                            ][seg_group][instance2.get("instance_name")]["y"],
+                            "tangent": tangent,
+                        },
+                    ]
+                )
                 found_this_step = True
                 break
 
@@ -285,7 +356,11 @@ for instance1 in instances:
 
     # === refactored call: use draw_styled_path() ===
     appearance_raw = instances_list.attribute_of(parent_name, "appearance")
-    appearance_dict = appearance.parse(appearance_raw) if appearance_raw else {"base_color": stroke_color}
+    appearance_dict = (
+        appearance.parse(appearance_raw)
+        if appearance_raw
+        else {"base_color": stroke_color}
+    )
     svg_utils.draw_styled_path(cleaned_chain, 0.1 * 96, appearance_dict, svg_groups)
 
     for order in [0, -1]:
@@ -300,7 +375,7 @@ for instance1 in instances:
                 cleaned_chain[order].get("tangent"),
                 text,
                 text_color="white",
-                background_color="black"
+                background_color="black",
             )
         )
 
@@ -310,8 +385,13 @@ for key, value in average_coords(points_to_pass_through).items():
         svg_groups.append(circle_svg(value["x"], value["y"], 0.1 * 96, "green"))
     svg_groups.append(
         label_svg(
-            value["x"], value["y"], value["angle"], value["text"],
-            text_color="black", background_color="white", outline="black"
+            value["x"],
+            value["y"],
+            value["angle"],
+            value["text"],
+            text_color="black",
+            background_color="white",
+            outline="black",
         )
     )
 
