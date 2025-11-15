@@ -3,6 +3,7 @@ import re
 import math
 from harnice.utils import appearance
 
+
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     if os.path.exists(filepath):
         try:
@@ -106,7 +107,9 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
     """
 
     if not appearance_dict:
-        appearance_dict = appearance.parse("{'base_color':'red', 'perpstripe':['orange','yellow','green','blue','purple']}")
+        appearance_dict = appearance.parse(
+            "{'base_color':'red', 'perpstripe':['orange','yellow','green','blue','purple']}"
+        )
         stroke_width_inches = 0.01
     else:
         appearance_dict = appearance.parse(appearance_dict)
