@@ -101,14 +101,10 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
     """
 
     if not appearance_dict:
-        print(f"!!!!! no appearance dict provided {stroke_width_inches}")
-        appearance_dict = appearance.parse("{'base_color':'pink', 'perpstripe':['gray']}")
+        appearance_dict = appearance.parse("{'base_color':'red', 'perpstripe':['orange','yellow','green','blue','purple']}")
         stroke_width_inches = 0.01
     else:
-        print("!!!!! ")
         appearance_dict = appearance.parse(appearance_dict)
-
-    print(f"         appearance_dict: {appearance_dict}")
 
     # ---------------------------------------------------------------------
     # --- helper: spline_to_path
@@ -139,11 +135,11 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
             if slash_lines_dict.get("angle") is not None:
                 angle_slant = slash_lines_dict.get("angle")
             else:
-                angle_slant = 45
+                angle_slant = 20
             if slash_lines_dict.get("step") is not None:
                 step_dist = slash_lines_dict.get("step")
             else:
-                step_dist = stroke_width * 10.0
+                step_dist = stroke_width * 3
             if slash_lines_dict.get("color") is not None:
                 color_line = slash_lines_dict.get("color")
             else:
@@ -152,6 +148,10 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
                 color_line = slash_lines_dict.get("color")
             else:
                 color_line = "black"
+            if slash_lines_dict.get("slash_width_inches") is not None:
+                slash_width = slash_lines_dict.get("slash_width_inches") * 96
+            else:
+                slash_width = 0.25
 
         line_elements = []
 
@@ -251,8 +251,7 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
                 line_elements.append(
                     f'<line x1="{x1:.2f}" y1="{-y1:.2f}" '
                     f'x2="{x2:.2f}" y2="{-y2:.2f}" '
-                    f'stroke="{color_line}" stroke-width="0.5" '
-                    f'stroke-opacity="0.9" />'
+                    f'stroke="{color_line}" stroke-width="{slash_width}" />'
                 )
 
         local_group.extend(line_elements)
