@@ -227,57 +227,97 @@ def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
             local_group.extend(hatch_elements)
 
     # ---------------------------------------------------------------------
-    # --- helper: draw dots along the spline
+    # --- helper: draw cross-section bars with parametric t-offset
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
-    # --- helper: draw paired dots offset from the spline centerline
+    # --- helper: draw physical-step-based cross-sections along spline
     # ---------------------------------------------------------------------
-    def draw_sample_dots(points, color_center="red", color_side="blue", radius=0.6):
-        """Draw two dots offset from the tangent line (left/right of center)."""
+    def draw_sample_dots(points,
+                         twist=None,
+                         color_center="red", color_side="blue", color_line="limegreen",
+                         radius=0.6, step=stroke_width):
+        """
+        Place samples at physical intervals along the spline:
+            t = (z * step / L)
+        and draw a line between t(step, left offset) and t(step+1, right offset).
+        """
         dot_elements = []
         offset_dist = stroke_width / 2
 
+        # helper: evaluate cubic Bezier (x,y,tangent)
+        def bezier_eval(p0, c1, c2, p1, t):
+            mt = 1 - t
+            x = (mt**3)*p0[0] + 3*(mt**2)*t*c1[0] + 3*mt*(t**2)*c2[0] + (t**3)*p1[0]
+            y = (mt**3)*p0[1] + 3*(mt**2)*t*c1[1] + 3*mt*(t**2)*c2[1] + (t**3)*p1[1]
+            dx = 3*(mt**2)*(c1[0]-p0[0]) + 6*mt*t*(c2[0]-c1[0]) + 3*(t**2)*(p1[0]-c2[0])
+            dy = 3*(mt**2)*(c1[1]-p0[1]) + 6*mt*t*(c2[1]-c1[1]) + 3*(t**2)*(p1[1]-c2[1])
+            return {"x": x, "y": y, "tangent": math.degrees(math.atan2(dy, dx))}
+
+        def bezier_length(p0, c1, c2, p1, samples=80):
+            prev = bezier_eval(p0, c1, c2, p1, 0)
+            length = 0.0
+            for i in range(1, samples+1):
+                t = i / samples
+                pt = bezier_eval(p0, c1, c2, p1, t)
+                length += math.hypot(pt["x"] - prev["x"], pt["y"] - prev["y"])
+                prev = pt
+            return length
+
+        # -----------------------------------------------------------------
+        # iterate through each Bézier segment
         for i in range(len(points) - 1):
             p0 = (points[i]["x"], points[i]["y"])
             p1 = (points[i + 1]["x"], points[i + 1]["y"])
             t0 = math.radians(points[i].get("tangent", 0))
             t1 = math.radians(points[i + 1].get("tangent", 0))
-            d = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+            d = math.hypot(p1[0]-p0[0], p1[1]-p0[1])
             ctrl_dist = d * 0.5
-            c1 = (p0[0] + math.cos(t0) * ctrl_dist, p0[1] + math.sin(t0) * ctrl_dist)
-            c2 = (p1[0] - math.cos(t1) * ctrl_dist, p1[1] - math.sin(t1) * ctrl_dist)
+            c1 = (p0[0] + math.cos(t0)*ctrl_dist, p0[1] + math.sin(t0)*ctrl_dist)
+            c2 = (p1[0] - math.cos(t1)*ctrl_dist, p1[1] - math.sin(t1)*ctrl_dist)
 
-            # sample points at equal arc-length intervals
-            sampled = sample_bezier_equal_arc(p0, c1, c2, p1, step=stroke_width * 1.5)
+            L = bezier_length(p0, c1, c2, p1)
+            num_steps = max(1, int(L / step))
 
-            for pt in sampled:
-                # tangent + normal
-                theta = math.radians(pt["tangent"])
-                nx, ny = -math.sin(theta), math.cos(theta)
+            for z in range(num_steps):
+                t1_norm = (z * step) / L
+                t2_norm = ((z + 1) * step) / L
+                if t2_norm > 1:  # prevent overshoot at end
+                    t2_norm = 1.0
 
-                # left/right offset points
-                px_left  = pt["x"] + nx * offset_dist
-                py_left  = pt["y"] + ny * offset_dist
-                px_right = pt["x"] - nx * offset_dist
-                py_right = pt["y"] - ny * offset_dist
+                # evaluate at both t positions
+                P1 = bezier_eval(p0, c1, c2, p1, t1_norm)
+                P2 = bezier_eval(p0, c1, c2, p1, t2_norm)
 
-                # draw left and right dots
+                # compute normals
+                n1 = (-math.sin(math.radians(P1["tangent"])), math.cos(math.radians(P1["tangent"])))
+                n2 = (-math.sin(math.radians(P2["tangent"])), math.cos(math.radians(P2["tangent"])))
+
+                # offset endpoints
+                x1 = P1["x"] + n1[0]*offset_dist
+                y1 = P1["y"] + n1[1]*offset_dist
+                x2 = P2["x"] - n2[0]*offset_dist
+                y2 = P2["y"] - n2[1]*offset_dist
+
+                # draw line between them
                 dot_elements.append(
-                    f'<circle cx="{px_left:.2f}" cy="{-py_left:.2f}" '
-                    f'r="{radius:.2f}" fill="{color_side}" />'
+                    f'<line x1="{x1:.2f}" y1="{-y1:.2f}" '
+                    f'x2="{x2:.2f}" y2="{-y2:.2f}" '
+                    f'stroke="{color_line}" stroke-width="0.5" stroke-opacity="0.9" />'
+                )
+
+                # draw dots for visual anchors
+                dot_elements.append(
+                    f'<circle cx="{x1:.2f}" cy="{-y1:.2f}" r="{radius:.2f}" fill="{color_side}" />'
                 )
                 dot_elements.append(
-                    f'<circle cx="{px_right:.2f}" cy="{-py_right:.2f}" '
-                    f'r="{radius:.2f}" fill="{color_side}" />'
+                    f'<circle cx="{x2:.2f}" cy="{-y2:.2f}" r="{radius:.2f}" fill="{color_side}" />'
                 )
-
-                # optional center marker for debugging
                 dot_elements.append(
-                    f'<circle cx="{pt["x"]:.2f}" cy="{-pt["y"]:.2f}" '
-                    f'r="{radius * 0.6:.2f}" fill="{color_center}" />'
+                    f'<circle cx="{P1["x"]:.2f}" cy="{-P1["y"]:.2f}" r="{radius * 0.5:.2f}" fill="{color_center}" />'
                 )
 
         local_group.extend(dot_elements)
+
 
     # ---------------------------------------------------------------------
     # --- Main body rendering
