@@ -4,6 +4,7 @@ import datetime
 import shutil
 import re
 import csv
+import json
 import subprocess
 from harnice import state
 
@@ -67,6 +68,14 @@ def path(target_value, structure_dict=None, base_directory=None):
             os.path.dirname(os.path.dirname(harnice.__file__))
         )
         return os.path.join(harnice_root, "project_locations.csv")
+
+    if target_value == "drawnby":
+        import harnice
+
+        harnice_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(harnice.__file__))
+        )
+        return os.path.join(harnice_root, "drawnby.json")
 
     # FILES INSIDE OF A STRUCURE DEFINED BY FILEIO
     # look up from default structure state if not provided
@@ -271,3 +280,6 @@ def read_tsv(filepath, delimiter="\t"):
             raise FileNotFoundError(
                 f"Expected tsv file with delimiter '{delimiter}' at path or key {filepath}"
             )
+
+def drawnby():
+    return json.load(open(path("drawnby")))
