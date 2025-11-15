@@ -91,31 +91,88 @@ def find_and_replace_svg_group(
 
     return 1
 
+import math
+import uuid
+
+
 def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
     """
-    Draws a straight or curved (spline) path with full appearance styling.
-    spline_points: list of dicts [{x, y, tangent}], minimum 2 points
-    stroke_width: numeric width of the base line
-    appearance_dict: normalized dictionary (from appearance.parse)
-    local_group: list to append SVG line/curve elements to
+    Draws a spline path with appearance styling.
+    Uses parametric Bézier sampling for accurate hatch lines and dot markers.
     """
 
     if not appearance_dict:
         appearance_dict = {"base_color": "black"}
 
     # ---------------------------------------------------------------------
-    # --- helper: convert spline to SVG path
+    # --- helper: cubic Bézier parametric evaluation
+    # ---------------------------------------------------------------------
+    def bezier_coeffs(p0, c1, c2, p1):
+        """Return lambda x(t), y(t), dx/dt, dy/dt for cubic Bézier 0 ≤ t ≤ 1."""
+        def poly(a0, a1, a2, a3):
+            return (
+                lambda t: ((1 - t) ** 3) * a0
+                + 3 * ((1 - t) ** 2) * t * a1
+                + 3 * (1 - t) * (t ** 2) * a2
+                + (t ** 3) * a3
+            )
+
+        def dpoly(a0, a1, a2, a3):
+            return (
+                lambda t: 3 * ((1 - t) ** 2) * (a1 - a0)
+                + 6 * (1 - t) * t * (a2 - a1)
+                + 3 * (t ** 2) * (a3 - a2)
+            )
+
+        return (
+            poly(p0[0], c1[0], c2[0], p1[0]),
+            poly(p0[1], c1[1], c2[1], p1[1]),
+            dpoly(p0[0], c1[0], c2[0], p1[0]),
+            dpoly(p0[1], c1[1], c2[1], p1[1]),
+        )
+
+    # ---------------------------------------------------------------------
+    # --- helper: approximate arc length and sample equal-spacing points
+    # ---------------------------------------------------------------------
+    def sample_bezier_equal_arc(p0, c1, c2, p1, step=2.0):
+        """Return list of (x, y, tangent_deg) points sampled by equal arc length."""
+        x_t, y_t, dx_t, dy_t = bezier_coeffs(p0, c1, c2, p1)
+        n = 80
+        pts = [(x_t(i / n), y_t(i / n)) for i in range(n + 1)]
+        dists = [0.0]
+        for i in range(1, len(pts)):
+            seg = math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
+            dists.append(dists[-1] + seg)
+        total_len = dists[-1]
+        if total_len < 1e-6:
+            return [p0, p1]
+
+        n_steps = max(2, int(total_len // step))
+        targets = [i * total_len / n_steps for i in range(n_steps + 1)]
+
+        sampled = []
+        for tlen in targets:
+            for i in range(1, len(dists)):
+                if dists[i] >= tlen:
+                    frac = (tlen - dists[i - 1]) / (dists[i] - dists[i - 1])
+                    t = ((i - 1) + frac) / n
+                    x, y = x_t(t), y_t(t)
+                    dx, dy = dx_t(t), dy_t(t)
+                    tangent = math.degrees(math.atan2(dy, dx))
+                    sampled.append({"x": x, "y": y, "tangent": tangent})
+                    break
+        return sampled
+
+    # ---------------------------------------------------------------------
+    # --- helper: spline_to_path
     # ---------------------------------------------------------------------
     def spline_to_path(points):
-        """Return SVG 'd' attribute using cubic Beziers from point chain."""
         if len(points) < 2:
             return ""
         path = f"M {points[0]['x']:.3f},{-points[0]['y']:.3f}"
         for i in range(len(points) - 1):
-            p0 = points[i]
-            p1 = points[i + 1]
-            t0 = math.radians(p0.get("tangent", 0))
-            t1 = math.radians(p1.get("tangent", 0))
+            p0, p1 = points[i], points[i + 1]
+            t0, t1 = math.radians(p0.get("tangent", 0)), math.radians(p1.get("tangent", 0))
             d = math.hypot(p1["x"] - p0["x"], p1["y"] - p0["y"])
             ctrl_dist = d * 0.5
             c1x = p0["x"] + math.cos(t0) * ctrl_dist
@@ -126,94 +183,127 @@ def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
         return path
 
     # ---------------------------------------------------------------------
-    # --- helper: hatch lines
+    # --- helper: hatch lines using parametrization
     # ---------------------------------------------------------------------
-    def add_hatch_lines_along_path(points, hatch_angle, stroke_width, color="black"):
-        """Approximate by hatching between each adjacent point pair."""
+    def hatch_lines_parametric(points, hatch_angle, stroke_width, color="black", clip_id=None, path_d=None):
+        """Use parametric sampling for evenly spaced hatch lines."""
+        hatch_elements = []
         for i in range(len(points) - 1):
-            x1, y1 = points[i]["x"], points[i]["y"]
-            x2, y2 = points[i + 1]["x"], points[i + 1]["y"]
-            dx, dy = x2 - x1, y2 - y1
-            seg_len = math.hypot(dx, dy)
-            ux, uy = dx / seg_len, dy / seg_len
-            nx, ny = -uy, ux
+            p0 = (points[i]["x"], points[i]["y"])
+            p1 = (points[i + 1]["x"], points[i + 1]["y"])
+            t0 = math.radians(points[i].get("tangent", 0))
+            t1 = math.radians(points[i + 1].get("tangent", 0))
+            d = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+            ctrl_dist = d * 0.5
+            c1 = (p0[0] + math.cos(t0) * ctrl_dist, p0[1] + math.sin(t0) * ctrl_dist)
+            c2 = (p1[0] - math.cos(t1) * ctrl_dist, p1[1] - math.sin(t1) * ctrl_dist)
+
+            sampled = sample_bezier_equal_arc(p0, c1, c2, p1, step=stroke_width * 1.5)
 
             theta = math.radians(hatch_angle)
-            hx = nx * math.cos(theta) - ny * math.sin(theta)
-            hy = nx * math.sin(theta) + ny * math.cos(theta)
-
-            spacing = stroke_width * 1.5
-            hatch_length = stroke_width / abs(math.cos(theta))
-            num_hatches = int(seg_len // spacing) + 1
-            for j in range(num_hatches):
-                t = j * spacing
-                cx = x1 + ux * t
-                cy = y1 + uy * t
-                hx1 = cx - hx * (hatch_length / 2)
-                hy1 = cy - hy * (hatch_length / 2)
-                hx2 = cx + hx * (hatch_length / 2)
-                hy2 = cy + hy * (hatch_length / 2)
-                local_group.append(
+            for pt in sampled:
+                tdir = math.radians(pt["tangent"])
+                nx, ny = -math.sin(tdir), math.cos(tdir)
+                hx = nx * math.cos(theta) - ny * math.sin(theta)
+                hy = nx * math.sin(theta) + ny * math.cos(theta)
+                length = stroke_width / abs(math.cos(theta))
+                hx1, hy1 = pt["x"] - hx * length / 2, pt["y"] - hy * length / 2
+                hx2, hy2 = pt["x"] + hx * length / 2, pt["y"] + hy * length / 2
+                hatch_elements.append(
                     f'<line x1="{hx1:.2f}" y1="{-hy1:.2f}" '
                     f'x2="{hx2:.2f}" y2="{-hy2:.2f}" '
-                    f'stroke="{color}" stroke-width="0.2" />'
+                    f'stroke="{color}" stroke-width="0.35" stroke-opacity="0.9"/>'
                 )
 
+        if clip_id and path_d:
+            local_group.append(
+                f'<clipPath id="{clip_id}">'
+                f'<path d="{path_d}" stroke="black" stroke-width="{stroke_width}" '
+                f'stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
+                f'</clipPath>'
+            )
+            local_group.append(f'<g clip-path="url(#{clip_id})">' + "\n".join(hatch_elements) + "</g>")
+        else:
+            local_group.extend(hatch_elements)
+
     # ---------------------------------------------------------------------
-    # --- Draw main body
+    # --- helper: draw dots along the spline
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+    # --- helper: draw paired dots offset from the spline centerline
+    # ---------------------------------------------------------------------
+    def draw_sample_dots(points, color_center="red", color_side="blue", radius=0.6):
+        """Draw two dots offset from the tangent line (left/right of center)."""
+        dot_elements = []
+        offset_dist = stroke_width / 2
+
+        for i in range(len(points) - 1):
+            p0 = (points[i]["x"], points[i]["y"])
+            p1 = (points[i + 1]["x"], points[i + 1]["y"])
+            t0 = math.radians(points[i].get("tangent", 0))
+            t1 = math.radians(points[i + 1].get("tangent", 0))
+            d = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+            ctrl_dist = d * 0.5
+            c1 = (p0[0] + math.cos(t0) * ctrl_dist, p0[1] + math.sin(t0) * ctrl_dist)
+            c2 = (p1[0] - math.cos(t1) * ctrl_dist, p1[1] - math.sin(t1) * ctrl_dist)
+
+            # sample points at equal arc-length intervals
+            sampled = sample_bezier_equal_arc(p0, c1, c2, p1, step=stroke_width * 1.5)
+
+            for pt in sampled:
+                # tangent + normal
+                theta = math.radians(pt["tangent"])
+                nx, ny = -math.sin(theta), math.cos(theta)
+
+                # left/right offset points
+                px_left  = pt["x"] + nx * offset_dist
+                py_left  = pt["y"] + ny * offset_dist
+                px_right = pt["x"] - nx * offset_dist
+                py_right = pt["y"] - ny * offset_dist
+
+                # draw left and right dots
+                dot_elements.append(
+                    f'<circle cx="{px_left:.2f}" cy="{-py_left:.2f}" '
+                    f'r="{radius:.2f}" fill="{color_side}" />'
+                )
+                dot_elements.append(
+                    f'<circle cx="{px_right:.2f}" cy="{-py_right:.2f}" '
+                    f'r="{radius:.2f}" fill="{color_side}" />'
+                )
+
+                # optional center marker for debugging
+                dot_elements.append(
+                    f'<circle cx="{pt["x"]:.2f}" cy="{-pt["y"]:.2f}" '
+                    f'r="{radius * 0.6:.2f}" fill="{color_center}" />'
+                )
+
+        local_group.extend(dot_elements)
+
+    # ---------------------------------------------------------------------
+    # --- Main body rendering
     # ---------------------------------------------------------------------
     base_color = appearance_dict.get("base_color", "black")
     outline_color = appearance_dict.get("outline_color")
     path_d = spline_to_path(spline_points)
+    clip_id = f"clip_{uuid.uuid4().hex[:8]}"
 
     if outline_color:
         local_group.append(
-            f'<path d="{path_d}" stroke="{outline_color}" stroke-width="{stroke_width}" '
+            f'<path d="{path_d}" stroke="{outline_color}" stroke-width="{stroke_width + 1.5}" '
             f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
         )
-        stroke_width -= 1.5
 
     local_group.append(
         f'<path d="{path_d}" stroke="{base_color}" stroke-width="{stroke_width}" '
         f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
     )
 
-    # ---------------------------------------------------------------------
-    # --- Add pattern overlays
-    # ---------------------------------------------------------------------
-    if appearance_dict.get("parallelstripe"):
-        stripes = appearance_dict["parallelstripe"]
-        num = len(stripes)
-        stripe_thickness = 0.5
-        stripe_spacing = stroke_width / num
-        offset = -(num - 1) * stripe_spacing / 2
-        for color in stripes:
-            local_group.append(
-                f'<path d="{path_d}" stroke="{color}" '
-                f'stroke-width="{stripe_thickness}" fill="none" '
-                f'transform="translate(0,{offset:.2f})"/>'
-            )
-            offset += stripe_spacing
+    # --- Twisted wires (parametric hatch) ---
+    twist = appearance_dict.get("twisted")
+    if twist == "RH":
+        hatch_lines_parametric(spline_points, 70, stroke_width, color=base_color, clip_id=clip_id, path_d=path_d)
+    elif twist == "LH":
+        hatch_lines_parametric(spline_points, -70, stroke_width, color=base_color, clip_id=clip_id, path_d=path_d)
 
-    if appearance_dict.get("perpstripe"):
-        stripes = appearance_dict["perpstripe"]
-        num = len(stripes)
-        pattern_length = 30
-        dash = pattern_length / (num + 1)
-        gap = pattern_length - dash
-        offset = 0
-        for color in stripes:
-            offset += dash
-            local_group.append(
-                f'<path d="{path_d}" stroke="{color}" stroke-width="{stroke_width}" '
-                f'stroke-dasharray="{dash},{gap}" stroke-dashoffset="{offset}" '
-                f'fill="none" />'
-            )
-
-    # ---------------------------------------------------------------------
-    # --- Twist hatch (RH/LH)
-    # ---------------------------------------------------------------------
-    if appearance_dict.get("twisted") == "RH":
-        add_hatch_lines_along_path(spline_points, 70, stroke_width)
-    elif appearance_dict.get("twisted") == "LH":
-        add_hatch_lines_along_path(spline_points, -70, stroke_width)
+    # --- Dot visualization ---
+    draw_sample_dots(spline_points, radius=0.6)
