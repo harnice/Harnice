@@ -1,7 +1,7 @@
 import os
 import re
 import math
-
+from harnice.utils import appearance
 
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     if os.path.exists(filepath):
@@ -93,7 +93,7 @@ def find_and_replace_svg_group(
     return 1
 
 
-def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
+def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_group):
     """
     Draws a spline path with appearance styling.
     Supports left-hand (LH) and right-hand (RH) twisted wire hatching
@@ -101,7 +101,14 @@ def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
     """
 
     if not appearance_dict:
-        appearance_dict = {"base_color": "black"}
+        print(f"!!!!! no appearance dict provided {stroke_width_inches}")
+        appearance_dict = appearance.parse("{'base_color':'white', 'perpstripe':['gray']}")
+        stroke_width_inches = 0.01
+    else:
+        print("!!!!! ")
+        appearance_dict = appearance.parse(appearance_dict)
+
+    print(f"         appearance_dict: {appearance_dict}")
 
     # ---------------------------------------------------------------------
     # --- helper: spline_to_path
@@ -127,10 +134,24 @@ def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
     # ---------------------------------------------------------------------
     # --- helper: draw consistent slanted hatches (twisted wire)
     # ---------------------------------------------------------------------
-    def draw_twist_lines(points, color_line, step_dist, direction):
+    def draw_slash_lines(points, slash_lines_dict):
+        if slash_lines_dict.get("direction") in ("RH", "LH"):
+            direction = 1 if slash_lines_dict.get("direction") == "LH" else -1
+            if slash_lines_dict.get("angle") is not None:
+                angle_slant = slash_lines_dict.get("angle")
+            else:
+                angle_slant = 45
+            if slash_lines_dict.get("step") is not None:
+                step_dist = slash_lines_dict.get("step")
+            else:
+                step_dist = stroke_width * 2.0
+            if slash_lines_dict.get("color") is not None:
+                color_line = slash_lines_dict.get("color")
+            else:
+                color_line = "black"
+
         line_elements = []
         offset_dist = stroke_width / 2
-        angle_slant = 45  # degrees relative to tangent
 
         def bezier_eval(p0, c1, c2, p1, t):
             mt = 1 - t
@@ -218,16 +239,18 @@ def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
     # ---------------------------------------------------------------------
     # --- Main body rendering
     # ---------------------------------------------------------------------
-    base_color = appearance_dict.get("base_color", "black")
+    base_color = appearance_dict.get("base_color", "white")
     outline_color = appearance_dict.get("outline_color")
     path_d = spline_to_path(spline_points)
 
     # outline path
+    stroke_width = stroke_width_inches * 96
     if outline_color:
         local_group.append(
-            f'<path d="{path_d}" stroke="{outline_color}" stroke-width="{stroke_width + 1.5}" '
+            f'<path d="{path_d}" stroke="{outline_color}" stroke-width="{stroke_width}" '
             f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
         )
+        stroke_width = stroke_width - 0.5
 
     # base path
     local_group.append(
@@ -235,8 +258,39 @@ def draw_styled_path(spline_points, stroke_width, appearance_dict, local_group):
         f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
     )
 
-    # --- Twisted wires ---
-    twist = appearance_dict.get("twisted")
-    if twist in ("RH", "LH"):
-        direction = 1 if twist == "LH" else -1
-        draw_twist_lines(spline_points, "black", stroke_width * 2.0, direction)
+    # ---------------------------------------------------------------------
+    # --- Add pattern overlays
+    # ---------------------------------------------------------------------
+    if appearance_dict.get("parallelstripe"):
+        stripes = appearance_dict["parallelstripe"]
+        num = len(stripes)
+        stripe_thickness = stroke_width / num
+        stripe_spacing = stroke_width / num
+        offset = -(num - 1) * stripe_spacing / 2
+        for color in stripes:
+            local_group.append(
+                f'<path d="{path_d}" stroke="{color}" '
+                f'stroke-width="{stripe_thickness}" fill="none" '
+                f'transform="translate(0,{offset:.2f})"/>'
+            )
+            offset += stripe_spacing
+
+    if appearance_dict.get("perpstripe"):
+        stripes = appearance_dict["perpstripe"]
+        num = len(stripes)
+        pattern_length = 30
+        dash = pattern_length / (num + 1)
+        gap = pattern_length - dash
+        offset = 0
+        for color in stripes:
+            offset += dash
+            local_group.append(
+                f'<path d="{path_d}" stroke="{color}" stroke-width="{stroke_width}" '
+                f'stroke-dasharray="{dash},{gap}" stroke-dashoffset="{offset}" '
+                f'fill="none" />'
+            )
+
+    # --- Slash lines ---
+    if appearance_dict.get("slash_lines") is not None:
+        slash_lines_dict = appearance_dict.get("slash_lines")
+        draw_slash_lines(spline_points, slash_lines_dict)

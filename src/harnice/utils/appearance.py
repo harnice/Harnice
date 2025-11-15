@@ -22,16 +22,8 @@ format: design your macros to be able to parse this, define your cables to confo
 
 def parse(val):
     """
-    Convert stored string like:
-        {base_color:"red", parallelstripe:["#0f0","blue"], perpstripe:[], twisted:"RH"}
-    into a dictionary with all colors converted to normalized hex:
-        {
-            "base_color": "#ff0000",
-            "parallelstripe": ["#00ff00", "#0000ff"],
-            "perpstripe": [],
-            "outline_color": None,
-            "twisted": "RH"
-        }
+    Parse appearance dictionary, converting color names and shorthand hex to full hex.
+    No validation or safeguards.
     """
     if not val:
         return None
@@ -39,67 +31,27 @@ def parse(val):
     data = val if isinstance(val, dict) else ast.literal_eval(str(val))
     result = {}
 
-    for key in (
-        "base_color",
-        "parallelstripe",
-        "perpstripe",
-        "outline_color",
-        "twisted",
-    ):
-        if key not in data:
-            # lists for stripe keys, None for single-value keys
-            if key in ("parallelstripe", "perpstripe"):
-                result[key] = []
-            elif key == "twisted":
-                result[key] = None
-            else:
-                result[key] = None
-            continue
-
-        value = data[key]
-
-        # --- handle twisted separately ---
-        if key == "twisted":
-            if value is None:
-                result[key] = None
-            elif str(value).upper() in ("RH", "LH"):
-                result[key] = str(value).upper()
-            else:
-                raise ValueError(
-                    f"Invalid twisted value: '{value}'. Expected 'RH', 'LH', or None."
-                )
-            continue
-
-        # --- handle color lists ---
+    for key, value in data.items():
+        # lists → normalize each element
         if isinstance(value, list):
-            parsed_colors = []
+            parsed = []
             for c in value:
-                if not c:
-                    continue
                 c = c.strip().lower()
-                if c.startswith("#"):
-                    if len(c) == 4:  # short hex
-                        c = "#" + "".join(ch * 2 for ch in c[1:])
-                    parsed_colors.append(c)
-                else:
-                    try:
-                        parsed_colors.append(webcolors.name_to_hex(c))
-                    except ValueError:
-                        raise ValueError(f"Unknown color name: '{c}'")
-            result[key] = parsed_colors
-        else:
-            if not value:
-                result[key] = None
-                continue
-            c = value.strip().lower()
-            if c.startswith("#"):
-                if len(c) == 4:
+                if c.startswith("#") and len(c) == 4:
                     c = "#" + "".join(ch * 2 for ch in c[1:])
-                result[key] = c
-            else:
-                try:
-                    result[key] = webcolors.name_to_hex(c)
-                except ValueError:
-                    raise ValueError(f"Unknown color name: '{c}'")
+                if not c.startswith("#"):
+                    c = webcolors.name_to_hex(c)
+                parsed.append(c)
+            result[key] = parsed
+        # single string → normalize directly
+        elif isinstance(value, str):
+            c = value.strip().lower()
+            if c.startswith("#") and len(c) == 4:
+                c = "#" + "".join(ch * 2 for ch in c[1:])
+            if not c.startswith("#"):
+                c = webcolors.name_to_hex(c)
+            result[key] = c
+        else:
+            result[key] = value
 
     return result
