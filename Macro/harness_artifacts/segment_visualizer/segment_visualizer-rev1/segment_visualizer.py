@@ -355,13 +355,7 @@ for instance1 in instances:
     cleaned_chain = [pt for pt in point_chain if isinstance(pt, dict)]
 
     # === refactored call: use draw_styled_path() ===
-    appearance_raw = instances_list.attribute_of(parent_name, "appearance")
-    appearance_dict = (
-        appearance.parse(appearance_raw)
-        if appearance_raw
-        else {"base_color": stroke_color}
-    )
-    svg_utils.draw_styled_path(cleaned_chain, 0.1 * 96, appearance_dict, svg_groups)
+    svg_utils.draw_styled_path(cleaned_chain, 0.02/scale, instances_list.attribute_of(parent_name, "appearance"), svg_groups)
 
     for order in [0, -1]:
         if order == 0:

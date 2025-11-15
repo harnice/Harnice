@@ -109,9 +109,6 @@ def plot_node(node_instance, x, y, box_width, local_group):
 
 
 def plot_segment(segment_instance, x, y, length, local_group):
-    appearance_dict = appearance.parse(segment_instance.get("appearance", "{}"))
-    stroke_width = 4
-
     # If svg_utils flips Y internally, counteract that here by negating y.
     y_for_path = -y
 
@@ -120,7 +117,7 @@ def plot_segment(segment_instance, x, y, length, local_group):
         {"x": x + length, "y": y_for_path, "tangent": 0},
     ]
     svg_utils.draw_styled_path(
-        spline_points, stroke_width, appearance_dict, local_group
+        spline_points, 0.02, segment_instance.get("appearance"), local_group
     )
 
     # Labels (normal SVG Y, don't negate)
