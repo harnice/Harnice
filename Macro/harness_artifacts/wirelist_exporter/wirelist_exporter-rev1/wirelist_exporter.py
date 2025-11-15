@@ -15,7 +15,13 @@ def macro_file_structure():
         "instance_data": {},
     }
 
-os.makedirs(fileio.dirpath(f"{artifact_id}-imported-instances", structure_dict=macro_file_structure()), exist_ok=True)
+
+os.makedirs(
+    fileio.dirpath(
+        f"{artifact_id}-imported-instances", structure_dict=macro_file_structure()
+    ),
+    exist_ok=True,
+)
 
 
 # =============== WIRELIST COLUMNS ===============
@@ -34,7 +40,9 @@ WIRELIST_COLUMNS = [
 
 # =============== CREATE TSV ===============
 with open(
-    fileio.path("wirelist no formats", structure_dict=macro_file_structure()), "w", newline=""
+    fileio.path("wirelist no formats", structure_dict=macro_file_structure()),
+    "w",
+    newline="",
 ) as file:
     writer = csv.writer(file, delimiter="\t")
     writer.writerow([col["name"] for col in WIRELIST_COLUMNS])
@@ -231,6 +239,8 @@ svg_lines.append(f'<g id="{artifact_id}-wirelist-contents-end"/>')
 svg_lines.append("</svg>")
 
 with open(
-    fileio.path("wirelist svg", structure_dict=macro_file_structure()), "w", encoding="utf-8"
+    fileio.path("wirelist svg", structure_dict=macro_file_structure()),
+    "w",
+    encoding="utf-8",
 ) as f:
     f.write("\n".join(svg_lines))

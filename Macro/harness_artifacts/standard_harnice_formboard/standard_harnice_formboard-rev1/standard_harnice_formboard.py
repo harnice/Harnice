@@ -21,20 +21,38 @@ def macro_file_structure(instance_name=None, item_type=None):
         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
     }
 
-if base_directory is None:  #path between cwd and the file structure for this macro
+
+if base_directory is None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+
 def path(target_value):
-    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.path(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
 
 def dirpath(target_value):
     # target_value = None will return the root of this macro
-    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.dirpath(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
+
 # ==========================================================================================================
 
 # =============== GLOBAL SETTINGS ===============
-instances = fileio.read_tsv("instances list") # only need to call this once
-printable_item_types = {"connector", "backshell", "segment", "flagnote"} # add content here as needed
+instances = fileio.read_tsv("instances list")  # only need to call this once
+printable_item_types = {
+    "connector",
+    "backshell",
+    "segment",
+    "flagnote",
+}  # add content here as needed
 
 # =============== CSYS DEFINITION ===============
 try:
@@ -44,22 +62,23 @@ except NameError:
     rotation = 0
 origin = [0, 0, rotation]
 
+
 # =============== FUNCTIONS ===============
 def make_new_flagnote_drawing(instance, location):
     if instance.get("item_type") != "flagnote":
-        raise ValueError(f"you just tried to make a flagnote drawing out of a non-flagnote instance '{instance.get("instance_name")}'")
+        raise ValueError(
+            f"you just tried to make a flagnote drawing out of a non-flagnote instance '{instance.get("instance_name")}'"
+        )
 
     if instance.get("item_type") != "flagnote":
-        raise ValueError(f"you just tried to make a flagnote drawing without specifying flagnote type by 'mpn' field on '{instance.get("instance_name")}'")
+        raise ValueError(
+            f"you just tried to make a flagnote drawing without specifying flagnote type by 'mpn' field on '{instance.get("instance_name")}'"
+        )
 
     # === Pull drawing into this macro ===
-    library_utils.pull(
-        instance, 
-        destination_directory=location
-    )
+    library_utils.pull(instance, destination_directory=location)
     flagnote_drawing_path = os.path.join(
-        location,
-        f"{instance.get("instance_name")}-drawing.svg"
+        location, f"{instance.get("instance_name")}-drawing.svg"
     )
 
     # === Perform text replacement on known drawing path ===
@@ -74,13 +93,15 @@ def make_new_flagnote_drawing(instance, location):
 
 def make_new_segment_drawing(instance, location):
     if instance.get("item_type") != "segment":
-        raise ValueError(f"you just tried to make a segment drawing out of a non-segment instance '{instance.get("instance_name")}'")
+        raise ValueError(
+            f"you just tried to make a segment drawing out of a non-segment instance '{instance.get("instance_name")}'"
+        )
 
     feature_tree_utils.run_macro(
         "basic_segment_generator",
-        "harness_artifacts", 
-        "https://github.com/harnice/harnice-library-public", 
-        artifact_id=f"{artifact_id}-{instance.get("instance_name")}", 
+        "harness_artifacts",
+        "https://github.com/harnice/harnice-library-public",
+        artifact_id=f"{artifact_id}-{instance.get("instance_name")}",
         instance=instance,
         base_directory=location,
     )
@@ -240,20 +261,16 @@ for instance in instances:
                 dirpath(None),
                 "instance_data",
                 "flagnote",
-                instance.get("instance_name")
+                instance.get("instance_name"),
             )
             if instance.get("mpn") in [None, ""]:
                 continue
             else:
-                make_new_flagnote_drawing(
-                    instance,
-                    flagnote_location
-                )
+                make_new_flagnote_drawing(instance, flagnote_location)
             svg_utils.find_and_replace_svg_group(
                 path("output svg"),
                 os.path.join(
-                    flagnote_location,
-                    f"{instance.get("instance_name")}-drawing.svg"
+                    flagnote_location, f"{instance.get("instance_name")}-drawing.svg"
                 ),
                 instance.get("instance_name"),
                 instance.get("instance_name"),
@@ -266,31 +283,28 @@ for instance in instances:
                 dirpath(None),
                 "instance_data",
                 "macro",
-                f"{artifact_id}-{instance.get("instance_name")}"
+                f"{artifact_id}-{instance.get("instance_name")}",
             )
-            make_new_segment_drawing(
-                instance,
-                segment_location
-            )
+            make_new_segment_drawing(instance, segment_location)
             svg_utils.find_and_replace_svg_group(
                 path("output svg"),
                 os.path.join(
                     segment_location,
-                    f"{artifact_id}-{instance.get("instance_name")}-drawing.svg"
+                    f"{artifact_id}-{instance.get("instance_name")}-drawing.svg",
                 ),
                 instance.get("instance_name"),
                 instance.get("instance_name"),
             )
 
-        else: #pull from project-level instance_data
+        else:  # pull from project-level instance_data
             svg_utils.find_and_replace_svg_group(
                 path("output svg"),
                 os.path.join(
-                    fileio.dirpath(None), # project root
+                    fileio.dirpath(None),  # project root
                     "instance_data",
                     instance.get("item_type"),
                     instance.get("instance_name"),
-                    f"{instance.get("instance_name")}-drawing.svg"
+                    f"{instance.get("instance_name")}-drawing.svg",
                 ),
                 instance.get("instance_name"),
                 instance.get("instance_name"),

@@ -3,31 +3,49 @@ import os
 
 artifact_mpn = "basic_segment_generator"
 
+
 # =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
         f"{artifact_id}-drawing.svg": "drawing",
     }
-    
-if base_directory == None:  #path between cwd and the file structure for this macro
+
+
+if base_directory == None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+
 def path(target_value):
-    return fileio.path(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.path(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
 
 def dirpath(target_value):
     # target_value = None will return the root of this macro
-    return fileio.dirpath(target_value, structure_dict=macro_file_structure(), base_directory=base_directory)
+    return fileio.dirpath(
+        target_value,
+        structure_dict=macro_file_structure(),
+        base_directory=base_directory,
+    )
+
+
 # ==========================================================================================================
 
 # =============== INPUT CHECKS ===============
 try:
     instance.get("instance_name")
 except:
-    raise ValueError("please pass an instance dict as argument 'instance' to this macro")
+    raise ValueError(
+        "please pass an instance dict as argument 'instance' to this macro"
+    )
 
 if instance.get("item_type") != "segment":
-    raise ValueError(f"basic_segment_generator can only be used to generate segments, not {instance.get('item_type')}")
+    raise ValueError(
+        f"basic_segment_generator can only be used to generate segments, not {instance.get('item_type')}"
+    )
 
 # =============== CALCULATIONS ===============
 length = 96 * float(instance.get("length", 0))

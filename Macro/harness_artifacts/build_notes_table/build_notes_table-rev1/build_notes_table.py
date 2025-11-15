@@ -5,6 +5,7 @@ from harnice.utils import svg_utils, library_utils
 
 artifact_mpn = "build_notes_table"
 
+
 # =============== PATHS ===================================================================================
 def macro_file_structure(identifier=None):
     return {
@@ -14,18 +15,31 @@ def macro_file_structure(identifier=None):
             f"bubble{identifier}": {
                 f"bubble{identifier}-drawing.svg": "bubble drawing svg"
             }
-        }
+        },
     }
 
-if base_directory is None:  #path between cwd and the file structure for this macro
+
+if base_directory is None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
+
 def path(target_value, identifier=None):
-    return fileio.path(target_value, structure_dict=macro_file_structure(identifier), base_directory=base_directory)
+    return fileio.path(
+        target_value,
+        structure_dict=macro_file_structure(identifier),
+        base_directory=base_directory,
+    )
+
 
 def dirpath(target_value, identifier=None):
     # target_value = None will return the root of this macro
-    return fileio.dirpath(target_value, structure_dict=macro_file_structure(identifier), base_directory=base_directory)
+    return fileio.dirpath(
+        target_value,
+        structure_dict=macro_file_structure(identifier),
+        base_directory=base_directory,
+    )
+
+
 # ==========================================================================================================
 
 # === Configuration ===
@@ -48,7 +62,7 @@ for instance in fileio.read_tsv("instances list"):
         # Pull bubble from the library if there is a shape
         if instance.get("mpn") not in ["", None]:
             has_shape = True
-        
+
         if has_shape:
             library_utils.pull(
                 {
@@ -58,7 +72,9 @@ for instance in fileio.read_tsv("instances list"):
                     "instance_name": f"bubble{build_note_number}",
                 },
                 update_instances_list=False,
-                destination_directory=dirpath(f"bubble{build_note_number}", identifier=build_note_number)
+                destination_directory=dirpath(
+                    f"bubble{build_note_number}", identifier=build_note_number
+                ),
             )
 
         # Append row information only if it contains valid data
