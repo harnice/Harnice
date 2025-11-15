@@ -203,7 +203,10 @@ with open(path("master contents svg"), "w", encoding="utf-8") as f:
 # fetch content from each -master.svg into the master contents svg
 for master_name, source_svg_path in masters:
     svg_utils.find_and_replace_svg_group(
-        path("master contents svg"), source_svg_path, master_name, master_name
+        source_svg_path,
+        master_name,
+        path("master contents svg"),
+        master_name
     )
 
 # ==========================================================================================================
@@ -318,17 +321,17 @@ for page in page_data.get("pages", []):
 
     # === replace tblock contents ===
     svg_utils.find_and_replace_svg_group(
-        path("user editable page svg", page_name=page_name, page_counter=page_counter),
         lib_imported_drawing_filepath,
         "tblock",
+        path("user editable page svg", page_name=page_name, page_counter=page_counter),
         "tblock",
     )
 
     # replace the master svg
     svg_utils.find_and_replace_svg_group(
-        path("user editable page svg", page_name=page_name, page_counter=page_counter),
         path("master contents svg"),
         "svg-master",
+        path("user editable page svg", page_name=page_name, page_counter=page_counter),
         "svg-master",
     )
 
