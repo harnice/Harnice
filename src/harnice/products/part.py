@@ -181,9 +181,9 @@ def render():
             svg_utils.add_entire_svg_file_contents_to_group(svg_path, group_name)
 
         svg_utils.find_and_replace_svg_group(
-            target_svg_filepath=temp_svg_path,
             source_svg_filepath=svg_path,
             source_group_name=group_name,
+            destination_svg_filepath=temp_svg_path,
             destination_group_name=group_name,
         )
 

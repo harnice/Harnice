@@ -39,12 +39,10 @@ def add_entire_svg_file_contents_to_group(filepath, new_group_name):
         )
 
 
-def find_and_replace_svg_group(
-    target_svg_filepath, source_svg_filepath, source_group_name, destination_group_name
-):
+def find_and_replace_svg_group(source_svg_filepath, source_group_name, destination_svg_filepath, destination_group_name):
     with open(source_svg_filepath, "r", encoding="utf-8") as source_file:
         source_svg_content = source_file.read()
-    with open(target_svg_filepath, "r", encoding="utf-8") as target_file:
+    with open(destination_svg_filepath, "r", encoding="utf-8") as target_file:
         target_svg_content = target_file.read()
 
     source_start_tag = f'id="{source_group_name}-contents-start"'
@@ -69,14 +67,14 @@ def find_and_replace_svg_group(
     dest_start_index = target_svg_content.find(dest_start_tag)
     if dest_start_index == -1:
         raise ValueError(
-            f"[ERROR] Target start tag <{dest_start_tag}> not found in <{target_svg_filepath}>."
+            f"[ERROR] Target start tag <{dest_start_tag}> not found in <{destination_svg_filepath}>."
         )
     dest_start_index = target_svg_content.find(">", dest_start_index) + 1
 
     dest_end_index = target_svg_content.find(dest_end_tag)
     if dest_end_index == -1:
         raise ValueError(
-            f"[ERROR] Target end tag <{dest_end_tag}> not found in <{target_svg_filepath}>."
+            f"[ERROR] Target end tag <{dest_end_tag}> not found in <{destination_svg_filepath}>."
         )
     dest_end_index = target_svg_content.rfind("<", 0, dest_end_index)
 
@@ -88,7 +86,7 @@ def find_and_replace_svg_group(
         + target_svg_content[dest_end_index:]
     )
 
-    with open(target_svg_filepath, "w", encoding="utf-8") as updated_file:
+    with open(destination_svg_filepath, "w", encoding="utf-8") as updated_file:
         updated_file.write(updated_svg_content)
 
     return 1
