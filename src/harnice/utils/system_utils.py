@@ -221,47 +221,77 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             ignore_duplicates=True,
         )
 
-        # add channel
+        # --- add channel
         for channel in channel_map:
-            if channel.get("from_device_refdes") == circuit.get("from_side_device_refdes") and channel.get("from_device_channel_id") == circuit.get("from_side_device_chname") and channel.get("to_device_refdes") == circuit.get("to_side_device_refdes") and channel.get("to_device_channel_id") == circuit.get("to_side_device_chname"):
-                chain_of_nets = channel.get("chain_of_nets").split(";")
+            if (
+                channel.get("from_device_refdes") == circuit.get("from_side_device_refdes")
+                and channel.get("from_device_channel_id") == circuit.get("from_side_device_chname")
+                and channel.get("to_device_refdes") == circuit.get("to_side_device_refdes")
+                and channel.get("to_device_channel_id") == circuit.get("to_side_device_chname")
+            ):
+                chain_of_nets = (channel.get("chain_of_nets") or "").split(";")
+                chain_of_connectors = (channel.get("chain_of_connectors") or "").split(";")
                 break
-        print(f"!!!!!!!!!!!!!! {chain_of_nets}");
+
+        # --- process each net in the channel chain
         for net in chain_of_nets:
+            # Find all connectors associated with this net
+            connectors_for_net = [
+                item.split(".", 1)[1]
+                for item in chain_of_connectors
+                if item.startswith(f"{net}.")
+            ]
+
+            node_a = node_b = ""
+            if connectors_for_net:
+                first = connectors_for_net[0]
+                last = connectors_for_net[-1]
+
+                # Each connector looks like "J1A" or "X1B"
+                # Split into refdes + connector suffix if possible
+                def split_connector(fullname):
+                    # Find where letters end / digits start
+                    for i, ch in enumerate(fullname):
+                        if ch.isalpha() and i > 0 and fullname[i - 1].isdigit():
+                            return fullname[:i], fullname[i:]
+                    return fullname, ""
+
+                dev_a, port_a = split_connector(first)
+                dev_b, port_b = split_connector(last)
+
+                node_a = f"{dev_a}.{port_a}.conn" if port_a else f"{dev_a}.conn"
+                node_b = f"{dev_b}.{port_b}.conn" if port_b else f"{dev_b}.conn"
+
+            # --- create instance for this net
             instances_list.new_instance(
-                f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}-net{net}",
+                f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}-net{net}",
                 {
                     "net": net,
                     "item_type": "channel",
-                    "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+                    "channel_group": (
+                        f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                        f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
+                    ),
                     "location_type": "segment",
-                    "node_at_end_a": f"{circuit.get('net_from_refdes')}.{circuit.get('net_from_connector_name')}.conn",
-                    "node_at_end_b": f"{circuit.get('net_to_refdes')}.{circuit.get('net_to_connector_name')}.conn",
+                    "node_at_end_a": node_a,
+                    "node_at_end_b": node_b,
                     "this_net_from_device_refdes": circuit.get("net_from_refdes"),
                     "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
-                    "this_net_from_device_connector_name": circuit.get(
-                        "net_from_connector_name"
-                    ),
+                    "this_net_from_device_connector_name": circuit.get("net_from_connector_name"),
                     "this_net_to_device_refdes": circuit.get("net_to_refdes"),
                     "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
-                    "this_net_to_device_connector_name": circuit.get(
-                        "net_to_connector_name"
-                    ),
-                    "this_channel_from_device_refdes": circuit.get(
-                        "from_side_device_refdes"
-                    ),
-                    "this_channel_from_device_channel_id": circuit.get(
-                        "from_side_device_chname"
-                    ),
+                    "this_net_to_device_connector_name": circuit.get("net_to_connector_name"),
+                    "this_channel_from_device_refdes": circuit.get("from_side_device_refdes"),
+                    "this_channel_from_device_channel_id": circuit.get("from_side_device_chname"),
                     "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
-                    "this_channel_to_device_channel_id": circuit.get(
-                        "to_side_device_chname"
-                    ),
+                    "this_channel_to_device_channel_id": circuit.get("to_side_device_chname"),
                     "this_channel_from_channel_type": circuit.get("from_channel_type"),
                     "this_channel_to_channel_type": circuit.get("to_channel_type"),
                 },
                 ignore_duplicates=True,
             )
+
 
     for connector in fileio.read_tsv("system connector list"):
         try:
