@@ -268,11 +268,11 @@ for instance in instances:
             else:
                 make_new_flagnote_drawing(instance, flagnote_location)
             svg_utils.find_and_replace_svg_group(
-                path("output svg"),
                 os.path.join(
                     flagnote_location, f"{instance.get("instance_name")}-drawing.svg"
                 ),
                 instance.get("instance_name"),
+                path("output svg"),
                 instance.get("instance_name"),
             )
 
@@ -287,18 +287,17 @@ for instance in instances:
             )
             make_new_segment_drawing(instance, segment_location)
             svg_utils.find_and_replace_svg_group(
-                path("output svg"),
                 os.path.join(
                     segment_location,
                     f"{artifact_id}-{instance.get("instance_name")}-drawing.svg",
                 ),
                 instance.get("instance_name"),
+                path("output svg"),
                 instance.get("instance_name"),
             )
 
         else:  # pull from project-level instance_data
             svg_utils.find_and_replace_svg_group(
-                path("output svg"),
                 os.path.join(
                     fileio.dirpath(None),  # project root
                     "instance_data",
@@ -307,5 +306,6 @@ for instance in instances:
                     f"{instance.get("instance_name")}-drawing.svg",
                 ),
                 instance.get("instance_name"),
+                path("output svg"),
                 instance.get("instance_name"),
             )

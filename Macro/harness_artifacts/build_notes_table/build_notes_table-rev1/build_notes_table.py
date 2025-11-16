@@ -206,8 +206,8 @@ for row in svg_table_data:
 
     # Inject the bubble SVG into the target SVG file
     svg_utils.find_and_replace_svg_group(
-        target_svg_filepath=target_svg_filepath,
         source_svg_filepath=source_svg_filepath,
         source_group_name=group_name,
+        destination_svg_filepath=target_svg_filepath,
         destination_group_name=group_name,
     )

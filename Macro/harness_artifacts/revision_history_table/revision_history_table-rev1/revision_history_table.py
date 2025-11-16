@@ -200,7 +200,6 @@ for row in data_rows:
 
     rev_text = row["rev"]
     source_svg_filepath = path("bubble drawing svg", rev_id=row["rev"])
-    target_svg_filepath = path("revision history table svg")
     group_name = f"bubble{rev_text}"
 
     # Replace text placeholder "flagnote-text" → rev_text
@@ -214,8 +213,8 @@ for row in data_rows:
 
     # Inject the bubble SVG
     svg_utils.find_and_replace_svg_group(
-        target_svg_filepath=target_svg_filepath,
         source_svg_filepath=source_svg_filepath,
         source_group_name=group_name,
+        destination_svg_filepath=path("revision history table svg"),
         destination_group_name=group_name,
     )
