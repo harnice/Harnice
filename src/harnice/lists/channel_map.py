@@ -12,6 +12,7 @@ COLUMNS = [
     "to_channel_type",
     "multi_ch_junction_id",
     "disconnect_refdes_requirement",
+    "chain_of_connectors",
     "chain_of_nets",
     "manual_map_channel_python_equiv",
 ]

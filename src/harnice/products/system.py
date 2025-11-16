@@ -34,7 +34,7 @@ channel_map.new()
 feature_tree_utils.run_macro("basic_channel_mapper", "system_builder", "https://github.com/harnice/harnice-library-public", artifact_id="channel-mapper-1")
 
 #if mapped channels must connect via disconnects, add the list of disconnects to the channel map
-system_utils.add_shortest_disconnect_chain_to_channel_map()
+system_utils.add_chains_to_channel_map()
 
 #map channels that must pass through disconnects to available channels inside disconnects
 disconnect_map.new()
