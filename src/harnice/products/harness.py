@@ -72,7 +72,7 @@ for instance in instances:
 
 # make segment instances for cables, conductors, and channels
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["conductor", "cable", "channel"]:
+    if instance.get("item_type") in ["conductor", "cable", "net-channel"]:
         formboard_utils.map_instance_to_segments(instance)
 
 # sum lengths of conductors and cables

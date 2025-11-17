@@ -222,6 +222,31 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
         )
 
         # --- add channel
+        instances_list.new_instance(
+            f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+            f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+            {
+                "item_type": "channel",
+                "channel_group": (
+                    f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                    f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
+                ),
+                "location_type": "segment",
+                "this_net_from_device_refdes": circuit.get("net_from_refdes"),
+                "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
+                "this_net_from_device_connector_name": circuit.get("net_from_connector_name"),
+                "this_net_to_device_refdes": circuit.get("net_to_refdes"),
+                "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
+                "this_net_to_device_connector_name": circuit.get("net_to_connector_name"),
+                "this_channel_from_device_refdes": circuit.get("from_side_device_refdes"),
+                "this_channel_from_device_channel_id": circuit.get("from_side_device_chname"),
+                "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
+                "this_channel_to_device_channel_id": circuit.get("to_side_device_chname"),
+                "this_channel_from_channel_type": circuit.get("from_channel_type"),
+                "this_channel_to_channel_type": circuit.get("to_channel_type"),
+            },
+            ignore_duplicates=True,
+        )
         for channel in channel_map:
             if (
                 channel.get("from_device_refdes") == circuit.get("from_side_device_refdes")
@@ -264,16 +289,17 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
 
             # --- create instance for this net
             instances_list.new_instance(
-                f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
-                f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}-net{net}",
+                f"net{net}:channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                 {
                     "net": net,
-                    "item_type": "channel",
+                    "item_type": "net-channel",
                     "channel_group": (
                         f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
                         f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
                     ),
                     "location_type": "segment",
+                    "parent_instance": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                     "node_at_end_a": node_a,
                     "node_at_end_b": node_b,
                     "this_net_from_device_refdes": circuit.get("net_from_refdes"),
