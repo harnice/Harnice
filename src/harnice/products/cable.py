@@ -33,7 +33,10 @@ def render():
                 "drain_wire": {
                     "conductor": True,
                     "properties": {"gauge": "20AWG", "construction": "7x28"},
-                    "appearance": {"outline_color":"gray","slash_lines":{"direction": "RH","color":"gray"}},
+                    "appearance": {
+                        "outline_color": "gray",
+                        "slash_lines": {"direction": "RH", "color": "gray"},
+                    },
                 },
                 "pair_1": {
                     "properties": {"twists": "12 per inch"},

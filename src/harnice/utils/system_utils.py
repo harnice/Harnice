@@ -234,14 +234,24 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                 "location_type": "segment",
                 "this_net_from_device_refdes": circuit.get("net_from_refdes"),
                 "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
-                "this_net_from_device_connector_name": circuit.get("net_from_connector_name"),
+                "this_net_from_device_connector_name": circuit.get(
+                    "net_from_connector_name"
+                ),
                 "this_net_to_device_refdes": circuit.get("net_to_refdes"),
                 "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
-                "this_net_to_device_connector_name": circuit.get("net_to_connector_name"),
-                "this_channel_from_device_refdes": circuit.get("from_side_device_refdes"),
-                "this_channel_from_device_channel_id": circuit.get("from_side_device_chname"),
+                "this_net_to_device_connector_name": circuit.get(
+                    "net_to_connector_name"
+                ),
+                "this_channel_from_device_refdes": circuit.get(
+                    "from_side_device_refdes"
+                ),
+                "this_channel_from_device_channel_id": circuit.get(
+                    "from_side_device_chname"
+                ),
                 "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
-                "this_channel_to_device_channel_id": circuit.get("to_side_device_chname"),
+                "this_channel_to_device_channel_id": circuit.get(
+                    "to_side_device_chname"
+                ),
                 "this_channel_from_channel_type": circuit.get("from_channel_type"),
                 "this_channel_to_channel_type": circuit.get("to_channel_type"),
             },
@@ -249,13 +259,19 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
         )
         for channel in channel_map:
             if (
-                channel.get("from_device_refdes") == circuit.get("from_side_device_refdes")
-                and channel.get("from_device_channel_id") == circuit.get("from_side_device_chname")
-                and channel.get("to_device_refdes") == circuit.get("to_side_device_refdes")
-                and channel.get("to_device_channel_id") == circuit.get("to_side_device_chname")
+                channel.get("from_device_refdes")
+                == circuit.get("from_side_device_refdes")
+                and channel.get("from_device_channel_id")
+                == circuit.get("from_side_device_chname")
+                and channel.get("to_device_refdes")
+                == circuit.get("to_side_device_refdes")
+                and channel.get("to_device_channel_id")
+                == circuit.get("to_side_device_chname")
             ):
                 chain_of_nets = (channel.get("chain_of_nets") or "").split(";")
-                chain_of_connectors = (channel.get("chain_of_connectors") or "").split(";")
+                chain_of_connectors = (channel.get("chain_of_connectors") or "").split(
+                    ";"
+                )
                 break
 
         # --- process each net in the channel chain
@@ -303,21 +319,34 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                     "node_at_end_a": node_a,
                     "node_at_end_b": node_b,
                     "this_net_from_device_refdes": circuit.get("net_from_refdes"),
-                    "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
-                    "this_net_from_device_connector_name": circuit.get("net_from_connector_name"),
+                    "this_net_from_device_channel_id": circuit.get(
+                        "net_from_channel_id"
+                    ),
+                    "this_net_from_device_connector_name": circuit.get(
+                        "net_from_connector_name"
+                    ),
                     "this_net_to_device_refdes": circuit.get("net_to_refdes"),
                     "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
-                    "this_net_to_device_connector_name": circuit.get("net_to_connector_name"),
-                    "this_channel_from_device_refdes": circuit.get("from_side_device_refdes"),
-                    "this_channel_from_device_channel_id": circuit.get("from_side_device_chname"),
-                    "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
-                    "this_channel_to_device_channel_id": circuit.get("to_side_device_chname"),
+                    "this_net_to_device_connector_name": circuit.get(
+                        "net_to_connector_name"
+                    ),
+                    "this_channel_from_device_refdes": circuit.get(
+                        "from_side_device_refdes"
+                    ),
+                    "this_channel_from_device_channel_id": circuit.get(
+                        "from_side_device_chname"
+                    ),
+                    "this_channel_to_device_refdes": circuit.get(
+                        "to_side_device_refdes"
+                    ),
+                    "this_channel_to_device_channel_id": circuit.get(
+                        "to_side_device_chname"
+                    ),
                     "this_channel_from_channel_type": circuit.get("from_channel_type"),
                     "this_channel_to_channel_type": circuit.get("to_channel_type"),
                 },
                 ignore_duplicates=True,
             )
-
 
     for connector in fileio.read_tsv("system connector list"):
         try:
@@ -424,20 +453,22 @@ def add_chains_to_channel_map():
     # apply to each channel pair
     for row in channel_map:
         from_key = (row.get("from_device_refdes"), row.get("from_device_channel_id"))
-        to_key   = (row.get("to_device_refdes"),   row.get("to_device_channel_id"))
+        to_key = (row.get("to_device_refdes"), row.get("to_device_channel_id"))
         if not all(from_key) or not all(to_key):
             continue
 
         from_cn = (from_key[0], connector_of_channel(from_key))
-        to_cn   = (to_key[0],   connector_of_channel(to_key))
+        to_cn = (to_key[0], connector_of_channel(to_key))
 
         n_from = net_of.get(from_cn)
-        n_to   = net_of.get(to_cn)
+        n_to = net_of.get(to_cn)
 
         if n_from and n_to and n_from == n_to:
             row["disconnect_refdes_requirement"] = ""
             row["chain_of_nets"] = n_from
-            row["chain_of_connectors"] = f"{n_from}.{from_cn[0]}{from_cn[1]};{n_to}.{to_cn[0]}{to_cn[1]}"
+            row["chain_of_connectors"] = (
+                f"{n_from}.{from_cn[0]}{from_cn[1]};{n_to}.{to_cn[0]}{to_cn[1]}"
+            )
             continue
 
         chain, net_chain, connector_chain = _shortest_disconnect_chain(from_cn, to_cn)
