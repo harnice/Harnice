@@ -39,7 +39,12 @@ def add_entire_svg_file_contents_to_group(filepath, new_group_name):
         )
 
 
-def find_and_replace_svg_group(source_svg_filepath, source_group_name, destination_svg_filepath, destination_group_name):
+def find_and_replace_svg_group(
+    source_svg_filepath,
+    source_group_name,
+    destination_svg_filepath,
+    destination_group_name,
+):
     with open(source_svg_filepath, "r", encoding="utf-8") as source_file:
         source_svg_content = source_file.read()
     with open(destination_svg_filepath, "r", encoding="utf-8") as target_file:

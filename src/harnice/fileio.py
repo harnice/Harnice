@@ -281,5 +281,6 @@ def read_tsv(filepath, delimiter="\t"):
                 f"Expected tsv file with delimiter '{delimiter}' at path or key {filepath}"
             )
 
+
 def drawnby():
     return json.load(open(path("drawnby")))
