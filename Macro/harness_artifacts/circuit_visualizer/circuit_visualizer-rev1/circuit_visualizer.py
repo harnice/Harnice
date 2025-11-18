@@ -75,9 +75,13 @@ svg_elements = []
 # TEXT RENDERING
 # ==========================================================================================================
 
-def plot_text_lines(lines, center_x, center_y, text_group):
+def plot_text_lines(lines, center_x, center_y, text_group, background = False):
     """Draw 1–3 centered text lines at a given row-relative location."""
-    total_text_height = len(lines) * line_spacing
+
+    # Normalize: turn None into empty strings
+    norm_lines = [(t if t is not None else "") for t in lines]
+
+    total_text_height = len(norm_lines) * line_spacing
     start_y = center_y - (total_text_height / 2) + (FONT_SIZE / 2)
 
     text_template = (
@@ -86,11 +90,28 @@ def plot_text_lines(lines, center_x, center_y, text_group):
         f'font-size="{FONT_SIZE}">{{text}}</text>'
     )
 
-    for i, text in enumerate(lines):
+    # Safe width calculation
+    max_chars = max(len(t) for t in norm_lines) if norm_lines else 0
+
+    if background:
+        if max_chars > 0:
+            est_width = max_chars * (FONT_SIZE * 0.6)
+            box_height = total_text_height
+            box_x = center_x - est_width/2 - 2
+            box_y = start_y - FONT_SIZE/2
+            text_group.append(
+                f'<rect x="{box_x:.2f}" y="{box_y:.2f}" '
+                f'width="{est_width+4:.2f}" height="{box_height:.2f}" '
+                f'fill="white" stroke="none"/>'
+            )
+
+    # Render text lines
+    for i, text in enumerate(norm_lines):
         ty = start_y + i * line_spacing
         text_group.append(
             text_template.format(x=center_x, y=ty, text=text)
         )
+
 
 
 # ==========================================================================================================
@@ -233,7 +254,7 @@ for instance in fileio.read_tsv("instances list"):
 
     # ---- Schematic Layout ----
 
-    left = NODE_MARGIN_X
+    left = NODE_MARGIN_X      # local coordinates only
     right = left
 
     for port in ports:
@@ -241,7 +262,7 @@ for instance in fileio.read_tsv("instances list"):
         loc = port.get("location_type", "")
 
         # --------------------------------------------
-        # Update left/right based solely on this port
+        # Update left/right
         # --------------------------------------------
         if loc == "segment":
             left = right
@@ -249,10 +270,11 @@ for instance in fileio.read_tsv("instances list"):
 
         else:  # node
             left = right
-            right = left + NODE_WIDTH   # <-- FIXED (nodes advance)
-        
+            right = left + NODE_WIDTH    # <-- Nodes must advance
+            
+
         # --------------------------------------------
-        # Draw NODE
+        # Draw NODE (local coords)
         # --------------------------------------------
         if loc == "node":
             center_x = (left + right) / 2
@@ -272,16 +294,16 @@ for instance in fileio.read_tsv("instances list"):
                     instances_list.attribute_of(port.get("parent_instance"), "print_name"),
                     port.get("print_name", ""),
                 ],
-                center_x,
+                group_x + center_x,       # <-- labels include group_x
                 group_y + row_center_y,
                 text_group,
             )
 
         # --------------------------------------------
-        # Draw SEGMENT
+        # Draw SEGMENT (local coords)
         # --------------------------------------------
         if loc == "segment":
-            cx = (left + right) / 2
+            center_x = (left + right) / 2
 
             svg_utils.draw_styled_path(
                 [
@@ -298,9 +320,10 @@ for instance in fileio.read_tsv("instances list"):
                     instances_list.attribute_of(port.get("parent_instance"), "print_name"),
                     port.get("print_name", ""),
                 ],
-                cx,
+                group_x + center_x,       # <-- labels include group_x
                 group_y + row_center_y,
                 text_group,
+                background = True
             )
 
 
