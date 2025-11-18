@@ -17,7 +17,7 @@ def macro_file_structure():
     }
 
 
-if base_directory is None:  # path between cwd and this macro's file structure
+if base_directory is None:  # Provided externally, not defined here
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
 
@@ -58,7 +58,7 @@ TABLE_FILL = "white"
 
 NODE_MARGIN_X = 5
 NODE_MARGIN_Y = 3
-NODE_WIDTH = 84
+NODE_WIDTH = 84  # fixed width for all nodes
 
 COL2_WIDTH = circuit_length + 2 * whitespace_length
 VISUALIZATION_INSET_X = whitespace_length
@@ -72,7 +72,7 @@ svg_elements = []
 
 
 # ==========================================================================================================
-# UTILITY: CONSOLIDATED TEXT RENDERING
+# TEXT RENDERING
 # ==========================================================================================================
 
 def plot_text_lines(lines, center_x, center_y, text_group):
@@ -94,37 +94,38 @@ def plot_text_lines(lines, center_x, center_y, text_group):
 
 
 # ==========================================================================================================
-# NODE + SEGMENT SHAPES (NO TEXT HERE)
+# SHAPE DRAWING (no text)
 # ==========================================================================================================
 
-def plot_node_shape(node_instance, x, y, box_width, node_group):
-    """Draw only the rectangular node box."""
-    box_height = ROW_HEIGHT - (2 * NODE_MARGIN_Y)
-    box_y = y - (box_height / 2)
+def plot_node_shape(node_instance, x_left, y_center, width, node_group):
+    """Draw a rectangular node box. x_left is LEFT edge, NOT center."""
+    box_height = ROW_HEIGHT - 2 * NODE_MARGIN_Y
+    box_y = y_center - box_height / 2
 
     rect = (
-        f'<rect x="{x}" y="{box_y}" width="{box_width}" height="{box_height}" '
+        f'<rect x="{x_left}" y="{box_y}" width="{width}" height="{box_height}" '
         f'fill="white" stroke="black" stroke-width="1"/>'
     )
     node_group.append(rect)
 
 
-def plot_segment_shape(segment_instance, x, y, length, segment_group):
-    """
-    Draw the styled spline path for a segment.
-    Returns (center_x, center_y) for text placement.
-    """
-    y_for_path = -y  # svg_utils flips Y internally
+def plot_segment_shape(segment_instance, x_left, y_center, length, segment_group):
+    """Draw a straight segment. Returns (center_x, center_y) for labels."""
+    y_for_path = -y_center  # svg_utils flips Y internally
 
     spline_points = [
-        {"x": x, "y": y_for_path, "tangent": 0},
-        {"x": x + length, "y": y_for_path, "tangent": 0},
+        {"x": x_left,        "y": y_for_path, "tangent": 0},
+        {"x": x_left+length, "y": y_for_path, "tangent": 0},
     ]
+
     svg_utils.draw_styled_path(
-        spline_points, 0.02, segment_instance.get("appearance"), segment_group
+        spline_points,
+        0.02,
+        segment_instance.get("appearance"),
+        segment_group
     )
 
-    return x + (length / 2), y
+    return (x_left + length/2, y_center)
 
 
 # ==========================================================================================================
@@ -145,21 +146,24 @@ def build_header():
     )
 
     header_group.append(
-        f'<text x="{COL1_WIDTH / 2}" y="{y0 + HEADER_HEIGHT / 2}" '
-        f'fill="{FONT_COLOR}" text-anchor="middle" dominant-baseline="middle" '
-        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE + 1}" font-weight="bold">CIRCUIT</text>'
+        f'<text x="{COL1_WIDTH/2}" y="{y0 + HEADER_HEIGHT/2}" '
+        f'text-anchor="middle" dominant-baseline="middle" '
+        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE+1}" font-weight="bold">CIRCUIT</text>'
     )
+
     header_group.append(
-        f'<text x="{COL1_WIDTH + COL2_WIDTH / 2}" y="{y0 + HEADER_HEIGHT / 2}" '
-        f'fill="{FONT_COLOR}" text-anchor="middle" dominant-baseline="middle" '
-        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE + 1}" font-weight="bold">SCHEMATIC</text>'
+        f'<text x="{COL1_WIDTH + COL2_WIDTH/2}" y="{y0 + HEADER_HEIGHT/2}" '
+        f'text-anchor="middle" dominant-baseline="middle" '
+        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE+1}" font-weight="bold">SCHEMATIC</text>'
     )
+
     return header_group
 
 
 # ==========================================================================================================
 # MAIN RENDER LOOP
 # ==========================================================================================================
+
 row_index = 0
 y_offset = HEADER_HEIGHT
 
@@ -169,12 +173,17 @@ for instance in fileio.read_tsv("instances list"):
 
     circuit_id = instance.get("circuit_id")
     print_name = instance.get("print_name")
-    ports_unfiltered = circuit_utils.instances_of_circuit(circuit_id)
-    ports = []
-    for port in ports_unfiltered:
-        if "-segment" not in port.get("item_type"):
-            ports.append(port)
 
+    # Full ports list from circuit_utils
+    ports_all = circuit_utils.instances_of_circuit(circuit_id)
+
+    # Remove items whose item_type explicitly contains "-segment"
+    ports = []
+    for p in ports_all:
+        if "-segment" not in p.get("item_type", ""):
+            ports.append(p)
+
+    # Correct node/segment split (Option A)
     nodes = []
     for p in ports:
         if p.get("location_type") == "node":
@@ -183,83 +192,123 @@ for instance in fileio.read_tsv("instances list"):
     segments = []
     for p in ports:
         if p.get("location_type") == "segment":
-            continue
-        segments.append(p)
+            segments.append(p)
 
-    usable_width = COL2_WIDTH - (2 * NODE_MARGIN_X)
+    # ---- Determine layout widths ----
+    usable_width = COL2_WIDTH - 2 * NODE_MARGIN_X
     total_node_width = len(nodes) * NODE_WIDTH
-    remaining_space = usable_width - total_node_width
-    segment_length = (remaining_space / max(len(segments), 1)) if segments else 0
-    segment_length = max(segment_length, 0)
 
-    # ---- SVG row groups ----
-    y_row_top = y_offset + (row_index * ROW_HEIGHT)
+    if len(segments) > 0:
+        segment_length = (usable_width - total_node_width) / len(segments)
+    else:
+        segment_length = 0
+
+    # ---- SVG group origins ----
+    y_row_top = y_offset + row_index * ROW_HEIGHT
     group_x = COL1_WIDTH
     group_y = y_row_top
+    row_center_y = ROW_HEIGHT / 2
 
     table_group = []
     segment_group = []
     node_group = []
     text_group = []
 
-    # ---- Table cell backgrounds ----
+    # ---- Table cells ----
     table_group.append(
         f'<rect x="0" y="{y_row_top}" width="{COL1_WIDTH}" height="{ROW_HEIGHT}" '
-        f'fill="{TABLE_FILL}" stroke="{TABLE_STROKE}" />'
+        f'stroke="{TABLE_STROKE}" fill="{TABLE_FILL}" />'
     )
     table_group.append(
         f'<rect x="{COL1_WIDTH}" y="{y_row_top}" width="{COL2_WIDTH}" height="{ROW_HEIGHT}" '
-        f'fill="{TABLE_FILL}" stroke="{TABLE_STROKE}" />'
+        f'stroke="{TABLE_STROKE}" fill="{TABLE_FILL}" />'
     )
 
-    # ---- Row label ----
+    # ---- Left Column Text ----
     text_group.append(
-        f'<text x="{COL1_WIDTH / 2}" y="{y_row_top + ROW_HEIGHT / 2}" '
-        f'fill="{FONT_COLOR}" text-anchor="middle" dominant-baseline="middle" '
+        f'<text x="{COL1_WIDTH/2}" y="{y_row_top + ROW_HEIGHT/2}" '
+        f'text-anchor="middle" dominant-baseline="middle" '
         f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE}">{print_name}</text>'
     )
 
-    # ---- Draw schematic content ----
-    x = NODE_MARGIN_X
-    row_center_y = ROW_HEIGHT / 2
+    # ---- Schematic Layout ----
+
+    left = NODE_MARGIN_X
+    right = left
 
     for port in ports:
-        if port.get("location_type") == "segment":
 
-            cx, cy = plot_segment_shape(port, x, row_center_y, segment_length, segment_group)
+        loc = port.get("location_type", "")
 
-            lines = [
-                instances_list.attribute_of(port.get("parent_instance"), "print_name"),
-                port.get("print_name")
-            ]
-            plot_text_lines(lines, group_x + cx, group_y + cy, text_group)
+        # --------------------------------------------
+        # Update left/right based solely on this port
+        # --------------------------------------------
+        if loc == "segment":
+            left = right
+            right = left + segment_length
 
-            x += segment_length
+        else:  # node
+            left = right
+            right = left + NODE_WIDTH   # <-- FIXED (nodes advance)
+        
+        # --------------------------------------------
+        # Draw NODE
+        # --------------------------------------------
+        if loc == "node":
+            center_x = (left + right) / 2
+            x_left = center_x - NODE_WIDTH/2
 
-        elif port.get("location_type") == "node":
-            box_width = NODE_WIDTH
-            plot_node_shape(port, x, row_center_y, box_width, node_group)
+            plot_node_shape(
+                port,
+                x_left,
+                row_center_y,
+                NODE_WIDTH,
+                node_group,
+            )
 
-            lines = [
-                port.get("item_type", ""),
-                instances_list.attribute_of(port.get("parent_instance"), "print_name"),
-                port.get("print_name", "")
-            ]
+            plot_text_lines(
+                [
+                    port.get("item_type", ""),
+                    instances_list.attribute_of(port.get("parent_instance"), "print_name"),
+                    port.get("print_name", ""),
+                ],
+                center_x,
+                group_y + row_center_y,
+                text_group,
+            )
 
-            cx = x + (box_width / 2)
-            cy = row_center_y
+        # --------------------------------------------
+        # Draw SEGMENT
+        # --------------------------------------------
+        if loc == "segment":
+            cx = (left + right) / 2
 
-            plot_text_lines(lines, group_x + cx, group_y + cy, text_group)
+            svg_utils.draw_styled_path(
+                [
+                    {"x": left,  "y": -row_center_y, "tangent": 0},
+                    {"x": right, "y": -row_center_y, "tangent": 0},
+                ],
+                0.02,
+                port.get("appearance"),
+                segment_group,
+            )
 
-            x += box_width
+            plot_text_lines(
+                [
+                    instances_list.attribute_of(port.get("parent_instance"), "print_name"),
+                    port.get("print_name", ""),
+                ],
+                cx,
+                group_y + row_center_y,
+                text_group,
+            )
 
-    # ---- Output row groups ----
+
+    # ---- Output row ----
     svg_elements.extend(table_group)
     svg_elements.append(f'<g transform="translate({group_x},{group_y})">')
-    for s in segment_group:
-        svg_elements.append(f"  {s}")
-    for n in node_group:
-        svg_elements.append(f"  {n}")
+    svg_elements.extend(f"  {s}" for s in segment_group)
+    svg_elements.extend(f"  {n}" for n in node_group)
     svg_elements.append("</g>")
     svg_elements.extend(text_group)
 
