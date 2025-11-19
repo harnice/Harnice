@@ -76,8 +76,6 @@ svg_elements = []
 # ==========================================================================================================
 
 def plot_text_lines(lines, center_x, center_y, text_group, background = False):
-    """Draw 1–3 centered text lines at a given row-relative location."""
-
     # Normalize: turn None into empty strings
     norm_lines = [(t if t is not None else "") for t in lines]
 
@@ -86,8 +84,8 @@ def plot_text_lines(lines, center_x, center_y, text_group, background = False):
 
     text_template = (
         f'<text x="{{x}}" y="{{y}}" fill="{FONT_COLOR}" '
-        f'text-anchor="middle" font-family="{FONT_FAMILY}" '
-        f'font-size="{FONT_SIZE}">{{text}}</text>'
+        f'text-anchor="middle" dominant-baseline="middle" '
+        f'font-family="{FONT_FAMILY}" font-size="{FONT_SIZE}">{{text}}</text>'
     )
 
     # Safe width calculation
@@ -204,7 +202,7 @@ for instance in input_circuits:
         if "-segment" not in p.get("item_type", ""):
             ports.append(p)
 
-    # Correct node/segment split (Option A)
+    # Correct node/segment split
     nodes = []
     for p in ports:
         if p.get("location_type") == "node":
@@ -288,13 +286,20 @@ for instance in input_circuits:
                 node_group,
             )
 
+            text_lines = []
+            if port.get("item_type") not in [None, ""]:
+                if port.get("item_type") in ["connector_cavity"]:
+                    pass
+                else:
+                    text_lines.append(port.get("item_type"))
+            if instances_list.attribute_of(port.get("parent_instance"), "print_name") not in [None, ""]:
+                text_lines.append(instances_list.attribute_of(port.get("parent_instance"), "print_name"))
+            if port.get("print_name") not in [None, ""]:
+                text_lines.append(port.get("print_name"))
+
             plot_text_lines(
-                [
-                    port.get("item_type", ""),
-                    instances_list.attribute_of(port.get("parent_instance"), "print_name"),
-                    port.get("print_name", ""),
-                ],
-                group_x + center_x,       # <-- labels include group_x
+                text_lines,
+                group_x + center_x,
                 group_y + row_center_y,
                 text_group,
             )
@@ -317,7 +322,6 @@ for instance in input_circuits:
 
             plot_text_lines(
                 [
-                    instances_list.attribute_of(port.get("parent_instance"), "print_name"),
                     port.get("print_name", ""),
                 ],
                 group_x + center_x,       # <-- labels include group_x
