@@ -107,12 +107,24 @@ for instance in fileio.read_tsv("instances list"):
     else:
         if instance.get("item_type") == "connector_cavity":
             instance_name = instance.get("instance_name", "")
-            print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
+            print_name = f"Cavity {instance_name.split(".")[-1] if "." in instance_name else instance_name}"
             instances_list.modify(instance_name, {"print_name": print_name})
-        elif instance.get("item_type") == "conductor":
+        elif instance.get("item_type") in ["conductor", "conductor-segment"]:
             instances_list.modify(instance.get("instance_name"), {
-                "print_name": f"{instance.get("cable_identifier")}"
+                "print_name": f"{instance.get("cable_identifier")} of {instances_list.attribute_of(instance.get("parent_instance"), "print_name")}"
             })
+        elif instance.get("item_type") == "net-channel":
+            print_name = f"'{instance.get("this_net_from_device_channel_id")}' of '{instance.get("this_net_from_device_refdes")}' to '{instance.get("this_net_to_device_channel_id")}' of '{instance.get("this_net_to_device_refdes")}'"
+            instances_list.modify(
+                instance.get("instance_name"),
+                {"print_name": print_name},
+            )
+        elif instance.get("item_type") == "net-channel-segment":
+            print_name = f"'{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_channel_id")}' of '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_refdes")}' to '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_channel_id")}' of '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_refdes")}'"
+            instances_list.modify(
+                instance.get("instance_name"),
+                {"print_name": print_name},
+            )
         else:
             instances_list.modify(instance.get("instance_name"), {
                 "print_name": instance.get("instance_name")

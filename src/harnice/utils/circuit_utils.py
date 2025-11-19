@@ -42,26 +42,33 @@ def squeeze_instance_between_ports_in_circuit(
     instance_name, circuit_id, new_circuit_port_number
 ):
     for instance in fileio.read_tsv("instances list"):
-        if instance.get("circuit_id") == circuit_id:
+        if str(instance.get("circuit_id")) == str(circuit_id):
             if instance.get("item_type") == "circuit":
                 continue
-            old_port_number = instance.get("circuit_port_number")
+            try:
+                old_port_number = int(instance.get("circuit_port_number"))
+            except ValueError:
+                if instance.get("instance_name") == instance_name:
+                    pass
+                else:
+                    continue
+            if instance.get("instance_name") == instance_name:
+                instances_list.modify(
+                    instance_name,
+                    {
+                        "circuit_id": circuit_id,
+                        "circuit_port_number": new_circuit_port_number,
+                    },
+                )
+                continue
+
             if int(instance.get("circuit_port_number")) < new_circuit_port_number:
                 continue
             else:
                 instances_list.modify(
                     instance.get("instance_name"),
-                    {"circuit_port_number": int(old_port_number) + 1},
+                    {"circuit_port_number": old_port_number + 1},
                 )
-
-        if instance.get("instance_name") == instance_name:
-            instances_list.modify(
-                instance_name,
-                {
-                    "circuit_id": circuit_id,
-                    "circuit_port_number": new_circuit_port_number,
-                },
-            )
 
 
 def instances_of_circuit(circuit_id):

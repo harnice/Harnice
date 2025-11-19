@@ -66,8 +66,11 @@ def lookup_outputcsys_from_lib_used(instance, outputcsys, base_directory=None):
         f"{instance.get("instance_name")}-attributes.json",
     )
 
-    with open(attributes_path, "r", encoding="utf-8") as f:
-        attributes_data = json.load(f)
+    try:
+        with open(attributes_path, "r", encoding="utf-8") as f:
+            attributes_data = json.load(f)
+    except FileNotFoundError:
+        return 0, 0, 0
 
     csys_children = attributes_data.get("csys_children", {})
 
