@@ -1,7 +1,7 @@
 import os
 from harnice import fileio, state
 from harnice.lists import instances_list
-from harnice.utils import circuit_utils, appearance, svg_utils
+from harnice.utils import circuit_utils, svg_utils
 
 artifact_mpn = "circuit_visualizer"
 # artifact_id: intentionally NOT defined here — injected externally by runpy
@@ -42,7 +42,7 @@ def dirpath(target_value):
 # ==========================================================================================================
 
 node_pointsize = 6
-circuit_length = 600
+circuit_length = 800
 whitespace_length = 24
 
 FONT_FAMILY = "Arial"
@@ -188,7 +188,7 @@ def build_header():
 row_index = 0
 y_offset = HEADER_HEIGHT
 
-for instance in fileio.read_tsv("instances list"):
+for instance in input_circuits:
     if instance.get("item_type") != "circuit":
         continue
 
