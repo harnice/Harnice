@@ -304,7 +304,16 @@ rev_history.overwrite({{
         if output_macro_dict is None:
             output_macro_contents = """feature_tree_utils.run_macro("bom_exporter_bottom_up", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="bom-1")
 feature_tree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="formboard-1", scale=scales.get("A"))
-feature_tree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="circuitviz-1")
+circuitviz_1_instances = []
+for instance in fileio.read_tsv("instances list"):
+    circuitviz_1_instances.append(instance)
+feature_tree_utils.run_macro(
+    "circuit_visualizer",
+    "harness_artifacts",
+    "https://github.com/harnice/harnice-library-public",
+    artifact_id="circuitviz-1",
+    input_circuits = circuitviz_1_instances
+)
 feature_tree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="revhistory-1")
 feature_tree_utils.run_macro("build_notes_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="build_notestable-1")
 feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)
