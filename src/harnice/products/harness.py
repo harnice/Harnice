@@ -107,12 +107,24 @@ for instance in fileio.read_tsv("instances list"):
     else:
         if instance.get("item_type") == "connector_cavity":
             instance_name = instance.get("instance_name", "")
-            print_name = instance_name.split(".")[-1] if "." in instance_name else instance_name
+            print_name = f"Cavity {instance_name.split(".")[-1] if "." in instance_name else instance_name}"
             instances_list.modify(instance_name, {"print_name": print_name})
-        elif instance.get("item_type") == "conductor":
+        elif instance.get("item_type") in ["conductor", "conductor-segment"]:
             instances_list.modify(instance.get("instance_name"), {
-                "print_name": f"{instance.get("cable_identifier")}"
+                "print_name": f"{instance.get("cable_identifier")} of {instances_list.attribute_of(instance.get("parent_instance"), "print_name")}"
             })
+        elif instance.get("item_type") == "net-channel":
+            print_name = f"'{instance.get("this_net_from_device_channel_id")}' of '{instance.get("this_net_from_device_refdes")}' to '{instance.get("this_net_to_device_channel_id")}' of '{instance.get("this_net_to_device_refdes")}'"
+            instances_list.modify(
+                instance.get("instance_name"),
+                {"print_name": print_name},
+            )
+        elif instance.get("item_type") == "net-channel-segment":
+            print_name = f"'{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_channel_id")}' of '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_refdes")}' to '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_channel_id")}' of '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_refdes")}'"
+            instances_list.modify(
+                instance.get("instance_name"),
+                {"print_name": print_name},
+            )
         else:
             instances_list.modify(instance.get("instance_name"), {
                 "print_name": instance.get("instance_name")
@@ -292,7 +304,16 @@ rev_history.overwrite({{
         if output_macro_dict is None:
             output_macro_contents = """feature_tree_utils.run_macro("bom_exporter_bottom_up", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="bom-1")
 feature_tree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="formboard-1", scale=scales.get("A"))
-feature_tree_utils.run_macro("circuit_visualizer", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="circuitviz-1")
+circuitviz_1_instances = []
+for instance in fileio.read_tsv("instances list"):
+    circuitviz_1_instances.append(instance)
+feature_tree_utils.run_macro(
+    "circuit_visualizer",
+    "harness_artifacts",
+    "https://github.com/harnice/harnice-library-public",
+    artifact_id="circuitviz-1",
+    input_circuits = circuitviz_1_instances
+)
 feature_tree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="revhistory-1")
 feature_tree_utils.run_macro("build_notes_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="build_notestable-1")
 feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)

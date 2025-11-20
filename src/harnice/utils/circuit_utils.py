@@ -38,10 +38,14 @@ def max_port_number_in_circuit(circuit_id):
     return max_port_number
 
 
+
 def squeeze_instance_between_ports_in_circuit(
     instance_name, circuit_id, new_circuit_port_number
 ):
-    for instance in fileio.read_tsv("instances list"):
+    instances = fileio.read_tsv("instances list")
+    for instance in instances:
+        if instance.get("instance_name") == instance_name:
+            continue
         if instance.get("circuit_id") == circuit_id:
             if instance.get("item_type") == "circuit":
                 continue
@@ -53,7 +57,7 @@ def squeeze_instance_between_ports_in_circuit(
                     instance.get("instance_name"),
                     {"circuit_port_number": int(old_port_number) + 1},
                 )
-
+    for instance in instances:
         if instance.get("instance_name") == instance_name:
             instances_list.modify(
                 instance_name,
