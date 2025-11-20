@@ -46,7 +46,6 @@ def dirpath(target_value):
 # ==========================================================================================================
 
 # =============== GLOBAL SETTINGS ===============
-instances = fileio.read_tsv("instances list")  # only need to call this once
 printable_item_types = {
     "connector",
     "backshell",
@@ -112,7 +111,7 @@ def make_new_segment_drawing(instance, location):
 # ====================================================
 # Group instances by item_type
 grouped_instances = defaultdict(list)
-for instance in instances:
+for instance in input_instances:
     item_type = instance.get("item_type", "").strip()
     if item_type in printable_item_types:
         grouped_instances[item_type].append(instance)
@@ -250,7 +249,7 @@ with open(path("output svg"), "w") as f:
 #        COPY IN INSTANCE CONTENT
 # ====================================================
 
-for instance in instances:
+for instance in input_instances:
     item_type = instance.get("item_type", "").strip()
     if instance.get("instance_name") in printable_instances:
 
