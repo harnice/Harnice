@@ -121,7 +121,7 @@ def average_coords(data):
                 instances_list.attribute_of(key, "segment_group"), "absolute_rotation"
             )
         )
-        averages[key]["text"] = instances_list.attribute_of(key, "parent_instance")
+        averages[key]["text"] = instances_list.attribute_of(key, "print_name")
     return averages
 
 
@@ -359,9 +359,9 @@ for instance1 in instances:
 
     for order in [0, -1]:
         if order == 0:
-            text = instances_list.attribute_of(parent_name, "node_at_end_a")
+            text = instances_list.attribute_of(instances_list.attribute_of(parent_name, "node_at_end_a"), "print_name")
         else:
-            text = instances_list.attribute_of(parent_name, "node_at_end_b")
+            text = instances_list.attribute_of(instances_list.attribute_of(parent_name, "node_at_end_b"), "print_name")
         svg_groups.append(
             label_svg(
                 cleaned_chain[order].get("x"),
@@ -373,7 +373,7 @@ for instance1 in instances:
             )
         )
 
-# === AVERAGE LABELS ===
+# === SEGMENT LABELS ===
 for key, value in average_coords(points_to_pass_through).items():
     if print_circles_and_dots:
         svg_groups.append(circle_svg(value["x"], value["y"], 0.1 * 96, "green"))
