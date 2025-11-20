@@ -121,7 +121,7 @@ def average_coords(data):
                 instances_list.attribute_of(key, "segment_group"), "absolute_rotation"
             )
         )
-        averages[key]["text"] = instance.get("print_name")
+        averages[key]["text"] = instances_list.attribute_of(key, "print_name")
     return averages
 
 
