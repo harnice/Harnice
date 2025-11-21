@@ -137,25 +137,6 @@ for instance in fileio.read_tsv("instances list"):
 flagnote_counter = 1
 build_note_counter = 1
 
-manual_flagnotes_list.ensure_exists()
-for manual_note in fileio.read_tsv("flagnotes manual"):
-    affected_list = manual_note.get("affectedinstances", "").strip().split(",")
-    for affected in affected_list:
-        instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-            "item_type": "flagnote",
-            "note_type": manual_note.get("note_type"),
-            "mpn": manual_note.get("shape"),
-            "lib_repo": manual_note.get("shape_lib_repo"),
-            "bubble_text": build_note_counter,
-            "parent_instance": affected,
-            "connector_group": instances_list.attribute_of(affected, "connector_group"),
-            "parent_csys_instance_name": affected,
-            "note_text": manual_note.get("note_text")
-        })
-        flagnote_counter += 1
-    if manual_note.get("note_type") == "build_note":
-        build_note_counter += 1
-
 for rev_row in fileio.read_tsv("revision history"):
     affected_raw = rev_row.get("affectedinstances", "").strip()
     if affected_raw:
@@ -242,7 +223,6 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
         "interactive_files": {
             f"{state.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
-            f"{state.partnumber('pn-rev')}.flagnotes.tsv": "flagnotes manual",
         },
     }
 
@@ -328,7 +308,7 @@ import re
 import runpy
 from harnice import fileio
 from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, flagnote_utils, library_utils, feature_tree_utils
-from harnice.lists import instances_list, post_harness_instances_list, rev_history, manual_flagnotes_list
+from harnice.lists import instances_list, post_harness_instances_list, rev_history
 
 #===========================================================================
 #                   build_macro SCRIPTING

@@ -1,6 +1,8 @@
 from harnice import fileio
 from harnice.lists import instances_list
 
+note_counter = 1
+build_note_counter = 1
 
 def compile_build_notes():
     # add build_note itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
@@ -56,7 +58,7 @@ def assign_output_csys():
     for current_affected_instance_candidate in fileio.read_tsv("instances list"):
         processed_affected_instances = []
         current_affected_instance = None
-        if current_affected_instance_candidate.get("item_type") == "flagnote":
+        if current_affected_instance_candidate.get("item_type") == "flag_note":
             if (
                 current_affected_instance_candidate.get("parent_instance")
                 not in processed_affected_instances
@@ -68,7 +70,7 @@ def assign_output_csys():
         # now that you have a not-yet traversed affected instance
         flagnote_counter = 1
         for instance in fileio.read_tsv("instances list"):
-            if instance.get("item_type") == "flagnote":
+            if instance.get("item_type") == "flag_note":
                 if instance.get("parent_instance") == current_affected_instance:
                     instances_list.modify(
                         instance.get("instance_name"),
@@ -94,3 +96,38 @@ def assign_output_csys():
                         ignore_duplicates=True,
                     )
                     flagnote_counter += 1
+
+def new_note(
+    note_type, # rev_change_callout, bom_item, part_name, build_note, etc
+    note_text, # content of the note, must be unique
+    shape = None,
+    shape_lib_subpath = None,
+    shape_lib_repo = None,
+    affectedinstances = None):
+
+    global note_counter
+
+    for instance in fileio.read_tsv("instances list"):
+        if instance.get("note_text") == note_text:
+            raise ValueError(f"A note with the text '{note_text}' already exists")
+
+    instances_list.new_instance(f"note-{note_counter}", {
+        "item_type": "note",
+        "note_type": note_type,
+        "print_name": note_text,
+        "note_text": note_text,
+        "shape": shape,
+        "shape_lib_repo": shape_lib_repo,
+        "affectedinstances": affectedinstances
+    })
+
+    note_counter += 1
+    
+
+def _new_flagnote(
+    item_type,
+    shape,
+    shape_lib_subpath = None,
+    shape_lib_repo,
+    print_name):
+    instances_list.new_instance(f"flagnote-{flagnote_counter}", {
