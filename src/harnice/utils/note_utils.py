@@ -4,57 +4,7 @@ from harnice.lists import instances_list
 note_counter = 1
 build_note_counter = 1
 
-def compile_build_notes():
-    # add build_note itemtypes to list (separate from the flagnote itemtype) to form source of truth for the list itself
-    for instance in fileio.read_tsv("instances list"):
-        if (
-            instance.get("item_type") == "flagnote"
-            and instance.get("note_type") == "build_note"
-        ):
-            instances_list.modify(
-                instance.get("instance_name"),
-                {"note_number": instance.get("bubble_text")},
-            )
-
-    for instance in fileio.read_tsv("instances list"):
-        if (
-            instance.get("item_type") == "flagnote"
-            and instance.get("note_type") == "build_note"
-        ):
-            build_note_text = instance.get("note_text")
-            note_number = instance.get("note_number")
-
-            # does this build_note exist as an instance yet?
-            already_exists = False
-            for instance2 in fileio.read_tsv("instances list"):
-                if (
-                    instance2.get("item_type") == "build_note"
-                    and instance2.get("note_text") == build_note_text
-                ):
-                    already_exists = True
-
-            # if not, make it
-            if not already_exists:
-                instances_list.new_instance(
-                    f"build_note-{instance.get('bubble_text')}",
-                    {
-                        "item_type": "build_note",
-                        "note_text": build_note_text,
-                        "note_number": note_number,
-                    },
-                )
-                if instance.get("lib_repo") not in [None, ""]:
-                    if instance.get("parent_instance") not in [None, ""]:
-                        instances_list.modify(
-                            f"build_note-{instance.get('bubble_text')}",
-                            {
-                                "mpn": instance.get("mpn"),
-                                "lib_repo": instance.get("lib_repo"),
-                            },
-                        )
-
-
-def assign_output_csys():
+def assign_output_csys(flagnote_number, affected_instance):
     for current_affected_instance_candidate in fileio.read_tsv("instances list"):
         processed_affected_instances = []
         current_affected_instance = None
@@ -97,6 +47,7 @@ def assign_output_csys():
                     )
                     flagnote_counter += 1
 
+
 def new_note(
     note_type, # rev_change_callout, bom_item, part_name, build_note, etc
     note_text, # content of the note, must be unique
@@ -109,7 +60,16 @@ def new_note(
 
     for instance in fileio.read_tsv("instances list"):
         if instance.get("note_text") == note_text:
-            raise ValueError(f"A note with the text '{note_text}' already exists")
+            updated_affectedinstances = []
+
+            if instance.get("affectedinstances"):
+                updated_affectedinstances = instance.get("affectedinstances").strip().split(";")
+
+            updated_affectedinstances.append(affectedinstances)
+
+            instances_list.modify(instance.get("instance_name"), {
+                "affectedinstances": updated_affectedinstances
+            })
 
     instances_list.new_instance(f"note-{note_counter}", {
         "item_type": "note",
@@ -118,16 +78,8 @@ def new_note(
         "note_text": note_text,
         "shape": shape,
         "shape_lib_repo": shape_lib_repo,
+        "shape_lib_subpath": shape_lib_subpath,
         "affectedinstances": affectedinstances
     })
 
     note_counter += 1
-    
-
-def _new_flagnote(
-    item_type,
-    shape,
-    shape_lib_subpath = None,
-    shape_lib_repo,
-    print_name):
-    instances_list.new_instance(f"flagnote-{flagnote_counter}", {

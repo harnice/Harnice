@@ -131,87 +131,6 @@ for instance in fileio.read_tsv("instances list"):
                 })
 
 
-#===========================================================================
-#                   ASSIGN FLAGNOTES
-#===========================================================================
-flagnote_counter = 1
-build_note_counter = 1
-
-for rev_row in fileio.read_tsv("revision history"):
-    affected_raw = rev_row.get("affectedinstances", "").strip()
-    if affected_raw:
-        for affected in [a.strip() for a in affected_raw.split(",") if a.strip()]:
-            instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-                "item_type": "flagnote",
-                "note_type": "rev_change_callout",
-                "mpn": "rev_change_callout",
-                "lib_repo": "https://github.com/harnice/harnice-library-public",
-                "bubble_text": rev_row.get("rev"),
-                "parent_instance": affected,
-                "connector_group": instances_list.attribute_of(affected, "connector_group"),
-                "parent_csys_instance_name": affected
-            })
-            flagnote_counter += 1
-
-for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["Cavity", "cable"]:
-        continue
-    if instance.get("bom_line_number") != "":
-        instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-            "item_type": "flagnote",
-            "note_type": "bom_item",
-            "mpn": "bom_item",
-            "lib_repo": "https://github.com/harnice/harnice-library-public",
-            "bubble_text": instance.get("bom_line_number"),
-            "parent_instance": instance.get("instance_name"),
-            "connector_group": instances_list.attribute_of(instance.get("instance_name"), "connector_group"),
-            "parent_csys_instance_name": instance.get("instance_name")
-        })
-        flagnote_counter += 1
-
-for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["connector", "backshell"]:
-        bubble_text = instance.get("print_name") or instance.get("instance_name")
-        instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-            "item_type": "flagnote",
-            "note_type": "part_name",
-            "mpn": "part_name",
-            "lib_repo": "https://github.com/harnice/harnice-library-public",
-            "bubble_text": bubble_text,
-            "parent_instance": instance.get("instance_name"),
-            "connector_group": instances_list.attribute_of(instance.get("instance_name"), "connector_group"),
-            "parent_csys_instance_name": instance.get("instance_name")
-        })
-        flagnote_counter += 1
-
-cavity_flagnote_conversion_happened = False
-for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "flagnote":
-        if instances_list.attribute_of(instance.get("parent_instance"), "item_type") == "Cavity":
-            instances_list.new_instance(f"flagnote-{flagnote_counter}", {
-                "item_type": "flagnote",
-                "note_type": "build_note",
-                "mpn": "build_note",
-                "lib_repo": "https://github.com/harnice/harnice-library-public",
-                "bubble_text": build_note_counter,
-                "parent_instance": instance.get("parent_instance"),
-                "parent_csys_instance_name": instance.get("parent_instance"),
-                "note_text": "Special cavities used in this connector"
-            })
-            flagnote_counter += 1
-            cavity_flagnote_conversion_happened = True
-if cavity_flagnote_conversion_happened:
-    build_note_counter += 1
-
-flagnote_utils.assign_output_csys()
-feature_tree_utils.update_translate_content()
-flagnote_utils.compile_build_notes()
-
-for instance in fileio.read_tsv("instances list"):
-    if instance.get("absolute_rotation") not in ["", None]:
-        instances_list.modify(instance.get("instance_name"), {
-            "rotate_csys": instance.get("absolute_rotation")
-        })
 """
 
 
@@ -307,7 +226,7 @@ import yaml
 import re
 import runpy
 from harnice import fileio
-from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, flagnote_utils, library_utils, feature_tree_utils
+from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, note_utils, library_utils, feature_tree_utils
 from harnice.lists import instances_list, post_harness_instances_list, rev_history
 
 #===========================================================================

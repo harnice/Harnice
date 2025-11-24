@@ -27,7 +27,7 @@ COLUMNS = [
     "translate_x",  # derived from parent_csys and parent_csys_name
     "translate_y",  # derived from parent_csys and parent_csys_name
     "rotate_csys",  # derived from parent_csys and parent_csys_name
-    "absolute_rotation",  # manual add, not nominally used unless it's a flagnote
+    "absolute_rotation",  # manual add, not nominally used unless it's a flagnote, segment, or node
     "cable_group",
     "cable_container",
     "cable_identifier",
