@@ -655,4 +655,7 @@ def calculate_location(instance_name, origin):
         y_pos += dy
         angle += rotate_csys  # update orientation after translation
 
+        if row.get("absolute_rotation") not in [None, ""]:
+            angle = float(row.get("absolute_rotation"))
+
     return x_pos, y_pos, angle
