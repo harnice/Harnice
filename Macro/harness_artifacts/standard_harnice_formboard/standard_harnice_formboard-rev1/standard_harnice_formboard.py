@@ -138,14 +138,14 @@ for item_type, items in grouped_instances.items():
         instance_name = instance.get("instance_name")
 
         x, y, angle = formboard_utils.calculate_location(instance_name, origin)
-
+        
         px_x = x * 96
         px_y = y * 96
 
         if instance.get("item_type") == "segment":
             angle += origin[2]
 
-        if instance.get("absolute_rotation") != "":
+        if instance.get("absolute_rotation") not in ["", None]:
             angle = float(instance.get("absolute_rotation"))
 
         if instance.get("item_type") == "segment":
@@ -153,7 +153,6 @@ for item_type, items in grouped_instances.items():
 
         svg_px_x = px_x
         svg_px_y = -1 * px_y
-        svg_angle = -1 * angle
 
         if item_type == "flagnote":
             if instance.get("parent_instance") in ["", None]:
