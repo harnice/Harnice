@@ -53,38 +53,37 @@ line_width = 0.008 * 96  # Define line_width before it is used
 svg_table_data = []
 
 # Read instances for build_notes
-for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "build_note":
-        build_note_number = instance.get("note_number")
-        note = instance.get("note_text")
-        has_shape = False
+for instance in input_instances:
+    build_note_number = instance.get("note_number")
+    note = instance.get("note_text")
+    has_shape = False
 
-        # Pull bubble from the library if there is a shape
-        if instance.get("mpn") not in ["", None]:
-            has_shape = True
+    # Pull bubble from the library if there is a shape
+    if instance.get("mpn") not in ["", None]:
+        has_shape = True
 
-        if has_shape:
-            library_utils.pull(
-                {
-                    "lib_repo": instance.get("lib_repo"),
-                    "item_type": "flagnote",
-                    "mpn": instance.get("mpn"),
-                    "instance_name": f"bubble{build_note_number}",
-                },
-                update_instances_list=False,
-                destination_directory=dirpath(
-                    f"bubble{build_note_number}", identifier=build_note_number
-                ),
-            )
-
-        # Append row information only if it contains valid data
-        svg_table_data.append(
+    if has_shape:
+        library_utils.pull(
             {
-                "build_note_number": build_note_number,
-                "note": note,
-                "has_shape": has_shape,
-            }
+                "lib_repo": instance.get("lib_repo"),
+                "item_type": "flagnote",
+                "mpn": instance.get("mpn"),
+                "instance_name": f"bubble{build_note_number}",
+            },
+            update_instances_list=False,
+            destination_directory=dirpath(
+                f"bubble{build_note_number}", identifier=build_note_number
+            ),
         )
+
+    # Append row information only if it contains valid data
+    svg_table_data.append(
+        {
+            "build_note_number": build_note_number,
+            "note": note,
+            "has_shape": has_shape,
+        }
+    )
 
 num_rows = len(svg_table_data)  # Number of valid data rows
 svg_width = sum(column_widths)
