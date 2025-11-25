@@ -33,11 +33,11 @@ COLUMNS = [
     "cable_identifier",
     "length",  # derived from formboard definition, the length of a segment
     "diameter",  # apparent diameter of a segment <---------- change to print_diameter
-    "appearance",  # see below on appearance standards
-    "note_type",
-    "note_number",  # <--------- merge with parent_csys and import instances of child csys?
-    "bubble_text",
-    "note_text",
+    "appearance",  # see harnice.utils.appearance for details
+    "note_type",  # build_note, rev_note, etc
+    "note_number",  # if there is a counter involved (rev, bom, build_note, etc)
+    "note_parent",  # the instance the note applies to
+    "note_text",  # the content of the note
     "lib_repo",
     "lib_subpath",
     "lib_desc",
