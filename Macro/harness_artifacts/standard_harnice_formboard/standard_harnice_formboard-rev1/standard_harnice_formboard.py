@@ -48,11 +48,9 @@ def dirpath(target_value):
 # ==================================================================================================
 #               ARGUMENTS AND GLOBAL SETTINGS
 # ==================================================================================================
-printable_item_types = {
-    "connector",
-    "backshell",
-    "segment",
-    "flagnote",
+unprintable_item_types = {
+    "origin",
+    "node",
 }
 
 try:
@@ -111,7 +109,7 @@ def make_new_segment_drawing(instance, location):
 grouped_instances = defaultdict(list)
 for instance in input_instances:
     item_type = instance.get("item_type", "").strip()
-    if item_type in printable_item_types:
+    if item_type not in unprintable_item_types:
         grouped_instances[item_type].append(instance)
 
 # Prepare lines for SVG content
@@ -125,78 +123,37 @@ for item_type, items in grouped_instances.items():
     content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
 
     for instance in items:
-        if instance.get("item_type") not in printable_item_types:
+        if instance.get("item_type") in unprintable_item_types:
             continue
 
         instance_name = instance.get("instance_name")
         printable_instances.add(instance_name)
 
+        x, y, angle = formboard_utils.calculate_location(instance, input_instances)
+
+        svg_px_x = x * 96
+        svg_px_y = y * -96
+
         if item_type == "flagnote":
-            flagnote_position_counter[instance.get("parent_instance")] = (
-                flagnote_position_counter.get(instance.get("parent_instance"), 0) + 1
-            )
-
-            # Unpack positions of note and leader
-            x_note, y_note, flagnote_orientation = formboard_utils.calculate_location(instance, input_instances)
-            x_leader, y_leader, angle_leader = 0, 0, 0
-
-            # Compute offset vector in SVG coordinates
-            leader_dx = (x_leader - x_note) * 96
-            leader_dy = (
-                y_leader - y_note
-            ) * -96  # change polarity of y offset (svg coordinate transform)
-
-            # Arrowhead geometry
-            arrow_length = 8  # length of the arrowhead in pixels
-            arrow_width = 6  # width of the arrowhead in pixels
-            line_len = math.hypot(leader_dx, leader_dy)
-            if line_len == 0:
-                line_len = 1  # prevent divide-by-zero
-            ux = leader_dx / line_len
-            uy = leader_dy / line_len
-
-            # Tip of arrow
-            tip_x = leader_dx * scale
-            tip_y = leader_dy * scale
-
-            # Base corners of arrowhead
-            left_x = tip_x - arrow_length * ux + arrow_width * uy / 2
-            left_y = tip_y - arrow_length * uy - arrow_width * ux / 2
-            right_x = tip_x - arrow_length * ux - arrow_width * uy / 2
-            right_y = tip_y - arrow_length * uy + arrow_width * ux / 2
-
+            # translate, then scale, then replace
             content_lines.append(
-                f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y})">'
+                f'      <g id="{instance_name}-translate" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({-1 * angle})">'
             )
             content_lines.append(
-                f'        <line x1="0" y1="0" x2="{tip_x}" y2="{tip_y}" stroke="black" stroke-width="1"/>'
+                f'      <g id="{instance_name}-scale" inkscape:label="{instance_name}-contents-start" transform="scale({1/scale})">'
             )
             content_lines.append(
-                f'        <polygon points="{tip_x},{tip_y} {left_x},{left_y} {right_x},{right_y}" fill="black"/>'
+                f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">'
             )
+            content_lines.append("      </g>")
             content_lines.append(
-                f'        <g id="{instance_name}-rotate" transform="rotate({-1 * angle})">'
+                f'      <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>'
             )
-            content_lines.append(
-                f'          <g id="{instance_name}-scale" transform="scale({1 / scale})">'
-            )
-            content_lines.append(
-                f'            <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">'
-            )
-            content_lines.append(f"            </g>")
-            content_lines.append(
-                f'            <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>'
-            )
-            content_lines.append(f"          </g>")
-            content_lines.append(f"        </g>")
-            content_lines.append(f"      </g>")
+            content_lines.append("      </g>")
+            content_lines.append("      </g>")
 
         else:
-            x, y, angle = formboard_utils.calculate_location(instance, input_instances)
-
-            svg_px_x = x * 96
-            svg_px_y = y * -96
-
+            #just replace, no scale
             content_lines.append(
                 f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({-1 * angle})">'
             )
@@ -285,3 +242,59 @@ for instance in input_instances:
                 path("output svg"),
                 instance.get("instance_name"),
             )
+
+
+
+"""
+
+            # Compute offset vector in SVG coordinates
+            leader_dx = (x_leader - x_note) * 96
+            leader_dy = (
+                y_leader - y_note
+            ) * -96  # change polarity of y offset (svg coordinate transform)
+
+            # Arrowhead geometry
+            arrow_length = 8  # length of the arrowhead in pixels
+            arrow_width = 6  # width of the arrowhead in pixels
+            line_len = math.hypot(leader_dx, leader_dy)
+            if line_len == 0:
+                line_len = 1  # prevent divide-by-zero
+            ux = leader_dx / line_len
+            uy = leader_dy / line_len
+
+            # Tip of arrow
+            tip_x = leader_dx * scale
+            tip_y = leader_dy * scale
+
+            # Base corners of arrowhead
+            left_x = tip_x - arrow_length * ux + arrow_width * uy / 2
+            left_y = tip_y - arrow_length * uy - arrow_width * ux / 2
+            right_x = tip_x - arrow_length * ux - arrow_width * uy / 2
+            right_y = tip_y - arrow_length * uy + arrow_width * ux / 2
+
+            content_lines.append(
+                f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y})">'
+            )
+            content_lines.append(
+                f'        <line x1="0" y1="0" x2="{tip_x}" y2="{tip_y}" stroke="black" stroke-width="1"/>'
+            )
+            content_lines.append(
+                f'        <polygon points="{tip_x},{tip_y} {left_x},{left_y} {right_x},{right_y}" fill="black"/>'
+            )
+            content_lines.append(
+                f'        <g id="{instance_name}-rotate" transform="rotate({-1 * angle})">'
+            )
+            content_lines.append(
+                f'          <g id="{instance_name}-scale" transform="scale({1 / scale})">'
+            )
+            content_lines.append(
+                f'            <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">'
+            )
+            content_lines.append(f"            </g>")
+            content_lines.append(
+                f'            <g id="{instance_name}-contents-end" inkscape:label="{instance_name}-contents-end"></g>'
+            )
+            content_lines.append(f"          </g>")
+            content_lines.append(f"        </g>")
+            content_lines.append(f"      </g>")
+"""
