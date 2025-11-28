@@ -160,7 +160,7 @@ for seg_name in sorted_segment_contents:
 # collect points to pass through
 for node in instances:
     if node.get("item_type") == "node":
-        x_px, y_px, seg_angle = formboard_utils.calculate_location(node)
+        x_px, y_px, seg_angle = formboard_utils.calculate_location(node, instances)
         x_node, y_node = x_px * 96, y_px * 96
 
         node_segment_angles = []

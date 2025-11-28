@@ -123,33 +123,21 @@ flagnote_position_counter = {}
 # Step through each item_type and add relevant group backbone content to the SVG
 for item_type, items in grouped_instances.items():
     content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
+
     for instance in items:
         if instance.get("item_type") not in printable_item_types:
             continue
 
         instance_name = instance.get("instance_name")
         printable_instances.add(instance_name)
-        x, y, angle = formboard_utils.calculate_location(instance)
-
-        svg_px_x = x * 96
-        svg_px_y = y * -96
 
         if item_type == "flagnote":
-            if instance.get("note_parent") in ["", None]:
-                continue
-
             flagnote_position_counter[instance.get("parent_instance")] = (
                 flagnote_position_counter.get(instance.get("parent_instance"), 0) + 1
             )
 
             # Unpack positions of note and leader
-            x_note, y_note, flagnote_orientation = formboard_utils.calculate_location(
-                {
-                    "instance_name": instance.get("instance_name"),
-                    "parent_csys_instance_name": instance.get("parent_instance"),
-                    "parent_csys_outputcsys_name": f"flagnote-{flagnote_position_counter[instance.get("parent_instance")]}",
-                }
-            )
+            x_note, y_note, flagnote_orientation = formboard_utils.calculate_location(instance, input_instances)
             x_leader, y_leader, angle_leader = 0, 0, 0
 
             # Compute offset vector in SVG coordinates
@@ -202,7 +190,13 @@ for item_type, items in grouped_instances.items():
             content_lines.append(f"          </g>")
             content_lines.append(f"        </g>")
             content_lines.append(f"      </g>")
+
         else:
+            x, y, angle = formboard_utils.calculate_location(instance, input_instances)
+
+            svg_px_x = x * 96
+            svg_px_y = y * -96
+
             content_lines.append(
                 f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({-1 * angle})">'
             )
