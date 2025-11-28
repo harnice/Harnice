@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import filecmp
+import json
 from harnice import fileio
 from harnice.lists import instances_list, library_history, rev_history
 from harnice.cli import print_import_status
@@ -154,9 +155,17 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
     )
     revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
 
+    try:
+        with open(os.path.join(destination_directory, f"{input_dict.get("instance_name")}-attributes.json"), "r", encoding="utf-8") as f:
+            attributes_data = json.load(f)
+        csys_children = attributes_data.get("csys_children", {})
+    except:
+        csys_children = None
+
     update_contents = {
         "mpn": input_dict.get("mpn"),
         "item_type": input_dict.get("item_type"),
+        "csys_children": csys_children,
         "lib_repo": input_dict.get("lib_repo"),
         "lib_subpath": input_dict.get("lib_subpath"),
         "lib_desc": revhistory_row.get("desc"),

@@ -4,7 +4,6 @@ import math
 import json
 import shutil
 from harnice import fileio
-from harnice.lists import instances_list
 from harnice.utils import library_utils
 
 

@@ -103,6 +103,8 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                 "item_type": "connector",
                 "location_type": "node",
                 "connector_group": from_connector_key,
+                "parent_csys_instance_name": f"{from_connector_key}.node",
+                "parent_csys_outputcsys_name": "origin",
                 "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
                 "this_instance_mating_device_connector": circuit.get(
                     "net_from_connector_name"
@@ -160,9 +162,11 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                 "item_type": "connector",
                 "location_type": "node",
                 "connector_group": to_connector_key,
-                "this_instance_mating_device_refdes": circuit.get("net_from_refdes"),
+                "parent_csys_instance_name": f"{to_connector_key}.node",
+                "parent_csys_outputcsys_name": "origin",
+                "this_instance_mating_device_refdes": circuit.get("net_to_refdes"),
                 "this_instance_mating_device_connector": circuit.get(
-                    "net_from_connector_name"
+                    "net_to_connector_name"
                 ),
                 "this_instance_mating_device_connector_mpn": to_connector_mpn,
             },

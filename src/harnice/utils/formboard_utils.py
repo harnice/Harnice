@@ -1,6 +1,7 @@
 import os
 import random
 import math
+import ast
 from collections import defaultdict, deque
 from PIL import Image, ImageDraw, ImageFont
 from harnice import fileio
@@ -247,13 +248,14 @@ def validate_nodes():
             f"Disconnected formboard graph found ({len(components)} connector_groups):\n{formatted_connector_groups}"
         )
 
+    # GENERATE NODE COORDINATES
 
-def generate_node_coordinates():
-    # === Step 1: Load segments and nodes from instances_list ===
+    # === Step 1: Reload from instances_list ===
     instances = fileio.read_tsv("instances list")
 
     segments = [inst for inst in instances if inst.get("item_type") == "segment"]
     nodes = [inst for inst in instances if inst.get("item_type") == "node"]
+
 
     # === Step 2: Determine origin node ===
     origin_node = ""
@@ -350,6 +352,8 @@ def generate_node_coordinates():
                 "translate_x": str(translate_x),
                 "translate_y": str(translate_y),
                 "absolute_rotation": average_angle,
+                "parent_csys_instance_name": "origin",
+                "parent_csys_outputcsys_name": "origin",
             },
         )
 
@@ -618,44 +622,152 @@ def map_instance_to_segments(instance):
         i += 1
 
 
-def calculate_location(instance_name, origin):
+def calculate_location(lookup_item, chain_append=None):
     instances = fileio.read_tsv("instances list")
-    instances_lookup = {row["instance_name"]: row for row in instances}
 
+    # rewrite instances list to have csys_children as a dict not a string
+    for instance in instances:
+        raw_children = instance.get("csys_children")
+
+        # Convert text → dict safely
+        try:
+            if isinstance(raw_children, str) and raw_children:
+                csys_children = ast.literal_eval(raw_children)
+            else:
+                csys_children = raw_children or {}
+        except Exception:
+            csys_children = {}
+
+        # Overwrite in the list-of-dicts
+        instance["csys_children"] = csys_children
+
+    # define chain as a list of only the instances relevant to the csys family tree
     chain = []
-    current = instance_name
+    current = lookup_item
 
-    # === Build chain of parents ===
-    while current:
-        chain.append(current)
-        row = instances_lookup.get(current)
-        if not row:
+    while True:
+        # find the parent_csys of the current instance
+        for instance in instances:
+            if instance.get("instance_name") == current.get("instance_name"):
+                parent_csys_instance_name = instance.get("parent_csys_instance_name")
+                parent_csys_outputcsys_name = instance.get("parent_csys_outputcsys_name")
+                break
+            
+        chain.append(instance)
+
+        if current.get("instance_name") == "origin":
             break
-        parent = row.get("parent_csys_instance_name", "").strip()
-        if not parent:
-            break
-        current = parent
 
-    x_pos, y_pos, angle = origin  # unpack origin
+        if parent_csys_instance_name is None:
+            raise ValueError(
+                f"Instance '{current}' missing parent_csys_instance_name"
+            )
+        if not parent_csys_instance_name:
+            raise ValueError(
+                f"Instance '{current}' parent_csys_instance_name blank"
+            )
+        if not parent_csys_outputcsys_name:
+            raise ValueError(
+                f"Instance '{current}' parent_csys_outputcsys_name blank"
+            )
 
-    # Walk down the chain (excluding the instance itself)
-    for name in reversed(chain):
-        row = instances_lookup.get(name, {})
+        parent_csys_instance = None
+        for instance in instances:
+            if instance.get("instance_name") == parent_csys_instance_name:
+                parent_csys_instance = instance
+                break
+        else:
+            raise ValueError(f"Instance '{parent_csys_instance_name}' not found in instances list")
 
-        translate_x = float(row.get("translate_x", 0) or 0)
-        translate_y = float(row.get("translate_y", 0) or 0)
-        rotate_csys = float(row.get("rotate_csys", 0) or 0)
+        current = parent_csys_instance
 
-        # Apply translation in the parent's local coordinates
-        rad = math.radians(angle)
-        dx = math.cos(rad) * translate_x - math.sin(rad) * translate_y
-        dy = math.sin(rad) * translate_x + math.cos(rad) * translate_y
+    if chain_append:
+        chain.append(chain_append)
 
-        x_pos += dx
-        y_pos += dy
-        angle += rotate_csys  # update orientation after translation
+    chain_text = ""
+    for chainlink in chain:
+        chain_text += f"{chainlink.get('instance_name')} -> "
+    print(f"693 !!!!!!!! {chain_text}")
 
-        if row.get("absolute_rotation") not in [None, ""]:
-            angle = float(row.get("absolute_rotation"))
+    # reverse the chain to start at the origin and end with the lookup_item
+    chain = list(reversed(chain))
+
+    # ======================================================================
+    #   Walk the chain, accumulate transforms
+    # ======================================================================
+    x_pos = 0.0
+    y_pos = 0.0
+    angle = 0.0
+
+    print(f"697 !!!! {lookup_item.get('instance_name')}")
+
+    chain_text = ""
+    for chainlink in chain:
+        chain_text += f"{chainlink.get('instance_name')} -> "
+    print(f"697 !!!!!!!! {chain_text}")
+
+    chainlink_number = 0
+    for chainlink in chain:
+        chainlink_number += 1
+        # ------------------------------------------------------------------
+        #   CHILD CSYS EXTRACTION
+        # ------------------------------------------------------------------
+        print(f"702 !!!!!!!!!!!! {chainlink.get('instance_name')}")
+        print(f"705 !!!!!!!!!!!!!!!! {chainlink.get('parent_csys_instance_name')}")
+        print(f"709 !!!!!!!!!!!!!!!! {chainlink.get('parent_csys_outputcsys_name')}")
+
+        relevant_csys_child = None
+        for instance in instances:
+            if instance.get('instance_name') == chainlink.get('parent_csys_instance_name'):
+                if not instance.get('csys_children') == {}:
+                    relevant_csys_child = instance.get('csys_children').get(chainlink.get('parent_csys_outputcsys_name'))
+                else:
+                    relevant_csys_child = {}
+
+        print(f"710 !!!!!!!!!!!!!!!! {relevant_csys_child}")
+
+        angle_old = angle
+
+        dx = 0.0
+        dy = 0.0
+
+        if relevant_csys_child is not None:
+            # --- Local translation from child CSYS ---
+            if relevant_csys_child.get('x') not in ["", None] and relevant_csys_child.get('y') not in ["", None]:
+                dx = float(relevant_csys_child.get('x'))
+                dy = float(relevant_csys_child.get('y'))
+
+            elif (relevant_csys_child.get('distance') not in ["", None] and 
+                relevant_csys_child.get('angle') not in ["", None]):
+                dist = float(relevant_csys_child.get('distance'))
+                ang  = math.radians(float(relevant_csys_child.get('angle')))
+                dx = dist * math.cos(ang)
+                dy = dist * math.sin(ang)
+
+            # --- Local rotation of the child CSYS ---
+            if relevant_csys_child.get('rotation') not in ["", None]:
+                angle += float(relevant_csys_child.get('rotation'))
+
+        # apply rotation (CCW) and accumulate position
+        dx_old = dx
+        dy_old = dy
+        x_pos += dx_old * math.cos(math.radians(angle_old)) - dy_old * math.sin(math.radians(angle_old))
+        y_pos += dx_old * math.sin(math.radians(angle_old)) + dy_old * math.cos(math.radians(angle_old))
+
+        if chainlink.get('translate_x') not in ["", None]:
+            print(f"714 !!!!!!!!!!!!!!!!!!!!!!!!!!! {chainlink.get('translate_x')}")
+            x_pos += float(chainlink.get('translate_x'))
+        if chainlink.get('translate_y') not in ["", None]:
+            print(f"714 !!!!!!!!!!!!!!!!!!!!!!!!!!! {chainlink.get('translate_y')}")
+            y_pos += float(chainlink.get('translate_y'))
+        if chainlink.get('rotate_csys') not in ["", None]:
+            print(f"714 !!!!!!!!!!!!!!!!!!!!!!!!!!! {chainlink.get('rotate_csys')}")
+            angle += float(chainlink.get('rotate_csys'))
+        
+        if chainlink.get('absolute_rotation') not in ["", None]:
+            print(f"720 !!!!!!!!!!!!!!!!!!!!!!!!!!! absolute rotation found for {chainlink.get('instance_name')} : {chainlink.get('absolute_rotation')}")
+            angle = float(chainlink.get('absolute_rotation'))
+
+        print(f"726 !!!!!!!!!!!!!!!! {x_pos} : {y_pos} : {angle}")
 
     return x_pos, y_pos, angle
