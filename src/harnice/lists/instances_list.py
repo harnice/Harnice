@@ -37,8 +37,9 @@ COLUMNS = [
     "appearance",  # see harnice.utils.appearance for details
     "note_type",  # build_note, rev_note, etc
     "note_number",  # if there is a counter involved (rev, bom, build_note, etc)
-    "note_parent",  # the instance the note applies to
+    "note_parent",  # the instance the note applies to. typically don't use this in the instances list, just note_utils
     "note_text",  # the content of the note
+    "note_affected_instances",  # list of instances that are affected by the note
     "lib_repo",
     "lib_subpath",
     "lib_desc",
