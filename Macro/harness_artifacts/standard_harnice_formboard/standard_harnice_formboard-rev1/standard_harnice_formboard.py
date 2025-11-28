@@ -14,6 +14,7 @@ scale : scale factor for the drawing
 rotation : rotation of the drawing in degrees=
 """
 
+
 # ==================================================================================================
 #               PATHS
 # ==================================================================================================
@@ -43,6 +44,7 @@ def dirpath(target_value):
         base_directory=base_directory,
     )
 
+
 # ==================================================================================================
 #               ARGUMENTS AND GLOBAL SETTINGS
 # ==================================================================================================
@@ -51,7 +53,7 @@ printable_item_types = {
     "backshell",
     "segment",
     "flagnote",
-} 
+}
 
 try:
     if additional_instances:
@@ -59,6 +61,7 @@ try:
             input_instances.append(instance)
 except NameError:
     pass
+
 
 # ==================================================================================================
 #               HELPER FUNCTIONS
@@ -100,6 +103,7 @@ def make_new_segment_drawing(instance, location):
         base_directory=location,
     )
 
+
 # ==================================================================================================
 #               MAIN RUNTIME LOGIC
 # ==================================================================================================
@@ -134,15 +138,19 @@ for item_type, items in grouped_instances.items():
             if instance.get("note_parent") in ["", None]:
                 continue
 
-            flagnote_position_counter[instance.get("parent_instance")] = flagnote_position_counter.get(instance.get("parent_instance"), 0) + 1
+            flagnote_position_counter[instance.get("parent_instance")] = (
+                flagnote_position_counter.get(instance.get("parent_instance"), 0) + 1
+            )
 
             # Unpack positions of note and leader
-            x_note, y_note, flagnote_orientation = formboard_utils.calculate_location({
-                "instance_name": instance.get("instance_name"),
-                "parent_csys_instance_name": instance.get("parent_instance"),
-                "parent_csys_outputcsys_name": f"flagnote-{flagnote_position_counter[instance.get("parent_instance")]}",
-            })
-            x_leader, y_leader, angle_leader = 0,0,0
+            x_note, y_note, flagnote_orientation = formboard_utils.calculate_location(
+                {
+                    "instance_name": instance.get("instance_name"),
+                    "parent_csys_instance_name": instance.get("parent_instance"),
+                    "parent_csys_outputcsys_name": f"flagnote-{flagnote_position_counter[instance.get("parent_instance")]}",
+                }
+            )
+            x_leader, y_leader, angle_leader = 0, 0, 0
 
             # Compute offset vector in SVG coordinates
             leader_dx = (x_leader - x_note) * 96

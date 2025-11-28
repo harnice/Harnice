@@ -11,6 +11,7 @@ artifact_mpn = "circuit_visualizer"
 # PATHS
 # ==========================================================================================================
 
+
 def macro_file_structure():
     return {
         f"{state.partnumber('pn-rev')}-{artifact_id}-circuit-visualizer-master.svg": "circuit visualizer svg",
@@ -75,7 +76,8 @@ svg_elements = []
 # TEXT RENDERING
 # ==========================================================================================================
 
-def plot_text_lines(lines, center_x, center_y, text_group, background = False):
+
+def plot_text_lines(lines, center_x, center_y, text_group, background=False):
     # Normalize: turn None into empty strings
     norm_lines = [(t if t is not None else "") for t in lines]
 
@@ -95,8 +97,8 @@ def plot_text_lines(lines, center_x, center_y, text_group, background = False):
         if max_chars > 0:
             est_width = max_chars * (FONT_SIZE * 0.6)
             box_height = total_text_height
-            box_x = center_x - est_width/2 - 2
-            box_y = start_y - FONT_SIZE/2
+            box_x = center_x - est_width / 2 - 2
+            box_y = start_y - FONT_SIZE / 2
             text_group.append(
                 f'<rect x="{box_x:.2f}" y="{box_y:.2f}" '
                 f'width="{est_width+4:.2f}" height="{box_height:.2f}" '
@@ -106,15 +108,13 @@ def plot_text_lines(lines, center_x, center_y, text_group, background = False):
     # Render text lines
     for i, text in enumerate(norm_lines):
         ty = start_y + i * line_spacing
-        text_group.append(
-            text_template.format(x=center_x, y=ty, text=text)
-        )
-
+        text_group.append(text_template.format(x=center_x, y=ty, text=text))
 
 
 # ==========================================================================================================
 # SHAPE DRAWING (no text)
 # ==========================================================================================================
+
 
 def plot_node_shape(node_instance, x_left, y_center, width, node_group):
     """Draw a rectangular node box. x_left is LEFT edge, NOT center."""
@@ -133,23 +133,21 @@ def plot_segment_shape(segment_instance, x_left, y_center, length, segment_group
     y_for_path = -y_center  # svg_utils flips Y internally
 
     spline_points = [
-        {"x": x_left,        "y": y_for_path, "tangent": 0},
-        {"x": x_left+length, "y": y_for_path, "tangent": 0},
+        {"x": x_left, "y": y_for_path, "tangent": 0},
+        {"x": x_left + length, "y": y_for_path, "tangent": 0},
     ]
 
     svg_utils.draw_styled_path(
-        spline_points,
-        0.02,
-        segment_instance.get("appearance"),
-        segment_group
+        spline_points, 0.02, segment_instance.get("appearance"), segment_group
     )
 
-    return (x_left + length/2, y_center)
+    return (x_left + length / 2, y_center)
 
 
 # ==========================================================================================================
 # HEADER
 # ==========================================================================================================
+
 
 def build_header():
     header_group = []
@@ -252,7 +250,7 @@ for instance in input_circuits:
 
     # ---- Schematic Layout ----
 
-    left = NODE_MARGIN_X      # local coordinates only
+    left = NODE_MARGIN_X  # local coordinates only
     right = left
 
     for port in ports:
@@ -268,15 +266,14 @@ for instance in input_circuits:
 
         else:  # node
             left = right
-            right = left + NODE_WIDTH    # <-- Nodes must advance
-            
+            right = left + NODE_WIDTH  # <-- Nodes must advance
 
         # --------------------------------------------
         # Draw NODE (local coords)
         # --------------------------------------------
         if loc == "node":
             center_x = (left + right) / 2
-            x_left = center_x - NODE_WIDTH/2
+            x_left = center_x - NODE_WIDTH / 2
 
             plot_node_shape(
                 port,
@@ -292,8 +289,14 @@ for instance in input_circuits:
                     pass
                 else:
                     text_lines.append(port.get("item_type"))
-            if instances_list.attribute_of(port.get("parent_instance"), "print_name") not in [None, ""]:
-                text_lines.append(instances_list.attribute_of(port.get("parent_instance"), "print_name"))
+            if instances_list.attribute_of(
+                port.get("parent_instance"), "print_name"
+            ) not in [None, ""]:
+                text_lines.append(
+                    instances_list.attribute_of(
+                        port.get("parent_instance"), "print_name"
+                    )
+                )
             if port.get("print_name") not in [None, ""]:
                 text_lines.append(port.get("print_name"))
 
@@ -312,7 +315,7 @@ for instance in input_circuits:
 
             svg_utils.draw_styled_path(
                 [
-                    {"x": left,  "y": -row_center_y, "tangent": 0},
+                    {"x": left, "y": -row_center_y, "tangent": 0},
                     {"x": right, "y": -row_center_y, "tangent": 0},
                 ],
                 0.02,
@@ -324,12 +327,11 @@ for instance in input_circuits:
                 [
                     port.get("print_name", ""),
                 ],
-                group_x + center_x,       # <-- labels include group_x
+                group_x + center_x,  # <-- labels include group_x
                 group_y + row_center_y,
                 text_group,
-                background = True
+                background=True,
             )
-
 
     # ---- Output row ----
     svg_elements.extend(table_group)

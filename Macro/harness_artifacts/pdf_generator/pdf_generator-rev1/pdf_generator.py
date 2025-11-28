@@ -203,10 +203,7 @@ with open(path("master contents svg"), "w", encoding="utf-8") as f:
 # fetch content from each -master.svg into the master contents svg
 for master_name, source_svg_path in masters:
     svg_utils.find_and_replace_svg_group(
-        source_svg_path,
-        master_name,
-        path("master contents svg"),
-        master_name
+        source_svg_path, master_name, path("master contents svg"), master_name
     )
 
 # ==========================================================================================================

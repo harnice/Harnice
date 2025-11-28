@@ -346,13 +346,22 @@ for instance1 in instances:
     cleaned_chain = [pt for pt in point_chain if isinstance(pt, dict)]
 
     # === refactored call: use draw_styled_path() ===
-    svg_utils.draw_styled_path(cleaned_chain, 0.02/scale, instances_list.attribute_of(parent_name, "appearance"), svg_groups)
+    svg_utils.draw_styled_path(
+        cleaned_chain,
+        0.02 / scale,
+        instances_list.attribute_of(parent_name, "appearance"),
+        svg_groups,
+    )
 
     for order in [0, -1]:
         if order == 0:
-            text = instances_list.attribute_of(instances_list.attribute_of(parent_name, "node_at_end_a"), "print_name")
+            text = instances_list.attribute_of(
+                instances_list.attribute_of(parent_name, "node_at_end_a"), "print_name"
+            )
         else:
-            text = instances_list.attribute_of(instances_list.attribute_of(parent_name, "node_at_end_b"), "print_name")
+            text = instances_list.attribute_of(
+                instances_list.attribute_of(parent_name, "node_at_end_b"), "print_name"
+            )
         svg_groups.append(
             label_svg(
                 cleaned_chain[order].get("x"),
