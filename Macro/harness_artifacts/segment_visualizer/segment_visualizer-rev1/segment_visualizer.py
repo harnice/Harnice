@@ -134,13 +134,6 @@ def circle_svg(x, y, r, color):
 instances = fileio.read_tsv("instances list")
 svg_groups = []
 
-try:
-    if not rotation:
-        rotation = 0
-except NameError:
-    rotation = 0
-origin = [0, 0, rotation]
-
 if item_type is None:
     raise ValueError(
         "item_type is required: which item types are you trying to visualize?"
@@ -167,9 +160,7 @@ for seg_name in sorted_segment_contents:
 # collect points to pass through
 for node in instances:
     if node.get("item_type") == "node":
-        x_px, y_px, seg_angle = formboard_utils.calculate_location(
-            node.get("instance_name"), origin
-        )
+        x_px, y_px, seg_angle = formboard_utils.calculate_location(node)
         x_node, y_node = x_px * 96, y_px * 96
 
         node_segment_angles = []

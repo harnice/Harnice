@@ -14,8 +14,9 @@ scale : scale factor for the drawing
 rotation : rotation of the drawing in degrees=
 """
 
-
-# =============== PATHS ===================================================================================
+# ==================================================================================================
+#               PATHS
+# ==================================================================================================
 def macro_file_structure(instance_name=None, item_type=None):
     return {
         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "output svg",
@@ -42,33 +43,27 @@ def dirpath(target_value):
         base_directory=base_directory,
     )
 
-
-# ==========================================================================================================
-
-# =============== GLOBAL SETTINGS ===============
+# ==================================================================================================
+#               ARGUMENTS AND GLOBAL SETTINGS
+# ==================================================================================================
 printable_item_types = {
     "connector",
     "backshell",
     "segment",
     "flagnote",
-}  # add content here as needed
+} 
 
-# =============== CSYS DEFINITION ===============
 try:
-    if not rotation:
-        rotation = 0
+    if additional_instances:
+        for instance in additional_instances:
+            input_instances.append(instance)
 except NameError:
-    rotation = 0
-origin = [0, 0, rotation]
+    pass
 
-
-# =============== FUNCTIONS ===============
+# ==================================================================================================
+#               HELPER FUNCTIONS
+# ==================================================================================================
 def make_new_flagnote_drawing(instance, location):
-    if instance.get("item_type") != "flagnote":
-        raise ValueError(
-            f"you just tried to make a flagnote drawing out of a non-flagnote instance '{instance.get("instance_name")}'"
-        )
-
     if instance.get("item_type") != "flagnote":
         raise ValueError(
             f"you just tried to make a flagnote drawing without specifying flagnote type by 'mpn' field on '{instance.get("instance_name")}'"
@@ -84,7 +79,7 @@ def make_new_flagnote_drawing(instance, location):
     with open(flagnote_drawing_path, "r", encoding="utf-8") as f:
         svg = f.read()
 
-    svg = re.sub(r">flagnote-text<", f">{instance.get('bubble_text')}<", svg)
+    svg = re.sub(r">flagnote-text<", f">{instance.get('print_name')}<", svg)
 
     with open(flagnote_drawing_path, "w", encoding="utf-8") as f:
         f.write(svg)
@@ -105,10 +100,9 @@ def make_new_segment_drawing(instance, location):
         base_directory=location,
     )
 
-
-# ====================================================
-#        CONSTRUCT SVG BACKBONE
-# ====================================================
+# ==================================================================================================
+#               MAIN RUNTIME LOGIC
+# ==================================================================================================
 # Group instances by item_type
 grouped_instances = defaultdict(list)
 for instance in input_instances:
@@ -118,53 +112,37 @@ for instance in input_instances:
 
 # Prepare lines for SVG content
 content_lines = []
-
 printable_instances = set()
+flagnote_position_counter = {}
 
+# ==================================================================================================
+# Step through each item_type and add relevant group backbone content to the SVG
 for item_type, items in grouped_instances.items():
     content_lines.append(f'    <g id="{item_type}" inkscape:label="{item_type}">')
     for instance in items:
-        # =================================
         if instance.get("item_type") not in printable_item_types:
             continue
 
-        # call continue more times here (after some logic) if you don't want to print this instance, for example:
-
-        # if instance.get("item_type") == "flagnote" and instance.get("note_type") != "part_name":
-        #     continue
-        # =================================
-        printable_instances.add(instance.get("instance_name"))
-
         instance_name = instance.get("instance_name")
+        printable_instances.add(instance_name)
+        x, y, angle = formboard_utils.calculate_location(instance)
 
-        x, y, angle = formboard_utils.calculate_location(instance_name, origin)
-        
-        px_x = x * 96
-        px_y = y * 96
-
-        if instance.get("item_type") == "segment":
-            angle += origin[2]
-
-        if instance.get("absolute_rotation") not in ["", None]:
-            angle = float(instance.get("absolute_rotation"))
-
-        if instance.get("item_type") == "segment":
-            angle += origin[2]
-
-        svg_px_x = px_x
-        svg_px_y = -1 * px_y
+        svg_px_x = x * 96
+        svg_px_y = y * -96
 
         if item_type == "flagnote":
-            if instance.get("parent_instance") in ["", None]:
+            if instance.get("note_parent") in ["", None]:
                 continue
 
-            # Unpack both positions
-            x_note, y_note, flagnote_orientation = formboard_utils.calculate_location(
-                instance_name, origin
-            )
-            x_leader, y_leader, angle_leader = formboard_utils.calculate_location(
-                f"{instance_name}.leader", origin
-            )
+            flagnote_position_counter[instance.get("parent_instance")] = flagnote_position_counter.get(instance.get("parent_instance"), 0) + 1
+
+            # Unpack positions of note and leader
+            x_note, y_note, flagnote_orientation = formboard_utils.calculate_location({
+                "instance_name": instance.get("instance_name"),
+                "parent_csys_instance_name": instance.get("parent_instance"),
+                "parent_csys_outputcsys_name": f"flagnote-{flagnote_position_counter[instance.get("parent_instance")]}",
+            })
+            x_leader, y_leader, angle_leader = 0,0,0
 
             # Compute offset vector in SVG coordinates
             leader_dx = (x_leader - x_note) * 96
@@ -227,6 +205,9 @@ for item_type, items in grouped_instances.items():
 
     content_lines.append("    </g>")
 
+
+# ==================================================================================================
+# write the svg file with group structure backbone
 with open(path("output svg"), "w") as f:
     f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
     f.write(
@@ -244,27 +225,21 @@ with open(path("output svg"), "w") as f:
     f.write("</svg>\n")
 
 
-# ====================================================
-#        COPY IN INSTANCE CONTENT
-# ====================================================
-
+# ==================================================================================================
+# copy in instance content
 for instance in input_instances:
     item_type = instance.get("item_type", "").strip()
     if instance.get("instance_name") in printable_instances:
 
         # === handle flagnotes ===
         if instance.get("item_type") == "flagnote":
-            # make as needed, edit this section to reference other flagnote drawings
             flagnote_location = os.path.join(
                 dirpath(None),
                 "instance_data",
                 "flagnote",
                 instance.get("instance_name"),
             )
-            if instance.get("mpn") in [None, ""]:
-                continue
-            else:
-                make_new_flagnote_drawing(instance, flagnote_location)
+            make_new_flagnote_drawing(instance, flagnote_location)
             svg_utils.find_and_replace_svg_group(
                 os.path.join(
                     flagnote_location, f"{instance.get("instance_name")}-drawing.svg"
@@ -277,16 +252,17 @@ for instance in input_instances:
         # === handle segments ===
         elif instance.get("item_type") in ["segment", "flagnote"]:
             # make as needed, edit this section to reference other segment drawings
-            segment_location = os.path.join(
+            generated_instance_location = os.path.join(
                 dirpath(None),
                 "instance_data",
                 "macro",
                 f"{artifact_id}-{instance.get("instance_name")}",
             )
-            make_new_segment_drawing(instance, segment_location)
+            if instance.get("item_type") == "segment":
+                make_new_segment_drawing(instance, generated_instance_location)
             svg_utils.find_and_replace_svg_group(
                 os.path.join(
-                    segment_location,
+                    generated_instance_location,
                     f"{artifact_id}-{instance.get("instance_name")}-drawing.svg",
                 ),
                 instance.get("instance_name"),
