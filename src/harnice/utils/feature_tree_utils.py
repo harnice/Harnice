@@ -4,7 +4,6 @@ import math
 import json
 import shutil
 from harnice import fileio
-from harnice.lists import instances_list
 from harnice.utils import library_utils
 
 
@@ -96,33 +95,6 @@ def lookup_outputcsys_from_lib_used(instance, outputcsys, base_directory=None):
     y = y + distance * math.sin(angle_rad)
 
     return x, y, rotation
-
-
-def update_translate_content():
-    # this looks through parent csys and finds its output csys and recommends its translate_x and translate_y
-    instances = fileio.read_tsv("instances list")
-    for instance in instances:
-        if instance.get("parent_csys_instance_name") in ["", None]:
-            continue  # skip if there isn't a parent defined
-
-        if instance.get("item_type") == "node":
-            continue  # these are automatically assigned at start
-
-        for instance2 in instances:
-            if instance2.get("instance_name") == instance.get(
-                "parent_csys_instance_name"
-            ):
-                parent_csys_instance = instance2
-                break
-
-        x, y, rotation = lookup_outputcsys_from_lib_used(
-            parent_csys_instance, instance.get("parent_csys_outputcsys_name")
-        )
-
-        instances_list.modify(
-            instance.get("instance_name"),
-            {"translate_x": x, "translate_y": y, "rotate_csys": rotation},
-        )
 
 
 def copy_pdfs_to_cwd():

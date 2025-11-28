@@ -1,6 +1,7 @@
 import os
 import random
 import math
+import ast
 from collections import defaultdict, deque
 from PIL import Image, ImageDraw, ImageFont
 from harnice import fileio
@@ -247,9 +248,9 @@ def validate_nodes():
             f"Disconnected formboard graph found ({len(components)} connector_groups):\n{formatted_connector_groups}"
         )
 
+    # GENERATE NODE COORDINATES
 
-def generate_node_coordinates():
-    # === Step 1: Load segments and nodes from instances_list ===
+    # === Step 1: Reload from instances_list ===
     instances = fileio.read_tsv("instances list")
 
     segments = [inst for inst in instances if inst.get("item_type") == "segment"]
@@ -350,6 +351,8 @@ def generate_node_coordinates():
                 "translate_x": str(translate_x),
                 "translate_y": str(translate_y),
                 "absolute_rotation": average_angle,
+                "parent_csys_instance_name": "origin",
+                "parent_csys_outputcsys_name": "origin",
             },
         )
 
@@ -599,18 +602,40 @@ def map_instance_to_segments(instance):
                 "cable_container": instance.get("cable_container"),
                 "cable_identifier": instance.get("cable_identifier"),
                 "appearance": instance.get("appearance"),
-                "this_net_from_device_refdes": instance.get("this_net_from_device_refdes"),
-                "this_net_from_device_channel_id": instance.get("this_net_from_device_channel_id"),
-                "this_net_from_device_connector_name": instance.get("this_net_from_device_connector_name"),
+                "this_net_from_device_refdes": instance.get(
+                    "this_net_from_device_refdes"
+                ),
+                "this_net_from_device_channel_id": instance.get(
+                    "this_net_from_device_channel_id"
+                ),
+                "this_net_from_device_connector_name": instance.get(
+                    "this_net_from_device_connector_name"
+                ),
                 "this_net_to_device_refdes": instance.get("this_net_to_device_refdes"),
-                "this_net_to_device_channel_id": instance.get("this_net_to_device_channel_id"),
-                "this_net_to_device_connector_name": instance.get("this_net_to_device_connector_name"),
-                "this_channel_from_device_refdes": instance.get("this_channel_from_device_refdes"),
-                "this_channel_from_device_channel_id": instance.get("this_channel_from_device_channel_id"),
-                "this_channel_to_device_refdes": instance.get("this_channel_to_device_refdes"),
-                "this_channel_to_device_channel_id": instance.get("this_channel_to_device_channel_id"),
-                "this_channel_from_channel_type": instance.get("this_channel_from_channel_type"),
-                "this_channel_to_channel_type": instance.get("this_channel_to_channel_type"),
+                "this_net_to_device_channel_id": instance.get(
+                    "this_net_to_device_channel_id"
+                ),
+                "this_net_to_device_connector_name": instance.get(
+                    "this_net_to_device_connector_name"
+                ),
+                "this_channel_from_device_refdes": instance.get(
+                    "this_channel_from_device_refdes"
+                ),
+                "this_channel_from_device_channel_id": instance.get(
+                    "this_channel_from_device_channel_id"
+                ),
+                "this_channel_to_device_refdes": instance.get(
+                    "this_channel_to_device_refdes"
+                ),
+                "this_channel_to_device_channel_id": instance.get(
+                    "this_channel_to_device_channel_id"
+                ),
+                "this_channel_from_channel_type": instance.get(
+                    "this_channel_from_channel_type"
+                ),
+                "this_channel_to_channel_type": instance.get(
+                    "this_channel_to_channel_type"
+                ),
                 "signal_of_channel_type": instance.get("signal_of_channel_type"),
                 "length": instances_list.attribute_of(seg_name, "length"),
             },
@@ -618,41 +643,159 @@ def map_instance_to_segments(instance):
         i += 1
 
 
-def calculate_location(instance_name, origin):
+def calculate_location(lookup_instance, chain_append=None):
     instances = fileio.read_tsv("instances list")
-    instances_lookup = {row["instance_name"]: row for row in instances}
 
+    # ------------------------------------------------------------------
+    # Normalize csys_children: ensure all rows contain real dicts
+    # ------------------------------------------------------------------
+    for instance in instances:
+        raw_children = instance.get("csys_children")
+        try:
+            if isinstance(raw_children, str) and raw_children:
+                csys_children = ast.literal_eval(raw_children)
+            else:
+                csys_children = raw_children or {}
+        except Exception:
+            csys_children = {}
+        instance["csys_children"] = csys_children
+
+    # ------------------------------------------------------------------
+    # Build the CSYS parent chain (from item → origin)
+    # ------------------------------------------------------------------
     chain = []
-    current = instance_name
+    current = lookup_instance
 
-    # === Build chain of parents ===
-    while current:
-        chain.append(current)
-        row = instances_lookup.get(current)
-        if not row:
+    while True:
+        # Find the current instance in the raw instances list
+        for instance in instances:
+            if instance.get("instance_name") == current.get("instance_name"):
+                parent_csys_instance_name = instance.get("parent_csys_instance_name")
+                parent_csys_outputcsys_name = instance.get(
+                    "parent_csys_outputcsys_name"
+                )
+                break
+
+        chain.append(instance)
+
+        # Stop once we reach the origin csys
+        if current.get("instance_name") == "origin":
             break
-        parent = row.get("parent_csys_instance_name", "").strip()
-        if not parent:
-            break
-        current = parent
 
-    x_pos, y_pos, angle = origin  # unpack origin
+        # Required-parent validation
+        if parent_csys_instance_name is None:
+            raise ValueError(f"Instance '{current.get('instance_name')}' missing parent_csys_instance_name")
+        if not parent_csys_instance_name:
+            raise ValueError(f"Instance '{current.get('instance_name')}' parent_csys_instance_name blank")
+        if not parent_csys_outputcsys_name:
+            raise ValueError(f"Instance '{current.get('instance_name')}' parent_csys_outputcsys_name blank")
 
-    # Walk down the chain (excluding the instance itself)
-    for name in reversed(chain):
-        row = instances_lookup.get(name, {})
+        # Resolve parent instance
+        parent_csys_instance = None
+        for instance in instances:
+            if instance.get("instance_name") == parent_csys_instance_name:
+                parent_csys_instance = instance
+                break
+        else:
+            raise ValueError(
+                f"Instance '{parent_csys_instance_name}' not found in instances list"
+            )
 
-        translate_x = float(row.get("translate_x", 0) or 0)
-        translate_y = float(row.get("translate_y", 0) or 0)
-        rotate_csys = float(row.get("rotate_csys", 0) or 0)
+        current = parent_csys_instance
 
-        # Apply translation in the parent's local coordinates
-        rad = math.radians(angle)
-        dx = math.cos(rad) * translate_x - math.sin(rad) * translate_y
-        dy = math.sin(rad) * translate_x + math.cos(rad) * translate_y
+    # Optional chain extension
+    if chain_append:
+        chain.append(chain_append)
 
-        x_pos += dx
-        y_pos += dy
-        angle += rotate_csys  # update orientation after translation
+    # Reverse chain: now runs origin → lookup_item
+    chain = list(reversed(chain))
 
+    # ------------------------------------------------------------------
+    # Accumulate transforms along chain
+    # ------------------------------------------------------------------
+    x_pos = 0.0
+    y_pos = 0.0
+    angle = 0.0
+
+    for chainlink in chain:
+
+        # ==================================================================
+        #   Resolve CHILD CSYS (the transform from parent output csys)
+        # ==================================================================
+        relevant_csys_child = None
+
+        # Find the chainlink's parent instance and extract its csys_children
+        for instance in instances:
+            if instance.get("instance_name") == chainlink.get("parent_csys_instance_name"):
+                if instance.get("csys_children") != {}:
+                    relevant_csys_child = instance["csys_children"].get(
+                        chainlink.get("parent_csys_outputcsys_name")
+                    )
+                else:
+                    relevant_csys_child = {}
+                break
+
+        angle_old = angle
+        dx = 0.0
+        dy = 0.0
+
+        # ------------------------------------------------------------------
+        # Child CSYS: translation component
+        # ------------------------------------------------------------------
+        if relevant_csys_child is not None:
+
+            # x/y explicit translation
+            if (
+                relevant_csys_child.get("x") not in ["", None]
+                and relevant_csys_child.get("y") not in ["", None]
+            ):
+                dx = float(relevant_csys_child.get("x"))
+                dy = float(relevant_csys_child.get("y"))
+
+            # polar translation
+            elif (
+                relevant_csys_child.get("distance") not in ["", None]
+                and relevant_csys_child.get("angle") not in ["", None]
+            ):
+                dist = float(relevant_csys_child.get("distance"))
+                ang = math.radians(float(relevant_csys_child.get("angle")))
+                dx = dist * math.cos(ang)
+                dy = dist * math.sin(ang)
+
+            # Child CSYS rotation
+            if relevant_csys_child.get("rotation") not in ["", None]:
+                angle += float(relevant_csys_child.get("rotation"))
+
+        # ------------------------------------------------------------------
+        # Apply rotated dx/dy into world coordinates
+        # ------------------------------------------------------------------
+        dx_old = dx
+        dy_old = dy
+
+        x_pos += dx_old * math.cos(math.radians(angle_old)) - dy_old * math.sin(
+            math.radians(angle_old)
+        )
+        y_pos += dx_old * math.sin(math.radians(angle_old)) + dy_old * math.cos(
+            math.radians(angle_old)
+        )
+
+        # ------------------------------------------------------------------
+        # Chainlink's local transform fields
+        # ------------------------------------------------------------------
+        if chainlink.get("translate_x") not in ["", None]:
+            x_pos += float(chainlink.get("translate_x"))
+
+        if chainlink.get("translate_y") not in ["", None]:
+            y_pos += float(chainlink.get("translate_y"))
+
+        if chainlink.get("rotate_csys") not in ["", None]:
+            angle += float(chainlink.get("rotate_csys"))
+
+        # Absolute rotation overrides accumulated rotation
+        if chainlink.get("absolute_rotation") not in ["", None]:
+            angle = float(chainlink.get("absolute_rotation"))
+
+    # ------------------------------------------------------------------
+    # Final world coordinates
+    # ------------------------------------------------------------------
     return x_pos, y_pos, angle

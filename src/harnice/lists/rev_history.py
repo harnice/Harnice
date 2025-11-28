@@ -87,7 +87,7 @@ def info(rev=None, path=None, field=None):
         path = fileio.path("revision history")
 
     if not os.path.exists(path):
-        return "file not found"  # exact text is looked up in downstream texts, don't make it more specific
+        return "file not found"
 
     if rev:
         rev = str(rev)
@@ -100,6 +100,11 @@ def info(rev=None, path=None, field=None):
         for row in rows:
             if row.get("rev") == rev:
                 if field:
+                    if field == "affectedinstances":
+                        val = row.get(field, "")
+                        if not val:  # empty string → return []
+                            return []
+                        return val.split(";")
                     return row.get(field)
                 else:
                     return row

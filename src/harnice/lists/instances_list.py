@@ -27,17 +27,18 @@ COLUMNS = [
     "translate_x",  # derived from parent_csys and parent_csys_name
     "translate_y",  # derived from parent_csys and parent_csys_name
     "rotate_csys",  # derived from parent_csys and parent_csys_name
-    "absolute_rotation",  # manual add, not nominally used unless it's a flagnote
+    "absolute_rotation",  # manual add, not nominally used unless it's a flagnote, segment, or node
+    "csys_children",  # imported csys children from library attributes file
     "cable_group",
     "cable_container",
     "cable_identifier",
     "length",  # derived from formboard definition, the length of a segment
     "diameter",  # apparent diameter of a segment <---------- change to print_diameter
-    "appearance",  # see below on appearance standards
-    "note_type",
-    "note_number",  # <--------- merge with parent_csys and import instances of child csys?
-    "bubble_text",
-    "note_text",
+    "appearance",  # see harnice.utils.appearance for details
+    "note_type",  # build_note, rev_note, etc
+    "note_number",  # if there is a counter involved (rev, bom, build_note, etc)
+    "note_parent",  # the instance the note applies to
+    "note_text",  # the content of the note
     "lib_repo",
     "lib_subpath",
     "lib_desc",
