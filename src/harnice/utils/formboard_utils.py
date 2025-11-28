@@ -643,14 +643,14 @@ def map_instance_to_segments(instance):
         i += 1
 
 
-def calculate_location(lookup_item, chain_append=None):
+def calculate_location(lookup_instance, chain_append=None):
     instances = fileio.read_tsv("instances list")
 
-    # rewrite instances list to have csys_children as a dict not a string
+    # ------------------------------------------------------------------
+    # Normalize csys_children: ensure all rows contain real dicts
+    # ------------------------------------------------------------------
     for instance in instances:
         raw_children = instance.get("csys_children")
-
-        # Convert text → dict safely
         try:
             if isinstance(raw_children, str) and raw_children:
                 csys_children = ast.literal_eval(raw_children)
@@ -658,16 +658,16 @@ def calculate_location(lookup_item, chain_append=None):
                 csys_children = raw_children or {}
         except Exception:
             csys_children = {}
-
-        # Overwrite in the list-of-dicts
         instance["csys_children"] = csys_children
 
-    # define chain as a list of only the instances relevant to the csys family tree
+    # ------------------------------------------------------------------
+    # Build the CSYS parent chain (from item → origin)
+    # ------------------------------------------------------------------
     chain = []
-    current = lookup_item
+    current = lookup_instance
 
     while True:
-        # find the parent_csys of the current instance
+        # Find the current instance in the raw instances list
         for instance in instances:
             if instance.get("instance_name") == current.get("instance_name"):
                 parent_csys_instance_name = instance.get("parent_csys_instance_name")
@@ -678,16 +678,19 @@ def calculate_location(lookup_item, chain_append=None):
 
         chain.append(instance)
 
+        # Stop once we reach the origin csys
         if current.get("instance_name") == "origin":
             break
 
+        # Required-parent validation
         if parent_csys_instance_name is None:
-            raise ValueError(f"Instance '{current}' missing parent_csys_instance_name")
+            raise ValueError(f"Instance '{current.get('instance_name')}' missing parent_csys_instance_name")
         if not parent_csys_instance_name:
-            raise ValueError(f"Instance '{current}' parent_csys_instance_name blank")
+            raise ValueError(f"Instance '{current.get('instance_name')}' parent_csys_instance_name blank")
         if not parent_csys_outputcsys_name:
-            raise ValueError(f"Instance '{current}' parent_csys_outputcsys_name blank")
+            raise ValueError(f"Instance '{current.get('instance_name')}' parent_csys_outputcsys_name blank")
 
+        # Resolve parent instance
         parent_csys_instance = None
         for instance in instances:
             if instance.get("instance_name") == parent_csys_instance_name:
@@ -700,66 +703,75 @@ def calculate_location(lookup_item, chain_append=None):
 
         current = parent_csys_instance
 
+    # Optional chain extension
     if chain_append:
         chain.append(chain_append)
 
-    # reverse the chain to start at the origin and end with the lookup_item
+    # Reverse chain: now runs origin → lookup_item
     chain = list(reversed(chain))
 
-    # ======================================================================
-    #   Walk the chain, accumulate transforms
-    # ======================================================================
+    # ------------------------------------------------------------------
+    # Accumulate transforms along chain
+    # ------------------------------------------------------------------
     x_pos = 0.0
     y_pos = 0.0
     angle = 0.0
 
     for chainlink in chain:
-        # ------------------------------------------------------------------
-        #   CHILD CSYS EXTRACTION
-        # ------------------------------------------------------------------
 
+        # ==================================================================
+        #   Resolve CHILD CSYS (the transform from parent output csys)
+        # ==================================================================
         relevant_csys_child = None
+
+        # Find the chainlink's parent instance and extract its csys_children
         for instance in instances:
-            if instance.get("instance_name") == chainlink.get(
-                "parent_csys_instance_name"
-            ):
-                if not instance.get("csys_children") == {}:
-                    relevant_csys_child = instance.get("csys_children").get(
+            if instance.get("instance_name") == chainlink.get("parent_csys_instance_name"):
+                if instance.get("csys_children") != {}:
+                    relevant_csys_child = instance["csys_children"].get(
                         chainlink.get("parent_csys_outputcsys_name")
                     )
                 else:
                     relevant_csys_child = {}
+                break
 
         angle_old = angle
-
         dx = 0.0
         dy = 0.0
 
+        # ------------------------------------------------------------------
+        # Child CSYS: translation component
+        # ------------------------------------------------------------------
         if relevant_csys_child is not None:
-            # --- Local translation from child CSYS ---
-            if relevant_csys_child.get("x") not in [
-                "",
-                None,
-            ] and relevant_csys_child.get("y") not in ["", None]:
+
+            # x/y explicit translation
+            if (
+                relevant_csys_child.get("x") not in ["", None]
+                and relevant_csys_child.get("y") not in ["", None]
+            ):
                 dx = float(relevant_csys_child.get("x"))
                 dy = float(relevant_csys_child.get("y"))
 
-            elif relevant_csys_child.get("distance") not in [
-                "",
-                None,
-            ] and relevant_csys_child.get("angle") not in ["", None]:
+            # polar translation
+            elif (
+                relevant_csys_child.get("distance") not in ["", None]
+                and relevant_csys_child.get("angle") not in ["", None]
+            ):
                 dist = float(relevant_csys_child.get("distance"))
                 ang = math.radians(float(relevant_csys_child.get("angle")))
                 dx = dist * math.cos(ang)
                 dy = dist * math.sin(ang)
 
-            # --- Local rotation of the child CSYS ---
+            # Child CSYS rotation
             if relevant_csys_child.get("rotation") not in ["", None]:
                 angle += float(relevant_csys_child.get("rotation"))
 
-        # apply rotation (CCW) and accumulate position
+        # ------------------------------------------------------------------
+        # Apply rotated dx/dy into world coordinates
+        # ------------------------------------------------------------------
         dx_old = dx
         dy_old = dy
+
         x_pos += dx_old * math.cos(math.radians(angle_old)) - dy_old * math.sin(
             math.radians(angle_old)
         )
@@ -767,14 +779,23 @@ def calculate_location(lookup_item, chain_append=None):
             math.radians(angle_old)
         )
 
+        # ------------------------------------------------------------------
+        # Chainlink's local transform fields
+        # ------------------------------------------------------------------
         if chainlink.get("translate_x") not in ["", None]:
             x_pos += float(chainlink.get("translate_x"))
+
         if chainlink.get("translate_y") not in ["", None]:
             y_pos += float(chainlink.get("translate_y"))
+
         if chainlink.get("rotate_csys") not in ["", None]:
             angle += float(chainlink.get("rotate_csys"))
 
+        # Absolute rotation overrides accumulated rotation
         if chainlink.get("absolute_rotation") not in ["", None]:
             angle = float(chainlink.get("absolute_rotation"))
 
+    # ------------------------------------------------------------------
+    # Final world coordinates
+    # ------------------------------------------------------------------
     return x_pos, y_pos, angle
