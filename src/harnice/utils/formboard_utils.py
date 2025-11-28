@@ -703,11 +703,6 @@ def calculate_location(lookup_item, chain_append=None):
     if chain_append:
         chain.append(chain_append)
 
-    chain_text = ""
-    for chainlink in chain:
-        chain_text += f"{chainlink.get('instance_name')} -> "
-    print(f"693 !!!!!!!! {chain_text}")
-
     # reverse the chain to start at the origin and end with the lookup_item
     chain = list(reversed(chain))
 
@@ -718,9 +713,7 @@ def calculate_location(lookup_item, chain_append=None):
     y_pos = 0.0
     angle = 0.0
 
-    chainlink_number = 0
     for chainlink in chain:
-        chainlink_number += 1
         # ------------------------------------------------------------------
         #   CHILD CSYS EXTRACTION
         # ------------------------------------------------------------------
