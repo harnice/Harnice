@@ -2,7 +2,6 @@ import os
 import random
 import math
 import ast
-import json
 from collections import defaultdict, deque
 from PIL import Image, ImageDraw, ImageFont
 from harnice import fileio
@@ -797,3 +796,24 @@ def calculate_location(lookup_instance, instances):
     # Final world coordinates
     # ------------------------------------------------------------------
     return x_pos, y_pos, angle
+
+
+def draw_line(from_coords, to_coords, scale=1, from_leader=False, to_leader=True, indent=6, stroke="black", thickness=1):
+    #coords come in format [x_pos_inches, y_pos_inches]
+
+    from_coords_px = [from_coords[0] * 96, from_coords[1] * -96]
+    to_coords_px = [to_coords[0] * 96, to_coords[1] * -96]
+
+    # Arrowhead geometry
+    arrow_length = 8  # length of the arrowhead in pixels
+    arrow_width = 6  # width of the arrowhead in pixels
+    dx = to_coords_px[0]-from_coords_px[0]
+    dy = to_coords_px[1]-from_coords_px[1]
+    line_len = math.hypot(dx, dy)
+
+
+    line_svg_content = f'<line x1="{from_coords_px[0]}" y1="{from_coords_px[1]}" x2="{to_coords_px[0]}" y2="{to_coords_px[1]}" stroke="{stroke}" stroke-width="{thickness}"/>'
+
+    print(f"!!!!!!! '{line_svg_content}'")
+
+    return line_svg_content
