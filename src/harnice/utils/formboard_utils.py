@@ -812,8 +812,6 @@ def draw_line(from_coords, to_coords, scale=1, from_leader=False, to_leader=True
     line_len = math.hypot(dx, dy)
 
 
-    line_svg_content = f'<line x1="{from_coords_px[0]}" y1="{from_coords_px[1]}" x2="{to_coords_px[0]}" y2="{to_coords_px[1]}" stroke="{stroke}" stroke-width="{thickness}"/>'
-
-    print(f"!!!!!!! '{line_svg_content}'")
+    line_svg_content = f'<line x1="{from_coords_px[0]}" y1="{from_coords_px[1]}" x2="{to_coords_px[0]}" y2="{to_coords_px[1]}" stroke="{stroke}" stroke-width="{thickness/scale}"/>'
 
     return line_svg_content
