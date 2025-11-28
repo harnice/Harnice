@@ -256,7 +256,6 @@ def validate_nodes():
     segments = [inst for inst in instances if inst.get("item_type") == "segment"]
     nodes = [inst for inst in instances if inst.get("item_type") == "node"]
 
-
     # === Step 2: Determine origin node ===
     origin_node = ""
     for seg in segments:
@@ -603,18 +602,40 @@ def map_instance_to_segments(instance):
                 "cable_container": instance.get("cable_container"),
                 "cable_identifier": instance.get("cable_identifier"),
                 "appearance": instance.get("appearance"),
-                "this_net_from_device_refdes": instance.get("this_net_from_device_refdes"),
-                "this_net_from_device_channel_id": instance.get("this_net_from_device_channel_id"),
-                "this_net_from_device_connector_name": instance.get("this_net_from_device_connector_name"),
+                "this_net_from_device_refdes": instance.get(
+                    "this_net_from_device_refdes"
+                ),
+                "this_net_from_device_channel_id": instance.get(
+                    "this_net_from_device_channel_id"
+                ),
+                "this_net_from_device_connector_name": instance.get(
+                    "this_net_from_device_connector_name"
+                ),
                 "this_net_to_device_refdes": instance.get("this_net_to_device_refdes"),
-                "this_net_to_device_channel_id": instance.get("this_net_to_device_channel_id"),
-                "this_net_to_device_connector_name": instance.get("this_net_to_device_connector_name"),
-                "this_channel_from_device_refdes": instance.get("this_channel_from_device_refdes"),
-                "this_channel_from_device_channel_id": instance.get("this_channel_from_device_channel_id"),
-                "this_channel_to_device_refdes": instance.get("this_channel_to_device_refdes"),
-                "this_channel_to_device_channel_id": instance.get("this_channel_to_device_channel_id"),
-                "this_channel_from_channel_type": instance.get("this_channel_from_channel_type"),
-                "this_channel_to_channel_type": instance.get("this_channel_to_channel_type"),
+                "this_net_to_device_channel_id": instance.get(
+                    "this_net_to_device_channel_id"
+                ),
+                "this_net_to_device_connector_name": instance.get(
+                    "this_net_to_device_connector_name"
+                ),
+                "this_channel_from_device_refdes": instance.get(
+                    "this_channel_from_device_refdes"
+                ),
+                "this_channel_from_device_channel_id": instance.get(
+                    "this_channel_from_device_channel_id"
+                ),
+                "this_channel_to_device_refdes": instance.get(
+                    "this_channel_to_device_refdes"
+                ),
+                "this_channel_to_device_channel_id": instance.get(
+                    "this_channel_to_device_channel_id"
+                ),
+                "this_channel_from_channel_type": instance.get(
+                    "this_channel_from_channel_type"
+                ),
+                "this_channel_to_channel_type": instance.get(
+                    "this_channel_to_channel_type"
+                ),
                 "signal_of_channel_type": instance.get("signal_of_channel_type"),
                 "length": instances_list.attribute_of(seg_name, "length"),
             },
@@ -650,26 +671,22 @@ def calculate_location(lookup_item, chain_append=None):
         for instance in instances:
             if instance.get("instance_name") == current.get("instance_name"):
                 parent_csys_instance_name = instance.get("parent_csys_instance_name")
-                parent_csys_outputcsys_name = instance.get("parent_csys_outputcsys_name")
+                parent_csys_outputcsys_name = instance.get(
+                    "parent_csys_outputcsys_name"
+                )
                 break
-            
+
         chain.append(instance)
 
         if current.get("instance_name") == "origin":
             break
 
         if parent_csys_instance_name is None:
-            raise ValueError(
-                f"Instance '{current}' missing parent_csys_instance_name"
-            )
+            raise ValueError(f"Instance '{current}' missing parent_csys_instance_name")
         if not parent_csys_instance_name:
-            raise ValueError(
-                f"Instance '{current}' parent_csys_instance_name blank"
-            )
+            raise ValueError(f"Instance '{current}' parent_csys_instance_name blank")
         if not parent_csys_outputcsys_name:
-            raise ValueError(
-                f"Instance '{current}' parent_csys_outputcsys_name blank"
-            )
+            raise ValueError(f"Instance '{current}' parent_csys_outputcsys_name blank")
 
         parent_csys_instance = None
         for instance in instances:
@@ -677,7 +694,9 @@ def calculate_location(lookup_item, chain_append=None):
                 parent_csys_instance = instance
                 break
         else:
-            raise ValueError(f"Instance '{parent_csys_instance_name}' not found in instances list")
+            raise ValueError(
+                f"Instance '{parent_csys_instance_name}' not found in instances list"
+            )
 
         current = parent_csys_instance
 
@@ -699,32 +718,24 @@ def calculate_location(lookup_item, chain_append=None):
     y_pos = 0.0
     angle = 0.0
 
-    print(f"697 !!!! {lookup_item.get('instance_name')}")
-
-    chain_text = ""
-    for chainlink in chain:
-        chain_text += f"{chainlink.get('instance_name')} -> "
-    print(f"697 !!!!!!!! {chain_text}")
-
     chainlink_number = 0
     for chainlink in chain:
         chainlink_number += 1
         # ------------------------------------------------------------------
         #   CHILD CSYS EXTRACTION
         # ------------------------------------------------------------------
-        print(f"702 !!!!!!!!!!!! {chainlink.get('instance_name')}")
-        print(f"705 !!!!!!!!!!!!!!!! {chainlink.get('parent_csys_instance_name')}")
-        print(f"709 !!!!!!!!!!!!!!!! {chainlink.get('parent_csys_outputcsys_name')}")
 
         relevant_csys_child = None
         for instance in instances:
-            if instance.get('instance_name') == chainlink.get('parent_csys_instance_name'):
-                if not instance.get('csys_children') == {}:
-                    relevant_csys_child = instance.get('csys_children').get(chainlink.get('parent_csys_outputcsys_name'))
+            if instance.get("instance_name") == chainlink.get(
+                "parent_csys_instance_name"
+            ):
+                if not instance.get("csys_children") == {}:
+                    relevant_csys_child = instance.get("csys_children").get(
+                        chainlink.get("parent_csys_outputcsys_name")
+                    )
                 else:
                     relevant_csys_child = {}
-
-        print(f"710 !!!!!!!!!!!!!!!! {relevant_csys_child}")
 
         angle_old = angle
 
@@ -733,41 +744,44 @@ def calculate_location(lookup_item, chain_append=None):
 
         if relevant_csys_child is not None:
             # --- Local translation from child CSYS ---
-            if relevant_csys_child.get('x') not in ["", None] and relevant_csys_child.get('y') not in ["", None]:
-                dx = float(relevant_csys_child.get('x'))
-                dy = float(relevant_csys_child.get('y'))
+            if relevant_csys_child.get("x") not in [
+                "",
+                None,
+            ] and relevant_csys_child.get("y") not in ["", None]:
+                dx = float(relevant_csys_child.get("x"))
+                dy = float(relevant_csys_child.get("y"))
 
-            elif (relevant_csys_child.get('distance') not in ["", None] and 
-                relevant_csys_child.get('angle') not in ["", None]):
-                dist = float(relevant_csys_child.get('distance'))
-                ang  = math.radians(float(relevant_csys_child.get('angle')))
+            elif relevant_csys_child.get("distance") not in [
+                "",
+                None,
+            ] and relevant_csys_child.get("angle") not in ["", None]:
+                dist = float(relevant_csys_child.get("distance"))
+                ang = math.radians(float(relevant_csys_child.get("angle")))
                 dx = dist * math.cos(ang)
                 dy = dist * math.sin(ang)
 
             # --- Local rotation of the child CSYS ---
-            if relevant_csys_child.get('rotation') not in ["", None]:
-                angle += float(relevant_csys_child.get('rotation'))
+            if relevant_csys_child.get("rotation") not in ["", None]:
+                angle += float(relevant_csys_child.get("rotation"))
 
         # apply rotation (CCW) and accumulate position
         dx_old = dx
         dy_old = dy
-        x_pos += dx_old * math.cos(math.radians(angle_old)) - dy_old * math.sin(math.radians(angle_old))
-        y_pos += dx_old * math.sin(math.radians(angle_old)) + dy_old * math.cos(math.radians(angle_old))
+        x_pos += dx_old * math.cos(math.radians(angle_old)) - dy_old * math.sin(
+            math.radians(angle_old)
+        )
+        y_pos += dx_old * math.sin(math.radians(angle_old)) + dy_old * math.cos(
+            math.radians(angle_old)
+        )
 
-        if chainlink.get('translate_x') not in ["", None]:
-            print(f"714 !!!!!!!!!!!!!!!!!!!!!!!!!!! {chainlink.get('translate_x')}")
-            x_pos += float(chainlink.get('translate_x'))
-        if chainlink.get('translate_y') not in ["", None]:
-            print(f"714 !!!!!!!!!!!!!!!!!!!!!!!!!!! {chainlink.get('translate_y')}")
-            y_pos += float(chainlink.get('translate_y'))
-        if chainlink.get('rotate_csys') not in ["", None]:
-            print(f"714 !!!!!!!!!!!!!!!!!!!!!!!!!!! {chainlink.get('rotate_csys')}")
-            angle += float(chainlink.get('rotate_csys'))
-        
-        if chainlink.get('absolute_rotation') not in ["", None]:
-            print(f"720 !!!!!!!!!!!!!!!!!!!!!!!!!!! absolute rotation found for {chainlink.get('instance_name')} : {chainlink.get('absolute_rotation')}")
-            angle = float(chainlink.get('absolute_rotation'))
+        if chainlink.get("translate_x") not in ["", None]:
+            x_pos += float(chainlink.get("translate_x"))
+        if chainlink.get("translate_y") not in ["", None]:
+            y_pos += float(chainlink.get("translate_y"))
+        if chainlink.get("rotate_csys") not in ["", None]:
+            angle += float(chainlink.get("rotate_csys"))
 
-        print(f"726 !!!!!!!!!!!!!!!! {x_pos} : {y_pos} : {angle}")
+        if chainlink.get("absolute_rotation") not in ["", None]:
+            angle = float(chainlink.get("absolute_rotation"))
 
     return x_pos, y_pos, angle

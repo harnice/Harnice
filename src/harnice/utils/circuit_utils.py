@@ -38,7 +38,6 @@ def max_port_number_in_circuit(circuit_id):
     return max_port_number
 
 
-
 def squeeze_instance_between_ports_in_circuit(
     instance_name, circuit_id, new_circuit_port_number
 ):

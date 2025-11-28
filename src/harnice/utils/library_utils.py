@@ -156,7 +156,14 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
     revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
 
     try:
-        with open(os.path.join(destination_directory, f"{input_dict.get("instance_name")}-attributes.json"), "r", encoding="utf-8") as f:
+        with open(
+            os.path.join(
+                destination_directory,
+                f"{input_dict.get("instance_name")}-attributes.json",
+            ),
+            "r",
+            encoding="utf-8",
+        ) as f:
             attributes_data = json.load(f)
         csys_children = attributes_data.get("csys_children", {})
     except:

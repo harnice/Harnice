@@ -102,7 +102,7 @@ def info(rev=None, path=None, field=None):
                 if field:
                     if field == "affectedinstances":
                         val = row.get(field, "")
-                        if not val:          # empty string → return []
+                        if not val:  # empty string → return []
                             return []
                         return val.split(";")
                     return row.get(field)
