@@ -798,20 +798,79 @@ def calculate_location(lookup_instance, instances):
     return x_pos, y_pos, angle
 
 
-def draw_line(from_coords, to_coords, scale=1, from_leader=False, to_leader=True, indent=6, stroke="black", thickness=1):
-    #coords come in format [x_pos_inches, y_pos_inches]
+def draw_line(
+    from_coords,
+    to_coords,
+    scale=1,
+    from_leader=False,
+    to_leader=True,
+    indent=6,
+    stroke="black",
+    thickness=1
+):
+    # Convert inches → px (and flip Y)
+    fx, fy = from_coords[0] * 96, from_coords[1] * -96
+    tx, ty = to_coords[0] * 96, to_coords[1] * -96
 
-    from_coords_px = [from_coords[0] * 96, from_coords[1] * -96]
-    to_coords_px = [to_coords[0] * 96, to_coords[1] * -96]
-
-    # Arrowhead geometry
-    arrow_length = 8  # length of the arrowhead in pixels
-    arrow_width = 6  # width of the arrowhead in pixels
-    dx = to_coords_px[0]-from_coords_px[0]
-    dy = to_coords_px[1]-from_coords_px[1]
+    # Geometry for arrowheads
+    dx = tx - fx
+    dy = ty - fy
     line_len = math.hypot(dx, dy)
 
+    if line_len == 0:
+        return ""  # cannot draw arrowheads on zero-length line
 
-    line_svg_content = f'<line x1="{from_coords_px[0]}" y1="{from_coords_px[1]}" x2="{to_coords_px[0]}" y2="{to_coords_px[1]}" stroke="{stroke}" stroke-width="{thickness/scale}"/>'
+    # Normalize direction vector
+    ux = dx / line_len
+    uy = dy / line_len
 
-    return line_svg_content
+    # Arrowhead size (scaled)
+    arrow_len = 8 / scale
+    arrow_wid = 6 / scale
+
+    svg_parts = []
+
+    # -------------------------
+    # Draw main line
+    # -------------------------
+    svg_parts.append(
+        f'<line x1="{fx}" y1="{fy}" x2="{tx}" y2="{ty}" '
+        f'stroke="{stroke}" stroke-width="{thickness/scale}"/>'
+    )
+
+    # -------------------------
+    # Arrowhead helper
+    # -------------------------
+    def arrowhead(px, py, ux, uy):
+        # Base of arrowhead is at (px, py)
+        # Two side points:
+        # Rotate ±90° for perpendicular direction
+        perp_x = -uy
+        perp_y = ux
+
+        p1x = px - ux * arrow_len + perp_x * (arrow_wid / 2)
+        p1y = py - uy * arrow_len + perp_y * (arrow_wid / 2)
+
+        p2x = px - ux * arrow_len - perp_x * (arrow_wid / 2)
+        p2y = py - uy * arrow_len - perp_y * (arrow_wid / 2)
+
+        return (
+            f'<polygon points="'
+            f'{px},{py} {p1x},{p1y} {p2x},{p2y}" '
+            f'fill="{stroke}"/>'
+        )
+
+    # -------------------------
+    # Arrow at TO end
+    # -------------------------
+    if to_leader:
+        svg_parts.append(arrowhead(tx, ty, ux, uy))
+
+    # -------------------------
+    # Arrow at FROM end
+    # reverse direction for correct orientation
+    # -------------------------
+    if from_leader:
+        svg_parts.append(arrowhead(fx, fy, -ux, -uy))
+
+    return "".join(svg_parts)

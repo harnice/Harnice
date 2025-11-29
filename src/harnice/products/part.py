@@ -2,6 +2,8 @@ import os
 import json
 import random
 import math
+import re
+from PIL import Image, ImageDraw, ImageFont
 from harnice import fileio, state
 from harnice.utils import svg_utils
 
@@ -12,6 +14,7 @@ default_desc = "COTS COMPONENT, SIZE, COLOR, etc."
 def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-drawing.svg": "drawing",
+        f"{state.partnumber('pn-rev')}-drawing.png": "drawing png",
         f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
     }
 
@@ -190,6 +193,417 @@ def render():
     if os.path.exists(svg_path):
         os.remove(svg_path)
     os.rename(temp_svg_path, svg_path)
+
+
+    # ==================================================
+    # PNG generation (SVG = truth for graphics; JSON = truth for CSYS)
+    # ==================================================
+
+    # ------------------------------------------------------------------
+    # 1. Extract raw contents group from final SVG
+    # ------------------------------------------------------------------
+    with open(svg_path, "r", encoding="utf-8") as f:
+        svg_text = f.read()
+
+    start_tag = f'<g id="{group_name}-contents-start">'
+    end_tag   = f'<g id="{group_name}-contents-end">'
+
+    start_idx = svg_text.find(start_tag)
+    end_idx   = svg_text.find(end_tag)
+
+    if start_idx == -1 or end_idx == -1:
+        print("[WARNING] Could not find contents group in SVG — PNG will only draw csys.")
+        inner_svg = ""
+    else:
+        inner_svg = svg_text[start_idx + len(start_tag) : end_idx]
+
+    # ======================================================
+    # 2. Utility functions + transform matrix code
+    # ======================================================
+
+    def get_attr(tag, name, default=None):
+        m = re.search(fr'{name}="([^"]+)"', tag)
+        return m.group(1) if m else default
+
+    def _parse_floats(s):
+        return [float(x) for x in re.split(r"[ ,]+", s.strip()) if x]
+
+    def _mat_identity():
+        return [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+
+    def _mat_mul(a, b):
+        res = [[0.0, 0.0, 0.0] for _ in range(3)]
+        for i in range(3):
+            for j in range(3):
+                res[i][j] = (
+                    a[i][0] * b[0][j] +
+                    a[i][1] * b[1][j] +
+                    a[i][2] * b[2][j]
+                )
+        return res
+
+    def _mat_apply(m, x, y):
+        nx = m[0][0] * x + m[0][1] * y + m[0][2]
+        ny = m[1][0] * x + m[1][1] * y + m[1][2]
+        return nx, ny
+
+    def parse_transform(transform_str):
+        """Parse SVG transform into 3x3 matrix."""
+        if not transform_str:
+            return _mat_identity()
+
+        mat = _mat_identity()
+        items = re.findall(r'(matrix|translate|scale|rotate|skewX|skewY)\s*\(([^)]*)\)', transform_str)
+        for op, args_str in items:
+            nums = _parse_floats(args_str)
+            op = op.lower()
+
+            if op == "matrix" and len(nums) == 6:
+                a, b, c, d, e, f = nums
+                m2 = [
+                    [a, c, e],
+                    [b, d, f],
+                    [0.0, 0.0, 1.0],
+                ]
+            elif op == "translate":
+                tx = nums[0] if len(nums) else 0.0
+                ty = nums[1] if len(nums) > 1 else 0.0
+                m2 = [
+                    [1.0, 0.0, tx],
+                    [0.0, 1.0, ty],
+                    [0.0, 0.0, 1.0],
+                ]
+            elif op == "scale":
+                sx = nums[0] if len(nums) else 1.0
+                sy = nums[1] if len(nums) > 1 else sx
+                m2 = [
+                    [sx, 0.0, 0.0],
+                    [0.0, sy, 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            elif op == "rotate":
+                angle = nums[0] if nums else 0.0
+                rad = math.radians(angle)
+                cos_a, sin_a = math.cos(rad), math.sin(rad)
+
+                if len(nums) == 3:
+                    cx, cy = nums[1], nums[2]
+                    t1 = [[1,0,cx],[0,1,cy],[0,0,1]]
+                    r  = [[cos_a,-sin_a,0],[sin_a,cos_a,0],[0,0,1]]
+                    t2 = [[1,0,-cx],[0,1,-cy],[0,0,1]]
+                    m2 = _mat_mul(_mat_mul(t1, r), t2)
+                else:
+                    m2 = [
+                        [cos_a, -sin_a, 0.0],
+                        [sin_a,  cos_a, 0.0],
+                        [0.0,    0.0,   1.0],
+                    ]
+            elif op == "skewx":
+                angle = nums[0] if nums else 0.0
+                t = math.tan(math.radians(angle))
+                m2 = [[1, t, 0],[0,1,0],[0,0,1]]
+            elif op == "skewy":
+                angle = nums[0] if nums else 0.0
+                t = math.tan(math.radians(angle))
+                m2 = [[1,0,0],[t,1,0],[0,0,1]]
+            else:
+                m2 = _mat_identity()
+
+            mat = _mat_mul(mat, m2)
+
+        return mat
+
+    # ======================================================
+    # 3. Parse actual shapes into SVG pixel space
+    # ======================================================
+
+    parsed_shapes = []
+
+    # -------- RECTANGLE --------
+    for tag in re.findall(r"<rect[^>]*/?>", inner_svg):
+        x = float(get_attr(tag, "x", 0))
+        y = float(get_attr(tag, "y", 0))
+        w = float(get_attr(tag, "width", 0))
+        h = float(get_attr(tag, "height", 0))
+        fill = get_attr(tag, "fill", "none")
+        stroke = get_attr(tag, "stroke", None)
+        stroke_w = float(get_attr(tag, "stroke-width", 1) or 1)
+        transform_str = get_attr(tag, "transform", "")
+
+        if transform_str:
+            mat = parse_transform(transform_str)
+            pts = [
+                (x,       y),
+                (x+w,     y),
+                (x+w, y+h),
+                (x,   y+h),
+            ]
+            pts_tr = [_mat_apply(mat, px, py) for px,py in pts]
+            parsed_shapes.append(("polygon", {
+                "points": pts_tr,
+                "fill": fill,
+                "stroke": stroke,
+                "sw": stroke_w,
+            }))
+        else:
+            parsed_shapes.append(("rect", {
+                "x": x, "y": y, "w": w, "h": h,
+                "fill": fill, "stroke": stroke, "sw": stroke_w
+            }))
+
+    # -------- CIRCLE --------
+    for tag in re.findall(r"<circle[^>]*/?>", inner_svg):
+        cx = float(get_attr(tag, "cx", 0))
+        cy = float(get_attr(tag, "cy", 0))
+        r  = float(get_attr(tag, "r", 0))
+        fill = get_attr(tag, "fill", "none")
+        stroke = get_attr(tag, "stroke", None)
+        stroke_w = float(get_attr(tag, "stroke-width", 1) or 1)
+        transform_str = get_attr(tag, "transform", "")
+
+        if transform_str:
+            mat = parse_transform(transform_str)
+            cx, cy = _mat_apply(mat, cx, cy)
+
+        parsed_shapes.append(("circle", {
+            "cx": cx, "cy": cy, "r": r,
+            "fill": fill, "stroke": stroke, "sw": stroke_w
+        }))
+
+    # -------- LINE --------
+    for tag in re.findall(r"<line[^>]*/?>", inner_svg):
+        x1 = float(get_attr(tag, "x1", 0))
+        y1 = float(get_attr(tag, "y1", 0))
+        x2 = float(get_attr(tag, "x2", 0))
+        y2 = float(get_attr(tag, "y2", 0))
+        stroke = get_attr(tag, "stroke", "black")
+        stroke_w = float(get_attr(tag, "stroke-width", 1) or 1)
+        transform_str = get_attr(tag, "transform", "")
+
+        if transform_str:
+            mat = parse_transform(transform_str)
+            x1, y1 = _mat_apply(mat, x1, y1)
+            x2, y2 = _mat_apply(mat, x2, y2)
+
+        parsed_shapes.append(("line", {
+            "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+            "stroke": stroke, "sw": stroke_w
+        }))
+
+    # -------- POLYGON --------
+    for tag in re.findall(r"<polygon[^>]*/?>", inner_svg):
+        pts_raw = get_attr(tag, "points", "")
+        pts = []
+        for p in pts_raw.split():
+            if "," in p:
+                xx, yy = p.split(",")
+                pts.append((float(xx), float(yy)))
+        fill = get_attr(tag, "fill", "none")
+        stroke = get_attr(tag, "stroke", None)
+        stroke_w = float(get_attr(tag, "stroke-width", 1) or 1)
+        transform_str = get_attr(tag, "transform", "")
+
+        if transform_str:
+            mat = parse_transform(transform_str)
+            pts = [_mat_apply(mat, px, py) for px, py in pts]
+
+        parsed_shapes.append(("polygon", {
+            "points": pts, "fill": fill,
+            "stroke": stroke, "sw": stroke_w
+        }))
+
+    # -------- TEXT (simple) --------
+    for full_tag in re.findall(r'<text[^>]*>.*?</text>', inner_svg, flags=re.DOTALL):
+        txt = re.sub(r'<.*?>', '', full_tag)
+        x = float(get_attr(full_tag, "x", 0))
+        y = float(get_attr(full_tag, "y", 0))
+        fill = get_attr(full_tag, "fill", "black")
+        transform_str = get_attr(full_tag, "transform", "")
+
+        if transform_str:
+            mat = parse_transform(transform_str)
+            x, y = _mat_apply(mat, x, y)
+
+        parsed_shapes.append(("text", {
+            "x": x, "y": y, "text": txt.strip(), "fill": fill
+        }))
+
+
+    # ======================================================
+    # 4. CSYS → SVG pixel coordinates
+    # ======================================================
+
+    padding = 50
+    scale   = 96  # px per inch
+    arrow_len_svg = 24
+
+    def csys_svg_xy(csys):
+        raw_x = csys.get("x")
+        raw_y = csys.get("y")
+        raw_d = csys.get("distance")
+        raw_a = csys.get("angle")
+
+        if raw_x not in ("", None) and raw_y not in ("", None):
+            x_in = float(raw_x)
+            y_in = float(raw_y)
+        elif raw_d not in ("", None) and raw_a not in ("", None):
+            dist = float(raw_d)
+            ang  = math.radians(float(raw_a))
+            x_in = dist * math.cos(ang)
+            y_in = dist * math.sin(ang)
+        else:
+            x_in, y_in = 0.0, 0.0
+
+        # inches → SVG px ; y-up → y-down
+        return x_in * scale, -y_in * scale
+
+
+    def csys_svg_axes_endpoints(csys, base_x, base_y, arrow_len):
+        rot = math.radians(float(csys.get("rotation", 0) or 0))
+
+        # CSYS-space directions (Y-up)
+        dx_x = math.cos(rot)
+        dy_x = math.sin(rot)
+        dx_y = -math.sin(rot)
+        dy_y = math.cos(rot)
+
+        # Convert CSYS → SVG (flip y)
+        dx_x_s = dx_x
+        dy_x_s = -dy_x
+        dx_y_s = dx_y
+        dy_y_s = -dy_y
+
+        # Endpoints in SVG space
+        x_x = base_x + dx_x_s * arrow_len
+        y_x = base_y + dy_x_s * arrow_len
+        x_y = base_x + dx_y_s * arrow_len
+        y_y = base_y + dy_y_s * arrow_len
+
+        return (x_x, y_x), (x_y, y_y)
+
+
+    # ======================================================
+    # 5. Compute bounding box from (SVG shapes + CSYS)
+    # ======================================================
+
+    pts = []
+
+    # SVG shapes
+    for typ, p in parsed_shapes:
+        if typ == "rect":
+            pts += [(p["x"], p["y"]), (p["x"]+p["w"], p["y"]+p["h"])]
+        elif typ == "circle":
+            pts += [(p["cx"]-p["r"], p["cy"]-p["r"]),
+                    (p["cx"]+p["r"], p["cy"]+p["r"])]
+        elif typ == "line":
+            pts += [(p["x1"], p["y1"]), (p["x2"], p["y2"])]
+        elif typ == "polygon":
+            pts += p["points"]
+        elif typ == "text":
+            pts.append((p["x"], p["y"]))
+
+    # CSYS
+    for csys_name, csys in csys_children.items():
+        bx, by = csys_svg_xy(csys)
+        pts.append((bx, by))
+        (x_x, y_x), (x_y, y_y) = csys_svg_axes_endpoints(csys, bx, by, arrow_len_svg)
+        pts += [(x_x, y_x), (x_y, y_y)]
+
+    if not pts:
+        pts = [(0,0)]
+
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+
+    width  = int((max_x - min_x) + 2*padding)
+    height = int((max_y - min_y) + 2*padding)
+
+    def map_xy(x, y):
+        return (
+            int((x - min_x) + padding),
+            int((y - min_y) + padding),
+        )
+
+
+    # ======================================================
+    # 6. Create PNG canvas and draw everything
+    # ======================================================
+
+    img = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(img)
+
+    try:
+        font = ImageFont.truetype("Arial.ttf", 8)
+    except:
+        font = ImageFont.load_default()
+
+    # --- SHAPES ---
+    for typ, p in parsed_shapes:
+        if typ == "rect":
+            x1, y1 = map_xy(p["x"], p["y"])
+            x2, y2 = map_xy(p["x"] + p["w"], p["y"] + p["h"])
+            draw.rectangle((x1, y1, x2, y2),
+                        fill=p["fill"],
+                        outline=p["stroke"],
+                        width=int(p["sw"]))
+        elif typ == "circle":
+            cx, cy = map_xy(p["cx"], p["cy"])
+            r = p["r"]
+            draw.ellipse((cx-r, cy-r, cx+r, cy+r),
+                        fill=p["fill"],
+                        outline=p["stroke"],
+                        width=int(p["sw"]))
+        elif typ == "line":
+            x1, y1 = map_xy(p["x1"], p["y1"])
+            x2, y2 = map_xy(p["x2"], p["y2"])
+            draw.line((x1,y1,x2,y2), fill=p["stroke"], width=int(p["sw"]))
+        elif typ == "polygon":
+            pts2 = [map_xy(x,y) for x,y in p["points"]]
+            draw.polygon(pts2, fill=p["fill"], outline=p["stroke"])
+        elif typ == "text":
+            tx, ty = map_xy(p["x"], p["y"])
+            draw.text((tx,ty), p["text"], fill=p["fill"], font=font)
+
+    # --- CSYS ---
+    dot_radius = 4
+
+    for csys_name, csys in csys_children.items():
+        bx, by = csys_svg_xy(csys)
+        cx, cy = map_xy(bx, by)
+
+        # Dot
+        draw.ellipse((cx-dot_radius, cy-dot_radius,
+                    cx+dot_radius, cy+dot_radius),
+                    fill="black")
+
+        # Endpoints in SVG → map to PNG
+        (x_x, y_x), (x_y, y_y) = csys_svg_axes_endpoints(csys, bx, by, arrow_len_svg)
+        px1, py1 = map_xy(x_x, y_x)
+        px2, py2 = map_xy(x_y, y_y)
+
+        # Axes
+        draw.line((cx, cy, px1, py1), fill="red",   width=2)  # X
+        draw.line((cx, cy, px2, py2), fill="green", width=2)  # Y
+
+        # Label
+        draw.text((cx+6, cy-6), csys_name, fill="blue", font=font)
+
+    # ======================================================
+    # 7. Save PNG
+    # ======================================================
+
+    png_path = fileio.path("drawing png")
+    img.save(png_path, dpi=(1000, 1000))
+
+
+
 
     print()
     print(f"Part file '{state.partnumber('pn')}' updated")
