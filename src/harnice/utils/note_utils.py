@@ -1,8 +1,8 @@
 from harnice import fileio
 from harnice.lists import instances_list, rev_history
+from harnice import state
 
 note_counter = 1
-
 
 def new_note(
     note_type,  # rev_change_callout, bom_item, part_name, build_note, etc
@@ -12,7 +12,7 @@ def new_note(
     shape_mpn=None,
     shape_lib_subpath=None,
     shape_lib_repo="https://github.com/harnice/harnice-library-public",
-    affectedinstances=[],
+    affectedinstances=None,
 ):
 
     if not shape_mpn:
@@ -31,26 +31,9 @@ def new_note(
             "lib_repo": shape_lib_repo,
             "lib_subpath": shape_lib_subpath,
             "note_number": note_number,
+            "note_affected_instances": affectedinstances,
         },
     )
-
-    if not affectedinstances == []:
-        for affected_instance in affectedinstances:
-            instances_list.new_instance(
-                f"note-{note_counter}-{affected_instance}",
-                {
-                    "item_type": "flagnote",
-                    "print_name": bubble_text,
-                    "parent_instance": affected_instance,
-                    "note_type": note_type,
-                    "note_text": note_text,
-                    "mpn": shape_mpn,
-                    "lib_repo": shape_lib_repo,
-                    "lib_subpath": shape_lib_subpath,
-                    "note_parent": f"note-{note_counter}",
-                    "note_number": note_number,
-                },
-            )
 
     note_counter += 1
 
@@ -84,6 +67,41 @@ def make_rev_history_notes():
                 affectedinstances=affected_instances,
             )
 
+def make_bom_flagnote(affected_instance, output_csys_name):
+    return {
+        "net": state.net,
+        "instance_name": f"note-bom_item-{affected_instance.get('instance_name')}",
+        "print_name": affected_instance.get("bom_line_number"),
+        "mpn": "bom_item",
+        "item_type": "flagnote",
+        "parent_instance": affected_instance.get("instance_name"),
+        "segment_group": affected_instance.get("segment_group"),
+        "connector_group": affected_instance.get("connector_group"),
+        "parent_csys_instance_name": affected_instance.get("instance_name"),
+        "parent_csys_outputcsys_name": output_csys_name,
+        "absolute_rotation": 0,
+        "note_type": "bom_item",
+        "note_affected_instances": [affected_instance.get("instance_name")],
+        "lib_repo": "https://github.com/harnice/harnice-library-public",
+    }
+
+def make_part_name_flagnote(affected_instance, output_csys_name):
+    return {
+        "net": state.net,
+        "instance_name": f"note-part_name-{affected_instance.get('instance_name')}",
+        "print_name": affected_instance.get("print_name"),
+        "mpn": "part_name",
+        "item_type": "flagnote",
+        "parent_instance": affected_instance.get("instance_name"),
+        "segment_group": affected_instance.get("segment_group"),
+        "connector_group": affected_instance.get("connector_group"),
+        "parent_csys_instance_name": affected_instance.get("instance_name"),
+        "parent_csys_outputcsys_name": output_csys_name,
+        "absolute_rotation": 0,
+        "note_type": "part_name",
+        "note_affected_instances": [affected_instance.get("instance_name")],
+        "lib_repo": "https://github.com/harnice/harnice-library-public",
+    }
 
 def combine_notes(instance_names):
     # instance_names is a list of note instances

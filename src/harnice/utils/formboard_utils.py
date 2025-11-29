@@ -643,9 +643,7 @@ def map_instance_to_segments(instance):
         i += 1
 
 
-def calculate_location(lookup_instance, chain_append=None):
-    instances = fileio.read_tsv("instances list")
-
+def calculate_location(lookup_instance, instances):
     # ------------------------------------------------------------------
     # Normalize csys_children: ensure all rows contain real dicts
     # ------------------------------------------------------------------
@@ -664,19 +662,22 @@ def calculate_location(lookup_instance, chain_append=None):
     # Build the CSYS parent chain (from item → origin)
     # ------------------------------------------------------------------
     chain = []
+
     current = lookup_instance
 
     while True:
         # Find the current instance in the raw instances list
+        parent_csys_instance_name = None
+        parent_csys_outputcsys_name = None
+
         for instance in instances:
             if instance.get("instance_name") == current.get("instance_name"):
                 parent_csys_instance_name = instance.get("parent_csys_instance_name")
                 parent_csys_outputcsys_name = instance.get(
                     "parent_csys_outputcsys_name"
                 )
+                chain.append(instance)
                 break
-
-        chain.append(instance)
 
         # Stop once we reach the origin csys
         if current.get("instance_name") == "origin":
@@ -702,10 +703,6 @@ def calculate_location(lookup_instance, chain_append=None):
             )
 
         current = parent_csys_instance
-
-    # Optional chain extension
-    if chain_append:
-        chain.append(chain_append)
 
     # Reverse chain: now runs origin → lookup_item
     chain = list(reversed(chain))
@@ -799,3 +796,22 @@ def calculate_location(lookup_instance, chain_append=None):
     # Final world coordinates
     # ------------------------------------------------------------------
     return x_pos, y_pos, angle
+
+
+def draw_line(from_coords, to_coords, scale=1, from_leader=False, to_leader=True, indent=6, stroke="black", thickness=1):
+    #coords come in format [x_pos_inches, y_pos_inches]
+
+    from_coords_px = [from_coords[0] * 96, from_coords[1] * -96]
+    to_coords_px = [to_coords[0] * 96, to_coords[1] * -96]
+
+    # Arrowhead geometry
+    arrow_length = 8  # length of the arrowhead in pixels
+    arrow_width = 6  # width of the arrowhead in pixels
+    dx = to_coords_px[0]-from_coords_px[0]
+    dy = to_coords_px[1]-from_coords_px[1]
+    line_len = math.hypot(dx, dy)
+
+
+    line_svg_content = f'<line x1="{from_coords_px[0]}" y1="{from_coords_px[1]}" x2="{to_coords_px[0]}" y2="{to_coords_px[1]}" stroke="{stroke}" stroke-width="{thickness/scale}"/>'
+
+    return line_svg_content
