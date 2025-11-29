@@ -130,19 +130,18 @@ for item_type, items in grouped_instances.items():
         printable_instances.add(instance_name)
 
         x, y, angle = formboard_utils.calculate_location(instance, input_instances)
-
         svg_px_x = x * 96
         svg_px_y = y * -96
 
         if item_type == "flagnote":
-            leader_dest = None
-            for instance2 in input_instances:
-                if instance2.get("instance_name") == instance.get("parent_csys_instance_name"):
-                    leader_dest = instance2
-                    break
+
+            leader_dest_temp_instance = instance
+            leader_dest_temp_instance["parent_csys_outputcsys_name"] = f"{instance.get("parent_csys_outputcsys_name")}-leader_dest"
+            x_leader_dest, y_leader_dest, angle_leader_dest = formboard_utils.calculate_location(leader_dest_temp_instance, input_instances)
+
 
             # translate, then scale, then replace
-            content_lines.append(formboard_utils.draw_line([x,y], formboard_utils.calculate_location(leader_dest, input_instances), scale=scale))
+            content_lines.append(formboard_utils.draw_line([x,y], [x_leader_dest, y_leader_dest], scale=scale))
             content_lines.append(
                 f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y}) rotate({-1 * angle})">'
             )
