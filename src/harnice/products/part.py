@@ -201,7 +201,6 @@ def render():
 
     # === Step X: PNG Rendering Including Parsed SVG Contents Group ===
 
-
     # ------------------------------------------------------------------
     # 1. Extract raw contents group from final SVG
     # ------------------------------------------------------------------
@@ -209,108 +208,115 @@ def render():
         svg_text = f.read()
 
     start_tag = f'<g id="{group_name}-contents-start">'
-    end_tag = f'<g id="{group_name}-contents-end">'
+    end_tag   = f'<g id="{group_name}-contents-end">'
 
     start_idx = svg_text.find(start_tag)
-    end_idx = svg_text.find(end_tag)
+    end_idx   = svg_text.find(end_tag)
 
     if start_idx == -1 or end_idx == -1:
         print("[WARNING] Could not find contents group in SVG — PNG will only draw csys.")
         inner_svg = ""
     else:
-        inner_svg = svg_text[start_idx + len(start_tag) : end_idx]
+        inner_svg = svg_text[start_idx + len(start_tag): end_idx]
 
     # ------------------------------------------------------------------
     # 2. Parse simple shapes from the SVG content group
     # ------------------------------------------------------------------
-    parsed_shapes = []  # list of ("type", params_dict)
+    parsed_shapes = []
 
-    # Helper regex getters
     def get_attr(tag, name, default=None):
         m = re.search(fr'{name}="([^"]+)"', tag)
         return m.group(1) if m else default
 
-    # Parse <rect>
+    # <rect>
     for tag in re.findall(r"<rect[^>]*/?>", inner_svg):
-        x = float(get_attr(tag, "x", 0))
-        y = float(get_attr(tag, "y", 0))
-        w = float(get_attr(tag, "width", 0))
-        h = float(get_attr(tag, "height", 0))
-        fill = get_attr(tag, "fill", "none")
-        stroke = get_attr(tag, "stroke", None)
-        stroke_w = float(get_attr(tag, "stroke-width", 1) or 1)
-        parsed_shapes.append(("rect", {
-            "x": x, "y": y, "w": w, "h": h, 
-            "fill": fill, "stroke": stroke, "sw": stroke_w
-        }))
+        parsed_shapes.append((
+            "rect",
+            {
+                "x": float(get_attr(tag, "x", 0)),
+                "y": float(get_attr(tag, "y", 0)),
+                "w": float(get_attr(tag, "width", 0)),
+                "h": float(get_attr(tag, "height", 0)),
+                "fill": get_attr(tag, "fill", "none"),
+                "stroke": get_attr(tag, "stroke", None),
+                "sw": float(get_attr(tag, "stroke-width", 1) or 1)
+            }
+        ))
 
-    # Parse <circle>
+    # <circle>
     for tag in re.findall(r"<circle[^>]*/?>", inner_svg):
-        cx = float(get_attr(tag, "cx", 0))
-        cy = float(get_attr(tag, "cy", 0))
-        r = float(get_attr(tag, "r", 0))
-        fill = get_attr(tag, "fill", "none")
-        stroke = get_attr(tag, "stroke", None)
-        stroke_w = float(get_attr(tag, "stroke-width", 1) or 1)
-        parsed_shapes.append(("circle", {
-            "cx": cx, "cy": cy, "r": r,
-            "fill": fill, "stroke": stroke, "sw": stroke_w
-        }))
+        parsed_shapes.append((
+            "circle",
+            {
+                "cx": float(get_attr(tag, "cx", 0)),
+                "cy": float(get_attr(tag, "cy", 0)),
+                "r": float(get_attr(tag, "r", 0)),
+                "fill": get_attr(tag, "fill", "none"),
+                "stroke": get_attr(tag, "stroke", None),
+                "sw": float(get_attr(tag, "stroke-width", 1) or 1)
+            }
+        ))
 
-    # Parse <line>
+    # <line>
     for tag in re.findall(r"<line[^>]*/?>", inner_svg):
-        x1 = float(get_attr(tag, "x1", 0))
-        y1 = float(get_attr(tag, "y1", 0))
-        x2 = float(get_attr(tag, "x2", 0))
-        y2 = float(get_attr(tag, "y2", 0))
-        stroke = get_attr(tag, "stroke", "black")
-        stroke_w = float(get_attr(tag, "stroke-width", 1) or 1)
-        parsed_shapes.append(("line", {
-            "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-            "stroke": stroke, "sw": stroke_w
-        }))
+        parsed_shapes.append((
+            "line",
+            {
+                "x1": float(get_attr(tag, "x1", 0)),
+                "y1": float(get_attr(tag, "y1", 0)),
+                "x2": float(get_attr(tag, "x2", 0)),
+                "y2": float(get_attr(tag, "y2", 0)),
+                "stroke": get_attr(tag, "stroke", "black"),
+                "sw": float(get_attr(tag, "stroke-width", 1) or 1)
+            }
+        ))
 
-    # Parse <polygon>
+    # <polygon>
     for tag in re.findall(r"<polygon[^>]*/?>", inner_svg):
-        pts_raw = get_attr(tag, "points", "")
         pts = []
+        pts_raw = get_attr(tag, "points", "")
         for p in pts_raw.split():
             if "," in p:
                 xx, yy = p.split(",")
                 pts.append((float(xx), float(yy)))
-        fill = get_attr(tag, "fill", "none")
-        stroke = get_attr(tag, "stroke", None)
-        parsed_shapes.append(("polygon", {
-            "points": pts, "fill": fill, "stroke": stroke
-        }))
 
-    # Parse <text> ... </text>
-    text_tags = re.findall(r'<text[^>]*>(.*?)</text>', inner_svg, flags=re.DOTALL)
+        parsed_shapes.append((
+            "polygon",
+            {
+                "points": pts,
+                "fill": get_attr(tag, "fill", "none"),
+                "stroke": get_attr(tag, "stroke", None)
+            }
+        ))
+
+    # <text>
     for full_tag in re.findall(r'<text[^>]*>.*?</text>', inner_svg, flags=re.DOTALL):
-        txt = re.sub(r'<text[^>]*>', '', full_tag)
-        txt = re.sub(r'</text>', '', txt)
-        x = float(get_attr(full_tag, "x", 0))
-        y = float(get_attr(full_tag, "y", 0))
-        fill = get_attr(full_tag, "fill", "black")
-        parsed_shapes.append(("text", {
-            "x": x, "y": y, "text": txt.strip(), "fill": fill
-        }))
+        text_content = re.sub(r'<.*?>', '', full_tag).strip()
+        parsed_shapes.append((
+            "text",
+            {
+                "x": float(get_attr(full_tag, "x", 0)),
+                "y": float(get_attr(full_tag, "y", 0)),
+                "text": text_content,
+                "fill": get_attr(full_tag, "fill", "black")
+            }
+        ))
 
     # ------------------------------------------------------------------
-    # 3. Compute bounding box including shapes + csys children
+    # 3. Compute bounding box from both SVG shapes and csys
     # ------------------------------------------------------------------
     padding = 50
-    scale = 96
+    scale   = 96
 
     pts = []
 
-    # SVG shapes
+    # Shapes
     for typ, p in parsed_shapes:
         if typ == "rect":
             pts += [(p["x"], p["y"]), (p["x"] + p["w"], p["y"] + p["h"])]
         elif typ == "circle":
-            pts += [(p["cx"] - p["r"], p["cy"] - p["r"]),
-                    (p["cx"] + p["r"], p["cy"] + p["r"])]
+            pts += [(p["cx"]-p["r"], p["cy"]-p["r"]),
+                    (p["cx"]+p["r"], p["cy"]+p["r"])]
         elif typ == "line":
             pts += [(p["x1"], p["y1"]), (p["x2"], p["y2"])]
         elif typ == "polygon":
@@ -318,25 +324,22 @@ def render():
         elif typ == "text":
             pts.append((p["x"], p["y"]))
 
-    # Csys points and arrows
+    # Csys (mix of up/down coordinates)
     for csys_name, csys in csys_children.items():
         x = float(csys.get("x", 0)) * scale
         y = float(csys.get("y", 0)) * scale
         angle = math.radians(float(csys.get("angle", 0)))
-        dist = float(csys.get("distance", 0)) * scale
+        dist  = float(csys.get("distance", 0)) * scale
         x += dist * math.cos(angle)
         y += dist * math.sin(angle)
 
         pts.append((x, y))
 
         rot = math.radians(float(csys.get("rotation", 0)))
-        cos_r, sin_r = math.cos(rot), math.sin(rot)
-
-        ax = x + 24 * cos_r
-        ay = y + 24 * sin_r
-        bx = x - 24 * sin_r
-        by = y + 24 * cos_r
-
+        ax = x + 24 * math.cos(rot)
+        ay = y + 24 * math.sin(rot)
+        bx = x - 24 * math.sin(rot)
+        by = y + 24 * math.cos(rot)
         pts += [(ax, ay), (bx, by)]
 
     if not pts:
@@ -348,19 +351,30 @@ def render():
     min_x, max_x = min(xs), max(xs)
     min_y, max_y = min(ys), max(ys)
 
-    width = int((max_x - min_x) + 2 * padding)
+    width  = int((max_x - min_x) + 2 * padding)
     height = int((max_y - min_y) + 2 * padding)
 
-    # Pillow y+ is down; SVG y+ is down; but csys y+ is UP.
-    # So we flip csys coordinates.
-    def map_xy(x, y):
+    # ------------------------------------------------------------------
+    # 3B. Mapping functions
+    # ------------------------------------------------------------------
+
+    # SVG is already Y-down → no flip
+    def map_svg_xy(x, y):
+        return (
+            int((x - min_x) + padding),
+            int((y - min_y) + padding)
+        )
+
+    # CSYS is Y-up → must be flipped
+    def map_csys_xy(x, y):
         return (
             int((x - min_x) + padding),
             int(height - ((y - min_y) + padding))
         )
 
+
     # ------------------------------------------------------------------
-    # 4. Create PNG canvas and draw shapes
+    # 4. Create PNG and draw SVG shapes (NO Y FLIP)
     # ------------------------------------------------------------------
     img = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(img)
@@ -370,29 +384,34 @@ def render():
     except:
         font = ImageFont.load_default()
 
-    # Draw SVG shapes
     for typ, p in parsed_shapes:
+
         if typ == "rect":
-            x1, y1 = map_xy(p["x"], p["y"])
-            x2, y2 = map_xy(p["x"] + p["w"], p["y"] + p["h"])
-            draw.rectangle((x1, y2, x2, y1), fill=p["fill"], outline=p["stroke"], width=int(p["sw"]))
+            x1, y1 = map_svg_xy(p["x"], p["y"])
+            x2, y2 = map_svg_xy(p["x"] + p["w"], p["y"] + p["h"])
+            draw.rectangle((x1, y1, x2, y2), fill=p["fill"], outline=p["stroke"], width=int(p["sw"]))
+
         elif typ == "circle":
-            cx, cy = map_xy(p["cx"], p["cy"])
+            cx, cy = map_svg_xy(p["cx"], p["cy"])
             r = p["r"]
             draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=p["fill"], outline=p["stroke"], width=int(p["sw"]))
+
         elif typ == "line":
-            x1, y1 = map_xy(p["x1"], p["y1"])
-            x2, y2 = map_xy(p["x2"], p["y2"])
+            x1, y1 = map_svg_xy(p["x1"], p["y1"])
+            x2, y2 = map_svg_xy(p["x2"], p["y2"])
             draw.line((x1, y1, x2, y2), fill=p["stroke"], width=int(p["sw"]))
+
         elif typ == "polygon":
-            pts = [map_xy(x, y) for x, y in p["points"]]
-            draw.polygon(pts, fill=p["fill"], outline=p["stroke"])
+            pts2 = [map_svg_xy(x, y) for x, y in p["points"]]
+            draw.polygon(pts2, fill=p["fill"], outline=p["stroke"])
+
         elif typ == "text":
-            x, y = map_xy(p["x"], p["y"])
-            draw.text((x, y), p["text"], fill=p["fill"], font=font)
+            x_txt, y_txt = map_svg_xy(p["x"], p["y"])
+            draw.text((x_txt, y_txt), p["text"], fill=p["fill"], font=font)
+
 
     # ------------------------------------------------------------------
-    # 5. Draw CSYS arrows/dots on top
+    # 5. Draw CSYS arrows/dots (WITH Y FLIP)
     # ------------------------------------------------------------------
     arrow_len = 24
     dot_radius = 4
@@ -401,16 +420,15 @@ def render():
         try:
             x = float(csys.get("x", 0)) * scale
             y = float(csys.get("y", 0)) * scale
-
             angle = math.radians(float(csys.get("angle", 0)))
-            dist = float(csys.get("distance", 0)) * scale
+            dist  = float(csys.get("distance", 0)) * scale
+
             x += dist * math.cos(angle)
             y += dist * math.sin(angle)
 
             rot = math.radians(float(csys.get("rotation", 0)))
-            cos_r, sin_r = math.cos(rot), math.sin(rot)
 
-            cx, cy = map_xy(x, y)
+            cx, cy = map_csys_xy(x, y)
 
             # Dot
             draw.ellipse(
@@ -418,19 +436,18 @@ def render():
                 fill="black"
             )
 
-            # X arrow (red)
-            x2 = x + arrow_len * cos_r
-            y2 = y + arrow_len * sin_r
-            px1, py1 = map_xy(x2, y2)
+            # X arrow
+            x2 = x + arrow_len * math.cos(rot)
+            y2 = y + arrow_len * math.sin(rot)
+            px1, py1 = map_csys_xy(x2, y2)
             draw.line((cx, cy, px1, py1), fill="red", width=2)
 
-            # Y arrow (green)
-            x3 = x - arrow_len * sin_r
-            y3 = y + arrow_len * cos_r
-            px2, py2 = map_xy(x3, y3)
+            # Y arrow
+            x3 = x - arrow_len * math.sin(rot)
+            y3 = y + arrow_len * math.cos(rot)
+            px2, py2 = map_csys_xy(x3, y3)
             draw.line((cx, cy, px2, py2), fill="green", width=2)
 
-            # Label
             draw.text((cx + 6, cy - 6), csys_name, fill="blue", font=font)
 
         except Exception as e:
@@ -441,6 +458,7 @@ def render():
     # ------------------------------------------------------------------
     png_path = fileio.path("drawing png")
     img.save(png_path, dpi=(1000, 1000))
+
 
 
 
