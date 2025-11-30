@@ -135,12 +135,21 @@ for item_type, items in grouped_instances.items():
         if item_type == "flagnote":
 
             leader_dest_temp_instance = instance
-            leader_dest_temp_instance["parent_csys_outputcsys_name"] = f"{instance.get("parent_csys_outputcsys_name")}-leader_dest"
-            x_leader_dest, y_leader_dest, angle_leader_dest = formboard_utils.calculate_location(leader_dest_temp_instance, input_instances)
-
+            leader_dest_temp_instance["parent_csys_outputcsys_name"] = (
+                f"{instance.get("parent_csys_outputcsys_name")}-leader_dest"
+            )
+            x_leader_dest, y_leader_dest, angle_leader_dest = (
+                formboard_utils.calculate_location(
+                    leader_dest_temp_instance, input_instances
+                )
+            )
 
             # translate, then scale, then replace
-            content_lines.append(formboard_utils.draw_line([x,y], [x_leader_dest, y_leader_dest], scale=scale))
+            content_lines.append(
+                formboard_utils.draw_line(
+                    [x, y], [x_leader_dest, y_leader_dest], scale=scale
+                )
+            )
             content_lines.append(
                 f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y}) rotate({-1 * angle})">'
             )
@@ -157,9 +166,8 @@ for item_type, items in grouped_instances.items():
             content_lines.append("      </g>")
             content_lines.append("      </g>")
 
-
         else:
-            #just replace, no scale
+            # just replace, no scale
             content_lines.append(
                 f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start" transform="translate({svg_px_x},{svg_px_y}) rotate({-1 * angle})">'
             )
