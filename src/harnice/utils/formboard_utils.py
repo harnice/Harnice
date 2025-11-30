@@ -685,11 +685,17 @@ def calculate_location(lookup_instance, instances):
 
         # Required-parent validation
         if parent_csys_instance_name is None:
-            raise ValueError(f"Instance '{current.get('instance_name')}' missing parent_csys_instance_name")
+            raise ValueError(
+                f"Instance '{current.get('instance_name')}' missing parent_csys_instance_name"
+            )
         if not parent_csys_instance_name:
-            raise ValueError(f"Instance '{current.get('instance_name')}' parent_csys_instance_name blank")
+            raise ValueError(
+                f"Instance '{current.get('instance_name')}' parent_csys_instance_name blank"
+            )
         if not parent_csys_outputcsys_name:
-            raise ValueError(f"Instance '{current.get('instance_name')}' parent_csys_outputcsys_name blank")
+            raise ValueError(
+                f"Instance '{current.get('instance_name')}' parent_csys_outputcsys_name blank"
+            )
 
         # Resolve parent instance
         parent_csys_instance = None
@@ -723,7 +729,9 @@ def calculate_location(lookup_instance, instances):
 
         # Find the chainlink's parent instance and extract its csys_children
         for instance in instances:
-            if instance.get("instance_name") == chainlink.get("parent_csys_instance_name"):
+            if instance.get("instance_name") == chainlink.get(
+                "parent_csys_instance_name"
+            ):
                 if instance.get("csys_children") != {}:
                     relevant_csys_child = instance["csys_children"].get(
                         chainlink.get("parent_csys_outputcsys_name")
@@ -742,18 +750,18 @@ def calculate_location(lookup_instance, instances):
         if relevant_csys_child is not None:
 
             # x/y explicit translation
-            if (
-                relevant_csys_child.get("x") not in ["", None]
-                and relevant_csys_child.get("y") not in ["", None]
-            ):
+            if relevant_csys_child.get("x") not in [
+                "",
+                None,
+            ] and relevant_csys_child.get("y") not in ["", None]:
                 dx = float(relevant_csys_child.get("x"))
                 dy = float(relevant_csys_child.get("y"))
 
             # polar translation
-            elif (
-                relevant_csys_child.get("distance") not in ["", None]
-                and relevant_csys_child.get("angle") not in ["", None]
-            ):
+            elif relevant_csys_child.get("distance") not in [
+                "",
+                None,
+            ] and relevant_csys_child.get("angle") not in ["", None]:
                 dist = float(relevant_csys_child.get("distance"))
                 ang = math.radians(float(relevant_csys_child.get("angle")))
                 dx = dist * math.cos(ang)
@@ -806,7 +814,7 @@ def draw_line(
     to_leader=True,
     indent=6,
     stroke="black",
-    thickness=1
+    thickness=1,
 ):
     # Convert inches → px (and flip Y)
     fx, fy = from_coords[0] * 96, from_coords[1] * -96

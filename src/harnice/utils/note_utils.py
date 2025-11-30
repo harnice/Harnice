@@ -5,6 +5,7 @@ from harnice import state
 
 note_counter = 1
 
+
 def new_note(
     note_type,  # rev_change_callout, bom_item, part_name, build_note, etc
     note_text,  # content of the note, must be unique
@@ -52,10 +53,7 @@ def assign_buildnote_numbers():
 
 
 def make_rev_history_notes(rev):
-    affected_instances = rev_history.info(
-        rev=rev.get("rev"),
-        field="affectedinstances"
-    )
+    affected_instances = rev_history.info(rev=rev.get("rev"), field="affectedinstances")
 
     if affected_instances:  # safer + more pythonic
         new_note(
@@ -87,6 +85,7 @@ def make_bom_flagnote(affected_instance, output_csys_name):
         "lib_repo": "https://github.com/harnice/harnice-library-public",
     }
 
+
 def make_part_name_flagnote(affected_instance, output_csys_name):
     return {
         "net": state.net,
@@ -104,6 +103,7 @@ def make_part_name_flagnote(affected_instance, output_csys_name):
         "note_affected_instances": [affected_instance.get("instance_name")],
         "lib_repo": "https://github.com/harnice/harnice-library-public",
     }
+
 
 def make_buildnote_flagnote(note_instance, affected_instance, output_csys_name):
     return {
@@ -123,6 +123,7 @@ def make_buildnote_flagnote(note_instance, affected_instance, output_csys_name):
         "lib_repo": "https://github.com/harnice/harnice-library-public",
     }
 
+
 def make_rev_change_flagnote(note_instance, affected_instance, output_csys_name):
     return {
         "net": state.net,
@@ -140,6 +141,7 @@ def make_rev_change_flagnote(note_instance, affected_instance, output_csys_name)
         "note_affected_instances": [affected_instance.get("instance_name")],
         "lib_repo": "https://github.com/harnice/harnice-library-public",
     }
+
 
 def parse_note_instance(instance):
     """
