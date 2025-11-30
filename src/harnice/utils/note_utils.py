@@ -51,22 +51,23 @@ def assign_buildnote_numbers():
             )
 
 
-def make_rev_history_notes():
-    rev_rows = fileio.read_tsv("revision history")
-    for rev in rev_rows:
-        affected_instances = rev_history.info(
-            rev=rev.get("rev"), field="affectedinstances"
+def make_rev_history_notes(rev):
+    affected_instances = rev_history.info(
+        rev=rev.get("rev"),
+        field="affectedinstances"
+    )
+
+    if affected_instances:  # safer + more pythonic
+        new_note(
+            note_type="rev_change_callout",
+            note_text=rev.get("revisionupdates"),
+            note_number=rev.get("rev"),
+            bubble_text=rev.get("rev"),
+            shape_mpn="rev_change_callout",
+            shape_lib_repo="https://github.com/harnice/harnice-library-public",
+            affectedinstances=affected_instances,
         )
-        if not affected_instances == []:
-            new_note(
-                note_type="rev_change_callout",
-                note_text=rev.get("revisionupdates"),
-                note_number=rev.get("rev"),
-                bubble_text=rev.get("rev"),
-                shape_mpn="rev_change_callout",
-                shape_lib_repo="https://github.com/harnice/harnice-library-public",
-                affectedinstances=affected_instances,
-            )
+
 
 def make_bom_flagnote(affected_instance, output_csys_name):
     return {
@@ -125,7 +126,7 @@ def make_buildnote_flagnote(note_instance, affected_instance, output_csys_name):
 def make_rev_change_flagnote(note_instance, affected_instance, output_csys_name):
     return {
         "net": state.net,
-        "instance_name": f"note-rev_change_callout-{note_instance.get('instance_name')}",
+        "instance_name": f"note-rev_change_callout-{note_instance.get('instance_name')}-{affected_instance.get('instance_name')}",
         "print_name": note_instance.get("print_name"),
         "mpn": "rev_change_callout",
         "item_type": "flagnote",
