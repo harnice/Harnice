@@ -1,10 +1,5 @@
 {
-    "csys_parent_prefs": [
-        ".node"
-    ],
-    "tooling_info": {
-        "tools": {}
-    },
+    "tools": {},
     "build_notes": {},
     "csys_children": {
         "flagnote-1": {
