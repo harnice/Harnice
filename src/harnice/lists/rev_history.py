@@ -1,5 +1,6 @@
 import os
 import csv
+import ast
 import importlib
 from harnice import fileio, state
 
@@ -97,19 +98,46 @@ def info(rev=None, path=None, field=None):
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         rows = list(reader)
-        for row in rows:
-            if row.get("rev") == rev:
-                if field:
-                    if field == "affectedinstances":
-                        val = row.get(field, "")
-                        if not val:  # empty string → return []
-                            return []
-                        return val.split(";")
-                    return row.get(field)
-                else:
-                    return row
 
-    return "row not found"  # exact text is looked up in downstream texts, don't make it more specific
+    for row in rows:
+        if row.get("rev") == rev:
+
+            # ------------------------------------------------------
+            # Field requested
+            # ------------------------------------------------------
+            if field:
+                val = row.get(field)
+
+                if field == "affectedinstances":
+                    if not val or val.strip() == "":
+                        return []
+                    try:
+                        print(f"115  !!!!!!!!!! {val} {ast.literal_eval(val)}")
+                        return ast.literal_eval(val)
+                    except Exception:
+                        print(f"117  !!!!!!!!!! {val} {Exception}")
+                        # fallback: return empty list if malformed
+                        return []
+
+                # other fields unchanged
+                return val
+
+            # ------------------------------------------------------
+            # Entire row requested: parse affectedinstances only
+            # ------------------------------------------------------
+            full_row = dict(row)
+            ai = row.get("affectedinstances")
+            if ai and ai.strip() != "":
+                try:
+                    full_row["affectedinstances"] = ast.literal_eval(ai)
+                except Exception:
+                    full_row["affectedinstances"] = []
+            else:
+                full_row["affectedinstances"] = []
+
+            return full_row
+
+    return "row not found"
 
 
 def initial_release_exists():
