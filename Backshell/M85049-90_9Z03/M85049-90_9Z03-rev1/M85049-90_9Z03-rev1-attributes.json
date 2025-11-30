@@ -1,11 +1,8 @@
 {
-    "csys_parent_prefs": [
-        ".node"
+    "tools": [],
+    "build_notes": [
+        "Torque backshell to connector at ten billion foot-pounds"
     ],
-    "tooling_info": {
-        "tools": {}
-    },
-    "build_notes": {},
     "csys_children": {
         "connector": {
             "x": 2,
