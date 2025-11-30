@@ -26,9 +26,8 @@ def generate_structure():
 def render():
     # === ATTRIBUTES JSON DEFAULTS ===
     default_attributes = {
-        "csys_parent_prefs": [".node"],
-        "tooling_info": {"tools": {}},
-        "build_notes": {},
+        "tools": [],
+        "build_notes": [],
         "csys_children": {
             "accessory-1": {"x": 3, "y": 2, "angle": 0, "rotation": 0},
             "accessory-2": {"x": 2, "y": 3, "angle": 0, "rotation": 0},

@@ -165,6 +165,52 @@ def parse_note_instance(instance):
     return parsed
 
 
+def get_lib_build_notes(instance):
+    """
+    Returns list of build_notes for this instance from the TSV row.
+    Safely parses with ast.literal_eval.
+    Always returns a Python list.
+    """
+
+    raw = instance.get("lib_build_notes")
+
+    if not raw or raw in ["", None]:
+        return []
+
+    try:
+        # Expecting a string representation of a list
+        parsed = ast.literal_eval(raw)
+
+        # Ensure it's actually a list
+        return parsed if isinstance(parsed, list) else []
+
+    except Exception:
+        # Malformed literal → fail safe
+        return []
+
+def get_lib_tools(instance):
+    """
+    Returns list of tools for this instance from the TSV row.
+    Safely parses with ast.literal_eval.
+    Always returns a Python list.
+    """
+
+    raw = instance.get("lib_tools")
+
+    if not raw or raw in ["", None]:
+        return []
+
+    try:
+        # Expecting a string representation of a list
+        parsed = ast.literal_eval(raw)
+
+        # Ensure it's actually a list
+        return parsed if isinstance(parsed, list) else []
+
+    except Exception:
+        # Malformed literal → fail safe
+        return []
+
 def combine_notes(instance_names):
     # instance_names is a list of note instances
     raise NotImplementedError("to do")

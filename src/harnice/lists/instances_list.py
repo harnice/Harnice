@@ -53,6 +53,8 @@ COLUMNS = [
     "lib_drawnby",
     "lib_checkedby",
     "project_editable_lib_modified",
+    "lib_build_notes",
+    "lib_tools",
     "this_instance_mating_device_refdes",  # if connector, refdes of the device it plugs into
     "this_instance_mating_device_connector",  # if connector, name of the connector it plugs into
     "this_instance_mating_device_connector_mpn",  # if connector, mpn of the connector it plugs into
