@@ -1,4 +1,5 @@
 import ast
+import json
 from harnice import fileio
 from harnice.lists import instances_list, rev_history
 from harnice import state
@@ -275,6 +276,40 @@ def get_lib_tools(instance):
         # Malformed literal → fail safe
         return []
 
-def combine_notes(instance_names):
-    # instance_names is a list of note instances
-    raise NotImplementedError("to do")
+
+def combine_notes(keep_note_text, merge_note_texts, note_type=None):
+    keep_note_instance = None
+    merge_note_instances_raw = []
+    for instance in fileio.read_tsv("instances list"):
+        if instance.get("note_text") in [None, ""]:
+            continue
+        if instance.get("note_text") == keep_note_text:
+            if note_type:
+                if instance.get("note_type") in note_type:
+                    keep_note_instance = instance
+            else:
+                keep_note_instance = instance
+        if instance.get("note_text") in merge_note_texts:
+            if note_type:
+                if instance.get("note_type") in note_type:
+                    merge_note_instances_raw.append(instance)
+            else:
+                merge_note_instances_raw.append(instance)
+
+    merge_note_instances_parsed = []
+    for instance in merge_note_instances_raw:
+        merge_note_instances_parsed.append(parse_note_instance(instance))
+
+    new_affected_instances = set()
+
+    for merged_note_instance in merge_note_instances_parsed:
+        for affected_instance in merged_note_instance.get("note_affected_instances"):
+            new_affected_instances.add(affected_instance)
+        instances_list.remove_instance(merged_note_instance)
+
+    for affected_instance in parse_note_instance(keep_note_instance).get("note_affected_instances"):
+        new_affected_instances.add(affected_instance)
+
+    instances_list.modify(keep_note_instance.get("instance_name"), {
+        "note_affected_instances": list(new_affected_instances)}
+    )
