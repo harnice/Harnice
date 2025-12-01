@@ -1,7 +1,6 @@
 import os
 import json
 import subprocess
-import shutil
 from harnice import fileio, state
 from harnice.utils import svg_utils, library_utils
 from harnice.lists import rev_history
