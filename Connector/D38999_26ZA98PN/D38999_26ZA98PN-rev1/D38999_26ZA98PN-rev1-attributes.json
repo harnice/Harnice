@@ -1,11 +1,12 @@
 {
-    "csys_parent_prefs": [
-        ".node"
+    "tools": [
+        "Socket part number for AN plugs",
+        "Strap wrench",
+        "Crimper tool",
+        "Crimper die",
+        "Pin extractor tool"
     ],
-    "tooling_info": {
-        "tools": {}
-    },
-    "build_notes": {},
+    "build_notes": [],
     "csys_children": {
         "flagnote-1": {
             "angle": 0,
