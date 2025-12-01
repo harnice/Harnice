@@ -112,10 +112,8 @@ def info(rev=None, path=None, field=None):
                     if not val or val.strip() == "":
                         return []
                     try:
-                        print(f"115  !!!!!!!!!! {val} {ast.literal_eval(val)}")
                         return ast.literal_eval(val)
                     except Exception:
-                        print(f"117  !!!!!!!!!! {val} {Exception}")
                         # fallback: return empty list if malformed
                         return []
 

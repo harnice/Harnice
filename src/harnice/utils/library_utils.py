@@ -159,15 +159,21 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
         with open(
             os.path.join(
                 destination_directory,
-                f"{input_dict.get("instance_name")}-attributes.json",
+                f"{input_dict.get('instance_name')}-attributes.json",
             ),
             "r",
             encoding="utf-8",
         ) as f:
             attributes_data = json.load(f)
-        csys_children = attributes_data.get("csys_children", {})
-    except:
-        csys_children = None
+
+        csys_children = attributes_data.get("csys_children") or {}
+        tools = attributes_data.get("tools") or []
+        build_notes = attributes_data.get("build_notes") or []
+
+    except Exception:
+        csys_children = {}
+        tools = []
+        build_notes = []
 
     update_contents = {
         "mpn": input_dict.get("mpn"),
@@ -185,6 +191,8 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
         "lib_datereleased": revhistory_row.get("datereleased"),
         "lib_drawnby": revhistory_row.get("drawnby"),
         "lib_checkedby": revhistory_row.get("checkedby"),
+        "lib_tools": tools,
+        "lib_build_notes": build_notes,
         "project_editable_lib_modified": Modified,
     }
 

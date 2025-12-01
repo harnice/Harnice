@@ -357,9 +357,9 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             instances_list.modify(
                 f"{connector.get('device_refdes')}.{connector.get('connector')}.conn",
                 {
-                    "mating_device_refdes": connector.get("device_refdes"),
-                    "mating_device_connector": connector.get("connector"),
-                    "mating_device_connector_mpn": connector.get("connector_mpn"),
+                    "this_instance_mating_device_refdes": connector.get("device_refdes"),
+                    "this_instance_mating_device_connector": connector.get("connector"),
+                    "this_instance_mating_device_connector_mpn": connector.get("connector_mpn"),
                 },
             )
         except ValueError:
@@ -430,7 +430,6 @@ def add_chains_to_channel_map():
 
         for a, b in zip(path, path[1:]):
             net_a = net_of.get(a)
-            net_b = net_of.get(b)
 
             # collect unique net chain
             if net_a and (not net_chain or net_chain[-1] != net_a):

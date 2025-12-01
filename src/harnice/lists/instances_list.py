@@ -53,6 +53,8 @@ COLUMNS = [
     "lib_drawnby",
     "lib_checkedby",
     "project_editable_lib_modified",
+    "lib_build_notes",
+    "lib_tools",
     "this_instance_mating_device_refdes",  # if connector, refdes of the device it plugs into
     "this_instance_mating_device_connector",  # if connector, name of the connector it plugs into
     "this_instance_mating_device_connector_mpn",  # if connector, mpn of the connector it plugs into
@@ -160,6 +162,20 @@ def modify(instance_name, instance_data):
             os.fsync(f.fileno())
 
         os.replace(tmp, path)
+
+
+def remove_instance(instance_to_delete):
+    instances_list = fileio.read_tsv("instances list")
+    new_list = []
+    for instance in instances_list:
+        if instance.get("instance_name") == instance_to_delete.get("instance_name"):
+            continue
+        new_list.append(instance)
+
+    with open(fileio.path("instances list"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(new_list)
 
 
 def new():

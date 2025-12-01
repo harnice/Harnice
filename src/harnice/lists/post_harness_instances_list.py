@@ -2,7 +2,7 @@ import os
 import csv
 import shutil
 from harnice import fileio
-
+from harnice.lists import instances_list
 
 def rebuild():
     """
@@ -32,8 +32,6 @@ def rebuild():
         # Case 2: harness_pn provided -> try to load harness instances list
         harness_instances_list_path = os.path.join(
             fileio.dirpath("harnesses"),
-            harness_pn,
-            "lists",
             f"{harness_pn}-instances_list.tsv",
         )
 
@@ -54,7 +52,7 @@ def rebuild():
     with open(
         fileio.path("post harness instances list"), "w", newline="", encoding="utf-8"
     ) as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=instances_list.COLUMNS, delimiter="\t")
         writer.writeheader()
         for instance in post_harness_instances:
             writer.writerow({k: instance.get(k, "") for k in fieldnames})
