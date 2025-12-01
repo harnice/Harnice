@@ -1,5 +1,4 @@
 import ast
-import json
 from harnice import fileio
 from harnice.lists import instances_list, rev_history
 from harnice import state
