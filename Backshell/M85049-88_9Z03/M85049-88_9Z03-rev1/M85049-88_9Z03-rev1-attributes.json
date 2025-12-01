@@ -1,8 +1,8 @@
 {
-    "tooling_info": {
-        "tools": {}
-    },
-    "build_notes": {},
+    "tools": [],
+    "build_notes": [
+        "Torque backshell to connector at 40 in-lbs"
+    ],
     "csys_children": {
         "connector": {
             "x": 3,

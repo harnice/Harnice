@@ -1,7 +1,7 @@
 {
     "tools": [],
     "build_notes": [
-        "Torque backshell to connector at ten billion foot-pounds"
+        "Torque backshell to connector at 40 in-lbs"
     ],
     "csys_children": {
         "connector": {

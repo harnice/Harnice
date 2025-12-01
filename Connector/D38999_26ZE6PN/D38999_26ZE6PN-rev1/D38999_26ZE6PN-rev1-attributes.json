@@ -1,5 +1,11 @@
 {
-    "tools": [],
+    "tools": [
+        "Socket part number for EN plugs",
+        "Strap wrench",
+        "Crimper tool",
+        "Crimper die",
+        "Pin extractor tool"
+    ],
     "build_notes": [],
     "csys_children": {
         "flagnote-1": {
