@@ -1,6 +1,6 @@
 {
-    "tools": {},
-    "build_notes": {},
+    "tools": [],
+    "build_notes": [],
     "csys_children": {
         "flagnote-1": {
             "angle": 0,
