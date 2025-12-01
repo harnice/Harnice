@@ -151,10 +151,7 @@ masters = []
 
 # Discover all master SVGs in a folder of the entire project (output of the other macros)
 part_prefix = state.partnumber("pn-rev")
-directory_to_search = os.path.join(
-    fileio.dirpath(None),
-    "instance_data",
-)
+directory_to_search = fileio.dirpath(None)
 
 for root, _, files in os.walk(directory_to_search):
     for filename in files:
