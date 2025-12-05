@@ -20,13 +20,6 @@ def validate_nodes():
         if instance.get("item_type") == "node"
     }
 
-    # Extract nodes already involved in segments in formboard definition
-    nodes_from_formboard_definition = set()
-    for row in fileio.read_tsv("formboard graph definition"):
-        nodes_from_formboard_definition.add(row.get("node_at_end_a", ""))
-        nodes_from_formboard_definition.add(row.get("node_at_end_b", ""))
-    nodes_from_formboard_definition.discard("")
-
     # --- Case 1: No segments exist in formboard definition yet, build from scratch ---
     if not fileio.read_tsv("formboard graph definition"):
         # If there are more than two nodes, make a randomized wheel-spoke graph
@@ -81,40 +74,46 @@ def validate_nodes():
             raise ValueError("Fewer than two nodes defined, cannot build segments.")
 
     # --- Case 2: Some nodes from instances list exist in the formboard definition but not all of them ---
-    else:
-        nodes_from_instances_list_not_in_formboard_def = (
-            nodes_from_instances_list - nodes_from_formboard_definition
-        )
+    # Extract nodes already involved in segments in formboard definition
+    nodes_from_formboard_definition = set()
+    for row in fileio.read_tsv("formboard graph definition"):
+        nodes_from_formboard_definition.add(row.get("node_at_end_a", ""))
+        nodes_from_formboard_definition.add(row.get("node_at_end_b", ""))
+    nodes_from_formboard_definition.discard("")
 
-        if nodes_from_instances_list_not_in_formboard_def:
-            for missing_node in nodes_from_instances_list_not_in_formboard_def:
-                segment_id = f"{missing_node}_leg"
+    nodes_from_instances_list_not_in_formboard_def = (
+        nodes_from_instances_list - nodes_from_formboard_definition
+    )
 
-                node_to_attach_new_leg_to = ""
-                for instance in fileio.read_tsv("instances list"):
-                    if (
-                        instance.get("item_type") == "node"
-                        and instance.get("instance_name") != missing_node
-                    ):
-                        node_to_attach_new_leg_to = instance.get("instance_name")
-                        break
+    if nodes_from_instances_list_not_in_formboard_def:
+        for missing_node in nodes_from_instances_list_not_in_formboard_def:
+            segment_id = f"{missing_node}_leg"
 
-                if not node_to_attach_new_leg_to:
-                    raise ValueError(
-                        f"No existing node found to connect {missing_node} to."
-                    )
+            node_to_attach_new_leg_to = ""
+            for instance in fileio.read_tsv("instances list"):
+                if (
+                    instance.get("item_type") == "node"
+                    and instance.get("instance_name") != missing_node
+                ):
+                    node_to_attach_new_leg_to = instance.get("instance_name")
+                    break
 
-                formboard_graph.append(
-                    segment_id,
-                    {
-                        "segment_id": segment_id,
-                        "node_at_end_a": missing_node,
-                        "node_at_end_b": node_to_attach_new_leg_to,
-                        "length": str(random.randint(6, 18)),
-                        "angle": str(random.randint(0, 359)),
-                        "diameter": 0.1,
-                    },
+            if not node_to_attach_new_leg_to:
+                raise ValueError(
+                    f"No existing node found to connect {missing_node} to."
                 )
+
+            formboard_graph.append(
+                segment_id,
+                {
+                    "segment_id": segment_id,
+                    "node_at_end_a": missing_node,
+                    "node_at_end_b": node_to_attach_new_leg_to,
+                    "length": str(random.randint(6, 18)),
+                    "angle": str(random.randint(0, 359)),
+                    "diameter": 0.1,
+                },
+            )
 
     # --- Remove any segments that connect to nodes that are both...
     #        only referenced once in the formboard definition and
@@ -167,19 +166,18 @@ def validate_nodes():
             },
         )
 
+    # === Ensure each node is represented in instances list ===
     for node in nodes_from_formboard_definition:
-        try:  # if this node already exists, that's ok we don't have to add it again
-            instances_list.new_instance(
-                node,
-                {
-                    "item_type": "node",
-                    "location_type": "node",
-                    "parent_csys_instance_name": "origin",
-                    "parent_csys_outputcsys_name": "origin",
-                },
-            )
-        except ValueError:
-            pass
+        instances_list.new_instance(
+            node,
+            {
+                "item_type": "node",
+                "location_type": "node",
+                "parent_csys_instance_name": "origin",
+                "parent_csys_outputcsys_name": "origin",
+            },
+            ignore_duplicates=True,
+        )
 
     # === Detect loops ===
     adjacency = defaultdict(list)
