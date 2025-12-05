@@ -59,7 +59,7 @@ for instance in input_instances:
     has_shape = False
 
     # Pull bubble from the library if there is a shape
-    if instance.get("note_affected_instances") not in ["", None]:
+    if not instance.get("note_affected_instances") == "[]":
         has_shape = True
 
     if has_shape:
