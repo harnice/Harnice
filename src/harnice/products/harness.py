@@ -284,7 +284,11 @@ for x in range(2):
             instances_list.modify(instance.get("instance_name"), {{"print_name": print_name}})
 
         elif instance.get("item_type") == "contact":
-            instances_list.modify(instance.get("instance_name"), {{"print_name": instance.get("mpn")}})
+            print_name = instance.get("mpn")
+            instances_list.modify(
+                instance.get("instance_name"),
+                {{"print_name": print_name}}
+            )
 
         else:
             instances_list.modify(instance.get("instance_name"), {{"print_name": instance.get("instance_name")}})
@@ -306,9 +310,25 @@ for instance in fileio.read_tsv("instances list"):
 
 note_utils.assign_buildnote_numbers()
 
+# example: add notes to describe actions
+# note_utils.new_note(
+#     "build_note",
+#     "do this",
+#     affectedinstances=["X1.B.conn"]
+# )
+# note_utils.new_note(
+#     "build_note",
+#     "do that"
+# )
+
+# example: combine buildnotes if their texts are similar
+#note_utils.combine_notes("Torque backshell to connector at 40 in-lbs","Torque backshell to connector at about 40 in-lbs")
+
+
 # ===========================================================================
 #                  PUT TOGETHER FORMBOARD SVG INSTANCE CONTENT
 # ===========================================================================
+instances = fileio.read_tsv("instances list")
 note_instances = []
 for instance in instances:
     if instance.get("item_type") == "note":
