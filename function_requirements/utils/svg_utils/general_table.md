@@ -174,14 +174,21 @@ Each entry of that list must contain the dictionary `columns` and may contain di
 
 `format_key` may only contain one value which corresponds to the name of a key in the format dictionary. It represents the appearance of that row. If it is not defined, the format of that row will fall back to globals and defaults. Custom formatting of individual cells is not supported. 
 
-`columns` is a dictionary that contains the actual content you want to appear in each column. The name of each key at this level must match one of the keys in the `columns` argument. It is agnostic to order, and by leaving a key out, simply nothing will appear in that cell. 
+`columns` is a dictionary that contains the actual content you want to appear in each column. The name of each key at this level must match one of the keys in the `columns` argument. It is agnostic to order, and by leaving a key out, simply nothing will appear in that cell. Existing formatting (cell fill and border) will still apply.
 
-The value of each column key may take the following forms. There may only be one content type per cell.
+The value of each column key may take one of the following forms:
 - string or number → single-line text, prints directly
 - list[str] → multi-line text where the 0th element prints highest within the cell. Use format key `line_spacing` as needed. 
 - dict → custom 
 
-If you add a dictionary to one of the content cells with key `instance_name`, it will search the current macro's `instances` folder for a file with name `*-drawing.svg`, search that file for contents between `*-contents-start` and `*-contents-end` (where `*` represents the same string of characters defined in `instance-name` of the data cell), find the svg text in between, copy and paste it into the cell of your column. It will fail if that drawing does not exist, or if either start or end tags are not found. It is up to the user to ensure the drawing exists before calling this function.
+### Importing a Symbol into a Cell
+
+If you add a dictionary to one of the content cells with key `instance_name`, the function will add a drawing to the cell.
+ - First the current macro's `instances` folder will be searched for a file with name `*-drawing.svg`. That file will be searched for contents between `*-contents-start` and `*-contents-end` (where `*` represents the same string of characters defined in `instance-name` of the data cell).
+ - The svg text in between will be copied and pasted into the cell of your column.
+ - If that drawing does not exist, or if either start or end tags are not found, the function will fail. It is up to the user to ensure the drawing exists before calling this function.
+ - Local table formatting will not apply to the imported drawing
+ - The drawing origin will obey the same justification rules as the text, and there is no boundary or clipping logic applied to the imported svg.
 
 ---
 
