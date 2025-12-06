@@ -5,7 +5,134 @@ from harnice.lists import instances_list, library_history
 
 default_desc = "HARNESS, DOES A, FOR B"
 
-harness_feature_tree_utils_default = """
+
+def file_structure():
+    return {
+        f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
+        f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
+        f"{state.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
+        f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
+        "interactive_files": {
+            f"{state.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
+        },
+    }
+
+
+def generate_structure():
+    os.makedirs(
+        fileio.dirpath("interactive_files", structure_dict=file_structure()),
+        exist_ok=True,
+    )
+
+
+def render():
+    """
+    Main harness rendering entrypoint.
+    """
+
+    feature_tree_path = fileio.path("feature tree", structure_dict=file_structure())
+
+    # ======================================================================
+    # 1. Feature tree does not exist: prompt user and create it
+    # ======================================================================
+    if not os.path.exists(feature_tree_path):
+
+        # ------------------------------------------------------------------
+        # Ask whether this harness pulls from a system or not
+        # ------------------------------------------------------------------
+        print(
+            "  's'   Enter 's' for system (or just hit enter) "
+            "if this harness is pulling data from a system instances list"
+        )
+        print(
+            "  'n'   Enter 'n' for none to build your harness entirely "
+            "out of rules in feature tree (you're hardcore)"
+        )
+        build_macro = cli.prompt("")
+
+        # ------------------------------------------------------------------
+        # If harness is built from a system, ask for system parameters
+        # ------------------------------------------------------------------
+        if build_macro in (None, "", "s"):
+            system_pn = cli.prompt("Enter the system part number")
+            system_rev = cli.prompt("Enter the system revision id (ex. rev1)")
+            target_net = cli.prompt("Enter the net you want to build this harness from")
+
+            # Inject actual values into template
+            build_macro_block = default_build_macro_block(
+                system_pn, system_rev, target_net
+            )
+            push_block = default_push_block()
+
+        # ------------------------------------------------------------------
+        # Hardcore mode — no system importing
+        # ------------------------------------------------------------------
+        elif build_macro == "n":
+            build_macro_block = ""
+            push_block = ""
+
+        else:
+            print(
+                "Unrecognized input. If you meant to select a template not listed, "
+                "just select a template, delete the contents and start over manually. rip."
+            )
+            exit()
+
+        # ------------------------------------------------------------------
+        # Write feature tree file
+        # ------------------------------------------------------------------
+        feature_tree_text = _make_feature_tree(build_macro_block, push_block)
+
+        with open(feature_tree_path, "w", encoding="utf-8") as f:
+            f.write(feature_tree_text)
+
+    # ======================================================================
+    # 2. Init library + instances list
+    # ======================================================================
+    library_history.new()
+    instances_list.new()
+    instances_list.new_instance(
+        "origin",
+        {
+            "instance_name": "origin",
+            "item_type": "origin",
+            "location_type": "node",
+        },
+    )
+
+    # ======================================================================
+    # 3. Run the feature tree
+    # ======================================================================
+    cli.print_import_status_headers()
+    runpy.run_path(feature_tree_path, run_name="__main__")
+
+    print(f"Harnice: harness {state.partnumber('pn')} rendered successfully!\n")
+
+
+# ======================================================================
+# Helper: prompt for system/no-system
+# ======================================================================
+def _prompt_build_macro():
+    print(
+        "  's'   Enter 's' for system (or just hit enter) "
+        "if this harness is pulling data from a system instances list"
+    )
+    print(
+        "  'n'   Enter 'n' for none to build your harness entirely "
+        "out of rules in feature tree (you're hardcore)"
+    )
+    return cli.prompt("")
+
+
+# ======================================================================
+# Helper: build the complete feature tree file text
+# ======================================================================
+def _make_feature_tree(build_macro_block: str, push_block: str) -> str:
+    """
+    Insert build_macro_block and push_block into your exact template.
+    """
+
+    return f"""
 import os
 from harnice import fileio, state
 from harnice.utils import (
@@ -21,30 +148,8 @@ from harnice.lists import (
     rev_history,
 )
 
-# ===========================================================================
-#                   build_macro SCRIPTING
-# ===========================================================================
-system_pn_rev = ["0000250810-S01", "rev9"]
-target_net = "/OUTPUT_SNK"
-feature_tree_utils.run_macro(
-    "import_harness_from_harnice_system",
-    "harness_builder",
-    "https://github.com/harnice/harnice-library-public",
-    "harness-from-system-1",
-    system_pn_rev=system_pn_rev,
-    path_to_system_rev=os.path.join(
-        "/Users/kenyonshutt/documents/dev-harnice-projects/dev-harnesses/0000250810-S01/",
-        "0000250810-S01-rev9",
-    ),
-    target_net=target_net,
-    manifest_nets=[target_net],
-)
+{build_macro_block}
 
-rev_history.overwrite(
-    {
-        "desc": f"HARNESS '{target_net}' FROM SYSTEM '{system_pn_rev[0]}-{system_pn_rev[1]}'",
-    }
-)
 # ===========================================================================
 #                  HARNESS BUILD RULES
 # ===========================================================================
@@ -58,17 +163,17 @@ for instance in instances:
             if instance.get("item_type") == "circuit":
                 circuit_instance = instance
                 connector_at_end_a = instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group")
-new_instance_name = f"{circuit_instance.get("instance_name")}-special_contact"
+new_instance_name = f"{{circuit_instance.get("instance_name")}}-special_contact"
 circuit_id = int(circuit_instance.get("circuit_id"))
 instances_list.new_instance(
-    new_instance_name, {
+    new_instance_name, {{
         "bom_line_number": True,
         "mpn": "TXPS20",
         "item_type": "contact",
         "location_type": "node",
         "circuit_id": circuit_id,
         "connector_group": connector_at_end_a
-    }
+    }}
 )
 circuit_utils.squeeze_instance_between_ports_in_circuit(
     new_instance_name, circuit_id, 1
@@ -77,7 +182,7 @@ circuit_utils.squeeze_instance_between_ports_in_circuit(
 # example: add a backshell
 for instance in instances:
     if instance.get("instance_name") in ["X1.B.conn", "PREAMP2.in2.conn"]:
-        instances_list.new_instance(f"{instance.get("connector_group")}.bs",{
+        instances_list.new_instance(f"{{instance.get("connector_group")}}.bs", {{
             "bom_line_number": True,
             "mpn": "M85049-90_9Z03",
             "item_type": "backshell",
@@ -87,12 +192,12 @@ for instance in instances:
             "parent_csys_instance_name": (instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "node")).get("instance_name"),
             "parent_csys_outputcsys_name": "origin",
             "lib_repo": "https://github.com/harnice/harnice-library-public"
-        }
-        )
-        instances_list.modify(instance.get("instance_name"),{
-            "parent_csys_instance_name": f"{instance.get("connector_group")}.bs",
+        }})
+        instances_list.modify(instance.get("instance_name"), {{
+            "parent_csys_instance_name": f"{{instance.get("connector_group")}}.bs",
             "parent_csys_outputcsys_name": "connector",
-        })
+        }})
+
 
 # ===========================================================================
 #                   IMPORT PARTS FROM LIBRARY FOR GENERAL USE
@@ -104,14 +209,10 @@ for instance in fileio.read_tsv("instances list"):
                 library_utils.pull(instance)
 
 # ===========================================================================
-#                   UPDATE FORMBOARD DATA
+#                  PROCESS HARNESS LAYOUT GRAPH
 # ===========================================================================
-
-# make sure your node network is fully connected, no loops are defined, etc
 formboard_utils.validate_nodes()
 
-# ensure each cable ends at the connector at the end nodes of the cable's conductors
-# (rewrite this if you are splitting conductors inside a cable to different connectors)
 instances = fileio.read_tsv("instances list")
 for instance in instances:
     if instance.get("item_type") == "cable":
@@ -120,7 +221,7 @@ for instance in instances:
                 if instance2.get("item_type") == "conductor":
                     instances_list.modify(
                         instance.get("instance_name"),
-                        {
+                        {{
                             "node_at_end_a": instances_list.instance_in_connector_group_with_item_type(
                                 instances_list.attribute_of(
                                     instance2.get("node_at_end_a"), "connector_group"
@@ -133,16 +234,14 @@ for instance in instances:
                                 ),
                                 "node",
                             ).get("instance_name"),
-                        },
+                        }},
                     )
                     break
 
-# make segment instances for cables, conductors, and channels
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["conductor", "cable", "net-channel"]:
         formboard_utils.map_instance_to_segments(instance)
 
-# sum lengths of conductors and cables
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["conductor", "cable"]:
         length = 0
@@ -150,103 +249,93 @@ for instance in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
                 if instance2.get("length", "").strip():
                     length += int(instance2.get("length").strip())
-        instances_list.modify(instance.get("instance_name"), {"length": length})
+        instances_list.modify(instance.get("instance_name"), {{"length": length}})
 
 # ===========================================================================
 #                   ASSIGN BOM LINE NUMBERS
 # ===========================================================================
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["connector", "cable", "backshell"]:
-        instances_list.modify(instance.get("instance_name"), {"bom_line_number": True})
+        instances_list.modify(instance.get("instance_name"), {{"bom_line_number": True}})
 instances_list.assign_bom_line_numbers()
 
 # ===========================================================================
-#       ASSIGN PRINT NAMES (run it n times in case print names are referenced recursively to the nth degree)
+#       ASSIGN PRINT NAMES
 # ===========================================================================
 for x in range(2):
     for instance in fileio.read_tsv("instances list"):
         if instance.get("item_type") == "connector_cavity":
             instance_name = instance.get("instance_name", "")
-            print_name = f"cavity {instance_name.split(".")[-1] if "." in instance_name else instance_name}"
-            instances_list.modify(instance_name, {"print_name": print_name})
+            print_name = f"cavity {{instance_name.split(".")[-1] if "." in instance_name else instance_name}}"
+            instances_list.modify(instance_name, {{"print_name": print_name}})
+
         elif instance.get("item_type") in ["conductor", "conductor-segment"]:
-            instances_list.modify(instance.get("instance_name"), {
-                "print_name": f"'{instance.get("cable_identifier")}' of '{instances_list.attribute_of(instance.get("cable_group"), "print_name")}'"
-            })
+            instances_list.modify(instance.get("instance_name"), {{
+                "print_name": f"'{{instance.get("cable_identifier")}}' of '{{instances_list.attribute_of(instance.get("cable_group"), "print_name")}}'"
+            }})
+
         elif instance.get("item_type") == "net-channel":
-            print_name = f"'{instance.get("this_net_from_device_channel_id")}' of '{instance.get("this_net_from_device_refdes")}' to '{instance.get("this_net_to_device_channel_id")}' of '{instance.get("this_net_to_device_refdes")}'"
-            instances_list.modify(
-                instance.get("instance_name"),
-                {"print_name": print_name},
-            )
+            print_name = f"'{{instance.get("this_net_from_device_channel_id")}}' of '{{instance.get("this_net_from_device_refdes")}}' to '{{instance.get("this_net_to_device_channel_id")}}' of '{{instance.get("this_net_to_device_refdes")}}'"
+            instances_list.modify(instance.get("instance_name"), {{"print_name": print_name}})
+
         elif instance.get("item_type") == "net-channel-segment":
-            print_name = f"'{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_channel_id")}' of '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_refdes")}' to '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_channel_id")}' of '{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_refdes")}'"
-            instances_list.modify(
-                instance.get("instance_name"),
-                {"print_name": print_name},
-            )
+            print_name = f"'{{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_channel_id")}}' of '{{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_refdes")}}' to '{{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_channel_id")}}' of '{{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_refdes")}}'"
+            instances_list.modify(instance.get("instance_name"), {{"print_name": print_name}})
+
         elif instance.get("item_type") == "connector":
-            print_name = f"{instance.get("connector_group")}"
-            instances_list.modify(
-                instance.get("instance_name"),
-                {"print_name": print_name},
-            )
+            print_name = f"{{instance.get("connector_group")}}"
+            instances_list.modify(instance.get("instance_name"), {{"print_name": print_name}})
+
         elif instance.get("item_type") == "cable-segment":
-            print_name = f"{instance.get("cable_group")}"
-            instances_list.modify(
-                instance.get("instance_name"),
-                {"print_name": print_name},
-            )
+            print_name = f"{{instance.get("cable_group")}}"
+            instances_list.modify(instance.get("instance_name"), {{"print_name": print_name}})
+
         elif instance.get("item_type") == "contact":
             print_name = instance.get("mpn")
             instances_list.modify(
                 instance.get("instance_name"),
-                {"print_name": print_name},
+                {{"print_name": print_name}}
             )
+
         else:
-            instances_list.modify(
-                instance.get("instance_name"),
-                {"print_name": instance.get("instance_name")},
-            )
+            instances_list.modify(instance.get("instance_name"), {{"print_name": instance.get("instance_name")}})
 
 # ===========================================================================
 #                  ADD BUILD NOTES
 # ===========================================================================
-
 for rev_row in fileio.read_tsv("revision history"):
     if rev_row.get("rev") == state.rev:
         note_utils.make_rev_history_notes(rev_row)
 
-note_utils.new_note(
-    "build_note",
-    "do this",
-    affectedinstances=["X1.B.conn"]
-)
-note_utils.new_note(
-    "build_note",
-    "do that",
-    affectedinstances=["X1.B.bs"]
-)
+for instance in fileio.read_tsv("instances list"):
+    for note in note_utils.get_lib_build_notes(instance):
+        note_utils.new_note(
+            "build_note",
+            note,
+            affectedinstances=[instance.get("instance_name")]
+        )
+
 note_utils.assign_buildnote_numbers()
 
+# example: add notes to describe actions
+# note_utils.new_note(
+#     "build_note",
+#     "do this",
+#     affectedinstances=["X1.B.conn"]
+# )
+# note_utils.new_note(
+#     "build_note",
+#     "do that"
+# )
 
+# example: combine buildnotes if their texts are similar
+#note_utils.combine_notes("Torque backshell to connector at 40 in-lbs","Torque backshell to connector at about 40 in-lbs")
 
 
 # ===========================================================================
-#                  BUILD HARNESS OUTPUTS
+#                  PUT TOGETHER FORMBOARD SVG INSTANCE CONTENT
 # ===========================================================================
 instances = fileio.read_tsv("instances list")
-scales = {"A": 0.25, "B": 0.3, "C": 1}
-
-feature_tree_utils.run_macro(
-    "bom_exporter_bottom_up",
-    "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
-    artifact_id="bom-1",
-)
-fileio.silentremove(os.path.join(fileio.dirpath(None),"instance_data","macro","formboard-overview"))
-fileio.silentremove(os.path.join(fileio.dirpath(None),"instance_data","macro","formboard-detail"))
-
 note_instances = []
 for instance in instances:
     if instance.get("item_type") == "note":
@@ -255,8 +344,8 @@ for instance in instances:
 formboard_overview_instances = []
 formboard_detail_instances = []
 for instance in instances:
-    if instance.get("item_type") not in ["connector", "backshell", "segment", "node", "origin"]: 
-        continue # nodes and origin required for location calculation, though they won't be printed
+    if instance.get("item_type") not in ["connector", "backshell", "segment", "node", "origin"]:
+        continue
 
     formboard_overview_instances.append(instance)
     formboard_detail_instances.append(instance)
@@ -265,33 +354,50 @@ for instance in instances:
     overview_flag_note_counter = 1
 
     if instance.get("item_type") in ["connector", "backshell"]:
-        formboard_detail_instances.append(note_utils.make_bom_flagnote(instance, f"flagnote-{detail_flag_note_counter}"))
+        formboard_detail_instances.append(note_utils.make_bom_flagnote(instance, f"flagnote-{{detail_flag_note_counter}}"))
         detail_flag_note_counter += 1
 
-        formboard_detail_instances.append(note_utils.make_part_name_flagnote(instance, f"flagnote-{detail_flag_note_counter}"))
+        formboard_detail_instances.append(note_utils.make_part_name_flagnote(instance, f"flagnote-{{detail_flag_note_counter}}"))
         detail_flag_note_counter += 1
 
-    if instance.get("item_type") in ["connector"]:
-        formboard_overview_instances.append(note_utils.make_part_name_flagnote(instance, f"flagnote-{overview_flag_note_counter}"))
+    if instance.get("item_type") == "connector":
+        formboard_overview_instances.append(note_utils.make_part_name_flagnote(instance, f"flagnote-{{overview_flag_note_counter}}"))
         overview_flag_note_counter += 1
 
     for note_instance in note_instances:
         if note_instance.get("note_type") == "build_note":
             if instance.get("instance_name") in note_instance.get("note_affected_instances"):
-                formboard_detail_instances.append(note_utils.make_buildnote_flagnote(note_instance, instance, f"flagnote-{detail_flag_note_counter}"))
-                detail_flag_note_counter += 1
-        if note_instance.get("note_type") == "rev_change_callout":
-            if instance.get("instance_name") in note_instance.get("note_affected_instances"):
-                formboard_detail_instances.append(note_utils.make_rev_change_flagnote(note_instance, instance, f"flagnote-{detail_flag_note_counter}"))
+                formboard_detail_instances.append(
+                    note_utils.make_buildnote_flagnote(note_instance, instance, f"flagnote-{{detail_flag_note_counter}}")
+                )
                 detail_flag_note_counter += 1
 
+        if note_instance.get("note_type") == "rev_change_callout":
+            if instance.get("instance_name") in note_instance.get("note_affected_instances"):
+                formboard_detail_instances.append(
+                    note_utils.make_rev_change_flagnote(note_instance, instance, f"flagnote-{{detail_flag_note_counter}}")
+                )
+                detail_flag_note_counter += 1
+
+# ===========================================================================
+#                  BUILD HARNESS OUTPUTS
+# ===========================================================================
+instances = fileio.read_tsv("instances list")
+scales = {{"A": 0.25, "B": 0.3, "C": 1}}
+
+feature_tree_utils.run_macro(
+    "bom_exporter_bottom_up",
+    "harness_artifacts",
+    "https://github.com/harnice/harnice-library-public",
+    artifact_id="bom-1",
+)
 feature_tree_utils.run_macro(
     "standard_harnice_formboard",
     "harness_artifacts",
     "https://github.com/harnice/harnice-library-public",
     artifact_id="formboard-overview",
     scale=scales.get("A"),
-    input_instances = formboard_overview_instances
+    input_instances=formboard_overview_instances,
 )
 feature_tree_utils.run_macro(
     "standard_harnice_formboard",
@@ -299,9 +405,8 @@ feature_tree_utils.run_macro(
     "https://github.com/harnice/harnice-library-public",
     artifact_id="formboard-detail",
     scale=scales.get("C"),
-    input_instances = formboard_detail_instances
-),
-
+    input_instances=formboard_detail_instances,
+)
 feature_tree_utils.run_macro(
     "segment_visualizer",
     "harness_artifacts",
@@ -329,13 +434,12 @@ feature_tree_utils.run_macro(
     item_type="net-channel-segment",
     segment_spacing_inches=0.1,
 )
-
 feature_tree_utils.run_macro(
     "circuit_visualizer",
     "harness_artifacts",
     "https://github.com/harnice/harnice-library-public",
     artifact_id="circuitviz-1",
-    input_circuits = instances
+    input_circuits=instances,
 )
 feature_tree_utils.run_macro(
     "revision_history_table",
@@ -343,16 +447,18 @@ feature_tree_utils.run_macro(
     "https://github.com/harnice/harnice-library-public",
     artifact_id="revhistory-1",
 )
+
 build_notes_list_instances = []
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") == "note" and instance.get("note_type") == "build_note":
         build_notes_list_instances.append(instance)
+
 feature_tree_utils.run_macro(
     "build_notes_table",
     "harness_artifacts",
     "https://github.com/harnice/harnice-library-public",
     artifact_id="build_notes_table-1",
-    input_instances = build_notes_list_instances
+    input_instances=build_notes_list_instances,
 )
 feature_tree_utils.run_macro(
     "pdf_generator",
@@ -361,147 +467,57 @@ feature_tree_utils.run_macro(
     artifact_id="pdf_drawing-1",
     scales=scales,
 )
-post_harness_instances_list.push(
-    "/Users/kenyonshutt/documents/dev-harnice-projects/dev-harnesses/0000250810-S01/",
-    ("0000250810-S01", "rev9"),
-)
-feature_tree_utils.copy_pdfs_to_cwd()
 
+{push_block}
+
+# for convenience, move any pdf to the base directory of the harness
+feature_tree_utils.copy_pdfs_to_cwd()
 """
 
 
-def file_structure():
-    return {
-        f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
-        f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
-        f"{state.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
-        f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
-        "interactive_files": {
-            f"{state.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
-        },
-    }
+# ======================================================================
+# BLOCKS FOR BUILDING THE HARNESS FROM A SYSTEM
+# ======================================================================
 
 
-def generate_structure():
-    os.makedirs(
-        fileio.dirpath("interactive_files", structure_dict=file_structure()),
-        exist_ok=True,
-    )
+def default_build_macro_block(system_pn, system_rev, target_net):
+    return f"""
+# ===========================================================================
+#                   build_macro SCRIPTING
+# ===========================================================================
+system_pn = "{system_pn}" # enter your system part number
+system_rev = "{system_rev}" # enter your system revision
+system_base_directory = fileio.get_path_to_project(system_pn) # add the path to project_locations.csv in the root of harnice
+system_target_net = "{target_net}" # enter the net you're building from
 
-
-def render(build_macro="", output_macro_dict=None):
-    if not os.path.exists(fileio.path("feature tree", structure_dict=file_structure())):
-        if build_macro == "":
-            print(
-                "  's'   Enter 's' for system (or just hit enter) if this harness is pulling data from a system instances list"
-            )
-            print(
-                "  'n'   Enter 'n' for none to build your harness entirely out of rules in feature tree (you're hardcore)"
-            )
-            build_macro = cli.prompt("")
-
-        if build_macro in (None, "", "s"):
-            build_macro_name = "import_harness_from_harnice_system"
-            system_pn = cli.prompt("Enter the system part number")
-            system_rev = cli.prompt("Enter the system revision id (ex. rev1)")
-            project_location_key = cli.prompt(
-                "Make sure project_locations contains a link to the local path of this system. Enter the traceable key",
-                default=system_pn,
-            )
-            target_net = cli.prompt("Enter the net you want to build this harness from")
-
-            path_to_system_pn = fileio.get_path_to_project(project_location_key)
-            build_macro_contents = f"""system_pn_rev = ["{system_pn}","{system_rev}"]
-target_net = "{target_net}"
-feature_tree_utils.run_macro(            
-    "{build_macro_name}",
+feature_tree_utils.run_macro(
+    "import_harness_from_harnice_system",
     "harness_builder",
     "https://github.com/harnice/harnice-library-public",
     "harness-from-system-1",
-    system_pn_rev=system_pn_rev,
-    path_to_system_rev=os.path.join("{path_to_system_pn}", 
-    f"{{system_pn_rev[0]}}-{{system_pn_rev[1]}}"),
-    target_net=target_net,
-    manifest_nets=[target_net]
+    system_pn=f"{{system_pn}}",
+    system_rev=f"{{system_rev}}",
+    path_to_system_rev=os.path.join(
+        system_base_directory,
+        f"{{system_pn}}-{{system_rev}}",
+    ),
+    target_net=system_target_net,
+    manifest_nets=[system_target_net],
 )
-rev_history.overwrite({{
-    "desc": f"HARNESS '{{target_net}}' FROM SYSTEM '{{system_pn_rev[0]}}-{{system_pn_rev[1]}}'",
-}})
-"""
-            push_harness_instances_list_to_upstream_system = f'post_harness_instances_list.push("{path_to_system_pn}", ("{system_pn}","{system_rev}"))'
 
-        else:
-            print(
-                "Unrecognized input. If you meant to select a template not listed, just select a template, delete the contents and start over manually. rip."
-            )
-            render()
-
-        if output_macro_dict is None:
-            output_macro_contents = """feature_tree_utils.run_macro("bom_exporter_bottom_up", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="bom-1")
-feature_tree_utils.run_macro("standard_harnice_formboard", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="formboard-1", scale=scales.get("A"))
-circuitviz_1_instances = []
-for instance in fileio.read_tsv("instances list"):
-    circuitviz_1_instances.append(instance)
-feature_tree_utils.run_macro(
-    "circuit_visualizer",
-    "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
-    artifact_id="circuitviz-1",
-    input_circuits = circuitviz_1_instances
+rev_history.overwrite(
+    {{
+        "desc": f"HARNESS '{{system_target_net}}' FROM SYSTEM '{{system_pn}}-{{system_rev}}'",
+    }}
 )
-feature_tree_utils.run_macro("revision_history_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="revhistory-1")
-feature_tree_utils.run_macro("build_notes_table", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="build_notestable-1")
-feature_tree_utils.run_macro("pdf_generator", "harness_artifacts", "https://github.com/harnice/harnice-library-public", artifact_id="pdf_drawing-1", scales=scales)
-feature_tree_utils.run_macro("segment_visualizer","harness_artifacts","https://github.com/harnice/harnice-library-public",artifact_id="cable_layout-1",scale=scales.get("A"),item_type="cable-segment",segment_spacing_inches=0.2,
-)"""
-        else:
-            output_macro_contents = "\n".join(output_macro_dict)
-
-        feature_tree_utils = f"""import os
-import yaml
-import re
-import runpy
-from harnice import fileio
-from harnice.utils import system_utils, circuit_utils, formboard_utils, svg_utils, note_utils, library_utils, feature_tree_utils
-from harnice.lists import instances_list, post_harness_instances_list, rev_history
-
-#===========================================================================
-#                   build_macro SCRIPTING
-#===========================================================================
-{build_macro_contents}
-
-#===========================================================================
-#                  HARNESS BUILD RULES
-#===========================================================================
-{harness_feature_tree_utils_default}
-
-#===========================================================================
-#                  CONSTRUCT HARNESS ARTIFACTS
-#===========================================================================
-scales = {{
-    "A": 1
-}}
-
-{output_macro_contents}
-{push_harness_instances_list_to_upstream_system}
-feature_tree_utils.copy_pdfs_to_cwd()
 """
 
-        with open(fileio.path("feature tree"), "w", encoding="utf-8") as dst:
-            dst.write(feature_tree_utils)
 
-    library_history.new()
-    instances_list.new()
-    instances_list.new_instance(
-        "origin",
-        {
-            "instance_name": "origin",
-            "item_type": "origin",
-            "location_type": "node",
-        },
-    )
-
-    cli.print_import_status_headers()
-    runpy.run_path(fileio.path("feature tree"), run_name="__main__")
-
-    print(f"Harnice: harness {state.partnumber('pn')} rendered successfully!\n")
+def default_push_block():
+    return """
+# ensure the system that this harness was built from contains the complete updated instances list
+post_harness_instances_list.push(
+    system_base_directory,
+    (system_pn, system_rev),
+)
+"""

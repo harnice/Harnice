@@ -47,6 +47,7 @@ def new_note(
     new_affected_instances = affectedinstances or []
     if isinstance(new_affected_instances, str):
         import ast
+
         try:
             new_affected_instances = ast.literal_eval(new_affected_instances)
         except Exception:
@@ -60,6 +61,7 @@ def new_note(
         old_affected_instances_raw = existing.get("note_affected_instances")
         if isinstance(old_affected_instances_raw, str):
             import ast
+
             try:
                 old_affected_instances = ast.literal_eval(old_affected_instances_raw)
             except Exception:
@@ -76,11 +78,15 @@ def new_note(
             )
 
         # A.2 — Merge and deduplicate into existing instance
-        merged = list(dict.fromkeys(old_affected_instances + new_affected_instances))  # keep order, remove dupes
+        merged = list(
+            dict.fromkeys(old_affected_instances + new_affected_instances)
+        )  # keep order, remove dupes
         existing["note_affected_instances"] = merged
 
         # Write modification back to instances_list
-        instances_list.modify(existing.get("instance_name"), {"note_affected_instances": merged})
+        instances_list.modify(
+            existing.get("instance_name"), {"note_affected_instances": merged}
+        )
         return existing
 
     # ------------------------------------------------------------
@@ -252,6 +258,7 @@ def get_lib_build_notes(instance):
         # Malformed literal → fail safe
         return []
 
+
 def get_lib_tools(instance):
     """
     Returns list of tools for this instance from the TSV row.
@@ -306,9 +313,12 @@ def combine_notes(keep_note_text, merge_note_texts, note_type=None):
             new_affected_instances.add(affected_instance)
         instances_list.remove_instance(merged_note_instance)
 
-    for affected_instance in parse_note_instance(keep_note_instance).get("note_affected_instances"):
+    for affected_instance in parse_note_instance(keep_note_instance).get(
+        "note_affected_instances"
+    ):
         new_affected_instances.add(affected_instance)
 
-    instances_list.modify(keep_note_instance.get("instance_name"), {
-        "note_affected_instances": list(new_affected_instances)}
+    instances_list.modify(
+        keep_note_instance.get("instance_name"),
+        {"note_affected_instances": list(new_affected_instances)},
     )
