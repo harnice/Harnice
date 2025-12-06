@@ -4,14 +4,15 @@ from harnice import state
 from harnice.lists import instances_list, manifest
 
 # args:
-# system_pn_rev = [pn, rev]
+# system_pn
+# system_rev
 # path_to_system_rev = "Path"
 # target_net = "Netname"
 # manifest_nets = []
 
 # define the path to the upstream system that this harness will reference
 path_to_system_instances_list = os.path.join(
-    path_to_system_rev, f"{system_pn_rev[0]}-{system_pn_rev[1]}-instances_list.tsv"
+    path_to_system_rev, f"{system_pn}-{system_rev}-instances_list.tsv"
 )
 
 
@@ -27,5 +28,5 @@ for instance in system_instances_list_data:
         instances_list.new_instance(instance.get("instance_name"), instance)
 
 manifest.update_upstream(
-    path_to_system_rev, system_pn_rev, manifest_nets, state.partnumber("pn-rev")
+    path_to_system_rev, [system_pn,system_rev], manifest_nets, state.partnumber("pn-rev")
 )
