@@ -24,6 +24,7 @@ def generate_structure():
         exist_ok=True,
     )
 
+
 def render():
     """
     Main harness rendering entrypoint.
@@ -58,7 +59,9 @@ def render():
             target_net = cli.prompt("Enter the net you want to build this harness from")
 
             # Inject actual values into template
-            build_macro_block = default_build_macro_block(system_pn, system_rev, target_net)
+            build_macro_block = default_build_macro_block(
+                system_pn, system_rev, target_net
+            )
             push_block = default_push_block()
 
         # ------------------------------------------------------------------
@@ -110,10 +113,14 @@ def render():
 # Helper: prompt for system/no-system
 # ======================================================================
 def _prompt_build_macro():
-    print("  's'   Enter 's' for system (or just hit enter) "
-          "if this harness is pulling data from a system instances list")
-    print("  'n'   Enter 'n' for none to build your harness entirely "
-          "out of rules in feature tree (you're hardcore)")
+    print(
+        "  's'   Enter 's' for system (or just hit enter) "
+        "if this harness is pulling data from a system instances list"
+    )
+    print(
+        "  'n'   Enter 'n' for none to build your harness entirely "
+        "out of rules in feature tree (you're hardcore)"
+    )
     return cli.prompt("")
 
 
@@ -472,6 +479,7 @@ feature_tree_utils.copy_pdfs_to_cwd()
 # BLOCKS FOR BUILDING THE HARNESS FROM A SYSTEM
 # ======================================================================
 
+
 def default_build_macro_block(system_pn, system_rev, target_net):
     return f"""
 # ===========================================================================
@@ -503,6 +511,7 @@ rev_history.overwrite(
     }}
 )
 """
+
 
 def default_push_block():
     return """

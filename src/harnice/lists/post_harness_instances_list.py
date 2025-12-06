@@ -4,6 +4,7 @@ import shutil
 from harnice import fileio
 from harnice.lists import instances_list
 
+
 def rebuild():
     """
     Build the 'post harness instances list' by merging instance data from:

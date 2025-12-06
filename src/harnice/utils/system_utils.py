@@ -357,9 +357,13 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             instances_list.modify(
                 f"{connector.get('device_refdes')}.{connector.get('connector')}.conn",
                 {
-                    "this_instance_mating_device_refdes": connector.get("device_refdes"),
+                    "this_instance_mating_device_refdes": connector.get(
+                        "device_refdes"
+                    ),
                     "this_instance_mating_device_connector": connector.get("connector"),
-                    "this_instance_mating_device_connector_mpn": connector.get("connector_mpn"),
+                    "this_instance_mating_device_connector_mpn": connector.get(
+                        "connector_mpn"
+                    ),
                 },
             )
         except ValueError:
