@@ -569,7 +569,7 @@ def render():
 
     try:
         font = ImageFont.truetype("Arial.ttf", 8)
-    except:
+    except Exception:
         font = ImageFont.load_default()
 
     # --- SHAPES ---
