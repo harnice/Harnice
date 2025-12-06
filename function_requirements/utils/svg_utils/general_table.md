@@ -2,16 +2,18 @@
 
 This function is called when the user needs to build a general SVG table.
 ```python
-svg_utils.table(layout, format, columns, content)
+svg_utils.table(layout_dict, format_dict, columns_list, content_list, table_name)
 ```
 ### Arguments
-- `layout` expects a dictionary describing in which direction the table is built
-- `format` expects a dictionary containing a description of how you want your table to appear.
-- `columns` expects a list containing your column header content, width, and formatting rules.
-- `content` expects a list containing what is actually presented on your table.
+- `layout_dict` expects a dictionary describing in which direction the table is built
+- `format_dict` expects a dictionary containing a description of how you want your table to appear.
+- `columns_list` expects a list containing your column header content, width, and formatting rules.
+- `content_list` expects a list containing what is actually presented on your table.
+- `table_name` expects a string.
 
 ### Returns
-- A string of SVG content intended to look like a table
+- A string of SVG primatives in xml format intended to look like a table. 
+- The SVG content will be wrapped inside group `{table_name}-contents-start` which preceeds an empty group `{table_name}-contents-end`. This is the only use of argument `table_name`.
 
 ---
 
@@ -29,32 +31,28 @@ layout = {
 Both fields are required. 
 ### Origin Corner
 
-The origin is defined to be at one of the four corners of the header row, and the table content rows are either built above or below.
-
-Valid header anchor points:
+The origin is defined to be at one of the four corners of the first row `content[0]`. Valid options:
 - `top-left`
 - `top-right`
 - `bottom-left`
 - `bottom-right`
 
 ### Build Direction 
-When building a table, you can choose the header to be at the top and the content rows to build downwards (positive y in svg coords) or the header can be at the bottom and the rows build upwards (negative y in svg coords). 
-
-The direction property determines where content rows are placed relative to the header:
-- `up` → rows appear above the header
-- `down` → rows appear below the header
+When building a table, you can choose to build rows downwards (below the previous, positive y in svg coords) or upwards (above the previous, negative y in svg coords). The direction property defines this:
+- `down` → rows appear below the previous
+- `up` → new rows appear above the previous
 
 ---
 
 ## 2. Format
 
-The format dictionary defines appearance, structure, layout, and style behavior. 
+The format dictionary defines appearance and style of your table. 
 
-Each key (except `globals`, the only reserved key) describes the format of the entire row that uses that format. 
+Any number of appearance keys can be defined and named with an identifier that is called when printing that row. This allows you to have rows that whose appearance can be varied dynamically with the table contents. 
 
 *example:*
 ```json
-format={
+format_dict={
     "globals": {
         "font_size": 11,
         "row_height": 20,
@@ -63,17 +61,15 @@ format={
         "font_weight":"B",
         "fill_color": "lightgray",
     },
-    "row_standard": {
-        "row_height": 20,
-    },
     "row_with_bubble": {
         "row_height": 40,
     },
 }
 ```
+The only reserved key is `globals` which can optionally be used to define fallbacks for any row that does not have a style explicitly called out.
 
 ### Format Arguments
-Any key can be defined in any of the format dictionaries. On the backend, "globals" is rewritten with the below defaults if they are not defined in your argument.
+Any of the following keys can be defined in any of the format dictionaries. 
 - `font_size` *(number, default=12)* Default font size (px) for all text
 - `font_family` *(string, default=helvetica)* Default font family (e.g., "Arial", "Helvetica")
 - `font_weight`*(`BIU`, default=None)* Add each character for bold, italic, or underline
@@ -87,8 +83,14 @@ Any key can be defined in any of the format dictionaries. On the backend, "globa
 - `stroke_width` *(number, default=1)* Border width
 - `text_color` *(default=black)* Default text color
 
-### Style resolution order
-If something is defined at the row level, it takes precedent over a column definition, which takes precedent over a definition in key `globals`, if defined.
+### Style Resolution Order
+If something is defined at the row level, it takes precedent over some parameter defined at the column level, which takes precedent over a definition in key `globals`, if defined. If something is not defined at all, the above defaults will apply. 
+
+### Color Standard
+- Default color: **black**
+- Accepted formats:
+  - Named SVG colors https://www.w3.org/TR/SVG11/types.html#ColorKeywords
+  - Hex values (#RGB or #RRGGBB)
 
 ---
 
@@ -98,18 +100,19 @@ The column argument is a list of dictionaries containing definition of how many 
 
 *ex:*
 ```json
-columns=[
+columns_list=[
     {
         "name": "rev"
         "width": 60,
         "justify": "center"
     },
     {
-        "name": "update"
+        "name": "updated"
         "width": 260,
     },
         "name": "status"
         "width": 120,
+        "fill_color": "yellow",
     }
 ]
 ```
@@ -127,119 +130,58 @@ Note that the order of the items in the list represents the order in which they 
 
 ## 4. Content Structure
 
-Content is a list of row dictionaries.
+The table content will be referenced from information stored in this argument. It is a list (rows) of dictionaries (columns).
 
-```python
-content = [{"row_format": "<row_format_id>", "columns": {...}}]
-```
-
-**Allowed cell data types:**
-- string or number → single-line text
-- list[str] → multi-line text (explicit line breaks used)
-- dict → symbol placeholder (`<g>` inject target)
-
-One content type per cell.
-
----
-
-## 5. Justification Rules
-
-**Horizontal options:**
-- left
-- center
-- right
-
-**Vertical options:**
-- top
-- middle
-- bottom
-
-**Rules:**
-- **Center alignment ignores padding.**
-- **Non-centered alignment uses padding offsets.**
-- Lists and symbol placeholders follow the same alignment behavior.
-
-Default padding = globals unless overridden by row format.
-
----
-
-## 6. Color Specification
-
-- Default color: **black**
-- Accepted formats:
-  - Named SVG colors
-  - Hex values (#RGB or #RRGGBB)
-
-Reference Named Colors: https://www.w3.org/TR/SVG11/types.html#ColorKeywords
-
----
-
-## 7. Rendering Behavior
-
-Rendering respects:
-- Header anchor position
-- Build direction
-- Column widths
-- Row heights
-
-Each cell renders:
-1. A bounding rectangle
-2. A text element or symbol placeholder
-
----
-
-## 8. Output Specification
-
-The function returns a complete SVG `<g>` block as a string.
-
-**Example:**
-
-`"<g> ... </g>"`
-
----
-
-## Example Usage (reference only)
-
-```python
-svg_table(
-    format={
-        "globals": {"font_size": 10, "padding": 4},
-        "header_format": {
-            "row_height": 22,
-            "font_size": 12,
-            "fill": "lightgray",
-            "justify": "center",
-        },
-        "row_standard": {"row_height": 18},
-        "row_with_bubble": {"row_height": 32, "fill": "#e6f2ff"},
+```json
+content_list = [
+    {
+        "format_key": "header"
         "columns": {
-            "rev": {"name": "rev", "width": 60, "justify": "center"},
-            "update": {"name": "update", "width": 260, "justify": "left"},
-            "status": {"name": "status", "width": 120, "justify": "center"},
-        },
-        "origin_corner": "top-left",
-        "direction": "down",
+            "rev": "REV",
+            "updated": "UPDATED",
+            "status": "STATUS",
+        }
     },
-    content=[
-        {
-            "row_format": "row_standard",
-            "columns": {"rev": "1", "update": "INITIAL RELEASE", "status": "OBSOLETE"},
-        },
-        {
-            "row_format": "row_standard",
-            "columns": {"rev": "2", "update": "ADDED CABLES", "status": "OBSOLETE"},
-        },
-        {
-            "row_format": "row_with_bubble",
-            "columns": {
-                "rev": {"instance_name": "REV-BUBBLE", "mpn": "REV-BUBBLE-ICON"},
-                "update": ["USING BASIC SEGMENT", "GENERATOR MACRO"],
-                "status": "OBSOLETE",
+    {
+        "columns": {
+            "rev": "1",
+            "updated": "12/6/25",
+            "status": "requires review",
+        }
+    },
+    {
+        "columns": {
+            "rev": "2",
+            "updated": ["12/6/25", "update incomplete"],
+        }
+    },
+    {
+        "format_key": "row_with_bubble",
+        "columns": {
+            "rev": {
+                "instance_name": "rev3-bubble",
             },
-        },
-    ],
-)
+            "updated": "12/6/25",
+            "status": "clear"
+        }
+    }
+]
 ```
+
+Content (the root argument) is a list. Each entry of the root list is representative of a row's worth of data.
+
+Each entry of that list must contain the dictionary `columns` and may contain dictionary `format_key`. 
+
+`format_key` may only contain one value which corresponds to the name of a key in the format dictionary. It represents the appearance of that row. If it is not defined, the format of that row will fall back to globals and defaults. Custom formatting of individual cells is not supported. 
+
+`columns` is a dictionary that contains the actual content you want to appear in each column. The name of each key at this level must match one of the keys in the `columns` argument. It is agnostic to order, and by leaving a key out, simply nothing will appear in that cell. 
+
+The value of each column key may take the following forms. There may only be one content type per cell.
+- string or number → single-line text, prints directly
+- list[str] → multi-line text where the 0th element prints highest within the cell. Use format key `line_spacing` as needed. 
+- dict → custom 
+
+If you add a dictionary to one of the content cells with key `instance_name`, it will search the current macro's `instances` folder for a file with name `*-drawing.svg`, search that file for contents between `*-contents-start` and `*-contents-end` (where `*` represents the same string of characters defined in `instance-name` of the data cell), find the svg text in between, copy and paste it into the cell of your column. It will fail if that drawing does not exist, or if either start or end tags are not found. It is up to the user to ensure the drawing exists before calling this function.
 
 ---
 
