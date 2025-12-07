@@ -574,101 +574,94 @@ class SvgTableGenerator:
         return f'<rect x="{x}" y="{y}" width="{width}" height="{height}" style="{style_str}" />'
 
     def build_svg(self):
-        """
-        Main function to iterate through content and build the complete SVG string.
-        """
-        svg_rows = []
-        col_x_starts = [0]
-        current_x = 0
-        for col in self.columns[:-1]:
-            current_x += col['width']
-            col_x_starts.append(current_x)
-            
-        current_y_offset = 0 # tracks total height processed for all previous rows
-        total_table_height = sum(
-            self._resolve_style(row.get('format_key'), {}).get('row_height', DEFAULTS['row_height'])
-            for row in self.content
-        )
-        
-        # --- Build Row by Row ---
-        for row_index, row_data in enumerate(self.content):
-            row_key = row_data.get('format_key')
-            # Resolve row-level style once per row to get row_height
-            row_style = self._resolve_style(row_key, {}) 
-            row_height = row_style['row_height']
-            
-            row_svg = []
-            
-            for col_index, col_def in enumerate(self.columns):
-                col_name = col_def['name']
-                col_width = col_def['width']
-                cell_content = row_data.get('columns', {}).get(col_name)
-                
-                # Resolve final cell style
-                cell_style = self._resolve_style(row_key, col_def)
-                
-                # Cell top-left corner relative to table's top-left
-                cell_x_start = col_x_starts[col_index]
-                cell_y_start = current_y_offset
-                
-                # 1. Draw Cell Rectangle (Background/Border)
-                rect_svg = self._draw_cell_rect(cell_x_start, cell_y_start, col_width, row_height, cell_style)
-                row_svg.append(rect_svg)
-                
-                # 2. Draw Cell Content
-                if cell_content is not None:
-                    content_svg = self._draw_cell_content(
-                        cell_x_start, cell_y_start, col_width, row_height, 
-                        cell_content, cell_style
-                    )
-                    row_svg.append(content_svg)
+            """
+            Main function to iterate through content and build the complete SVG string,
+            returning only the group (<g>) element with primitives inside.
+            """
+            svg_rows = []
+            col_x_starts = [0]
+            current_x = 0
+            for col in self.columns[:-1]:
+                current_x += col['width']
+                col_x_starts.append(current_x)
 
-            svg_rows.append("\n".join(row_svg))
+            # Calculate total table height and individual row heights
+            row_heights = [
+                self._resolve_style(row.get('format_key'), {}).get('row_height', DEFAULTS['row_height'])
+                for row in self.content
+            ]
+            total_table_height = sum(row_heights)
+            row_height_0 = row_heights[0]
             
-            # Update current_y_offset for the next row
-            if self.layout['build_direction'] == 'down':
-                current_y_offset += row_height
-            elif self.layout['build_direction'] == 'up':
-                # Rows build "upwards" (negative y). The offset should be negative.
-                current_y_offset -= row_height
+            # current_y_offset tracks the NEXT row's starting Y position (top edge)
+            current_y_offset = 0 
             
-        # --- Apply Final Table Transform ---
-        
-        # Calculate the required translation to place (0,0) at the required corner of the first row.
-        
-        # Assume all internal coordinates are relative to the top-left (0,0) of the *entire table*.
-        # The first row is the row at index 0, with a height of row_height_0.
-        row_height_0 = self._resolve_style(self.content[0].get('format_key'), {}).get('row_height', DEFAULTS['row_height'])
-        
-        tx = 0
-        ty = 0
-        
-        if self.layout['origin_corner'] == 'top-right':
-            tx = -self.total_width
-        elif self.layout['origin_corner'] == 'bottom-left':
-            if self.layout['build_direction'] == 'down':
-                ty = -row_height_0 # Translate up by the height of the first row
-            elif self.layout['build_direction'] == 'up':
-                 # All y coordinates are negative, so total height needs to be included.
-                 ty = -total_table_height 
-        elif self.layout['origin_corner'] == 'bottom-right':
-            tx = -self.total_width
-            if self.layout['build_direction'] == 'down':
-                ty = -row_height_0
-            elif self.layout['build_direction'] == 'up':
-                 ty = -total_table_height
-        
-        # Wrap everything in a top-level <svg> and a <g> for the transform
-        table_contents = "\n".join(svg_rows)
+            # --- Build Row by Row ---
+            for row_index, row_data in enumerate(self.content):
+                row_key = row_data.get('format_key')
+                row_height = row_heights[row_index]
+                
+                row_svg = []
+                
+                # --- Y Position Logic ---
+                if self.layout['build_direction'] == 'down':
+                    cell_y_start = current_y_offset
+                    current_y_offset += row_height
+                
+                elif self.layout['build_direction'] == 'up':
+                    current_y_offset -= row_height
+                    cell_y_start = current_y_offset
 
-        svg_output = f"""
-<svg xmlns="http://www.w3.org/2000/svg" width="{self.total_width}" height="{abs(total_table_height)}">
-  <g transform="translate({tx}, {ty})">
-    {table_contents}
-  </g>
-</svg>
-"""
-        return svg_output.strip()
+                # --- Column Iteration ---
+                for col_index, col_def in enumerate(self.columns):
+                    col_name = col_def['name']
+                    col_width = col_def['width']
+                    cell_content = row_data.get('columns', {}).get(col_name)
+                    
+                    cell_style = self._resolve_style(row_key, col_def)
+                    
+                    cell_x_start = col_x_starts[col_index]
+                    
+                    # 1. Draw Cell Rectangle (Background/Border)
+                    rect_svg = self._draw_cell_rect(cell_x_start, cell_y_start, col_width, row_height, cell_style)
+                    row_svg.append(rect_svg)
+                    
+                    # 2. Draw Cell Content
+                    if cell_content is not None:
+                        content_svg = self._draw_cell_content(
+                            cell_x_start, cell_y_start, col_width, row_height, 
+                            cell_content, cell_style
+                        )
+                        row_svg.append(content_svg)
+
+                svg_rows.append("\n".join(row_svg))
+                
+            # --- Calculate Final Table Transform (Positioning (0,0) at Origin Corner) ---
+            
+            tx = 0
+            ty = 0
+            
+            # X Translation
+            if self.layout['origin_corner'] in ('top-right', 'bottom-right'):
+                tx = -self.total_width
+            
+            # Y Translation: Ensures the first row's required corner is at Y=0
+            if self.layout['build_direction'] == 'down':
+                if self.layout['origin_corner'] in ('bottom-left', 'bottom-right'):
+                    ty = -row_height_0
+
+            elif self.layout['build_direction'] == 'up':
+                if self.layout['origin_corner'] in ('top-left', 'top-right'):
+                    ty = total_table_height
+                
+            table_contents = "\n".join(svg_rows)
+
+            # RETURN ONLY THE <g> ELEMENT AND ITS CONTENTS
+            group_output = f"""<g transform="translate({tx}, {ty})">
+        {table_contents}
+    </g>"""
+            
+            return group_output.strip()
 
 # ====================================================================
 # The required function signature
