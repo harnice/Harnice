@@ -2,18 +2,16 @@
 
 This function is called when the user needs to build a general SVG table.
 ```python
-svg_utils.table(layout_dict, format_dict, columns_list, content_list, table_name)
+svg_utils.table(layout_dict, format_dict, columns_list, content_list)
 ```
 ### Arguments
 - `layout_dict` expects a dictionary describing in which direction the table is built
 - `format_dict` expects a dictionary containing a description of how you want your table to appear.
 - `columns_list` expects a list containing your column header content, width, and formatting rules.
 - `content_list` expects a list containing what is actually presented on your table.
-- `table_name` expects a string.
 
 ### Returns
 - A string of SVG primatives in xml format intended to look like a table. 
-- The SVG content will be wrapped inside group `{table_name}-contents-start` which preceeds an empty group `{table_name}-contents-end`. This is the only use of argument `table_name`.
 
 ---
 
