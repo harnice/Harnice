@@ -194,5 +194,7 @@ End of Requirements — rev2
 
 # Issues
 
-[ ] `"font_color"="white"` seems to not be working
-[x] y coords of all elements off during `"build_direction"="up"`, was ok before b24ee7d05838ca2f4e232828cf0afebed68b1b5c
+[ ] imported instances aren't set up yet
+
+### New features
+ [ ] be able to format individual cells
