@@ -195,6 +195,7 @@ End of Requirements — rev2
 # Issues
 
 [ ] imported instances aren't set up yet
+ - svg has to be saved in order to copy in group content which requires a path and a name argument
 
 ### New features
  [ ] be able to format individual cells

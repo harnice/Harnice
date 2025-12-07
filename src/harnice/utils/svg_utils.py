@@ -330,11 +330,11 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
 
 import xml.etree.ElementTree as ET
 
-# --- Default Style Values ---
+# --- Default Style Values (Required for the class) ---
 DEFAULTS = {
     "font_size": 12,
     "font_family": "helvetica",
-    "font_weight": None,  # BIU string
+    "font_weight": None,
     "row_height": 18,
     "padding": 3,
     "line_spacing": 14,
@@ -390,7 +390,6 @@ class SvgTableGenerator:
         Resolves the final style for a cell following the Style Resolution Order:
         Row Format > Column Format > Globals > Defaults.
         """
-        # Start with defaults
         style = DEFAULTS.copy()
 
         # 1. Globals
@@ -406,69 +405,41 @@ class SvgTableGenerator:
         if row_format:
             style.update({k: v for k, v in row_format.items() if k in DEFAULTS})
             
-        # 4. Column-specific style overrides (if any)
-        # Note: Requirements only mention Row and Column level formatting, 
-        # and not cell-level overrides for general style attributes.
-
         return style
 
-    def _get_svg_position(self, current_row_index, row_height, col_x_start):
+    def _generate_symbol_placeholder(self, instance_name, bubble_x, bubble_y):
         """
-        Calculates the SVG (x, y) origin for the current cell based on layout.
-        The returned (x, y) is the top-left corner of the cell for SVG drawing ease.
+        Generates the SVG group structure used as a placeholder for external tools 
+        to inject drawing content based on instance_name and start/end markers.
         """
+        svg_lines = []
         
-        # Calculate Y position (relative to the first row's boundary)
-        row_offset = sum(self._resolve_style(r.get('format_key'), {}).get('row_height', DEFAULTS['row_height']) 
-                         for r in self.content[:current_row_index])
+        svg_lines.append(
+            f'<g id="{instance_name}" transform="translate({bubble_x},{bubble_y})">'
+        )
+        # Content Start marker
+        svg_lines.append(f'  <g id="{instance_name}-contents-start">')
+        svg_lines.append(f"  </g>")
         
-        y_center = row_height / 2
+        # Content End marker (using the self-closing tag format)
+        svg_lines.append(f'  <g id="{instance_name}-contents-end"/>')
         
-        if self.layout['build_direction'] == 'down':
-            y_start = row_offset
-            
-        elif self.layout['build_direction'] == 'up':
-            # The first row starts at y=0, and subsequent rows stack "upwards" (negative y).
-            # We need to account for all previous rows' heights to find the *top* of the current row.
-            y_start = -row_offset - row_height
+        svg_lines.append(f"</g>")
         
-        # Adjust Y based on origin_corner
-        origin_corner = self.layout['origin_corner']
-        
-        # The origin (0,0) is defined at one of the four corners of the *first row*.
-        # We'll calculate all positions relative to the first row's TOP-LEFT (0,0)
-        # and then apply a final transformation offset to place the true (0,0) as required.
-        
-        # The final transformation is handled in the main build function. 
-        # For now, let's keep all positions relative to the top-left of the table.
-
-        x_start = col_x_start
-        
-        return x_start, y_start
+        return "\n".join(svg_lines)
 
     def _draw_cell_content(self, x, y, width, height, content, style):
         """
         Generates the SVG for the cell's content (text or symbol).
-        
-        x, y: Top-left corner of the cell
-        width, height: Dimensions of the cell
         """
         svg_primitives = []
         
         # --- Handle Content Type ---
         if isinstance(content, dict) and 'instance_name' in content:
-            # 1. Importing a Symbol
+            # 1. Importing a Symbol (Placeholder Generation)
             instance_name = content['instance_name']
             
-            # Placeholder for actual drawing search/import logic
-            # In a real utility, this would involve file I/O to search for:
-            # {instance_name}-drawing.svg and extract content between
-            # and # Placeholder:
-            imported_svg = f""
-            
-            # Drawing origin obeys justification rules.
-            # No boundary/clipping logic applied.
-            
+            # --- Symbol Positioning (Alignment) ---
             align_x = 0
             if style['justify'] == 'center':
                 align_x = width / 2
@@ -485,12 +456,14 @@ class SvgTableGenerator:
             elif style['valign'] == 'top':
                 align_y = style['padding']
 
-            # Transform the imported symbol based on justification/valignment
-            # We wrap the imported SVG in a <g> to position it.
-            # NOTE: This is an oversimplification. True SVG instance placement is complex.
-            svg_primitives.append(
-                f'<g transform="translate({x + align_x}, {y + align_y})" data-type="symbol" data-name="{instance_name}">{imported_svg}</g>'
+            # Call the integrated method to generate the required placeholder structure
+            # The symbol's local origin (0,0) is placed at the calculated alignment point.
+            symbol_xml = self._generate_symbol_placeholder(
+                instance_name=instance_name,
+                bubble_x=x + align_x,
+                bubble_y=y + align_y
             )
+            svg_primitives.append(symbol_xml)
 
         else:
             # 2. Text Content (string, number, or list of strings)
@@ -504,10 +477,9 @@ class SvgTableGenerator:
                 return ""
 
             # --- Text Positioning Logic ---
-            
-            # Horizontal Alignment (X)
             x_pos = x
             text_anchor = "start"
+            # ... (rest of text positioning logic remains the same)
             if style['justify'] == 'center':
                 x_pos += width / 2
                 text_anchor = "middle"
@@ -518,7 +490,6 @@ class SvgTableGenerator:
                 x_pos += style['padding']
                 text_anchor = "start"
 
-            # Vertical Alignment (Y)
             num_lines = len(text_lines)
             total_text_height = (num_lines - 1) * style['line_spacing'] + style['font_size']
             
@@ -530,7 +501,7 @@ class SvgTableGenerator:
             elif style['valign'] == 'top':
                 y_start += style['padding']
             
-            y_pos = y_start + style['font_size'] * 0.8 # approx baseline adjustment
+            y_pos = y_start + style['font_size'] * 0.8 
 
             # --- Text Style Attributes ---
             text_style = {
@@ -539,8 +510,7 @@ class SvgTableGenerator:
                 "fill": style['text_color'],
                 "text-anchor": text_anchor,
             }
-            
-            # Add font-weight, font-style, text-decoration
+            # ... (font weight logic remains the same)
             if style['font_weight']:
                 if 'B' in style['font_weight']:
                     text_style['font-weight'] = 'bold'
@@ -574,95 +544,95 @@ class SvgTableGenerator:
         return f'<rect x="{x}" y="{y}" width="{width}" height="{height}" style="{style_str}" />'
 
     def build_svg(self):
-            """
-            Main function to iterate through content and build the complete SVG string,
-            returning only the group (<g>) element with primitives inside.
-            """
-            svg_rows = []
-            col_x_starts = [0]
-            current_x = 0
-            for col in self.columns[:-1]:
-                current_x += col['width']
-                col_x_starts.append(current_x)
+        """
+        Main function to iterate through content and build the complete SVG string,
+        returning only the group (<g>) element with primitives inside.
+        """
+        svg_rows = []
+        col_x_starts = [0]
+        current_x = 0
+        for col in self.columns[:-1]:
+            current_x += col['width']
+            col_x_starts.append(current_x)
 
-            # Calculate total table height and individual row heights
-            row_heights = [
-                self._resolve_style(row.get('format_key'), {}).get('row_height', DEFAULTS['row_height'])
-                for row in self.content
-            ]
-            total_table_height = sum(row_heights)
-            row_height_0 = row_heights[0]
+        # Calculate total table height and individual row heights
+        row_heights = [
+            self._resolve_style(row.get('format_key'), {}).get('row_height', DEFAULTS['row_height'])
+            for row in self.content
+        ]
+        total_table_height = sum(row_heights)
+        row_height_0 = row_heights[0]
+        
+        current_y_offset = 0 
+        
+        # --- Build Row by Row ---
+        for row_index, row_data in enumerate(self.content):
+            row_key = row_data.get('format_key')
+            row_height = row_heights[row_index]
             
-            # current_y_offset tracks the NEXT row's starting Y position (top edge)
-            current_y_offset = 0 
+            row_svg = []
             
-            # --- Build Row by Row ---
-            for row_index, row_data in enumerate(self.content):
-                row_key = row_data.get('format_key')
-                row_height = row_heights[row_index]
-                
-                row_svg = []
-                
-                # --- Y Position Logic ---
-                if self.layout['build_direction'] == 'down':
-                    cell_y_start = current_y_offset
-                    current_y_offset += row_height
-                
-                elif self.layout['build_direction'] == 'up':
-                    current_y_offset -= row_height
-                    cell_y_start = current_y_offset
-
-                # --- Column Iteration ---
-                for col_index, col_def in enumerate(self.columns):
-                    col_name = col_def['name']
-                    col_width = col_def['width']
-                    cell_content = row_data.get('columns', {}).get(col_name)
-                    
-                    cell_style = self._resolve_style(row_key, col_def)
-                    
-                    cell_x_start = col_x_starts[col_index]
-                    
-                    # 1. Draw Cell Rectangle (Background/Border)
-                    rect_svg = self._draw_cell_rect(cell_x_start, cell_y_start, col_width, row_height, cell_style)
-                    row_svg.append(rect_svg)
-                    
-                    # 2. Draw Cell Content
-                    if cell_content is not None:
-                        content_svg = self._draw_cell_content(
-                            cell_x_start, cell_y_start, col_width, row_height, 
-                            cell_content, cell_style
-                        )
-                        row_svg.append(content_svg)
-
-                svg_rows.append("\n".join(row_svg))
-                
-            # --- Calculate Final Table Transform (Positioning (0,0) at Origin Corner) ---
-            
-            tx = 0
-            ty = 0
-            
-            # X Translation
-            if self.layout['origin_corner'] in ('top-right', 'bottom-right'):
-                tx = -self.total_width
-            
-            # Y Translation: Ensures the first row's required corner is at Y=0
+            # --- Y Position Logic ---
             if self.layout['build_direction'] == 'down':
-                if self.layout['origin_corner'] in ('bottom-left', 'bottom-right'):
-                    ty = -row_height_0
-
+                cell_y_start = current_y_offset
+                current_y_offset += row_height
+            
             elif self.layout['build_direction'] == 'up':
-                if self.layout['origin_corner'] in ('top-left', 'top-right'):
-                    ty = total_table_height
-                
-            table_contents = "\n".join(svg_rows)
+                current_y_offset -= row_height
+                cell_y_start = current_y_offset
 
-            # RETURN ONLY THE <g> ELEMENT AND ITS CONTENTS
-            group_output = f"""<g transform="translate({tx}, {ty})">
+            # --- Column Iteration ---
+            for col_index, col_def in enumerate(self.columns):
+                col_name = col_def['name']
+                col_width = col_def['width']
+                cell_content = row_data.get('columns', {}).get(col_name)
+                
+                cell_style = self._resolve_style(row_key, col_def)
+                
+                cell_x_start = col_x_starts[col_index]
+                
+                # 1. Draw Cell Rectangle (Background/Border)
+                rect_svg = self._draw_cell_rect(cell_x_start, cell_y_start, col_width, row_height, cell_style)
+                row_svg.append(rect_svg)
+                
+                # 2. Draw Cell Content
+                if cell_content is not None:
+                    content_svg = self._draw_cell_content(
+                        cell_x_start, cell_y_start, col_width, row_height, 
+                        cell_content, cell_style
+                    )
+                    row_svg.append(content_svg)
+
+            svg_rows.append("\n".join(row_svg))
+            
+        # --- Calculate Final Table Transform (Positioning (0,0) at Origin Corner) ---
+        
+        tx = 0
+        ty = 0
+        
+        # X Translation
+        if self.layout['origin_corner'] in ('top-right', 'bottom-right'):
+            tx = -self.total_width
+        
+        # Y Translation: Ensures the first row's required corner is at Y=0
+        if self.layout['build_direction'] == 'down':
+            if self.layout['origin_corner'] in ('bottom-left', 'bottom-right'):
+                ty = -row_height_0
+
+        elif self.layout['build_direction'] == 'up':
+            if self.layout['origin_corner'] in ('top-left', 'top-right'):
+                ty = total_table_height
+            
+        table_contents = "\n".join(svg_rows)
+
+        # RETURN ONLY THE <g> ELEMENT AND ITS CONTENTS
+        group_output = f"""<g transform="translate({tx}, {ty})">
         {table_contents}
     </g>"""
-            
-            return group_output.strip()
+        
+        return group_output.strip()
 
+        
 # ====================================================================
 # The required function signature
 # ====================================================================
