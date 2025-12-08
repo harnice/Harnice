@@ -194,3 +194,90 @@ If you add a dictionary to one of the content cells with key `instance_name`, th
 
 End of Requirements — rev2
 
+# Example Tables
+
+The following assumes there is an svg with group id tags set up correctly at `cwd/imported_instances/flagnote/rev3-bubble/rev3-bubble-drawing.svg`
+
+```python
+from harnice.utils import svg_utils
+import os
+
+# --- Table Input Definitions ---
+
+# 1. Layout Example
+layout_example = {
+    "origin_corner": "top-left",
+    "build_direction": "down",
+}
+
+# 2. Format Example
+format_example = {
+    "header": {
+        "font_weight": "B",
+        "fill_color": "darkgray",
+        "text_color": "blue"
+    },
+    "row_with_bubble": {
+        "row_height": 40,
+        "text_color": "red"
+    },
+}
+
+# 3. Columns Example
+columns_example = [
+    {
+        "name": "rev",
+        "width": 60,
+        "justify": "center"
+    },
+    {
+        "name": "updated",
+        "width": 260,
+    },
+    {
+        "name": "status",
+        "width": 120,
+    }
+]
+
+# 4. Content Example
+content_example = [
+    {
+        "format_key": "header",
+        "columns": {
+            "rev": "REV",
+            "updated": "UPDATED",
+            "status": "STATUS",
+        }
+    },
+    {
+        "columns": {
+            "rev": "1",
+            "updated": "12/6/25",
+            "status": "requires review",
+        }
+    },
+    {
+        "columns": {
+            "rev": "2",
+            "updated": ["12/6/25", "update incomplete"],
+        }
+    },
+    {
+        "format_key": "row_with_bubble",
+        "columns": {
+            "updated": {
+                "instance_name": "rev3-bubble",
+                "item_type": "flagnote"
+            },
+            "rev": "12/6/25",
+            "status": "clear"
+        }
+    }
+]
+
+# --- Function Call and File Output ---
+
+# The svg_utils.table function returns the <g> element content
+table_group_content = svg_utils.table(layout_example, format_example, columns_example, content_example, os.getcwd(), "test_table")
+```
