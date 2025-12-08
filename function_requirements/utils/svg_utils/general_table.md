@@ -158,6 +158,7 @@ content_list = [
         "columns": {
             "rev": {
                 "instance_name": "rev3-bubble",
+                "item_type": "flagnote"
             },
             "updated": "12/6/25",
             "status": "clear"
@@ -183,6 +184,7 @@ The value of each column key may take one of the following forms:
 
 If you add a dictionary to one of the content cells with key `instance_name`, the function will add a drawing to the cell.
  - First the current macro's `instances` folder will be searched for a file with name `*-drawing.svg`. That file will be searched for contents between `*-contents-start` and `*-contents-end` (where `*` represents the same string of characters defined in `instance-name` of the data cell).
+ - Note that `item_type` is a **required key** here as well, which will allow the user to sort imported symbols as you would for any other imported instance in Harnice. 
  - The svg text in between will be copied and pasted into the cell of your column.
  - If that drawing does not exist, or if either start or end tags are not found, the function will fail. It is up to the user to ensure the drawing exists before calling this function.
  - Local table formatting will not apply to the imported drawing
@@ -192,12 +194,3 @@ If you add a dictionary to one of the content cells with key `instance_name`, th
 
 End of Requirements — rev2
 
-# Issues
-
-[ ] imported instances aren't set up yet
- - svg has to be saved in order to copy in group content which requires a path and a name argument
-[ ] document need for item_type in symbol definition
-[ ] document need for path_to_caller and svg_name
-
-### New features
- [ ] be able to format individual cells

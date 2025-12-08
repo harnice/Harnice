@@ -405,7 +405,7 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_caller, 
         
         if isinstance(content, dict) and 'instance_name' in content:
             instance_name = content['instance_name']
-            item_type = content.get('item_type', 'default') 
+            item_type = content.get('item_type') 
             
             align_x = width / 2 if style['justify'] == 'center' else (width - style['padding'] if style['justify'] == 'right' else style['padding'])
             align_y = height / 2 if style['valign'] == 'middle' else (height - style['padding'] if style['valign'] == 'bottom' else style['padding'])
@@ -546,15 +546,11 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_caller, 
         f.write(group_output.strip())
 
     # Symbol injection logic (requires the external find_and_replace_svg_group function)
-    try:
-        from harnice.utils import find_and_replace_svg_group 
-        for instance in instances_to_copy_in:
-            find_and_replace_svg_group(
-                os.path.join(path_to_caller, "instance_data", instance.get("item_type"), instance.get("instance_name")),
-                instance.get("instance_name"),
-                path_to_svg,
-                svg_name
-            )
-    except ImportError:
-        pass 
+    for instance in instances_to_copy_in:
+        find_and_replace_svg_group(
+            os.path.join(path_to_caller, "instance_data", instance.get("item_type"), instance.get("instance_name"), f"{instance.get("instance_name")}-drawing.svg"),
+            instance.get("instance_name"),
+            path_to_svg,
+            instance.get("instance_name")
+        )
 
