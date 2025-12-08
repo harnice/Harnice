@@ -196,6 +196,8 @@ End of Requirements — rev2
 
 [ ] imported instances aren't set up yet
  - svg has to be saved in order to copy in group content which requires a path and a name argument
+[ ] document need for item_type in symbol definition
+[ ] document need for path_to_caller and svg_name
 
 ### New features
  [ ] be able to format individual cells

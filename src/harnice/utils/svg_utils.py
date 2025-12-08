@@ -327,9 +327,6 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
         draw_slash_lines(spline_points, slash_lines_dict)
 
 
-
-import xml.etree.ElementTree as ET
-
 # --- Default Style Values (Required for the class) ---
 DEFAULTS = {
     "font_size": 12,
@@ -350,7 +347,7 @@ class SvgTableGenerator:
     """
     Generates an SVG table based on Harnice Table Requirements (rev2).
     """
-    def __init__(self, layout_dict, format_dict, columns_list, content_list):
+    def __init__(self, layout_dict, format_dict, columns_list, content_list, path_to_caller, svg_name):
         self.layout = self._validate_layout(layout_dict)
         self.format = format_dict
         self.columns = self._validate_columns(columns_list)
@@ -433,11 +430,13 @@ class SvgTableGenerator:
         Generates the SVG for the cell's content (text or symbol).
         """
         svg_primitives = []
+        instances_to_copy_in = []
         
         # --- Handle Content Type ---
         if isinstance(content, dict) and 'instance_name' in content:
             # 1. Importing a Symbol (Placeholder Generation)
             instance_name = content['instance_name']
+            item_type = content['item_type']
             
             # --- Symbol Positioning (Alignment) ---
             align_x = 0
@@ -463,6 +462,7 @@ class SvgTableGenerator:
                 bubble_x=x + align_x,
                 bubble_y=y + align_y
             )
+            instances_to_copy_in.append({"item_type":item_type, "instance_name":instance_name})
             svg_primitives.append(symbol_xml)
 
         else:
@@ -528,7 +528,7 @@ class SvgTableGenerator:
                     f'<text x="{x_pos}" y="{current_y}" style="{style_str}">{line}</text>'
                 )
 
-        return "\n".join(svg_primitives)
+        return "\n".join(svg_primitives), instances_to_copy_in
 
     def _draw_cell_rect(self, x, y, width, height, style):
         """
@@ -543,7 +543,7 @@ class SvgTableGenerator:
         
         return f'<rect x="{x}" y="{y}" width="{width}" height="{height}" style="{style_str}" />'
 
-    def build_svg(self):
+    def build_svg(self, path_to_caller, svg_name):
         """
         Main function to iterate through content and build the complete SVG string,
         returning only the group (<g>) element with primitives inside.
@@ -564,6 +564,10 @@ class SvgTableGenerator:
         row_height_0 = row_heights[0]
         
         current_y_offset = 0 
+
+        instances_to_copy_in = []
+
+        print("!!!!!!! 570")
         
         # --- Build Row by Row ---
         for row_index, row_data in enumerate(self.content):
@@ -597,11 +601,12 @@ class SvgTableGenerator:
                 
                 # 2. Draw Cell Content
                 if cell_content is not None:
-                    content_svg = self._draw_cell_content(
+                    content_svg, instances = self._draw_cell_content(
                         cell_x_start, cell_y_start, col_width, row_height, 
                         cell_content, cell_style
                     )
                     row_svg.append(content_svg)
+                    instances_to_copy_in.extend(instances)
 
             svg_rows.append("\n".join(row_svg))
             
@@ -626,20 +631,37 @@ class SvgTableGenerator:
         table_contents = "\n".join(svg_rows)
 
         # RETURN ONLY THE <g> ELEMENT AND ITS CONTENTS
-        group_output = f"""<g transform="translate({tx}, {ty})">
-        {table_contents}
-    </g>"""
+        group_output = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">
+  <g id="{svg_name}-contents-start">
+    <g id="translate" transform="translate({tx}, {ty})">
+{table_contents}
+    </g>
+  <g id="{svg_name}-contents-end">
+</svg>"""
+
+        print("!!!!!!!640")
+
+        path_to_svg = os.path.join(path_to_caller, f"{svg_name}-master.svg")
+        with open(path_to_svg, "w") as f:
+            f.write(group_output.strip())
+
+        for instance in instances_to_copy_in:
+            find_and_replace_svg_group(
+                os.path.join(path_to_caller, "instance_data", instance.get("item_type"), instance.get("instance_name")),
+                instance.get("instance_name"),
+                path_to_svg,
+                svg_name
+            )
         
         return group_output.strip()
 
-        
+
 # ====================================================================
 # The required function signature
 # ====================================================================
 
-def table(layout_dict, format_dict, columns_list, content_list):
+def table(layout_dict, format_dict, columns_list, content_list, path_to_caller, svg_name):
     """
-    Generates an SVG table based on the Harnice Table Requirements (rev2).
     
     Arguments:
     - layout_dict (dict): Defines origin and build direction.
@@ -651,8 +673,8 @@ def table(layout_dict, format_dict, columns_list, content_list):
     - A string of SVG primitives in xml format.
     """
     try:
-        generator = SvgTableGenerator(layout_dict, format_dict, columns_list, content_list)
-        return generator.build_svg()
+        print("!!!!!676")
+        SvgTableGenerator(layout_dict, format_dict, columns_list, content_list, path_to_caller, svg_name)
     except ValueError as e:
         # In a real utility, this would likely log the error or return a minimal 
         # error SVG. For this function, we'll raise the error.
