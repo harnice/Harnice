@@ -544,13 +544,3 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_caller, 
 
     with open(path_to_svg, "w") as f:
         f.write(group_output.strip())
-
-    # Symbol injection logic (requires the external find_and_replace_svg_group function)
-    for instance in instances_to_copy_in:
-        find_and_replace_svg_group(
-            os.path.join(path_to_caller, "instance_data", instance.get("item_type"), instance.get("instance_name"), f"{instance.get("instance_name")}-drawing.svg"),
-            instance.get("instance_name"),
-            path_to_svg,
-            instance.get("instance_name")
-        )
-

@@ -2,7 +2,14 @@
 
 This function is called when the user needs to build a general SVG table.
 ```python
-svg_utils.table(layout_dict, format_dict, columns_list, content_list)
+svg_utils.table(
+    layout_dict,
+    format_dict,
+    columns_list,
+    content_list,
+    path_to_caller,
+    svg_name
+)
 ```
 ### Arguments
 - `layout_dict` expects a dictionary describing in which direction the table is built
@@ -182,102 +189,45 @@ The value of each column key may take one of the following forms:
 
 ### Importing a Symbol into a Cell
 
-If you add a dictionary to one of the content cells with key `instance_name`, the function will add a drawing to the cell.
- - First the current macro's `instances` folder will be searched for a file with name `*-drawing.svg`. That file will be searched for contents between `*-contents-start` and `*-contents-end` (where `*` represents the same string of characters defined in `instance-name` of the data cell).
- - Note that `item_type` is a **required key** here as well, which will allow the user to sort imported symbols as you would for any other imported instance in Harnice. 
- - The svg text in between will be copied and pasted into the cell of your column.
- - If that drawing does not exist, or if either start or end tags are not found, the function will fail. It is up to the user to ensure the drawing exists before calling this function.
- - Local table formatting will not apply to the imported drawing
- - The drawing origin will obey the same justification rules as the text, and there is no boundary or clipping logic applied to the imported svg.
+If you add a dictionary to one of the content cells, content start/end groups will be written into your svg. This will allow the user to generate and/or import symbols into the table using their own logic, without regard for placement into the table.
+
+```python
+#from your macro or wherever you're building the table from...
+example_symbol = {
+    "lib_repo": instance.get("lib_repo"),
+    "item_type": "flagnote",
+    "mpn": instance.get("mpn"),
+    "instance_name": f"bubble{build_note_number}",
+    "note_text": build_note_number,
+}
+symbols_to_build=[example_symbol]
+        
+svg_utils.table(
+    layout_dict,
+    format_dict,
+    columns_list,
+    content_list,
+    os.dirname(path_to_table_svg),
+    artifact_id
+)
+
+# user import logic 
+for symbol in symbols_to_build:
+    path_to_symbol = #...
+    library_utils.pull(
+        symbol,
+        update_instances_list=False,
+        destination_directory=path_to_symbol,
+    )
+
+    svg_utils.find_and_replace_svg_group(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
+        symbol.get("instance_name"),
+        path_to_table_svg,
+        symbol.get("instance_name")
+    )
+```
 
 ---
 
 End of Requirements — rev2
-
-# Example Tables
-
-The following assumes there is an svg with group id tags set up correctly at `cwd/imported_instances/flagnote/rev3-bubble/rev3-bubble-drawing.svg`
-
-```python
-from harnice.utils import svg_utils
-import os
-
-# --- Table Input Definitions ---
-
-# 1. Layout Example
-layout_example = {
-    "origin_corner": "top-left",
-    "build_direction": "down",
-}
-
-# 2. Format Example
-format_example = {
-    "header": {
-        "font_weight": "B",
-        "fill_color": "darkgray",
-        "text_color": "blue"
-    },
-    "row_with_bubble": {
-        "row_height": 40,
-        "text_color": "red"
-    },
-}
-
-# 3. Columns Example
-columns_example = [
-    {
-        "name": "rev",
-        "width": 60,
-        "justify": "center"
-    },
-    {
-        "name": "updated",
-        "width": 260,
-    },
-    {
-        "name": "status",
-        "width": 120,
-    }
-]
-
-# 4. Content Example
-content_example = [
-    {
-        "format_key": "header",
-        "columns": {
-            "rev": "REV",
-            "updated": "UPDATED",
-            "status": "STATUS",
-        }
-    },
-    {
-        "columns": {
-            "rev": "1",
-            "updated": "12/6/25",
-            "status": "requires review",
-        }
-    },
-    {
-        "columns": {
-            "rev": "2",
-            "updated": ["12/6/25", "update incomplete"],
-        }
-    },
-    {
-        "format_key": "row_with_bubble",
-        "columns": {
-            "updated": {
-                "instance_name": "rev3-bubble",
-                "item_type": "flagnote"
-            },
-            "rev": "12/6/25",
-            "status": "clear"
-        }
-    }
-]
-
-# --- Function Call and File Output ---
-
-# The svg_utils.table function returns the <g> element content
-table_group_content = svg_utils.table(layout_example, format_example, columns_example, content_example, os.getcwd(), "test_table")
-```
