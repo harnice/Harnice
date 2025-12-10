@@ -12,8 +12,9 @@ LENGTH_MARGIN = 12
 # =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
-        f"{state.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
-        f"{state.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
+        f"{state.partnumber('pn-rev')}-{artifact_id}.tsv": "bom tsv",
+        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "bom svg",
+        "instance_data": {}
     }
 
 
@@ -37,12 +38,12 @@ def dirpath(target_value):
         base_directory=base_directory,
     )
 
-bom_table_contents = []
-
 # ================= PROCESS INPUT INSTANCES ===========================================================
 instances = fileio.read_tsv("instances list")
+bom_table_contents = []
 bom_instances = []
 bom_tsv = []
+symbols_to_build = []
 
 highest_bom_number = 0
 for instance in instances:
@@ -76,10 +77,15 @@ for i in range(1, highest_bom_number + 1):
                 total_length_exact = ""
                 total_length_plus_margin = ""
 
+    bubble_instance_name = f"bom_table_item-{i}-bubble"
+
     bom_table_contents.append(
         {
             "columns": {
-                "bom_line_number": i,
+                "bom_line_number": {
+                    "instance_name": bubble_instance_name,
+                    "item_type": "flagnote"
+                },
                 "qty": qty,
                 "total_length_exact": total_length_exact,
                 "mpn": mpn,
@@ -89,6 +95,7 @@ for i in range(1, highest_bom_number + 1):
 
     bom_tsv.append(
         {
+            "part_of_part_number": state.partnumber('pn'),
             "bom_line_number": i,
             "mpn": mpn,
             "item_type": item_type,
@@ -99,6 +106,30 @@ for i in range(1, highest_bom_number + 1):
             "total_length_plus_margin": total_length_plus_margin,
         }
     )
+
+    path_to_symbol = os.path.join(dirpath("instance_data"), "flagnote", bubble_instance_name)
+    symbol_dict = {
+        "lib_repo": "https://github.com/harnice/harnice-library-public",
+        "item_type": "flagnote",
+        "mpn": "bom_table_item",
+        "instance_name": bubble_instance_name,
+        "note_text": str(i),
+    }
+    library_utils.pull(
+        symbol_dict,
+        update_instances_list=False,
+        destination_directory=path_to_symbol,
+    )
+    symbols_to_build.append(symbol_dict)
+
+    # perform text replacement
+    with open(os.path.join(path_to_symbol, f"{bubble_instance_name}-drawing.svg"), "r") as f:
+        svg_content = f.read()
+
+    svg_content = svg_content.replace("flagnote-text", str(i))
+
+    with open(os.path.join(path_to_symbol, f"{bubble_instance_name}-drawing.svg"), "w") as f:
+        f.write(svg_content)
 
 # ============= BUILD TABLE ===========================================================
 layout_dict = {
@@ -154,7 +185,7 @@ svg_utils.table(
     format_dict,
     columns_list,
     bom_table_contents,
-    fileio.dirpath(None, base_directory=base_directory),
+    path("bom svg"),
     artifact_id
 )
 
@@ -166,8 +197,6 @@ with open(path("bom tsv", ), "w", newline="") as tsv_file:
         writer.writerow(row.values())
 
 # ============= ADD SYMBOLS TO TABLE =======================================================================
-
-"""
 for symbol in symbols_to_build:
     path_to_symbol = os.path.join(dirpath("instance_data"), symbol.get("instance_name"))
     library_utils.pull(
@@ -188,7 +217,6 @@ for symbol in symbols_to_build:
     svg_utils.find_and_replace_svg_group(
         os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
         symbol.get("instance_name"),
-        path("build notes table svg"),
+        path("bom svg"),
         symbol.get("instance_name")
     )
-"""

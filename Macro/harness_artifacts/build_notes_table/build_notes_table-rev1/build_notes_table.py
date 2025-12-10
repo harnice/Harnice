@@ -1,5 +1,5 @@
 import os
-from harnice import fileio
+from harnice import fileio, state
 from harnice.utils import svg_utils, library_utils
 
 artifact_mpn = "build_notes_table"
@@ -8,8 +8,8 @@ artifact_mpn = "build_notes_table"
 # =============== PATHS ===================================================================================
 def macro_file_structure(identifier=None):
     return {
-        f"{artifact_id}-master.svg": "build notes table svg",
-        "build_notes-list.tsv": "build_notes list",
+        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "build notes table svg",
+        f"{state.partnumber('pn-rev')}-{artifact_id}-build_notes-list.tsv": "build_notes list",
         "instance_data": {}
     }
 
@@ -125,7 +125,7 @@ svg_utils.table(
     format_dict,
     columns_list,
     content_list,
-    fileio.dirpath(None, base_directory=base_directory),
+    path("build notes table svg"),
     artifact_id
 )
 
