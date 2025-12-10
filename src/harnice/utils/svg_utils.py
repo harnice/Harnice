@@ -480,6 +480,11 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_caller, 
     instances_to_copy_in = []
     
     # 3. BUILD ROW BY ROW
+
+    # reverse content list if building upwards so the first row stays on top but is now printed last
+    if layout['build_direction'] == 'up':
+        content_list = list(reversed(content_list))
+
     for row_index, row_data in enumerate(content_list):
         row_key = row_data.get('format_key')
         row_height = row_heights[row_index]
