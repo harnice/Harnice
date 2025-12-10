@@ -327,7 +327,7 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
         draw_slash_lines(spline_points, slash_lines_dict)
 
 
-def table(layout_dict, format_dict, columns_list, content_list, path_to_caller, svg_name):
+def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, contents_group_name):
     """
     Generates an SVG table group structure and handles saving/symbol injection logic.
     All configuration (DEFAULTS) and helper logic is nested inside this function's scope.
@@ -535,17 +535,14 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_caller, 
 
     # 5. WRAP, SAVE, AND INJECT
     group_output = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">
-  <g id="{svg_name}-contents-start">
+  <g id="{contents_group_name}-contents-start">
     <g id="translate" transform="translate({tx}, {ty})">
 {table_contents}
     </g>
   </g>
-  <g id="{svg_name}-contents-end"/>
+  <g id="{contents_group_name}-contents-end"/>
 </svg>"""
 
     # Save the master SVG file
-    path_to_svg = os.path.join(path_to_caller, f"{svg_name}-master.svg")
-    
-
     with open(path_to_svg, "w") as f:
         f.write(group_output.strip())
