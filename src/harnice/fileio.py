@@ -189,8 +189,11 @@ def verify_revision_structure(product_type=None):
         os.chdir(folder)
 
     # --- Ensure revision_history entry exists ---
-    info_row = rev_history.info()
-    if info_row in ("row not found", "file not found"):
+    try:
+        rev_history.info()
+    except ValueError:
+        rev_history.append(next_rev=state.rev)
+    except FileNotFoundError:
         rev_history.append(next_rev=state.rev)
 
     # --- Status must be blank to proceed ---

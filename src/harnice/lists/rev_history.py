@@ -83,12 +83,12 @@ def overwrite(content_dict):
         writer.writerows(rows)
 
 
-def info(rev=None, path=None, field=None):
+def info(rev=None, path=None, field=None, all=False):
     if path is None:
         path = fileio.path("revision history")
 
     if not os.path.exists(path):
-        return "file not found"
+        raise FileNotFoundError(f"Revision history file not found at {path}")
 
     if rev:
         rev = str(rev)
@@ -98,6 +98,9 @@ def info(rev=None, path=None, field=None):
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         rows = list(reader)
+
+    if all:
+        return rows
 
     for row in rows:
         if row.get("rev") == rev:
@@ -135,7 +138,7 @@ def info(rev=None, path=None, field=None):
 
             return full_row
 
-    return "row not found"
+    raise ValueError(f"Revision {rev} not found in revision history at {path}")
 
 
 def initial_release_exists():

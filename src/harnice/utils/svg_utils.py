@@ -325,3 +325,224 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
     if appearance_dict.get("slash_lines") is not None:
         slash_lines_dict = appearance_dict.get("slash_lines")
         draw_slash_lines(spline_points, slash_lines_dict)
+
+
+def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, contents_group_name):
+    """
+    Generates an SVG table group structure and handles saving/symbol injection logic.
+    All configuration (DEFAULTS) and helper logic is nested inside this function's scope.
+    """
+
+    # --- Default Style Values (Local to the table() function) ---
+    DEFAULTS = {
+        "font_size": 12,
+        "font_family": "helvetica",
+        "font_weight": None,
+        "row_height": 0.16 * 96,
+        "padding": 3,
+        "line_spacing": 14,
+        "justify": "center",
+        "valign": "middle",
+        "fill_color": "white",
+        "stroke_color": "black",
+        "stroke_width": 1,
+        "text_color": "black",
+    }
+
+    # --- Helper functions ---
+
+    def _validate_layout(layout):
+        """Validates the layout dictionary."""
+        valid_corners = {"top-left", "top-right", "bottom-left", "bottom-right"}
+        valid_directions = {"down", "up"}
+        corner = layout.get("origin_corner")
+        direction = layout.get("build_direction")
+        if corner not in valid_corners:
+            raise ValueError(f"Invalid origin_corner: {corner}. Must be one of {valid_corners}.")
+        if direction not in valid_directions:
+            raise ValueError(f"Invalid build_direction: {direction}. Must be one of {valid_directions}.")
+        return layout
+
+    def _validate_columns(columns_list):
+        """Validates the columns list, ensuring 'name' and 'width' are present."""
+        if not columns_list:
+            raise ValueError("columns_list cannot be empty.")
+        names = set()
+        for col in columns_list:
+            if 'name' not in col or 'width' not in col:
+                raise ValueError("Each column must have 'name' and 'width' keys.")
+            if col['name'] in names:
+                raise ValueError(f"Duplicate column name: {col['name']}.")
+            names.add(col['name'])
+        return columns_list
+
+    def _resolve_style(row_format_key, col_data, format_dict, columns_list):
+        """Resolves the final style for a cell."""
+        style = DEFAULTS.copy()
+        style.update(format_dict.get("globals", {}))
+        col_name = col_data.get('name')
+        column_def = next((c for c in columns_list if c['name'] == col_name), {})
+        style.update({k: v for k, v in column_def.items() if k in DEFAULTS})
+        row_format = format_dict.get(row_format_key)
+        if row_format:
+            style.update({k: v for k, v in row_format.items() if k in DEFAULTS})
+        return style
+
+    def _generate_symbol_placeholder(instance_name, bubble_x, bubble_y):
+        """Generates the SVG group structure placeholder."""
+        svg_lines = []
+        svg_lines.append(f'<g id="{instance_name}" transform="translate({bubble_x},{bubble_y})">')
+        svg_lines.append(f'  <g id="{instance_name}-contents-start">')
+        svg_lines.append(f"  </g>")
+        svg_lines.append(f'  <g id="{instance_name}-contents-end"/>')
+        svg_lines.append(f"</g>")
+        return "\n".join(svg_lines)
+
+    def _draw_cell_content(x, y, width, height, content, style, columns_list, format_dict):
+        """Generates the SVG for the cell's content (text or symbol)."""
+        svg_primitives = []
+        instances_to_copy_in = []
+        
+        if isinstance(content, dict) and 'instance_name' in content:
+            instance_name = content['instance_name']
+            item_type = content.get('item_type') 
+            
+            align_x = width / 2 if style['justify'] == 'center' else (width - style['padding'] if style['justify'] == 'right' else style['padding'])
+            align_y = height / 2 if style['valign'] == 'middle' else (height - style['padding'] if style['valign'] == 'bottom' else style['padding'])
+
+            symbol_xml = _generate_symbol_placeholder(instance_name=instance_name, bubble_x=x + align_x, bubble_y=y + align_y)
+            instances_to_copy_in.append({"item_type":item_type, "instance_name":instance_name})
+            svg_primitives.append(symbol_xml)
+
+        else:
+            text_lines = [str(content)] if isinstance(content, (str, int, float)) else [str(line) for line in content] if isinstance(content, list) else []
+            if not text_lines:
+                return "", []
+
+            x_pos = x
+            text_anchor = "start"
+            if style['justify'] == 'center': x_pos += width / 2; text_anchor = "middle"
+            elif style['justify'] == 'right': x_pos += width - style['padding']; text_anchor = "end"
+            elif style['justify'] == 'left': x_pos += style['padding']; text_anchor = "start"
+
+            num_lines = len(text_lines)
+            total_text_height = (num_lines - 1) * style['line_spacing'] + style['font_size']
+            y_start = y
+            if style['valign'] == 'middle': y_start += (height - total_text_height) / 2
+            elif style['valign'] == 'bottom': y_start += height - total_text_height - style['padding']
+            elif style['valign'] == 'top': y_start += style['padding']
+            y_pos = y_start + style['font_size'] * 0.8 
+
+            text_style = {"font-size": f"{style['font_size']}px", "font-family": style['font_family'], "fill": style['text_color'], "text-anchor": text_anchor}
+            if style['font_weight']:
+                if 'B' in style['font_weight']: text_style['font-weight'] = 'bold'
+                if 'I' in style['font_weight']: text_style['font-style'] = 'italic'
+                if 'U' in style['font_weight']: text_style['text-decoration'] = 'underline'
+            style_str = "; ".join(f"{k}: {v}" for k, v in text_style.items())
+
+            for i, line in enumerate(text_lines):
+                current_y = y_pos + i * style['line_spacing']
+                svg_primitives.append(f'<text x="{x_pos}" y="{current_y}" style="{style_str}">{line}</text>')
+
+        return "\n".join(svg_primitives), instances_to_copy_in
+
+    def _draw_cell_rect(x, y, width, height, style):
+        """Generates the SVG for the cell's background and border."""
+        rect_style = {"fill": style['fill_color'], "stroke": style['stroke_color'], "stroke-width": style['stroke_width']}
+        style_str = "; ".join(f"{k}: {v}" for k, v in rect_style.items())
+        return f'<rect x="{x}" y="{y}" width="{width}" height="{height}" style="{style_str}" />'
+
+    # ====================================================================
+    # MAIN FUNCTION LOGIC START
+    # ====================================================================
+
+    # 1. INITIAL VALIDATION (and state definition)
+    layout = _validate_layout(layout_dict)
+    columns = _validate_columns(columns_list)
+    total_width = sum(col['width'] for col in columns)
+
+    # ... (Setup for BUILD_SVG LOGIC remains unchanged) ...
+    svg_rows = []
+    col_x_starts = [0]
+    current_x = 0
+    for col in columns[:-1]:
+        current_x += col['width']
+        col_x_starts.append(current_x)
+
+    row_heights = [
+        _resolve_style(row.get('format_key'), {}, format_dict, columns).get('row_height', DEFAULTS['row_height'])
+        for row in content_list
+    ]
+    total_table_height = sum(row_heights)
+    row_height_0 = row_heights[0]
+    
+    current_y_offset = 0 
+    instances_to_copy_in = []
+    
+    # 3. BUILD ROW BY ROW
+
+    # reverse content list if building upwards so the first row stays on top but is now printed last
+    if layout['build_direction'] == 'up':
+        content_list = list(reversed(content_list))
+
+    for row_index, row_data in enumerate(content_list):
+        row_key = row_data.get('format_key')
+        row_height = row_heights[row_index]
+        row_svg = []
+        
+        if layout['build_direction'] == 'down':
+            cell_y_start = current_y_offset
+            current_y_offset += row_height
+        elif layout['build_direction'] == 'up':
+            current_y_offset -= row_height
+            cell_y_start = current_y_offset
+
+        for col_index, col_def in enumerate(columns):
+            col_name = col_def['name']
+            col_width = col_def['width']
+            cell_content = row_data.get('columns', {}).get(col_name)
+            cell_style = _resolve_style(row_key, col_def, format_dict, columns)
+            cell_x_start = col_x_starts[col_index]
+            
+            rect_svg = _draw_cell_rect(cell_x_start, cell_y_start, col_width, row_height, cell_style)
+            row_svg.append(rect_svg)
+            
+            if cell_content is not None:
+                content_svg, instances = _draw_cell_content(
+                    cell_x_start, cell_y_start, col_width, row_height, 
+                    cell_content, cell_style, columns, format_dict
+                )
+                row_svg.append(content_svg)
+                instances_to_copy_in.extend(instances)
+
+        svg_rows.append("\n".join(row_svg))
+        
+    # 4. FINAL TRANSFORM CALCULATION
+    tx = 0
+    ty = 0
+    
+    if layout['origin_corner'] in ('top-right', 'bottom-right'):
+        tx = -total_width
+    
+    if layout['build_direction'] == 'down':
+        if layout['origin_corner'] in ('bottom-left', 'bottom-right'):
+            ty = -row_height_0
+    elif layout['build_direction'] == 'up':
+        if layout['origin_corner'] in ('top-left', 'top-right'):
+            ty = total_table_height
+        
+    table_contents = "\n".join(svg_rows)
+
+    # 5. WRAP, SAVE, AND INJECT
+    group_output = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">
+  <g id="{contents_group_name}-contents-start">
+    <g id="translate" transform="translate({tx}, {ty})">
+{table_contents}
+    </g>
+  </g>
+  <g id="{contents_group_name}-contents-end"/>
+</svg>"""
+
+    # Save the master SVG file
+    with open(path_to_svg, "w") as f:
+        f.write(group_output.strip())
