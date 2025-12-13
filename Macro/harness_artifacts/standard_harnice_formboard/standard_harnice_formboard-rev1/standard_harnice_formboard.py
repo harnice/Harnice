@@ -70,7 +70,9 @@ def make_new_flagnote_drawing(instance, location):
         )
 
     # === Pull drawing into this macro ===
-    library_utils.pull(instance, destination_directory=location, update_instances_list=False)
+    library_utils.pull(
+        instance, destination_directory=location, update_instances_list=False
+    )
     flagnote_drawing_path = os.path.join(
         location, f"{instance.get("instance_name")}-drawing.svg"
     )

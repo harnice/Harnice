@@ -14,7 +14,7 @@ def macro_file_structure():
     return {
         f"{state.partnumber('pn-rev')}-{artifact_id}.tsv": "bom tsv",
         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "bom svg",
-        "instance_data": {}
+        "instance_data": {},
     }
 
 
@@ -37,6 +37,7 @@ def dirpath(target_value):
         structure_dict=macro_file_structure(),
         base_directory=base_directory,
     )
+
 
 # ================= PROCESS INPUT INSTANCES ===========================================================
 instances = fileio.read_tsv("instances list")
@@ -70,9 +71,7 @@ for i in range(1, highest_bom_number + 1):
             lib_subpath = instance.get("lib_subpath")
             if not instance.get("length") == "":
                 total_length_exact += int(instance.get("length"))
-                total_length_plus_margin += (
-                    int(instance.get("length")) + LENGTH_MARGIN
-                )
+                total_length_plus_margin += int(instance.get("length")) + LENGTH_MARGIN
             else:
                 total_length_exact = ""
                 total_length_plus_margin = ""
@@ -84,7 +83,7 @@ for i in range(1, highest_bom_number + 1):
             "columns": {
                 "bom_line_number": {
                     "instance_name": bubble_instance_name,
-                    "item_type": "flagnote"
+                    "item_type": "flagnote",
                 },
                 "qty": qty,
                 "total_length_exact": total_length_exact,
@@ -95,7 +94,7 @@ for i in range(1, highest_bom_number + 1):
 
     bom_tsv.append(
         {
-            "part_of_part_number": state.partnumber('pn'),
+            "part_of_part_number": state.partnumber("pn"),
             "bom_line_number": i,
             "mpn": mpn,
             "item_type": item_type,
@@ -107,7 +106,9 @@ for i in range(1, highest_bom_number + 1):
         }
     )
 
-    path_to_symbol = os.path.join(dirpath("instance_data"), "flagnote", bubble_instance_name)
+    path_to_symbol = os.path.join(
+        dirpath("instance_data"), "flagnote", bubble_instance_name
+    )
     symbol_dict = {
         "lib_repo": "https://github.com/harnice/harnice-library-public",
         "item_type": "flagnote",
@@ -123,12 +124,16 @@ for i in range(1, highest_bom_number + 1):
     symbols_to_build.append(symbol_dict)
 
     # perform text replacement
-    with open(os.path.join(path_to_symbol, f"{bubble_instance_name}-drawing.svg"), "r") as f:
+    with open(
+        os.path.join(path_to_symbol, f"{bubble_instance_name}-drawing.svg"), "r"
+    ) as f:
         svg_content = f.read()
 
     svg_content = svg_content.replace("flagnote-text", str(i))
 
-    with open(os.path.join(path_to_symbol, f"{bubble_instance_name}-drawing.svg"), "w") as f:
+    with open(
+        os.path.join(path_to_symbol, f"{bubble_instance_name}-drawing.svg"), "w"
+    ) as f:
         f.write(svg_content)
 
 # ============= BUILD TABLE ===========================================================
@@ -145,7 +150,7 @@ format_dict = {
     "header": {
         "font_weight": "B",
         "fill_color": "lightgray",
-    }
+    },
 }
 
 columns_list = [
@@ -176,7 +181,7 @@ bom_table_contents.append(
             "qty": "QTY",
             "total_length_exact": "LENGTH (in)",
             "mpn": "MPN",
-        }
+        },
     }
 )
 
@@ -186,11 +191,17 @@ svg_utils.table(
     columns_list,
     bom_table_contents,
     path("bom svg"),
-    artifact_id
+    artifact_id,
 )
 
 # ============= WRITE CSV FILE =======================================================================
-with open(path("bom tsv", ), "w", newline="") as tsv_file:
+with open(
+    path(
+        "bom tsv",
+    ),
+    "w",
+    newline="",
+) as tsv_file:
     writer = csv.writer(tsv_file, delimiter="\t")
     writer.writerow(bom_tsv[0].keys())
     for row in bom_tsv:
@@ -206,17 +217,21 @@ for symbol in symbols_to_build:
     )
 
     # perform text replacement
-    with open(os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r") as f:
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r"
+    ) as f:
         svg_content = f.read()
 
     svg_content = svg_content.replace("flagnote-text", symbol.get("note_text"))
 
-    with open(os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w") as f:
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w"
+    ) as f:
         f.write(svg_content)
 
     svg_utils.find_and_replace_svg_group(
         os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
         symbol.get("instance_name"),
         path("bom svg"),
-        symbol.get("instance_name")
+        symbol.get("instance_name"),
     )

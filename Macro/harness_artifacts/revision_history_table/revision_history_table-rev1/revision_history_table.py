@@ -10,7 +10,7 @@ artifact_mpn = "revision_history_table"
 def macro_file_structure(rev_id=None):
     return {
         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "revision history table svg",
-        "instance_data": {}
+        "instance_data": {},
     }
 
 
@@ -33,6 +33,7 @@ def dirpath(target_value, rev_id=None):
         structure_dict=macro_file_structure(rev_id),
         base_directory=base_directory,
     )
+
 
 # ==========================================================================================================
 layout_dict = {
@@ -96,7 +97,7 @@ rev_history_table_contents = [
             "checked": "CHECKED",
             "started": "STARTED",
             "modified": "MODIFIED",
-        }
+        },
     }
 ]
 
@@ -106,12 +107,12 @@ symbols_to_build = []
 for rev in rev_history.info(all=True):
     if rev.get("affectedinstances") not in ["", None, []]:
         bubble_instance = {
-                "instance_name": f"bubble{rev.get('rev')}",
-                "item_type": "flagnote",
-                "mpn": "rev_change_callout",
-                "lib_repo": "https://github.com/harnice/harnice-library-public",
-                "note_text": rev.get("rev"),
-            }
+            "instance_name": f"bubble{rev.get('rev')}",
+            "item_type": "flagnote",
+            "mpn": "rev_change_callout",
+            "lib_repo": "https://github.com/harnice/harnice-library-public",
+            "note_text": rev.get("rev"),
+        }
         rev_history_table_contents.append(
             {
                 "format_key": "row_with_bubble",
@@ -123,11 +124,11 @@ for rev in rev_history.info(all=True):
                     "checked": rev.get("checkedby"),
                     "started": rev.get("datestarted"),
                     "modified": rev.get("datemodified"),
-                }
+                },
             }
         )
         symbols_to_build.append(bubble_instance)
-    
+
     else:
         rev_history_table_contents.append(
             {
@@ -151,7 +152,7 @@ svg_utils.table(
     columns_list,
     rev_history_table_contents,
     path("revision history table svg"),
-    artifact_id
+    artifact_id,
 )
 
 # ============= ADD SYMBOLS TO TABLE =======================================================================
@@ -164,17 +165,21 @@ for symbol in symbols_to_build:
     )
 
     # perform text replacement
-    with open(os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r") as f:
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r"
+    ) as f:
         svg_content = f.read()
 
     svg_content = svg_content.replace("flagnote-text", symbol.get("note_text"))
 
-    with open(os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w") as f:
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w"
+    ) as f:
         f.write(svg_content)
 
     svg_utils.find_and_replace_svg_group(
         os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
         symbol.get("instance_name"),
         path("revision history table svg"),
-        symbol.get("instance_name")
+        symbol.get("instance_name"),
     )

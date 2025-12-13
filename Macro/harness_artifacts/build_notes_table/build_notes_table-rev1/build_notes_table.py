@@ -10,7 +10,7 @@ def macro_file_structure(identifier=None):
     return {
         f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "build notes table svg",
         f"{state.partnumber('pn-rev')}-{artifact_id}-build_notes-list.tsv": "build_notes list",
-        "instance_data": {}
+        "instance_data": {},
     }
 
 
@@ -76,7 +76,7 @@ content_list.append(
         "format_key": "header",
         "columns": {
             "note": "BUILD NOTES",
-        }
+        },
     }
 )
 # ============= PROCESS INPUT INSTANCES =======================================================================
@@ -103,7 +103,7 @@ for instance in input_instances:
                 "columns": {
                     "build_note_number": number_column,
                     "note": note_column,
-                }
+                },
             }
         )
         symbols_to_build.append(number_column)
@@ -126,7 +126,7 @@ svg_utils.table(
     columns_list,
     content_list,
     path("build notes table svg"),
-    artifact_id
+    artifact_id,
 )
 
 # ============= ADD SYMBOLS TO TABLE =======================================================================
@@ -140,17 +140,21 @@ for symbol in symbols_to_build:
     )
 
     # perform text replacement
-    with open(os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r") as f:
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r"
+    ) as f:
         svg_content = f.read()
 
     svg_content = svg_content.replace("flagnote-text", symbol.get("note_text"))
 
-    with open(os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w") as f:
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w"
+    ) as f:
         f.write(svg_content)
 
     svg_utils.find_and_replace_svg_group(
         os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
         symbol.get("instance_name"),
         path("build notes table svg"),
-        symbol.get("instance_name")
+        symbol.get("instance_name"),
     )
