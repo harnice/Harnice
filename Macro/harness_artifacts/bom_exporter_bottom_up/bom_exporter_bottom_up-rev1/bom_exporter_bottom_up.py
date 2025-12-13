@@ -1,17 +1,24 @@
+import os
 import csv
 from harnice import fileio, state
-import os
+from harnice.utils import svg_utils, library_utils
+
+artifact_mpn = "bom_exporter_bottom_up"
+
+# ============== SETUP VARIABLES ===============================================
+LENGTH_MARGIN = 12
 
 
 # =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
-        f"{state.partnumber('pn-rev')}-{artifact_id}-bom.tsv": "bom tsv",
-        f"{state.partnumber('pn-rev')}-{artifact_id}-bom-master.svg": "bom svg",
+        f"{state.partnumber('pn-rev')}-{artifact_id}.tsv": "bom tsv",
+        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "bom svg",
+        "instance_data": {},
     }
 
 
-if base_directory == None:  # path between cwd and the file structure for this macro
+if base_directory is None:  # path between cwd and the file structure for this macro
     base_directory = os.path.join("instance_data", "macro", artifact_id)
 
 
@@ -32,152 +39,199 @@ def dirpath(target_value):
     )
 
 
-# ==========================================================================================================
-
-
-CABLE_MARGIN = 12
-BOM_COLUMNS = [
-    "bom_line_number",
-    "mpn",
-    "item_type",
-    "qty",
-    "lib_repo",
-    "total_length_exact",
-    "total_length_plus_margin",
-]
-
-with open(path("bom tsv"), "w", newline="", encoding="utf-8") as f:
-    writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
-    writer.writeheader()
-    writer.writerows([])
-
-
-def add_line_to_bom(line_data):
-    with open(path("bom tsv"), "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=BOM_COLUMNS, delimiter="\t")
-        writer.writerow({key: line_data.get(key, "") for key in BOM_COLUMNS})
-
+# ================= PROCESS INPUT INSTANCES ===========================================================
+instances = fileio.read_tsv("instances list")
+bom_table_contents = []
+bom_instances = []
+bom_tsv = []
+symbols_to_build = []
 
 highest_bom_number = 0
-for instance in fileio.read_tsv("instances list"):
-    if not instance.get("bom_line_number") == "":
+for instance in instances:
+    if instance.get("bom_line_number") not in ["", None]:
+        bom_instances.append(instance)
         if int(instance.get("bom_line_number")) > highest_bom_number:
             highest_bom_number = int(instance.get("bom_line_number"))
 
 for i in range(1, highest_bom_number + 1):
-    mpn = ""
-    item_type = ""
     qty = 0
-    lib_repo = ""
     total_length_exact = 0
     total_length_plus_margin = 0
+    mpn = ""
+    item_type = ""
+    lib_repo = ""
+    lib_subpath = ""
 
-    for instance in fileio.read_tsv("instances list"):
-        if not instance.get("bom_line_number") == "":
-            if int(instance.get("bom_line_number")) == i:
-                mpn = instance.get("mpn")
-                item_type = instance.get("item_type")
-                qty += 1
-                lib_repo = instance.get("lib_repo")
-                if not instance.get("length") == "":
-                    total_length_exact += int(instance.get("length"))
-                    total_length_plus_margin += (
-                        int(instance.get("length")) + CABLE_MARGIN
-                    )
-                else:
-                    total_length_exact = ""
-                    total_length_plus_margin = ""
+    for instance in bom_instances:
+        if int(instance.get("bom_line_number")) == i:
+            qty += 1
+            mpn = instance.get("mpn")
+            item_type = instance.get("item_type")
+            lib_repo = instance.get("lib_repo")
+            lib_subpath = instance.get("lib_subpath")
+            if not instance.get("length") == "":
+                total_length_exact += int(instance.get("length"))
+                total_length_plus_margin += int(instance.get("length")) + LENGTH_MARGIN
+            else:
+                total_length_exact = ""
+                total_length_plus_margin = ""
 
-    add_line_to_bom(
+    bubble_instance_name = f"bom_table_item-{i}-bubble"
+
+    bom_table_contents.append(
         {
+            "columns": {
+                "bom_line_number": {
+                    "instance_name": bubble_instance_name,
+                    "item_type": "flagnote",
+                },
+                "qty": qty,
+                "total_length_exact": total_length_exact,
+                "mpn": mpn,
+            }
+        }
+    )
+
+    bom_tsv.append(
+        {
+            "part_of_part_number": state.partnumber("pn"),
             "bom_line_number": i,
             "mpn": mpn,
             "item_type": item_type,
             "qty": qty,
             "lib_repo": lib_repo,
+            "lib_subpath": lib_subpath,
             "total_length_exact": total_length_exact,
             "total_length_plus_margin": total_length_plus_margin,
         }
     )
 
-# === Create BOM Table SVG ===
-selected_columns = ["bom_line_number", "qty", "total_length_exact", "mpn"]
-header_labels = ["ITEM", "QTY", "LENGTH", "MPN"]
-column_widths = [0.375 * 96, 0.375 * 96, 0.75 * 96, 1.75 * 96]
-row_height = 0.16 * 96
-font_size = 8
-font_family = "Arial, Helvetica, sans-serif"
-line_width = 0.008 * 96
+    path_to_symbol = os.path.join(
+        dirpath("instance_data"), "flagnote", bubble_instance_name
+    )
+    symbol_dict = {
+        "lib_repo": "https://github.com/harnice/harnice-library-public",
+        "item_type": "flagnote",
+        "mpn": "bom_table_item",
+        "instance_name": bubble_instance_name,
+        "note_text": str(i),
+    }
+    library_utils.pull(
+        symbol_dict,
+        update_instances_list=False,
+        destination_directory=path_to_symbol,
+    )
+    symbols_to_build.append(symbol_dict)
 
-with open(path("bom tsv"), "r", newline="", encoding="utf-8") as tsv_file:
-    reader = csv.DictReader(tsv_file, delimiter="\t")
-    data_rows = [
-        [row.get(col, "") for col in selected_columns]
-        for row in reader
-        if row.get("bom_line_number", "").isdigit()
-    ]
+    # perform text replacement
+    with open(
+        os.path.join(path_to_symbol, f"{bubble_instance_name}-drawing.svg"), "r"
+    ) as f:
+        svg_content = f.read()
 
-data_rows.sort(key=lambda r: int(r[0]))
-table_rows = data_rows + [header_labels]
+    svg_content = svg_content.replace("flagnote-text", str(i))
 
-num_rows = len(table_rows)
-svg_width = sum(column_widths)
-svg_height = num_rows * row_height
+    with open(
+        os.path.join(path_to_symbol, f"{bubble_instance_name}-drawing.svg"), "w"
+    ) as f:
+        f.write(svg_content)
 
-svg_lines = [
-    f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
-    f'font-family="{font_family}" font-size="{font_size}">',
-    f'<g id="{artifact_id}-bom-contents-start">',
+# ============= BUILD TABLE ===========================================================
+layout_dict = {
+    "origin_corner": "bottom-right",
+    "build_direction": "up",
+}
+
+format_dict = {
+    "globals": {
+        "font_size": 8,
+        "font_family": "Arial, Helvetica, sans-serif",
+    },
+    "header": {
+        "font_weight": "B",
+        "fill_color": "lightgray",
+    },
+}
+
+columns_list = [
+    {
+        "name": "bom_line_number",
+        "width": 0.375 * 96,
+    },
+    {
+        "name": "qty",
+        "width": 0.375 * 96,
+    },
+    {
+        "name": "total_length_exact",
+        "width": 0.75 * 96,
+    },
+    {
+        "name": "mpn",
+        "width": 1.75 * 96,
+        "justify": "left",
+    },
 ]
+# append header row at the end because we want it on the bottom of the table
+bom_table_contents.append(
+    {
+        "format_key": "header",
+        "columns": {
+            "bom_line_number": "ITEM",
+            "qty": "QTY",
+            "total_length_exact": "LENGTH (in)",
+            "mpn": "MPN",
+        },
+    }
+)
 
-column_x_positions = []
-running_x = 0
-for width in column_widths:
-    running_x += width
-    column_x_positions.append(-running_x)
+svg_utils.table(
+    layout_dict,
+    format_dict,
+    columns_list,
+    bom_table_contents,
+    path("bom svg"),
+    artifact_id,
+)
 
-for row_index, row in enumerate(reversed(table_rows)):
-    y = -1 * (row_index + 1) * row_height
-    is_header_row = row_index == 0
-    rect_fill = "#e0e0e0" if is_header_row else "white"
-    font_weight = "bold" if is_header_row else "normal"
+# ============= WRITE CSV FILE =======================================================================
+with open(
+    path(
+        "bom tsv",
+    ),
+    "w",
+    newline="",
+) as tsv_file:
+    writer = csv.writer(tsv_file, delimiter="\t")
+    writer.writerow(bom_tsv[0].keys())
+    for row in bom_tsv:
+        writer.writerow(row.values())
 
-    for col_index, cell in enumerate(row):
-        x = column_x_positions[col_index]
-        cell_width = column_widths[col_index]
+# ============= ADD SYMBOLS TO TABLE =======================================================================
+for symbol in symbols_to_build:
+    path_to_symbol = os.path.join(dirpath("instance_data"), symbol.get("instance_name"))
+    library_utils.pull(
+        symbol,
+        update_instances_list=False,
+        destination_directory=path_to_symbol,
+    )
 
-        svg_lines.append(
-            f'<rect x="{x}" y="{y}" width="{cell_width}" height="{row_height}" '
-            f'style="fill:{rect_fill};stroke:black;stroke-width:{line_width}"/>'
-        )
+    # perform text replacement
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r"
+    ) as f:
+        svg_content = f.read()
 
-        if col_index in (0, 1):
-            text_anchor = "middle"
-            text_x = x + cell_width / 2
-        else:
-            text_anchor = "start"
-            text_x = x + 5
+    svg_content = svg_content.replace("flagnote-text", symbol.get("note_text"))
 
-        text_y = y + row_height / 2
-        svg_lines.append(
-            f'<text x="{text_x}" y="{text_y}" text-anchor="{text_anchor}" '
-            f'style="fill:black;dominant-baseline:middle;font-weight:{font_weight};'
-            f'font-family:{font_family};font-size:{font_size}">{cell}</text>'
-        )
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w"
+    ) as f:
+        f.write(svg_content)
 
-        if col_index == 0 and not is_header_row:
-            circle_cx = x + cell_width / 2
-            circle_cy = y + row_height / 2
-            radius = min(cell_width, row_height) / 2 - 2
-
-            svg_lines.append(
-                f'<circle cx="{circle_cx}" cy="{circle_cy}" r="{radius}" '
-                f'style="fill:none;stroke:black;stroke-width:{line_width}"/>'
-            )
-
-svg_lines.append("</g>")
-svg_lines.append(f'<g id="{artifact_id}-bom-contents-end"/>')
-svg_lines.append("</svg>")
-
-with open(path("bom svg"), "w", encoding="utf-8") as svg_file:
-    svg_file.write("\n".join(svg_lines))
+    svg_utils.find_and_replace_svg_group(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
+        symbol.get("instance_name"),
+        path("bom svg"),
+        symbol.get("instance_name"),
+    )

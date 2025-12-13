@@ -1,6 +1,5 @@
 import os
-import re
-from harnice import fileio
+from harnice import fileio, state
 from harnice.utils import svg_utils, library_utils
 
 artifact_mpn = "build_notes_table"
@@ -9,13 +8,9 @@ artifact_mpn = "build_notes_table"
 # =============== PATHS ===================================================================================
 def macro_file_structure(identifier=None):
     return {
-        "build_notes-table-master.svg": "build notes table svg",
-        "build_notes-list.tsv": "build_notes list",
-        "table_bubbles": {
-            f"bubble{identifier}": {
-                f"bubble{identifier}-drawing.svg": "bubble drawing svg"
-            }
-        },
+        f"{state.partnumber('pn-rev')}-{artifact_id}-master.svg": "build notes table svg",
+        f"{state.partnumber('pn-rev')}-{artifact_id}-build_notes-list.tsv": "build_notes list",
+        "instance_data": {},
     }
 
 
@@ -40,173 +35,126 @@ def dirpath(target_value, identifier=None):
     )
 
 
-# ==========================================================================================================
+# ================= INITIALIZE TABLE =========================================================================================
 
-# === Configuration ===
-column_widths = [0.5 * 96, 3.375 * 96]  # bubble, then note
-row_height = 0.16 * 96
-font_size = 8
-font_family = "Arial, Helvetica, sans-serif"
-line_width = 0.008 * 96  # Define line_width before it is used
+layout_dict = {
+    "origin_corner": "top-left",
+    "build_direction": "down",
+}
 
-# Initialize an empty list to hold buildnote svg table rows
-svg_table_data = []
+format_dict = {
+    "globals": {
+        "font_size": 8,
+        "font_family": "Arial, Helvetica, sans-serif",
+    },
+    "header": {
+        "font_weight": "B",
+        "fill_color": "lightgray",
+    },
+    "row_with_bubble": {
+        "row_height": 0.4 * 96,
+    },
+}
 
-# Read instances for build_notes
+columns_list = [
+    {
+        "name": "build_note_number",
+        "width": 0.5 * 96,
+    },
+    {
+        "name": "note",
+        "width": 3.375 * 96,
+        "justify": "left",
+    },
+]
+
+content_list = []
+
+# ============= WRITE HEADER ROW =======================================================================
+content_list.append(
+    {
+        "format_key": "header",
+        "columns": {
+            "note": "BUILD NOTES",
+        },
+    }
+)
+# ============= PROCESS INPUT INSTANCES =======================================================================
+symbols_to_build = []
+
 for instance in input_instances:
     build_note_number = instance.get("note_number")
-    note = instance.get("note_text")
+    number_column = build_note_number
+    note_column = instance.get("note_text")
     has_shape = False
 
     # Pull bubble from the library if there is a shape
     if not instance.get("note_affected_instances") == "[]":
-        has_shape = True
-
-    if has_shape:
-        library_utils.pull(
+        number_column = {
+            "lib_repo": instance.get("lib_repo"),
+            "item_type": "flagnote",
+            "mpn": instance.get("mpn"),
+            "instance_name": f"bubble{build_note_number}",
+            "note_text": build_note_number,
+        }
+        content_list.append(
             {
-                "lib_repo": instance.get("lib_repo"),
-                "item_type": "flagnote",
-                "mpn": instance.get("mpn"),
-                "instance_name": f"bubble{build_note_number}",
-            },
-            update_instances_list=False,
-            destination_directory=dirpath(
-                f"bubble{build_note_number}", identifier=build_note_number
-            ),
+                "format_key": "row_with_bubble",
+                "columns": {
+                    "build_note_number": number_column,
+                    "note": note_column,
+                },
+            }
+        )
+        symbols_to_build.append(number_column)
+
+    else:
+        content_list.append(
+            {
+                "columns": {
+                    "build_note_number": number_column,
+                    "note": note_column,
+                }
+            }
         )
 
-    # Append row information only if it contains valid data
-    svg_table_data.append(
-        {
-            "build_note_number": build_note_number,
-            "note": note,
-            "has_shape": has_shape,
-        }
+# ============= BUILD TABLE =======================================================================
+
+svg_utils.table(
+    layout_dict,
+    format_dict,
+    columns_list,
+    content_list,
+    path("build notes table svg"),
+    artifact_id,
+)
+
+# ============= ADD SYMBOLS TO TABLE =======================================================================
+
+for symbol in symbols_to_build:
+    path_to_symbol = os.path.join(dirpath("instance_data"), symbol.get("instance_name"))
+    library_utils.pull(
+        symbol,
+        update_instances_list=False,
+        destination_directory=path_to_symbol,
     )
 
-num_rows = len(svg_table_data)  # Number of valid data rows
-svg_width = sum(column_widths)
-svg_height = num_rows * row_height
+    # perform text replacement
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r"
+    ) as f:
+        svg_content = f.read()
 
-# === Begin SVG Output ===
-svg_lines = [
-    f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" '
-    f'font-family="{font_family}" font-size="{font_size}">',
-    '<g id="build_notes-table-contents-start">',
-    f'<rect x="0" y="0" width="{svg_width}" height="{svg_height}" fill="none" stroke="black" stroke-width="{line_width}"/>',
-]
+    svg_content = svg_content.replace("flagnote-text", symbol.get("note_text"))
 
-# Column positions
-bubble_x = 0
-note_x = column_widths[0]
+    with open(
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w"
+    ) as f:
+        f.write(svg_content)
 
-# === Merged Header Row ===
-# Create a merged header cell that spans both columns
-merged_header_x = 0
-merged_header_width = sum(column_widths)  # Span the entire width of the columns
-header_text_y = row_height / 2
-
-# Draw the merged header cell (spanning across both columns)
-svg_lines.append(
-    f'<rect x="{merged_header_x}" y="0" width="{merged_header_width}" height="{row_height}" '
-    f'style="fill:#e0e0e0;stroke:black;stroke-width:{line_width}"/>'
-)
-
-# Add text inside the merged header cell (center-justified)
-svg_lines.append(
-    f'<text x="{merged_header_x + merged_header_width / 2}" y="{header_text_y}" text-anchor="middle" '
-    f'style="fill:black;dominant-baseline:middle;font-weight:bold;'
-    f'font-family:{font_family};font-size:{font_size}">BUILD NOTES</text>'
-)
-
-# Initialize current_y to start below the header (current_y = row_height)
-current_y = row_height  # Start from the row directly below the header
-
-# === Data Rows ===
-for row_index, row in enumerate(svg_table_data):
-    # Adjust row height based on whether there is a bubble
-    row_height_adjusted = (
-        row_height if not row["has_shape"] else 0.4 * 96
-    )  # Height for rows with bubbles
-    y = current_y  # Current y position for the row
-    cy = y + row_height_adjusted / 2  # Center of the cell vertically
-
-    # Draw the cell borders for the current row
-    for col_index, key in enumerate(["build_note_number", "note"]):
-        x = sum(column_widths[:col_index])
-        text = row.get(key, "").strip()
-
-        # Draw rectangle for the cell (border for all cells)
-        svg_lines.append(
-            f'<rect x="{x}" y="{y}" width="{column_widths[col_index]}" height="{row_height_adjusted}" '
-            f'style="fill:white;stroke:black;stroke-width:{line_width}"/>'
-        )
-
-        # For the note column, left justify the text
-        if key == "note":
-            text_x = x + 5  # Add a small margin to the left for note text
-            svg_lines.append(
-                f'<text x="{text_x}" y="{cy}" text-anchor="start" '
-                f'style="fill:black;dominant-baseline:middle;'
-                f'font-family:{font_family};font-size:{font_size}">{text}</text>'
-            )
-        else:
-            # Center the text for the build_note number column
-            svg_lines.append(
-                f'<text x="{x + column_widths[col_index] / 2}" y="{cy}" text-anchor="middle" '
-                f'style="fill:black;dominant-baseline:middle;'
-                f'font-family:{font_family};font-size:{font_size}">{text}</text>'
-            )
-
-    # If row has a shape (bubble), add the bubble
-    if row["has_shape"]:
-        build_note_number = row["build_note_number"]
-        svg_lines.append(
-            f'<g id="bubble{build_note_number}" transform="translate({bubble_x + column_widths[0] / 2},{cy})">'
-        )
-        svg_lines.append(f'  <g id="bubble{build_note_number}-contents-start">')
-        svg_lines.append(f"  </g>")
-        svg_lines.append(f'  <g id="bubble{build_note_number}-contents-end"/>')
-        svg_lines.append(f"</g>")
-
-    # Update the current_y position for the next row
-    current_y += row_height_adjusted  # Move down after drawing the row
-
-svg_lines.append("</g>")
-svg_lines.append('<g id="build_notes-table-contents-end"/>')
-svg_lines.append("</svg>")
-
-# === Write SVG Output ===
-with open(path("build notes table svg"), "w", encoding="utf-8") as svg_file:
-    svg_file.write("\n".join(svg_lines))
-
-# === Inject bubble SVGs into the written file ===
-for row in svg_table_data:
-    if not row["has_shape"]:
-        continue
-
-    build_note_number = row["build_note_number"]
-    source_svg_filepath = path("bubble drawing svg", identifier=build_note_number)
-    target_svg_filepath = path("build notes table svg")
-    group_name = f"bubble{build_note_number}"
-
-    # Replace text placeholder "flagnote-text" → build_note_number
-    if os.path.exists(source_svg_filepath):
-        with open(source_svg_filepath, "r", encoding="utf-8") as f:
-            svg_text = f.read()
-
-        updated_text = re.sub(
-            r">\s*flagnote-text\s*<", f">{build_note_number}<", svg_text
-        )
-
-        with open(source_svg_filepath, "w", encoding="utf-8") as f:
-            f.write(updated_text)
-
-    # Inject the bubble SVG into the target SVG file
     svg_utils.find_and_replace_svg_group(
-        source_svg_filepath=source_svg_filepath,
-        source_group_name=group_name,
-        destination_svg_filepath=target_svg_filepath,
-        destination_group_name=group_name,
+        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
+        symbol.get("instance_name"),
+        path("build notes table svg"),
+        symbol.get("instance_name"),
     )

@@ -28,5 +28,8 @@ for instance in system_instances_list_data:
         instances_list.new_instance(instance.get("instance_name"), instance)
 
 manifest.update_upstream(
-    path_to_system_rev, [system_pn,system_rev], manifest_nets, state.partnumber("pn-rev")
+    path_to_system_rev,
+    [system_pn, system_rev],
+    manifest_nets,
+    state.partnumber("pn-rev"),
 )
