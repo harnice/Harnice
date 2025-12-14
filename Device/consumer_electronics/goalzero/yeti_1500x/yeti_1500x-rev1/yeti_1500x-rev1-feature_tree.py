@@ -31,12 +31,12 @@ american_outlet = {
 }
 
 for row in [
-    ["12vdc_barrel_out-1", "GOALZERO_6MM_BARREL", (13, "https://github.com/harnice/harnice-library-public"), barrel_pinout],
-    ["12vdc_barrel_out-2", "GOALZERO_6MM_BARREL", (13, "https://github.com/harnice/harnice-library-public"), barrel_pinout],
-    ["charge_in-barrel", "GOALZERO_8MM_BARREL", (20, "https://github.com/harnice/harnice-library-public"), barrel_pinout],
-    ["car_port", "CIG_LIGHTER", (21, "https://github.com/harnice/harnice-library-public"), barrel_pinout],
-    ["charge_in-powerpole", "PP15-2", (10, "https://github.com/harnice/harnice-library-public"), powerpole_pinout],
-    ["12vdc_powerpole_out", "PP15-2", (19, "https://github.com/harnice/harnice-library-public"), powerpole_pinout],
+    ["12vdc_barrel_out-1", "GOALZERO_6MM_BARREL_RECEPT", (13, "https://github.com/harnice/harnice-library-public"), barrel_pinout],
+    ["12vdc_barrel_out-2", "GOALZERO_6MM_BARREL_RECEPT", (13, "https://github.com/harnice/harnice-library-public"), barrel_pinout],
+    ["charge_in-barrel", "GOALZERO_8MM_BARREL_RECEPT", (20, "https://github.com/harnice/harnice-library-public"), barrel_pinout],
+    ["car_port", "CIG_LIGHTER_RECEPT", (21, "https://github.com/harnice/harnice-library-public"), barrel_pinout],
+    ["charge_in-powerpole", "PP15-2_RECEPT", (10, "https://github.com/harnice/harnice-library-public"), powerpole_pinout],
+    ["12vdc_powerpole_out", "PP15-2_RECEPT", (19, "https://github.com/harnice/harnice-library-public"), powerpole_pinout],
     ["usbc-pd", "USBC_RECEPT", (15, "https://github.com/harnice/harnice-library-public"), usb_c_pinout],
     ["usbc-normal", "USBC_RECEPT", (16, "https://github.com/harnice/harnice-library-public"), usb_c_pinout],
     ["usba-1", "USBA_RECEPT", (22, "https://github.com/harnice/harnice-library-public"), usb_a_pinout],
