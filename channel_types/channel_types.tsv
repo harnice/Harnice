@@ -19,6 +19,6 @@ channel_type_id	status	description	direction	signals	compatible_channel_types	li
 17		North American 120VAC 15A	out	"live,neutral,earth"	"(18, 'https://github.com/harnice/harnice-library-public')"		110	125	VAC	15	amps
 18		North American 120VAC 15A	in	"live,neutral,earth"	"(17, 'https://github.com/harnice/harnice-library-public')"		110	125	VAC	15	amps
 19		12vdc supply	out	"pos,neg"	"(12, 'https://github.com/harnice/harnice-library-public')"		12	12	VDC	30	amps
-20		solar power	in	"pos,neg"			14	50	VDC	10	amps
+20		solar power	in	"pos,neg"	"(11, 'https://github.com/harnice/harnice-library-public')"		14	50	VDC	10	amps
 21		12vdc supply	out	"pos,neg"	"(12, 'https://github.com/harnice/harnice-library-public')"		12	12	VDC	13	amps
 22		5vdc supply	out	"pos,neg"			5	5	VDC	2.4	amps

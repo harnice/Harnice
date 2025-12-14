@@ -143,7 +143,7 @@ with open(page_setup_path, "w", encoding="utf-8") as f:
 
 # ==========================================================================================================
 #            PREP MASTER SVG
-# searches imported_instances for anything that ends in -master.svg and adds it to this file
+# searches the entire rev directory for anything that ends in -master.svg and adds it to this file
 # ==========================================================================================================
 masters_translate = [0, -3200]
 masters = []
