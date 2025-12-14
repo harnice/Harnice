@@ -2,6 +2,9 @@
 # Kicad backups
 # ===================================
 *-backups/
+*.kicad_prl
+harnice-backups/
+harnice.bak
 
 # ===================================
 # Python
