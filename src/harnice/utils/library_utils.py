@@ -10,7 +10,7 @@ from harnice.cli import print_import_status
 """
 where a part lands in a project after it's been imported:
 
-imported_instances
+instance_data
     item_type
         destination_directory
             lib_used

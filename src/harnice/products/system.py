@@ -79,9 +79,6 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
         f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
         "instance_data": {
-            "imported_instances": {
-                "disconnect": {},
-            },
         },
         "features_for_relatives": {},
         "harnesses": {},
@@ -104,7 +101,6 @@ def file_structure():
 
 def generate_structure():
     os.makedirs(fileio.dirpath("instance_data"), exist_ok=True)
-    os.makedirs(fileio.dirpath("imported_instances"), exist_ok=True)
     os.makedirs(fileio.dirpath("features_for_relatives"), exist_ok=True)
     os.makedirs(fileio.dirpath("harnesses"), exist_ok=True)
     os.makedirs(fileio.dirpath("lists"), exist_ok=True)

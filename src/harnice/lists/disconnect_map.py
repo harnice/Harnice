@@ -67,7 +67,7 @@ def new():
     for item in fileio.read_tsv("bom"):
         if item.get("disconnect"):
             disconnect_signals_list_path = os.path.join(
-                fileio.dirpath("imported_instances"),
+                fileio.dirpath("instance_data"),
                 "disconnect",
                 item.get("device_refdes"),
                 f"{item.get('device_refdes')}-signals_list.tsv",

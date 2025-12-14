@@ -95,7 +95,7 @@ def new():
     # --- resolvers ---
     def resolve_device_endpoint(refdes, channel_id, signal):
         device_signals_list_path = os.path.join(
-            fileio.dirpath("imported_instances"),
+            fileio.dirpath("instance_data"),
             "device",
             refdes,
             f"{refdes}-signals_list.tsv",

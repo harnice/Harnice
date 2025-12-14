@@ -17,7 +17,7 @@ def connector_of_channel(key):
     refdes, channel_id = key
 
     device_signals_list_path = os.path.join(
-        fileio.dirpath("imported_instances"),
+        fileio.dirpath("instance_data"),
         "device",
         refdes,
         f"{refdes}-signals_list.tsv",
@@ -61,7 +61,7 @@ def find_connector_with_no_circuit(connector_list, circuits_list):
 
         if not found_match:
             raise ValueError(
-                f"Connector '{connector_name}' of device '{device_refdes}' does not contain any circuits"
+                f"Connector '{connector_name}' of device '{device_refdes}' does not contain any circuits. Check if it was mapped in the channel map. If n, check channel compatibility."
             )
 
 
