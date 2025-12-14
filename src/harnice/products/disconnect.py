@@ -9,6 +9,7 @@ default_desc = "DISCONNECT, FUNCTION, ATTRIBUTES, etc."
 
 disconnect_feature_tree_utils_default = """
 from harnice.lists import signals_list
+from harnice.products import chtype
 
 ch_type_ids = {
     "A": {
@@ -74,9 +75,9 @@ signals_list.new()
 for channel in range(8):
     channel_name = f"ch{channel}"
 
-    for signal in signals_list.signals_of_channel_type(ch_type_ids["A"]["balanced audio mic level in"]):
+    for signal in chtype.signals(ch_type_ids["A"]["balanced audio mic level in"]):
         signals_list.append(
-            channel=channel_name,
+            channel_id=channel_name,
             signal=signal,
 
             A_cavity=cavity_number[channel_name][signal],
@@ -88,9 +89,9 @@ for channel in range(8):
             B_channel_type=ch_type_ids["B"]["balanced audio mic level out"],
         )
 
-    for signal in signals_list.signals_of_channel_type(ch_type_ids["A"]["chassis"]):
+    for signal in chtype.signals(ch_type_ids["A"]["chassis"]):
         signals_list.append(
-            channel=f"{channel_name}-shield",
+            channel_id=f"{channel_name}-shield",
             signal=signal,
 
             A_cavity=cavity_number[channel_name][signal],
@@ -211,7 +212,7 @@ def _validate_signals_list():
 
 
 def render():
-    signals_list.list_type = "disconnect"
+    signals_list.set_list_type("disconnect")
     if not os.path.exists(fileio.path("signals list")):
         if not os.path.exists(fileio.path("feature tree")):
             with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
