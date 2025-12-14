@@ -1,0 +1,942 @@
+(kicad_symbol_lib
+	(version 20241209)
+	(generator "kicad_symbol_editor")
+	(generator_version "9.0")
+	(symbol "disconnect"
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X"
+			(at 0 7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 2.54 -4.064 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Disconnect" "TRUE"
+			(at 0 -7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" ""
+			(at 0 -9.398 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" ""
+			(at 0 -14.986 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at -0.254 -12.954 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" ""
+			(at -0.254 -11.176 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" ""
+			(at 0 -16.256 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "disconnect_0_1"
+			(polyline
+				(pts
+					(xy -1.27 5.715) (xy -3.175 5.715) (xy -3.81 5.08) (xy -3.81 -5.08) (xy -3.175 -5.715) (xy -1.27 -5.715)
+					(xy -1.27 5.715)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 1.27 5.715) (xy 1.27 -5.715) (xy 3.175 -5.715) (xy 3.81 -5.08) (xy 3.81 5.08) (xy 3.175 5.715)
+					(xy 1.27 5.715)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "disconnect_1_1"
+			(text "DISCONNECT"
+				(at 0 0 900)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(pin unspecified line
+				(at -6.35 0 0)
+				(length 2.54)
+				(name "A"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at 6.35 0 180)
+				(length 2.54)
+				(name "B"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+	(symbol "disconnect_ghost-on-A"
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X"
+			(at 0 7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 2.54 -4.064 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Disconnect" "TRUE"
+			(at 0.254 -7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" ""
+			(at -0.254 -13.208 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" ""
+			(at -0.254 -15.24 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at 0 -8.89 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" ""
+			(at -0.254 -10.922 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" ""
+			(at 0 -16.764 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "disconnect_ghost-on-A_0_1"
+			(polyline
+				(pts
+					(xy -1.27 5.715) (xy -3.175 5.715) (xy -3.81 5.08) (xy -3.81 -5.08) (xy -3.175 -5.715) (xy -1.27 -5.715)
+					(xy -1.27 5.715)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 1.27 3.81) (xy 1.27 -5.715) (xy 3.175 -5.715) (xy 3.81 -5.08) (xy 3.81 3.175) (xy 3.175 3.81)
+					(xy 1.27 3.81)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "disconnect_ghost-on-A_1_1"
+			(text "DISCONNECT"
+				(at 0 -0.762 900)
+				(effects
+					(font
+						(size 1.016 1.016)
+					)
+				)
+			)
+			(pin unspecified line
+				(at -6.35 0 0)
+				(length 2.54)
+				(name "A"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at 6.35 5.08 180)
+				(length 7.62)
+				(name "GHOST_A"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at 6.35 0 180)
+				(length 2.54)
+				(name "B"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+	(symbol "disconnect_ghost-on-B"
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X"
+			(at 0 7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 2.54 -4.064 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Disconnect" "TRUE"
+			(at 0.254 -6.858 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" ""
+			(at 0 -12.7 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" ""
+			(at 0 -14.732 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at 0 -10.414 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" ""
+			(at -0.254 -8.382 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" ""
+			(at 0 -16.256 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "disconnect_ghost-on-B_0_1"
+			(polyline
+				(pts
+					(xy -1.27 -3.81) (xy -1.27 5.715) (xy -3.175 5.715) (xy -3.81 5.08) (xy -3.81 -3.175) (xy -3.175 -3.81)
+					(xy -1.27 -3.81)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 1.27 -5.715) (xy 3.175 -5.715) (xy 3.81 -5.08) (xy 3.81 5.08) (xy 3.175 5.715) (xy 1.27 5.715)
+					(xy 1.27 -5.715)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "disconnect_ghost-on-B_1_1"
+			(text "DISCONNECT"
+				(at 0 0.254 900)
+				(effects
+					(font
+						(size 1.016 1.016)
+					)
+				)
+			)
+			(pin unspecified line
+				(at -6.35 0 0)
+				(length 2.54)
+				(name "A"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at -6.35 -5.08 0)
+				(length 7.62)
+				(name "GHOST_B"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at 6.35 0 180)
+				(length 2.54)
+				(name "B"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+	(symbol "disconnect_ghost-on-both"
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "X"
+			(at 0 7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 2.54 -4.064 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Disconnect" "TRUE"
+			(at 0.508 -7.112 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MFG" ""
+			(at -0.254 -13.97 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" ""
+			(at 0 -16.256 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at -0.254 -9.398 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_subpath" ""
+			(at 0 -11.684 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "rev" ""
+			(at 0 -18.034 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "disconnect_ghost-on-both_0_1"
+			(polyline
+				(pts
+					(xy -1.27 -3.81) (xy -1.27 5.715) (xy -3.175 5.715) (xy -3.81 5.08) (xy -3.81 -3.175) (xy -3.175 -3.81)
+					(xy -1.27 -3.81)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+			(polyline
+				(pts
+					(xy 1.27 3.81) (xy 1.27 -5.715) (xy 3.175 -5.715) (xy 3.81 -5.08) (xy 3.81 3.175) (xy 3.175 3.81)
+					(xy 1.27 3.81)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "disconnect_ghost-on-both_1_1"
+			(text "DISCONNECT"
+				(at 0 0 900)
+				(effects
+					(font
+						(size 1.016 1.016)
+					)
+				)
+			)
+			(pin unspecified line
+				(at -6.35 0 0)
+				(length 2.54)
+				(name "A"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at -6.35 -5.08 0)
+				(length 7.62)
+				(name "GHOST_B"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+				(number "4"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at 6.35 5.08 180)
+				(length 7.62)
+				(name "GHOST_A"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+			)
+			(pin unspecified line
+				(at 6.35 0 180)
+				(length 2.54)
+				(name "B"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+	(symbol "ghost-channel"
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "CH"
+			(at 0 3.048 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 0 -7.874 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Disconnect" "GHOST"
+			(at 0 -3.302 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "channel_type" ""
+			(at 0 -3.048 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lib_repo" ""
+			(at 0 -4.318 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 0.508 0.508)
+					(thickness 0.1016)
+					(bold yes)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "ghost-channel_0_1"
+			(rectangle
+				(start -5.08 1.905)
+				(end 5.08 -1.905)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(symbol "ghost-channel_1_1"
+			(text "GHOST"
+				(at 1.016 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(pin unspecified line
+				(at -7.62 0 0)
+				(length 2.54)
+				(name "GHOST"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 0.254 0.254)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+)
