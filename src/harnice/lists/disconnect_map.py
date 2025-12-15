@@ -230,3 +230,8 @@ def disconnect_is_already_assigned(key):
         return True
     else:
         return False
+
+def ensure_requirements_met():
+    for row in fileio.read_tsv("disconnect map"):
+        if row.get("A-side_device_refdes") not in [None, ""] and row.get("disconnect_channel_id") in [None, ""]:
+            raise ValueError(f"Channel '{row.get('A-side_device_refdes')}.{row.get('A-side_device_channel_id')}' to '{row.get('B-side_device_refdes')}.{row.get('B-side_device_channel_id')}' could not find a compatible disconnect channel through '{row.get('disconnect_refdes')}'")

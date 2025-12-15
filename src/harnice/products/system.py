@@ -44,6 +44,7 @@ disconnect_map.new()
 
 #map channels passing through disconnects to available channels inside disconnects
 feature_tree_utils.run_macro("disconnect_mapper", "system_builder", "https://github.com/harnice/harnice-library-public", artifact_id="disconnect-mapper-1")
+feature_tree_utils.ensure_requirements_met()
 
 #process channel and disconnect maps to make a list of every circuit in your system
 circuits_list.new()

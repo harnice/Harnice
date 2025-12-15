@@ -11,3 +11,4 @@ In Harnice, any time you need to add connectors in between harnesses, you're req
         3. `What product type are you working on? (harness, system, device, etc.): ` type "device"
         4. `Enter a description of this device [DEVICE, FUNCTION, ATTRIBUTES, etc.]:` self-explanatory
         5. `Enter a description for this revision [INITIAL RELEASE]: ` hit enter, otherwise type the goal of the first revision
+https://github.com/harnice/Harnice/blob/357-update-phantom-channel-libraries/documentation/how-to/how-to-update-signals-list.md
