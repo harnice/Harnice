@@ -1,2 +1,2 @@
 product	mfg	pn	desc	rev	status	releaseticket	library_repo	library_subpath	datestarted	datemodified	datereleased	git_hash_of_harnice_src	drawnby	checkedby	revisionupdates	affectedinstances
-device		boulder_200_briefcase	PORTABLE SOLAR PANEL, 200W	1			https://github.com/harnice/harnice-library-public	consumer_electronics/goalzero/	12/13/25	12/14/25		d7fc98cf5c8cab526662561fc0501403ab41f062	K SHUTT		INITIAL RELEASE	
+device		boulder_200_briefcase	PORTABLE SOLAR PANEL, 200W	1			https://github.com/harnice/harnice-library-public	consumer_electronics/goalzero/	12/13/25	12/14/25		32150cb12664bc71e892dbe8f05c408673fc24b3	K SHUTT		INITIAL RELEASE	
