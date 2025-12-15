@@ -1,0 +1,7 @@
+channel_id	signal	connector_name	cavity	connector_mpn	channel_type
+in	live	in	live	wire_nuts	(18, 'https://github.com/harnice/harnice-library-public')
+in	neutral	in	neutral	wire_nuts	(18, 'https://github.com/harnice/harnice-library-public')
+in	earth	in	earth	wire_nuts	(18, 'https://github.com/harnice/harnice-library-public')
+out	live	out	live	wire_nuts	(24, 'https://github.com/harnice/harnice-library-public')
+out	neutral	out	neutral	wire_nuts	(24, 'https://github.com/harnice/harnice-library-public')
+out	earth	out	earth	wire_nuts	(24, 'https://github.com/harnice/harnice-library-public')
