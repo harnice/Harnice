@@ -28,7 +28,7 @@ def new():
             continue
 
         device_signals_list_path = os.path.join(
-            fileio.dirpath("imported_instances"),
+            fileio.dirpath("instance_data"),
             "device",
             device_refdes,
             f"{device_refdes}-signals_list.tsv",

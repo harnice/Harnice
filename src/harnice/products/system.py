@@ -44,6 +44,7 @@ disconnect_map.new()
 
 #map channels passing through disconnects to available channels inside disconnects
 feature_tree_utils.run_macro("disconnect_mapper", "system_builder", "https://github.com/harnice/harnice-library-public", artifact_id="disconnect-mapper-1")
+feature_tree_utils.ensure_requirements_met()
 
 #process channel and disconnect maps to make a list of every circuit in your system
 circuits_list.new()
@@ -79,9 +80,6 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
         f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
         "instance_data": {
-            "imported_instances": {
-                "disconnect": {},
-            },
         },
         "features_for_relatives": {},
         "harnesses": {},
@@ -104,7 +102,6 @@ def file_structure():
 
 def generate_structure():
     os.makedirs(fileio.dirpath("instance_data"), exist_ok=True)
-    os.makedirs(fileio.dirpath("imported_instances"), exist_ok=True)
     os.makedirs(fileio.dirpath("features_for_relatives"), exist_ok=True)
     os.makedirs(fileio.dirpath("harnesses"), exist_ok=True)
     os.makedirs(fileio.dirpath("lists"), exist_ok=True)

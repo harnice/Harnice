@@ -95,7 +95,7 @@ def new():
     # --- resolvers ---
     def resolve_device_endpoint(refdes, channel_id, signal):
         device_signals_list_path = os.path.join(
-            fileio.dirpath("imported_instances"),
+            fileio.dirpath("instance_data"),
             "device",
             refdes,
             f"{refdes}-signals_list.tsv",
@@ -119,7 +119,7 @@ def new():
 
     def resolve_disconnect_endpoint(refdes, side, signal, channel_id):
         disconnect_signals_list_path = os.path.join(
-            fileio.dirpath("disconnect"), refdes, f"{refdes}-signals_list.tsv"
+            fileio.dirpath("instance_data"), "disconnect", refdes, f"{refdes}-signals_list.tsv"
         )
 
         row = None
@@ -134,7 +134,7 @@ def new():
 
         if row is None:
             raise ValueError(
-                f"Signal {signal} of channel {channel_id} not found in {disconnect_signals_list_path}"
+                f"Signal '{signal}' of channel '{channel_id}' not found in {disconnect_signals_list_path}"
             )
 
         cavity = (row.get(f"{side}_cavity") or "").strip()

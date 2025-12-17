@@ -10,7 +10,7 @@ from harnice.cli import print_import_status
 """
 where a part lands in a project after it's been imported:
 
-imported_instances
+instance_data
     item_type
         destination_directory
             lib_used
@@ -44,9 +44,15 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
         )
     os.makedirs(destination_directory, exist_ok=True)
 
+    lib_repo = None
+    if input_dict.get("lib_repo") == "local":
+        lib_repo = os.path.join(fileio.part_directory(), "library")
+    else:
+        lib_repo = get_local_path(input_dict.get("lib_repo"))
+
     # determine source library path
     source_lib_path = os.path.join(
-        get_local_path(input_dict.get("lib_repo")),
+        lib_repo,
         input_dict.get("item_type"),
         input_dict.get("lib_subpath", ""),
         input_dict.get("mpn"),
@@ -179,7 +185,7 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
         "mpn": input_dict.get("mpn"),
         "item_type": input_dict.get("item_type"),
         "csys_children": csys_children,
-        "lib_repo": input_dict.get("lib_repo"),
+        "lib_repo": lib_repo,
         "lib_subpath": input_dict.get("lib_subpath"),
         "lib_desc": revhistory_row.get("desc"),
         "lib_latest_rev": highest_source_rev,
