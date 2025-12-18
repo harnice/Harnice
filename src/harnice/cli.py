@@ -192,7 +192,43 @@ def newrev():
 
 
 def select_product_type():
-    return prompt(
-        "What product type are you working on? (harness, system, device, etc.)",
-        default="harness",
+    from pathlib import Path
+    import harnice.products as products_pkg
+    from prompt_toolkit import prompt
+    from prompt_toolkit.completion import WordCompleter
+
+    def get_product_types():
+        products_dir = Path(products_pkg.__file__).parent
+        return sorted(
+            p.stem
+            for p in products_dir.glob("*.py")
+            if p.name != "__init__.py"
+        )
+
+    product_types = get_product_types()
+    product_map = {p.lower(): p for p in product_types}
+
+    completer = WordCompleter(
+        product_types,
+        ignore_case=True,
+        sentence=True,
     )
+
+    while True:
+        value = prompt(
+            "What product type are you working on? ",
+            completer=completer,
+            default="harness",
+        ).strip()
+
+        if not value:
+            value = "harness"
+
+        key = value.lower()
+        if key in product_map:
+            return product_map[key]
+
+        print(
+            f"Unrecognized product type '{value}'. "
+            f"Valid options: {', '.join(product_types)}"
+        )
