@@ -273,14 +273,14 @@ def append(next_rev=None):
     library_subpath = ""
     cwd = str(os.getcwd()).lower().strip("~")
 
-    for row in fileio.read_tsv("library locations"):
-        local_path = str(row.get("local_path", "")).lower().strip("~")
-        if local_path and local_path in cwd:
-            library_repo = row.get("url")
+    for row in fileio.read_tsv("library locations", delimiter=","):
+        lib_local_path = str(row.get("local_path", "")).lower().strip("~")
+        if lib_local_path in cwd:
+            library_repo = row.get("repo_url")
 
             # keep only the portion AFTER local_path
-            idx = cwd.find(local_path)
-            remainder = cwd[idx + len(local_path) :].lstrip("/")
+            idx = cwd.find(lib_local_path)
+            remainder = cwd[idx + len(lib_local_path) :].lstrip("/")
             parts = remainder.split("/")
 
             # find the part number in the path

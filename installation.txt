@@ -15,13 +15,14 @@
 
 ***********
 1. Update library_locations.csv to point Harnice towards your libararies. Make the file if it doesn't exist in the root of your harnice repo.
-    here's the format:
+    here's the header row:
     :
         repo_url,local_path
     :
 
     here's an example:
     :
+        repo_url,local_path
         https://github.com/harnice/harnice-library-public,Users/kenyonshutt/Documents/github/harnice-library-public
     :
     add whatever other library you need in this document. pull components from that library by referencing them by their url for traceability purposes. 

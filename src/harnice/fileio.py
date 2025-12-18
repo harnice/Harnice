@@ -281,7 +281,7 @@ def read_tsv(filepath, delimiter="\t"):
                 return list(csv.DictReader(f, delimiter=delimiter))
         except FileNotFoundError:
             raise FileNotFoundError(
-                f"Expected tsv file with delimiter '{delimiter}' at path or key {filepath}"
+                f"Expected csv or tsv file with delimiter '{delimiter}' at path or key {filepath}"
             )
 
 
