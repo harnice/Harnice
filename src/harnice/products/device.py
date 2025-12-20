@@ -775,9 +775,9 @@ def render(lightweight=False):
     path_nickname = ""
     subpath_nickname = ""
     if rev_history.info(field="library_repo"):
-        path_nickname = f"{os.path.basename(rev_history.info(field="library_repo"))}-"
+        path_nickname = f"{os.path.basename(rev_history.info(field="library_repo"))}/"
     if rev_history.info(field="library_subpath"):
-        subpath_nickname = f"{rev_history.info(field="library_subpath")}-"
+        subpath_nickname = f"{rev_history.info(field="library_subpath")}"
 
     if path_nickname == "":
         print("Add this to 'PROJECT SPECIFIC LIBRARIES' not 'global libraries' in Kicad because it doesn't look like you're working in a Harnice library path")
