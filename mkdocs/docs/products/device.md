@@ -19,3 +19,5 @@ https://github.com/harnice/Harnice/blob/357-update-phantom-channel-libraries/doc
     2. Open Kicad, add the newly generated library to your library paths (preferences > manage symbol libraries). The command line should have spit out a line `Kicad nickname:` that you can use when adding the library to your kicad application. The provided nickname should already be sufficiently unique and human readable. Refer to Kicad documentation for more support.
     3. Open the symbol in Kicad and make the symbol appear the way you want it to look. Do not modify the pin names, but you can change their placement and appearance.
     4. When you are done modifying the kicad_sym file, save it, and rerender the harnice part one more time to ensure no mistakes were made.
+
+# Device Configurations
