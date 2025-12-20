@@ -149,7 +149,7 @@ def dirpath(target_key, structure_dict=None, base_directory=None):
         return os.path.join(rev_directory(), base_directory, *path_key)
 
 
-def verify_revision_structure(product_type=None):
+def verify_revision_structure():
     from harnice import cli
     from harnice.lists import rev_history
 

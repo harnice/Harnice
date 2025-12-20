@@ -173,6 +173,10 @@ def _add_blank_symbol(sym_name, value="", footprint="", datasheet="", descriptio
         data = sexpdata.load(f)
 
     # Build symbol s-expression
+    if rev_history.info(field="library_repo") in ["", None]:
+        lib_repo_to_write = "local"
+    else:
+        lib_repo_to_write = _get_attribute("library_repo")
     symbol = [
         sexpdata.Symbol("symbol"),
         sym_name,
@@ -189,7 +193,7 @@ def _add_blank_symbol(sym_name, value="", footprint="", datasheet="", descriptio
             "MPN", _get_attribute("manufacturer_part_number"), hide=False, id_counter=1
         ),
         _make_property(
-            "lib_repo", _get_attribute("library_repo"), hide=True, id_counter=2
+            "lib_repo", lib_repo_to_write, hide=True, id_counter=2
         ),
         _make_property(
             "lib_subpath", _get_attribute("library_subpath"), hide=True, id_counter=3
@@ -559,8 +563,8 @@ def _validate_kicad_library():
     """
 
     if not os.path.exists(path("library file")):
-        print(f"Making a new Kicad symbol at {path('library file')}")
         _make_new_library_file()
+        print("New Kicad symbol file created.")
 
     kicad_library_data = _parse_kicad_sym_file()
 
@@ -601,9 +605,15 @@ def _validate_kicad_library():
     )
     _overwrite_or_create_property_in_symbol("MFG", _get_attribute("mfg"), hide=True)
     _overwrite_or_create_property_in_symbol("MPN", _get_attribute("pn"), hide=False)
-    _overwrite_or_create_property_in_symbol(
-        "lib_repo", _get_attribute("library_repo"), hide=True
-    )
+
+    if rev_history.info(field="library_repo") in ["", None]:
+        _overwrite_or_create_property_in_symbol(
+            "lib_repo", "local", hide=True
+        )
+    else:
+        _overwrite_or_create_property_in_symbol(
+            "lib_repo", _get_attribute("library_repo"), hide=True
+        )
     _overwrite_or_create_property_in_symbol(
         "lib_subpath", _get_attribute("library_subpath"), hide=True
     )
@@ -762,8 +772,20 @@ def render(lightweight=False):
         # don't want to map things that have not been mapped completely yet
         _remove_details_from_signals_list()
 
+    path_nickname = ""
+    subpath_nickname = ""
+    if rev_history.info(field="library_repo"):
+        path_nickname = f"{os.path.basename(rev_history.info(field="library_repo"))}-"
+    if rev_history.info(field="library_subpath"):
+        subpath_nickname = f"{rev_history.info(field="library_subpath")}-"
+
+    if path_nickname == "":
+        print("Add this to 'PROJECT SPECIFIC LIBRARIES' not 'global libraries' in Kicad because it doesn't look like you're working in a Harnice library path")
+
     print(
-        f"Kicad nickname:       harnice-devices/{rev_history.info(field='library_subpath')}{state.partnumber('pn')}"
+        "\n"
+        f"Nickname:       {path_nickname}{subpath_nickname}{state.partnumber('pn')}\n"
+        f"Library path:   {path('library file')}\n"
     )
 
     _validate_kicad_library()
