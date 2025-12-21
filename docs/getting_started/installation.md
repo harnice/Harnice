@@ -1,4 +1,6 @@
-***********
+# How to Install Harnice
+
+# Cloning the Repository
 1. Install Homebrew (if not already):
    https://brew.sh/
 
@@ -13,7 +15,7 @@
 4. Clone the repo:
    git clone https://github.com/harnice/Harnice.git
 
-***********
+# Setting up Local Paths
 1. Update library_locations.csv to point Harnice towards your libararies. Make the file if it doesn't exist in the root of your harnice repo.
     here's the header row:
     :
@@ -29,10 +31,10 @@
     you can use git or dropbox or whatever to control your libraries in a repo separate from harnice, as you wish.
     local_path is used to point harnice towards where the files for that repo live on your computer, but is not stored in any part definition.
 
-*************
+# Install Python
 2. install python however you want
 
-*************
+# Install Harnice Packages and Dependancies with Pip
 3. install the following packages:
 
     Option A: Install via pip (recommended):
@@ -53,7 +55,7 @@
     System dependencies:
         brew install poppler  # for pdfunite
 
-***********
+# Install Other Relevant Applications
 4. make sure you have real apps installed that interface with files that Harnice reads and writes:
     text editor to edit feature trees (VSCode, Cursor, Xcode, notepad++, etc)
     SVG editor (Inkscape preferred)

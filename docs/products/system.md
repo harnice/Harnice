@@ -1,3 +1,7 @@
+# System
+A collection of devices and harnesses that satisfies a set of functionality requirements for some external purpose. 
+
+
 # How to Make a New System
 In Harnice, a system is a collection of parts that are connected by harnesses. Collectively, the system itself has a part number, similarly to how an assembly has a part number. The electrical system has its own form/fit/function which is unique to that part number. 
 

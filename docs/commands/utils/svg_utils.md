@@ -1,5 +1,6 @@
-# 📝 Harnice Table Requirements (rev2)
+# SVG Utilities
 
+# General Table
 This function is called when the user needs to build a general SVG table.
 ```python
 svg_utils.table(

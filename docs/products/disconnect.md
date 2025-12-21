@@ -1,3 +1,8 @@
+# Disconnect
+
+Set of two electrical connectors that has a predefined pinout, connector selection, and set of channels that can host circuits.
+
+
 # How to Make a New Disconnect in Harnice
 In Harnice, any time you need to add connectors in between harnesses, you're required to define the disconnect as a unique part number. Fundamentally, a disconnect part number defines the connector part numbers involved on both sides of the disconnect, the signals running on each of the contacts of the connectors, and which channels those signals are part of. You can reuse a disconnect part number across many systems, which helps to ensure cross-compatibility. When channel mapping a system, Harnice will validate if there are enough available channels through a disconnect to support the device-channel-to-device-channel mapping you're trying to achieve. You can be as specific or as vague as you need about the part numbers and naming (you can always overwrite with logic later) but you must be extremely precise about the electrical information.
 

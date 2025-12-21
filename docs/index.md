@@ -1,3 +1,0 @@
-# Harnice
-
-index page

@@ -1,3 +1,7 @@
+# Device
+Item you can buy that has signals, connectors, channels. Exhibits electrical behavior. The fundamental “block” element in a block diagram.
+
+
 # How to Make a New Device in Harnice
 
 1. Ensure your channel types are defined. *Harnice defines "channel" to mean a physical set of physical electrical signals that must be connected to each other. Channels may map to other channels, which later drives conductor, cavity selection, etc.*

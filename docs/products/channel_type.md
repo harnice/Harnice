@@ -1,3 +1,6 @@
+# Channel Types
+Uniquely identifiable set of signals that allow electrical intent to be documented and later referenced
+
 # How to Define New Channel Types
 1. In a repository of your choice (or start with [harnice_library_public](https://github.com/harnice/harnice-library-public) on your own branch), navigate to `library_repo/channel_types/channel_types.csv`
 2. If you want channel definitions to be private and are therefore working in a private repository, ensure the repo's path is listed in file `library_locations.csv` (located at root of your harnice source code repo). The first column is the URL or traceable path, and the second column is your local path.
