@@ -2,7 +2,6 @@ name: ci
 on:
   push:
     branches:
-      - mkdocs-init
       - main
 permissions:
   contents: write
