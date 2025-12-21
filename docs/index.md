@@ -1,3 +1,3 @@
 # Harnice
 
-## Design Philosophy
+index page
