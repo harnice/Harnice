@@ -1,3 +1,5 @@
+*Harnice defines a signals list to be a table that keeps track of every single signal going into and out of a device, which connector or channel it's part of, which signal names it has, which connector contact number or part number it has.*
+
 1. If your device is very simple (has only a small number of signals), you are free to edit `*-signals_list.tsv` manually. If you choose to do this, delete `*-feature_tree.py` before rerunning because by default, it will overwrite the signals list. However, it is recommended that you edit the python feature tree instead to produce a validated, reproduceable, and portable result.
 2. To edit the feature tree python file, this quick-start guide should give you an idea of how the default feature tree is set up, and how you might be able to change it to suit your needs. The goal of this feature tree is to make a signals list. Do not be concerned with writing this efficiently, as it will only be ran while rendering the device.
     1. These are useful modules you'll want to reference. Leave them there.
