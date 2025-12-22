@@ -1,1 +1,0 @@
-COLUMNS = ["device_refdes", "net", "merged_net", "disconnect"]

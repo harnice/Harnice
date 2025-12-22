@@ -1,3 +1,0 @@
-# Part Numbering
-
-# File Structure

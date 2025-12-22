@@ -45,48 +45,39 @@ markdown_extensions:
   - admonition
   - pymdownx.details
 
+plugins:
+  - include-markdown
+
 copyright: Copyright &copy; 2025 Kenyon Shutt
 
 nav:
   - Home: index.md
 
-  - Getting Started:
-      - Installation: getting_started/installation.md
-      - File Structure and Part Numbering: getting_started/structure.md
+  - Installation: getting_started/installation.md
+
+  - The Fundamentals:
+      - Data Structures: getting_started/data_structures.md
+      - File Structure and Part Numbering: getting_started/part_numbering.md
       - Git Integration: getting_started/git_integration.md
 
   - Products:
-      - Cables: products/cable.md
-      - Channel Types: products/channel_type.md
+      - Harnesses: products/harness.md
+      - Systems: products/system.md
       - Devices: products/device.md
       - Disconnects: products/disconnect.md
-      - Flagnotes: products/flagnote.md
-      - Harnesses: products/harness.md
       - Macros: products/macro.md
+      - Channel Types: products/channel_type.md
+      - Cables: products/cable.md
+      - Flagnotes: products/flagnote.md
       - Parts: products/part.md
-      - Systems: products/system.md
       - Titleblocks: products/titleblock.md
 
   - Commands:
-
-    - Directly Interacting with Data:
-      - Channel Maps: commands/lists/channel_maps.md
-      - Circuits Lists: commands/lists/circuits_lists.md
-      - Disconnect Maps: commands/lists/disconnect_maps.md
-      - Formboard Graphs: commands/lists/formboard_graphs.md
-      - Instances Lists: commands/lists/instances_lists.md
-      - System Manifests: commands/lists/system_manifests.md
-      - Netlists: commands/lists/netlists.md
-      - Post Harness Instances Lists: commands/lists/post_harness_instances_lists.md
-      - Revision History Lists: commands/lists/revision_history_lists.md
-      - Signals Lists: commands/lists/signals_lists.md
-
-    - Higher Level Utilities:
-      - Working with Harnice Libraries: commands/utils/library_utils.md
-      - Manipulating Circuits: commands/utils/circuits_utils.md
-      - Feature Tree Utilities: commands/utils/feature_tree_utils.md
-      - Formboard Utilities: commands/utils/formboard_utils.md
-      - Working with Harnice Notes: commands/utils/note_utils.md
-      - System Utilities: commands/utils/system_utils.md
-      - Appearance Utilities: commands/utils/appearance.md
-      - SVG Utilities: commands/utils/svg_utils.md
+    - Harnice Libraries: commands/library_utils.md
+    - Manipulating Circuits: commands/circuits_utils.md
+    - Feature Tree Utilities: commands/feature_tree_utils.md
+    - Formboard Utilities: commands/formboard_utils.md
+    - Working with Harnice Notes: commands/note_utils.md
+    - System Utilities: commands/system_utils.md
+    - Appearance Utilities: commands/appearance.md
+    - SVG Utilities: commands/svg_utils.md
