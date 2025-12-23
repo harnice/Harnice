@@ -393,9 +393,9 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, con
         svg_lines = []
         svg_lines.append(f'<g id="{instance_name}" transform="translate({bubble_x},{bubble_y})">')
         svg_lines.append(f'  <g id="{instance_name}-contents-start">')
-        svg_lines.append(f"  </g>")
+        svg_lines.append("  </g>")
         svg_lines.append(f'  <g id="{instance_name}-contents-end"/>')
-        svg_lines.append(f"</g>")
+        svg_lines.append("</g>")
         return "\n".join(svg_lines)
 
     def _draw_cell_content(x, y, width, height, content, style, columns_list, format_dict):
@@ -421,23 +421,35 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, con
 
             x_pos = x
             text_anchor = "start"
-            if style['justify'] == 'center': x_pos += width / 2; text_anchor = "middle"
-            elif style['justify'] == 'right': x_pos += width - style['padding']; text_anchor = "end"
-            elif style['justify'] == 'left': x_pos += style['padding']; text_anchor = "start"
+            if style['justify'] == 'center': 
+                x_pos += width / 2
+                text_anchor = "middle"
+            elif style['justify'] == 'right': 
+                x_pos += width - style['padding']
+                text_anchor = "end"
+            elif style['justify'] == 'left': 
+                x_pos += style['padding']
+                text_anchor = "start"
 
             num_lines = len(text_lines)
             total_text_height = (num_lines - 1) * style['line_spacing'] + style['font_size']
             y_start = y
-            if style['valign'] == 'middle': y_start += (height - total_text_height) / 2
-            elif style['valign'] == 'bottom': y_start += height - total_text_height - style['padding']
-            elif style['valign'] == 'top': y_start += style['padding']
+            if style['valign'] == 'middle': 
+                y_start += (height - total_text_height) / 2
+            elif style['valign'] == 'bottom': 
+                y_start += height - total_text_height - style['padding']
+            elif style['valign'] == 'top': 
+                y_start += style['padding']
             y_pos = y_start + style['font_size'] * 0.8 
 
             text_style = {"font-size": f"{style['font_size']}px", "font-family": style['font_family'], "fill": style['text_color'], "text-anchor": text_anchor}
             if style['font_weight']:
-                if 'B' in style['font_weight']: text_style['font-weight'] = 'bold'
-                if 'I' in style['font_weight']: text_style['font-style'] = 'italic'
-                if 'U' in style['font_weight']: text_style['text-decoration'] = 'underline'
+                if 'B' in style['font_weight']: 
+                    text_style['font-weight'] = 'bold'
+                if 'I' in style['font_weight']: 
+                    text_style['font-style'] = 'italic'
+                if 'U' in style['font_weight']: 
+                    text_style['text-decoration'] = 'underline'
             style_str = "; ".join(f"{k}: {v}" for k, v in text_style.items())
 
             for i, line in enumerate(text_lines):
