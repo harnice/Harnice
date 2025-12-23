@@ -57,8 +57,8 @@ nav:
 
   - The Fundamentals:
       - Data Structures: getting_started/data_structures.md
-      - File Structure and Part Numbering: getting_started/part_numbering.md
       - Git Integration: getting_started/git_integration.md
+      - Libraries: getting_started/libraries.md
 
   - Products:
       - Harnesses: products/harness.md
@@ -81,3 +81,5 @@ nav:
     - System Utilities: commands/system_utils.md
     - Appearance Utilities: commands/appearance.md
     - SVG Utilities: commands/svg_utils.md
+
+  - Macros: macros.md

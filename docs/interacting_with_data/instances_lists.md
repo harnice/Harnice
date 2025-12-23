@@ -1,6 +1,11 @@
 ## What it is
 `*-instances_list.tsv` is a tab-separated value list of every physical or notional thing, drawing element, or concept that is the single source of truth for the product you are working on.
 
+A list of every single item, idea, note, part, instruction, circuit, literally anything that comprehensively describes how to build that harness or system
+TSV (tab-separated-values, big spreadsheet)
+Declined alternatives: STEP files, schematics, dictionaries not general, descriptive, or human readable enough
+
+
 ## How to Import
 Including the instances list module into your py file will allow you to access the functions of this module. Copy and paste it into the top of your py file.
 `from harnice.lists import instances_list`

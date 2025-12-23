@@ -1,102 +1,142 @@
-# Define "Electrical System"
+# Welcome to Harnice
 
-An electrical system is any collection of circuit boards, electrical boxes, devices, etc, that connect to and interact with each other with wires or harnesses
+**Harnice** is a powerful Python framework for electrical system design and harness management that transforms how engineers define, validate, and document complex electrical systems. By providing a single source of truth for system connectivity and enabling automated generation of all downstream artifacts, Harnice empowers designers to focus on engineering excellence rather than manual documentation.
 
-Examples:
+## What is an Electrical System?
 
- - Concert sound system
- - Control compute system for plane, car, rocket
- - Commercial power distribution system
- - iPhone
- - City power distribution network
+An **electrical system** is any collection of interconnected electrical components—circuit boards, electrical boxes, devices, and subsystems—that communicate and interact through wires, cables, or harnesses.
 
-# What Problem is Harnice Trying to Solve?
+Electrical systems are everywhere:
 
- - There should always be one single source of truth that describes the devices in your system and how they are connected. Harnice helps designers keep track of it. 
- - Harnice provides a landing pad for designers to be able to define design rules that can build, validate, simulate, or perform any other action on their system design in a clear, concise, human-readable, and machine-readable format.
- - Harnice helps designers produce any possible downstream data that can be derived from the system definition. Any system artifact will always be directly traceable back to the original source of truth. 
+- **Consumer Electronics**: Smartphones, laptops, IoT devices
+- **Industrial Systems**: Commercial power distribution, manufacturing control systems
+- **Transportation**: Automotive, aerospace, and marine control systems
+- **Entertainment**: Professional audio systems, concert sound systems
+- **Infrastructure**: City power distribution networks, building automation
 
+## The Challenge: Why Harnice Exists
 
-## Where does the Harnice Scope End?
+Modern electrical system design faces critical challenges that traditional tools fail to address:
 
- - We’re not yet concerned about what’s going on inside your devices
-    - only how they interact with the outside world
-    - Software configuration
-    - Sure, you can write any rule you want into your Harnice system processor, but Harnice is intended to track hardware.
- - How your electrical hardware interacts with non-electrical things
-    - Don’t care about size, weight, fluid type, mounting, physical, thermal, environmental compliance, etc. 
- - As-built configurations
-    - Not yet offering ERP/MES functionality
+### The Single Source of Truth Problem
 
-# State of the Art
- - Existing software:
-    - Zuken, E-plan, Altium Harnessing, etc
-    - SUPER expensive
-    - Training-intensive
-    - Not user-friendly
-    - Not customizable
- - Existing manual options:
-    - Literal paper and pen hand drawings
-    - Vizio, Powerpoint, Excel, MS Paint, WireViz make good-looking drawings but without metadata
-    - Design rule checks impossible
-    - Conflicting sources of truth
+Electrical systems require precise documentation of every device, connection, and design rule. Without a centralized system definition, designers struggle with:
 
-Instead, let the machines work for you!
-Without Harnice…
-Designers compile, read, sort through information either from a design guide, from industry knowledge, or other sources…
-…manually…
-while documenting the results of their studies, until their design is complete. 
-Bad because there’s inherently less traceability back to design intent, rampant broken links to sources of truth, results scale proportionally to design time
+- **Conflicting documentation** across multiple files, spreadsheets, and drawings
+- **Broken traceability** between design intent and final artifacts
+- **Manual synchronization** of changes across documentation, BOMs, and drawings
+- **Error-prone processes** that scale poorly with system complexity
 
-Instead, with Harnice…
-Designers are encouraged to spend their time documenting their design inputs (standards, rules, trades, processes), in a machine-readable format.
-So much better because python does the boring work while the designers put their brains to use!
+### The Automation Gap
 
-Minimum viable inputs…
-Harnice will operate on just the following…
-Devices are fully defined
-Every signal, channel, connector is accounted for in every device
-Sufficient device electrical behavior is defined
-A block diagram is drawn by the designer
-Each device is accounted for, and each harness connection is made linking connectors
-Your rules are qualitatively expressed
-Channel mapping preferences
-Part selection tree
-Length, size, count, device attribute requirements
-Any other rule you could possibly ever need
-Physical harness routing information can be imported or manually defined
+Traditional workflows force engineers to manually compile, validate, and document system designs, consuming valuable engineering time on repetitive tasks rather than design innovation.
 
-… regard unlimited outputs
-Given a system definition, the following can be produced automatically, predictably, effortlessly:
-Bill of materials of your entire system 
-(devices, harnesses, parts, cable lengths, bits of heat shrink, volume of solder, you name it)
-Versions, release dependencies, part number per reference designator, etc
-Every harness build drawing, formboard, wirelist in PDF and CSV formats, all at once
-Even stylistic choices can be automated into your system render
-Electrical behavior
-Steady-state and even transient system responses can be simulated with just simple device and harness lump-element definitions
-Write your own!
-Harnice makes it easy to write simple Python scripts that can tell you anything about your system.
+## The Harnice Solution
 
+Harnice addresses these challenges through three core principles:
 
-# The Approach
-Harnice is a python package that processes netlists and turns them into outputs.
-Specify your system definition using Kicad or Altium to make a block diagram
-Components represent devices
-Nets represent harnesses
-Harnice runs a bunch of code on your netlist to determine harness requirements
-Builds a channel map
-Builds a System Instances List (list of every part and every connection for every harness)
-Harnice harness editor can look for a harness inside a system
-Adds parts based on standard build rules
-Exports build drawings and other artifacts instantaneously
+### 1. **Single Source of Truth**
 
-# Harnice’s strict requirement on flexibility
-Major departure from existing eCAD packages:
-YOU CAN PUT ANYTHING* ANYWHERE.
+Harnice maintains one authoritative system definition that describes all devices, their connections, and design rules. Every artifact generated from this definition is directly traceable to the source, ensuring consistency and eliminating conflicting documentation.
 
-As long as a thing can be defined as an “instance”, it can end up in your electrical system. Harnice doesn’t care if you need string, nails, plumbing fittings, raccoons, cables, or connectors.
+### 2. **Machine-Readable Design Rules**
 
-You write your own instance definitions, your own item_types, your own vocabulary, your own relationships.
+Designers define standards, rules, and processes in a clear, concise format that is both human-readable and machine-executable. Harnice uses these rules to automatically build, validate, simulate, and generate artifacts from your system definition.
 
-*The following slides define the exceptions to the above. We couldn’t get away with everything.
+### 3. **Unlimited Automated Outputs**
+
+From a single system definition, Harnice generates all downstream documentation automatically:
+
+- **Complete Bill of Materials** (BOMs) with devices, harnesses, parts, cable lengths, consumables, and more
+- **Version control and release management** with part numbers per reference designator
+- **Production documentation** including harness build drawings, formboards, and wirelists in PDF and CSV formats
+- **Electrical simulation** capabilities for steady-state and transient analysis
+- **Custom artifacts** through extensible Python scripting
+
+## How Harnice Works
+
+Harnice is a Python package that processes netlists and transforms them into comprehensive system documentation and artifacts.
+
+### The Workflow
+
+1. **Define Your System**: Create a block diagram using KiCad or Altium
+   - Components represent devices
+   - Nets represent harnesses and connections
+
+2. **Process the Netlist**: Harnice analyzes your netlist to:
+   - Determine harness requirements
+   - Build channel maps
+   - Generate System Instances Lists (comprehensive part and connection inventories)
+
+3. **Apply Design Rules**: The harness editor:
+   - Locates harnesses within the system
+   - Applies standard build rules
+   - Adds required parts automatically
+
+4. **Generate Artifacts**: Export build drawings, BOMs, wirelists, and other documentation instantaneously
+
+### Minimum Input Requirements
+
+Harnice operates efficiently with minimal input:
+
+- **Fully defined devices** with all signals, channels, and connectors accounted for
+- **Complete electrical behavior definitions** for each device
+- **System block diagram** with all devices and harness connections specified
+- **Design rules** expressed as:
+  - Channel mapping preferences
+  - Part selection trees
+  - Length, size, count, and attribute requirements
+  - Any custom rule your system requires
+- **Physical routing information** (imported or manually defined)
+
+## Unprecedented Flexibility
+
+Harnice represents a fundamental departure from traditional eCAD packages by offering complete extensibility:
+
+**You define your own vocabulary, relationships, and instance types.**
+
+As long as an item can be defined as an "instance," it can be part of your electrical system. Whether you're tracking cables, connectors, mechanical fasteners, or custom components, Harnice adapts to your needs rather than forcing you into predefined categories.
+
+This flexibility enables:
+- Custom part types and classifications
+- Domain-specific terminology
+- Unique relationship definitions
+- Integration with any component or material in your system
+
+## Current Limitations
+
+Harnice focuses on electrical system connectivity and harness management. The following areas are currently outside scope:
+
+- **Internal device design**: Harnice tracks how devices interact with the outside world, not their internal circuitry or software configuration
+- **Non-electrical properties**: Physical dimensions, weight, thermal characteristics, environmental compliance, and mechanical mounting are not currently tracked
+- **As-built tracking**: ERP/MES functionality for manufacturing execution is not yet provided
+
+## The State of the Industry
+
+### Existing Commercial Solutions
+
+Traditional eCAD packages (Zuken, E-plan, Altium Harnessing) offer comprehensive features but come with significant drawbacks:
+
+- **High cost**: Enterprise licensing that limits accessibility
+- **Steep learning curve**: Training-intensive interfaces
+- **Limited customization**: Rigid workflows that don't adapt to unique requirements
+- **Poor user experience**: Complex interfaces that hinder productivity
+
+### Manual Alternatives
+
+Many teams resort to manual documentation methods:
+
+- Hand-drawn schematics on paper
+- Generic drawing tools (Visio, PowerPoint, Excel, MS Paint, WireViz) that produce attractive visuals but lack metadata
+- **No design rule checking**: Manual validation is error-prone and time-consuming
+- **Multiple sources of truth**: Documentation scattered across files, leading to inconsistencies
+
+## Why Harnice is Different
+
+Harnice transforms the design workflow by automating the tedious work while preserving complete control and flexibility:
+
+**Without Harnice**: Engineers manually compile information from design guides, industry standards, and various sources, documenting results throughout the design process. This approach suffers from poor traceability, broken links to source information, and results that scale linearly with design time.
+
+**With Harnice**: Engineers document design inputs (standards, rules, processes) in a machine-readable format. Python handles the repetitive work—generating documentation, validating connections, applying rules—while designers focus on engineering decisions and innovation.
+
+The result? Faster design cycles, fewer errors, complete traceability, and the freedom to customize every aspect of your workflow.

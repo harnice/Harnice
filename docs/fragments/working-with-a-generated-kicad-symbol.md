@@ -6,3 +6,9 @@
 1. Open Kicad, add the newly generated library to your library paths (preferences > manage symbol libraries). The command line should have printed lines `Kicad nickname:` and `Kicad path` that you can use when adding the library to your Kicad Library Manager. The provided nickname should already be sufficiently unique and human readable. Refer to Kicad documentation for more support.
 1. Open the symbol in Kicad and make the symbol appear the way you want it to look. Do not modify the pin names, but you can change their placement and appearance.
 1. When you are done modifying the kicad_sym file, save it, and rerender the harnice part one more time to ensure no mistakes were made.
+
+When you render a device Signals List, it’ll make a KiCad schematic symbol in the parent directory
+
+KiCad Symbol will contain ports that match the set of connectors that you’ve specified in Signals List
+
+Render will not affect placement or graphic design of your symbol, just port count and symbol attributes
