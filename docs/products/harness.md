@@ -7,7 +7,7 @@ A set of circuits that satisfies a channel map. Also contains instructions about
 # What happens when you render?
 
 # Harness Data Structures
-{% include-markdown "fragments/data_structures.md" %}
+Harness data is stored in the following file formats.
 
 ??? info "Instances List"
 

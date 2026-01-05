@@ -42,7 +42,7 @@ Add an official Harnice disconnect part to your project and route nets to it. Ad
 # What happens when you render?
 
 # System Data Structures
-{% include-markdown "fragments/data_structures.md" %}
+System data is stored in the following file formats.
 
 ??? info "Instances List"
 

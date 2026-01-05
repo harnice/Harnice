@@ -1,19 +1,92 @@
-# Interacting with Signals Lists
+A **Signals List** is an exhaustive list of every signal is going into or out of a thing. Signals Lists are the primary way Harnice stores information about devices, and act as the source of truth for devices and disconnects.
 
-A list of circuits that appear on connectors and are part of channels that belong to a device
+ - Each signal is contained by one or more cavities of connectors
+ - Each signal may be assigned to a functional signal of a channel, or left unused.
 
-Signals Lists are the primary way Harnice stores information about devices
-Source of truth for devices or disconnects
-Exhaustive list of every electrical connection going into or out of the device or disconnect
 
-# Rules about Signals Lists
-Every combination of (channel_id, signal) must be unique within the signals list
-You can’t have two “ch1, pos” signals on the same device
-Every signal of a channel_type must be present in the Signals List
-If your channel_type requires “positive” and “negative”, you have to have both in your signals list
-Every signal in the Signals List must be present in the channel_type
-If you need to add signals that aren’t already part of your pre-defined channel_type, you’ll need to define a new channel_type.
-You can’t put signals of the same channel on different connectors
-While this may sound convenient, it breaks a lot of internal assumptions Harnice is making on the back end about how to map channels. 
-If you need to do this, I recommend defining one channel type per signal, then write a macro for mapping the channels to their respective destinations.
-“A” and “B” channels of the same disconnect must be compatible with each other
+---
+
+## Columns
+
+### Signals Lists for Devices
+
+=== "`channel_id`"
+
+    Unique identifier for the channel. 
+
+=== "`signal`"
+
+    Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
+
+=== "`connector_name`"
+
+    Unique identifier for the connector that this signal and channel is a part of.
+
+=== "`cavity`"
+
+    Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within its connector.
+
+=== "`connector_mpn`"
+
+    MPN of the connector in this device (NOT the mating connector).
+
+=== "`channel_type`"
+
+    {% include-markdown "fragments/channel_type_reference.md" %}
+
+
+### Signals Lists for Disconnects
+
+=== "`channel_id`"
+
+    Unique identifier for the channel. 
+
+=== "`signal`"
+
+    Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
+
+=== "`A, B_cavity`"
+
+    Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within that side of the connector.
+
+    ??? question "Why are A and B different here?"
+
+        Sometimes it's possible to have connectors that have cavities that may mate electrically, but have different names. For example, suppose two connectors physically mate, but are made by different manufacturers. One manufacturer used lowercase (a, b, c) to reference the cavities but the other used uppercase (A, B, C), or numbers (1, 2, 3), or colors (red, green, blue), etc.
+
+=== "`A, B_connector_mpn`"
+
+    MPN of the connector of the harness on this side of the disconnect
+
+=== "`A, B_channel_type`"
+
+    The channel type of this side of the discconect.
+
+    ??? question "Why are A and B different here?"
+
+        It's important to keep track of which side has which channel type so that you cannot accidentally flip pins and sockets, for example, by mapping the wrong channel type to the wrong pin gender. Careful validation should be done when mapping channels through disconnects to ensure the disconnects have channels that pass through them in the correct direction.
+
+---
+
+## Signals Lists have rules...
+
+ - Every combination of (channel_id, signal) must be unique within the signals list
+    - i.e. you can’t have two “ch1, pos” signals on the same device
+
+ - Signals of channels in a signals list must agree with their channel type definitions
+    - If a signal is on the list that has a channel name and a channel type, all of the required signals of that channel type must also be present in the list with the same channel name (you can't just define 'positive' if the channel type requires 'positive' and 'negative')
+
+ - Every signal in the Signals List must have a pre-defined channel type
+
+    ??? info "Channel Types"
+        {% include-markdown "products/channel_type.md" %}
+
+ - You can’t put signals of the same channel on different connectors
+    - While this may sound inconvenient, it breaks a lot of internal assumptions Harnice is making on the back end about how to map channels. 
+
+    - If you need to do this, I recommend the following two options:
+    
+        - **Most correct but confusing:** Define one channel type per signal, then manually chmap your channels or write a macro for mapping the channels to their respective destinations.
+
+        - **Janky but easiest to understand:** Define a connector part number that actually represents multiple connectors, while using cavities to reference each connector.
+
+ - “A” and “B” channels of the same disconnect must be compatible with each other
