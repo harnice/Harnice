@@ -1,13 +1,40 @@
-# Device
-Item you can buy that has signals, connectors, channels. Exhibits electrical behavior. The fundamental “block” element in a block diagram.
+# Devices
 
-Primary data structure of a device is a TSV called “signals_list”.
-Generated from a python script that you define
-Produces a KiCad symbol that you can import into your project for a block diagram.
+Harnice defines a device to be **any electrical item that is not a harness.** Devices are the “block” elements in a block diagram, while harnesses are the nets.
 
-Future work: will contain a .kicad_esch file that will allow you to define device electrical behavior.
+Devices contain signals which are part of channels and are mapped to connector cavities. 
 
+The primary data structure of a device is a TSV called a “signals_list”. Signals lists can be written manually or generated from a python script that can help automate the generation of lists for complicated devices.
 
+---
+##Rendering a Device
+
+When a Device is rendered in Harnice, here's what happens:
+
+1. Harnice runs the feature tree if it's found in the device directory.
+1. The signals list is validated and verified.
+1. A KiCad symbol that can be used represent this device in a block diagram is generated or updated based on the signals list.
+
+---
+## Device Modeling for Simulation of Behavior in a System (future work)
+
+It is often useful to model how an entire electrical system will behave by aggregating up behaviors of many contained devices and how they interact with each other.
+
+Eventually, Harnice will allow you to do this automatically within the same source-of-truth system definition that defines your harnesses.
+
+When this feature is implemented, devices will contain an automatically generated .kicad_esch file that will allow the user to define a schematic that represents the lump behavior of your device. Harnice will ensure that every signal on your signals list is accounted for in the simulation esch, and the user may choose to connect any simulation device between those symbols. This way, when the device is used in a system block diagram, this device esch can referenced by the system simulator and its behavior can be considered while running an entire system simulation profile.
+
+---
+
+# How Device Definitions are Stored
+
+The definition of a device lives in a CSV file called a "Signals List".
+
+??? info "Signals List"
+
+    {% include-markdown "interacting_with_data/signals_lists.md" %}
+
+---
 
 # How to define a new device
 1. Ensure every channel going into or out of a device has a type defined in a repo somewhere.
@@ -27,7 +54,8 @@ Future work: will contain a .kicad_esch file that will allow you to define devic
 
 1. Edit the attributes of your new device.
 
-    {% include-markdown "fragments/editing_attributes.md" %}
+    ??? info "Editing the Attributes of a Product"
+        {% include-markdown "fragments/editing_attributes.md" %}
 
 1. Edit the signals list of your new device. 
 
@@ -39,18 +67,12 @@ Future work: will contain a .kicad_esch file that will allow you to define devic
     ??? info "Working on a Generated Kicad Symbol"
         {% include-markdown "fragments/working-with-a-generated-kicad-symbol.md" %}
 
+---
+
 # Device Configurations
 
 {% include-markdown "fragments/configurations.md" %}
 
-# What happens when you render?
-
-# Device Data Structures
-
-{% include-markdown "fragments/data_structures.md" %}
-
-??? info "Signals List"
-
-    {% include-markdown "interacting_with_data/signals_lists.md" %}
+---
 
 # Examples

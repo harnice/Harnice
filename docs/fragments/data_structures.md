@@ -1,1 +1,0 @@
-All data is stored in files within your part/rev folder, and you can interact with it via functions written in the feature_tree. The following dropdowns describe the files that pertain to harness definitions, as well as how to interact with their contents.
