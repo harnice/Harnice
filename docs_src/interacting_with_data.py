@@ -1,5 +1,5 @@
 from pathlib import Path
-from docs_compiler import print_function_docs
+import docs_compiler
 from harnice.lists import channel_map, circuits_list, disconnect_map, formboard_graph, instances_list, library_history, post_harness_instances_list, rev_history, signals_list, manifest
 
 harnice_dir = Path(__file__).resolve().parents[1]
@@ -13,11 +13,11 @@ A list of channels on devices within merged_nets that are either mapped to other
 """]
 
 md.append("\n##Commands:\n")
-md.append(print_function_docs(channel_map.new, module_prefix))
-md.append(print_function_docs(channel_map.map, module_prefix))
-md.append(print_function_docs(channel_map.already_mapped_set_append, module_prefix))
-md.append(print_function_docs(channel_map.already_mapped_set, module_prefix))
-md.append(print_function_docs(channel_map.already_mapped, module_prefix))
+md.append(docs_compiler.print_function_docs(channel_map.new, module_prefix))
+md.append(docs_compiler.print_function_docs(channel_map.map, module_prefix))
+md.append(docs_compiler.print_function_docs(channel_map.already_mapped_set_append, module_prefix))
+md.append(docs_compiler.print_function_docs(channel_map.already_mapped_set, module_prefix))
+md.append(docs_compiler.print_function_docs(channel_map.already_mapped, module_prefix))
 
 path = harnice_dir / "docs" / "interacting_with_data" / "channel_maps.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -34,7 +34,7 @@ A list of every individual electrical connection that must be present in your sy
 """]
 
 md.append("\n##Commands:\n")
-md.append(print_function_docs(circuits_list.new, module_prefix))
+md.append(docs_compiler.print_function_docs(circuits_list.new, module_prefix))
 
 path = harnice_dir / "docs" / "interacting_with_data" / "circuits_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -50,15 +50,15 @@ md = [r"""# Interacting with Disconnect Maps
 A list of every available channel on a every disconnect, and every channel that may or may not pass through it
 """]
 md.append("\n##Commands:\n")
-md.append(print_function_docs(disconnect_map.new, module_prefix))
-md.append(print_function_docs(disconnect_map.assign, module_prefix))
-md.append(print_function_docs(disconnect_map.already_assigned_channels_through_disconnects_set_append, module_prefix))
-md.append(print_function_docs(disconnect_map.already_assigned_disconnects_set_append, module_prefix))
-md.append(print_function_docs(disconnect_map.already_assigned_channels_through_disconnects_set, module_prefix))
-md.append(print_function_docs(disconnect_map.already_assigned_disconnects_set, module_prefix))
-md.append(print_function_docs(disconnect_map.channel_is_already_assigned_through_disconnect, module_prefix))
-md.append(print_function_docs(disconnect_map.disconnect_is_already_assigned, module_prefix))
-md.append(print_function_docs(disconnect_map.ensure_requirements_met, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.new, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.assign, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.already_assigned_channels_through_disconnects_set_append, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.already_assigned_disconnects_set_append, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.already_assigned_channels_through_disconnects_set, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.already_assigned_disconnects_set, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.channel_is_already_assigned_through_disconnect, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.disconnect_is_already_assigned, module_prefix))
+md.append(docs_compiler.print_function_docs(disconnect_map.ensure_requirements_met, module_prefix))
 
 path = harnice_dir / "docs" / "interacting_with_data" / "disconnect_maps.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -70,8 +70,8 @@ module_prefix = "formboard_graph"
 
 md = [r"""# Interacting with Formboard Graphs"""]
 md.append("\n##Commands:\n")
-md.append(print_function_docs(formboard_graph.new, module_prefix))
-md.append(print_function_docs(formboard_graph.append, module_prefix))
+md.append(docs_compiler.print_function_docs(formboard_graph.new, module_prefix))
+md.append(docs_compiler.print_function_docs(formboard_graph.append, module_prefix))
 
 path = harnice_dir / "docs" / "interacting_with_data" / "formboard_graphs.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -95,14 +95,14 @@ Including the instances list module into your py file will allow you to access t
 `from harnice.lists import instances_list`"""]
 
 md.append("\n##Commands:\n")
-md.append(print_function_docs(instances_list.new_instance, module_prefix))
-md.append(print_function_docs(instances_list.modify, module_prefix))
-md.append(print_function_docs(instances_list.remove_instance, module_prefix))
-md.append(print_function_docs(instances_list.new, module_prefix))
-md.append(print_function_docs(instances_list.assign_bom_line_numbers, module_prefix))
-md.append(print_function_docs(instances_list.attribute_of, module_prefix))
-md.append(print_function_docs(instances_list.instance_in_connector_group_with_item_type, module_prefix))
-md.append(print_function_docs(instances_list.list_of_uniques, module_prefix))
+md.append(docs_compiler.print_function_docs(instances_list.new_instance, module_prefix))
+md.append(docs_compiler.print_function_docs(instances_list.modify, module_prefix))
+md.append(docs_compiler.print_function_docs(instances_list.remove_instance, module_prefix))
+md.append(docs_compiler.print_function_docs(instances_list.new, module_prefix))
+md.append(docs_compiler.print_function_docs(instances_list.assign_bom_line_numbers, module_prefix))
+md.append(docs_compiler.print_function_docs(instances_list.attribute_of, module_prefix))
+md.append(docs_compiler.print_function_docs(instances_list.instance_in_connector_group_with_item_type, module_prefix))
+md.append(docs_compiler.print_function_docs(instances_list.list_of_uniques, module_prefix))
 
 path = harnice_dir / "docs" / "interacting_with_data" / "instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -118,8 +118,8 @@ md = [r"""# Interacting with Library History
 A report of what was imported during the most recent render of the current product
 """]
 md.append("\n##Commands:\n")
-md.append(print_function_docs(library_history.new, module_prefix))
-md.append(print_function_docs(library_history.append, module_prefix))
+md.append(docs_compiler.print_function_docs(library_history.new, module_prefix))
+md.append(docs_compiler.print_function_docs(library_history.append, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "library_history.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -142,8 +142,8 @@ md = ["""# Interacting with Post Harness Instances Lists
 A list of every physical or notional thing, drawing element, or concept that includes instances added at the harness level, that represents a system
 """]
 md.append("\n##Commands:\n")
-md.append(print_function_docs(post_harness_instances_list.rebuild, module_prefix))
-md.append(print_function_docs(post_harness_instances_list.push, module_prefix))
+md.append(docs_compiler.print_function_docs(post_harness_instances_list.rebuild, module_prefix))
+md.append(docs_compiler.print_function_docs(post_harness_instances_list.push, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "post_harness_instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -158,13 +158,13 @@ md = ["""# Interacting with Revision History Lists
 A record of every revision of a part, and its release status
 """]
 md.append("\n##Commands:\n")
-md.append(print_function_docs(rev_history.overwrite, module_prefix))
-md.append(print_function_docs(rev_history.info, module_prefix))
-md.append(print_function_docs(rev_history.initial_release_exists, module_prefix))
-md.append(print_function_docs(rev_history.initial_release_desc, module_prefix))
-md.append(print_function_docs(rev_history.update_datemodified, module_prefix))
-md.append(print_function_docs(rev_history.new, module_prefix))
-md.append(print_function_docs(rev_history.append, module_prefix))
+md.append(docs_compiler.print_function_docs(rev_history.overwrite, module_prefix))
+md.append(docs_compiler.print_function_docs(rev_history.info, module_prefix))
+md.append(docs_compiler.print_function_docs(rev_history.initial_release_exists, module_prefix))
+md.append(docs_compiler.print_function_docs(rev_history.initial_release_desc, module_prefix))
+md.append(docs_compiler.print_function_docs(rev_history.update_datemodified, module_prefix))
+md.append(docs_compiler.print_function_docs(rev_history.new, module_prefix))
+md.append(docs_compiler.print_function_docs(rev_history.append, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "revision_history_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -185,32 +185,11 @@ md = [r"""A **Signals List** is an exhaustive list of every signal is going into
 ## Columns
 
 ### Signals Lists for Devices
+"""]
 
-=== "`channel_id`"
+md.append(docs_compiler.columns_to_markdown(signals_list, "DEVICE_COLUMNS"))
 
-    Unique identifier for the channel. 
-
-=== "`signal`"
-
-    Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
-
-=== "`connector_name`"
-
-    Unique identifier for the connector that this signal and channel is a part of.
-
-=== "`cavity`"
-
-    Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within its connector.
-
-=== "`connector_mpn`"
-
-    MPN of the connector in this device (NOT the mating connector).
-
-=== "`channel_type`"
-
-    {% include-markdown "fragments/channel_type_reference.md" %}
-
-
+md.append(r"""
 ### Signals Lists for Disconnects
 
 === "`channel_id`"
@@ -265,13 +244,14 @@ md = [r"""A **Signals List** is an exhaustive list of every signal is going into
 
         - **Janky but easiest to understand:** Define a connector part number that actually represents multiple connectors, while using cavities to reference each connector.
 
- - “A” and “B” channels of the same disconnect must be compatible with each other"""]
+ - “A” and “B” channels of the same disconnect must be compatible with each other""")
+
 md.append("\n##Commands:\n")
-md.append(print_function_docs(signals_list.set_list_type, module_prefix))
-md.append(print_function_docs(signals_list.new, module_prefix))
-md.append(print_function_docs(signals_list.append, module_prefix))
-md.append(print_function_docs(signals_list.cavity_of_signal, module_prefix))
-md.append(print_function_docs(signals_list.connector_name_of_channel, module_prefix))
+md.append(docs_compiler.print_function_docs(signals_list.set_list_type, module_prefix))
+md.append(docs_compiler.print_function_docs(signals_list.new, module_prefix))
+md.append(docs_compiler.print_function_docs(signals_list.append, module_prefix))
+md.append(docs_compiler.print_function_docs(signals_list.cavity_of_signal, module_prefix))
+md.append(docs_compiler.print_function_docs(signals_list.connector_name_of_channel, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "signals_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -286,8 +266,8 @@ md = ["""# Interacting with System Manifests
 A table that relates reference designator to part number(s), and may contain other information indexed to the reference designator
 """]
 md.append("\n##Commands:\n")
-md.append(print_function_docs(manifest.new, module_prefix))
-md.append(print_function_docs(manifest.update_upstream, module_prefix))
+md.append(docs_compiler.print_function_docs(manifest.new, module_prefix))
+md.append(docs_compiler.print_function_docs(manifest.update_upstream, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "system_manifests.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")

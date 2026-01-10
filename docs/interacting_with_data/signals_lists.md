@@ -9,10 +9,9 @@ A **Signals List** is an exhaustive list of every signal is going into or out of
 ## Columns
 
 ### Signals Lists for Devices
-
 === "`channel_id`"
 
-    Unique identifier for the channel. 
+    Unique identifier for the channe
 
 === "`signal`"
 
@@ -32,7 +31,7 @@ A **Signals List** is an exhaustive list of every signal is going into or out of
 
 === "`channel_type`"
 
-    {% include-markdown "fragments/channel_type_reference.md" %}
+    The channel type of this signal. \n{% include-markdown "fragments/channel_type_reference.md" %}
 
 
 ### Signals Lists for Disconnects

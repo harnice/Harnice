@@ -7,12 +7,12 @@ COLUMNS = []
 
 # Signals list column headers to match source of truth + compatibility change
 DEVICE_COLUMNS = [
-    "channel_id",  # unique identifier for the channel
-    "signal",
-    "connector_name",
-    "cavity",
-    "connector_mpn",
-    "channel_type",
+    "channel_id",  # Unique identifier for the channel.
+    "signal", # Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
+    "connector_name", # Unique identifier for the connector that this signal and channel is a part of.
+    "cavity", # Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within its connector.
+    "connector_mpn", #MPN of the connector in this device (NOT the mating connector).
+    "channel_type",  #The channel type of this signal. \n{% include-markdown "fragments/channel_type_reference.md" %}
 ]
 
 DISCONNECT_COLUMNS = [
