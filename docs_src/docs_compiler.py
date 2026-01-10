@@ -22,6 +22,7 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
     into MkDocs tab markdown:
         === "`channel_id`"
             Unique identifier
+    Supports escaped newlines \\n inside comments.
     """
     module_path = inspect.getsourcefile(module)
     if not module_path:
@@ -56,14 +57,23 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
         name = mm.group("name").strip()
         desc = mm.group("desc").rstrip()
 
-        # Optionally strip a leading '#' if you accidentally wrote "#The ..."
+        # Optionally strip accidental extra "#"
         if desc.startswith("#"):
             desc = desc[1:].lstrip()
 
+        # 🔹 Expand escaped newlines
+        desc = desc.replace("\\n", "\n")
+
+        # 🔹 Re-indent multiline text for MkDocs
+        formatted_desc = "\n".join(
+            "    " + l for l in desc.splitlines()
+        )
+
         md.append(f'=== "`{name}`"\n\n')
-        md.append(f"    {desc}\n\n")
+        md.append(f"{formatted_desc}\n\n")
 
     return "".join(md)
+
 
 if __name__ == "__main__":
     runpy.run_path("commands.py", run_name="__main__")

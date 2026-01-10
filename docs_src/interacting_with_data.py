@@ -178,50 +178,17 @@ md = [r"""A **Signals List** is an exhaustive list of every signal is going into
 
  - Each signal is contained by one or more cavities of connectors
  - Each signal may be assigned to a functional signal of a channel, or left unused.
-
-
----
-
-## Columns
-
-### Signals Lists for Devices
 """]
 
+md.append("---\n")
+md.append("## Columns\n")
+md.append("### Columns of Signals Lists for Devices\n")
 md.append(docs_compiler.columns_to_markdown(signals_list, "DEVICE_COLUMNS"))
+md.append("### Columns of Signals Lists for Disconnects\n")
+md.append(docs_compiler.columns_to_markdown(signals_list, "DISCONNECT_COLUMNS"))
+md.append("---\n")
 
 md.append(r"""
-### Signals Lists for Disconnects
-
-=== "`channel_id`"
-
-    Unique identifier for the channel. 
-
-=== "`signal`"
-
-    Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
-
-=== "`A, B_cavity`"
-
-    Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within that side of the connector.
-
-    ??? question "Why are A and B different here?"
-
-        Sometimes it's possible to have connectors that have cavities that may mate electrically, but have different names. For example, suppose two connectors physically mate, but are made by different manufacturers. One manufacturer used lowercase (a, b, c) to reference the cavities but the other used uppercase (A, B, C), or numbers (1, 2, 3), or colors (red, green, blue), etc.
-
-=== "`A, B_connector_mpn`"
-
-    MPN of the connector of the harness on this side of the disconnect
-
-=== "`A, B_channel_type`"
-
-    The channel type of this side of the discconect.
-
-    ??? question "Why are A and B different here?"
-
-        It's important to keep track of which side has which channel type so that you cannot accidentally flip pins and sockets, for example, by mapping the wrong channel type to the wrong pin gender. Careful validation should be done when mapping channels through disconnects to ensure the disconnects have channels that pass through them in the correct direction.
-
----
-
 ## Signals Lists have rules...
 
  - Every combination of (channel_id, signal) must be unique within the signals list
@@ -246,12 +213,14 @@ md.append(r"""
 
  - “A” and “B” channels of the same disconnect must be compatible with each other""")
 
+md.append("\n\n---\n")
 md.append("\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(signals_list.set_list_type, module_prefix))
 md.append(docs_compiler.print_function_docs(signals_list.new, module_prefix))
 md.append(docs_compiler.print_function_docs(signals_list.append, module_prefix))
 md.append(docs_compiler.print_function_docs(signals_list.cavity_of_signal, module_prefix))
 md.append(docs_compiler.print_function_docs(signals_list.connector_name_of_channel, module_prefix))
+md.append("---\n")
 path = harnice_dir / "docs" / "interacting_with_data" / "signals_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
