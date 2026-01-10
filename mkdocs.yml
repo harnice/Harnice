@@ -82,4 +82,17 @@ nav:
     - Appearance Utilities: commands/appearance.md
     - SVG Utilities: commands/svg_utils.md
 
+  - Interacting with Data:
+    - Channel Maps: interacting_with_data/channel_maps.md
+    - Circuits Lists: interacting_with_data/circuits_lists.md
+    - Disconnect Maps: interacting_with_data/disconnect_maps.md
+    - Formboard Graphs: interacting_with_data/formboard_graphs.md
+    - Instances Lists: interacting_with_data/instances_lists.md
+    - Library History: interacting_with_data/library_history.md
+    - Netlists: interacting_with_data/netlists.md
+    - Post-Harness Instances Lists: interacting_with_data/post_harness_instances_lists.md
+    - Revision History Lists: interacting_with_data/revision_history_lists.md
+    - Signals Lists: interacting_with_data/signals_lists.md
+    - System Manifests: interacting_with_data/system_manifests.md
+
   - Macros: macros.md

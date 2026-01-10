@@ -15,6 +15,15 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR / "root"
 POLL_SECONDS = 0.5
 
+def print_function_docs(fn,module_prefix=""):
+    title = fn.__name__
+    doc = fn.__doc__ or "No documentation provided."
+
+    return (
+        f'??? info "`{module_prefix}.{title}`"\n\n'
+        + "\n".join(f"    {line}" for line in doc.strip().splitlines())
+        + "\n\n"
+    )
 
 @dataclass(frozen=True)
 class Fingerprint:

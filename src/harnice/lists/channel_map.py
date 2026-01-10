@@ -19,6 +19,13 @@ COLUMNS = [
 
 
 def new():
+    """
+    Makes a new blank channel map. Overwrites existing channel map.
+
+    Args: none
+
+    Returns: none
+    """
     channel_map = []
 
     for connector in fileio.read_tsv("system connector list"):

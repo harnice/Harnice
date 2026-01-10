@@ -1,13 +1,22 @@
 from pathlib import Path
+from docs_compiler import print_function_docs
+from harnice.lists import channel_map
 
 #========================================================
 # CHANNEL MAPS
 #========================================================
-
+module_prefix = "channel_map"
 md = ["""# Interacting with Channel Maps
 
-A list of channels on devices within merged_nets that are either mapped to other channels or are unmapped
+A list of channels on devices within merged_nets that are either mapped to other channels or are unmapped.
 """]
+
+md.append("\n##Commands:\n")
+md.append(print_function_docs(channel_map.new, module_prefix))
+md.append(print_function_docs(channel_map.map, module_prefix))
+md.append(print_function_docs(channel_map.already_mapped_set_append, module_prefix))
+md.append(print_function_docs(channel_map.already_mapped_set, module_prefix))
+md.append(print_function_docs(channel_map.already_mapped, module_prefix))
 
 harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "interacting_with_data" / "channel_maps.md"
@@ -17,6 +26,7 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # CIRCUITS LISTS
 #========================================================
+module_prefix = "channel_map"
 
 md = ["""# Interacting with Circuits Lists
 
