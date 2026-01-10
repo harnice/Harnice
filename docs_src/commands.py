@@ -91,7 +91,7 @@ path.write_text("".join(md), encoding="utf-8")
 # SVG UTILS
 #========================================================
 
-md = ["""# SVG Utilities
+md = [r"""# SVG Utilities
 
 # General Table
 This function is called when the user needs to build a general SVG table.

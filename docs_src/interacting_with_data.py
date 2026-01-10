@@ -1,6 +1,6 @@
 from pathlib import Path
 from docs_compiler import print_function_docs
-from harnice.lists import channel_map
+from harnice.lists import channel_map, circuits_list, disconnect_map, formboard_graph, instances_list, library_history, post_harness_instances_list, rev_history, signals_list
 
 #========================================================
 # CHANNEL MAPS
@@ -18,7 +18,7 @@ md.append(print_function_docs(channel_map.already_mapped_set_append, module_pref
 md.append(print_function_docs(channel_map.already_mapped_set, module_prefix))
 md.append(print_function_docs(channel_map.already_mapped, module_prefix))
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "channel_maps.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -26,14 +26,17 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # CIRCUITS LISTS
 #========================================================
-module_prefix = "channel_map"
+module_prefix = "circuits_list"
 
-md = ["""# Interacting with Circuits Lists
+md = [r"""# Interacting with Circuits Lists
 
-A list of every individual electrical connection that must be present in your system or harness to satisfy your channel and disconnect maps
+A list of every individual electrical connection that must be present in your system or harness to satisfy your channel and disconnect maps.
 """]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+md.append("\n##Commands: test\n")
+md.append(print_function_docs(circuits_list.new, module_prefix))
+
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "circuits_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -41,27 +44,30 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # DISCONNECT MAPS
 #========================================================
+module_prefix = "disconnect_map"
 
 md = ["""# Interacting with Disconnect Maps
 
 A list of every available channel on a every disconnect, and every channel that may or may not pass through it
 """]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "disconnect_maps.md"
 
 #========================================================
 # FORMBOARD GRAPHS
 #========================================================
+module_prefix = "formboard_graph"
 
 md = ["""# Interacting with Formboard Graphs"""]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "formboard_graphs.md"
 
 #========================================================
 # INSTANCES LISTS
 #========================================================
+module_prefix = "instances_list"
 
 md = ["""## What it is
 `*-instances_list.tsv` is a tab-separated value list of every physical or notional thing, drawing element, or concept that is the single source of truth for the product you are working on.
@@ -220,7 +226,7 @@ Including the instances list module into your py file will allow you to access t
     ```
     TODO:DESCRIPTION NEEDED"""]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -228,13 +234,14 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # LIBRARY HISTORY
 #========================================================
+module_prefix = "library_history"
 
 md = ["""# Interacting with Library History
 
 A report of what was imported during the most recent render of the current product
 """]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "library_history.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -245,7 +252,7 @@ path.write_text("".join(md), encoding="utf-8")
 
 md = ["""# Interacting with Netlists"""]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "netlists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -259,7 +266,7 @@ md = ["""# Interacting with Post Harness Instances Lists
 A list of every physical or notional thing, drawing element, or concept that includes instances added at the harness level, that represents a system
 """]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "post_harness_instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -267,13 +274,14 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # REVISION HISTORY LISTS
 #========================================================
+module_prefix = "revision_history_list"
 
 md = ["""# Interacting with Revision History Lists
 
 A record of every revision of a part, and its release status
 """]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "revision_history_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -281,6 +289,7 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # SIGNALS LISTS
 #========================================================
+module_prefix = "signals_list"
 
 md = ["""A **Signals List** is an exhaustive list of every signal is going into or out of a thing. Signals Lists are the primary way Harnice stores information about devices, and act as the source of truth for devices and disconnects.
 
@@ -375,7 +384,7 @@ md = ["""A **Signals List** is an exhaustive list of every signal is going into 
 
  - “A” and “B” channels of the same disconnect must be compatible with each other"""]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "signals_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -383,11 +392,12 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # SYSTEM MANIFESTS
 #========================================================
+module_prefix = "system_manifest"
 
 md = ["""# Interacting with System Manifests
 
 A table that relates reference designator to part number(s), and may contain other information indexed to the reference designator
 """]
 
-harnice_dir = Path(__file__).resolve().parents[2]
+harnice_dir = Path(__file__).resolve().parents[1]
 path = harnice_dir / "docs" / "interacting_with_data" / "system_manifests.md"

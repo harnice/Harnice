@@ -26,6 +26,13 @@ COLUMNS = [
 
 
 def new():
+    """
+    Makes a new blank circuits list. Overwrites existing circuits list.
+    
+    Args: none
+    
+    Returns: none
+    """
     # --- helper: first non-empty field ---
     def first_nonempty(row, *candidate_names):
         for name in candidate_names:
