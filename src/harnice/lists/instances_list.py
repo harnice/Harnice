@@ -77,6 +77,29 @@ COLUMNS = [
 
 
 def new_instance(instance_name, instance_data, ignore_duplicates=False):
+    """
+    New Instance
+
+instances_list.new_instance(
+    instance_name,
+    instance_data,
+    ignore_duplicates=False
+)
+
+Add a new instance to your instances list.
+
+    instance_name is a string and must be unique within the list.
+    instance_data is a dictionary of columns (above). You may or may not include instance_name in this dict, though if you do and it doesn't match the argument, the code will fail.
+    Setting ignore_duplicates to True will cause the line to pass silently if you try to add an instance with an instance_name that already exists. By default, False, if you do this, the code will raise an error if you try to add a duplicate instance_name.
+
+    Args:
+        instance_name: string, must be unique within the list
+        instance_data: dictionary of columns (above)
+        ignore_duplicates: boolean, default False
+
+    Returns:
+        -1 if the instance was added successfully, otherwise raises an error
+    """
     if instance_name in ["", None]:
         raise ValueError(
             "Argument 'instance_name' is blank and reqired to idenitify a unique instance"
