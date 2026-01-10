@@ -90,3 +90,34 @@ A **Signals List** is an exhaustive list of every signal is going into or out of
         - **Janky but easiest to understand:** Define a connector part number that actually represents multiple connectors, while using cavities to reference each connector.
 
  - “A” and “B” channels of the same disconnect must be compatible with each other
+##Commands:
+??? info "`signals_list.set_list_type()`"
+
+    No documentation provided.
+
+??? info "`signals_list.new()`"
+
+    Creates a new signals TSV file at fileio.path("signals list") with only the header row.
+    Overwrites any existing file.
+
+??? info "`signals_list.append()`"
+
+    Appends a new row to the signals TSV file.
+    Missing optional fields will be written as empty strings.
+    Raises ValueError if required fields are missing.
+    
+    Required kwargs:
+        For 'device':
+            channel_id, signal, connector_name, cavity, connector_mpn, channel_type
+        For 'disconnect':
+            A_channel_id, A_signal, A_connector_name, A_cavity, A_connector_mpn, A_channel_type,
+            B_channel_id, B_signal, B_connector_name, B_cavity, B_connector_mpn, B_channel_type
+
+??? info "`signals_list.cavity_of_signal()`"
+
+    No documentation provided.
+
+??? info "`signals_list.connector_name_of_channel()`"
+
+    No documentation provided.
+

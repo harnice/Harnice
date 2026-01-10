@@ -1,6 +1,6 @@
 from pathlib import Path
 from docs_compiler import print_function_docs
-from harnice.lists import channel_map, circuits_list, disconnect_map, formboard_graph, instances_list, library_history, post_harness_instances_list, rev_history, signals_list
+from harnice.lists import channel_map, circuits_list, disconnect_map, formboard_graph, instances_list, library_history, post_harness_instances_list, rev_history, signals_list, manifest
 
 harnice_dir = Path(__file__).resolve().parents[1]
 #========================================================
@@ -141,6 +141,9 @@ md = ["""# Interacting with Post Harness Instances Lists
 
 A list of every physical or notional thing, drawing element, or concept that includes instances added at the harness level, that represents a system
 """]
+md.append("\n##Commands:\n")
+md.append(print_function_docs(post_harness_instances_list.rebuild, module_prefix))
+md.append(print_function_docs(post_harness_instances_list.push, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "post_harness_instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -148,12 +151,20 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # REVISION HISTORY LISTS
 #========================================================
-module_prefix = "revision_history_list"
+module_prefix = "rev_history"
 
 md = ["""# Interacting with Revision History Lists
 
 A record of every revision of a part, and its release status
 """]
+md.append("\n##Commands:\n")
+md.append(print_function_docs(rev_history.overwrite, module_prefix))
+md.append(print_function_docs(rev_history.info, module_prefix))
+md.append(print_function_docs(rev_history.initial_release_exists, module_prefix))
+md.append(print_function_docs(rev_history.initial_release_desc, module_prefix))
+md.append(print_function_docs(rev_history.update_datemodified, module_prefix))
+md.append(print_function_docs(rev_history.new, module_prefix))
+md.append(print_function_docs(rev_history.append, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "revision_history_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -163,7 +174,7 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 module_prefix = "signals_list"
 
-md = ["""A **Signals List** is an exhaustive list of every signal is going into or out of a thing. Signals Lists are the primary way Harnice stores information about devices, and act as the source of truth for devices and disconnects.
+md = [r"""A **Signals List** is an exhaustive list of every signal is going into or out of a thing. Signals Lists are the primary way Harnice stores information about devices, and act as the source of truth for devices and disconnects.
 
  - Each signal is contained by one or more cavities of connectors
  - Each signal may be assigned to a functional signal of a channel, or left unused.
@@ -255,6 +266,12 @@ md = ["""A **Signals List** is an exhaustive list of every signal is going into 
         - **Janky but easiest to understand:** Define a connector part number that actually represents multiple connectors, while using cavities to reference each connector.
 
  - “A” and “B” channels of the same disconnect must be compatible with each other"""]
+md.append("\n##Commands:\n")
+md.append(print_function_docs(signals_list.set_list_type, module_prefix))
+md.append(print_function_docs(signals_list.new, module_prefix))
+md.append(print_function_docs(signals_list.append, module_prefix))
+md.append(print_function_docs(signals_list.cavity_of_signal, module_prefix))
+md.append(print_function_docs(signals_list.connector_name_of_channel, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "signals_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -262,10 +279,15 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # SYSTEM MANIFESTS
 #========================================================
-module_prefix = "system_manifest"
+module_prefix = "manifest"
 
 md = ["""# Interacting with System Manifests
 
 A table that relates reference designator to part number(s), and may contain other information indexed to the reference designator
 """]
+md.append("\n##Commands:\n")
+md.append(print_function_docs(manifest.new, module_prefix))
+md.append(print_function_docs(manifest.update_upstream, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "system_manifests.md"
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text("".join(md), encoding="utf-8")
