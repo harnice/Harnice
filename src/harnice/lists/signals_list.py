@@ -7,23 +7,23 @@ COLUMNS = []
 
 # Signals list column headers to match source of truth + compatibility change
 DEVICE_COLUMNS = [
-    "channel_id",  # unique identifier for the channel
-    "signal",
-    "connector_name",
-    "cavity",
-    "connector_mpn",
-    "channel_type",
+    "channel_id",  # Unique identifier for the channel.
+    "signal", # Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
+    "connector_name", # Unique identifier for the connector that this signal and channel is a part of.
+    "cavity", # Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within its connector.
+    "connector_mpn", #MPN of the connector in this device (NOT the mating connector).
+    "channel_type",  #The channel type of this signal. \n{% include-markdown "fragments/channel_type_reference.md" %}
 ]
 
 DISCONNECT_COLUMNS = [
-    "channel_id",  # unique identifier for the channel
-    "signal",
-    "A_cavity",
-    "B_cavity",
-    "A_connector_mpn",
-    "A_channel_type",
-    "B_connector_mpn",
-    "B_channel_type",
+    "channel_id",  # Unique identifier for the channel.
+    "signal",# Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
+    "A_cavity", #Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within that side of the connector.\n??? question "Why are A and B different here?"\n    Sometimes it's possible to have connectors that have cavities that may mate electrically, but have different names. For example, suppose two connectors physically mate, but are made by different manufacturers. One manufacturer used lowercase (a, b, c) to reference the cavities but the other used uppercase (A, B, C), or numbers (1, 2, 3), or colors (red, green, blue), etc.
+    "B_cavity" #Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within that side of the connector.\n??? question "Why are A and B different here?"\n    Sometimes it's possible to have connectors that have cavities that may mate electrically, but have different names. For example, suppose two connectors physically mate, but are made by different manufacturers. One manufacturer used lowercase (a, b, c) to reference the cavities but the other used uppercase (A, B, C), or numbers (1, 2, 3), or colors (red, green, blue), etc.
+    "A_connector_mpn", #MPN of the connector of the harness on this side of the disconnect
+    "A_channel_type", #The channel type of this side of the discconect.\n??? question "Why are A and B different here?"\n    It's important to keep track of which side has which channel type so that you cannot accidentally flip pins and sockets, for example, by mapping the wrong channel type to the wrong pin gender. Careful validation should be done when mapping channels through disconnects to ensure the disconnects have channels that pass through them in the correct direction.
+    "B_connector_mpn",#MPN of the connector of the harness on this side of the disconnect
+    "B_channel_type", #The channel type of this side of the discconect.\n??? question "Why are A and B different here?"\n    It's important to keep track of which side has which channel type so that you cannot accidentally flip pins and sockets, for example, by mapping the wrong channel type to the wrong pin gender. Careful validation should be done when mapping channels through disconnects to ensure the disconnects have channels that pass through them in the correct direction.
 ]
 
 

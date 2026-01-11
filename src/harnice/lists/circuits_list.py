@@ -5,27 +5,34 @@ from harnice.lists import signals_list
 from harnice.products import chtype
 
 COLUMNS = [
-    "net",
-    "circuit_id",
-    "signal",
-    "net_from_refdes",
-    "net_from_channel_id",
-    "net_from_connector_name",
-    "net_from_cavity",
-    "net_to_refdes",
-    "net_to_channel_id",
-    "net_to_connector_name",
-    "net_to_cavity",
-    "from_side_device_refdes",
-    "from_side_device_chname",
-    "to_side_device_refdes",
-    "to_side_device_chname",
-    "from_channel_type",
-    "to_channel_type",
+    "net", #documentation needed
+    "circuit_id", #documentation needed
+    "signal", #documentation needed
+    "net_from_refdes", #documentation needed
+    "net_from_channel_id", #documentation needed
+    "net_from_connector_name", #documentation needed
+    "net_from_cavity", #documentation needed
+    "net_to_refdes", #documentation needed
+    "net_to_channel_id", #documentation needed
+    "net_to_connector_name", #documentation needed
+    "net_to_cavity", #documentation needed
+    "from_side_device_refdes", #documentation needed
+    "from_side_device_chname", #documentation needed
+    "to_side_device_refdes", #documentation needed
+    "to_side_device_chname", #documentation needed
+    "from_channel_type", #documentation needed
+    "to_channel_type", #documentation needed
 ]
 
 
 def new():
+    """
+    Makes a new blank circuits list. Overwrites existing circuits list.
+    
+    Args: none
+    
+    Returns: none
+    """
     # --- helper: first non-empty field ---
     def first_nonempty(row, *candidate_names):
         for name in candidate_names:

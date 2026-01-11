@@ -3,22 +3,29 @@ import os
 from harnice import fileio
 
 COLUMNS = [
-    "merged_net",
-    "from_device_refdes",
-    "from_device_channel_id",
-    "from_channel_type",
-    "to_device_refdes",
-    "to_device_channel_id",
-    "to_channel_type",
-    "multi_ch_junction_id",
-    "disconnect_refdes_requirement",
-    "chain_of_connectors",
-    "chain_of_nets",
-    "manual_map_channel_python_equiv",
+    "merged_net", #documentation needed
+    "from_device_refdes", #documentation needed
+    "from_device_channel_id", #documentation needed
+    "from_channel_type", #documentation needed
+    "to_device_refdes", #documentation needed
+    "to_device_channel_id", #documentation needed
+    "to_channel_type", #documentation needed
+    "multi_ch_junction_id", #documentation needed
+    "disconnect_refdes_requirement", #documentation needed
+    "chain_of_connectors", #documentation needed
+    "chain_of_nets", #documentation needed
+    "manual_map_channel_python_equiv", #documentation needed
 ]
 
 
 def new():
+    """
+    Makes a new blank channel map. Overwrites existing channel map.
+
+    Args: none
+
+    Returns: none
+    """
     channel_map = []
 
     for connector in fileio.read_tsv("system connector list"):

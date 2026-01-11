@@ -2,7 +2,10 @@ import os
 import csv
 from harnice import fileio
 
-COLUMNS = ["net", "harness_pn"]
+COLUMNS = [
+    "net", #documentation needed
+    "harness_pn", #documentation needed
+]
 
 
 def new():

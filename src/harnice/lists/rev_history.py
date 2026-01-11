@@ -6,23 +6,23 @@ from harnice import fileio, state
 
 # === Global Columns Definition ===
 COLUMNS = [
-    "product",
-    "mfg",
-    "pn",
-    "desc",
-    "rev",
-    "status",
-    "releaseticket",
-    "library_repo",
-    "library_subpath",
-    "datestarted",
-    "datemodified",
-    "datereleased",
-    "git_hash_of_harnice_src",
-    "drawnby",
-    "checkedby",
-    "revisionupdates",
-    "affectedinstances",
+    "product", #documentation needed
+    "mfg", #documentation needed
+    "pn", #documentation needed
+    "desc", #documentation needed
+    "rev", #documentation needed
+    "status", #documentation needed
+    "releaseticket", #documentation needed
+    "library_repo", #documentation needed
+    "library_subpath", #documentation needed
+    "datestarted", #documentation needed
+    "datemodified", #documentation needed
+    "datereleased", #documentation needed
+    "git_hash_of_harnice_src", #documentation needed
+    "drawnby", #documentation needed
+    "checkedby", #documentation needed
+    "revisionupdates", #documentation needed
+    "affectedinstances", #documentation needed
 ]
 
 

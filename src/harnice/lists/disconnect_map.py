@@ -3,17 +3,17 @@ import csv
 from harnice import fileio
 
 COLUMNS = [
-    "A-side_device_refdes",
-    "A-side_device_channel_id",
-    "A-side_device_channel_type",
-    "B-side_device_refdes",
-    "B-side_device_channel_id",
-    "B-side_device_channel_type",
-    "disconnect_refdes",
-    "disconnect_channel_id",
-    "A-port_channel_type",
-    "B-port_channel_type",
-    "manual_map_channel_python_equiv",
+    "A-side_device_refdes", #documentation needed
+    "A-side_device_channel_id", #documentation needed
+    "A-side_device_channel_type", #documentation needed
+    "B-side_device_refdes", #documentation needed
+    "B-side_device_channel_id", #documentation needed
+    "B-side_device_channel_type", #documentation needed
+    "disconnect_refdes", #documentation needed
+    "disconnect_channel_id", #documentation needed
+    "A-port_channel_type", #documentation needed
+    "B-port_channel_type", #documentation needed
+    "manual_map_channel_python_equiv", #documentation needed
 ]
 
 
