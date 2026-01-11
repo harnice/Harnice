@@ -20,6 +20,9 @@ instance_data
 
 
 def pull(input_dict, update_instances_list=True, destination_directory=None):
+    """
+    documentation needed
+    """
     # throw errors if required fields are blank
     if input_dict.get("lib_repo") in [None, ""]:
         raise ValueError(
@@ -225,6 +228,9 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
 
 
 def get_local_path(lib_repo):
+    """
+    documentation needed
+    """
     csv_path = fileio.path("library locations")  # path to library_locations.csv
 
     # ----------------------------------------------------

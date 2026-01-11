@@ -1,14 +1,17 @@
 from pathlib import Path
-
+import docs_compiler
+from harnice.utils import library_utils
 harnice_dir = Path(__file__).resolve().parents[1]
 
 #========================================================
 # LIBRARY UTILS
 #========================================================
+module_prefix = "library_utils"
 
-md = [
-    "# Library Utilities",
-]
+md = ["""# Library Utilities"""]
+md.append(docs_compiler.commands_header(module_prefix))
+md.append(docs_compiler.print_function_docs(library_utils.pull, module_prefix))
+md.append(docs_compiler.print_function_docs(library_utils.get_local_path, module_prefix))
 
 path = harnice_dir / "docs" / "commands" / "library_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
