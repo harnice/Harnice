@@ -29,9 +29,9 @@ A Signals List is an exhaustive list of every signal is going into or out of a t
         - **Janky but easiest to understand:** Define a connector part number that actually represents multiple connectors, while using cavities to reference each connector.
 
  - “A” and “B” channels of the same disconnect must be compatible with each other
-
 ---
-## Columns 
+##Columns 
+*Columns are automatically generated when `signals_list.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 ### Columns of Signals Lists for Devices 
 === "`channel_id`"
 
@@ -103,7 +103,13 @@ A Signals List is an exhaustive list of every signal is going into or out of a t
 
 ---
 
+---
 ##Commands:
+*Use the following functions by first importing the module in your script like this: 
+```python
+from harnice.lists import signals_list
+```
+ then use as written.*
 ??? info "`signals_list.set_list_type()`"
 
     Documentation needed.

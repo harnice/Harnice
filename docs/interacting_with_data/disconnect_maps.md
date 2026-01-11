@@ -2,7 +2,8 @@
 A list of every available channel on a every disconnect, and every channel that may or may not pass through it
 
 ---
-## Columns 
+##Columns 
+*Columns are automatically generated when `disconnect_map.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`A-side_device_refdes`"
 
     documentation needed
@@ -50,6 +51,11 @@ A list of every available channel on a every disconnect, and every channel that 
 
 ---
 ##Commands:
+*Use the following functions by first importing the module in your script like this: 
+```python
+from harnice.lists import disconnect_map
+```
+ then use as written.*
 ??? info "`disconnect_map.new()`"
 
     Documentation needed.

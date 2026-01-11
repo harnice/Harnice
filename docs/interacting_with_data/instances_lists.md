@@ -4,7 +4,8 @@ An instances list is a list of every physical or notional item, idea, note, part
 Instances lists are the single comprehensive source of truth for the product you are working on. Other documents like the Feature Tree, etc, build this list, and all output documentation are derived from it.
 
 ---
-## Columns 
+##Columns 
+*Columns are automatically generated when `instances_list.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`net`"
 
     documentation needed
@@ -278,7 +279,13 @@ Instances lists are the single comprehensive source of truth for the product you
     documentation needed
 
 
+---
 ##Commands:
+*Use the following functions by first importing the module in your script like this: 
+```python
+from harnice.lists import instances_list
+```
+ then use as written.*
 ??? info "`instances_list.new_instance()`"
 
     New Instance

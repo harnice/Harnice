@@ -2,7 +2,8 @@
 A report of what was imported during the most recent render of the current product
 
 ---
-## Columns 
+##Columns 
+*Columns are automatically generated when `library_history.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`instance_name`"
 
     documentation needed
@@ -70,6 +71,11 @@ A report of what was imported during the most recent render of the current produ
 
 ---
 ##Commands:
+*Use the following functions by first importing the module in your script like this: 
+```python
+from harnice.lists import library_history
+```
+ then use as written.*
 ??? info "`library_history.new()`"
 
     Documentation needed.

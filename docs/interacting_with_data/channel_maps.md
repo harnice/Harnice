@@ -2,7 +2,8 @@
 A list of channels on devices within merged_nets that are either mapped to other channels or are unmapped.
 
 ---
-## Columns 
+##Columns 
+*Columns are automatically generated when `channel_map.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`merged_net`"
 
     documentation needed
@@ -54,6 +55,11 @@ A list of channels on devices within merged_nets that are either mapped to other
 
 ---
 ##Commands:
+*Use the following functions by first importing the module in your script like this: 
+```python
+from harnice.lists import channel_map
+```
+ then use as written.*
 ??? info "`channel_map.new()`"
 
     Makes a new blank channel map. Overwrites existing channel map.

@@ -2,7 +2,8 @@
 A list of every individual electrical connection that must be present in your system or harness to satisfy your channel and disconnect maps.
 
 ---
-## Columns 
+##Columns 
+*Columns are automatically generated when `circuits_list.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`net`"
 
     documentation needed
@@ -74,6 +75,11 @@ A list of every individual electrical connection that must be present in your sy
 
 ---
 ##Commands:
+*Use the following functions by first importing the module in your script like this: 
+```python
+from harnice.lists import circuits_list
+```
+ then use as written.*
 ??? info "`circuits_list.new()`"
 
     Makes a new blank circuits list. Overwrites existing circuits list.

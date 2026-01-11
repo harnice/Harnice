@@ -2,7 +2,8 @@
 A record of every revision of a part, and its release status
 
 ---
-## Columns 
+##Columns 
+*Columns are automatically generated when `rev_history.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`product`"
 
     documentation needed
@@ -74,6 +75,11 @@ A record of every revision of a part, and its release status
 
 ---
 ##Commands:
+*Use the following functions by first importing the module in your script like this: 
+```python
+from harnice.lists import rev_history
+```
+ then use as written.*
 ??? info "`rev_history.overwrite()`"
 
     Documentation needed.
