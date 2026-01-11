@@ -1,5 +1,19 @@
 from pathlib import Path
 
+harnice_dir = Path(__file__).resolve().parents[1]
+
+#========================================================
+# LIBRARY UTILS
+#========================================================
+
+md = [
+    "# Library Utilities",
+]
+
+path = harnice_dir / "docs" / "commands" / "library_utils.md"
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text("".join(md), encoding="utf-8")
+
 #========================================================
 # APPEARANCE
 #========================================================
@@ -17,7 +31,6 @@ md = [
     "```\n",
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "commands" / "appearance.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -30,7 +43,6 @@ md = [
     "# Circuit Utilities",
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "commands" / "circuits_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -43,7 +55,6 @@ md = [
     "# Feature Tree Utilities",
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "commands" / "feature_tree_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -56,23 +67,10 @@ md = [
     "# Formboard Utilities",
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "commands" / "formboard_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
-# LIBRARY UTILS
-#========================================================
-
-md = [
-    "# Library Utilities",
-]
-
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "commands" / "library_utils.md"
-path.parent.mkdir(parents=True, exist_ok=True)
-path.write_text("".join(md), encoding="utf-8")
 
 #========================================================
 # NOTE UTILS
@@ -82,7 +80,6 @@ md = [
     "# Note Utilities",
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "commands" / "note_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -328,7 +325,6 @@ End of Requirements — rev2
 """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "commands" / "svg_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -341,7 +337,6 @@ md = [
     "# System Utilities",
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "commands" / "system_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")

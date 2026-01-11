@@ -3,6 +3,21 @@ import inspect
 import re
 from types import ModuleType
 
+def commands_header(module_prefix):
+    string = "\n---\n##Commands:\n"
+    string += f"*Use the following functions by first importing the module in your script like this: \n```python\nfrom harnice.lists import {module_prefix}\n```\n then use as written.*\n"
+    return string
+
+def columns_header(module_prefix, additional_columns=False):
+    string = "\n---\n##Columns \n"
+    string += f"*Columns are automatically generated when `{module_prefix}.new()` is called. "
+    if additional_columns:
+        string += "Additional columns for this kind of list may be added by the user.*"
+    else:
+        string += "Additional columns are not supported and may result in an error when parsing.*"
+    string += "\n"
+    return string
+
 def print_function_docs(fn,module_prefix=""):
     title = fn.__name__
     doc = fn.__doc__ or "Documentation needed."
@@ -12,7 +27,6 @@ def print_function_docs(fn,module_prefix=""):
         + "\n".join(f"    {line}" for line in doc.strip().splitlines())
         + "\n\n"
     )
-
 
 def columns_to_markdown(module: ModuleType, var_name: str) -> str:
     """
