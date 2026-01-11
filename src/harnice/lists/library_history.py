@@ -2,22 +2,22 @@ import csv
 from harnice import fileio
 
 COLUMNS = [
-    "instance_name",
-    "mpn",
-    "item_type",
-    "lib_repo",
-    "lib_subpath",
-    "lib_desc",
-    "lib_latest_rev",
-    "lib_rev_used_here",
-    "lib_status",
-    "lib_releaseticket",
-    "lib_datestarted",
-    "lib_datemodified",
-    "lib_datereleased",
-    "lib_drawnby",
-    "lib_checkedby",
-    "project_editable_lib_modified",
+    "instance_name", #documentation needed
+    "mpn", #documentation needed
+    "item_type", #documentation needed
+    "lib_repo", #documentation needed
+    "lib_subpath", #documentation needed
+    "lib_desc", #documentation needed
+    "lib_latest_rev", #documentation needed
+    "lib_rev_used_here", #documentation needed
+    "lib_status", #documentation needed
+    "lib_releaseticket", #documentation needed
+    "lib_datestarted", #documentation needed
+    "lib_datemodified", #documentation needed
+    "lib_datereleased", #documentation needed
+    "lib_drawnby", #documentation needed
+    "lib_checkedby", #documentation needed
+    "project_editable_lib_modified", #documentation needed
 ]
 
 

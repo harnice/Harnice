@@ -3,12 +3,12 @@ import os
 from harnice import fileio
 
 COLUMNS = [
-    "segment_id",
-    "node_at_end_a",
-    "node_at_end_b",
-    "length",
-    "angle",
-    "diameter",
+    "segment_id", #documentation needed
+    "node_at_end_a", #documentation needed
+    "node_at_end_b", #documentation needed
+    "length", #documentation needed
+    "angle", #documentation needed
+    "diameter", #documentation needed
 ]
 
 

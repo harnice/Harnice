@@ -5,7 +5,7 @@ from types import ModuleType
 
 def print_function_docs(fn,module_prefix=""):
     title = fn.__name__
-    doc = fn.__doc__ or "No documentation provided."
+    doc = fn.__doc__ or "Documentation needed."
 
     return (
         f'??? info "`{module_prefix}.{title}()`"\n\n'

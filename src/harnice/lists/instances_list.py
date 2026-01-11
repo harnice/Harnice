@@ -5,11 +5,11 @@ from threading import Lock
 from harnice import fileio, state
 
 COLUMNS = [
-    "net",
-    "instance_name",
-    "print_name",
-    "bom_line_number",
-    "mfg",
+    "net", #documentation needed
+    "instance_name", #documentation needed
+    "print_name", #documentation needed
+    "bom_line_number", #documentation needed
+    "mfg", #documentation needed
     "mpn",  # unique part identifier (manufacturer + part number concatenated)
     "item_type",  # connector, backshell, whatever
     "parent_instance",  # general purpose reference
@@ -17,7 +17,7 @@ COLUMNS = [
     "segment_group",  # the group of segments that this instance is part of
     "segment_order",  # the sequential id of this item in its segment group
     "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
-    "channel_group",
+    "channel_group", #documentation needed
     "circuit_id",  # which signal this component is electrically connected to
     "circuit_port_number",  # the sequential id of this item in its signal chain
     "node_at_end_a",  # derived from formboard definition
@@ -29,9 +29,9 @@ COLUMNS = [
     "rotate_csys",  # derived from parent_csys and parent_csys_name
     "absolute_rotation",  # manual add, not nominally used unless it's a flagnote, segment, or node
     "csys_children",  # imported csys children from library attributes file
-    "cable_group",
-    "cable_container",
-    "cable_identifier",
+    "cable_group", #documentation needed
+    "cable_container", #documentation needed
+    "cable_identifier", #documentation needed
     "length",  # derived from formboard definition, the length of a segment
     "diameter",  # apparent diameter of a segment <---------- change to print_diameter
     "appearance",  # see harnice.utils.appearance for details
@@ -40,39 +40,39 @@ COLUMNS = [
     "note_parent",  # the instance the note applies to. typically don't use this in the instances list, just note_utils
     "note_text",  # the content of the note
     "note_affected_instances",  # list of instances that are affected by the note
-    "lib_repo",
-    "lib_subpath",
-    "lib_desc",
-    "lib_latest_rev",
-    "lib_rev_used_here",
-    "lib_status",
-    "lib_releaseticket",
-    "lib_datestarted",
-    "lib_datemodified",
-    "lib_datereleased",
-    "lib_drawnby",
-    "lib_checkedby",
-    "project_editable_lib_modified",
-    "lib_build_notes",
-    "lib_tools",
+    "lib_repo", #documentation needed
+    "lib_subpath", #documentation needed
+    "lib_desc", #documentation needed
+    "lib_latest_rev", #documentation needed
+    "lib_rev_used_here", #documentation needed
+    "lib_status", #documentation needed
+    "lib_releaseticket", #documentation needed
+    "lib_datestarted", #documentation needed
+    "lib_datemodified", #documentation needed
+    "lib_datereleased", #documentation needed
+    "lib_drawnby", #documentation needed
+    "lib_checkedby", #documentation needed
+    "project_editable_lib_modified", #documentation needed
+    "lib_build_notes", #documentation needed
+    "lib_tools", #documentation needed
     "this_instance_mating_device_refdes",  # if connector, refdes of the device it plugs into
     "this_instance_mating_device_connector",  # if connector, name of the connector it plugs into
     "this_instance_mating_device_connector_mpn",  # if connector, mpn of the connector it plugs into
-    "this_net_from_device_refdes",
-    "this_net_from_device_channel_id",
-    "this_net_from_device_connector_name",
-    "this_net_to_device_refdes",
-    "this_net_to_device_channel_id",
-    "this_net_to_device_connector_name",
+    "this_net_from_device_refdes", #documentation needed
+    "this_net_from_device_channel_id", #documentation needed
+    "this_net_from_device_connector_name", #documentation needed
+    "this_net_to_device_refdes", #documentation needed
+    "this_net_to_device_channel_id", #documentation needed
+    "this_net_to_device_connector_name", #documentation needed
     "this_channel_from_device_refdes",  # if channel, refdes of the device on one side of the channel
-    "this_channel_from_device_channel_id",
+    "this_channel_from_device_channel_id", #documentation needed
     "this_channel_to_device_refdes",  # if channel, refdes of the device on the other side of the channel
-    "this_channel_to_device_channel_id",
-    "this_channel_from_channel_type",
-    "this_channel_to_channel_type",
-    "signal_of_channel_type",
-    "debug",
-    "debug_cutoff",
+    "this_channel_to_device_channel_id", #documentation needed
+    "this_channel_from_channel_type", #documentation needed
+    "this_channel_to_channel_type", #documentation needed
+    "signal_of_channel_type", #documentation needed
+    "debug", #documentation needed
+    "debug_cutoff", #documentation needed
 ]
 
 

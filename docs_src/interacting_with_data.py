@@ -7,12 +7,12 @@ harnice_dir = Path(__file__).resolve().parents[1]
 # CHANNEL MAPS
 #========================================================
 module_prefix = "channel_map"
-md = ["""# Interacting with Channel Maps
 
-A list of channels on devices within merged_nets that are either mapped to other channels or are unmapped.
-"""]
-
-md.append("\n##Commands:\n")
+md = ["""# Interacting with Channel Maps"""]
+md.append("""\nA list of channels on devices within merged_nets that are either mapped to other channels or are unmapped.\n""")
+md.append("\n---\n## Columns \n")
+md.append(docs_compiler.columns_to_markdown(channel_map, "COLUMNS"))
+md.append("\n---\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(channel_map.new, module_prefix))
 md.append(docs_compiler.print_function_docs(channel_map.map, module_prefix))
 md.append(docs_compiler.print_function_docs(channel_map.already_mapped_set_append, module_prefix))
@@ -28,12 +28,11 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 module_prefix = "circuits_list"
 
-md = [r"""# Interacting with Circuits Lists
-
-A list of every individual electrical connection that must be present in your system or harness to satisfy your channel and disconnect maps.
-"""]
-
-md.append("\n##Commands:\n")
+md = ["""# Interacting with Circuits Lists"""]
+md.append("""\nA list of every individual electrical connection that must be present in your system or harness to satisfy your channel and disconnect maps.\n""")
+md.append("\n---\n## Columns \n")
+md.append(docs_compiler.columns_to_markdown(circuits_list, "COLUMNS"))
+md.append("\n---\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(circuits_list.new, module_prefix))
 
 path = harnice_dir / "docs" / "interacting_with_data" / "circuits_lists.md"
@@ -45,11 +44,11 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 module_prefix = "disconnect_map"
 
-md = [r"""# Interacting with Disconnect Maps
-
-A list of every available channel on a every disconnect, and every channel that may or may not pass through it
-"""]
-md.append("\n##Commands:\n")
+md = ["""# Interacting with Disconnect Maps"""]
+md.append("""\nA list of every available channel on a every disconnect, and every channel that may or may not pass through it\n""")
+md.append("\n---\n## Columns \n")
+md.append(docs_compiler.columns_to_markdown(disconnect_map, "COLUMNS"))
+md.append("\n---\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(disconnect_map.new, module_prefix))
 md.append(docs_compiler.print_function_docs(disconnect_map.assign, module_prefix))
 md.append(docs_compiler.print_function_docs(disconnect_map.already_assigned_channels_through_disconnects_set_append, module_prefix))
@@ -63,12 +62,16 @@ md.append(docs_compiler.print_function_docs(disconnect_map.ensure_requirements_m
 path = harnice_dir / "docs" / "interacting_with_data" / "disconnect_maps.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
+
 #========================================================
 # FORMBOARD GRAPHS
 #========================================================
 module_prefix = "formboard_graph"
 
-md = [r"""# Interacting with Formboard Graphs"""]
+md = ["""# Interacting with Formboard Graphs"""]
+md.append("""\nA table that describes the geometry of the formboard, and the nodes and segments that make up the formboard.\n""")
+md.append("\n---\n## Columns \n")
+md.append(docs_compiler.columns_to_markdown(formboard_graph, "COLUMNS"))
 md.append("\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(formboard_graph.new, module_prefix))
 md.append(docs_compiler.print_function_docs(formboard_graph.append, module_prefix))
@@ -82,18 +85,11 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 module_prefix = "instances_list"
 
-md = [r"""## What it is
-`*-instances_list.tsv` is a tab-separated value list of every physical or notional thing, drawing element, or concept that is the single source of truth for the product you are working on.
-
-A list of every single item, idea, note, part, instruction, circuit, literally anything that comprehensively describes how to build that harness or system
-TSV (tab-separated-values, big spreadsheet)
-Declined alternatives: STEP files, schematics, dictionaries not general, descriptive, or human readable enough
-
-
-## How to Import
-Including the instances list module into your py file will allow you to access the functions of this module. Copy and paste it into the top of your py file.
-`from harnice.lists import instances_list`"""]
-
+md = ["""## Interacting with Instances Lists"""]
+md.append("""\nAn instances list is a list of every physical or notional item, idea, note, part, instruction, circuit, drawing element, thing, concept literally anything that describes how to build that harness or system.\n""")
+md.append("""\nInstances lists are the single comprehensive source of truth for the product you are working on. Other documents like the Feature Tree, etc, build this list, and all output documentation are derived from it.\n""")
+md.append("\n---\n## Columns \n")
+md.append(docs_compiler.columns_to_markdown(instances_list, "COLUMNS"))
 md.append("\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(instances_list.new_instance, module_prefix))
 md.append(docs_compiler.print_function_docs(instances_list.modify, module_prefix))
@@ -113,11 +109,11 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 module_prefix = "library_history"
 
-md = [r"""# Interacting with Library History
-
-A report of what was imported during the most recent render of the current product
-"""]
-md.append("\n##Commands:\n")
+md = ["""# Interacting with Library History"""]
+md.append("""\nA report of what was imported during the most recent render of the current product\n""")
+md.append("\n---\n## Columns \n")
+md.append(docs_compiler.columns_to_markdown(library_history, "COLUMNS"))
+md.append("\n---\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(library_history.new, module_prefix))
 md.append(docs_compiler.print_function_docs(library_history.append, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "library_history.md"
@@ -153,11 +149,11 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 module_prefix = "rev_history"
 
-md = ["""# Interacting with Revision History Lists
-
-A record of every revision of a part, and its release status
-"""]
-md.append("\n##Commands:\n")
+md = ["""# Interacting with Revision History Lists"""]
+md.append("""\nA record of every revision of a part, and its release status\n""")
+md.append("\n---\n## Columns \n")
+md.append(docs_compiler.columns_to_markdown(rev_history, "COLUMNS"))
+md.append("\n---\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(rev_history.overwrite, module_prefix))
 md.append(docs_compiler.print_function_docs(rev_history.info, module_prefix))
 md.append(docs_compiler.print_function_docs(rev_history.initial_release_exists, module_prefix))
@@ -174,22 +170,13 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 module_prefix = "signals_list"
 
-md = [r"""A **Signals List** is an exhaustive list of every signal is going into or out of a thing. Signals Lists are the primary way Harnice stores information about devices, and act as the source of truth for devices and disconnects.
-
- - Each signal is contained by one or more cavities of connectors
- - Each signal may be assigned to a functional signal of a channel, or left unused.
-"""]
-
-md.append("---\n")
-md.append("## Columns\n")
-md.append("### Columns of Signals Lists for Devices\n")
-md.append(docs_compiler.columns_to_markdown(signals_list, "DEVICE_COLUMNS"))
-md.append("### Columns of Signals Lists for Disconnects\n")
-md.append(docs_compiler.columns_to_markdown(signals_list, "DISCONNECT_COLUMNS"))
-md.append("---\n")
-
+md = ["""# Interacting with Signals Lists"""]
+md.append("""\nA Signals List is an exhaustive list of every signal is going into or out of a thing. Signals Lists are the primary way Harnice stores information about devices, and act as the source of truth for devices and disconnects.\n""")
+md.append("\n---\n## Rules:\n")
 md.append(r"""
-## Signals Lists have rules...
+ - Each signal is contained by one or more cavities of connectors
+
+ - Each signal may be assigned to a functional signal of a channel, or left unused.
 
  - Every combination of (channel_id, signal) must be unique within the signals list
     - i.e. you can’t have two “ch1, pos” signals on the same device
@@ -212,7 +199,11 @@ md.append(r"""
         - **Janky but easiest to understand:** Define a connector part number that actually represents multiple connectors, while using cavities to reference each connector.
 
  - “A” and “B” channels of the same disconnect must be compatible with each other""")
-
+md.append("\n\n---\n## Columns \n")
+md.append("### Columns of Signals Lists for Devices \n")
+md.append(docs_compiler.columns_to_markdown(signals_list, "DEVICE_COLUMNS"))
+md.append("### Columns of Signals Lists for Disconnects \n")
+md.append(docs_compiler.columns_to_markdown(signals_list, "DISCONNECT_COLUMNS"))
 md.append("\n\n---\n")
 md.append("\n##Commands:\n")
 md.append(docs_compiler.print_function_docs(signals_list.set_list_type, module_prefix))
@@ -230,11 +221,13 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 module_prefix = "manifest"
 
-md = ["""# Interacting with System Manifests
-
-A table that relates reference designator to part number(s), and may contain other information indexed to the reference designator
-"""]
-md.append("\n##Commands:\n")
+md = ["""# Interacting with System Manifests"""]
+md.append("""\nA table that relates reference designator to part number(s), and may contain other information indexed to the reference designator\n""")
+md.append("\n---\n## Columns \n")
+md.append(docs_compiler.columns_to_markdown(manifest, "COLUMNS"))
+md.append("\n---\n##Commands:\n")
+md.append(docs_compiler.print_function_docs(manifest.new, module_prefix))
+md.append(docs_compiler.print_function_docs(manifest.update_upstream, module_prefix))
 md.append(docs_compiler.print_function_docs(manifest.new, module_prefix))
 md.append(docs_compiler.print_function_docs(manifest.update_upstream, module_prefix))
 path = harnice_dir / "docs" / "interacting_with_data" / "system_manifests.md"
