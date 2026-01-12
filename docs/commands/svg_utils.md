@@ -237,11 +237,40 @@ from harnice.lists import svg_utils
 
 ??? info "`svg_utils.add_entire_svg_file_contents_to_group()`"
 
-    documentation needed
+    Wraps the entire contents of an SVG file in a new group element.
+    
+    Reads an SVG file, extracts its inner content (everything between <svg> tags),
+    and wraps it in a new group element with start and end markers. The original
+    file is modified in place.
+    
+    Args:
+        filepath (str): Path to the SVG file to modify.
+        new_group_name (str): Name to use for the new group element (will create
+            {new_group_name}-contents-start and {new_group_name}-contents-end markers).
+    
+    Raises:
+        ValueError: If the file does not appear to be a valid SVG or has no inner contents.
 
 ??? info "`svg_utils.find_and_replace_svg_group()`"
 
-    documentation needed
+    Copies SVG group content from one file to another, replacing existing group content.
+    
+    Extracts the content between group markers in a source SVG file and replaces
+    the content between corresponding markers in a destination SVG file. The group
+    markers are identified by {group_name}-contents-start and {group_name}-contents-end IDs.
+    
+    Args:
+        source_svg_filepath (str): Path to the source SVG file containing the group to copy.
+        source_group_name (str): Name of the source group to extract content from.
+        destination_svg_filepath (str): Path to the destination SVG file to modify.
+        destination_group_name (str): Name of the destination group to replace content in.
+    
+    Returns:
+        int: Always returns 1 (success indicator).
+    
+    Raises:
+        ValueError: If any of the required group markers are not found in the source
+            or destination files.
 
 ??? info "`svg_utils.draw_styled_path()`"
 
