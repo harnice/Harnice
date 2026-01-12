@@ -2,6 +2,10 @@ import runpy
 import inspect
 import re
 from types import ModuleType
+from pathlib import Path
+
+def harnice_dir():
+    return Path(__file__).resolve().parents[1]
 
 def commands_header(module_prefix):
     string = "\n---\n##Commands:\n"
@@ -95,7 +99,6 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
 
 if __name__ == "__main__":
     runpy.run_path("commands.py", run_name="__main__")
-    runpy.run_path("fragments.py", run_name="__main__")
     runpy.run_path("getting_started.py", run_name="__main__")
     runpy.run_path("interacting_with_data.py", run_name="__main__")
     runpy.run_path("products.py", run_name="__main__")
