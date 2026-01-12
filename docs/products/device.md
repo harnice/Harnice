@@ -1,3 +1,4 @@
+
 # Devices
 
 Harnice defines a device to be **any electrical item that is not a harness.** Devices are the “block” elements in a block diagram, while harnesses are the nets.
@@ -67,12 +68,3 @@ The definition of a device lives in a CSV file called a "Signals List".
     ??? info "Working on a Generated Kicad Symbol"
         {% include-markdown "fragments/working-with-a-generated-kicad-symbol.md" %}
 
----
-
-# Device Configurations
-
-{% include-markdown "fragments/configurations.md" %}
-
----
-
-# Examples

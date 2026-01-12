@@ -1,3 +1,4 @@
+
 # Channel Types
 Uniquely identifiable set of signals that allow electrical intent to be documented and later referenced
 

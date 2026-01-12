@@ -1,5 +1,4 @@
-from pathlib import Path
-
+import docs_compiler
 #========================================================
 # CABLES
 #========================================================
@@ -14,8 +13,7 @@ Something you can purchase by the spool or lot, contains conductor(s) that can b
 """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "cable.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "cable.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -40,8 +38,7 @@ Uniquely identifiable set of signals that allow electrical intent to be document
 """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "channel_type.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "channel_type.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -120,20 +117,10 @@ The definition of a device lives in a CSV file called a "Signals List".
     ??? info "Working on a Generated Kicad Symbol"
         {% include-markdown "fragments/working-with-a-generated-kicad-symbol.md" %}
 
----
-
-# Device Configurations
-
-{% include-markdown "fragments/configurations.md" %}
-
----
-
-# Examples
 """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "device.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "device.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -174,14 +161,9 @@ In Harnice, any time you need to add connectors in between harnesses, you're req
     ??? info "Updating a Signals List"
         {% include-markdown "fragments/how-to-update-signals-list.md" %}
 
-# Disconnect Configurations
-
-{% include-markdown "fragments/configurations.md" %}
 """
 ]
-
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "disconnect.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "disconnect.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -196,8 +178,7 @@ A bubble shape on a drawing that usually points to something via a leader arrow.
 """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "flagnote.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "flagnote.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -232,8 +213,7 @@ Harness data is stored in the following file formats.
 """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "harness.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "harness.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -245,8 +225,7 @@ md = [
     "# Macro"
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "macro.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "macro.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -261,8 +240,7 @@ Something you can purchase per each or per unit. May have a 1:1 drawing that can
 """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "part.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "part.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -355,8 +333,7 @@ System data is stored in the following file formats.
     """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "system.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "system.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -372,7 +349,6 @@ A page SVG, usually with your name or company logo, that makes your drawings loo
 """
 ]
 
-harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "products" / "titleblock.md"
+path = docs_compiler.harnice_dir() / "docs" / "products" / "titleblock.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")

@@ -1,8 +1,6 @@
-from pathlib import Path
 import docs_compiler
 from harnice.lists import channel_map, circuits_list, disconnect_map, formboard_graph, instances_list, library_history, post_harness_instances_list, rev_history, signals_list, manifest
 
-harnice_dir = Path(__file__).resolve().parents[1]
 #========================================================
 # CHANNEL MAPS
 #========================================================
@@ -19,7 +17,7 @@ md.append(docs_compiler.print_function_docs(channel_map.already_mapped_set_appen
 md.append(docs_compiler.print_function_docs(channel_map.already_mapped_set, module_prefix))
 md.append(docs_compiler.print_function_docs(channel_map.already_mapped, module_prefix))
 
-path = harnice_dir / "docs" / "interacting_with_data" / "channel_maps.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "channel_maps.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -35,7 +33,7 @@ md.append(docs_compiler.columns_to_markdown(circuits_list, "COLUMNS"))
 md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(circuits_list.new, module_prefix))
 
-path = harnice_dir / "docs" / "interacting_with_data" / "circuits_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "circuits_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -59,7 +57,7 @@ md.append(docs_compiler.print_function_docs(disconnect_map.channel_is_already_as
 md.append(docs_compiler.print_function_docs(disconnect_map.disconnect_is_already_assigned, module_prefix))
 md.append(docs_compiler.print_function_docs(disconnect_map.ensure_requirements_met, module_prefix))
 
-path = harnice_dir / "docs" / "interacting_with_data" / "disconnect_maps.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "disconnect_maps.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -76,7 +74,7 @@ md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(formboard_graph.new, module_prefix))
 md.append(docs_compiler.print_function_docs(formboard_graph.append, module_prefix))
 
-path = harnice_dir / "docs" / "interacting_with_data" / "formboard_graphs.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "formboard_graphs.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -100,7 +98,7 @@ md.append(docs_compiler.print_function_docs(instances_list.attribute_of, module_
 md.append(docs_compiler.print_function_docs(instances_list.instance_in_connector_group_with_item_type, module_prefix))
 md.append(docs_compiler.print_function_docs(instances_list.list_of_uniques, module_prefix))
 
-path = harnice_dir / "docs" / "interacting_with_data" / "instances_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -116,7 +114,7 @@ md.append(docs_compiler.columns_to_markdown(library_history, "COLUMNS"))
 md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(library_history.new, module_prefix))
 md.append(docs_compiler.print_function_docs(library_history.append, module_prefix))
-path = harnice_dir / "docs" / "interacting_with_data" / "library_history.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "library_history.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -125,7 +123,7 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 
 md = ["""# Interacting with Netlists"""]
-path = harnice_dir / "docs" / "interacting_with_data" / "netlists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "netlists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -140,7 +138,7 @@ A list of every physical or notional thing, drawing element, or concept that inc
 md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(post_harness_instances_list.rebuild, module_prefix))
 md.append(docs_compiler.print_function_docs(post_harness_instances_list.push, module_prefix))
-path = harnice_dir / "docs" / "interacting_with_data" / "post_harness_instances_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "post_harness_instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -161,7 +159,7 @@ md.append(docs_compiler.print_function_docs(rev_history.initial_release_desc, mo
 md.append(docs_compiler.print_function_docs(rev_history.update_datemodified, module_prefix))
 md.append(docs_compiler.print_function_docs(rev_history.new, module_prefix))
 md.append(docs_compiler.print_function_docs(rev_history.append, module_prefix))
-path = harnice_dir / "docs" / "interacting_with_data" / "revision_history_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "revision_history_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -172,33 +170,8 @@ module_prefix = "signals_list"
 
 md = ["""# Interacting with Signals Lists"""]
 md.append("""\nA Signals List is an exhaustive list of every signal is going into or out of a thing. Signals Lists are the primary way Harnice stores information about devices, and act as the source of truth for devices and disconnects.\n""")
-md.append("\n---\n## Rules:\n")
-md.append(r"""
- - Each signal is contained by one or more cavities of connectors
-
- - Each signal may be assigned to a functional signal of a channel, or left unused.
-
- - Every combination of (channel_id, signal) must be unique within the signals list
-    - i.e. you can’t have two “ch1, pos” signals on the same device
-
- - Signals of channels in a signals list must agree with their channel type definitions
-    - If a signal is on the list that has a channel name and a channel type, all of the required signals of that channel type must also be present in the list with the same channel name (you can't just define 'positive' if the channel type requires 'positive' and 'negative')
-
- - Every signal in the Signals List must have a pre-defined channel type
-
-    ??? info "Channel Types"
-        {% include-markdown "products/channel_type.md" %}
-
- - You can’t put signals of the same channel on different connectors
-    - While this may sound inconvenient, it breaks a lot of internal assumptions Harnice is making on the back end about how to map channels. 
-
-    - If you need to do this, I recommend the following two options:
-    
-        - **Most correct but confusing:** Define one channel type per signal, then manually chmap your channels or write a macro for mapping the channels to their respective destinations.
-
-        - **Janky but easiest to understand:** Define a connector part number that actually represents multiple connectors, while using cavities to reference each connector.
-
- - “A” and “B” channels of the same disconnect must be compatible with each other""")
+md.append("\n---\n## Signals List Validation Checks:\n*(These are automatically validated when you render the device or disconnect that owns the list.)*\n\n")
+md.append("""{% include-markdown "fragments/signals_list_requirements.md" %}""")
 md.append(docs_compiler.columns_header(module_prefix))
 md.append("### Columns of Signals Lists for Devices \n")
 md.append(docs_compiler.columns_to_markdown(signals_list, "DEVICE_COLUMNS"))
@@ -212,7 +185,7 @@ md.append(docs_compiler.print_function_docs(signals_list.append, module_prefix))
 md.append(docs_compiler.print_function_docs(signals_list.cavity_of_signal, module_prefix))
 md.append(docs_compiler.print_function_docs(signals_list.connector_name_of_channel, module_prefix))
 md.append("---\n")
-path = harnice_dir / "docs" / "interacting_with_data" / "signals_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "signals_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -230,6 +203,6 @@ md.append(docs_compiler.print_function_docs(manifest.new, module_prefix))
 md.append(docs_compiler.print_function_docs(manifest.update_upstream, module_prefix))
 md.append(docs_compiler.print_function_docs(manifest.new, module_prefix))
 md.append(docs_compiler.print_function_docs(manifest.update_upstream, module_prefix))
-path = harnice_dir / "docs" / "interacting_with_data" / "system_manifests.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "system_manifests.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")

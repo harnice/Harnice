@@ -2,33 +2,10 @@
 A Signals List is an exhaustive list of every signal is going into or out of a thing. Signals Lists are the primary way Harnice stores information about devices, and act as the source of truth for devices and disconnects.
 
 ---
-## Rules:
+## Signals List Validation Checks:
+*(These are automatically validated when you render the device or disconnect that owns the list.)*
 
- - Each signal is contained by one or more cavities of connectors
-
- - Each signal may be assigned to a functional signal of a channel, or left unused.
-
- - Every combination of (channel_id, signal) must be unique within the signals list
-    - i.e. you can’t have two “ch1, pos” signals on the same device
-
- - Signals of channels in a signals list must agree with their channel type definitions
-    - If a signal is on the list that has a channel name and a channel type, all of the required signals of that channel type must also be present in the list with the same channel name (you can't just define 'positive' if the channel type requires 'positive' and 'negative')
-
- - Every signal in the Signals List must have a pre-defined channel type
-
-    ??? info "Channel Types"
-        {% include-markdown "products/channel_type.md" %}
-
- - You can’t put signals of the same channel on different connectors
-    - While this may sound inconvenient, it breaks a lot of internal assumptions Harnice is making on the back end about how to map channels. 
-
-    - If you need to do this, I recommend the following two options:
-    
-        - **Most correct but confusing:** Define one channel type per signal, then manually chmap your channels or write a macro for mapping the channels to their respective destinations.
-
-        - **Janky but easiest to understand:** Define a connector part number that actually represents multiple connectors, while using cavities to reference each connector.
-
- - “A” and “B” channels of the same disconnect must be compatible with each other
+{% include-markdown "fragments/signals_list_requirements.md" %}
 ---
 ##Columns 
 *Columns are automatically generated when `signals_list.new()` is called. Additional columns are not supported and may result in an error when parsing.*

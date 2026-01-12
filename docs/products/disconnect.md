@@ -31,6 +31,3 @@ In Harnice, any time you need to add connectors in between harnesses, you're req
     ??? info "Updating a Signals List"
         {% include-markdown "fragments/how-to-update-signals-list.md" %}
 
-# Disconnect Configurations
-
-{% include-markdown "fragments/configurations.md" %}

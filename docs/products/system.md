@@ -1,3 +1,4 @@
+
 # System
 A collection of devices and harnesses that satisfies a set of functionality requirements for some external purpose. 
 
@@ -79,3 +80,4 @@ System data is stored in the following file formats.
 ??? info "Manifests"
 
     {% include-markdown "interacting_with_data/system_manifests.md" %}
+    
