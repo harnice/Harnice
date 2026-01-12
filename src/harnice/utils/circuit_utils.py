@@ -5,6 +5,9 @@ import os
 
 
 def end_ports_of_circuit(circuit_id):
+    """
+    documentation needed
+    """
     try:
         int(circuit_id)
     except ValueError:
@@ -23,6 +26,9 @@ def end_ports_of_circuit(circuit_id):
 
 
 def max_port_number_in_circuit(circuit_id):
+    """
+    documentation needed
+    """
     max_port_number = 0
     for instance in fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
@@ -41,6 +47,9 @@ def max_port_number_in_circuit(circuit_id):
 def squeeze_instance_between_ports_in_circuit(
     instance_name, circuit_id, new_circuit_port_number
 ):
+    """
+    documentation needed
+    """
     instances = fileio.read_tsv("instances list")
     for instance in instances:
         if instance.get("instance_name") == instance_name:
@@ -68,6 +77,9 @@ def squeeze_instance_between_ports_in_circuit(
 
 
 def instances_of_circuit(circuit_id):
+    """
+    documentation needed
+    """
     instances = []
     for instance in fileio.read_tsv("instances list"):
         if instance.get("circuit_id") == circuit_id:
@@ -82,6 +94,9 @@ def instances_of_circuit(circuit_id):
 
 
 def instance_of_circuit_port_number(circuit_id, circuit_port_number):
+    """
+    documentation needed
+    """
     if circuit_id in ["", None]:
         raise ValueError("Circuit ID is blank")
     if circuit_port_number in ["", None]:
@@ -101,6 +116,9 @@ def instance_of_circuit_port_number(circuit_id, circuit_port_number):
 
 
 def circuit_instance_of_instance(instance_name):
+    """
+    documentation needed
+    """
     circuit_instance_name = ""
     instance_rows = fileio.read_tsv("instances list")
     for instance in instance_rows:
@@ -123,6 +141,9 @@ def assign_cable_conductor(
     library_info,  # dict containing library info: {lib_repo, mpn, lib_subpath, used_rev}
     net,  # which net this cable belongs to
 ):
+    """
+    documentation needed
+    """
     # for cable_conductor_id, see (container, identifier) from the cable conductor list.
     # TODO: ensure cable_conductor_id has the right format.
 

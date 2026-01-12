@@ -9,13 +9,7 @@ Appearance guide:
 
 format: design your macros to be able to parse this, define your cables to conform to this
     {"base_color":"","parallelstripe":["",""],"perpstripe":[], "twisted":None}
-    required arg:
-        base_color (requires one value)
-    optional args:
-        parallelstripe (accepts 0-unlimited values in a list)
-        perpstripe (accepts 0-unlimited values in a list)
-        twisted (accepts 0-one value: None, "RH", "LH)
-        outline_color (accepts 0-one value)
+
     
 """
 

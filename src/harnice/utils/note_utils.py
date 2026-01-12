@@ -111,6 +111,9 @@ def new_note(
 
 
 def assign_buildnote_numbers():
+    """
+    documentation needed
+    """
     build_note_counter = 0
     for instance in fileio.read_tsv("instances list"):
         if instance.get("note_type") == "build_note":
@@ -123,6 +126,9 @@ def assign_buildnote_numbers():
 
 
 def make_rev_history_notes(rev):
+    """
+    documentation needed
+    """
     affected_instances = rev_history.info(rev=rev.get("rev"), field="affectedinstances")
 
     if affected_instances:  # safer + more pythonic
@@ -138,6 +144,9 @@ def make_rev_history_notes(rev):
 
 
 def make_bom_flagnote(affected_instance, output_csys_name):
+    """
+    documentation needed
+    """
     return {
         "net": state.net,
         "instance_name": f"note-bom_item-{affected_instance.get('instance_name')}",
@@ -157,6 +166,9 @@ def make_bom_flagnote(affected_instance, output_csys_name):
 
 
 def make_part_name_flagnote(affected_instance, output_csys_name):
+    """
+    documentation needed
+    """
     return {
         "net": state.net,
         "instance_name": f"note-part_name-{affected_instance.get('instance_name')}",
@@ -176,6 +188,9 @@ def make_part_name_flagnote(affected_instance, output_csys_name):
 
 
 def make_buildnote_flagnote(note_instance, affected_instance, output_csys_name):
+    """
+    documentation needed
+    """
     return {
         "net": state.net,
         "instance_name": f"note-build_note-{note_instance.get('instance_name')}-{affected_instance.get('instance_name')}",
@@ -195,6 +210,9 @@ def make_buildnote_flagnote(note_instance, affected_instance, output_csys_name):
 
 
 def make_rev_change_flagnote(note_instance, affected_instance, output_csys_name):
+    """
+    documentation needed
+    """
     return {
         "net": state.net,
         "instance_name": f"note-rev_change_callout-{note_instance.get('instance_name')}-{affected_instance.get('instance_name')}",
@@ -284,6 +302,9 @@ def get_lib_tools(instance):
 
 
 def combine_notes(keep_note_text, merge_note_texts, note_type=None):
+    """
+    documentation needed
+    """
     keep_note_instance = None
     merge_note_instances_raw = []
     for instance in fileio.read_tsv("instances list"):
