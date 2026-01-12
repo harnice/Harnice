@@ -4,7 +4,7 @@ A physical assembly that contains a set of electrical circuits that satisfies a 
 
 ---
 
-## How to make a new harness
+## How to define a new harness
 
 1. Make a folder for the part number of your harness somewhere on your computer. Run Harnice Render, which will generate an example harness that you can then edit.
 

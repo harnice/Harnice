@@ -16,7 +16,7 @@ path.write_text("".join(md), encoding="utf-8")
 
 md = ["# Channel Types\nUniquely identifiable set of signals that allow electrical intent to be documented and later referenced."]
 
-md.append("""\n\n---\n\n## How to Define New Channel Types
+md.append("""\n\n---\n\n## How to define a new channel type
 1. In a repository of your choice (or start with [harnice_library_public](https://github.com/harnice/harnice-library-public) on your own branch), navigate to `library_repo/channel_types/channel_types.csv`
 1. If you want channel definitions to be private and are therefore working in a private repository, ensure the repo's path is listed in file `library_locations.csv` (located at root of your harnice source code repo). The first column is the URL or traceable path, and the second column is your local path.
 1. If you find the channel_type you're looking for, temporarily note it as a touple in a notepad somewhere with format `(ch_type_id, universal_library_repository)`. 
@@ -33,13 +33,13 @@ path.write_text("".join(md), encoding="utf-8")
 
 md = ["# Devices\nAny electrical item, active or passive, that is not a harness."]
 
-md.append("""\n\n---\n\n##  How Device Definitions are Stored\n
+md.append("""\n\n---\n\n##  How device data is stored\n
 The primary data structure of a device is a TSV called a “signals_list”. Signals lists can be written manually or generated from a python script that can help automate the generation of lists for complicated devices.\n
 The definition of a device lives in a CSV file called a "Signals List".\n
 ??? info "Signals List"\n
     {% include-markdown "interacting_with_data/signals_lists.md" %}""")
 
-md.append("""\n\n---\n\n## Rendering a Device\n
+md.append("""\n\n---\n\n## Rendering a device\n
 When a Device is rendered in Harnice, here's what happens:\n
 1. Harnice runs the feature tree if it's found in the device directory.
 1. The signals list is validated and verified.
@@ -65,7 +65,7 @@ md.append("""\n\n---\n\n## How to define a new device
     ??? info "Working on a Generated Kicad Symbol"\n
         {% include-markdown "fragments/working-with-a-generated-kicad-symbol.md" %}\n""")
 
-md.append("""\n\n---\n\n##  Device Modeling for Simulation of Behavior in a System (future work)\n
+md.append("""\n\n---\n\n##  Device modeling for simulation of behavior in a system (future work)\n
 It is often useful to model how an entire electrical system will behave by aggregating up behaviors of many contained devices and how they interact with each other.\n
 Eventually, Harnice will allow you to do this automatically within the same source-of-truth system definition that defines your harnesses.\n
 When this feature is implemented, devices will contain an automatically generated .kicad_esch file that will allow the user to define a schematic that represents the lump behavior of your device. Harnice will ensure that every signal on your signals list is accounted for in the simulation esch, and the user may choose to connect any simulation device between those symbols. This way, when the device is used in a system block diagram, this device esch can referenced by the system simulator and its behavior can be considered while running an entire system simulation profile.""")
@@ -80,7 +80,7 @@ path.write_text("".join(md), encoding="utf-8")
 
 md = ["# Disconnects\nSet of two electrical connectors that has a predefined pinout, connector selection, and signals list.\n"]
 
-md.append("""\n\n---\n\n## How Disconnect Definitions are Stored\n
+md.append("""\n\n---\n\n## How disconnect data is stored\n
 The definition of a disconnect lives in a CSV file called a "Signals List".\n
 ??? info "Signals List"\n
     {% include-markdown "interacting_with_data/signals_lists.md" %}\n""")
@@ -90,7 +90,7 @@ When a disconnect is rendered in Harnice, here's what happens:\n
 1. Harnice runs the feature tree if it's found in the device directory.
 1. The signals list is validated and verified.""")
 
-md.append("""\n\n---\n\n## How to define a new disconnect in Harnice\n
+md.append("""\n\n---\n\n## How to define a new disconnect\n
 1. Ensure every channel going into or out of your disconnect has a type defined in a repo somewhere. Each connector of your disconnect will contain information about which side has which direction ("a" contains "inputs", "b" contains "outputs" with respect to the disconnect itself, i.e. inputting into the disconnect)\n
     ??? info "Channel Types"\n
         {% include-markdown "products/channel_type.md" %}\n
@@ -127,7 +127,7 @@ path.write_text("".join(md), encoding="utf-8")
 
 md = ["# Harnesses\nA physical assembly that contains a set of electrical circuits that satisfies a channel map. Can also contain other parts and instructions about how to be built. \n"]
 
-md.append("""\n\n---\n\n## How to make a new harness\n
+md.append("""\n\n---\n\n## How to define a new harness\n
 1. Make a folder for the part number of your harness somewhere on your computer. Run Harnice Render, which will generate an example harness that you can then edit.\n
     ??? info "Rendering a Product"\n
         {% include-markdown "fragments/how-to-render.md" %}\n
@@ -170,7 +170,7 @@ path.write_text("".join(md), encoding="utf-8")
 
 md = ["# Systems\nA collection of devices and harnesses that satisfies a set of functionality requirements for some external purpose. "]
 
-md.append("""\n\n---\n\n## How System Data is Stored\n
+md.append("""\n\n---\n\n## How system data is stored\n
 System data is stored in the following file formats.\n
 ??? info "Instances List"\n
     {% include-markdown "interacting_with_data/instances_lists.md" %}\n
@@ -196,7 +196,7 @@ md.append("""\n\n---\n\n## Rendering a system\n
 1. The system is validated and verified.\n
 1. A KiCad symbol that can be used represent this system in a block diagram is generated or updated based on the system.\n""")
 
-md.append("""\n\n---\n\n## How to Make a New System\n
+md.append("""\n\n---\n\n## How to define a new system\n
 1. Make a folder for the part number of your system somewhere on your computer. Run Harnice Render, which will generate an example system that you can then edit.\n
     ??? info "Rendering a Product"\n
         {% include-markdown "fragments/how-to-render.md" %}\n
@@ -206,7 +206,7 @@ md.append("""\n\n---\n\n## How to Make a New System\n
 1. Add Harnice devices from a validated device repo as symbols in your kicad_sch. Save and harnice-render it often.\n""")
 
 
-md.append("""\n\n---\n\n## Designing your Block Diagram in Kicad\n
+md.append("""\n\n---\n\n## Designing your block diagram in Kicad\n
 Device symbols can be added to your KiCad schematic.\n
 KiCad wires can be drawn that represent entire harnesses.\n
 KiCad is agnostic to the individual conductors, channels, or signals of a harness, just that there are certain connectors that are connected to each other via a harness.\n

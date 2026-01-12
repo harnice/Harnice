@@ -3,7 +3,7 @@ A collection of devices and harnesses that satisfies a set of functionality requ
 
 ---
 
-## How System Data is Stored
+## How system data is stored
 
 System data is stored in the following file formats.
 
@@ -57,7 +57,7 @@ System data is stored in the following file formats.
 
 ---
 
-## How to Make a New System
+## How to define a new system
 
 1. Make a folder for the part number of your system somewhere on your computer. Run Harnice Render, which will generate an example system that you can then edit.
 
@@ -76,7 +76,7 @@ System data is stored in the following file formats.
 
 ---
 
-## Designing your Block Diagram in Kicad
+## Designing your block diagram in Kicad
 
 Device symbols can be added to your KiCad schematic.
 

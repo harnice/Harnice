@@ -3,7 +3,7 @@ Any electrical item, active or passive, that is not a harness.
 
 ---
 
-##  How Device Definitions are Stored
+##  How device data is stored
 
 The primary data structure of a device is a TSV called a “signals_list”. Signals lists can be written manually or generated from a python script that can help automate the generation of lists for complicated devices.
 
@@ -15,7 +15,7 @@ The definition of a device lives in a CSV file called a "Signals List".
 
 ---
 
-## Rendering a Device
+## Rendering a device
 
 When a Device is rendered in Harnice, here's what happens:
 
@@ -65,7 +65,7 @@ When a Device is rendered in Harnice, here's what happens:
 
 ---
 
-##  Device Modeling for Simulation of Behavior in a System (future work)
+##  Device modeling for simulation of behavior in a system (future work)
 
 It is often useful to model how an entire electrical system will behave by aggregating up behaviors of many contained devices and how they interact with each other.
 

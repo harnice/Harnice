@@ -4,7 +4,7 @@ Set of two electrical connectors that has a predefined pinout, connector selecti
 
 ---
 
-## How Disconnect Definitions are Stored
+## How disconnect data is stored
 
 The definition of a disconnect lives in a CSV file called a "Signals List".
 
@@ -24,7 +24,7 @@ When a disconnect is rendered in Harnice, here's what happens:
 
 ---
 
-## How to define a new disconnect in Harnice
+## How to define a new disconnect
 
 1. Ensure every channel going into or out of your disconnect has a type defined in a repo somewhere. Each connector of your disconnect will contain information about which side has which direction ("a" contains "inputs", "b" contains "outputs" with respect to the disconnect itself, i.e. inputting into the disconnect)
 
