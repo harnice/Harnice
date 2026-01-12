@@ -6,7 +6,7 @@
 from harnice.lists import svg_utils
 ```
  then use as written.*
-??? info "`svg_utils.table()`"
+??? info "`svg_utils.table(layout_dict, format_dict, columns_list, content_list, path_to_svg, contents_group_name)`"
 
     This function is called when the user needs to build a general SVG table.
     ```python
@@ -235,7 +235,7 @@ from harnice.lists import svg_utils
             symbol.get("instance_name")
         )
 
-??? info "`svg_utils.add_entire_svg_file_contents_to_group()`"
+??? info "`svg_utils.add_entire_svg_file_contents_to_group(filepath, new_group_name)`"
 
     Wraps the entire contents of an SVG file in a new group element.
     
@@ -251,7 +251,7 @@ from harnice.lists import svg_utils
     **Raises:**
     - `ValueError`: If the file does not appear to be a valid SVG or has no inner contents.
 
-??? info "`svg_utils.find_and_replace_svg_group()`"
+??? info "`svg_utils.find_and_replace_svg_group(source_svg_filepath, source_group_name, destination_svg_filepath, destination_group_name)`"
 
     Copies SVG group content from one file to another, replacing existing group content.
     
@@ -272,7 +272,7 @@ from harnice.lists import svg_utils
     - `ValueError`: If any of the required group markers are not found in the source
         or destination files.
 
-??? info "`svg_utils.draw_styled_path()`"
+??? info "`svg_utils.draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_group)`"
 
     Adds a styled spline path to the local group.
     Call as if you were appending any other element to an svg group.

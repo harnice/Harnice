@@ -80,7 +80,7 @@ from harnice.lists import library_history
 
     Documentation needed.
 
-??? info "`library_history.append()`"
+??? info "`library_history.append(instance_name, instance_data)`"
 
     Documentation needed.
 

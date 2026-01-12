@@ -6,7 +6,7 @@
 from harnice.lists import circuit_utils
 ```
  then use as written.*
-??? info "`circuit_utils.end_ports_of_circuit()`"
+??? info "`circuit_utils.end_ports_of_circuit(circuit_id)`"
 
     Returns the instance names at the end ports (port 0 and maximum port) of a circuit.
     
@@ -23,7 +23,7 @@ from harnice.lists import circuit_utils
     **Raises:**
     - `ValueError`: If `circuit_id` is not a valid integer.
 
-??? info "`circuit_utils.max_port_number_in_circuit()`"
+??? info "`circuit_utils.max_port_number_in_circuit(circuit_id)`"
 
     Finds the maximum circuit port number used in a circuit.
     
@@ -40,7 +40,7 @@ from harnice.lists import circuit_utils
     **Raises:**
     - `ValueError`: If any non-circuit instance has a blank `circuit_port_number`.
 
-??? info "`circuit_utils.squeeze_instance_between_ports_in_circuit()`"
+??? info "`circuit_utils.squeeze_instance_between_ports_in_circuit(instance_name, circuit_id, new_circuit_port_number)`"
 
     Inserts an instance into a circuit by shifting existing port numbers.
     
@@ -55,7 +55,7 @@ from harnice.lists import circuit_utils
         instances at this port number or higher will have their port numbers
         incremented by 1.
 
-??? info "`circuit_utils.instances_of_circuit()`"
+??? info "`circuit_utils.instances_of_circuit(circuit_id)`"
 
     Returns all instances in a circuit, sorted by port number.
     
@@ -69,7 +69,7 @@ from harnice.lists import circuit_utils
     **Returns:**
     - `list`: List of instance dictionaries, sorted by `circuit_port_number` in ascending order.
 
-??? info "`circuit_utils.instance_of_circuit_port_number()`"
+??? info "`circuit_utils.instance_of_circuit_port_number(circuit_id, circuit_port_number)`"
 
     Finds the instance name at a specific port number in a circuit.
     
@@ -88,7 +88,7 @@ from harnice.lists import circuit_utils
     - `ValueError`: If `circuit_id` or `circuit_port_number` is blank, or if no instance
         is found matching both the `circuit_id` and `circuit_port_number`.
 
-??? info "`circuit_utils.circuit_instance_of_instance()`"
+??? info "`circuit_utils.circuit_instance_of_instance(instance_name)`"
 
     Returns the circuit instance dictionary for an instance that belongs to a circuit.
     
@@ -104,7 +104,7 @@ from harnice.lists import circuit_utils
     **Raises:**
     - `ValueError`: If the circuit instance cannot be found for the given instance.
 
-??? info "`circuit_utils.assign_cable_conductor()`"
+??? info "`circuit_utils.assign_cable_conductor(cable_instance_name, cable_conductor_id, conductor_instance, library_info, net)`"
 
     Assigns a conductor instance to a specific conductor in a cable.
     

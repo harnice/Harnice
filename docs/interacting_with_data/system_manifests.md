@@ -27,7 +27,7 @@ from harnice.lists import manifest
       - Add nets that appear in the connector list but not yet in the manifest
       - Preserve all other column data for nets that still exist
 
-??? info "`manifest.update_upstream()`"
+??? info "`manifest.update_upstream(path_to_system_rev, system_pn_rev, manifest_nets, harness_pn)`"
 
     Documentation needed.
 
@@ -38,7 +38,7 @@ from harnice.lists import manifest
       - Add nets that appear in the connector list but not yet in the manifest
       - Preserve all other column data for nets that still exist
 
-??? info "`manifest.update_upstream()`"
+??? info "`manifest.update_upstream(path_to_system_rev, system_pn_rev, manifest_nets, harness_pn)`"
 
     Documentation needed.
 

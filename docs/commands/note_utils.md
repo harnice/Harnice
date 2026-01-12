@@ -6,7 +6,7 @@
 from harnice.lists import note_utils
 ```
  then use as written.*
-??? info "`note_utils.new_note()`"
+??? info "`note_utils.new_note(note_type, note_text, note_number=None, bubble_text=None, shape_mpn=None, shape_lib_subpath=None, shape_lib_repo='https://github.com/harnice/harnice-library-public', affectedinstances=None)`"
 
     Creates or updates a note instance.
     
@@ -23,7 +23,7 @@ from harnice.lists import note_utils
     numbers to build notes. Each build note gets a unique number and that number is
     set as both the `note_number` and `print_name` fields.
 
-??? info "`note_utils.make_rev_history_notes()`"
+??? info "`note_utils.make_rev_history_notes(rev)`"
 
     Creates revision change callout notes based on revision history.
     
@@ -35,7 +35,7 @@ from harnice.lists import note_utils
     - `rev` (dict): Revision dictionary from revision history containing at least
         `'rev'` and `'revisionupdates'` fields.
 
-??? info "`note_utils.make_bom_flagnote()`"
+??? info "`note_utils.make_bom_flagnote(affected_instance, output_csys_name)`"
 
     Creates a BOM item flagnote dictionary for an instance.
     
@@ -51,7 +51,7 @@ from harnice.lists import note_utils
     **Returns:**
     - `dict`: A flagnote instance dictionary ready to be added to the instances list.
 
-??? info "`note_utils.make_part_name_flagnote()`"
+??? info "`note_utils.make_part_name_flagnote(affected_instance, output_csys_name)`"
 
     Creates a part name flagnote dictionary for an instance.
     
@@ -67,7 +67,7 @@ from harnice.lists import note_utils
     **Returns:**
     - `dict`: A flagnote instance dictionary ready to be added to the instances list.
 
-??? info "`note_utils.make_buildnote_flagnote()`"
+??? info "`note_utils.make_buildnote_flagnote(note_instance, affected_instance, output_csys_name)`"
 
     Creates a build note flagnote dictionary linking a note to an instance.
     
@@ -84,7 +84,7 @@ from harnice.lists import note_utils
     **Returns:**
     - `dict`: A flagnote instance dictionary ready to be added to the instances list.
 
-??? info "`note_utils.make_rev_change_flagnote()`"
+??? info "`note_utils.make_rev_change_flagnote(note_instance, affected_instance, output_csys_name)`"
 
     Creates a revision change callout flagnote dictionary linking a note to an instance.
     
@@ -101,24 +101,24 @@ from harnice.lists import note_utils
     **Returns:**
     - `dict`: A flagnote instance dictionary ready to be added to the instances list.
 
-??? info "`note_utils.parse_note_instance()`"
+??? info "`note_utils.parse_note_instance(instance)`"
 
     Return a full copy of `instance`, but with note_affected_instances
     parsed into a real Python list (or left alone if blank).
 
-??? info "`note_utils.get_lib_build_notes()`"
+??? info "`note_utils.get_lib_build_notes(instance)`"
 
     Returns list of build_notes for this instance from the TSV row.
     Safely parses with ast.literal_eval.
     Always returns a Python list.
 
-??? info "`note_utils.get_lib_tools()`"
+??? info "`note_utils.get_lib_tools(instance)`"
 
     Returns list of tools for this instance from the TSV row.
     Safely parses with ast.literal_eval.
     Always returns a Python list.
 
-??? info "`note_utils.combine_notes()`"
+??? info "`note_utils.combine_notes(keep_note_text, merge_note_texts, note_type=None)`"
 
     Combines multiple notes by merging their affected instances into one note.
     

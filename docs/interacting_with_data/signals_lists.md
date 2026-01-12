@@ -110,7 +110,7 @@ A Signals List is an exhaustive list of every signal is going into or out of a t
 from harnice.lists import signals_list
 ```
  then use as written.*
-??? info "`signals_list.set_list_type()`"
+??? info "`signals_list.set_list_type(x)`"
 
     Documentation needed.
 
@@ -119,7 +119,7 @@ from harnice.lists import signals_list
     Creates a new signals TSV file at fileio.path("signals list") with only the header row.
     Overwrites any existing file.
 
-??? info "`signals_list.append()`"
+??? info "`signals_list.append(**kwargs)`"
 
     Appends a new row to the signals TSV file.
     Missing optional fields will be written as empty strings.
@@ -132,11 +132,11 @@ from harnice.lists import signals_list
             A_channel_id, A_signal, A_connector_name, A_cavity, A_connector_mpn, A_channel_type,
             B_channel_id, B_signal, B_connector_name, B_cavity, B_connector_mpn, B_channel_type
 
-??? info "`signals_list.cavity_of_signal()`"
+??? info "`signals_list.cavity_of_signal(channel_id, signal, path_to_signals_list)`"
 
     Documentation needed.
 
-??? info "`signals_list.connector_name_of_channel()`"
+??? info "`signals_list.connector_name_of_channel(channel_id, path_to_signals_list)`"
 
     Documentation needed.
 

@@ -6,7 +6,7 @@
 from harnice.lists import feature_tree_utils
 ```
  then use as written.*
-??? info "`feature_tree_utils.run_macro()`"
+??? info "`feature_tree_utils.run_macro(macro_part_number, lib_subpath, lib_repo, artifact_id, base_directory=None, **kwargs)`"
 
     Runs a macro script from the library with the given artifact ID.
     
@@ -27,7 +27,7 @@ from harnice.lists import feature_tree_utils
     - `ValueError`: If `artifact_id` is `None`, `macro_part_number` is `None`, `lib_repo` is `None`,
         or if a macro with the given `artifact_id` already exists in library history.
 
-??? info "`feature_tree_utils.lookup_outputcsys_from_lib_used()`"
+??? info "`feature_tree_utils.lookup_outputcsys_from_lib_used(instance, outputcsys, base_directory=None)`"
 
     Looks up coordinate system transform from an instance's library attributes.
     
@@ -57,7 +57,7 @@ from harnice.lists import feature_tree_utils
     found to the current working directory. Preserves file metadata during copy.
     Prints error messages if any files cannot be copied but continues processing.
 
-??? info "`feature_tree_utils.run_feature_for_relative()`"
+??? info "`feature_tree_utils.run_feature_for_relative(project_key, referenced_pn_rev, feature_tree_utils_name)`"
 
     Runs a feature tree script from a referenced part's `features_for_relatives` directory.
     

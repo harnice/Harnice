@@ -29,7 +29,7 @@ The appearance of a segment is defined by a dictionary of the following format:
 from harnice.lists import appearance
 ```
  then use as written.*
-??? info "`appearance.parse()`"
+??? info "`appearance.parse(val)`"
 
     Parse appearance dictionary, converting color names and shorthand hex to full hex.
     No validation or safeguards.

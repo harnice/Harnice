@@ -6,7 +6,7 @@
 from harnice.lists import library_utils
 ```
  then use as written.*
-??? info "`library_utils.pull()`"
+??? info "`library_utils.pull(input_dict, update_instances_list=True, destination_directory=None)`"
 
     Imports a part from the library into the project.
     
@@ -41,7 +41,7 @@ from harnice.lists import library_utils
     - `ValueError`: If required fields (`lib_repo`, `mpn`, `item_type`) are blank.
     - `FileNotFoundError`: If no revision folders are found for the part number in the library.
 
-??? info "`library_utils.get_local_path()`"
+??? info "`library_utils.get_local_path(lib_repo)`"
 
     Looks up the local filesystem path for a library repository URL.
     

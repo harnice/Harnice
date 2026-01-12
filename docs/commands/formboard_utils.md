@@ -27,7 +27,7 @@ from harnice.lists import formboard_utils
     - `Exception`: If loops are detected, if nodes have no segments, or if the graph
         has disconnected components.
 
-??? info "`formboard_utils.map_instance_to_segments()`"
+??? info "`formboard_utils.map_instance_to_segments(instance)`"
 
     Maps a segment-based instance across multiple segments using pathfinding.
     
@@ -49,7 +49,7 @@ from harnice.lists import formboard_utils
     - `ValueError`: If the instance is not segment-based, if endpoints are missing,
         if endpoints are not nodes, or if no path is found between the nodes.
 
-??? info "`formboard_utils.calculate_location()`"
+??? info "`formboard_utils.calculate_location(lookup_instance, instances)`"
 
     Calculates world coordinates for an instance by accumulating transforms through the CSYS chain.
     
@@ -72,7 +72,7 @@ from harnice.lists import formboard_utils
     - `ValueError`: If parent coordinate system information is missing or invalid, or
         if parent instances cannot be found in the instances list.
 
-??? info "`formboard_utils.draw_line()`"
+??? info "`formboard_utils.draw_line(from_coords, to_coords, scale=1, from_leader=False, to_leader=True, indent=6, stroke='black', thickness=1)`"
 
     Generates SVG markup for a line with optional arrowheads.
     

@@ -80,11 +80,11 @@ A record of every revision of a part, and its release status
 from harnice.lists import rev_history
 ```
  then use as written.*
-??? info "`rev_history.overwrite()`"
+??? info "`rev_history.overwrite(content_dict)`"
 
     Documentation needed.
 
-??? info "`rev_history.info()`"
+??? info "`rev_history.info(rev=None, path=None, field=None, all=False)`"
 
     Documentation needed.
 
@@ -104,7 +104,7 @@ from harnice.lists import rev_history
 
     Documentation needed.
 
-??? info "`rev_history.append()`"
+??? info "`rev_history.append(next_rev=None)`"
 
     Documentation needed.
 

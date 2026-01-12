@@ -60,15 +60,15 @@ from harnice.lists import disconnect_map
 
     Documentation needed.
 
-??? info "`disconnect_map.assign()`"
+??? info "`disconnect_map.assign(a_side_key, disconnect_key)`"
 
     Documentation needed.
 
-??? info "`disconnect_map.already_assigned_channels_through_disconnects_set_append()`"
+??? info "`disconnect_map.already_assigned_channels_through_disconnects_set_append(key, disconnect_refdes)`"
 
     Documentation needed.
 
-??? info "`disconnect_map.already_assigned_disconnects_set_append()`"
+??? info "`disconnect_map.already_assigned_disconnects_set_append(key)`"
 
     Documentation needed.
 
@@ -80,11 +80,11 @@ from harnice.lists import disconnect_map
 
     Documentation needed.
 
-??? info "`disconnect_map.channel_is_already_assigned_through_disconnect()`"
+??? info "`disconnect_map.channel_is_already_assigned_through_disconnect(key, disconnect_refdes)`"
 
     Documentation needed.
 
-??? info "`disconnect_map.disconnect_is_already_assigned()`"
+??? info "`disconnect_map.disconnect_is_already_assigned(key)`"
 
     Documentation needed.
 

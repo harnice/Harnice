@@ -6,7 +6,7 @@
 from harnice.lists import system_utils
 ```
  then use as written.*
-??? info "`system_utils.mpn_of_device_refdes()`"
+??? info "`system_utils.mpn_of_device_refdes(refdes)`"
 
     Looks up manufacturer part number information for a device reference designator.
     
@@ -19,7 +19,7 @@ from harnice.lists import system_utils
     **Returns:**
     - `tuple`: A tuple of `(MFG, MPN, rev)` if found, or `(None, None, None)` if not found.
 
-??? info "`system_utils.connector_of_channel()`"
+??? info "`system_utils.connector_of_channel(key)`"
 
     Finds the connector name associated with a device channel.
     
@@ -35,7 +35,7 @@ from harnice.lists import system_utils
     **Raises:**
     - `ValueError`: If the connector is not found for the given channel.
 
-??? info "`system_utils.find_connector_with_no_circuit()`"
+??? info "`system_utils.find_connector_with_no_circuit(connector_list, circuits_list)`"
 
     Validates that all connectors have associated circuits.
     
