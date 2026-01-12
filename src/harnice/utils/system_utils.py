@@ -7,6 +7,9 @@ from harnice.utils import library_utils
 
 
 def mpn_of_device_refdes(refdes):
+    """
+    documentation needed
+    """
     for row in fileio.read_tsv("bom"):
         if row.get("device_refdes") == refdes:
             return row.get("MFG"), row.get("MPN"), row.get("rev")
@@ -14,6 +17,9 @@ def mpn_of_device_refdes(refdes):
 
 
 def connector_of_channel(key):
+    """
+    documentation needed
+    """
     refdes, channel_id = key
 
     device_signals_list_path = os.path.join(
@@ -30,6 +36,9 @@ def connector_of_channel(key):
 
 
 def find_connector_with_no_circuit(connector_list, circuits_list):
+    """
+    documentation needed
+    """
     for connector in connector_list:
         device_refdes = connector.get("device_refdes", "").strip()
         connector_name = connector.get("connector", "").strip()
@@ -66,6 +75,9 @@ def find_connector_with_no_circuit(connector_list, circuits_list):
 
 
 def make_instances_for_connectors_cavities_nodes_channels_circuits():
+    """
+    documentation needed
+    """
     connectors_list = fileio.read_tsv("system connector list")
     channel_map = fileio.read_tsv("channel map")
 
@@ -491,6 +503,9 @@ def add_chains_to_channel_map():
 
 
 def make_instances_from_bom():
+    """
+    documentation needed
+    """
     for device in fileio.read_tsv("bom"):
         if device.get("disconnect"):
             item_type = "disconnect"

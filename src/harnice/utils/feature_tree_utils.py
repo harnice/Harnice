@@ -10,6 +10,9 @@ from harnice.utils import library_utils
 def run_macro(
     macro_part_number, lib_subpath, lib_repo, artifact_id, base_directory=None, **kwargs
 ):
+    """
+    documentation needed
+    """
     if artifact_id is None:
         raise ValueError("artifact_id is required")
     if macro_part_number is None:
@@ -54,6 +57,9 @@ def run_macro(
 
 
 def lookup_outputcsys_from_lib_used(instance, outputcsys, base_directory=None):
+    """
+    documentation needed
+    """
     if outputcsys == "origin":
         return 0, 0, 0
 
@@ -98,6 +104,9 @@ def lookup_outputcsys_from_lib_used(instance, outputcsys, base_directory=None):
 
 
 def copy_pdfs_to_cwd():
+    """
+    documentation needed
+    """
     cwd = os.getcwd()
 
     for root, _, files in os.walk(fileio.dirpath(None, base_directory="instance_data")):
@@ -113,6 +122,9 @@ def copy_pdfs_to_cwd():
 
 
 def run_feature_for_relative(project_key, referenced_pn_rev, feature_tree_utils_name):
+    """
+    documentation needed
+    """
     project_path = fileio.get_path_to_project(project_key)
     feature_tree_utils_path = os.path.join(
         project_path,

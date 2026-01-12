@@ -9,6 +9,9 @@ from harnice.lists import instances_list, formboard_graph
 
 
 def validate_nodes():
+    """
+    documentation needed
+    """
     # Ensure TSV exists
     if not os.path.exists(fileio.path("formboard graph definition")):
         formboard_graph.new()
@@ -435,6 +438,9 @@ def validate_nodes():
 
 
 def map_instance_to_segments(instance):
+    """
+    documentation needed
+    """
     # note to user: we're actually mapping to nodes in same connector group as the "end nodes".
     # so if your to/from nodes are item_type==Cavity, for example, this function will return paths of segments
     # between the item_type==node instance where those cavities are
@@ -642,6 +648,9 @@ def map_instance_to_segments(instance):
 
 
 def calculate_location(lookup_instance, instances):
+    """
+    documentation needed
+    """
     # ------------------------------------------------------------------
     # Normalize csys_children: ensure all rows contain real dicts
     # ------------------------------------------------------------------
@@ -814,6 +823,9 @@ def draw_line(
     stroke="black",
     thickness=1,
 ):
+    """
+    documentation needed
+    """
     # Convert inches → px (and flip Y)
     fx, fy = from_coords[0] * 96, from_coords[1] * -96
     tx, ty = to_coords[0] * 96, to_coords[1] * -96

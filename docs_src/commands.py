@@ -1,6 +1,6 @@
 from pathlib import Path
 import docs_compiler
-from harnice.utils import library_utils
+from harnice.utils import feature_tree_utils, library_utils, circuit_utils, formboard_utils, note_utils, svg_utils, system_utils, appearance
 harnice_dir = Path(__file__).resolve().parents[1]
 
 #========================================================
@@ -8,7 +8,7 @@ harnice_dir = Path(__file__).resolve().parents[1]
 #========================================================
 module_prefix = "library_utils"
 
-md = ["""# Library Utilities"""]
+md = ["# Library Utilities"]
 md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(library_utils.pull, module_prefix))
 md.append(docs_compiler.print_function_docs(library_utils.get_local_path, module_prefix))
@@ -18,34 +18,19 @@ path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
 #========================================================
-# APPEARANCE
-#========================================================
-
-md = [
-    "## Appearance Guide\n\n",
-    "The appearance of a segment is defined by a dictionary of the following format:\n\n",
-    "```json\n",
-    "{\n",
-    "    \"base_color\": \"#000000\",\n",
-    "    \"parallelstripe\": [\"#000000\", \"#000000\"],\n",
-    "    \"perpstripe\": [\"#000000\", \"#000000\"],\n",
-    "    \"twisted\": null\n",
-    "}\n",
-    "```\n",
-]
-
-path = harnice_dir / "docs" / "commands" / "appearance.md"
-path.parent.mkdir(parents=True, exist_ok=True)
-path.write_text("".join(md), encoding="utf-8")
-
-#========================================================
 # CIRCUIT UTILS
 #========================================================
+module_prefix = "circuit_utils"
 
-md = [
-    "# Circuit Utilities",
-]
-
+md = ["# Circuit Utilities"]
+md.append(docs_compiler.commands_header(module_prefix))
+md.append(docs_compiler.print_function_docs(circuit_utils.end_ports_of_circuit, module_prefix))
+md.append(docs_compiler.print_function_docs(circuit_utils.max_port_number_in_circuit, module_prefix))
+md.append(docs_compiler.print_function_docs(circuit_utils.squeeze_instance_between_ports_in_circuit, module_prefix))
+md.append(docs_compiler.print_function_docs(circuit_utils.instances_of_circuit, module_prefix))
+md.append(docs_compiler.print_function_docs(circuit_utils.instance_of_circuit_port_number, module_prefix))
+md.append(docs_compiler.print_function_docs(circuit_utils.circuit_instance_of_instance, module_prefix))
+md.append(docs_compiler.print_function_docs(circuit_utils.assign_cable_conductor, module_prefix))
 path = harnice_dir / "docs" / "commands" / "circuits_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -53,10 +38,14 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # FEATURE TREE UTILS
 #========================================================
+module_prefix = "feature_tree_utils"
 
-md = [
-    "# Feature Tree Utilities",
-]
+md = ["# Feature Tree Utilities"]
+md.append(docs_compiler.commands_header(module_prefix))
+md.append(docs_compiler.print_function_docs(feature_tree_utils.run_macro, module_prefix))
+md.append(docs_compiler.print_function_docs(feature_tree_utils.lookup_outputcsys_from_lib_used, module_prefix))
+md.append(docs_compiler.print_function_docs(feature_tree_utils.copy_pdfs_to_cwd, module_prefix))
+md.append(docs_compiler.print_function_docs(feature_tree_utils.run_feature_for_relative, module_prefix))
 
 path = harnice_dir / "docs" / "commands" / "feature_tree_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -65,10 +54,13 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # FORMBOARD UTILS
 #========================================================
-
-md = [
-    "# Formboard Utilities",
-]
+module_prefix = "formboard_utils"
+md = ["# Formboard Utilities"]
+md.append(docs_compiler.commands_header(module_prefix))
+md.append(docs_compiler.print_function_docs(formboard_utils.validate_nodes, module_prefix))
+md.append(docs_compiler.print_function_docs(formboard_utils.map_instance_to_segments, module_prefix))
+md.append(docs_compiler.print_function_docs(formboard_utils.calculate_location, module_prefix))
+md.append(docs_compiler.print_function_docs(formboard_utils.draw_line, module_prefix))
 
 path = harnice_dir / "docs" / "commands" / "formboard_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,254 +71,37 @@ path.write_text("".join(md), encoding="utf-8")
 # NOTE UTILS
 #========================================================
 
-md = [
-    "# Note Utilities",
-]
+module_prefix = "note_utils"
+md = ["# Note Utilities"]
+md.append(docs_compiler.commands_header(module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.new_note, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.assign_buildnote_numbers, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.make_rev_history_notes, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.make_bom_flagnote, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.make_part_name_flagnote, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.make_buildnote_flagnote, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.make_rev_change_flagnote, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.parse_note_instance, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.get_lib_build_notes, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.get_lib_tools, module_prefix))
+md.append(docs_compiler.print_function_docs(note_utils.combine_notes, module_prefix))
 
 path = harnice_dir / "docs" / "commands" / "note_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
+
 #========================================================
 # SVG UTILS
 #========================================================
+module_prefix = "svg_utils"
 
-md = [r"""# SVG Utilities
-
-# General Table
-This function is called when the user needs to build a general SVG table.
-```python
-svg_utils.table(
-    layout_dict,
-    format_dict,
-    columns_list,
-    content_list,
-    path_to_caller,
-    svg_name
-)
-```
-### Arguments
-- `layout_dict` expects a dictionary describing in which direction the table is built
-- `format_dict` expects a dictionary containing a description of how you want your table to appear.
-- `columns_list` expects a list containing your column header content, width, and formatting rules.
-- `content_list` expects a list containing what is actually presented on your table.
-
-### Returns
-- A string of SVG primatives in xml format intended to look like a table. 
-
----
-
-## 1. Layout
-
-The SVG origin (0,0) must exist somewhere in your table. Defining this correctly will help later when tables dynamically update with changing inputs. 
-
-*example:*
-```json
-layout = {
-    "origin_corner": "top-left",
-    "build_direction": "down",
-}
-```
-Both fields are required. 
-### Origin Corner
-
-The origin is defined to be at one of the four corners of the first row `content[0]`. Valid options:
-- `top-left`
-- `top-right`
-- `bottom-left`
-- `bottom-right`
-
-### Build Direction 
-When building a table, you can choose to build rows downwards (below the previous, positive y in svg coords) or upwards (above the previous, negative y in svg coords). The direction property defines this:
-- `down` → rows appear below the previous
-- `up` → new rows appear above the previous
-
----
-
-## 2. Format
-
-The format dictionary defines appearance and style of your table. 
-
-Any number of appearance keys can be defined and named with an identifier that is called when printing that row. This allows you to have rows that whose appearance can be varied dynamically with the table contents. 
-
-*example:*
-```json
-format_dict={
-    "globals": {
-        "font_size": 11,
-        "row_height": 20,
-    },
-    "header": {
-        "font_weight":"B",
-        "fill_color": "lightgray",
-    },
-    "row_with_bubble": {
-        "row_height": 40,
-    },
-}
-```
-The only reserved key is `globals` which can optionally be used to define fallbacks for any row that does not have a style explicitly called out.
-
-### Format Arguments
-Any of the following keys can be defined in any of the format dictionaries. 
-- `font_size` *(number, default=12)* Default font size (px) for all text
-- `font_family` *(string, default=helvetica)* Default font family (e.g., "Arial", "Helvetica")
-- `font_weight`*(`BIU`, default=None)* Add each character for bold, italic, or underline
-- `row_height` *(number, default=18)* Self-explanatory (px)
-- `padding` *(number, default=3)* Default text inset from border if not center or middle justified
-- `line_spacing` *(number, default=14)* Vertical spacing between multi-line text entries
-- `justify` *(`left` \ `center` \ `right`, default=center)* Default horizontal alignment
-- `valign` *(`top` \ `middle` \ `bottom`, default=center)* Default vertical alignment
-- `fill_color` *(default=white)* Cell background color
-- `stroke_color` *(default=black)* Border line color
-- `stroke_width` *(number, default=1)* Border width
-- `text_color` *(default=black)* Default text color
-
-### Style Resolution Order
-If something is defined at the row level, it takes precedent over some parameter defined at the column level, which takes precedent over a definition in key `globals`, if defined. If something is not defined at all, the above defaults will apply. 
-
-### Color Standard
-- Default color: **black**
-- Accepted formats:
-  - Named SVG colors https://www.w3.org/TR/SVG11/types.html#ColorKeywords
-  - Hex values (#RGB or #RRGGBB)
-
----
-
-## 3. Columns
-
-The column argument is a list of dictionaries containing definition of how many columns there are, the order in which they exist, how to reference them, and any applicable formatting.
-
-*ex:*
-```json
-columns_list=[
-    {
-        "name": "rev"
-        "width": 60,
-        "justify": "center"
-    },
-    {
-        "name": "updated"
-        "width": 260,
-    },
-        "name": "status"
-        "width": 120,
-        "fill_color": "yellow",
-    }
-]
-```
-
-### Column Arguments
-Each field must have the following required keys:
-- `name` *(string)* Used to identify a column when defining contents later. Must be unique.
-- `width` *(number)* Self-explanatory (px)
-
-You may add any formatting key as defined in the formatting section as needed.
-
-Note that the order of the items in the list represents the order in which they will be printed from left to right, regardless of the layout you've chosen for this table.
-
----
-
-## 4. Content Structure
-
-The table content will be referenced from information stored in this argument. It is a list (rows) of dictionaries (columns).
-
-```json
-content_list = [
-    {
-        "format_key": "header"
-        "columns": {
-            "rev": "REV",
-            "updated": "UPDATED",
-            "status": "STATUS",
-        }
-    },
-    {
-        "columns": {
-            "rev": "1",
-            "updated": "12/6/25",
-            "status": "requires review",
-        }
-    },
-    {
-        "columns": {
-            "rev": "2",
-            "updated": ["12/6/25", "update incomplete"],
-        }
-    },
-    {
-        "format_key": "row_with_bubble",
-        "columns": {
-            "rev": {
-                "instance_name": "rev3-bubble",
-                "item_type": "flagnote"
-            },
-            "updated": "12/6/25",
-            "status": "clear"
-        }
-    }
-]
-```
-
-Content (the root argument) is a list. Each entry of the root list is representative of a row's worth of data.
-
-Each entry of that list must contain the dictionary `columns` and may contain dictionary `format_key`. 
-
-`format_key` may only contain one value which corresponds to the name of a key in the format dictionary. It represents the appearance of that row. If it is not defined, the format of that row will fall back to globals and defaults. Custom formatting of individual cells is not supported. 
-
-`columns` is a dictionary that contains the actual content you want to appear in each column. The name of each key at this level must match one of the keys in the `columns` argument. It is agnostic to order, and by leaving a key out, simply nothing will appear in that cell. Existing formatting (cell fill and border) will still apply.
-
-The value of each column key may take one of the following forms:
-- string or number → single-line text, prints directly
-- list[str] → multi-line text where the 0th element prints highest within the cell. Use format key `line_spacing` as needed. 
-- dict → custom 
-
-### Importing a Symbol into a Cell
-
-If you add a dictionary to one of the content cells, content start/end groups will be written into your svg. This will allow the user to generate and/or import symbols into the table using their own logic, without regard for placement into the table.
-
-```python
-#from your macro or wherever you're building the table from...
-example_symbol = {
-    "lib_repo": instance.get("lib_repo"),
-    "item_type": "flagnote",
-    "mpn": instance.get("mpn"),
-    "instance_name": f"bubble{build_note_number}",
-    "note_text": build_note_number,
-}
-symbols_to_build=[example_symbol]
-        
-svg_utils.table(
-    layout_dict,
-    format_dict,
-    columns_list,
-    content_list,
-    os.dirname(path_to_table_svg),
-    artifact_id
-)
-
-# user import logic 
-for symbol in symbols_to_build:
-    path_to_symbol = #...
-    library_utils.pull(
-        symbol,
-        update_instances_list=False,
-        destination_directory=path_to_symbol,
-    )
-
-    svg_utils.find_and_replace_svg_group(
-        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
-        symbol.get("instance_name"),
-        path_to_table_svg,
-        symbol.get("instance_name")
-    )
-```
-
----
-
-End of Requirements — rev2
-"""
-]
+md = ["# SVG Utilities"]
+md.append(docs_compiler.commands_header(module_prefix))
+md.append(docs_compiler.print_function_docs(svg_utils.table, module_prefix))
+md.append(docs_compiler.print_function_docs(svg_utils.add_entire_svg_file_contents_to_group, module_prefix))
+md.append(docs_compiler.print_function_docs(svg_utils.find_and_replace_svg_group, module_prefix))
+md.append(docs_compiler.print_function_docs(svg_utils.draw_styled_path, module_prefix))
 
 path = harnice_dir / "docs" / "commands" / "svg_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -335,11 +110,57 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 # SYSTEM UTILS
 #========================================================
-
-md = [
-    "# System Utilities",
-]
+module_prefix = "system_utils"
+md = ["# System Utilities"]
+md.append(docs_compiler.commands_header(module_prefix))
+md.append(docs_compiler.print_function_docs(system_utils.mpn_of_device_refdes, module_prefix))
+md.append(docs_compiler.print_function_docs(system_utils.connector_of_channel, module_prefix))
+md.append(docs_compiler.print_function_docs(system_utils.find_connector_with_no_circuit, module_prefix))
+md.append(docs_compiler.print_function_docs(system_utils.make_instances_for_connectors_cavities_nodes_channels_circuits, module_prefix))
+md.append(docs_compiler.print_function_docs(system_utils.add_chains_to_channel_map, module_prefix))
+md.append(docs_compiler.print_function_docs(system_utils.make_instances_from_bom, module_prefix))
 
 path = harnice_dir / "docs" / "commands" / "system_utils.md"
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text("".join(md), encoding="utf-8")
+
+
+#========================================================
+# APPEARANCE
+#========================================================
+module_prefix = "appearance"
+
+md = ["# Appearance Utilities"]
+md.append(
+    r"""## Appearance Guide
+
+The appearance of a segment is defined by a dictionary of the following format:
+
+~~~json
+{
+    "base_color": "#000000",
+    "parallelstripe": ["#000000", "#000000"],
+    "perpstripe": ["#000000", "#000000"],
+    "twisted": null
+}
+~~~
+
+### Arguments
+
+**Required**
+- `base_color`: exactly one value
+
+**Optional**
+- `parallelstripe`: 0+ values (list)
+- `perpstripe`: 0+ values (list)
+- `twisted`: 0–1 value (`null`, `"RH"`, or `"LH"`)
+- `outline_color`: 0–1 value
+"""
+)
+md.append(docs_compiler.commands_header(module_prefix))
+md.append(docs_compiler.print_function_docs(appearance.parse, module_prefix))
+
+
+path = harnice_dir / "docs" / "commands" / "appearance.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
