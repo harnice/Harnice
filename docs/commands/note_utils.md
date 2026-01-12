@@ -21,7 +21,7 @@ from harnice.lists import note_utils
     
     Iterates through all note instances in the instances list and assigns sequential
     numbers to build notes. Each build note gets a unique number and that number is
-    set as both the note_number and print_name fields.
+    set as both the `note_number` and `print_name` fields.
 
 ??? info "`note_utils.make_rev_history_notes()`"
 
@@ -31,9 +31,9 @@ from harnice.lists import note_utils
     the instances affected by that revision. The note text comes from the
     revision's update description.
     
-    Args:
-        rev (dict): Revision dictionary from revision history containing at least
-            'rev' and 'revisionupdates' fields.
+    **Args:**
+    - `rev` (dict): Revision dictionary from revision history containing at least
+        `'rev'` and `'revisionupdates'` fields.
 
 ??? info "`note_utils.make_bom_flagnote()`"
 
@@ -43,13 +43,13 @@ from harnice.lists import note_utils
     for a given instance. The flagnote is positioned at the specified output
     coordinate system of the instance.
     
-    Args:
-        affected_instance (dict): Instance dictionary to create a flagnote for.
-        output_csys_name (str): Name of the output coordinate system where the
-            flagnote should be positioned.
+    **Args:**
+    - `affected_instance` (dict): Instance dictionary to create a flagnote for.
+    - `output_csys_name` (str): Name of the output coordinate system where the
+        flagnote should be positioned.
     
-    Returns:
-        dict: A flagnote instance dictionary ready to be added to the instances list.
+    **Returns:**
+    - `dict`: A flagnote instance dictionary ready to be added to the instances list.
 
 ??? info "`note_utils.make_part_name_flagnote()`"
 
@@ -59,13 +59,13 @@ from harnice.lists import note_utils
     of a given instance. The flagnote is positioned at the specified output
     coordinate system of the instance.
     
-    Args:
-        affected_instance (dict): Instance dictionary to create a flagnote for.
-        output_csys_name (str): Name of the output coordinate system where the
-            flagnote should be positioned.
+    **Args:**
+    - `affected_instance` (dict): Instance dictionary to create a flagnote for.
+    - `output_csys_name` (str): Name of the output coordinate system where the
+        flagnote should be positioned.
     
-    Returns:
-        dict: A flagnote instance dictionary ready to be added to the instances list.
+    **Returns:**
+    - `dict`: A flagnote instance dictionary ready to be added to the instances list.
 
 ??? info "`note_utils.make_buildnote_flagnote()`"
 
@@ -75,14 +75,14 @@ from harnice.lists import note_utils
     a specific instance. The flagnote shows the build note's print name and is
     positioned at the specified output coordinate system of the affected instance.
     
-    Args:
-        note_instance (dict): Build note instance dictionary.
-        affected_instance (dict): Instance dictionary to attach the flagnote to.
-        output_csys_name (str): Name of the output coordinate system where the
-            flagnote should be positioned.
+    **Args:**
+    - `note_instance` (dict): Build note instance dictionary.
+    - `affected_instance` (dict): Instance dictionary to attach the flagnote to.
+    - `output_csys_name` (str): Name of the output coordinate system where the
+        flagnote should be positioned.
     
-    Returns:
-        dict: A flagnote instance dictionary ready to be added to the instances list.
+    **Returns:**
+    - `dict`: A flagnote instance dictionary ready to be added to the instances list.
 
 ??? info "`note_utils.make_rev_change_flagnote()`"
 
@@ -92,14 +92,14 @@ from harnice.lists import note_utils
     callout note on a specific instance. The flagnote shows the revision number
     and is positioned at the specified output coordinate system of the affected instance.
     
-    Args:
-        note_instance (dict): Revision change callout note instance dictionary.
-        affected_instance (dict): Instance dictionary to attach the flagnote to.
-        output_csys_name (str): Name of the output coordinate system where the
-            flagnote should be positioned.
+    **Args:**
+    - `note_instance` (dict): Revision change callout note instance dictionary.
+    - `affected_instance` (dict): Instance dictionary to attach the flagnote to.
+    - `output_csys_name` (str): Name of the output coordinate system where the
+        flagnote should be positioned.
     
-    Returns:
-        dict: A flagnote instance dictionary ready to be added to the instances list.
+    **Returns:**
+    - `dict`: A flagnote instance dictionary ready to be added to the instances list.
 
 ??? info "`note_utils.parse_note_instance()`"
 
@@ -123,12 +123,12 @@ from harnice.lists import note_utils
     Combines multiple notes by merging their affected instances into one note.
     
     Merges one or more notes into a single note by combining their affected instances
-    lists. The note to keep is identified by keep_note_text, and all notes matching
-    merge_note_texts are merged into it and then removed.
+    lists. The note to keep is identified by `keep_note_text`, and all notes matching
+    `merge_note_texts` are merged into it and then removed.
     
-    Args:
-        keep_note_text (str): The note_text value of the note to keep and merge others into.
-        merge_note_texts (list): List of note_text values to find and merge into the kept note.
-        note_type (list, optional): If provided, only notes with note_type in this list
-            will be considered for merging. If None, all notes are considered.
+    **Args:**
+    - `keep_note_text` (str): The `note_text` value of the note to keep and merge others into.
+    - `merge_note_texts` (list): List of `note_text` values to find and merge into the kept note.
+    - `note_type` (list, optional): If provided, only notes with `note_type` in this list
+        will be considered for merging. If `None`, all notes are considered.
 

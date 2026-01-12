@@ -113,10 +113,10 @@ def new_note(
 def assign_buildnote_numbers():
     """
     Assigns sequential numbers to build note instances.
-    
+
     Iterates through all note instances in the instances list and assigns sequential
     numbers to build notes. Each build note gets a unique number and that number is
-    set as both the note_number and print_name fields.
+    set as both the `note_number` and `print_name` fields.
     """
     build_note_counter = 0
     for instance in fileio.read_tsv("instances list"):
@@ -132,14 +132,14 @@ def assign_buildnote_numbers():
 def make_rev_history_notes(rev):
     """
     Creates revision change callout notes based on revision history.
-    
+
     Creates a revision change callout note for a given revision, linking it to
     the instances affected by that revision. The note text comes from the
     revision's update description.
-    
-    Args:
-        rev (dict): Revision dictionary from revision history containing at least
-            'rev' and 'revisionupdates' fields.
+
+    **Args:**
+    - `rev` (dict): Revision dictionary from revision history containing at least
+        `'rev'` and `'revisionupdates'` fields.
     """
     affected_instances = rev_history.info(rev=rev.get("rev"), field="affectedinstances")
 
@@ -158,18 +158,18 @@ def make_rev_history_notes(rev):
 def make_bom_flagnote(affected_instance, output_csys_name):
     """
     Creates a BOM item flagnote dictionary for an instance.
-    
+
     Creates a flagnote configuration dictionary that displays the BOM line number
     for a given instance. The flagnote is positioned at the specified output
     coordinate system of the instance.
-    
-    Args:
-        affected_instance (dict): Instance dictionary to create a flagnote for.
-        output_csys_name (str): Name of the output coordinate system where the
-            flagnote should be positioned.
-    
-    Returns:
-        dict: A flagnote instance dictionary ready to be added to the instances list.
+
+    **Args:**
+    - `affected_instance` (dict): Instance dictionary to create a flagnote for.
+    - `output_csys_name` (str): Name of the output coordinate system where the
+        flagnote should be positioned.
+
+    **Returns:**
+    - `dict`: A flagnote instance dictionary ready to be added to the instances list.
     """
     return {
         "net": state.net,
@@ -192,18 +192,18 @@ def make_bom_flagnote(affected_instance, output_csys_name):
 def make_part_name_flagnote(affected_instance, output_csys_name):
     """
     Creates a part name flagnote dictionary for an instance.
-    
+
     Creates a flagnote configuration dictionary that displays the print name
     of a given instance. The flagnote is positioned at the specified output
     coordinate system of the instance.
-    
-    Args:
-        affected_instance (dict): Instance dictionary to create a flagnote for.
-        output_csys_name (str): Name of the output coordinate system where the
-            flagnote should be positioned.
-    
-    Returns:
-        dict: A flagnote instance dictionary ready to be added to the instances list.
+
+    **Args:**
+    - `affected_instance` (dict): Instance dictionary to create a flagnote for.
+    - `output_csys_name` (str): Name of the output coordinate system where the
+        flagnote should be positioned.
+
+    **Returns:**
+    - `dict`: A flagnote instance dictionary ready to be added to the instances list.
     """
     return {
         "net": state.net,
@@ -226,19 +226,19 @@ def make_part_name_flagnote(affected_instance, output_csys_name):
 def make_buildnote_flagnote(note_instance, affected_instance, output_csys_name):
     """
     Creates a build note flagnote dictionary linking a note to an instance.
-    
+
     Creates a flagnote configuration dictionary that displays a build note on
     a specific instance. The flagnote shows the build note's print name and is
     positioned at the specified output coordinate system of the affected instance.
-    
-    Args:
-        note_instance (dict): Build note instance dictionary.
-        affected_instance (dict): Instance dictionary to attach the flagnote to.
-        output_csys_name (str): Name of the output coordinate system where the
-            flagnote should be positioned.
-    
-    Returns:
-        dict: A flagnote instance dictionary ready to be added to the instances list.
+
+    **Args:**
+    - `note_instance` (dict): Build note instance dictionary.
+    - `affected_instance` (dict): Instance dictionary to attach the flagnote to.
+    - `output_csys_name` (str): Name of the output coordinate system where the
+        flagnote should be positioned.
+
+    **Returns:**
+    - `dict`: A flagnote instance dictionary ready to be added to the instances list.
     """
     return {
         "net": state.net,
@@ -261,19 +261,19 @@ def make_buildnote_flagnote(note_instance, affected_instance, output_csys_name):
 def make_rev_change_flagnote(note_instance, affected_instance, output_csys_name):
     """
     Creates a revision change callout flagnote dictionary linking a note to an instance.
-    
+
     Creates a flagnote configuration dictionary that displays a revision change
     callout note on a specific instance. The flagnote shows the revision number
     and is positioned at the specified output coordinate system of the affected instance.
-    
-    Args:
-        note_instance (dict): Revision change callout note instance dictionary.
-        affected_instance (dict): Instance dictionary to attach the flagnote to.
-        output_csys_name (str): Name of the output coordinate system where the
-            flagnote should be positioned.
-    
-    Returns:
-        dict: A flagnote instance dictionary ready to be added to the instances list.
+
+    **Args:**
+    - `note_instance` (dict): Revision change callout note instance dictionary.
+    - `affected_instance` (dict): Instance dictionary to attach the flagnote to.
+    - `output_csys_name` (str): Name of the output coordinate system where the
+        flagnote should be positioned.
+
+    **Returns:**
+    - `dict`: A flagnote instance dictionary ready to be added to the instances list.
     """
     return {
         "net": state.net,
@@ -366,16 +366,16 @@ def get_lib_tools(instance):
 def combine_notes(keep_note_text, merge_note_texts, note_type=None):
     """
     Combines multiple notes by merging their affected instances into one note.
-    
+
     Merges one or more notes into a single note by combining their affected instances
-    lists. The note to keep is identified by keep_note_text, and all notes matching
-    merge_note_texts are merged into it and then removed.
-    
-    Args:
-        keep_note_text (str): The note_text value of the note to keep and merge others into.
-        merge_note_texts (list): List of note_text values to find and merge into the kept note.
-        note_type (list, optional): If provided, only notes with note_type in this list
-            will be considered for merging. If None, all notes are considered.
+    lists. The note to keep is identified by `keep_note_text`, and all notes matching
+    `merge_note_texts` are merged into it and then removed.
+
+    **Args:**
+    - `keep_note_text` (str): The `note_text` value of the note to keep and merge others into.
+    - `merge_note_texts` (list): List of `note_text` values to find and merge into the kept note.
+    - `note_type` (list, optional): If provided, only notes with `note_type` in this list
+        will be considered for merging. If `None`, all notes are considered.
     """
     keep_note_instance = None
     merge_note_instances_raw = []
