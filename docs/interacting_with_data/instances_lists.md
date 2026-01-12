@@ -286,7 +286,7 @@ Instances lists are the single comprehensive source of truth for the product you
 from harnice.lists import instances_list
 ```
  then use as written.*
-??? info "`instances_list.new_instance()`"
+??? info "`instances_list.new_instance(instance_name, instance_data, ignore_duplicates=False)`"
 
     New Instance
     
@@ -310,11 +310,11 @@ from harnice.lists import instances_list
         Returns:
             -1 if the instance was added successfully, otherwise raises an error
 
-??? info "`instances_list.modify()`"
+??? info "`instances_list.modify(instance_name, instance_data)`"
 
     Documentation needed.
 
-??? info "`instances_list.remove_instance()`"
+??? info "`instances_list.remove_instance(instance_to_delete)`"
 
     Documentation needed.
 
@@ -326,15 +326,15 @@ from harnice.lists import instances_list
 
     Documentation needed.
 
-??? info "`instances_list.attribute_of()`"
+??? info "`instances_list.attribute_of(target_instance, attribute)`"
 
     Documentation needed.
 
-??? info "`instances_list.instance_in_connector_group_with_item_type()`"
+??? info "`instances_list.instance_in_connector_group_with_item_type(connector_group, item_type)`"
 
     Documentation needed.
 
-??? info "`instances_list.list_of_uniques()`"
+??? info "`instances_list.list_of_uniques(attribute)`"
 
     Documentation needed.
 

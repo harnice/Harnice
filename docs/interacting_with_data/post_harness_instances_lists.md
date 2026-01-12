@@ -17,7 +17,7 @@ from harnice.lists import library_history
     
     Writes a clean TSV with INSTANCES_LIST_COLUMNS.
 
-??? info "`library_history.push()`"
+??? info "`library_history.push(path_to_system_rev, system_pn_rev)`"
 
     Documentation needed.
 

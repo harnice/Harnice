@@ -18,12 +18,16 @@ def columns_header(module_prefix, additional_columns=False):
     string += "\n"
     return string
 
-def print_function_docs(fn,module_prefix=""):
-    title = fn.__name__
+
+def print_function_docs(fn, module_prefix=""):
+    name = fn.__name__
+    sig = inspect.signature(fn)
     doc = fn.__doc__ or "Documentation needed."
 
+    full_name = f"{module_prefix}.{name}{sig}"
+
     return (
-        f'??? info "`{module_prefix}.{title}()`"\n\n'
+        f'??? info "`{full_name}`"\n\n'
         + "\n".join(f"    {line}" for line in doc.strip().splitlines())
         + "\n\n"
     )

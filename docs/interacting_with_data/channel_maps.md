@@ -68,11 +68,11 @@ from harnice.lists import channel_map
     
     Returns: none
 
-??? info "`channel_map.map()`"
+??? info "`channel_map.map(from_key, to_key=None, multi_ch_junction_key='')`"
 
     Documentation needed.
 
-??? info "`channel_map.already_mapped_set_append()`"
+??? info "`channel_map.already_mapped_set_append(key)`"
 
     Documentation needed.
 
@@ -80,7 +80,7 @@ from harnice.lists import channel_map
 
     Documentation needed.
 
-??? info "`channel_map.already_mapped()`"
+??? info "`channel_map.already_mapped(key)`"
 
     Documentation needed.
 

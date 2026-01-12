@@ -40,7 +40,7 @@ from harnice.lists import formboard_graph
 
     Documentation needed.
 
-??? info "`formboard_graph.append()`"
+??? info "`formboard_graph.append(segment_id, segment_data)`"
 
     Documentation needed.
 
