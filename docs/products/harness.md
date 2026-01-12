@@ -1,24 +1,31 @@
-# Harness
+# Harnesses
+A physical assembly that contains a set of electrical circuits that satisfies a channel map. Can also contain other parts and instructions about how to be built. 
 
-A set of circuits that satisfies a channel map. Also contains instructions about how to be built from a set of selected parts. 
 
-# How to make a new harness
+---
 
-# What happens when you render?
+## How to make a new harness
 
-# Harness Data Structures
-Harness data is stored in the following file formats.
+1. Make a folder for the part number of your harness somewhere on your computer. Run Harnice Render, which will generate an example harness that you can then edit.
 
-??? info "Instances List"
+    ??? info "Rendering a Product"
 
-    {% include-markdown "interacting_with_data/instances_lists.md" %}
+        {% include-markdown "fragments/how-to-render.md" %}
 
-??? info "Formboard Graph Definition"
+    You can also lightweight render if you want to bypass some of the checks.
 
-    {% include-markdown "interacting_with_data/formboard_graphs.md" %}
+    ??? info "Lightweight Rendering a Product"
 
-??? info "Library Import History"
+        {% include-markdown "fragments/lightweight_rendering.md" %}
 
-    {% include-markdown "interacting_with_data/library_history.md" %}
+1. Edit the attributes of your new harness.
 
-# Examples
+    ??? info "Editing the Attributes of a Product"
+
+        {% include-markdown "fragments/editing_attributes.md" %}
+
+1. Edit the formboard graph of your new harness.
+
+    ??? info "Editing the Formboard Graph of a Product"
+
+        {% include-markdown "fragments/editing_formboard_graph.md" %}
