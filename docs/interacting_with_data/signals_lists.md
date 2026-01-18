@@ -35,6 +35,10 @@ A Signals List is an exhaustive list of every signal is going into or out of a t
     The channel type of this signal. 
     {% include-markdown "fragments/channel_type_reference.md" %}
 
+=== "`config_variable`"
+
+    Change header or add more headers as needed. Blank: row is true across all values of this field. Otherwise, row is only true when configuration matches the value of this field.
+
 ### Columns of Signals Lists for Disconnects 
 === "`channel_id`"
 

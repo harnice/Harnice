@@ -13,6 +13,7 @@ DEVICE_COLUMNS = [
     "cavity", # Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within its connector.
     "connector_mpn", #MPN of the connector in this device (NOT the mating connector).
     "channel_type",  #The channel type of this signal. \n{% include-markdown "fragments/channel_type_reference.md" %}
+    "config_variable", #Change header or add more headers as needed. Blank: row is true across all values of this field. Otherwise, row is only true when configuration matches the value of this field.
 ]
 
 DISCONNECT_COLUMNS = [
