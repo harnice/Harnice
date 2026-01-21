@@ -163,7 +163,7 @@ def main():
 
                 # Decide directory based on disconnect flag
                 base_dir = os.path.join(
-                    fileio.dirpath("imported_instances"),
+                    fileio.dirpath("instance_data"),
                     ("disconnect" if disconnect_flag else "device"),
                 )
                 signals_list_path = os.path.join(

@@ -1,0 +1,3 @@
+channel_id	signal	connector_name	cavity	connector_mpn	channel_type
+power	pos	power_in	red	bare_wire	"(12, 'https://github.com/harnice/harnice-library-public')"
+power	neg	power_in	black	bare_wire	"(12, 'https://github.com/harnice/harnice-library-public')"

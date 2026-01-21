@@ -1,0 +1,3 @@
+channel_id	signal	A_cavity	B_cavity	A_connector_mpn	A_channel_type	B_connector_mpn	B_channel_type
+ch0	pos	pin	pin	GOALZERO_8MM_BARREL_PLUG	"(11, 'https://github.com/harnice/harnice-library-public')"	GOALZERO_8MM_BARREL_RECEPT	"(20, 'https://github.com/harnice/harnice-library-public')"
+ch0	neg	ring	ring	GOALZERO_8MM_BARREL_PLUG	"(11, 'https://github.com/harnice/harnice-library-public')"	GOALZERO_8MM_BARREL_RECEPT	"(20, 'https://github.com/harnice/harnice-library-public')"

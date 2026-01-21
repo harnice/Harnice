@@ -1,0 +1,2 @@
+product	mfg	pn	desc	rev	status	releaseticket	library_repo	library_subpath	datestarted	datemodified	datereleased	git_hash_of_harnice_src	drawnby	checkedby	revisionupdates	affectedinstances
+device		generic_dimmer_switch	GENERIC DIMMER SWITCH	1			https://github.com/harnice/harnice-library-public	residential_electrical/switches/	12/19/25	1/20/26		06fb92f981c910365ec04c7a042a7d566078323f	K SHUTT		INITIAL RELEASE	
