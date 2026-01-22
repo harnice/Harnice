@@ -192,9 +192,7 @@ def _add_blank_symbol(sym_name, value="", footprint="", datasheet="", descriptio
         _make_property(
             "MPN", _get_attribute("manufacturer_part_number"), hide=False, id_counter=1
         ),
-        _make_property(
-            "lib_repo", lib_repo_to_write, hide=True, id_counter=2
-        ),
+        _make_property("lib_repo", lib_repo_to_write, hide=True, id_counter=2),
         _make_property(
             "lib_subpath", _get_attribute("library_subpath"), hide=True, id_counter=3
         ),
@@ -607,9 +605,7 @@ def _validate_kicad_library():
     _overwrite_or_create_property_in_symbol("MPN", _get_attribute("pn"), hide=False)
 
     if rev_history.info(field="library_repo") in ["", None]:
-        _overwrite_or_create_property_in_symbol(
-            "lib_repo", "local", hide=True
-        )
+        _overwrite_or_create_property_in_symbol("lib_repo", "local", hide=True)
     else:
         _overwrite_or_create_property_in_symbol(
             "lib_repo", _get_attribute("library_repo"), hide=True
@@ -662,6 +658,53 @@ def _get_attribute(attribute_key):
             return json.load(f).get(attribute_key)
 
 
+def configurations(sig_list):
+    """
+    Returns a dict of each configuration variable and each of its allowed options.
+    {number} represents any number and can be used in a string like "{number}V".
+    You can also say "0<={number}<10V" to describe bounds.
+
+    Args:
+    signals_list (dictionary form)
+
+    Returns:
+        {
+            "config_col_1": {"opt1", "opt2", ""},
+            "config_col_2": {"5V", "12V", ""},
+            ...
+        }
+    """
+
+    # collect headers
+    headers = set()
+    for item in sig_list:
+        headers.update(item.keys())
+        break  # only need first row for headers
+
+    # find configuration columns
+    configuration_cols = (
+        headers - set(signals_list.DEVICE_COLUMNS) - {"config_variable"}
+    )
+
+    # initialize root dict
+    configuration_vars = {col: set() for col in configuration_cols}
+
+    # populate unique values (INCLUDING blanks)
+    for row in sig_list:
+        for col in configuration_cols:
+            val = row.get(col)
+
+            # normalize everything to string
+            if val is None:
+                val = ""
+            else:
+                val = str(val).strip()
+
+            configuration_vars[col].add(val)
+
+    return configuration_vars
+
+
 def _validate_signals_list():
     print("--------------------------------")
     print("Validating signals list...")
@@ -675,6 +718,14 @@ def _validate_signals_list():
 
     if not headers:
         raise ValueError("Signals list has no header row.")
+
+    config_vars = configurations(signals_list)
+
+    print(json.dumps(config_vars, indent=4))
+    # NEXT UP: WAIT UNTIL YOU HAVE A GOOD USE CASE OF CONFIGURED DEVICES.
+    # CONFIRM THAT THIS PRINTS A DICTIONARY OF ALL THE VALID CONFIGURATION VARIABLES AND THEIR DEFINED STATES
+    # THEN MAKE A LIST OF EVERY SINGLE FACTORIAL COMBINATION OF THE CONFIGURATION VARIABLES
+    # THEN ITERATE THROUGH THAT LIST AND VALIDATE EACH CONFIGURATION
 
     counter = 2
     for signal in signals_list:
@@ -775,12 +826,14 @@ def render(lightweight=False):
     path_nickname = ""
     subpath_nickname = ""
     if rev_history.info(field="library_repo"):
-        path_nickname = f"{os.path.basename(rev_history.info(field="library_repo"))}/"
+        path_nickname = f"{os.path.basename(rev_history.info(field='library_repo'))}/"
     if rev_history.info(field="library_subpath"):
-        subpath_nickname = f"{rev_history.info(field="library_subpath")}"
+        subpath_nickname = f"{rev_history.info(field='library_subpath')}"
 
     if path_nickname == "":
-        print("Add this to 'PROJECT SPECIFIC LIBRARIES' not 'global libraries' in Kicad because it doesn't look like you're working in a Harnice library path")
+        print(
+            "Add this to 'PROJECT SPECIFIC LIBRARIES' not 'global libraries' in Kicad because it doesn't look like you're working in a Harnice library path"
+        )
 
     print(
         "\n"
