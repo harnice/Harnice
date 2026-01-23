@@ -65,7 +65,6 @@ os.makedirs(
     exist_ok=True,
 )
 
-# macro initialization complete.write the rest of the macro logic here. 
+# macro initialization complete. write the rest of the macro logic here. there are no remaining required functions to call.
 # ==========================================================================================================
-# there are no remaining required functions to call.
 ```
