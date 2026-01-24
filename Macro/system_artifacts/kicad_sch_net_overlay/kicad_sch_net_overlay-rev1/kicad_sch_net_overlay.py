@@ -2,6 +2,7 @@
 import os
 import subprocess
 from harnice import fileio, state
+from harnice.utils import svg_utils
 
 # describe your args here. comment them out and do not officially define because they are called via runpy,
 # for example, the caller feature_tree should define the arguments like this:
@@ -30,7 +31,8 @@ def macro_file_structure():
     return {
         f"{artifact_id}.log.txt": "kicad-cli export log",
         f"{artifact_id}-svgs.txt": "notes about exported svgs",
-        "svgs": {}
+        "kicad_direct_exports": {},
+        "kicad_net_overlay": {}
     }
 
 def file_structure():
@@ -68,7 +70,11 @@ def dirpath(target_value):
 
 # don't forget to make the directories you've defined above.
 os.makedirs(
-    dirpath("svgs"),
+    dirpath("kicad_direct_exports"),
+    exist_ok=True,
+)
+os.makedirs(
+    dirpath("kicad_net_overlay"),
     exist_ok=True,
 )
 
@@ -89,7 +95,31 @@ cmd = [
     "svg",
     schematic_path,
     "-o",
-    dirpath("svgs"),
+    dirpath("kicad_direct_exports"),
 ]
 
 subprocess.run(cmd, check=True, capture_output=True)
+
+for svg in os.listdir(dirpath("kicad_direct_exports")):
+    docname = svg.replace('.svg', '')
+    direct_export_path = os.path.join(dirpath("kicad_direct_exports"), svg)
+    overlay_path = os.path.join(dirpath("kicad_net_overlay"), f"{docname}-overlay.svg")
+    svg_utils.add_entire_svg_file_contents_to_group(direct_export_path, f"{docname}-kicad_direct_export")
+    
+    net_overlay_path = os.path.join(dirpath("kicad_net_overlay"), svg)
+
+    if not os.path.isfile(net_overlay_path):
+        with open(net_overlay_path, "w") as f:
+            f.write(f"""<svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+<g id="{docname}-kicad_direct_export-contents-start">
+</g>
+<g id="{docname}-kicad_direct_export-contents-end">
+</g>
+</svg>""")
+
+    svg_utils.find_and_replace_svg_group(
+        direct_export_path,
+        f"{docname}-kicad_direct_export",
+        net_overlay_path,
+        f"{docname}-kicad_direct_export",
+    )
