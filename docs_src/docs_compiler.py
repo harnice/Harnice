@@ -4,17 +4,22 @@ import re
 from types import ModuleType
 from pathlib import Path
 
+
 def harnice_dir():
     return Path(__file__).resolve().parents[1]
+
 
 def commands_header(module_prefix):
     string = "\n---\n##Commands:\n"
     string += f"*Use the following functions by first importing the module in your script like this: \n```python\nfrom harnice.lists import {module_prefix}\n```\n then use as written.*\n"
     return string
 
+
 def columns_header(module_prefix, additional_columns=False):
     string = "\n---\n##Columns \n"
-    string += f"*Columns are automatically generated when `{module_prefix}.new()` is called. "
+    string += (
+        f"*Columns are automatically generated when `{module_prefix}.new()` is called. "
+    )
     if additional_columns:
         string += "Additional columns for this kind of list may be added by the user.*"
     else:
@@ -35,6 +40,7 @@ def print_function_docs(fn, module_prefix=""):
         + "\n".join(f"    {line}" for line in doc.strip().splitlines())
         + "\n\n"
     )
+
 
 def columns_to_markdown(module: ModuleType, var_name: str) -> str:
     """
@@ -87,9 +93,7 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
         desc = desc.replace("\\n", "\n")
 
         # 🔹 Re-indent multiline text for MkDocs
-        formatted_desc = "\n".join(
-            "    " + l for l in desc.splitlines()
-        )
+        formatted_desc = "\n".join("    " + l for l in desc.splitlines())
 
         md.append(f'=== "`{name}`"\n\n')
         md.append(f"{formatted_desc}\n\n")
