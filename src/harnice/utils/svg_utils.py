@@ -13,12 +13,13 @@ def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     
     **Args:**
 
-    - filepath (str): Path to the SVG file to modify.
-    - new_group_name (str): Name to use for the new group element (will create
-        {new_group_name}-contents-start and {new_group_name}-contents-end markers).
+    - `filepath` (str): Path to the SVG file to modify.
+    - `new_group_name` (str): Name to use for the new group element (will create
+        `{new_group_name}-contents-start` and `{new_group_name}-contents-end` markers).
 
     **Raises:**
-    - ValueError: If the file does not appear to be a valid SVG or has no inner contents.
+
+    - `ValueError`: If the file does not appear to be a valid SVG or has no inner contents.
     """
     if not os.path.exists(filepath):
         print("File does not exist: {}".format(filepath))
@@ -86,6 +87,7 @@ def find_and_replace_svg_group(
 
     **Args:**
 
+
     - `source_svg_filepath` (str): Path to the source SVG file containing the group to copy.
     - `source_group_name` (str): Name of the source group to extract content from.
     - `destination_svg_filepath` (str): Path to the destination SVG file to modify.
@@ -93,9 +95,11 @@ def find_and_replace_svg_group(
 
     **Returns:**
 
+
     - `int`: Always returns `1` (success indicator).
 
     **Raises:**
+
 
     - `ValueError`: If any of the required group markers are not found in the source
         or destination files.
@@ -162,6 +166,11 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
     [{"x": 0, "y": 0, "tangent": 0}, {"x": 1, "y": 1, "tangent": 0}]
     ```
     
+    Spline points are a list of dictionaries with x and y coordinates. 
+    ```python
+    [{"x": 0, "y": 0, "tangent": 0}, {"x": 1, "y": 1, "tangent": 0}]
+    ```
+    
     Appearance dictionary is a dictionary with the following keys: base_color, outline_color, parallelstripe, perpstripe, slash_lines
     ```python
     {
@@ -169,7 +178,22 @@ def draw_styled_path(spline_points, stroke_width_inches, appearance_dict, local_
         "perpstripe": ["orange", "yellow", "green", "blue", "purple"],
     }
     ```
+    ```python
+    {
+        "base_color": "red",
+        "perpstripe": ["orange", "yellow", "green", "blue", "purple"],
+    }
+    ```
     Slash lines dictionary is a dictionary with the following keys: direction, angle, step, color, slash_width_inches
+    ```python
+    {
+        "direction": "RH",
+        "angle": 20,
+        "step": 3,
+        "color": "black",
+        "slash_width_inches": 0.25,
+    }
+    ```
     ```python
     {
         "direction": "RH",
@@ -416,12 +440,14 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, con
     ```
     ### Arguments
 
+
     - `layout_dict` expects a dictionary describing in which direction the table is built
     - `format_dict` expects a dictionary containing a description of how you want your table to appear.
     - `columns_list` expects a list containing your column header content, width, and formatting rules.
     - `content_list` expects a list containing what is actually presented on your table.
 
     ### Returns
+
 
     - A string of SVG primatives in xml format intended to look like a table. 
 
@@ -443,6 +469,7 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, con
 
     The origin is defined to be at one of the four corners of the first row `content[0]`. Valid options:
     
+    
     - `top-left`
     - `top-right`
     - `bottom-left`
@@ -450,6 +477,7 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, con
 
     ### Build Direction 
     When building a table, you can choose to build rows downwards (below the previous, positive y in svg coords) or upwards (above the previous, negative y in svg coords). The direction property defines this:
+    
     
     - `down` → rows appear below the previous
     - `up` → new rows appear above the previous
@@ -483,6 +511,7 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, con
     ### Format Arguments
     Any of the following keys can be defined in any of the format dictionaries. 
 
+
     - `font_size` *(number, default=12)* Default font size (px) for all text
     - `font_family` *(string, default=helvetica)* Default font family (e.g., "Arial", "Helvetica")
     - `font_weight`*(`BIU`, default=None)* Add each character for bold, italic, or underline
@@ -500,6 +529,7 @@ def table(layout_dict, format_dict, columns_list, content_list, path_to_svg, con
     If something is defined at the row level, it takes precedent over some parameter defined at the column level, which takes precedent over a definition in key `globals`, if defined. If something is not defined at all, the above defaults will apply. 
 
     ### Color Standard
+
 
     - Default color: **black**
     - Accepted formats:
