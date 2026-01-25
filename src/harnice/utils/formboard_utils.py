@@ -25,9 +25,11 @@ def validate_nodes():
     9. Generates a PNG visualization of the formboard graph
 
     **Raises:**
+
     - `ValueError`: If fewer than two nodes are defined.
     - `Exception`: If loops are detected, if nodes have no segments, or if the graph
         has disconnected components.
+
     """
     # Ensure TSV exists
     if not os.path.exists(fileio.path("formboard graph definition")):
@@ -469,10 +471,12 @@ def map_instance_to_segments(instance):
     where those cavities are located.
 
     **Args:**
+
     - `instance` (dict): Instance dictionary with `location_type="segment"` that has
         `node_at_end_a` and `node_at_end_b` defined.
 
     **Raises:**
+
     - `ValueError`: If the instance is not segment-based, if endpoints are missing,
         if endpoints are not nodes, or if no path is found between the nodes.
     """
@@ -694,14 +698,17 @@ def calculate_location(lookup_instance, instances):
     specifications for child coordinate systems. Absolute rotation overrides accumulated rotation.
 
     **Args:**
+
     - `lookup_instance` (dict): The instance dictionary to calculate coordinates for.
     - `instances` (list): List of all instance dictionaries needed to resolve the parent chain.
 
     **Returns:**
+
     - `tuple`: A tuple of `(x_pos, y_pos, angle)` representing the world coordinates and
         rotation angle in degrees.
 
     **Raises:**
+    
     - `ValueError`: If parent coordinate system information is missing or invalid, or
         if parent instances cannot be found in the instances list.
     """
