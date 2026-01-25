@@ -2,6 +2,7 @@
 import os
 import re
 import json
+import math
 from typing import Dict
 from harnice import fileio, state
 
@@ -21,12 +22,17 @@ from harnice import fileio, state
 # define the artifact_id of this macro (treated the same as part number). should match the filename.
 artifact_id = "kicad_sch_parser"
 
+# KiCad internal units to inches conversion
+# KiCad stores in units of 0.0254mm = 1 mil = 0.001 inches
+KICAD_UNIT_SCALE = 0.001  # Convert from internal units (mils) to inches
+
 # =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
         f"{artifact_id}-pin-locations-lib.json": "pin locations of library symbols",
         f"{artifact_id}-instance-locations.json": "locations of library instances",
         f"{artifact_id}-wire-locations.json": "wire locations",
+        f"{artifact_id}-pin-locations.json": "absolute pin locations by refdes",
     }
 
 def file_structure():
@@ -180,6 +186,82 @@ class KiCadSchematicParser:
         
         return wire_locations
 
+def rotate_point(x, y, angle_degrees):
+    """Rotate a point by angle in degrees"""
+    angle_rad = math.radians(angle_degrees)
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    
+    new_x = x * cos_a - y * sin_a
+    new_y = x * sin_a + y * cos_a
+    
+    return new_x, new_y
+
+def compile_pin_locations(pin_locations_of_lib_symbols, locations_of_lib_instances):
+    """
+    Compile absolute pin locations for each instance.
+    Returns:
+    {
+        box_refdes: {
+            pin_name: {
+                'x_loc': xxxx,
+                'y_loc': xxxx
+            }
+        }
+    }
+    """
+    pin_locations = {}
+    
+    for refdes, instance_info in locations_of_lib_instances.items():
+        lib_id = instance_info['lib_id']
+        instance_x = instance_info['x']
+        instance_y = instance_info['y']
+        instance_rotate = instance_info['rotate']
+        
+        # Check if we have pin data for this lib_id
+        if lib_id not in pin_locations_of_lib_symbols:
+            print(f"Warning: No pin data found for lib_id '{lib_id}' (used by {refdes})")
+            continue
+        
+        pin_locations[refdes] = {}
+        
+        # For each pin in the library symbol, calculate its absolute position
+        for pin_name, pin_info in pin_locations_of_lib_symbols[lib_id].items():
+            pin_x_rel = pin_info['x_loc']
+            pin_y_rel = pin_info['y_loc']
+            
+            # Rotate the pin relative position by the instance rotation
+            rotated_x, rotated_y = rotate_point(pin_x_rel, pin_y_rel, instance_rotate)
+            
+            # Add the instance position to get absolute coordinates
+            absolute_x = instance_x + rotated_x
+            absolute_y = instance_y + rotated_y
+            
+            pin_locations[refdes][pin_name] = {
+                'x_loc': absolute_x,
+                'y_loc': absolute_y
+            }
+    
+    return pin_locations
+
+def round_and_scale_coordinates(data, scale_factor):
+    """
+    Round coordinates to nearest 0.1 mil, then scale to inches.
+    Recursively processes nested dictionaries.
+    """
+    if isinstance(data, dict):
+        processed = {}
+        for key, value in data.items():
+            if key in ['x_loc', 'y_loc', 'x', 'y', 'start_x', 'start_y', 'end_x', 'end_y']:
+                # Round to nearest 0.1 mil (multiply by 10, round, divide by 10)
+                rounded_mils = round(value * 10) / 10
+                processed[key] = rounded_mils * scale_factor
+            else:
+                processed[key] = round_and_scale_coordinates(value, scale_factor)
+        return processed
+    else:
+        return data
+
 # =============== MAIN MACRO LOGIC =========================================================================
 
 schematic_path = fileio.path("kicad sch", structure_dict=file_structure())
@@ -194,23 +276,42 @@ print("Parsing KiCad schematic...")
 parser = KiCadSchematicParser(schematic_path)
 pin_locations_of_lib_symbols, locations_of_lib_instances, wire_locations = parser.parse()
 
+# Compile absolute pin locations
+print("Compiling absolute pin locations...")
+pin_locations = compile_pin_locations(pin_locations_of_lib_symbols, locations_of_lib_instances)
+
+# Round to nearest 0.1 mil and scale to inches
+print(f"Rounding to nearest 0.1 mil and converting to inches...")
+pin_locations_of_lib_symbols_scaled = round_and_scale_coordinates(pin_locations_of_lib_symbols, KICAD_UNIT_SCALE)
+locations_of_lib_instances_scaled = round_and_scale_coordinates(locations_of_lib_instances, KICAD_UNIT_SCALE)
+wire_locations_scaled = round_and_scale_coordinates(wire_locations, KICAD_UNIT_SCALE)
+pin_locations_scaled = round_and_scale_coordinates(pin_locations, KICAD_UNIT_SCALE)
+
 # Export to JSON files
 pin_lib_path = path("pin locations of library symbols")
 instance_path = path("locations of library instances")
 wire_path = path("wire locations")
+pin_path = path("absolute pin locations by refdes")
 
 with open(pin_lib_path, 'w') as f:
-    json.dump(pin_locations_of_lib_symbols, f, indent=2)
+    json.dump(pin_locations_of_lib_symbols_scaled, f, indent=2)
 
 with open(instance_path, 'w') as f:
-    json.dump(locations_of_lib_instances, f, indent=2)
+    json.dump(locations_of_lib_instances_scaled, f, indent=2)
 
 with open(wire_path, 'w') as f:
-    json.dump(wire_locations, f, indent=2)
+    json.dump(wire_locations_scaled, f, indent=2)
+
+with open(pin_path, 'w') as f:
+    json.dump(pin_locations_scaled, f, indent=2)
 
 print(f"Found {len(pin_locations_of_lib_symbols)} library symbols")
 print(f"Found {len(locations_of_lib_instances)} symbol instances")
 print(f"Found {len(wire_locations)} wires")
-print(f"\nLibrary pin data saved to: {pin_lib_path}")
+total_pins = sum(len(pins) for pins in pin_locations.values())
+print(f"Compiled {total_pins} absolute pin locations")
+print(f"\nAll coordinates rounded to nearest 0.1 mil and converted to inches")
+print(f"Library pin data saved to: {pin_lib_path}")
 print(f"Instance locations saved to: {instance_path}")
 print(f"Wire locations saved to: {wire_path}")
+print(f"Absolute pin locations saved to: {pin_path}")
