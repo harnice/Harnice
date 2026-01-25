@@ -153,12 +153,34 @@ class KiCadSchematicParser:
             ref_match = re.search(r'\(property\s+"Reference"\s+"([^"]+)"', symbol_body)
             ref = ref_match.group(1) if ref_match else "?"
             
+            # Extract pins from symbol definition
+            pins = self._extract_pins_from_symbol_def(lib_id, symbol_body)
+            
             self.symbols[uuid] = {
                 'lib_id': lib_id,
                 'reference': ref,
                 'position': Point(float(x), float(y)),
-                'angle': int(angle)
+                'angle': int(angle),
+                'pins': pins
             }
+    
+    def _extract_pins_from_symbol_def(self, lib_id, symbol_body):
+        """Extract pin definitions from symbol body"""
+        pins = []
+        # Pattern: (pin ... (at x y angle) ... (name "...") ... (number "..."))
+        pin_pattern = r'\(pin\s+\w+\s+\w+\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+(\d+)\).*?\(name\s+"([^"]+)".*?\(number\s+"([^"]+)"'
+        
+        for match in re.finditer(pin_pattern, symbol_body, re.DOTALL):
+            pin_x, pin_y, pin_angle, pin_name, pin_number = match.groups()
+            pins.append({
+                'number': pin_number,
+                'name': pin_name,
+                'x': float(pin_x),
+                'y': float(pin_y),
+                'angle': int(pin_angle)
+            })
+        
+        return pins
     
     def _parse_wires(self):
         """Extract wire segments with their coordinates"""
@@ -216,12 +238,47 @@ class KiCadSchematicParser:
         print("=" * 80)
     
     def _parse_pins(self):
-        """Extract pin locations from symbol definitions and instances"""
-        # This is simplified - you'd need to match pin definitions with symbol instances
-        # and calculate actual pin positions based on symbol position + rotation
+        """Calculate actual pin positions in schematic coordinates"""
+        print("=" * 80)
         
-        # For now, we'll extract from the netlist or infer from wire endpoints
-        pass
+        for uuid, symbol_info in self.symbols.items():
+            symbol_pos = symbol_info['position']
+            symbol_angle = symbol_info['angle']
+            
+            for pin in symbol_info['pins']:
+                # Calculate absolute position considering symbol rotation
+                pin_x, pin_y = self._rotate_point(
+                    pin['x'], pin['y'], symbol_angle
+                )
+                
+                absolute_pos = Point(
+                    symbol_pos.x + pin_x,
+                    symbol_pos.y + pin_y
+                )
+                
+                pin_obj = Pin(
+                    symbol_ref=symbol_info['reference'],
+                    pin_number=pin['number'],
+                    pin_name=pin['name'],
+                    position=absolute_pos,
+                    angle=(pin['angle'] + symbol_angle) % 360
+                )
+                self.pins.append(pin_obj)
+                print(f"Pin {symbol_info['reference']}.{pin['number']} ({pin['name']}) at ({absolute_pos.x}, {absolute_pos.y})")
+        
+        print("=" * 80)
+    
+    def _rotate_point(self, x, y, angle):
+        """Rotate a point by angle degrees (KiCad uses 0/90/180/270)"""
+        import math
+        rad = math.radians(angle)
+        cos_a = math.cos(rad)
+        sin_a = math.sin(rad)
+        
+        new_x = x * cos_a - y * sin_a
+        new_y = x * sin_a + y * cos_a
+        
+        return new_x, new_y
     
     def find_net_for_wire(self, wire: Wire) -> Optional[str]:
         """Find which net a wire belongs to by checking nearby labels"""
@@ -295,6 +352,143 @@ class KiCadSchematicParser:
         
         return nets
     
+    def find_pins_on_net(self, net_name: str) -> List[Dict]:
+        """Find all pins connected to a specific net"""
+        pins_on_net = []
+        
+        # Get all wire endpoints for this net
+        net_points = set()
+        for wire in self.wires:
+            # Check if this wire belongs to the net
+            for label in self.labels:
+                if self._point_near_wire(label.position, wire) and label.text == net_name:
+                    net_points.add(wire.start)
+                    net_points.add(wire.end)
+                    break
+        
+        # Find pins at or very near these points
+        for pin in self.pins:
+            for pt in net_points:
+                dist = ((pin.position.x - pt.x)**2 + (pin.position.y - pt.y)**2)**0.5
+                if dist < 0.5:  # Small tolerance for floating point
+                    pins_on_net.append({
+                        'symbol_ref': pin.symbol_ref,
+                        'pin_number': pin.pin_number,
+                        'pin_name': pin.pin_name,
+                        'x': pin.position.x,
+                        'y': pin.position.y
+                    })
+                    break
+        
+        return pins_on_net
+    
+    def build_net_routing_graph(self) -> Dict[str, Dict]:
+        """
+        Build a routing graph for each net that can be used to find paths between any two pins.
+        Returns: {
+            'net_name': {
+                'pins': [list of pins on this net],
+                'segments': [list of wire segments],
+                'graph': {point -> [connected_points]} adjacency list
+            }
+        }
+        """
+        routing_info = {}
+        
+        # Build connectivity map
+        point_to_wires = {}
+        for wire in self.wires:
+            for pt in [wire.start, wire.end]:
+                if pt not in point_to_wires:
+                    point_to_wires[pt] = []
+                point_to_wires[pt].append(wire)
+        
+        # Assign nets to wires
+        wire_nets = {}
+        for label in self.labels:
+            for wire in self.wires:
+                if self._point_near_wire(label.position, wire):
+                    wire_nets[wire.uuid] = label.text
+        
+        # Propagate net names
+        changed = True
+        while changed:
+            changed = False
+            for pt, wires_at_pt in point_to_wires.items():
+                net_names = [wire_nets.get(w.uuid) for w in wires_at_pt if w.uuid in wire_nets]
+                if net_names:
+                    net_name = net_names[0]
+                    for w in wires_at_pt:
+                        if w.uuid not in wire_nets:
+                            wire_nets[w.uuid] = net_name
+                            changed = True
+        
+        # Build routing info per net
+        for net_name in set(wire_nets.values()):
+            # Get all wires for this net
+            net_wires = [w for w in self.wires if wire_nets.get(w.uuid) == net_name]
+            
+            # Build adjacency graph
+            graph = {}
+            for wire in net_wires:
+                # Add bidirectional edges
+                start_key = (wire.start.x, wire.start.y)
+                end_key = (wire.end.x, wire.end.y)
+                
+                if start_key not in graph:
+                    graph[start_key] = []
+                if end_key not in graph:
+                    graph[end_key] = []
+                
+                graph[start_key].append(end_key)
+                graph[end_key].append(start_key)
+            
+            # Find pins on this net
+            net_points = set()
+            for wire in net_wires:
+                net_points.add((wire.start.x, wire.start.y))
+                net_points.add((wire.end.x, wire.end.y))
+            
+            pins_on_net = []
+            for pin in self.pins:
+                pin_key = (pin.position.x, pin.position.y)
+                # Check if pin is at or very near any net point
+                for pt in net_points:
+                    dist = ((pin.position.x - pt[0])**2 + (pin.position.y - pt[1])**2)**0.5
+                    if dist < 0.5:
+                        pins_on_net.append({
+                            'symbol_ref': pin.symbol_ref,
+                            'pin_number': pin.pin_number,
+                            'pin_name': pin.pin_name,
+                            'x': pin.position.x,
+                            'y': pin.position.y,
+                            'graph_key': pin_key
+                        })
+                        break
+            
+            # Store segments
+            segments = [
+                {
+                    'start': {'x': w.start.x, 'y': w.start.y},
+                    'end': {'x': w.end.x, 'y': w.end.y},
+                    'uuid': w.uuid
+                }
+                for w in net_wires
+            ]
+            
+            routing_info[net_name] = {
+                'pins': pins_on_net,
+                'segments': segments,
+                'graph': {str(k): [str(v) for v in vals] for k, vals in graph.items()},
+                'junctions': [
+                    {'x': j.point.x, 'y': j.point.y}
+                    for j in self.junctions
+                    if (j.point.x, j.point.y) in net_points
+                ]
+            }
+        
+        return routing_info
+    
     def _point_near_wire(self, point: Point, wire: Wire, threshold: float = 5.0) -> bool:
         """Check if a point is near a wire segment"""
         # Calculate distance from point to line segment
@@ -341,13 +535,25 @@ class KiCadSchematicParser:
                 }
                 for l in self.labels
             ],
+            'pins': [
+                {
+                    'symbol_ref': p.symbol_ref,
+                    'pin_number': p.pin_number,
+                    'pin_name': p.pin_name,
+                    'x': p.position.x,
+                    'y': p.position.y,
+                    'angle': p.angle
+                }
+                for p in self.pins
+            ],
             'symbols': {
                 uuid: {
                     'reference': info['reference'],
                     'lib_id': info['lib_id'],
                     'x': info['position'].x,
                     'y': info['position'].y,
-                    'angle': info['angle']
+                    'angle': info['angle'],
+                    'pins': info['pins']
                 }
                 for uuid, info in self.symbols.items()
             }
