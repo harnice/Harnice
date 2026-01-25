@@ -661,7 +661,6 @@ for instance in instances:
         instance['total_segments'] = 0
 
 print(f"\n=== Path Finding: {path_found_count}/{len(instances)} paths found ===")
-
 # =============== BUILD SVG OVERLAY ========================================================================
 
 # Define segment spacing (distance between parallel wires)
@@ -734,8 +733,7 @@ for node_id, node_coords in graph['nodes'].items():
     
     # Draw gray circle if debug mode is on
     if print_circles_and_dots:
-        y_svg = -y_node_px
-        svg_groups.append(f'<circle cx="{x_node_px:.3f}" cy="{y_svg:.3f}" r="{node_radius_px:.3f}" fill="gray" opacity="0.5" />')
+        svg_groups.append(f'<circle cx="{x_node_px:.3f}" cy="{y_node_px:.3f}" r="{node_radius_px:.3f}" fill="gray" opacity="0.5" />')
     
     # For each segment connected to this node, calculate entry/exit points
     for seg_angle, seg_uuid in zip(node_segment_angles, node_segments):
@@ -776,15 +774,14 @@ for node_id, node_coords in graph['nodes'].items():
             x_circleintersect = x_node_px + node_radius_px * math.cos(math.radians(final_angle))
             y_circleintersect = y_node_px + node_radius_px * math.sin(math.radians(final_angle))
             
-            # Draw red dot if debug mode is on
+            # Draw red dot if debug mode is on (use unflipped coordinates)
             if print_circles_and_dots:
-                y_dot_svg = -y_circleintersect
-                svg_groups.append(f'<circle cx="{x_circleintersect:.3f}" cy="{y_dot_svg:.3f}" r="3" fill="red" />')
+                svg_groups.append(f'<circle cx="{x_circleintersect:.3f}" cy="{y_circleintersect:.3f}" r="3" fill="red" />')
             
-            # Store the point
+            # Store the point WITH Y FLIPPED for svg_utils.draw_styled_path()
             points_to_pass_through.setdefault(node_id, {}).setdefault(seg_uuid, {})[inst_name] = {
                 'x': x_circleintersect,
-                'y': y_circleintersect
+                'y': -y_circleintersect  # Flip Y for the paths
             }
             point_count += 1
 
