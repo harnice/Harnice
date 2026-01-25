@@ -169,10 +169,10 @@ class KiCadSchematicParser:
         Returns:
         {
             wire_uuid: {
-                'start_x': xxxx,
-                'start_y': xxxx,
-                'end_x': xxxx,
-                'end_y': xxxx
+                'a_x': xxxx,
+                'a_y': xxxx,
+                'b_x': xxxx,
+                'b_y': xxxx
             }
         }
         """
@@ -185,10 +185,10 @@ class KiCadSchematicParser:
             x1, y1, x2, y2, uuid = match.groups()
             
             wire_locations[uuid] = {
-                'start_x': float(x1),
-                'start_y': float(y1),
-                'end_x': float(x2),
-                'end_y': float(y2)
+                'a_x': float(x1),
+                'a_y': float(y1),
+                'b_x': float(x2),
+                'b_y': float(y2)
             }
         
         return wire_locations
@@ -260,7 +260,7 @@ def round_and_scale_coordinates(data, scale_factor):
     if isinstance(data, dict):
         processed = {}
         for key, value in data.items():
-            if key in ['x_loc', 'y_loc', 'x', 'y', 'start_x', 'start_y', 'end_x', 'end_y']:
+            if key in ['x_loc', 'y_loc', 'x', 'y', 'a_x', 'a_y', 'b_x', 'b_y']:
                 # Round to nearest 0.1 mil (multiply by 10, round, divide by 10)
                 rounded_mils = round(value * 10) / 10
                 # Convert to inches
@@ -324,41 +324,41 @@ def build_graph(pin_locations_scaled, wire_locations_scaled):
     
     # Step 2: Process wires and create junction nodes where needed
     for wire_uuid, wire_coords in wire_locations_scaled.items():
-        start_x = wire_coords['start_x']
-        start_y = wire_coords['start_y']
-        end_x = wire_coords['end_x']
-        end_y = wire_coords['end_y']
+        a_x = wire_coords['a_x']
+        a_y = wire_coords['a_y']
+        b_x = wire_coords['b_x']
+        b_y = wire_coords['b_y']
         
-        start_key = location_key(start_x, start_y)
-        end_key = location_key(end_x, end_y)
+        a_key = location_key(a_x, a_y)
+        b_key = location_key(b_x, b_y)
         
-        # Get or create node for start point
-        if start_key not in location_to_node:
+        # Get or create node for end A
+        if a_key not in location_to_node:
             junction_uuid = f"wirejunction-{junction_counter}"
             junction_counter += 1
             nodes[junction_uuid] = {
-                'x': round(start_x, OUTPUT_PRECISION),
-                'y': round(start_y, OUTPUT_PRECISION)
+                'x': round(a_x, OUTPUT_PRECISION),
+                'y': round(a_y, OUTPUT_PRECISION)
             }
-            location_to_node[start_key] = junction_uuid
+            location_to_node[a_key] = junction_uuid
         
-        start_node = location_to_node[start_key]
+        a_node = location_to_node[a_key]
         
-        # Get or create node for end point
-        if end_key not in location_to_node:
+        # Get or create node for end B
+        if b_key not in location_to_node:
             junction_uuid = f"wirejunction-{junction_counter}"
             junction_counter += 1
             nodes[junction_uuid] = {
-                'x': round(end_x, OUTPUT_PRECISION),
-                'y': round(end_y, OUTPUT_PRECISION)
+                'x': round(b_x, OUTPUT_PRECISION),
+                'y': round(b_y, OUTPUT_PRECISION)
             }
-            location_to_node[end_key] = junction_uuid
+            location_to_node[b_key] = junction_uuid
         
-        end_node = location_to_node[end_key]
+        b_node = location_to_node[b_key]
         
         segments[wire_uuid] = {
-            'node_at_end_a': start_node,
-            'node_at_end_b': end_node
+            'node_at_end_a': a_node,
+            'node_at_end_b': b_node
         }
     
     return {
@@ -392,6 +392,7 @@ def generate_schematic_png(graph, output_path):
     pin_radius_inches = 0.033  # ~0.067in diameter (1/3 of 0.2in)
     junction_radius_inches = 0.033
     font_size_inches = 0.05  # 1/3 of 0.15in
+    wire_font_size_inches = 0.05 / 3  # 1/3 of node font size
     arrow_length_inches = 0.067  # 1/3 of 0.2in
     line_width_inches = 0.02
     
@@ -399,6 +400,7 @@ def generate_schematic_png(graph, output_path):
     pin_radius = int(pin_radius_inches * dpi)
     junction_radius = int(junction_radius_inches * dpi)
     font_size = int(font_size_inches * dpi)
+    wire_font_size = int(wire_font_size_inches * dpi)
     arrow_length = int(arrow_length_inches * dpi)
     line_width = max(1, int(line_width_inches * dpi))
     
@@ -431,13 +433,16 @@ def generate_schematic_png(graph, output_path):
     # Try to get a system font with appropriate size
     try:
         font = ImageFont.truetype("Arial.ttf", font_size)
+        wire_font = ImageFont.truetype("Arial.ttf", wire_font_size)
         legend_font = ImageFont.truetype("Arial.ttf", font_size)
     except OSError:
         try:
             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+            wire_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", wire_font_size)
             legend_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
         except OSError:
             font = ImageFont.load_default()
+            wire_font = ImageFont.load_default()
             legend_font = ImageFont.load_default()
     
     # --- Draw segments (wires) ---
@@ -464,6 +469,12 @@ def generate_schematic_png(graph, output_path):
             right_y = y2 - arrow_length * math.sin(angle + arrow_angle)
             
             draw.polygon([(x2, y2), (left_x, left_y), (right_x, right_y)], fill="blue")
+            
+            # Label wire with UUID at center of the wire (smaller font)
+            center_x = (x1 + x2) / 2
+            center_y = (y1 + y2) / 2
+            wire_label_offset = int(0.075 * dpi)  # Same offset as node labels
+            draw.text((center_x, center_y - wire_label_offset), wire_uuid, fill="blue", font=wire_font, anchor="mm")
     
     # --- Draw nodes ---
     for name, (x, y) in node_coordinates.items():
@@ -478,8 +489,8 @@ def generate_schematic_png(graph, output_path):
             width=line_width
         )
         
-        # Label all nodes with their names
-        label_offset = int(0.15 * dpi)  # 0.15 inch above the node
+        # Label all nodes with their names (closer to the node)
+        label_offset = int(0.075 * dpi)  # 0.075 inch above the node (half of previous distance)
         draw.text((cx, cy - label_offset), name, fill="black", font=font, anchor="mm")
     
     # Add legend at the bottom of the sheet with visual examples
