@@ -3,7 +3,7 @@ import os
 import re
 import json
 import math
-from typing import Dict
+from typing import Dict, Set, Tuple, List
 from harnice import fileio, state
 
 # describe your args here. comment them out and do not officially define because they are called via runpy,
@@ -26,6 +26,9 @@ artifact_id = "kicad_sch_parser"
 # KiCad stores in units of 0.0254mm = 1 mil = 0.001 inches
 KICAD_UNIT_SCALE = 0.001  # Convert from internal units (mils) to inches
 
+# Precision for final output (number of decimal places)
+OUTPUT_PRECISION = 5
+
 # =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
@@ -33,6 +36,7 @@ def macro_file_structure():
         f"{artifact_id}-instance-locations.json": "locations of library instances",
         f"{artifact_id}-wire-locations.json": "wire locations",
         f"{artifact_id}-pin-locations.json": "absolute pin locations by refdes",
+        f"{artifact_id}-graph.json": "graph of nodes and segments",
     }
 
 def file_structure():
@@ -246,7 +250,7 @@ def compile_pin_locations(pin_locations_of_lib_symbols, locations_of_lib_instanc
 
 def round_and_scale_coordinates(data, scale_factor):
     """
-    Round coordinates to nearest 0.1 mil, then scale to inches.
+    Round coordinates to nearest 0.1 mil, then scale to inches, then round to output precision.
     Recursively processes nested dictionaries.
     """
     if isinstance(data, dict):
@@ -255,12 +259,116 @@ def round_and_scale_coordinates(data, scale_factor):
             if key in ['x_loc', 'y_loc', 'x', 'y', 'start_x', 'start_y', 'end_x', 'end_y']:
                 # Round to nearest 0.1 mil (multiply by 10, round, divide by 10)
                 rounded_mils = round(value * 10) / 10
-                processed[key] = rounded_mils * scale_factor
+                # Convert to inches
+                inches = rounded_mils * scale_factor
+                # Round to output precision to avoid floating point artifacts
+                processed[key] = round(inches, OUTPUT_PRECISION)
             else:
                 processed[key] = round_and_scale_coordinates(value, scale_factor)
         return processed
     else:
         return data
+
+def build_graph(pin_locations_scaled, wire_locations_scaled):
+    """
+    Build a graph from pin locations and wire locations.
+    
+    Returns:
+    {
+        'nodes': {
+            node_uuid: {
+                'x': xxxx,
+                'y': xxxx
+            }
+        },
+        'segments': {
+            wire_uuid: {
+                'node_at_end_a': node_uuid,
+                'node_at_end_b': node_uuid
+            }
+        }
+    }
+    """
+    nodes = {}
+    segments = {}
+    
+    # Tolerance for considering two points as the same location (in inches)
+    # Use 0.1 mils = 0.0001 inches
+    TOLERANCE = 0.0001
+    
+    # Helper function to round coordinates for comparison
+    def round_coord(value):
+        return round(value / TOLERANCE) * TOLERANCE
+    
+    # Helper function to create a location tuple for lookup
+    def location_key(x, y):
+        return (round_coord(x), round_coord(y))
+    
+    # Map from location to node_uuid
+    location_to_node = {}
+    
+    # Counter for junction node IDs
+    junction_counter = 0
+    
+    # Step 1: Add all pins as nodes
+    for refdes, pins in pin_locations_scaled.items():
+        for pin_name, coords in pins.items():
+            node_uuid = f"{refdes}.{pin_name}"  # Use dot separator
+            x = coords['x_loc']
+            y = coords['y_loc']
+            
+            nodes[node_uuid] = {
+                'x': round(x, OUTPUT_PRECISION),
+                'y': round(y, OUTPUT_PRECISION)
+            }
+            
+            loc_key = location_key(x, y)
+            location_to_node[loc_key] = node_uuid
+    
+    # Step 2: Process wires and create junction nodes where needed
+    for wire_uuid, wire_coords in wire_locations_scaled.items():
+        start_x = wire_coords['start_x']
+        start_y = wire_coords['start_y']
+        end_x = wire_coords['end_x']
+        end_y = wire_coords['end_y']
+        
+        start_key = location_key(start_x, start_y)
+        end_key = location_key(end_x, end_y)
+        
+        # Get or create node for start point
+        if start_key not in location_to_node:
+            junction_uuid = f"wirejunction-{junction_counter}"
+            junction_counter += 1
+            nodes[junction_uuid] = {
+                'x': round(start_x, OUTPUT_PRECISION),
+                'y': round(start_y, OUTPUT_PRECISION)
+            }
+            location_to_node[start_key] = junction_uuid
+        
+        start_node = location_to_node[start_key]
+        
+        # Get or create node for end point
+        if end_key not in location_to_node:
+            junction_uuid = f"wirejunction-{junction_counter}"
+            junction_counter += 1
+            nodes[junction_uuid] = {
+                'x': round(end_x, OUTPUT_PRECISION),
+                'y': round(end_y, OUTPUT_PRECISION)
+            }
+            location_to_node[end_key] = junction_uuid
+        
+        end_node = location_to_node[end_key]
+        
+        # Create segment using wire_uuid as key
+        segments[wire_uuid] = {
+            'node_at_end_a': start_node,
+            'node_at_end_b': end_node
+        }
+    
+    return {
+        'nodes': nodes,
+        'segments': segments
+    }
 
 # =============== MAIN MACRO LOGIC =========================================================================
 
@@ -287,11 +395,16 @@ locations_of_lib_instances_scaled = round_and_scale_coordinates(locations_of_lib
 wire_locations_scaled = round_and_scale_coordinates(wire_locations, KICAD_UNIT_SCALE)
 pin_locations_scaled = round_and_scale_coordinates(pin_locations, KICAD_UNIT_SCALE)
 
+# Build the graph
+print("Building graph of nodes and segments...")
+graph = build_graph(pin_locations_scaled, wire_locations_scaled)
+
 # Export to JSON files
 pin_lib_path = path("pin locations of library symbols")
 instance_path = path("locations of library instances")
 wire_path = path("wire locations")
 pin_path = path("absolute pin locations by refdes")
+graph_path = path("graph of nodes and segments")
 
 with open(pin_lib_path, 'w') as f:
     json.dump(pin_locations_of_lib_symbols_scaled, f, indent=2)
@@ -305,13 +418,22 @@ with open(wire_path, 'w') as f:
 with open(pin_path, 'w') as f:
     json.dump(pin_locations_scaled, f, indent=2)
 
+with open(graph_path, 'w') as f:
+    json.dump(graph, f, indent=2)
+
 print(f"Found {len(pin_locations_of_lib_symbols)} library symbols")
 print(f"Found {len(locations_of_lib_instances)} symbol instances")
 print(f"Found {len(wire_locations)} wires")
 total_pins = sum(len(pins) for pins in pin_locations.values())
 print(f"Compiled {total_pins} absolute pin locations")
+print(f"Created graph with {len(graph['nodes'])} nodes and {len(graph['segments'])} segments")
+pin_nodes = sum(1 for n in graph['nodes'].keys() if not n.startswith('wirejunction-'))
+junction_nodes = sum(1 for n in graph['nodes'].keys() if n.startswith('wirejunction-'))
+print(f"  - Pin nodes: {pin_nodes}")
+print(f"  - Junction nodes: {junction_nodes}")
 print(f"\nAll coordinates rounded to nearest 0.1 mil and converted to inches")
 print(f"Library pin data saved to: {pin_lib_path}")
 print(f"Instance locations saved to: {instance_path}")
 print(f"Wire locations saved to: {wire_path}")
 print(f"Absolute pin locations saved to: {pin_path}")
+print(f"Graph saved to: {graph_path}")
