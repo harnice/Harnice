@@ -6,6 +6,7 @@ import math
 from typing import Dict, Set, Tuple, List
 from harnice import fileio, state
 from PIL import Image, ImageDraw, ImageFont
+from harnice.utils import svg_utils
 
 # describe your args here. comment them out and do not officially define because they are called via runpy,
 # for example, the caller feature_tree should define the arguments like this:
@@ -37,6 +38,9 @@ def macro_file_structure():
     return {
         f"{artifact_id}-graph.json": "graph of nodes and segments",
         f"{artifact_id}-schematic-visualization.png": "schematic visualization png",
+        "net_overlay_svgs": {
+            "net-channel-overlay.svg": "net channel overlay svg",
+        },
     }
 
 def file_structure():
@@ -65,6 +69,7 @@ def dirpath(target_value):
     )
 
 os.makedirs(dirpath(None), exist_ok=True)
+os.makedirs(dirpath("net_overlay_svgs"), exist_ok=True)
 
 # =============== PARSER CLASS =============================================================================
 
@@ -564,3 +569,4 @@ generate_schematic_png(graph, png_path)
 total_pins = sum(len(pins) for pins in pin_locations.values())
 pin_nodes = sum(1 for n in graph['nodes'].keys() if not n.startswith('wirejunction-'))
 junction_nodes = sum(1 for n in graph['nodes'].keys() if n.startswith('wirejunction-'))
+
