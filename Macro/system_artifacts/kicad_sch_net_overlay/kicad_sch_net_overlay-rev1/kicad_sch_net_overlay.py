@@ -33,6 +33,8 @@ KICAD_UNIT_SCALE = 1.0 / 25.4  # Convert from millimeters to inches
 # Precision for final output (number of decimal places)
 OUTPUT_PRECISION = 5
 
+print_circles_and_dots = True
+
 # =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
@@ -570,3 +572,363 @@ total_pins = sum(len(pins) for pins in pin_locations.values())
 pin_nodes = sum(1 for n in graph['nodes'].keys() if not n.startswith('wirejunction-'))
 junction_nodes = sum(1 for n in graph['nodes'].keys() if n.startswith('wirejunction-'))
 
+# =============== BUILD GRAPH PATHS ========================================================================
+
+# Open instances list and filter for the given item_type
+instances = []
+all_instances = fileio.read_tsv("instances list")
+for instance in all_instances:
+    if instance.get("item_type") == item_type:
+        instances.append(instance)
+
+print(f"\n=== Found {len(instances)} instances with item_type='{item_type}' ===")
+
+# Map the instances to graph paths and assign segment_order
+path_found_count = 0
+for instance in instances:
+    from_device_refdes = instance.get("this_net_from_device_refdes")
+    from_connector_name = instance.get("this_net_from_device_connector_name")
+    to_device_refdes = instance.get("this_net_to_device_refdes")
+    to_connector_name = instance.get("this_net_to_device_connector_name")
+    
+    # Skip if missing required fields
+    if not all([from_device_refdes, from_connector_name, to_device_refdes, to_connector_name]):
+        print(f"Skipping {instance.get('instance_name')}: missing from/to fields")
+        continue
+    
+    # Form node IDs (refdes.connector_name format)
+    from_node_id = f"{from_device_refdes}.{from_connector_name}"
+    to_node_id = f"{to_device_refdes}.{to_connector_name}"
+    
+    # Check if both nodes exist in graph
+    if from_node_id not in graph['nodes']:
+        print(f"Warning: From node '{from_node_id}' not found in graph for {instance.get('instance_name')}")
+        continue
+    if to_node_id not in graph['nodes']:
+        print(f"Warning: To node '{to_node_id}' not found in graph for {instance.get('instance_name')}")
+        continue
+    
+    # Find path from from_node to to_node using BFS
+    path_segments = []
+    path_directions = []
+    
+    # BFS to find path
+    queue = [(from_node_id, [])]  # (current_node, path_of_segments)
+    visited = {from_node_id}
+    
+    found_path = False
+    while queue and not found_path:
+        current_node, current_path = queue.pop(0)
+        
+        if current_node == to_node_id:
+            path_segments = [seg for seg, _ in current_path]
+            path_directions = [direction for _, direction in current_path]
+            found_path = True
+            break
+        
+        # Check all segments for connections
+        for segment_uuid, segment_info in graph['segments'].items():
+            node_a = segment_info['node_at_end_a']
+            node_b = segment_info['node_at_end_b']
+            
+            # Check if segment connects to current node
+            next_node = None
+            direction = None
+            
+            if node_a == current_node and node_b not in visited:
+                next_node = node_b
+                direction = "a_to_b"
+            elif node_b == current_node and node_a not in visited:
+                next_node = node_a
+                direction = "b_to_a"
+            
+            if next_node:
+                visited.add(next_node)
+                new_path = current_path + [(segment_uuid, direction)]
+                queue.append((next_node, new_path))
+    
+    if found_path:
+        # Store the path information in the instance
+        instance['graph_path_segments'] = path_segments
+        instance['graph_path_directions'] = path_directions
+        instance['total_segments'] = len(path_segments)
+        path_found_count += 1
+        print(f"✓ Found path for {instance.get('instance_name')}: {len(path_segments)} segments ({from_node_id} → {to_node_id})")
+    else:
+        print(f"✗ No path found for {instance.get('instance_name')}: {from_node_id} → {to_node_id}")
+        instance['graph_path_segments'] = []
+        instance['graph_path_directions'] = []
+        instance['total_segments'] = 0
+
+print(f"\n=== Path Finding: {path_found_count}/{len(instances)} paths found ===")
+
+# =============== BUILD SVG OVERLAY ========================================================================
+
+# Define segment spacing (distance between parallel wires)
+segment_spacing_inches = 0.05  # Adjust as needed for visual spacing
+segment_spacing_px = segment_spacing_inches * 96
+
+# Dictionary to store points to pass through for each node/segment/instance
+points_to_pass_through = {}
+svg_groups = []
+
+print(f"\n=== Calculating entry/exit points for {len(graph['nodes'])} nodes ===")
+
+# Calculate entry/exit points for each instance at each node
+point_count = 0
+for node_id, node_coords in graph['nodes'].items():
+    x_node_px = node_coords['x'] * 96
+    y_node_px = node_coords['y'] * 96
+    
+    # Find all segments connected to this node and determine their angles
+    node_segment_angles = []
+    node_segments = []
+    flip_sort = {}
+    
+    for segment_uuid, segment_info in graph['segments'].items():
+        node_a = segment_info['node_at_end_a']
+        node_b = segment_info['node_at_end_b']
+        
+        if node_a == node_id:
+            # Calculate angle from this node (A) toward the other node (B)
+            node_b_coords = graph['nodes'][node_b]
+            dx = (node_b_coords['x'] - node_coords['x']) * 96
+            dy = (node_b_coords['y'] - node_coords['y']) * 96
+            angle = math.degrees(math.atan2(dy, dx))
+            node_segment_angles.append(angle)
+            node_segments.append(segment_uuid)
+            flip_sort[segment_uuid] = False
+            
+        elif node_b == node_id:
+            # Calculate angle from this node (B) toward the other node (A)
+            node_a_coords = graph['nodes'][node_a]
+            dx = (node_a_coords['x'] - node_coords['x']) * 96
+            dy = (node_a_coords['y'] - node_coords['y']) * 96
+            angle = math.degrees(math.atan2(dy, dx))
+            node_segment_angles.append(angle)
+            node_segments.append(segment_uuid)
+            flip_sort[segment_uuid] = True
+    
+    # Count how many instances pass through this node
+    components_in_node = 0
+    components_seen = []
+    
+    for instance in instances:
+        parent_name = instance.get("parent_instance") or instance.get("instance_name")
+        if parent_name in components_seen:
+            continue
+        
+        path_segments = instance.get('graph_path_segments', [])
+        for seg_uuid in path_segments:
+            if seg_uuid in node_segments:
+                components_seen.append(parent_name)
+                components_in_node += 1
+                break
+    
+    if components_in_node == 0:
+        continue
+    
+    # Calculate node radius based on number of components
+    node_radius_inches = 0.3 + math.pow(components_in_node, 1.2) * segment_spacing_inches / 4
+    node_radius_px = node_radius_inches * 96
+    
+    # Draw gray circle if debug mode is on
+    if print_circles_and_dots:
+        y_svg = -y_node_px
+        svg_groups.append(f'<circle cx="{x_node_px:.3f}" cy="{y_svg:.3f}" r="{node_radius_px:.3f}" fill="gray" opacity="0.5" />')
+    
+    # For each segment connected to this node, calculate entry/exit points
+    for seg_angle, seg_uuid in zip(node_segment_angles, node_segments):
+        # Collect instances that use this segment
+        instances_using_segment = []
+        for instance in instances:
+            if seg_uuid in instance.get('graph_path_segments', []):
+                instances_using_segment.append(instance.get('instance_name'))
+        
+        if not instances_using_segment:
+            continue
+        
+        # Sort alphabetically
+        instances_using_segment.sort()
+        
+        # Flip order if segment is reversed relative to this node
+        if flip_sort.get(seg_uuid):
+            instances_using_segment = instances_using_segment[::-1]
+        
+        num_seg_components = len(instances_using_segment)
+        
+        # Calculate position for each instance around the node perimeter
+        for idx, inst_name in enumerate(instances_using_segment, start=1):
+            # Calculate offset from center of segment bundle
+            center_offset_from_count_inches = (idx - (num_seg_components / 2) - 0.5) * segment_spacing_inches
+            center_offset_from_count_px = center_offset_from_count_inches * 96
+            
+            try:
+                # Calculate angular offset based on arc position
+                delta_angle_from_count = math.degrees(
+                    math.asin(center_offset_from_count_px / node_radius_px)
+                )
+            except (ValueError, ZeroDivisionError):
+                delta_angle_from_count = 0
+            
+            # Calculate final position on circle perimeter
+            final_angle = seg_angle + delta_angle_from_count
+            x_circleintersect = x_node_px + node_radius_px * math.cos(math.radians(final_angle))
+            y_circleintersect = y_node_px + node_radius_px * math.sin(math.radians(final_angle))
+            
+            # Draw red dot if debug mode is on
+            if print_circles_and_dots:
+                y_dot_svg = -y_circleintersect
+                svg_groups.append(f'<circle cx="{x_circleintersect:.3f}" cy="{y_dot_svg:.3f}" r="3" fill="red" />')
+            
+            # Store the point
+            points_to_pass_through.setdefault(node_id, {}).setdefault(seg_uuid, {})[inst_name] = {
+                'x': x_circleintersect,
+                'y': y_circleintersect
+            }
+            point_count += 1
+
+print(f"=== Calculated {point_count} entry/exit points ===")
+
+# === BUILD CLEANED CHAINS AND SVG ===
+cleaned_chains = {}
+
+# Get unique parent instances
+unique_parents = []
+for instance in instances:
+    parent_name = instance.get("parent_instance") or instance.get("instance_name")
+    if parent_name not in unique_parents:
+        unique_parents.append(parent_name)
+
+print(f"\n=== Building chains for {len(unique_parents)} parent instances ===")
+
+# Build chain for each parent instance
+for parent_name in unique_parents:
+    # Find all instances belonging to this parent
+    parent_instances = [inst for inst in instances 
+                       if (inst.get("parent_instance") or inst.get("instance_name")) == parent_name]
+    
+    if not parent_instances:
+        continue
+    
+    # Use the first instance to get the path information
+    first_instance = parent_instances[0]
+    path_segments = first_instance.get('graph_path_segments', [])
+    path_directions = first_instance.get('graph_path_directions', [])
+    
+    if not path_segments:
+        print(f"Warning: No path segments for {parent_name}")
+        continue
+    
+    point_chain = []
+    
+    # Walk through each segment in the path
+    for segment_uuid, direction in zip(path_segments, path_directions):
+        segment_info = graph['segments'][segment_uuid]
+        node_a_id = segment_info['node_at_end_a']
+        node_b_id = segment_info['node_at_end_b']
+        
+        # Get the instance name
+        inst_name = first_instance.get('instance_name')
+        
+        # Calculate tangent angle for this segment
+        node_a_coords = graph['nodes'][node_a_id]
+        node_b_coords = graph['nodes'][node_b_id]
+        dx = (node_b_coords['x'] - node_a_coords['x']) * 96
+        dy = (node_b_coords['y'] - node_a_coords['y']) * 96
+        tangent_ab = math.degrees(math.atan2(dy, dx))
+        
+        if direction == "a_to_b":
+            # Get entry point at node A and exit point at node B
+            if (node_a_id in points_to_pass_through and 
+                segment_uuid in points_to_pass_through[node_a_id] and
+                inst_name in points_to_pass_through[node_a_id][segment_uuid]):
+                
+                point_a = points_to_pass_through[node_a_id][segment_uuid][inst_name]
+                point_chain.append({
+                    'x': point_a['x'],
+                    'y': point_a['y'],
+                    'tangent': tangent_ab
+                })
+            else:
+                print(f"  Missing point A for {inst_name} at {node_a_id}/{segment_uuid}")
+            
+            if (node_b_id in points_to_pass_through and 
+                segment_uuid in points_to_pass_through[node_b_id] and
+                inst_name in points_to_pass_through[node_b_id][segment_uuid]):
+                
+                point_b = points_to_pass_through[node_b_id][segment_uuid][inst_name]
+                point_chain.append({
+                    'x': point_b['x'],
+                    'y': point_b['y'],
+                    'tangent': tangent_ab
+                })
+            else:
+                print(f"  Missing point B for {inst_name} at {node_b_id}/{segment_uuid}")
+        
+        else:  # direction == "b_to_a"
+            tangent_ba = tangent_ab + 180
+            if tangent_ba > 360:
+                tangent_ba -= 360
+            
+            # Get entry point at node B and exit point at node A
+            if (node_b_id in points_to_pass_through and 
+                segment_uuid in points_to_pass_through[node_b_id] and
+                inst_name in points_to_pass_through[node_b_id][segment_uuid]):
+                
+                point_b = points_to_pass_through[node_b_id][segment_uuid][inst_name]
+                point_chain.append({
+                    'x': point_b['x'],
+                    'y': point_b['y'],
+                    'tangent': tangent_ba
+                })
+            else:
+                print(f"  Missing point B for {inst_name} at {node_b_id}/{segment_uuid}")
+            
+            if (node_a_id in points_to_pass_through and 
+                segment_uuid in points_to_pass_through[node_a_id] and
+                inst_name in points_to_pass_through[node_a_id][segment_uuid]):
+                
+                point_a = points_to_pass_through[node_a_id][segment_uuid][inst_name]
+                point_chain.append({
+                    'x': point_a['x'],
+                    'y': point_a['y'],
+                    'tangent': tangent_ba
+                })
+            else:
+                print(f"  Missing point A for {inst_name} at {node_a_id}/{segment_uuid}")
+    
+    if point_chain:
+        cleaned_chains[parent_name] = point_chain
+        
+        # Get appearance from instance
+        appearance_data = first_instance.get('appearance', {'base_color': 'blue', 'outline_color': 'black'})
+        
+        # Draw the styled path
+        svg_utils.draw_styled_path(
+            point_chain,
+            0.01,  # stroke width in inches
+            appearance_data,
+            svg_groups,
+        )
+        
+        print(f"✓ Built chain for {parent_name}: {len(point_chain)} points")
+    else:
+        print(f"✗ Empty chain for {parent_name}")
+
+# === WRITE SVG OUTPUT ===
+svg_output = (
+    '<svg xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">\n'
+    f'  <g id="{artifact_id}-net-overlay-contents">\n'
+    + "\n".join(svg_groups)
+    + "\n  </g>\n"
+    "</svg>\n"
+)
+
+with open(path("net channel overlay svg"), "w", encoding="utf-8") as f:
+    f.write(svg_output)
+
+print(f"\n=== Summary ===")
+print(f"Cleaned chains built: {len(cleaned_chains)}/{len(unique_parents)}")
+print(f"SVG groups generated: {len(svg_groups)}")
+print(f"Net channel overlay SVG: {path('net channel overlay svg')}")
