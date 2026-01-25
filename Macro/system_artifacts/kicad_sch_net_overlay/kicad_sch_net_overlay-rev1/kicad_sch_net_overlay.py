@@ -19,6 +19,7 @@ from PIL import Image, ImageDraw, ImageFont
 # Expected args (injected by caller or defaulted below):
 # artifact_id: str (optional override)
 # base_directory: str | None  (optional override)
+# item_type: filter placed on the instances list in the "item_type" column, filtering only instances we're trying to plot here. for example, "channel" or "circuit",
 
 # define the artifact_id of this macro (treated the same as part number). should match the filename.
 artifact_id = "kicad_sch_parser"
@@ -34,10 +35,6 @@ OUTPUT_PRECISION = 5
 # =============== PATHS ===================================================================================
 def macro_file_structure():
     return {
-        f"{artifact_id}-pin-locations-lib.json": "pin locations of library symbols",
-        f"{artifact_id}-instance-locations.json": "locations of library instances",
-        f"{artifact_id}-wire-locations.json": "wire locations",
-        f"{artifact_id}-pin-locations.json": "absolute pin locations by refdes",
         f"{artifact_id}-graph.json": "graph of nodes and segments",
         f"{artifact_id}-schematic-visualization.png": "schematic visualization png",
     }
@@ -545,7 +542,7 @@ pin_locations_of_lib_symbols, locations_of_lib_instances, wire_locations = parse
 # Compile absolute pin locations
 pin_locations = compile_pin_locations(pin_locations_of_lib_symbols, locations_of_lib_instances)
 
-# Round to nearest 0.1 mil and scale to inches
+# Round to nearest 0.1 mil and scale to inches (keep in memory only)
 pin_locations_of_lib_symbols_scaled = round_and_scale_coordinates(pin_locations_of_lib_symbols, KICAD_UNIT_SCALE)
 locations_of_lib_instances_scaled = round_and_scale_coordinates(locations_of_lib_instances, KICAD_UNIT_SCALE)
 wire_locations_scaled = round_and_scale_coordinates(wire_locations, KICAD_UNIT_SCALE)
@@ -554,25 +551,9 @@ pin_locations_scaled = round_and_scale_coordinates(pin_locations, KICAD_UNIT_SCA
 # Build the graph
 graph = build_graph(pin_locations_scaled, wire_locations_scaled)
 
-# Export to JSON files
-pin_lib_path = path("pin locations of library symbols")
-instance_path = path("locations of library instances")
-wire_path = path("wire locations")
-pin_path = path("absolute pin locations by refdes")
+# Export only the graph to JSON file
 graph_path = path("graph of nodes and segments")
 png_path = path("schematic visualization png")
-
-with open(pin_lib_path, 'w') as f:
-    json.dump(pin_locations_of_lib_symbols_scaled, f, indent=2)
-
-with open(instance_path, 'w') as f:
-    json.dump(locations_of_lib_instances_scaled, f, indent=2)
-
-with open(wire_path, 'w') as f:
-    json.dump(wire_locations_scaled, f, indent=2)
-
-with open(pin_path, 'w') as f:
-    json.dump(pin_locations_scaled, f, indent=2)
 
 with open(graph_path, 'w') as f:
     json.dump(graph, f, indent=2)
