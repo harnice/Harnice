@@ -119,15 +119,15 @@ class KiCadSchematicParser:
                 pin_locations_of_lib_symbols[lib_id] = {}
             
             # Find all pins in this symbol definition
-            # Pattern: (pin ... (at x y angle) ... (name "pin_name"
-            pin_pattern = r'\(pin\s+\w+\s+\w+\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+(\d+)\).*?\(name\s+"([^"]+)"'
+            pin_pattern = r'\(pin\s+\w+\s+\w+\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+(\d+)\)\s+\(length\s+([-\d.]+)\).*?\(name\s+"([^"]+)"'
             
             for pin_match in re.finditer(pin_pattern, symbol_body, re.DOTALL):
-                x, y, angle, pin_name = pin_match.groups()
+                x, y, angle, length, pin_name = pin_match.groups()
+                x, y = float(x), float(y)
                 
                 pin_locations_of_lib_symbols[lib_id][pin_name] = {
-                    'x_loc': float(x),
-                    'y_loc': float(y)
+                    'x_loc': x,
+                    'y_loc': y
                 }
         
         return pin_locations_of_lib_symbols
@@ -240,9 +240,10 @@ def compile_pin_locations(pin_locations_of_lib_symbols, locations_of_lib_instanc
             # Rotate the pin relative position by the instance rotation
             rotated_x, rotated_y = rotate_point(pin_x_rel, pin_y_rel, instance_rotate)
             
-            # Add the instance position to get absolute coordinates
+            # KiCad Y coordinate is inverted in symbol definitions
+            # Y increases downward in schematic, but symbol coords use upward Y
             absolute_x = instance_x + rotated_x
-            absolute_y = instance_y + rotated_y
+            absolute_y = instance_y - rotated_y  # SUBTRACT Y
             
             pin_locations[refdes][pin_name] = {
                 'x_loc': absolute_x,
@@ -295,28 +296,21 @@ def build_graph(pin_locations_scaled, wire_locations_scaled):
     nodes = {}
     segments = {}
     
-    # Tolerance for considering two points as the same location (in inches)
-    # Use 0.1 mils = 0.0001 inches
-    TOLERANCE = 0.0001
+    TOLERANCE = 0.01
     
-    # Helper function to round coordinates for comparison
     def round_coord(value):
         return round(value / TOLERANCE) * TOLERANCE
     
-    # Helper function to create a location tuple for lookup
     def location_key(x, y):
         return (round_coord(x), round_coord(y))
     
-    # Map from location to node_uuid
     location_to_node = {}
-    
-    # Counter for junction node IDs
     junction_counter = 0
     
     # Step 1: Add all pins as nodes
     for refdes, pins in pin_locations_scaled.items():
         for pin_name, coords in pins.items():
-            node_uuid = f"{refdes}.{pin_name}"  # Use dot separator
+            node_uuid = f"{refdes}.{pin_name}"
             x = coords['x_loc']
             y = coords['y_loc']
             
@@ -362,7 +356,6 @@ def build_graph(pin_locations_scaled, wire_locations_scaled):
         
         end_node = location_to_node[end_key]
         
-        # Create segment using wire_uuid as key
         segments[wire_uuid] = {
             'node_at_end_a': start_node,
             'node_at_end_b': end_node
@@ -524,8 +517,6 @@ def generate_schematic_png(graph, output_path):
     
     # Save image with proper DPI metadata
     img.save(output_path, dpi=(dpi, dpi))
-    print(f"PNG visualization saved to: {output_path}")
-    print(f"Image size: {width}x{height} pixels ({sheet_width_inches}x{sheet_height_inches} inches at {dpi} DPI)")
 
 # =============== MAIN MACRO LOGIC =========================================================================
 
@@ -537,23 +528,19 @@ if not os.path.isfile(schematic_path):
     )
 
 # Parse the schematic
-print("Parsing KiCad schematic...")
 parser = KiCadSchematicParser(schematic_path)
 pin_locations_of_lib_symbols, locations_of_lib_instances, wire_locations = parser.parse()
 
 # Compile absolute pin locations
-print("Compiling absolute pin locations...")
 pin_locations = compile_pin_locations(pin_locations_of_lib_symbols, locations_of_lib_instances)
 
 # Round to nearest 0.1 mil and scale to inches
-print(f"Rounding to nearest 0.1 mil and converting to inches...")
 pin_locations_of_lib_symbols_scaled = round_and_scale_coordinates(pin_locations_of_lib_symbols, KICAD_UNIT_SCALE)
 locations_of_lib_instances_scaled = round_and_scale_coordinates(locations_of_lib_instances, KICAD_UNIT_SCALE)
 wire_locations_scaled = round_and_scale_coordinates(wire_locations, KICAD_UNIT_SCALE)
 pin_locations_scaled = round_and_scale_coordinates(pin_locations, KICAD_UNIT_SCALE)
 
 # Build the graph
-print("Building graph of nodes and segments...")
 graph = build_graph(pin_locations_scaled, wire_locations_scaled)
 
 # Export to JSON files
@@ -580,25 +567,8 @@ with open(graph_path, 'w') as f:
     json.dump(graph, f, indent=2)
 
 # Generate PNG visualization
-print("Generating PNG visualization...")
 generate_schematic_png(graph, png_path)
 
-print(f"\n{'='*60}")
-print(f"Found {len(pin_locations_of_lib_symbols)} library symbols")
-print(f"Found {len(locations_of_lib_instances)} symbol instances")
-print(f"Found {len(wire_locations)} wires")
 total_pins = sum(len(pins) for pins in pin_locations.values())
-print(f"Compiled {total_pins} absolute pin locations")
-print(f"Created graph with {len(graph['nodes'])} nodes and {len(graph['segments'])} segments")
 pin_nodes = sum(1 for n in graph['nodes'].keys() if not n.startswith('wirejunction-'))
 junction_nodes = sum(1 for n in graph['nodes'].keys() if n.startswith('wirejunction-'))
-print(f"  - Pin nodes: {pin_nodes}")
-print(f"  - Junction nodes: {junction_nodes}")
-print(f"\nAll coordinates rounded to nearest 0.1 mil and converted to inches")
-print(f"Library pin data saved to: {pin_lib_path}")
-print(f"Instance locations saved to: {instance_path}")
-print(f"Wire locations saved to: {wire_path}")
-print(f"Absolute pin locations saved to: {pin_path}")
-print(f"Graph saved to: {graph_path}")
-print(f"PNG visualization saved to: {png_path}")
-print(f"{'='*60}")
