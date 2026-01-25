@@ -5,6 +5,7 @@ import json
 import math
 from typing import Dict, Set, Tuple, List
 from harnice import fileio, state
+from PIL import Image, ImageDraw, ImageFont
 
 # describe your args here. comment them out and do not officially define because they are called via runpy,
 # for example, the caller feature_tree should define the arguments like this:
@@ -23,8 +24,9 @@ from harnice import fileio, state
 artifact_id = "kicad_sch_parser"
 
 # KiCad internal units to inches conversion
-# KiCad stores in units of 0.0254mm = 1 mil = 0.001 inches
-KICAD_UNIT_SCALE = 0.001  # Convert from internal units (mils) to inches
+# KiCad v6+ schematics store coordinates in millimeters
+# Need to convert mm to inches: 1 inch = 25.4 mm
+KICAD_UNIT_SCALE = 1.0 / 25.4  # Convert from millimeters to inches
 
 # Precision for final output (number of decimal places)
 OUTPUT_PRECISION = 5
@@ -37,6 +39,7 @@ def macro_file_structure():
         f"{artifact_id}-wire-locations.json": "wire locations",
         f"{artifact_id}-pin-locations.json": "absolute pin locations by refdes",
         f"{artifact_id}-graph.json": "graph of nodes and segments",
+        f"{artifact_id}-schematic-visualization.png": "schematic visualization png",
     }
 
 def file_structure():
@@ -370,6 +373,160 @@ def build_graph(pin_locations_scaled, wire_locations_scaled):
         'segments': segments
     }
 
+def generate_schematic_png(graph, output_path):
+    """
+    Generate a PNG visualization of the schematic graph.
+    
+    Args:
+        graph: Dictionary with 'nodes' and 'segments'
+        output_path: Path to save the PNG file
+    """
+    nodes = graph['nodes']
+    segments = graph['segments']
+    
+    if not nodes:
+        print("Warning: No nodes to visualize")
+        return
+    
+    # Parameters for standard letter size sheet
+    dpi = 1000  # High resolution
+    sheet_width_inches = 11  # Letter size landscape
+    sheet_height_inches = 8.5
+    width = int(sheet_width_inches * dpi)
+    height = int(sheet_height_inches * dpi)
+    
+    # Visual parameters (in inches, then converted to pixels)
+    pin_radius_inches = 0.033  # ~0.067in diameter (1/3 of 0.2in)
+    junction_radius_inches = 0.033
+    font_size_inches = 0.05  # 1/3 of 0.15in
+    arrow_length_inches = 0.067  # 1/3 of 0.2in
+    line_width_inches = 0.02
+    
+    # Convert to pixels
+    pin_radius = int(pin_radius_inches * dpi)
+    junction_radius = int(junction_radius_inches * dpi)
+    font_size = int(font_size_inches * dpi)
+    arrow_length = int(arrow_length_inches * dpi)
+    line_width = max(1, int(line_width_inches * dpi))
+    
+    margin_inches = 0.5  # Margin from sheet edge
+    margin_pixels = int(margin_inches * dpi)
+    
+    # Extract node coordinates (already in inches from the parser)
+    node_coordinates = {name: (info['x'], info['y']) for name, info in nodes.items()}
+    
+    # Compute bounding box of actual content
+    xs = [x for x, y in node_coordinates.values()]
+    ys = [y for x, y in node_coordinates.values()]
+    content_min_x, content_max_x = min(xs), max(xs)
+    content_min_y, content_max_y = min(ys), max(ys)
+    
+    # KiCad coordinates: origin is typically at top-left, Y increases downward
+    # We'll map KiCad coordinates directly to sheet space
+    def map_xy(x, y):
+        """Map KiCad coordinates (in inches) to image pixel coordinates."""
+        # X: directly map from left with margin
+        pixel_x = int(x * dpi + margin_pixels)
+        # Y: KiCad Y increases downward, image Y increases downward, so direct mapping
+        pixel_y = int(y * dpi + margin_pixels)
+        return (pixel_x, pixel_y)
+    
+    # Create white canvas
+    img = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(img)
+    
+    # Try to get a system font with appropriate size
+    try:
+        font = ImageFont.truetype("Arial.ttf", font_size)
+        legend_font = ImageFont.truetype("Arial.ttf", font_size)
+    except OSError:
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+            legend_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+        except OSError:
+            font = ImageFont.load_default()
+            legend_font = ImageFont.load_default()
+    
+    # --- Draw segments (wires) ---
+    for wire_uuid, seg_info in segments.items():
+        node_a = seg_info.get("node_at_end_a")
+        node_b = seg_info.get("node_at_end_b")
+        
+        if node_a in node_coordinates and node_b in node_coordinates:
+            x1, y1 = map_xy(*node_coordinates[node_a])
+            x2, y2 = map_xy(*node_coordinates[node_b])
+            
+            # Draw line from A to B
+            draw.line((x1, y1, x2, y2), fill="black", width=line_width)
+            
+            # Draw arrow at end B to show direction
+            arrow_angle = math.radians(25)
+            
+            angle = math.atan2(y2 - y1, x2 - x1)
+            
+            # Compute arrowhead points
+            left_x = x2 - arrow_length * math.cos(angle - arrow_angle)
+            left_y = y2 - arrow_length * math.sin(angle - arrow_angle)
+            right_x = x2 - arrow_length * math.cos(angle + arrow_angle)
+            right_y = y2 - arrow_length * math.sin(angle + arrow_angle)
+            
+            draw.polygon([(x2, y2), (left_x, left_y), (right_x, right_y)], fill="blue")
+    
+    # --- Draw nodes ---
+    for name, (x, y) in node_coordinates.items():
+        cx, cy = map_xy(x, y)
+        
+        # Draw all nodes as identical circles (same style for pins and junctions)
+        draw.ellipse(
+            (cx - pin_radius, cy - pin_radius, 
+             cx + pin_radius, cy + pin_radius),
+            fill="red",
+            outline="darkred",
+            width=line_width
+        )
+        
+        # Label all nodes with their names
+        label_offset = int(0.15 * dpi)  # 0.15 inch above the node
+        draw.text((cx, cy - label_offset), name, fill="black", font=font, anchor="mm")
+    
+    # Add legend at the bottom of the sheet with visual examples
+    legend_y = height - int(0.4 * dpi)  # 0.4 inches from bottom
+    legend_x = margin_pixels
+    
+    # Draw example node (circle - used for all nodes)
+    example_node_x = legend_x + int(0.15 * dpi)
+    draw.ellipse(
+        (example_node_x - pin_radius, legend_y - pin_radius,
+         example_node_x + pin_radius, legend_y + pin_radius),
+        fill="red",
+        outline="darkred",
+        width=line_width
+    )
+    draw.text((example_node_x + int(0.2 * dpi), legend_y), "= Node (identified by label)", 
+              fill="black", font=legend_font, anchor="lm")
+    
+    # Draw example wire with arrow
+    example_wire_x = legend_x + int(3.5 * dpi)
+    wire_start_x = example_wire_x
+    wire_end_x = example_wire_x + int(0.5 * dpi)
+    draw.line((wire_start_x, legend_y, wire_end_x, legend_y), fill="black", width=line_width)
+    
+    # Arrow at end
+    arrow_angle = math.radians(25)
+    left_x = wire_end_x - arrow_length * math.cos(0 - arrow_angle)
+    left_y = legend_y - arrow_length * math.sin(0 - arrow_angle)
+    right_x = wire_end_x - arrow_length * math.cos(0 + arrow_angle)
+    right_y = legend_y - arrow_length * math.sin(0 + arrow_angle)
+    draw.polygon([(wire_end_x, legend_y), (left_x, left_y), (right_x, right_y)], fill="blue")
+    
+    draw.text((wire_end_x + int(0.2 * dpi), legend_y), "= Wire (arrow points from End A to End B)", 
+              fill="black", font=legend_font, anchor="lm")
+    
+    # Save image with proper DPI metadata
+    img.save(output_path, dpi=(dpi, dpi))
+    print(f"PNG visualization saved to: {output_path}")
+    print(f"Image size: {width}x{height} pixels ({sheet_width_inches}x{sheet_height_inches} inches at {dpi} DPI)")
+
 # =============== MAIN MACRO LOGIC =========================================================================
 
 schematic_path = fileio.path("kicad sch", structure_dict=file_structure())
@@ -405,6 +562,7 @@ instance_path = path("locations of library instances")
 wire_path = path("wire locations")
 pin_path = path("absolute pin locations by refdes")
 graph_path = path("graph of nodes and segments")
+png_path = path("schematic visualization png")
 
 with open(pin_lib_path, 'w') as f:
     json.dump(pin_locations_of_lib_symbols_scaled, f, indent=2)
@@ -421,6 +579,11 @@ with open(pin_path, 'w') as f:
 with open(graph_path, 'w') as f:
     json.dump(graph, f, indent=2)
 
+# Generate PNG visualization
+print("Generating PNG visualization...")
+generate_schematic_png(graph, png_path)
+
+print(f"\n{'='*60}")
 print(f"Found {len(pin_locations_of_lib_symbols)} library symbols")
 print(f"Found {len(locations_of_lib_instances)} symbol instances")
 print(f"Found {len(wire_locations)} wires")
@@ -437,3 +600,5 @@ print(f"Instance locations saved to: {instance_path}")
 print(f"Wire locations saved to: {wire_path}")
 print(f"Absolute pin locations saved to: {pin_path}")
 print(f"Graph saved to: {graph_path}")
+print(f"PNG visualization saved to: {png_path}")
+print(f"{'='*60}")
