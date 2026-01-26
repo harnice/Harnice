@@ -976,3 +976,10 @@ svg_output = (
 overlay_svg_path = path("net overlay svg")
 with open(overlay_svg_path, "w", encoding="utf-8") as f:
     f.write(svg_output)
+
+svg_utils.find_and_replace_svg_group(
+    path("net overlay svg"), 
+    "kicad_sch_parser-net-overlay", 
+    path("kicad direct export svg"), 
+    "kicad_sch_parser-net-overlay"
+    )
