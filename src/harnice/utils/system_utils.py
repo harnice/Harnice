@@ -295,16 +295,6 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                     f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
                 ),
                 "location_type": "segment",
-                "this_net_from_device_refdes": circuit.get("net_from_refdes"),
-                "this_net_from_device_channel_id": circuit.get("net_from_channel_id"),
-                "this_net_from_device_connector_name": circuit.get(
-                    "net_from_connector_name"
-                ),
-                "this_net_to_device_refdes": circuit.get("net_to_refdes"),
-                "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
-                "this_net_to_device_connector_name": circuit.get(
-                    "net_to_connector_name"
-                ),
                 "this_channel_from_device_refdes": circuit.get(
                     "from_side_device_refdes"
                 ),
@@ -320,6 +310,8 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             },
             ignore_duplicates=True,
         )
+        chain_of_nets = []
+        chain_of_connectors = []
         for channel in channel_map:
             if (
                 channel.get("from_device_refdes")
@@ -347,6 +339,9 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             ]
 
             node_a = node_b = ""
+            net_from_refdes = net_from_connector = ""
+            net_to_refdes = net_to_connector = ""
+            net_from_channel_id = net_to_channel_id = ""
             if connectors_for_net:
                 first = connectors_for_net[0]
                 last = connectors_for_net[-1]
@@ -365,6 +360,13 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
 
                 node_a = f"{dev_a}.{port_a}.conn" if port_a else f"{dev_a}.conn"
                 node_b = f"{dev_b}.{port_b}.conn" if port_b else f"{dev_b}.conn"
+                net_from_refdes = dev_a
+                net_from_connector = port_a
+                net_to_refdes = dev_b
+                net_to_connector = port_b
+                if net == circuit.get("net"):
+                    net_from_channel_id = circuit.get("net_from_channel_id") or ""
+                    net_to_channel_id = circuit.get("net_to_channel_id") or ""
 
             # --- create instance for this net
             instances_list.new_instance(
@@ -381,18 +383,12 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                     "parent_instance": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                     "node_at_end_a": node_a,
                     "node_at_end_b": node_b,
-                    "this_net_from_device_refdes": circuit.get("net_from_refdes"),
-                    "this_net_from_device_channel_id": circuit.get(
-                        "net_from_channel_id"
-                    ),
-                    "this_net_from_device_connector_name": circuit.get(
-                        "net_from_connector_name"
-                    ),
-                    "this_net_to_device_refdes": circuit.get("net_to_refdes"),
-                    "this_net_to_device_channel_id": circuit.get("net_to_channel_id"),
-                    "this_net_to_device_connector_name": circuit.get(
-                        "net_to_connector_name"
-                    ),
+                    "this_net_from_device_refdes": net_from_refdes,
+                    "this_net_from_device_channel_id": net_from_channel_id,
+                    "this_net_from_device_connector_name": net_from_connector,
+                    "this_net_to_device_refdes": net_to_refdes,
+                    "this_net_to_device_channel_id": net_to_channel_id,
+                    "this_net_to_device_connector_name": net_to_connector,
                     "this_channel_from_device_refdes": circuit.get(
                         "from_side_device_refdes"
                     ),
