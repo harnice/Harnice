@@ -8,15 +8,6 @@ from harnice import fileio, state
 from PIL import Image, ImageDraw, ImageFont
 from harnice.utils import svg_utils
 
-# describe your args here. comment them out and do not officially define because they are called via runpy,
-# for example, the caller feature_tree should define the arguments like this:
-# feature_tree_utils.run_macro(
-#    "kicad_sch_parser",
-#    "harness_artifacts",
-#    "https://github.com/harnice/harnice-library-public",
-#    artifact_id="kicad-schematic-parser",
-# )
-#
 # Expected args (injected by caller or defaulted below):
 # artifact_id: str (optional override)
 # base_directory: str | None  (optional override)
@@ -35,6 +26,14 @@ OUTPUT_PRECISION = 5
 
 print_circles_and_dots = True
 
+"""
+Known issues:
+
+- Multiple pages of kicad schematic are not supported
+- Multi-circuit junctions are not supported
+- Kicad buses are not supported
+"""
+
 
 # =============== PATHS ===================================================================================
 def macro_file_structure():
@@ -47,6 +46,7 @@ def macro_file_structure():
         "overlay_svgs": {
             f"{artifact_id}-net-overlay.svg": "net overlay svg",
         },
+        f"{state.partnumber('pn-rev')}-{item_type}_block_diagram.pdf": "output pdf",
     }
 
 
@@ -1126,3 +1126,43 @@ svg_utils.find_and_replace_svg_group(
     path("kicad direct export svg"),
     "kicad_sch_parser-net-overlay",
 )
+
+# === PRODUCE MULTIPAGE PDF ===
+temp_pdfs = []
+inkscape_bin = "/Applications/Inkscape.app/Contents/MacOS/inkscape"  # adjust if needed
+
+# Get all SVG files from the directory, sorted for consistent page order
+svg_files = sorted(
+    [
+        f
+        for f in os.listdir(dirpath(f"{artifact_id}-kicad-direct-export"))
+        if f.endswith(".svg") and os.path.isfile(os.path.join(dirpath(f"{artifact_id}-kicad-direct-export"), f))
+    ]
+)
+
+for svg_filename in svg_files:
+    svg_path = os.path.join(dirpath(f"{artifact_id}-kicad-direct-export"), svg_filename)
+    pdf_path = svg_path.replace(".svg", ".temp.pdf")
+
+    subprocess.run(
+        [
+            inkscape_bin,
+            svg_path,
+            "--export-type=pdf",
+            f"--export-filename={pdf_path}",
+        ],
+        check=True,
+    )
+
+    temp_pdfs.append(pdf_path)
+
+# Merge all PDFs
+subprocess.run(
+    ["pdfunite"] + temp_pdfs + [path("output pdf")],
+    check=True,
+)
+
+# Optional cleanup
+for temp in temp_pdfs:
+    if os.path.exists(temp):
+        os.remove(temp)
