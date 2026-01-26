@@ -13,13 +13,12 @@ def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     
     **Args:**
 
-    - `filepath` (str): Path to the SVG file to modify.
-    - `new_group_name` (str): Name to use for the new group element (will create
-        `{new_group_name}-contents-start` and `{new_group_name}-contents-end` markers).
+    - filepath (str): Path to the SVG file to modify.
+    - new_group_name (str): Name to use for the new group element (will create
+        {new_group_name}-contents-start and {new_group_name}-contents-end markers).
 
     **Raises:**
-
-    - `ValueError`: If the file does not appear to be a valid SVG or has no inner contents.
+    - ValueError: If the file does not appear to be a valid SVG or has no inner contents.
     """
     if not os.path.exists(filepath):
         print("File does not exist: {}".format(filepath))
