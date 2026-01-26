@@ -253,7 +253,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             {
                 "net": circuit.get("net"),
                 "item_type": "circuit",
-                "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+                "channel_group": f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                 "circuit_id": circuit.get("circuit_id"),
                 "node_at_end_a": from_cavity,
                 "node_at_end_b": to_cavity,
@@ -286,12 +286,12 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
 
         # --- add channel
         instances_list.new_instance(
-            f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+            f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
             f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
             {
                 "item_type": "channel",
                 "channel_group": (
-                    f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                    f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
                     f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
                 ),
                 "location_type": "segment",
@@ -370,17 +370,17 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
 
             # --- create instance for this net
             instances_list.new_instance(
-                f"net{net}:channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                f"net{net}:{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
                 f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                 {
                     "net": net,
                     "item_type": "net-channel",
                     "channel_group": (
-                        f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                        f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
                         f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
                     ),
                     "location_type": "segment",
-                    "parent_instance": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+                    "parent_instance": f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                     "node_at_end_a": node_a,
                     "node_at_end_b": node_b,
                     "this_net_from_device_refdes": net_from_refdes,
