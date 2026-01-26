@@ -40,9 +40,12 @@ def macro_file_structure():
     return {
         f"{artifact_id}-graph.json": "graph of nodes and segments",
         f"{artifact_id}-schematic-visualization.png": "schematic visualization png",
-        "net_overlay_svgs": {
-            "net-channel-overlay.svg": "net channel overlay svg",
+        f"{artifact_id}-kicad-direct-export": { # i think this is because kicad exports svgs into a directory with the same name as the target file
+            f"{state.partnumber('pn')}-{state.partnumber('rev')}.svg": "kicad direct export svg",
         },
+        "overlay_svgs":{
+            f"{artifact_id}-net-overlay.svg": "net overlay svg",
+        }
     }
 
 def file_structure():
@@ -71,7 +74,7 @@ def dirpath(target_value):
     )
 
 os.makedirs(dirpath(None), exist_ok=True)
-os.makedirs(dirpath("net_overlay_svgs"), exist_ok=True)
+os.makedirs(dirpath("overlay_svgs"), exist_ok=True)
 
 # =============== PARSER CLASS =============================================================================
 
@@ -533,6 +536,43 @@ def generate_schematic_png(graph, output_path):
     # Save image with proper DPI metadata
     img.save(output_path, dpi=(dpi, dpi))
 
+def add_net_overlay_groups_to_svg(filepath):
+    """
+    Adds net overlay group markers at the end of an SVG file (before the closing </svg> tag).
+    
+    Args:
+        filepath (str): Path to the SVG file to modify
+        artifact_id (str): Identifier to use in the group IDs
+    """
+    with open(filepath, "r", encoding="utf-8") as file:
+        svg_content = file.read()
+    
+    # Find the closing </svg> tag
+    svg_end_match = re.search(r'</svg>\s*$', svg_content, re.DOTALL)
+    
+    if not svg_end_match:
+        raise ValueError("Could not find closing </svg> tag")
+    
+    # Insert the new groups before the closing </svg> tag
+    insert_position = svg_end_match.start()
+    
+    new_groups = (
+        f'  <g id="{artifact_id}-net-overlay-contents-start">\n'
+        f'  </g>\n'
+        f'  <g id="{artifact_id}-net-overlay-contents-end"/>\n'
+    )
+    
+    updated_svg_content = (
+        svg_content[:insert_position] +
+        new_groups +
+        svg_content[insert_position:]
+    )
+    
+    # Write back to file
+    with open(filepath, "w", encoding="utf-8") as file:
+        file.write(updated_svg_content)
+        
+
 # =============== MAIN MACRO LOGIC =========================================================================
 
 schematic_path = fileio.path("kicad sch", structure_dict=file_structure())
@@ -580,8 +620,6 @@ all_instances = fileio.read_tsv("instances list")
 for instance in all_instances:
     if instance.get("item_type") == item_type:
         instances.append(instance)
-
-print(f"\n=== Found {len(instances)} instances with item_type='{item_type}' ===")
 
 # Map the instances to graph paths and assign segment_order
 path_found_count = 0
@@ -653,14 +691,12 @@ for instance in instances:
         instance['graph_path_directions'] = path_directions
         instance['total_segments'] = len(path_segments)
         path_found_count += 1
-        print(f"✓ Found path for {instance.get('instance_name')}: {len(path_segments)} segments ({from_node_id} → {to_node_id})")
     else:
-        print(f"✗ No path found for {instance.get('instance_name')}: {from_node_id} → {to_node_id}")
+        print(f"No path found for {instance.get('instance_name')}: {from_node_id} → {to_node_id}")
         instance['graph_path_segments'] = []
         instance['graph_path_directions'] = []
         instance['total_segments'] = 0
 
-print(f"\n=== Path Finding: {path_found_count}/{len(instances)} paths found ===")
 # =============== BUILD SVG OVERLAY ========================================================================
 
 # Define segment spacing (distance between parallel wires)
@@ -670,8 +706,6 @@ segment_spacing_px = segment_spacing_inches * 96
 # Dictionary to store points to pass through for each node/segment/instance
 points_to_pass_through = {}
 svg_groups = []
-
-print(f"\n=== Calculating entry/exit points for {len(graph['nodes'])} nodes ===")
 
 # Calculate entry/exit points for each instance at each node
 point_count = 0
@@ -785,8 +819,6 @@ for node_id, node_coords in graph['nodes'].items():
             }
             point_count += 1
 
-print(f"=== Calculated {point_count} entry/exit points ===")
-
 # === BUILD CLEANED CHAINS AND SVG ===
 cleaned_chains = {}
 
@@ -796,8 +828,6 @@ for instance in instances:
     parent_name = instance.get("parent_instance") or instance.get("instance_name")
     if parent_name not in unique_parents:
         unique_parents.append(parent_name)
-
-print(f"\n=== Building chains for {len(unique_parents)} parent instances ===")
 
 # Build chain for each parent instance
 for parent_name in unique_parents:
@@ -909,23 +939,40 @@ for parent_name in unique_parents:
             svg_groups,
         )
         
-        print(f"✓ Built chain for {parent_name}: {len(point_chain)} points")
     else:
-        print(f"✗ Empty chain for {parent_name}")
+        print(f"Empty chain for {parent_name}")
 
-# === WRITE SVG OUTPUT ===
+# === EXPORT KICAD SCHEMATIC TO SVG ===
+
+try:
+    import subprocess
+    result = subprocess.run(
+        ["kicad-cli", "sch", "export", "svg", "--output", dirpath(f"{artifact_id}-kicad-direct-export"), schematic_path],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    
+except subprocess.CalledProcessError as e:
+    print(f"Error exporting KiCad schematic:")
+    print(f"  stdout: {e.stdout}")
+    print(f"  stderr: {e.stderr}")
+except FileNotFoundError:
+    print(f"kicad-cli not found. Install KiCad CLI tools.")
+
+# Wrap the KiCad SVG contents in a group
+add_net_overlay_groups_to_svg(path("kicad direct export svg"))
+
+# === WRITE SVG OVERLAY OUTPUT ===
 svg_output = (
     '<svg xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">\n'
-    f'  <g id="{artifact_id}-net-overlay-contents">\n'
+    f'  <g id="{artifact_id}-net-overlay-contents-start">\n'
     + "\n".join(svg_groups)
     + "\n  </g>\n"
+    f'  <g id="{artifact_id}-net-overlay-contents-end"/>\n'
     "</svg>\n"
 )
 
-with open(path("net channel overlay svg"), "w", encoding="utf-8") as f:
+overlay_svg_path = path("net overlay svg")
+with open(overlay_svg_path, "w", encoding="utf-8") as f:
     f.write(svg_output)
-
-print(f"\n=== Summary ===")
-print(f"Cleaned chains built: {len(cleaned_chains)}/{len(unique_parents)}")
-print(f"SVG groups generated: {len(svg_groups)}")
-print(f"Net channel overlay SVG: {path('net channel overlay svg')}")
