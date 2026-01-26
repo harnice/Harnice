@@ -24,7 +24,7 @@ KICAD_UNIT_SCALE = 1.0 / 25.4  # Convert from millimeters to inches
 # Precision for final output (number of decimal places)
 OUTPUT_PRECISION = 5
 
-print_circles_and_dots = True
+print_circles_and_dots = False #for debugging the path
 
 """
 Known issues:
@@ -404,7 +404,6 @@ def generate_schematic_png(graph, output_path):
 
     # Visual parameters (in inches, then converted to pixels)
     pin_radius_inches = 0.033  # ~0.067in diameter (1/3 of 0.2in)
-    junction_radius_inches = 0.033
     font_size_inches = 0.05  # 1/3 of 0.15in
     wire_font_size_inches = 0.05 / 3  # 1/3 of node font size
     arrow_length_inches = 0.067  # 1/3 of 0.2in
@@ -412,7 +411,6 @@ def generate_schematic_png(graph, output_path):
 
     # Convert to pixels
     pin_radius = int(pin_radius_inches * dpi)
-    junction_radius = int(junction_radius_inches * dpi)
     font_size = int(font_size_inches * dpi)
     wire_font_size = int(wire_font_size_inches * dpi)
     arrow_length = int(arrow_length_inches * dpi)
@@ -423,12 +421,6 @@ def generate_schematic_png(graph, output_path):
 
     # Extract node coordinates (already in inches from the parser)
     node_coordinates = {name: (info["x"], info["y"]) for name, info in nodes.items()}
-
-    # Compute bounding box of actual content
-    xs = [x for x, y in node_coordinates.values()]
-    ys = [y for x, y in node_coordinates.values()]
-    content_min_x, content_max_x = min(xs), max(xs)
-    content_min_y, content_max_y = min(ys), max(ys)
 
     # KiCad coordinates: origin is typically at top-left, Y increases downward
     # We'll map KiCad coordinates directly to sheet space
@@ -856,7 +848,7 @@ for node_id, node_coords in graph["nodes"].items():
 
     # Calculate node radius based on number of components
     node_radius_inches = (
-        0.3 + math.pow(components_in_node, 1.2) * segment_spacing_inches / 4
+        math.pow(components_in_node, 1) * segment_spacing_inches
     )
     node_radius_mm = (
         node_radius_inches * 25.4
@@ -1055,7 +1047,7 @@ for parent_name in unique_parents:
         # Draw the styled path
         svg_utils.draw_styled_path(
             point_chain,
-            0.01,  # stroke width in inches
+            0.003,  # stroke width in inches
             appearance_data,
             svg_groups,
         )
@@ -1084,11 +1076,11 @@ try:
     )
 
 except subprocess.CalledProcessError as e:
-    print(f"Error exporting KiCad schematic:")
+    print("Error exporting KiCad schematic:")
     print(f"  stdout: {e.stdout}")
     print(f"  stderr: {e.stderr}")
 except FileNotFoundError:
-    print(f"kicad-cli not found. Install KiCad CLI tools.")
+    print("kicad-cli not found. Install KiCad CLI tools.")
 
 # Wrap the KiCad SVG contents in a group
 add_net_overlay_groups_to_svg(path("kicad direct export svg"))
