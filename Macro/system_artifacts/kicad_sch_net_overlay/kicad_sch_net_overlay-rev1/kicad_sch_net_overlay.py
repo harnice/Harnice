@@ -11,7 +11,7 @@ from harnice.utils import svg_utils
 # Expected args (injected by caller or defaulted below):
 # artifact_id: str (optional override)
 # base_directory: str | None  (optional override)
-# item_type: filter placed on the instances list in the "item_type" column, filtering only instances we're trying to plot here. for example, "channel" or "circuit",
+# item_type: filter placed on the instances list in the "item_type" column, filtering only instances we're trying to plot here. for example, "net-channel" or "circuit",
 
 # define the artifact_id of this macro (treated the same as part number). should match the filename.
 artifact_id = "kicad_sch_parser"
@@ -24,7 +24,7 @@ KICAD_UNIT_SCALE = 1.0 / 25.4  # Convert from millimeters to inches
 # Precision for final output (number of decimal places)
 OUTPUT_PRECISION = 5
 
-print_circles_and_dots = False #for debugging the path
+print_circles_and_dots = True  # for debugging the path
 
 """
 Known issues:
@@ -701,28 +701,19 @@ for instance in instances:
     to_device_refdes = instance.get("this_net_to_device_refdes")
     to_connector_name = instance.get("this_net_to_device_connector_name")
 
-    # Skip if missing required fields
-    if not all(
-        [from_device_refdes, from_connector_name, to_device_refdes, to_connector_name]
-    ):
-        print(f"Skipping {instance.get('instance_name')}: missing from/to fields")
-        continue
-
     # Form node IDs (refdes.connector_name format)
     from_node_id = f"{from_device_refdes}.{from_connector_name}"
     to_node_id = f"{to_device_refdes}.{to_connector_name}"
 
     # Check if both nodes exist in graph
     if from_node_id not in graph["nodes"]:
-        print(
-            f"Warning: From node '{from_node_id}' not found in graph for {instance.get('instance_name')}"
+        raise ValueError(
+            f"From node '{from_node_id}' not found in graph for {instance.get('instance_name')}"
         )
-        continue
     if to_node_id not in graph["nodes"]:
-        print(
-            f"Warning: To node '{to_node_id}' not found in graph for {instance.get('instance_name')}"
+        raise ValueError(
+            f"To node '{to_node_id}' not found in graph for {instance.get('instance_name')}"
         )
-        continue
 
     # Find path from from_node to to_node using BFS
     path_segments = []
@@ -770,12 +761,9 @@ for instance in instances:
         instance["total_segments"] = len(path_segments)
         path_found_count += 1
     else:
-        print(
+        raise ValueError(
             f"No path found for {instance.get('instance_name')}: {from_node_id} → {to_node_id}"
         )
-        instance["graph_path_segments"] = []
-        instance["graph_path_directions"] = []
-        instance["total_segments"] = 0
 
 # =============== BUILD SVG OVERLAY ========================================================================
 
@@ -847,9 +835,7 @@ for node_id, node_coords in graph["nodes"].items():
         continue
 
     # Calculate node radius based on number of components
-    node_radius_inches = (
-        math.pow(components_in_node, 1) * segment_spacing_inches
-    )
+    node_radius_inches = math.pow(components_in_node, 0.5) * segment_spacing_inches
     node_radius_mm = (
         node_radius_inches * 25.4
     )  # Convert to mm to match KiCad SVG coordinate system
@@ -925,44 +911,27 @@ for node_id, node_coords in graph["nodes"].items():
 # === BUILD CLEANED CHAINS AND SVG ===
 cleaned_chains = {}
 
-# Get unique parent instances
-unique_parents = []
+# Iterate over each instance to build its path
 for instance in instances:
-    parent_name = instance.get("parent_instance") or instance.get("instance_name")
-    if parent_name not in unique_parents:
-        unique_parents.append(parent_name)
-
-# Build chain for each parent instance
-for parent_name in unique_parents:
-    # Find all instances belonging to this parent
-    parent_instances = [
-        inst
-        for inst in instances
-        if (inst.get("parent_instance") or inst.get("instance_name")) == parent_name
-    ]
-
-    if not parent_instances:
-        continue
-
-    # Use the first instance to get the path information
-    first_instance = parent_instances[0]
-    path_segments = first_instance.get("graph_path_segments", [])
-    path_directions = first_instance.get("graph_path_directions", [])
+    path_segments = instance.get("graph_path_segments", [])
+    path_directions = instance.get("graph_path_directions", [])
 
     if not path_segments:
-        print(f"Warning: No path segments for {parent_name}")
+        print(f"Warning: No path segments for {instance.get('instance_name')}")
         continue
 
+    # Use segment UUID as the "parent" key (replacing parent_instance concept)
+    # For each segment in the path, the segment UUID is the parent
     point_chain = []
 
     # Walk through each segment in the path
-    for segment_uuid, direction in zip(path_segments, path_directions):
-        segment_info = graph["segments"][segment_uuid]
+    for seg_uuid, direction in zip(path_segments, path_directions):
+        segment_info = graph["segments"][seg_uuid]
         node_a_id = segment_info["node_at_end_a"]
         node_b_id = segment_info["node_at_end_b"]
 
-        # Get the instance name
-        inst_name = first_instance.get("instance_name")
+        # Get the instance name - this is the instance we're currently processing
+        inst_name = instance.get("instance_name")
 
         # Calculate tangent angle for this segment
         node_a_coords = graph["nodes"][node_a_id]
@@ -976,31 +945,27 @@ for parent_name in unique_parents:
             # Get entry point at node A and exit point at node B
             if (
                 node_a_id in points_to_pass_through
-                and segment_uuid in points_to_pass_through[node_a_id]
-                and inst_name in points_to_pass_through[node_a_id][segment_uuid]
+                and seg_uuid in points_to_pass_through[node_a_id]
+                and inst_name in points_to_pass_through[node_a_id][seg_uuid]
             ):
-                point_a = points_to_pass_through[node_a_id][segment_uuid][inst_name]
+                point_a = points_to_pass_through[node_a_id][seg_uuid][inst_name]
                 point_chain.append(
                     {"x": point_a["x"], "y": point_a["y"], "tangent": tangent_ab}
                 )
             else:
-                print(
-                    f"  Missing point A for {inst_name} at {node_a_id}/{segment_uuid}"
-                )
+                print(f"  Missing point A for {inst_name} at {node_a_id}/{seg_uuid}")
 
             if (
                 node_b_id in points_to_pass_through
-                and segment_uuid in points_to_pass_through[node_b_id]
-                and inst_name in points_to_pass_through[node_b_id][segment_uuid]
+                and seg_uuid in points_to_pass_through[node_b_id]
+                and inst_name in points_to_pass_through[node_b_id][seg_uuid]
             ):
-                point_b = points_to_pass_through[node_b_id][segment_uuid][inst_name]
+                point_b = points_to_pass_through[node_b_id][seg_uuid][inst_name]
                 point_chain.append(
                     {"x": point_b["x"], "y": point_b["y"], "tangent": tangent_ab}
                 )
             else:
-                print(
-                    f"  Missing point B for {inst_name} at {node_b_id}/{segment_uuid}"
-                )
+                print(f"  Missing point B for {inst_name} at {node_b_id}/{seg_uuid}")
 
         else:  # direction == "b_to_a"
             tangent_ba = tangent_ab + 180
@@ -1010,37 +975,35 @@ for parent_name in unique_parents:
             # Get entry point at node B and exit point at node A
             if (
                 node_b_id in points_to_pass_through
-                and segment_uuid in points_to_pass_through[node_b_id]
-                and inst_name in points_to_pass_through[node_b_id][segment_uuid]
+                and seg_uuid in points_to_pass_through[node_b_id]
+                and inst_name in points_to_pass_through[node_b_id][seg_uuid]
             ):
-                point_b = points_to_pass_through[node_b_id][segment_uuid][inst_name]
+                point_b = points_to_pass_through[node_b_id][seg_uuid][inst_name]
                 point_chain.append(
                     {"x": point_b["x"], "y": point_b["y"], "tangent": tangent_ba}
                 )
             else:
-                print(
-                    f"  Missing point B for {inst_name} at {node_b_id}/{segment_uuid}"
-                )
+                print(f"  Missing point B for {inst_name} at {node_b_id}/{seg_uuid}")
 
             if (
                 node_a_id in points_to_pass_through
-                and segment_uuid in points_to_pass_through[node_a_id]
-                and inst_name in points_to_pass_through[node_a_id][segment_uuid]
+                and seg_uuid in points_to_pass_through[node_a_id]
+                and inst_name in points_to_pass_through[node_a_id][seg_uuid]
             ):
-                point_a = points_to_pass_through[node_a_id][segment_uuid][inst_name]
+                point_a = points_to_pass_through[node_a_id][seg_uuid][inst_name]
                 point_chain.append(
                     {"x": point_a["x"], "y": point_a["y"], "tangent": tangent_ba}
                 )
             else:
-                print(
-                    f"  Missing point A for {inst_name} at {node_a_id}/{segment_uuid}"
-                )
+                print(f"  Missing point A for {inst_name} at {node_a_id}/{seg_uuid}")
 
     if point_chain:
-        cleaned_chains[parent_name] = point_chain
+        # Use instance name as the key (segment UUID is the "parent" conceptually)
+        instance_name = instance.get("instance_name")
+        cleaned_chains[instance_name] = point_chain
 
         # Get appearance from instance
-        appearance_data = first_instance.get(
+        appearance_data = instance.get(
             "appearance", {"base_color": "blue", "outline_color": "black"}
         )
 
@@ -1053,7 +1016,7 @@ for parent_name in unique_parents:
         )
 
     else:
-        print(f"Empty chain for {parent_name}")
+        print(f"Empty chain for {instance.get('instance_name')}")
 
 # === EXPORT KICAD SCHEMATIC TO SVG ===
 
@@ -1128,7 +1091,10 @@ svg_files = sorted(
     [
         f
         for f in os.listdir(dirpath(f"{artifact_id}-kicad-direct-export"))
-        if f.endswith(".svg") and os.path.isfile(os.path.join(dirpath(f"{artifact_id}-kicad-direct-export"), f))
+        if f.endswith(".svg")
+        and os.path.isfile(
+            os.path.join(dirpath(f"{artifact_id}-kicad-direct-export"), f)
+        )
     ]
 )
 
