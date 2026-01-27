@@ -24,6 +24,15 @@ KICAD_UNIT_SCALE = 1.0 / 25.4  # Convert from millimeters to inches
 # Precision for final output (number of decimal places)
 OUTPUT_PRECISION = 5
 
+# Scale factor for labels (1.0 since coordinates are already in mm for SVG)
+try:
+    scale
+except NameError:
+    scale = 1.0
+
+# Minimum segment length (in mm) to show white labels
+MIN_SEGMENT_LENGTH_FOR_LABEL_MM = 30.0
+
 print_circles_and_dots = False  # for debugging the path
 
 """
@@ -208,6 +217,51 @@ class KiCadSchematicParser:
             }
 
         return wire_locations
+
+    def _parse_labels(self) -> List[Dict]:
+        """
+        Parse text labels and net labels from the schematic.
+        Returns:
+        [
+            {
+                'text': '...',
+                'x': xxxx,
+                'y': xxxx,
+                'angle': xxxx,
+                'type': 'text' or 'label'
+            },
+            ...
+        ]
+        """
+        labels = []
+
+        # Pattern for text labels: (text "..." (at x y angle) ...)
+        text_pattern = r'\(text\s+"([^"]+)"\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\)'
+        
+        for match in re.finditer(text_pattern, self.content):
+            text, x, y, angle = match.groups()
+            labels.append({
+                'text': text,
+                'x': float(x),
+                'y': float(y),
+                'angle': float(angle),
+                'type': 'text'
+            })
+
+        # Pattern for net labels: (label "..." (at x y angle) ...)
+        label_pattern = r'\(label\s+"([^"]+)"\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\)'
+        
+        for match in re.finditer(label_pattern, self.content):
+            text, x, y, angle = match.groups()
+            labels.append({
+                'text': text,
+                'x': float(x),
+                'y': float(y),
+                'angle': float(angle),
+                'type': 'label'
+            })
+
+        return labels
 
 
 def rotate_point(x, y, angle_degrees):
@@ -636,6 +690,7 @@ def add_net_overlay_groups_to_svg(filepath):
     with open(filepath, "w", encoding="utf-8") as file:
         file.write(updated_svg_content)
 
+
 def label_svg(
     x,
     y,
@@ -644,35 +699,84 @@ def label_svg(
     text_color="black",
     background_color="white",
     outline="black",
-    font_size=6,
-    font_family="Arial, Helvetica, sans-serif;",
+    font_size=0.2,
+    font_family="Arial, Helvetica, sans-serif",
     font_weight="normal",
 ):
-    font_size = font_size / scale
+    # Ensure text is not None or empty - use placeholder if needed
+    text_str = str(text) if text is not None else ""
+    if not text_str.strip():
+        text_str = "?"
+    
+    # Escape XML/SVG special characters in text
+    text_escaped = (
+        text_str
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+    )
+    
+    # Font size is in mm (coordinates are in mm for SVG)
+    # Don't divide by scale since coordinates are already in mm
+    font_size_mm = font_size
     y_svg = -y
+    
+    # Normalize angle to 0-360 range
+    angle = angle % 360
+    if angle < 0:
+        angle += 360
+    
+    # The tangent angle represents the direction of the wire segment
+    # For SVG, we want text parallel to the wire direction
+    # SVG rotate() is counter-clockwise, and Y increases downward
+    # The tangent angle already accounts for flipped Y coordinates
+    # We just need to ensure text is readable (not upside down)
+    # If angle is between 90 and 270, flip it 180 degrees for readability
     if 90 < angle < 270:
         angle += 180
-    if angle > 360:
-        angle -= 360
+        angle = angle % 360
 
-    char_width = font_size * 0.6
-    text_width = len(text) * char_width
-    text_height = font_size
-    padding = 4
-    width = text_width + padding * 2
-    height = text_height + padding * 2
+    # Calculate dimensions - boxes are 1.5x taller than text for better visibility
+    # Character width multiplier increased to 2x (from 0.6 to 1.2) for stronger text length scaling
+    char_width = font_size_mm * 1.2
+    text_width = len(text_escaped) * char_width
+    
+    # Horizontal padding (left/right)
+    horizontal_padding = 0.3
+    # Make rectangles 1.75x as long (wider)
+    width = (text_width + horizontal_padding * 2) * 1.75
+    
+    # Box height is 4x the font size (text stays same size, box gets bigger)
+    # This adds vertical padding around the text for better visibility
+    height = font_size_mm * 4
+    
+    # Center the rectangle around the origin
     rect_x = -width / 2
     rect_y = -height / 2
+    
+    # Use outline color that matches background for black boxes (no visible outline)
+    stroke_color = outline if background_color != "black" else background_color
+    # White labels have thinner borders (0.25x thickness), black boxes use matching color (no visible border)
+    if background_color == "white":
+        stroke_width = 0.2 * 0.25  # 0.05mm for white labels
+    else:
+        stroke_width = 0.2  # Black boxes - stroke matches background so not visible
 
+    # CRITICAL: Box height MUST equal font_size_mm
+    # The rect is centered at origin: y from -height/2 to +height/2
+    # Text is at y=0 with dominant-baseline:middle, so it's vertically centered
+    # Font-size property equals height, ensuring perfect match
     return f"""
 <g transform="translate({x:.3f},{y_svg:.3f}) rotate({-angle:.3f})">
   <rect x="{rect_x:.3f}" y="{rect_y:.3f}"
         width="{width:.3f}" height="{height:.3f}"
-        fill="{background_color}" stroke="{outline}" stroke-width="0.8"/>
+        fill="{background_color}" stroke="{stroke_color}" stroke-width="{stroke_width}"/>
   <text x="0" y="0" text-anchor="middle"
         style="fill:{text_color};dominant-baseline:middle;
                font-weight:{font_weight};font-family:{font_family};
-               font-size:{font_size}px">{text}</text>
+               font-size:{font_size_mm}mm">{text_escaped}</text>
 </g>
 """.strip()
 
@@ -958,33 +1062,33 @@ for wire_uuid, wire_coords in wire_locations_scaled.items():
     a_y_inches = wire_coords["a_y"]
     b_x_inches = wire_coords["b_x"]
     b_y_inches = wire_coords["b_y"]
-    
+
     # Convert to millimeters for SVG coordinates
     a_x_mm = a_x_inches * 25.4
     a_y_mm = a_y_inches * 25.4
     b_x_mm = b_x_inches * 25.4
     b_y_mm = b_y_inches * 25.4
-    
+
     # Calculate wire length and angle
     dx = b_x_mm - a_x_mm
     dy = b_y_mm - a_y_mm
     length = math.sqrt(dx * dx + dy * dy)
     angle_rad = math.atan2(dy, dx)
     angle_deg = math.degrees(angle_rad)
-    
+
     # Calculate rectangle center (midpoint of wire)
     center_x = (a_x_mm + b_x_mm) / 2
     center_y = (a_y_mm + b_y_mm) / 2
-    
+
     # Create rectangle dimensions
     # Length should extend wire_mask_width_mm beyond each endpoint to ensure full coverage
     rect_length = length + wire_mask_width_mm
     rect_width = wire_mask_width_mm
-    
+
     # Calculate rectangle corners (rotated around center)
     half_length = rect_length / 2
     half_width = rect_width / 2
-    
+
     # Corner offsets before rotation
     corners = [
         (-half_length, -half_width),
@@ -992,24 +1096,22 @@ for wire_uuid, wire_coords in wire_locations_scaled.items():
         (half_length, half_width),
         (-half_length, half_width),
     ]
-    
+
     # Rotate corners around origin, then translate to center
     rotated_corners = []
     cos_a = math.cos(angle_rad)
     sin_a = math.sin(angle_rad)
-    
+
     for cx, cy in corners:
         # Rotate
         rx = cx * cos_a - cy * sin_a
         ry = cx * sin_a + cy * cos_a
         # Translate to center
         rotated_corners.append((center_x + rx, center_y + ry))
-    
+
     # Create SVG rectangle as a polygon (since we need rotation)
     points_str = " ".join([f"{x:.3f},{y:.3f}" for x, y in rotated_corners])
-    svg_groups.append(
-        f'<polygon points="{points_str}" fill="#F5F4EF" stroke="none" />'
-    )
+    svg_groups.append(f'<polygon points="{points_str}" fill="#F5F4EF" stroke="none" />')
 
 # === BUILD CLEANED CHAINS AND SVG ===
 cleaned_chains = {}
@@ -1119,6 +1221,94 @@ for instance in instances:
             appearance_data,
             svg_groups,
         )
+
+        # Add labels at start (node_at_end_a) and end (node_at_end_b)
+        for order in [0, -1]:
+            if order == 0:
+                # Start of path - use node_at_end_a print_name
+                node_name = instance.get("node_at_end_a")
+                if node_name:
+                    # Find the node instance in all_instances
+                    node_instance = next(
+                        (inst for inst in all_instances if inst.get("instance_name") == node_name),
+                        None
+                    )
+                    if node_instance:
+                        text = node_instance.get("print_name") or node_instance.get("instance_name") or node_name
+                    else:
+                        text = node_name
+                else:
+                    text = instance.get("print_name") or instance_name
+            else:
+                # End of path - use node_at_end_b print_name
+                node_name = instance.get("node_at_end_b")
+                if node_name:
+                    # Find the node instance in all_instances
+                    node_instance = next(
+                        (inst for inst in all_instances if inst.get("instance_name") == node_name),
+                        None
+                    )
+                    if node_instance:
+                        text = node_instance.get("print_name") or node_instance.get("instance_name") or node_name
+                    else:
+                        text = node_name
+                else:
+                    text = instance.get("print_name") or instance_name
+            
+            # Ensure we have text
+            if not text:
+                text = "?"
+            
+            # Get coordinates and tangent from point_chain
+            point = point_chain[order]
+            x_mm = point["x"]
+            y_mm = point["y"]
+            tangent = point["tangent"]
+            
+            svg_groups.append(
+                label_svg(
+                    x_mm,
+                    y_mm,
+                    tangent,
+                    text,
+                    text_color="white",
+                    background_color="black",
+                    outline="black",
+                )
+            )
+        
+        # Add white label in the middle of each segment (each pair of consecutive points)
+        # Only add labels for segments longer than the threshold
+        instance_print_name = instance.get("print_name") or instance_name
+        if not instance_print_name:
+            instance_print_name = "?"
+        for i in range(len(point_chain) - 1):
+            point_a = point_chain[i]
+            point_b = point_chain[i + 1]
+            
+            # Calculate segment length
+            dx = point_b["x"] - point_a["x"]
+            dy = point_b["y"] - point_a["y"]
+            segment_length_mm = math.sqrt(dx * dx + dy * dy)
+            
+            # Only add label if segment is long enough
+            if segment_length_mm >= MIN_SEGMENT_LENGTH_FOR_LABEL_MM:
+                # Calculate midpoint of this segment
+                x_mm = (point_a["x"] + point_b["x"]) / 2
+                y_mm = (point_a["y"] + point_b["y"]) / 2
+                tangent = point_a["tangent"]  # Use the tangent from the first point of the segment
+                
+                svg_groups.append(
+                    label_svg(
+                        x_mm,
+                        y_mm,
+                        tangent,
+                        instance_print_name,
+                        text_color="black",
+                        background_color="white",
+                        outline="black",
+                    )
+                )
 
     else:
         print(f"Empty chain for {instance.get('instance_name')}")
