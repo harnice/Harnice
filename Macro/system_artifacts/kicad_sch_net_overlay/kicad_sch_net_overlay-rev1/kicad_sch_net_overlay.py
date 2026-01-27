@@ -703,6 +703,30 @@ def label_svg(
     font_family="Arial, Helvetica, sans-serif",
     font_weight="normal",
 ):
+    """
+    Generate SVG label with text in a rectangular box.
+    
+    Units: All parameters and calculations are in millimeters (mm).
+    - x, y: Position coordinates in mm (SVG coordinate system, Y increases downward)
+    - angle: Rotation angle in degrees (tangent angle of wire segment)
+    - font_size: Font size in mm (default 0.2mm)
+    - All dimensions (width, height, padding, stroke) are in mm
+    
+    Args:
+        x: X coordinate in mm
+        y: Y coordinate in mm (KiCad coordinates, will be flipped for SVG)
+        angle: Rotation angle in degrees (wire tangent direction)
+        text: Text content to display
+        text_color: Text fill color
+        background_color: Box fill color ("white" or "black")
+        outline: Box stroke color
+        font_size: Font size in mm (default 0.2mm)
+        font_family: Font family name
+        font_weight: Font weight
+    
+    Returns:
+        SVG string for the label group
+    """
     # Ensure text is not None or empty - use placeholder if needed
     text_str = str(text) if text is not None else ""
     if not text_str.strip():
@@ -718,9 +742,12 @@ def label_svg(
         .replace("'", "&apos;")
     )
     
-    # Font size is in mm (coordinates are in mm for SVG)
-    # Don't divide by scale since coordinates are already in mm
-    font_size_mm = font_size
+    # All units are in millimeters (mm)
+    # x, y coordinates are already in mm from point_chain (converted from inches earlier)
+    # font_size parameter is in mm
+    font_size_mm = font_size  # Explicitly named for clarity, but same value
+    
+    # Flip Y coordinate for SVG (KiCad Y increases downward, SVG Y increases upward)
     y_svg = -y
     
     # Normalize angle to 0-360 range
@@ -738,41 +765,43 @@ def label_svg(
         angle += 180
         angle = angle % 360
 
-    # Calculate dimensions - boxes are 1.5x taller than text for better visibility
-    # Character width multiplier increased to 2x (from 0.6 to 1.2) for stronger text length scaling
-    char_width = font_size_mm * 1.2
-    text_width = len(text_escaped) * char_width
+    # Calculate box dimensions (all in mm)
+    # Character width: each character takes 1.2x the font size in width
+    char_width_mm = font_size_mm * 1.2
+    text_width_mm = len(text_escaped) * char_width_mm
     
-    # Horizontal padding (left/right)
-    horizontal_padding = 0.3
-    # Make rectangles 1.75x as long (wider)
-    width = (text_width + horizontal_padding * 2) * 1.75
+    # Horizontal padding (left/right) in mm
+    horizontal_padding_mm = 0.3
+    # Box width: text width + padding, then multiplied by 1.75 for extra width
+    width_mm = (text_width_mm + horizontal_padding_mm * 2) * 1.75
     
-    # Box height is 4x the font size (text stays same size, box gets bigger)
-    # This adds vertical padding around the text for better visibility
-    height = font_size_mm * 4
+    # Box height: 4x the font size (provides vertical padding around text)
+    # Text size remains font_size_mm, box is taller for better visibility
+    height_mm = font_size_mm * 4
     
-    # Center the rectangle around the origin
-    rect_x = -width / 2
-    rect_y = -height / 2
+    # Center the rectangle around the origin (for rotation)
+    rect_x_mm = -width_mm / 2
+    rect_y_mm = -height_mm / 2
     
-    # Use outline color that matches background for black boxes (no visible outline)
+    # Stroke settings (all in mm)
+    # White labels: thin border (0.05mm) for subtle outline
+    # Black labels: stroke matches background (invisible, but set for consistency)
     stroke_color = outline if background_color != "black" else background_color
-    # White labels have thinner borders (0.25x thickness), black boxes use matching color (no visible border)
     if background_color == "white":
-        stroke_width = 0.2 * 0.25  # 0.05mm for white labels
+        stroke_width_mm = 0.05  # 0.25 * 0.2mm = 0.05mm for white labels
     else:
-        stroke_width = 0.2  # Black boxes - stroke matches background so not visible
+        stroke_width_mm = 0.2  # Black boxes - stroke matches background so not visible
 
-    # CRITICAL: Box height MUST equal font_size_mm
-    # The rect is centered at origin: y from -height/2 to +height/2
-    # Text is at y=0 with dominant-baseline:middle, so it's vertically centered
-    # Font-size property equals height, ensuring perfect match
+    # Layout notes:
+    # - Rectangle is centered at origin: extends from -width/2 to +width/2 (x) and -height/2 to +height/2 (y)
+    # - Text is positioned at (0, 0) with dominant-baseline:middle, so it's vertically centered
+    # - Font-size in SVG is font_size_mm (text size), box height is height_mm (4x text size)
+    # Generate SVG (all values in mm)
     return f"""
 <g transform="translate({x:.3f},{y_svg:.3f}) rotate({-angle:.3f})">
-  <rect x="{rect_x:.3f}" y="{rect_y:.3f}"
-        width="{width:.3f}" height="{height:.3f}"
-        fill="{background_color}" stroke="{stroke_color}" stroke-width="{stroke_width}"/>
+  <rect x="{rect_x_mm:.3f}" y="{rect_y_mm:.3f}"
+        width="{width_mm:.3f}" height="{height_mm:.3f}"
+        fill="{background_color}" stroke="{stroke_color}" stroke-width="{stroke_width_mm}"/>
   <text x="0" y="0" text-anchor="middle"
         style="fill:{text_color};dominant-baseline:middle;
                font-weight:{font_weight};font-family:{font_family};
