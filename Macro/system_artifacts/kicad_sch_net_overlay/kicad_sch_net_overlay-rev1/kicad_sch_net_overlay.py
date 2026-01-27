@@ -636,6 +636,46 @@ def add_net_overlay_groups_to_svg(filepath):
     with open(filepath, "w", encoding="utf-8") as file:
         file.write(updated_svg_content)
 
+def label_svg(
+    x,
+    y,
+    angle,
+    text,
+    text_color="black",
+    background_color="white",
+    outline="black",
+    font_size=6,
+    font_family="Arial, Helvetica, sans-serif;",
+    font_weight="normal",
+):
+    font_size = font_size / scale
+    y_svg = -y
+    if 90 < angle < 270:
+        angle += 180
+    if angle > 360:
+        angle -= 360
+
+    char_width = font_size * 0.6
+    text_width = len(text) * char_width
+    text_height = font_size
+    padding = 4
+    width = text_width + padding * 2
+    height = text_height + padding * 2
+    rect_x = -width / 2
+    rect_y = -height / 2
+
+    return f"""
+<g transform="translate({x:.3f},{y_svg:.3f}) rotate({-angle:.3f})">
+  <rect x="{rect_x:.3f}" y="{rect_y:.3f}"
+        width="{width:.3f}" height="{height:.3f}"
+        fill="{background_color}" stroke="{outline}" stroke-width="0.8"/>
+  <text x="0" y="0" text-anchor="middle"
+        style="fill:{text_color};dominant-baseline:middle;
+               font-weight:{font_weight};font-family:{font_family};
+               font-size:{font_size}px">{text}</text>
+</g>
+""".strip()
+
 
 # =============== MAIN MACRO LOGIC =========================================================================
 
@@ -907,6 +947,69 @@ for node_id, node_coords in graph["nodes"].items():
                 "y": -y_circleintersect,  # Flip Y for the paths
             }
             point_count += 1
+
+# === ADD WHITE RECTANGLES TO MASK WIRES ===
+# Add white rectangles over each wire segment to mask out the original wires
+wire_mask_width_mm = 1  # Width of the mask rectangle in mm
+
+for wire_uuid, wire_coords in wire_locations_scaled.items():
+    # Get wire endpoints in inches
+    a_x_inches = wire_coords["a_x"]
+    a_y_inches = wire_coords["a_y"]
+    b_x_inches = wire_coords["b_x"]
+    b_y_inches = wire_coords["b_y"]
+    
+    # Convert to millimeters for SVG coordinates
+    a_x_mm = a_x_inches * 25.4
+    a_y_mm = a_y_inches * 25.4
+    b_x_mm = b_x_inches * 25.4
+    b_y_mm = b_y_inches * 25.4
+    
+    # Calculate wire length and angle
+    dx = b_x_mm - a_x_mm
+    dy = b_y_mm - a_y_mm
+    length = math.sqrt(dx * dx + dy * dy)
+    angle_rad = math.atan2(dy, dx)
+    angle_deg = math.degrees(angle_rad)
+    
+    # Calculate rectangle center (midpoint of wire)
+    center_x = (a_x_mm + b_x_mm) / 2
+    center_y = (a_y_mm + b_y_mm) / 2
+    
+    # Create rectangle dimensions
+    # Length should extend wire_mask_width_mm beyond each endpoint to ensure full coverage
+    rect_length = length + wire_mask_width_mm
+    rect_width = wire_mask_width_mm
+    
+    # Calculate rectangle corners (rotated around center)
+    half_length = rect_length / 2
+    half_width = rect_width / 2
+    
+    # Corner offsets before rotation
+    corners = [
+        (-half_length, -half_width),
+        (half_length, -half_width),
+        (half_length, half_width),
+        (-half_length, half_width),
+    ]
+    
+    # Rotate corners around origin, then translate to center
+    rotated_corners = []
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    
+    for cx, cy in corners:
+        # Rotate
+        rx = cx * cos_a - cy * sin_a
+        ry = cx * sin_a + cy * cos_a
+        # Translate to center
+        rotated_corners.append((center_x + rx, center_y + ry))
+    
+    # Create SVG rectangle as a polygon (since we need rotation)
+    points_str = " ".join([f"{x:.3f},{y:.3f}" for x, y in rotated_corners])
+    svg_groups.append(
+        f'<polygon points="{points_str}" fill="#F5F4EF" stroke="none" />'
+    )
 
 # === BUILD CLEANED CHAINS AND SVG ===
 cleaned_chains = {}
