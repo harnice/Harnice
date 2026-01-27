@@ -7,69 +7,51 @@ from harnice.utils import appearance
 def add_entire_svg_file_contents_to_group(filepath, new_group_name):
     """
     Wraps the entire contents of an SVG file in a new group element.
-    Reads an SVG file, extracts its inner content (everything between <svg> tags),
+
+    Reads an SVG file, extracts its inner content (everything between `<svg>` tags),
     and wraps it in a new group element with start and end markers. The original
     file is modified in place.
-    
-    **Args:**
 
+    **Args:**
     - `filepath` (str): Path to the SVG file to modify.
     - `new_group_name` (str): Name to use for the new group element (will create
         `{new_group_name}-contents-start` and `{new_group_name}-contents-end` markers).
 
     **Raises:**
-
     - `ValueError`: If the file does not appear to be a valid SVG or has no inner contents.
     """
-    if not os.path.exists(filepath):
-        print("File does not exist: {}".format(filepath))
-        return
-    
-    try:
-        with open(filepath, "r", encoding="utf-8") as file:
-            svg_content = file.read()
-        
-        # Find the opening SVG tag and capture its attributes
-        svg_start_match = re.search(r'(<svg[^>]*>)', svg_content, re.DOTALL)
-        if not svg_start_match:
-            raise ValueError("Could not find opening <svg> tag")
-        
-        svg_opening_tag = svg_start_match.group(1)
-        
-        # Find where the opening tag ends and closing tag starts
-        content_start = svg_start_match.end()
-        svg_end_match = re.search(r'</svg>\s*$', svg_content, re.DOTALL)
-        
-        if not svg_end_match:
-            raise ValueError("Could not find closing </svg> tag")
-        
-        content_end = svg_end_match.start()
-        
-        # Extract the inner content
-        inner_content = svg_content[content_start:content_end].strip()
-        
-        if not inner_content:
-            raise ValueError("SVG file appears to have no inner content")
-        
-        # Reconstruct with the new group wrapper
-        updated_svg_content = (
-            '{}\n'
-            '<g id="{}-contents-start">\n'
-            '{}\n'
-            '</g>\n'
-            '<g id="{}-contents-end"></g>\n'
-            '</svg>\n'
-        ).format(svg_opening_tag, new_group_name, inner_content, new_group_name)
-        
-        # Write back to file
-        with open(filepath, "w", encoding="utf-8") as file:
-            file.write(updated_svg_content)
-            
-        print("Successfully wrapped contents of {} in group '{}'".format(
-            os.path.basename(filepath), new_group_name))
-        
-    except Exception as e:
-        print("Error processing {}: {}".format(os.path.basename(filepath), e))
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r", encoding="utf-8") as file:
+                svg_content = file.read()
+
+            match = re.search(r"<svg[^>]*>(.*?)</svg>", svg_content, re.DOTALL)
+            if not match:
+                raise ValueError(
+                    "File does not appear to be a valid SVG or has no inner contents."
+                )
+            inner_content = match.group(1).strip()
+
+            updated_svg_content = (
+                f'<svg xmlns="http://www.w3.org/2000/svg">\n'
+                f'  <g id="{new_group_name}-contents-start">\n'
+                f"    {inner_content}\n"
+                f"  </g>\n"
+                f'  <g id="{new_group_name}-contents-end"></g>\n'
+                f"</svg>\n"
+            )
+
+            with open(filepath, "w", encoding="utf-8") as file:
+                file.write(updated_svg_content)
+
+        except Exception as e:
+            print(
+                f"Error adding contents of {os.path.basename(filepath)} to a new group {new_group_name}: {e}"
+            )
+    else:
+        print(
+            f"Trying to add contents of {os.path.basename(filepath)} to a new group but file does not exist."
+        )
 
 
 def find_and_replace_svg_group(
