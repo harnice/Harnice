@@ -1,2 +1,2 @@
 product	mfg	pn	desc	rev	status	releaseticket	library_repo	library_subpath	datestarted	datemodified	datereleased	git_hash_of_harnice_src	drawnby	checkedby	revisionupdates	affectedinstances
-macro		kicad_sch_net_overlay	Produces a PDF drawing of a system block diagram but shows channels instead of harnesses	1			https://github.com/harnice/harnice-library-public	system_artifacts/	1/20/26	1/22/26		c6e76d783792956c9ceb5a65ceb35182bf796711	K SHUTT		INITIAL RELEASE	
+macro		kicad_sch_net_overlay	Produces a PDF drawing of a system block diagram but shows channels instead of harnesses	1			https://github.com/harnice/harnice-library-public	system_artifacts/	1/20/26	1/27/26		5ea7a0ad35c71fb5d6ae74cbf3752488fcc647ca	K SHUTT		INITIAL RELEASE	
