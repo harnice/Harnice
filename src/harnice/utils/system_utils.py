@@ -56,6 +56,81 @@ def connector_of_channel(key):
     raise ValueError(f"Connector not found for channel {key}")
 
 
+def channel_id_of_connector(refdes, connector_name, signal=None):
+    """
+    Finds the channel ID associated with a device connector.
+
+    Given a device reference designator and connector name, looks up the corresponding
+    channel ID from the device's or disconnect's signals list.
+
+    **Args:**
+    - `refdes` (str): Device reference designator (e.g., `"J1"`, `"X1"`).
+    - `connector_name` (str): Connector name to look up.
+    - `signal` (str, optional): Signal name to use for disconnects. Required for disconnects.
+
+    **Returns:**
+    - `str`: The channel ID associated with the connector, or empty string if not found.
+
+    **Note:**
+    - Returns empty string if connector is not found (does not raise error) to allow
+      graceful handling of missing data.
+    - For disconnects, the signal parameter is required to uniquely identify the channel.
+    """
+    if not refdes or not connector_name:
+        return ""
+
+    # Check if this is a disconnect by looking in system connector list
+    is_disconnect = False
+    for connector in fileio.read_tsv("system connector list"):
+        if (
+            connector.get("device_refdes", "").strip() == refdes.strip()
+            and (connector.get("disconnect") or "").strip().upper() == "TRUE"
+        ):
+            is_disconnect = True
+            break
+
+    if is_disconnect:
+        # For disconnects, connector_name is "A" or "B"
+        # We need the signal to find the matching channel_id
+        if not signal:
+            return ""
+        
+        disconnect_signals_list_path = os.path.join(
+            fileio.dirpath("instance_data"),
+            "disconnect",
+            refdes,
+            f"{refdes}-signals_list.tsv",
+        )
+        
+        if not os.path.exists(disconnect_signals_list_path):
+            return ""
+        
+        # For disconnects, we need to match signal to find channel_id
+        # All signals for a channel_id share the same channel_id
+        for row in fileio.read_tsv(disconnect_signals_list_path):
+            if row.get("signal", "").strip() == signal.strip():
+                return row.get("channel_id", "").strip()
+        
+        return ""
+    else:
+        # Regular device - look up by connector_name
+        device_signals_list_path = os.path.join(
+            fileio.dirpath("instance_data"),
+            "device",
+            refdes,
+            f"{refdes}-signals_list.tsv",
+        )
+        
+        if not os.path.exists(device_signals_list_path):
+            return ""
+        
+        for row in fileio.read_tsv(device_signals_list_path):
+            if row.get("connector_name", "").strip() == connector_name.strip():
+                return row.get("channel_id", "").strip()
+        
+        return ""
+
+
 def find_connector_with_no_circuit(connector_list, circuits_list):
     """
     Validates that all connectors have associated circuits.
@@ -253,7 +328,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             {
                 "net": circuit.get("net"),
                 "item_type": "circuit",
-                "channel_group": f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+                "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                 "circuit_id": circuit.get("circuit_id"),
                 "node_at_end_a": from_cavity,
                 "node_at_end_b": to_cavity,
@@ -286,12 +361,12 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
 
         # --- add channel
         instances_list.new_instance(
-            f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+            f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
             f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
             {
                 "item_type": "channel",
                 "channel_group": (
-                    f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                    f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
                     f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
                 ),
                 "location_type": "segment",
@@ -364,19 +439,29 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                 net_from_connector = port_a
                 net_to_refdes = dev_b
                 net_to_connector = port_b
+                
+                # Look up channel IDs for this net
+                # If this net matches the circuit's net, use circuit data (most accurate)
                 if net == circuit.get("net"):
-                    net_from_channel_id = circuit.get("net_from_channel_id") or ""
-                    net_to_channel_id = circuit.get("net_to_channel_id") or ""
+                    net_from_channel_id = circuit.get("net_from_channel_id")
+                    net_to_channel_id = circuit.get("net_to_channel_id")
+                else:
+                    # For other nets in the chain (e.g., when disconnects are involved),
+                    # look up channel IDs from the device/disconnect signals lists
+                    # Pass the circuit's signal to help identify channels in disconnects
+                    circuit_signal = circuit.get("signal", "")
+                    net_from_channel_id = channel_id_of_connector(dev_a, port_a, circuit_signal)
+                    net_to_channel_id = channel_id_of_connector(dev_b, port_b, circuit_signal)
 
             # --- create instance for this net
             instances_list.new_instance(
-                f"net{net}:{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                f"net{net}:channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
                 f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                 {
                     "net": net,
                     "item_type": "net-channel",
                     "channel_group": (
-                        f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
+                        f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
                         f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
                     ),
                     "location_type": "segment",
