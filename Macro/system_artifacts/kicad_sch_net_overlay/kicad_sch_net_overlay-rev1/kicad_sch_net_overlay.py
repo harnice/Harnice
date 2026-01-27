@@ -24,7 +24,7 @@ KICAD_UNIT_SCALE = 1.0 / 25.4  # Convert from millimeters to inches
 # Precision for final output (number of decimal places)
 OUTPUT_PRECISION = 5
 
-print_circles_and_dots = True  # for debugging the path
+print_circles_and_dots = False  # for debugging the path
 
 """
 Known issues:
@@ -835,7 +835,7 @@ for node_id, node_coords in graph["nodes"].items():
         continue
 
     # Calculate node radius based on number of components
-    node_radius_inches = math.pow(components_in_node, 0.5) * segment_spacing_inches
+    node_radius_inches = math.pow(components_in_node, 0.7) * segment_spacing_inches
     node_radius_mm = (
         node_radius_inches * 25.4
     )  # Convert to mm to match KiCad SVG coordinate system
@@ -939,7 +939,9 @@ for instance in instances:
         # Convert from inches to millimeters to match KiCad SVG coordinate system
         dx = (node_b_coords["x"] - node_a_coords["x"]) * 25.4
         dy = (node_b_coords["y"] - node_a_coords["y"]) * 25.4
-        tangent_ab = math.degrees(math.atan2(dy, dx))
+        # Negate the tangent angle because Y coordinates are flipped when stored in points_to_pass_through
+        # When Y is flipped, a vector pointing at angle θ becomes angle -θ
+        tangent_ab = -math.degrees(math.atan2(dy, dx))
 
         if direction == "a_to_b":
             # Get entry point at node A and exit point at node B
