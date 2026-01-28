@@ -36,7 +36,6 @@ def render():
     # 1. Feature tree does not exist: prompt user and create it
     # ======================================================================
     if not os.path.exists(feature_tree_path):
-
         # ------------------------------------------------------------------
         # Ask whether this harness pulls from a system or not
         # ------------------------------------------------------------------
@@ -191,7 +190,7 @@ for instance in instances:
             "connector_group": instance.get("connector_group"),
             "parent_csys_instance_name": (instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "node")).get("instance_name"),
             "parent_csys_outputcsys_name": "origin",
-            "lib_repo": "https://github.com/harnice/harnice-library-public"
+            "lib_repo": "https://github.com/harnice/harnice"
         }})
         instances_list.modify(instance.get("instance_name"), {{
             "parent_csys_instance_name": f"{{instance.get("connector_group")}}.bs",
@@ -388,13 +387,13 @@ scales = {{"A": 0.25, "B": 0.3, "C": 1}}
 feature_tree_utils.run_macro(
     "bom_exporter_bottom_up",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="bom-1",
 )
 feature_tree_utils.run_macro(
     "standard_harnice_formboard",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="formboard-overview",
     scale=scales.get("A"),
     input_instances=formboard_overview_instances,
@@ -402,7 +401,7 @@ feature_tree_utils.run_macro(
 feature_tree_utils.run_macro(
     "standard_harnice_formboard",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="formboard-detail",
     scale=scales.get("C"),
     input_instances=formboard_detail_instances,
@@ -410,7 +409,7 @@ feature_tree_utils.run_macro(
 feature_tree_utils.run_macro(
     "segment_visualizer",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="cable_layout-1",
     scale=scales.get("A"),
     item_type="cable-segment",
@@ -419,7 +418,7 @@ feature_tree_utils.run_macro(
 feature_tree_utils.run_macro(
     "segment_visualizer",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="conductor-layout-1",
     scale=scales.get("A"),
     item_type="conductor-segment",
@@ -428,7 +427,7 @@ feature_tree_utils.run_macro(
 feature_tree_utils.run_macro(
     "segment_visualizer",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="channel-layout-1",
     scale=scales.get("B"),
     item_type="net-channel-segment",
@@ -437,14 +436,14 @@ feature_tree_utils.run_macro(
 feature_tree_utils.run_macro(
     "circuit_visualizer",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="circuitviz-1",
     input_circuits=instances,
 )
 feature_tree_utils.run_macro(
     "revision_history_table",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="revhistory-1",
 )
 
@@ -456,14 +455,14 @@ for instance in fileio.read_tsv("instances list"):
 feature_tree_utils.run_macro(
     "build_notes_table",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="build_notes_table-1",
     input_instances=build_notes_list_instances,
 )
 feature_tree_utils.run_macro(
     "pdf_generator",
     "harness_artifacts",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     artifact_id="pdf_drawing-1",
     scales=scales,
 )
@@ -493,7 +492,7 @@ system_target_net = "{target_net}" # enter the net you're building from
 feature_tree_utils.run_macro(
     "import_harness_from_harnice_system",
     "harness_builder",
-    "https://github.com/harnice/harnice-library-public",
+    "https://github.com/harnice/harnice",
     "harness-from-system-1",
     system_pn=f"{{system_pn}}",
     system_rev=f"{{system_rev}}",

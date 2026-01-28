@@ -66,7 +66,7 @@ except NameError:
 def make_new_flagnote_drawing(instance, location):
     if instance.get("item_type") != "flagnote":
         raise ValueError(
-            f"you just tried to make a flagnote drawing without specifying flagnote type by 'mpn' field on '{instance.get("instance_name")}'"
+            f"you just tried to make a flagnote drawing without specifying flagnote type by 'mpn' field on '{instance.get('instance_name')}'"
         )
 
     # === Pull drawing into this macro ===
@@ -74,7 +74,7 @@ def make_new_flagnote_drawing(instance, location):
         instance, destination_directory=location, update_instances_list=False
     )
     flagnote_drawing_path = os.path.join(
-        location, f"{instance.get("instance_name")}-drawing.svg"
+        location, f"{instance.get('instance_name')}-drawing.svg"
     )
 
     # === Perform text replacement on known drawing path ===
@@ -90,14 +90,14 @@ def make_new_flagnote_drawing(instance, location):
 def make_new_segment_drawing(instance, location):
     if instance.get("item_type") != "segment":
         raise ValueError(
-            f"you just tried to make a segment drawing out of a non-segment instance '{instance.get("instance_name")}'"
+            f"you just tried to make a segment drawing out of a non-segment instance '{instance.get('instance_name')}'"
         )
 
     feature_tree_utils.run_macro(
         "basic_segment_generator",
         "harness_artifacts",
-        "https://github.com/harnice/harnice-library-public",
-        artifact_id=f"{artifact_id}-{instance.get("instance_name")}",
+        "https://github.com/harnice/harnice",
+        artifact_id=f"{artifact_id}-{instance.get('instance_name')}",
         instance=instance,
         base_directory=location,
     )
@@ -135,10 +135,9 @@ for item_type, items in grouped_instances.items():
         svg_px_y = y * -96
 
         if item_type == "flagnote":
-
             leader_dest_temp_instance = instance
             leader_dest_temp_instance["parent_csys_outputcsys_name"] = (
-                f"{instance.get("parent_csys_outputcsys_name")}-leader_dest"
+                f"{instance.get('parent_csys_outputcsys_name')}-leader_dest"
             )
             x_leader_dest, y_leader_dest, angle_leader_dest = (
                 formboard_utils.calculate_location(
@@ -156,7 +155,7 @@ for item_type, items in grouped_instances.items():
                 f'      <g id="{instance_name}-translate" transform="translate({svg_px_x},{svg_px_y}) rotate({-1 * angle})">'
             )
             content_lines.append(
-                f'      <g id="{instance_name}-scale" transform="scale({1/scale})">'
+                f'      <g id="{instance_name}-scale" transform="scale({1 / scale})">'
             )
             content_lines.append(
                 f'      <g id="{instance_name}-contents-start" inkscape:label="{instance_name}-contents-start">'
@@ -205,7 +204,6 @@ with open(path("output svg"), "w") as f:
 for instance in input_instances:
     item_type = instance.get("item_type", "").strip()
     if instance.get("instance_name") in printable_instances:
-
         # === handle flagnotes ===
         if instance.get("item_type") == "flagnote":
             flagnote_location = os.path.join(
@@ -217,7 +215,7 @@ for instance in input_instances:
             make_new_flagnote_drawing(instance, flagnote_location)
             svg_utils.find_and_replace_svg_group(
                 os.path.join(
-                    flagnote_location, f"{instance.get("instance_name")}-drawing.svg"
+                    flagnote_location, f"{instance.get('instance_name')}-drawing.svg"
                 ),
                 instance.get("instance_name"),
                 path("output svg"),
@@ -231,14 +229,14 @@ for instance in input_instances:
                 dirpath(None),
                 "instance_data",
                 "macro",
-                f"{artifact_id}-{instance.get("instance_name")}",
+                f"{artifact_id}-{instance.get('instance_name')}",
             )
             if instance.get("item_type") == "segment":
                 make_new_segment_drawing(instance, generated_instance_location)
             svg_utils.find_and_replace_svg_group(
                 os.path.join(
                     generated_instance_location,
-                    f"{artifact_id}-{instance.get("instance_name")}-drawing.svg",
+                    f"{artifact_id}-{instance.get('instance_name')}-drawing.svg",
                 ),
                 instance.get("instance_name"),
                 path("output svg"),
@@ -252,7 +250,7 @@ for instance in input_instances:
                     "instance_data",
                     instance.get("item_type"),
                     instance.get("instance_name"),
-                    f"{instance.get("instance_name")}-drawing.svg",
+                    f"{instance.get('instance_name')}-drawing.svg",
                 ),
                 instance.get("instance_name"),
                 path("output svg"),

@@ -110,7 +110,7 @@ for i in range(1, highest_bom_number + 1):
         dirpath("instance_data"), "flagnote", bubble_instance_name
     )
     symbol_dict = {
-        "lib_repo": "https://github.com/harnice/harnice-library-public",
+        "lib_repo": "https://github.com/harnice/harnice",
         "item_type": "flagnote",
         "mpn": "bom_table_item",
         "instance_name": bubble_instance_name,

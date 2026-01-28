@@ -54,7 +54,7 @@ from harnice.lists import library_utils
     
     **Args:**
     - `lib_repo` (str): Library repository URL to look up (e.g., 
-        `"https://github.com/harnice/harnice-library-public"`).
+        `"https://github.com/harnice/harnice"`).
     
     **Returns:**
     - `str`: Local filesystem path to the library repository.

@@ -60,7 +60,7 @@ blank_setup = {
     "pages": [
         {
             "name": "page1",
-            "lib_repo": "https://github.com/harnice/harnice-library-public",
+            "lib_repo": "https://github.com/harnice/harnice",
             "titleblock": "harnice_tblock-11x8.5",
             "text_replacements": {
                 "tblock-key-desc": "pull_from_revision_history(desc)",

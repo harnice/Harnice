@@ -7,9 +7,9 @@
 `from harnice.products import chtype`
     1. Copy your channel_type touples in from earlier notepad step. Again, these are relevant only to the device you're trying to make. The dictionary is used to store these here so that you can reference the touples in a human-readable format in this script only.
 `ch_type_ids = {`
-`    "in": (1, "https://github.com/harnice/harnice-library-public"),`
-`    "out": (4, "https://github.com/harnice/harnice-library-public"),`
-`    "chassis": (5, "https://github.com/harnice/harnice-library-public")`
+`    "in": (1, "https://github.com/harnice/harnice"),`
+`    "out": (4, "https://github.com/harnice/harnice"),`
+`    "chassis": (5, "https://github.com/harnice/harnice")`
 `}`
     1. Define your pinouts. Default convention is this dictionary, where if you reference something like `xlr_pinout.pos`, this dictionary should return the cavity name. Reminder: channels do not contain information about pinouts or connectors so this has to be done at each device. If you use the same pinout across multiple devices, you may consider importing that definition from a python library elsewhere.
 `xlr_pinout = {`
