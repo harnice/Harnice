@@ -1,3 +1,5 @@
-Harnice is a free, open source electrical systems CAD tool. 
+Harnice is a free, open source electrical system CAD tool. 
 
-Visit https://urban-adventure-kzjlmn7.pages.github.io/ for documentation.
+Visit [harnice.io](harnice.io) for documentation.
+
+Made by Kenyon Shutt
