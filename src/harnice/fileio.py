@@ -24,6 +24,12 @@ def rev_directory():
 
 
 def silentremove(filepath):
+    """
+    Removes a file or directory and its contents.
+
+    Args:
+        filepath (str): The path to the file or directory to remove.
+    """
     if os.path.exists(filepath):
         if os.path.isfile(filepath) or os.path.islink(filepath):
             os.remove(filepath)  # remove file or symlink

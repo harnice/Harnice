@@ -275,11 +275,11 @@ for x in range(2):
             }})
 
         elif instance.get("item_type") == "net-channel":
-            print_name = f"'{{instance.get("this_net_from_device_channel_id")}}' of '{{instance.get("this_net_from_device_refdes")}}' to '{{instance.get("this_net_to_device_channel_id")}}' of '{{instance.get("this_net_to_device_refdes")}}'"
+            print_name = f"'{{instance.get("this_channel_from_device_channel_id")}}' of '{{instance.get("this_channel_from_device_refdes")}}' to '{{instance.get("this_channel_to_device_channel_id")}}' of '{{instance.get("this_channel_to_device_refdes")}}'"
             instances_list.modify(instance.get("instance_name"), {{"print_name": print_name}})
 
         elif instance.get("item_type") == "net-channel-segment":
-            print_name = f"'{{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_channel_id")}}' of '{{instances_list.attribute_of(instance.get("parent_instance"), "this_net_from_device_refdes")}}' to '{{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_channel_id")}}' of '{{instances_list.attribute_of(instance.get("parent_instance"), "this_net_to_device_refdes")}}'"
+            print_name = f"'{{instances_list.attribute_of(instance.get("parent_instance"), "this_channel_from_device_channel_id")}}' of '{{instances_list.attribute_of(instance.get("parent_instance"), "this_channel_from_device_refdes")}}' to '{{instances_list.attribute_of(instance.get("parent_instance"), "this_channel_to_device_channel_id")}}' of '{{instances_list.attribute_of(instance.get("parent_instance"), "this_channel_to_device_refdes")}}'"
             instances_list.modify(instance.get("instance_name"), {{"print_name": print_name}})
 
         elif instance.get("item_type") == "connector":
