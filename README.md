@@ -1,6 +1,6 @@
 Harnice is a free, open source electrical system CAD tool. 
 
-It designs harnesses for you... and does so much more... nicely!
+It designs harnesses for you... and does so much more... ** *nicely!* **
 
 
 
