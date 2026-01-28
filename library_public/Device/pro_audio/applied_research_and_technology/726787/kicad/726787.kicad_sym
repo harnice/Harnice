@@ -68,7 +68,7 @@
 				)
 			)
 		)
-		(property "lib_repo" "https://github.com/harnice/harnice-library-public"
+		(property "lib_repo" "https://github.com/harnice/harnice"
 			(at -0.508 -14.224 0)
 			(effects
 				(font

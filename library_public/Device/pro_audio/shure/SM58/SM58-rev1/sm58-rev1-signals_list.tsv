@@ -1,4 +1,4 @@
 channel_id	signal	connector_name	cavity	connector_mpn	channel_type
-out1	pos	out1	2	XLR3M	"(2, 'https://github.com/harnice/harnice-library-public')"
-out1	neg	out1	3	XLR3M	"(2, 'https://github.com/harnice/harnice-library-public')"
-out1-shield	chassis	out1	1	XLR3M	"(5, 'https://github.com/harnice/harnice-library-public')"
+out1	pos	out1	2	XLR3M	"(2, 'https://github.com/harnice/harnice')"
+out1	neg	out1	3	XLR3M	"(2, 'https://github.com/harnice/harnice')"
+out1-shield	chassis	out1	1	XLR3M	"(5, 'https://github.com/harnice/harnice')"

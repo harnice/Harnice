@@ -13,7 +13,7 @@ You can copy and paste this template into your new macro (or ai tool lol) to for
 # feature_tree_utils.run_macro(
 #    "standard_harnice_formboard",
 #    "harness_artifacts",
-#    "https://github.com/harnice/harnice-library-public",
+#    "https://github.com/harnice/harnice",
 #    artifact_id="formboard-overview",
 #    scale=scales.get("A"),
 #    input_instances=formboard_overview_instances,

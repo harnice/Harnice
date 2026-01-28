@@ -1,10 +1,11 @@
 from pathlib import Path
 
-#========================================================
+# ========================================================
 # DATA STRUCTURES
-#========================================================
+# ========================================================
 
-md = ["""# Feature Tree
+md = [
+    """# Feature Tree
 
 When a python file (feature_tree.py) is called, a System Instances List is queried, and every instance that’s related to the associated KiCad net is brought in. 
 
@@ -57,23 +58,23 @@ path = harnice_dir / "docs" / "getting_started" / "data_structures.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # GIT INTEGRATION
-#========================================================
+# ========================================================
 
-md = ["# Integrating Harnice with Git"
-]
+md = ["# Integrating Harnice with Git"]
 
 harnice_dir = Path(__file__).resolve().parents[2]
 path = harnice_dir / "docs" / "getting_started" / "git_integration.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # INSTALLATION
-#========================================================
+# ========================================================
 
-md = ["""# How to Install Harnice
+md = [
+    """# How to Install Harnice
 
 # Cloning the Repository
 1. Install Homebrew (if not already):
@@ -100,7 +101,7 @@ md = ["""# How to Install Harnice
     here's an example:
     :
         repo_url,local_path
-        https://github.com/harnice/harnice-library-public,Users/kenyonshutt/Documents/github/harnice-library-public
+        https://github.com/harnice/harnice,Users/kenyonshutt/Documents/github/harnice-library-public
     :
     add whatever other library you need in this document. pull components from that library by referencing them by their url for traceability purposes. 
     you can use git or dropbox or whatever to control your libraries in a repo separate from harnice, as you wish.
@@ -143,11 +144,12 @@ path = harnice_dir / "docs" / "getting_started" / "installation.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # LIBRARIES
-#========================================================
+# ========================================================
 
-md = ["""Parts, macros, titleblocks, flagnotes, etc, should be re-used and referenced for any future use
+md = [
+    """Parts, macros, titleblocks, flagnotes, etc, should be re-used and referenced for any future use
 Users are heavily encouraged to contribute to the public git repo for your cots parts
 harnice-library-public
 However, you can define paths to as many library repos as you want.

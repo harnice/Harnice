@@ -1,6 +1,6 @@
 """
 Example usage:
-featuretree_utils.run_macro("multi_channel_junction_mapper", "https://github.com/harnice/harnice-library-public", lib_subpath="build_macros", multi_ch_junction_name = "shield", multi_ch_junction_type_ids = [5])
+featuretree_utils.run_macro("multi_channel_junction_mapper", "https://github.com/harnice/harnice", lib_subpath="build_macros", multi_ch_junction_name = "shield", multi_ch_junction_type_ids = [5])
 
 args:
 - multi_ch_junction_name: name of the channel where multi_ch_junctions are connected

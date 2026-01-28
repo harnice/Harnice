@@ -6,7 +6,7 @@
 from harnice.lists import note_utils
 ```
  then use as written.*
-??? info "`note_utils.new_note(note_type, note_text, note_number=None, bubble_text=None, shape_mpn=None, shape_lib_subpath=None, shape_lib_repo='https://github.com/harnice/harnice-library-public', affectedinstances=None)`"
+??? info "`note_utils.new_note(note_type, note_text, note_number=None, bubble_text=None, shape_mpn=None, shape_lib_subpath=None, shape_lib_repo='https://github.com/harnice/harnice', affectedinstances=None)`"
 
     Creates or updates a note instance.
     

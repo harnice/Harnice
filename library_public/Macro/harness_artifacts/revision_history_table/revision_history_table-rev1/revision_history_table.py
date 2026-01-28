@@ -110,7 +110,7 @@ for rev in rev_history.info(all=True):
             "instance_name": f"bubble{rev.get('rev')}",
             "item_type": "flagnote",
             "mpn": "rev_change_callout",
-            "lib_repo": "https://github.com/harnice/harnice-library-public",
+            "lib_repo": "https://github.com/harnice/harnice",
             "note_text": rev.get("rev"),
         }
         rev_history_table_contents.append(

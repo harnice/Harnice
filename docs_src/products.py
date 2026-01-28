@@ -1,23 +1,27 @@
 import docs_compiler
-#========================================================
+# ========================================================
 # CABLES
-#========================================================
+# ========================================================
 
-md = ["# Cables\nCOTS or custom physical item, purchased by length, that contains electrical conductors, and are physically installed inside harnesses."]
+md = [
+    "# Cables\nCOTS or custom physical item, purchased by length, that contains electrical conductors, and are physically installed inside harnesses."
+]
 
 path = docs_compiler.harnice_dir() / "docs" / "products" / "cable.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
 
-#========================================================
+# ========================================================
 # CHANNEL TYPES
-#========================================================
+# ========================================================
 
-md = ["# Channel Types\nUniquely identifiable set of signals that allow electrical intent to be documented and later referenced."]
+md = [
+    "# Channel Types\nUniquely identifiable set of signals that allow electrical intent to be documented and later referenced."
+]
 
 md.append("""\n\n---\n\n## How to define a new channel type
-1. In a repository of your choice (or start with [harnice_library_public](https://github.com/harnice/harnice-library-public) on your own branch), navigate to `library_repo/channel_types/channel_types.csv`
+1. In a repository of your choice (or start with [harnice_library_public](https://github.com/harnice/harnice) on your own branch), navigate to `library_repo/channel_types/channel_types.csv`
 1. If you want channel definitions to be private and are therefore working in a private repository, ensure the repo's path is listed in file `library_locations.csv` (located at root of your harnice source code repo). The first column is the URL or traceable path, and the second column is your local path.
 1. If you find the channel_type you're looking for, temporarily note it as a touple in a notepad somewhere with format `(ch_type_id, universal_library_repository)`. 
 1. If you don't find it, make a new one. It's important to try and reduce the number of channel_types in here to reduce complexity, but it's also important that you adhere to strict and true rules about what is allowed to be mapped to what. Modifications and additions to this document should be taken and reviewed very seriously.""")
@@ -27,9 +31,9 @@ path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
 
-#========================================================
+# ========================================================
 # DEVICES
-#========================================================
+# ========================================================
 
 md = ["# Devices\nAny electrical item, active or passive, that is not a harness."]
 
@@ -74,11 +78,13 @@ path = docs_compiler.harnice_dir() / "docs" / "products" / "device.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # DISCONNECTS
-#========================================================
+# ========================================================
 
-md = ["# Disconnects\nSet of two electrical connectors that has a predefined pinout, connector selection, and signals list.\n"]
+md = [
+    "# Disconnects\nSet of two electrical connectors that has a predefined pinout, connector selection, and signals list.\n"
+]
 
 md.append("""\n\n---\n\n## How disconnect data is stored\n
 The definition of a disconnect lives in a CSV file called a "Signals List".\n
@@ -111,21 +117,25 @@ path = docs_compiler.harnice_dir() / "docs" / "products" / "disconnect.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # FLAGNOTES
-#========================================================
+# ========================================================
 
-md = ["# Flagnotes\nA bubble shape on a drawing that usually points to something via a leader arrow."]
+md = [
+    "# Flagnotes\nA bubble shape on a drawing that usually points to something via a leader arrow."
+]
 
 path = docs_compiler.harnice_dir() / "docs" / "products" / "flagnote.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # HARNESSES
-#========================================================
+# ========================================================
 
-md = ["# Harnesses\nA physical assembly that contains a set of electrical circuits that satisfies a channel map. Can also contain other parts and instructions about how to be built. \n"]
+md = [
+    "# Harnesses\nA physical assembly that contains a set of electrical circuits that satisfies a channel map. Can also contain other parts and instructions about how to be built. \n"
+]
 
 md.append("""\n\n---\n\n## How to define a new harness\n
 1. Make a folder for the part number of your harness somewhere on your computer. Run Harnice Render, which will generate an example harness that you can then edit.\n
@@ -145,9 +155,9 @@ path = docs_compiler.harnice_dir() / "docs" / "products" / "harness.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # MACROS
-#========================================================
+# ========================================================
 
 md = ["# Macros"]
 
@@ -161,7 +171,7 @@ You can copy and paste this template into your new macro (or ai tool lol) to for
 # feature_tree_utils.run_macro(
 #    "standard_harnice_formboard",
 #    "harness_artifacts",
-#    "https://github.com/harnice/harnice-library-public",
+#    "https://github.com/harnice/harnice",
 #    artifact_id="formboard-overview",
 #    scale=scales.get("A"),
 #    input_instances=formboard_overview_instances,
@@ -222,20 +232,22 @@ path = docs_compiler.harnice_dir() / "docs" / "products" / "macro.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # PARTS
-#========================================================
+# ========================================================
 
 md = ["# Parts\nBuyable or buildable child item that goes into a harness.\n"]
 path = docs_compiler.harnice_dir() / "docs" / "products" / "part.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
-#========================================================
+# ========================================================
 # SYSTEMS
-#========================================================
+# ========================================================
 
-md = ["# Systems\nA collection of devices and harnesses that satisfies a set of functionality requirements for some external purpose. "]
+md = [
+    "# Systems\nA collection of devices and harnesses that satisfies a set of functionality requirements for some external purpose. "
+]
 
 md.append("""\n\n---\n\n## How system data is stored\n
 System data is stored in the following file formats.\n
@@ -288,11 +300,13 @@ path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
 
-#========================================================
+# ========================================================
 # TITLEBLOCKS
-#========================================================
+# ========================================================
 
-md = ["# Titleblocks\nA page SVG, usually with your name or company logo, that makes your drawings look professional."]
+md = [
+    "# Titleblocks\nA page SVG, usually with your name or company logo, that makes your drawings look professional."
+]
 path = docs_compiler.harnice_dir() / "docs" / "products" / "titleblock.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")

@@ -1,2 +1,2 @@
 product	mfg	pn	desc	rev	status	releaseticket	library_repo	library_subpath	datestarted	datemodified	datereleased	git_hash_of_harnice_src	drawnby	checkedby	revisionupdates	affectedinstances
-device		yeti_1500x	PORTABLE BATTERY CHARGER, 1500WH	1			https://github.com/harnice/harnice-library-public	consumer_electronics/goalzero/	12/13/25	12/17/25		5b2ff755e49cb67de4e58e71b1c120dcbcdcec68	K SHUTT		INITIAL RELEASE	
+device		yeti_1500x	PORTABLE BATTERY CHARGER, 1500WH	1			https://github.com/harnice/harnice	consumer_electronics/goalzero/	12/13/25	12/17/25		5b2ff755e49cb67de4e58e71b1c120dcbcdcec68	K SHUTT		INITIAL RELEASE	
