@@ -1263,11 +1263,11 @@ for instance in instances:
                         None
                     )
                     if node_instance:
-                        text = node_instance.get("print_name") or node_instance.get("instance_name") or node_name
+                        text = node_instance.get("print_name")
                     else:
                         text = node_name
                 else:
-                    text = instance.get("print_name") or instance_name
+                    text = instance.get("print_name")
             else:
                 # End of path - use node_at_end_b print_name
                 node_name = instance.get("node_at_end_b")
@@ -1278,11 +1278,11 @@ for instance in instances:
                         None
                     )
                     if node_instance:
-                        text = node_instance.get("print_name") or node_instance.get("instance_name") or node_name
+                        text = node_instance.get("print_name")
                     else:
                         text = node_name
                 else:
-                    text = instance.get("print_name") or instance_name
+                    text = instance.get("print_name")
             
             # Ensure we have text
             if not text:
@@ -1308,7 +1308,7 @@ for instance in instances:
         
         # Add white label in the middle of each segment (each pair of consecutive points)
         # Only add labels for segments longer than the threshold
-        instance_print_name = instance.get("print_name") or instance_name
+        instance_print_name = instance.get("print_name")
         if not instance_print_name:
             instance_print_name = "?"
         for i in range(len(point_chain) - 1):
