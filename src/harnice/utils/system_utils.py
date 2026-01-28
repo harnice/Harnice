@@ -191,11 +191,14 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
     For each circuit, it creates:
 
     - Connector nodes (at both ends)
-    - Connector instances (at both ends)
+    - Connector instances (at both ends, with MPN lookup from system connector list)
     - Connector cavity instances (at both ends)
     - Circuit instance
     - Channel instance
-    - Net-channel instances for each net in the channel chain
+    - Net-channel instances for nets in the channel chain (only for nets matching the circuit's net)
+
+    After processing all circuits, the function updates connector instances with mating device
+    information from the system connector list.
 
     The function reads from the circuits list, system connector list, and channel map
     to build the complete instance hierarchy.
@@ -209,6 +212,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
         )
         from_cavity = f"{from_connector_key}.{circuit.get('net_from_cavity')}"
 
+        # Look up connector MPN from system connector list for the from connector
         from_connector_mpn = ""
         for connector in connectors_list:
             if connector.get("device_refdes") == circuit.get(
@@ -268,6 +272,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
         )
         to_cavity = f"{to_connector_key}.{circuit.get('net_to_cavity')}"
 
+        # Look up connector MPN from system connector list for the to connector
         to_connector_mpn = ""
         for connector in connectors_list:
             if connector.get("device_refdes") == circuit.get(
@@ -387,6 +392,9 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             },
             ignore_duplicates=True,
         )
+        
+        # Find the chain of nets for this channel from the channel map
+        # The chain_of_nets field contains semicolon-separated net names
         chain_of_nets = []
         for channel in channel_map:
             if (
@@ -402,10 +410,8 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                 chain_of_nets = (channel.get("chain_of_nets") or "").split(";")
                 break
         
-        
+        # Create net-channel instances for each net in the chain
         for net in chain_of_nets:
-
-            # --- create instance for this net
             if circuit.get('net') == net:
                 instances_list.new_instance(
                     f"{net}:channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
@@ -435,6 +441,8 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                     ignore_duplicates=True,
                 )
 
+    # Post-process: Update all connector instances with mating device information
+    # This ensures connector instances have the correct mating device refdes, connector name, and MPN
     for connector in fileio.read_tsv("system connector list"):
         try:
             instances_list.modify(
@@ -450,6 +458,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
                 },
             )
         except ValueError:
+            # Skip if connector instance doesn't exist (may not have been created if no circuits)
             pass
 
 
@@ -530,9 +539,9 @@ def add_chains_to_channel_map():
                 port_a, port_b = a[1], b[1]
                 chain.append(f"{dev}({port_a},{port_b})")
 
-        # build connector chain in format: net_name.connector_name;net_name.connector_name;...
-        # connector_name is net.connector_name (e.g., "/MIC_CABLE_2.MIC3out1" where "/MIC_CABLE_2" is the net)
-        # For each net, find its first and last connector in the path
+        # Build connector chain in format: net.connector_name;net.connector_name;...
+        # Format: {net}.{connector_name} where net comes from net_of lookup
+        # For each net in the chain, find its first and last connector in the path
         net_to_connectors = {}
         for i, (dev, con) in enumerate(path):
             net = net_of.get((dev, con))
@@ -541,9 +550,8 @@ def add_chains_to_channel_map():
                     net_to_connectors[net] = []
                 net_to_connectors[net].append((i, dev, con))
         
-        # Build connector chain: for each net in net_chain, add net_name.connector_name pairs
-        # Format: net_name.connector_name where connector_name is net.connector_name (e.g., "/MIC_CABLE_2.MIC3out1")
-        # The net in connector_name comes from net_of lookup: net_of[(device_refdes, connector)] = net
+        # Build connector chain: for each net in net_chain, add net.connector_name pairs
+        # Format: {net}.{connector_name} (e.g., "WH-1.MIC3out1" where "WH-1" is the net and "MIC3out1" is the connector)
         for net in net_chain:
             if net in net_to_connectors:
                 connectors = net_to_connectors[net]
@@ -555,9 +563,7 @@ def add_chains_to_channel_map():
                     # Look up the net for each connector (net_of maps (device_refdes, connector) -> net)
                     from_net = net_of.get((from_dev, from_con), "")
                     to_net = net_of.get((to_dev, to_con), "")
-                    # Format: net_name.connector_name (e.g., "WH-1./MIC_CABLE_2.MIC3out1")
-                    # connector_name is net.connector_name where net is like "/MIC_CABLE_2" and connector_name is like "MIC3out1"
-                    # Dots separate net_name from connector_name, semicolons separate connectors
+                    # Add both connectors: from connector and to connector for this net
                     connector_chain.append(f"{from_net}.{from_con}")
                     connector_chain.append(f"{to_net}.{to_con}")
 
@@ -577,13 +583,12 @@ def add_chains_to_channel_map():
         n_from = net_of.get(from_cn)
         n_to = net_of.get(to_cn)
 
+        # Special case: from and to connectors are on the same net (direct connection, no disconnects)
         if n_from and n_to and n_from == n_to:
             row["disconnect_refdes_requirement"] = ""
             row["chain_of_nets"] = n_from
-            # Format: net_name.connector_name;net_name.connector_name
-            # connector_name is net.connector_name (e.g., "/MIC_CABLE_2.MIC3out1" where "/MIC_CABLE_2" is the net)
-            # Dots separate net_name from connector_name, semicolons separate connectors
-            # from_cn[0] is device_refdes, from_cn[1] is connector_name - need to look up the net
+            # Format: net.net.connector_name;net.net.connector_name
+            # Look up the net for each connector (should match n_from/n_to)
             from_net = net_of.get(from_cn, "")
             to_net = net_of.get(to_cn, "")
             row["chain_of_connectors"] = (
