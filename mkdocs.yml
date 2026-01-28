@@ -1,0 +1,99 @@
+site_name: Harnice
+site_url: https://harnice.github.io/Harnice/
+theme:
+  name: material
+  font:
+    text: Inter
+    code: Red Hat Mono
+  features:
+    - navigation.footer
+    - content.code.copy
+  palette:
+    # Dark Mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Dark mode
+      primary: black
+      accent: red
+
+    # Light Mode
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Light mode
+      primary: black
+      accent: red
+
+markdown_extensions:
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+
+plugins:
+  - include-markdown
+
+copyright: Copyright &copy; 2025 Kenyon Shutt
+
+nav:
+  - Home: index.md
+
+  - Installation: getting_started/installation.md
+
+  - The Fundamentals:
+      - Data Structures: getting_started/data_structures.md
+      - Git Integration: getting_started/git_integration.md
+      - Libraries: getting_started/libraries.md
+
+  - Products:
+      - Harnesses: products/harness.md
+      - Systems: products/system.md
+      - Devices: products/device.md
+      - Disconnects: products/disconnect.md
+      - Macros: products/macro.md
+      - Channel Types: products/channel_type.md
+      - Cables: products/cable.md
+      - Flagnotes: products/flagnote.md
+      - Parts: products/part.md
+      - Titleblocks: products/titleblock.md
+
+  - Commands:
+    - Harnice Libraries: commands/library_utils.md
+    - Manipulating Circuits: commands/circuits_utils.md
+    - Feature Tree Utilities: commands/feature_tree_utils.md
+    - Formboard Utilities: commands/formboard_utils.md
+    - Working with Harnice Notes: commands/note_utils.md
+    - System Utilities: commands/system_utils.md
+    - Appearance Utilities: commands/appearance.md
+    - SVG Utilities: commands/svg_utils.md
+
+  - Interacting with Data:
+    - Channel Maps: interacting_with_data/channel_maps.md
+    - Circuits Lists: interacting_with_data/circuits_lists.md
+    - Disconnect Maps: interacting_with_data/disconnect_maps.md
+    - Formboard Graphs: interacting_with_data/formboard_graphs.md
+    - Instances Lists: interacting_with_data/instances_lists.md
+    - Library History: interacting_with_data/library_history.md
+    - Netlists: interacting_with_data/netlists.md
+    - Post-Harness Instances Lists: interacting_with_data/post_harness_instances_lists.md
+    - Revision History Lists: interacting_with_data/revision_history_lists.md
+    - Signals Lists: interacting_with_data/signals_lists.md
+    - System Manifests: interacting_with_data/system_manifests.md
+
+  - Macros: macros.md

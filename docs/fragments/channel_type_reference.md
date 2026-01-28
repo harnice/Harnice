@@ -1,0 +1,1 @@
+Touple `(x, y)` where x is the channel id within a library repo and y is the traceable name or url where that channel type library is defined

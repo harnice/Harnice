@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+gui_layout.json
+
+>>>>>>> 4224103619b44026d6d52e7a3f5e29603fed18be
 # ===================================
 # Kicad backups
 # ===================================
@@ -57,10 +62,16 @@ coverage.xml
 # ===================================
 # Environment Variables / Secrets
 # ===================================
+<<<<<<< HEAD
 .env
 .env.*
 *.env
 secrets.*
+=======
+secrets.*
+library_locations.csv
+project_locations.csv
+>>>>>>> 4224103619b44026d6d52e7a3f5e29603fed18be
 
 # ===================================
 # IDEs / Editors
@@ -74,8 +85,11 @@ secrets.*
 # macOS
 # ===================================
 .DS_Store
+<<<<<<< HEAD
 *.DS_Store
 **/.DS_Store
+=======
+>>>>>>> 4224103619b44026d6d52e7a3f5e29603fed18be
 
 # ===================================
 # Windows
