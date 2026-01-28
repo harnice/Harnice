@@ -1,0 +1,4 @@
+container	identifier	appearance	construction	gauge	insulation material	material	od
+shield	drain_wire	{'base_color':'white','slash_lines':{'direction':'RH','color':'gray','angle':45}}	7x28	20AWG			
+pair_1	black	{'base_color':'black'}	7x28	20AWG	polyethylene	copper	0.017in
+pair_1	white	{'base_color':'white','outline_color':'black'}	7x28	20AWG	polyethylene	copper	0.017in

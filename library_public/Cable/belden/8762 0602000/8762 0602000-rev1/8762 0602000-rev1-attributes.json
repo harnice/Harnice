@@ -1,0 +1,63 @@
+{
+    "jacket": {
+        "properties": {
+            "color": "gray",
+            "material": "pvc",
+            "od": "0.204in",
+            "thickness": "0.028in"
+        },
+        "shield": {
+            "properties": {
+                "type": "foil",
+                "coverage": "100%"
+            },
+            "drain_wire": {
+                "conductor": true,
+                "properties": {
+                    "gauge": "20AWG",
+                    "construction": "7x28"
+                },
+                "appearance": {
+                    "base_color": "white",
+                    "slash_lines": {
+                        "direction": "RH",
+                        "color": "gray",
+                        "angle": 45
+                    }
+                }
+            },
+            "pair_1": {
+                "properties": {
+                    "twists": "12 per inch"
+                },
+                "black": {
+                    "conductor": true,
+                    "properties": {
+                        "insulation material": "polyethylene",
+                        "od": "0.017in",
+                        "gauge": "20AWG",
+                        "construction": "7x28",
+                        "material": "copper"
+                    },
+                    "appearance": {
+                        "base_color": "black"
+                    }
+                },
+                "white": {
+                    "conductor": true,
+                    "properties": {
+                        "insulation material": "polyethylene",
+                        "od": "0.017in",
+                        "gauge": "20AWG",
+                        "construction": "7x28",
+                        "material": "copper"
+                    },
+                    "appearance": {
+                        "base_color": "white",
+                        "outline_color": "black"
+                    }
+                }
+            }
+        }
+    }
+}

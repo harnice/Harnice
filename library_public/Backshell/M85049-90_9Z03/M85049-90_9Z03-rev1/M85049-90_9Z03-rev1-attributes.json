@@ -1,0 +1,174 @@
+{
+    "tools": [],
+    "build_notes": [
+        "Torque backshell to connector at 40 in-lbs"
+    ],
+    "csys_children": {
+        "connector": {
+            "x": 2,
+            "y": 1.5,
+            "angle": 0,
+            "rotation": 90
+        },
+        "flagnote-1": {
+            "angle": 0,
+            "distance": 4,
+            "rotation": 0
+        },
+        "flagnote-1-leader_dest": {
+            "angle": 0,
+            "distance": 2.53,
+            "rotation": 0
+        },
+        "flagnote-2": {
+            "angle": 10,
+            "distance": 4,
+            "rotation": 0
+        },
+        "flagnote-2-leader_dest": {
+            "angle": 10,
+            "distance": 2.55,
+            "rotation": 0
+        },
+        "flagnote-3": {
+            "angle": -10,
+            "distance": 4,
+            "rotation": 0
+        },
+        "flagnote-3-leader_dest": {
+            "angle": -10,
+            "distance": 2.55,
+            "rotation": 0
+        },
+        "flagnote-4": {
+            "angle": 20,
+            "distance": 4,
+            "rotation": 0
+        },
+        "flagnote-4-leader_dest": {
+            "angle": 20,
+            "distance": 2.7,
+            "rotation": 0
+        },
+        "flagnote-5": {
+            "angle": -20,
+            "distance": 4,
+            "rotation": 0
+        },
+        "flagnote-5-leader_dest": {
+            "angle": -20,
+            "distance": 1.5,
+            "rotation": 0
+        },
+        "flagnote-6": {
+            "angle": 45,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-6": {
+            "angle": 45,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-7": {
+            "angle": -45,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-7": {
+            "angle": -45,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-8": {
+            "angle": 60,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-8": {
+            "angle": 60,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-9": {
+            "angle": -60,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-9": {
+            "angle": -60,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-10": {
+            "angle": -75,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-10": {
+            "angle": -75,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-11": {
+            "angle": 75,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-11": {
+            "angle": 75,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-12": {
+            "angle": -90,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-12": {
+            "angle": -90,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-13": {
+            "angle": 90,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-13": {
+            "angle": 90,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-14": {
+            "angle": -105,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-14": {
+            "angle": -105,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-15": {
+            "angle": 105,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-15": {
+            "angle": 105,
+            "distance": 1,
+            "rotation": 0
+        },
+        "flagnote-16": {
+            "angle": -120,
+            "distance": 2,
+            "rotation": 0
+        },
+        "flagnote-leader-16": {
+            "angle": -120,
+            "distance": 1,
+            "rotation": 0
+        }
+    }
+}

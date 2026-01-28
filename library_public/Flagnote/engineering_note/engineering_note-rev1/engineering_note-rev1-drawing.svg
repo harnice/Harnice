@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.1"
+   width="576"
+   height="576"
+   id="svg1"
+   sodipodi:docname="engineering_note-rev1-drawing.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <g
+     id="engineering_note-drawing-contents-start">
+    <polygon
+       points="16.63,9.6 -16.63,9.6 0,-19.2 "
+       fill="#FFFFFF"
+       stroke="#000000"
+       id="polygon1"
+       style="fill:none;fill-opacity:1;stroke:#fc0000;stroke-opacity:1" />
+    <text
+       x="19.630219"
+       y="-3.1258202"
+       style="font-size:8px;font-family:Arial;text-align:start;text-anchor:start;fill:#ff0000;fill-opacity:1"
+       text-anchor="middle"
+       dominant-baseline="middle"
+       id="flagnote-text">flagnote-text</text>
+    <text
+       x="-7.9162419e-09"
+       y="0"
+       style="font-size:18.6667px;font-family:Arial;text-align:center;text-anchor:middle;fill:#ff0000;fill-opacity:1"
+       text-anchor="middle"
+       dominant-baseline="middle"
+       id="flagnote-text-8">!</text>
+  </g>
+  <g
+     id="engineering_note-drawing-contents-end" />
+</svg>
