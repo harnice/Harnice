@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "harnice.io"
+Documentation = "https://harnice.io/"
 Homepage = "https://github.com/harnice/Harnice"
 Issues = "https://github.com/harnice/Harnice/issues"
 
