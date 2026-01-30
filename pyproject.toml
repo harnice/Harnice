@@ -1,8 +1,8 @@
 [project]
 name = "harnice"
-version = "0.0.1"
+version = "0.3.0"
 authors = [
-  { name="Kenyon Shutt", email="kenyonshutt@gmail.com" },
+  { name="Kenyon Shutt", email="harnice.io@gmail.com" },
 ]
 description = "Electrical System CAD"
 readme = "README.md"
@@ -23,6 +23,7 @@ dependencies = [
 ]
 
 [project.urls]
+Documentation = "harnice.io"
 Homepage = "https://github.com/harnice/Harnice"
 Issues = "https://github.com/harnice/Harnice/issues"
 
@@ -35,5 +36,5 @@ harnice-gui = "harnice.gui.launcher:main"
 package-dir = {"" = "src"}
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
