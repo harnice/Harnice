@@ -62,10 +62,10 @@ nav:
   - Home: index.md
 
   - Getting Started:
-      - Installation: getting_started/_installation.md
       - The Basics: getting_started/_the_basics.md
-      - Data Structures: getting_started/_data_structures.md
+      - Installation: getting_started/_installation.md
       - Libraries: getting_started/_libraries.md
+      - Data Structures: getting_started/_data_structures.md
       - Git Integration: getting_started/_git_integration.md
 
   - Products:
@@ -102,5 +102,3 @@ nav:
     - Revision History Lists: interacting_with_data/_revision_history_lists.md
     - Signals Lists: interacting_with_data/_signals_lists.md
     - System Manifests: interacting_with_data/_system_manifests.md
-
-  - Macros: macros.md
