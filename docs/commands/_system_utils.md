@@ -60,11 +60,14 @@ from harnice.lists import system_utils
     For each circuit, it creates:
     
     - Connector nodes (at both ends)
-    - Connector instances (at both ends)
+    - Connector instances (at both ends, with MPN lookup from system connector list)
     - Connector cavity instances (at both ends)
     - Circuit instance
     - Channel instance
-    - Net-channel instances for each net in the channel chain
+    - Net-channel instances for nets in the channel chain (only for nets matching the circuit's net)
+    
+    After processing all circuits, the function updates connector instances with mating device
+    information from the system connector list.
     
     The function reads from the circuits list, system connector list, and channel map
     to build the complete instance hierarchy.
@@ -75,7 +78,9 @@ from harnice.lists import system_utils
     find:
       - 'disconnect_refdes_requirement' (like "X1(A,B);X2(B,A)")
       - 'chain_of_nets' (like "WH-1;WH-2;WH-3" or a single net if no disconnects)
-      - 'chain_of_connectors' (like "WH-1.J1A;WH-2.X1A;WH-2.X1B;WH-3.J2A")
+      - 'chain_of_connectors' (like "WH-1.net.connector_name;WH-1.net.connector_name;WH-2.net.connector_name;WH-2.net.connector_name")
+      - Format: net_name.connector_name where connector_name is net.connector_name (e.g., "/MIC_CABLE_2.MIC3out1" where "/MIC_CABLE_2" is the net)
+      - Dots separate net_name from connector_name, semicolons separate connectors
 
 ??? info "`system_utils.make_instances_from_bom()`"
 

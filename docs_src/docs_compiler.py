@@ -91,11 +91,11 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
         if desc.startswith("#"):
             desc = desc[1:].lstrip()
 
-        # 🔹 Expand escaped newlines
+        # Expand escaped newlines
         desc = desc.replace("\\n", "\n")
 
-        # 🔹 Re-indent multiline text for MkDocs
-        formatted_desc = "\n".join("    " + l for l in desc.splitlines())
+        # Re-indent multiline text for MkDocs
+        formatted_desc = "\n".join("    " + line for line in desc.splitlines())
 
         md.append(f'=== "`{name}`"\n\n')
         md.append(f"{formatted_desc}\n\n")

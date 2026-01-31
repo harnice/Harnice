@@ -53,7 +53,7 @@ from harnice.lists import library_utils
     to the user's home directory).
     
     **Args:**
-    - `lib_repo` (str): Library repository URL to look up (e.g., 
+    - `lib_repo` (str): Library repository URL to look up (e.g.,
         `"https://github.com/harnice/harnice"`).
     
     **Returns:**
