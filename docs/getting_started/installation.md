@@ -40,10 +40,7 @@ Or install dependencies manually:
 
 ```bash
 # Core dependencies
-pip install PySide6>=6.6 sexpdata Pillow PyYAML
-
-# Macro dependencies (for library macros)
-pip install xlwt lxml PyPDF2
+pip install PySide6>=6.6 sexpdata Pillow PyYAML xlwt webcolors
 
 # System dependencies (macOS)
 brew install poppler  # for pdfunite
