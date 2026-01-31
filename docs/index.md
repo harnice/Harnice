@@ -36,7 +36,7 @@ Harnice was developed with one goal in mind:
 
 As a system designer, your time is most valuably spent thinking about exactly what you want, not how to actually implement it. 
 
-If your electrical system can be implemented by simple logic statements (if this then that), Harnice can help you record those design intents as rules, then compile them against libraries of devices and COTS items that you're trying to use, and give you ==**one fully compiled solution**== to your system.
+If your electrical system can be implemented by simple logic statements, Harnice can help you record those design intents as rules, then compile them against libraries of devices and COTS items that you're trying to use, and give you ==**one fully compiled solution**== to your system.
 
 ---
 
@@ -50,7 +50,7 @@ If your electrical system can be implemented by simple logic statements (if this
 1. Define your build rules, checks, part selections, channel mapping, naming conventions, color preferences, and more, in simple Python. 
 ![Feature tree](assets/images/system_feature_tree_ex.png)
 
-1. Run `python3 harnice --r` in your command line to render all outputs. 
+1. Run `python3 harnice -r` in your command line to render all outputs. 
 
 ---
 
@@ -72,13 +72,13 @@ Probably! But if not, Harnice supports **Macros**, which are Python files that c
 ---
 
 ## :octicons-x-circle-16: What doesn't Harnice do?
-- Harnice is not intended to **make engineering decisions** for you. This is a platform for you to use your brain for the hard stuff, while the computers produce a determinite, predictable output of the rules you've defined. 
+- Harnice is not intended to **make engineering decisions** for you. This is a platform that lets you use your brain to focus on the hard stuff, while the computers produce a determinite, predictable output of the rules you've defined. 
 
 - Harnice is currenlty set up to link as-intended systems to as-designed. It does not yet have the ability to track as-built. 
 
-- Harnice does not read your mind. If you are receiving results that you don't expect (unless it's a bug), you may need to rethink how you are communicating or organizing your thought process. **This is a feature!** Complete, explicit definition makes your designs easier to understand both human and machine alike. 
+- Harnice does not read your mind. If you are receiving results that you don't expect (unless it's a bug), you may need to rethink how you are communicating or organizing your thought process. **This is a feature!** Complete, explicit definition makes your designs easier to understand by both humans and machines alike. 
 
-- Harnice doesn't have an easy way of definining parts yet. A barrier of entry to other software packages is that libraries do not come pre-defined. Harnice is no better. I see a future where you can upload a datasheet and AI can turn that into a logically parsible object that Harnice can parse at the stroke of a key, but we're not there yet. 
+- Harnice doesn't have an easy way of definining parts yet. A barrier to entry for competitive packages is that libraries do not always come pre-defined. Harnice does not yet have a magical solution to this problem either. I see a future where you can upload a datasheet and AI can magically turn that into an object that Harnice can parse, but we're not there yet. 
 
 ---
 
@@ -87,4 +87,4 @@ Free, fully free, forever and always. Fuck the establishment, money is a constru
 
 ---
 ## :octicons-question-16: Who am I?
-My name is Kenyon, I'm an electrical engineer by training and by day job. I have **no** background in programming. This is my first python project. Please forgive any beginner mistakes you might find. I'm always open to feedback, I love to learn, and I love to be outside!
+My name is Kenyon, I'm an electrical engineer by training and by day job. I have **no** background in programming. This is my first python projec ever, so please forgive any beginner mistakes you might find. I'm always open to feedback, I love to learn, and I love to be outside!
