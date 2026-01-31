@@ -61,12 +61,12 @@ copyright: Copyright &copy; 2025 Kenyon Shutt
 nav:
   - Home: index.md
 
-  - Installation: getting_started/installation.md
-
-  - The Fundamentals:
+  - Getting Started:
+      - Installation: getting_started/installation.md
+      - The Basics: getting_started/the_basics.md
       - Data Structures: getting_started/data_structures.md
-      - Git Integration: getting_started/git_integration.md
       - Libraries: getting_started/libraries.md
+      - Git Integration: getting_started/git_integration.md
 
   - Products:
       - Harnesses: products/harness.md

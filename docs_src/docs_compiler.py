@@ -4,6 +4,8 @@ import re
 from types import ModuleType
 from pathlib import Path
 
+# NOTE THAT ANY MD FILE OR DIRECTORY STARTING IN _ IS DEFINED BY CODE RAN BY THIS FULE
+# ALL ELSE IS MANUALLY DEFINED.
 
 def harnice_dir():
     return Path(__file__).resolve().parents[1]
