@@ -17,7 +17,7 @@ md.append(docs_compiler.print_function_docs(channel_map.already_mapped_set_appen
 md.append(docs_compiler.print_function_docs(channel_map.already_mapped_set, module_prefix))
 md.append(docs_compiler.print_function_docs(channel_map.already_mapped, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "channel_maps.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_channel_maps.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -33,7 +33,7 @@ md.append(docs_compiler.columns_to_markdown(circuits_list, "COLUMNS"))
 md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(circuits_list.new, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "circuits_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_circuits_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -57,7 +57,7 @@ md.append(docs_compiler.print_function_docs(disconnect_map.channel_is_already_as
 md.append(docs_compiler.print_function_docs(disconnect_map.disconnect_is_already_assigned, module_prefix))
 md.append(docs_compiler.print_function_docs(disconnect_map.ensure_requirements_met, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "disconnect_maps.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_disconnect_maps.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -74,7 +74,7 @@ md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(formboard_graph.new, module_prefix))
 md.append(docs_compiler.print_function_docs(formboard_graph.append, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "formboard_graphs.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_formboard_graphs.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -98,7 +98,7 @@ md.append(docs_compiler.print_function_docs(instances_list.attribute_of, module_
 md.append(docs_compiler.print_function_docs(instances_list.instance_in_connector_group_with_item_type, module_prefix))
 md.append(docs_compiler.print_function_docs(instances_list.list_of_uniques, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "instances_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -114,7 +114,7 @@ md.append(docs_compiler.columns_to_markdown(library_history, "COLUMNS"))
 md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(library_history.new, module_prefix))
 md.append(docs_compiler.print_function_docs(library_history.append, module_prefix))
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "library_history.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_library_history.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -123,7 +123,7 @@ path.write_text("".join(md), encoding="utf-8")
 #========================================================
 
 md = ["""# Interacting with Netlists"""]
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "netlists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_netlists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -138,7 +138,7 @@ A list of every physical or notional thing, drawing element, or concept that inc
 md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(post_harness_instances_list.rebuild, module_prefix))
 md.append(docs_compiler.print_function_docs(post_harness_instances_list.push, module_prefix))
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "post_harness_instances_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_post_harness_instances_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -159,7 +159,7 @@ md.append(docs_compiler.print_function_docs(rev_history.initial_release_desc, mo
 md.append(docs_compiler.print_function_docs(rev_history.update_datemodified, module_prefix))
 md.append(docs_compiler.print_function_docs(rev_history.new, module_prefix))
 md.append(docs_compiler.print_function_docs(rev_history.append, module_prefix))
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "revision_history_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_revision_history_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -185,7 +185,7 @@ md.append(docs_compiler.print_function_docs(signals_list.append, module_prefix))
 md.append(docs_compiler.print_function_docs(signals_list.cavity_of_signal, module_prefix))
 md.append(docs_compiler.print_function_docs(signals_list.connector_name_of_channel, module_prefix))
 md.append("---\n")
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "signals_lists.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_signals_lists.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -203,6 +203,6 @@ md.append(docs_compiler.print_function_docs(manifest.new, module_prefix))
 md.append(docs_compiler.print_function_docs(manifest.update_upstream, module_prefix))
 md.append(docs_compiler.print_function_docs(manifest.new, module_prefix))
 md.append(docs_compiler.print_function_docs(manifest.update_upstream, module_prefix))
-path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "system_manifests.md"
+path = docs_compiler.harnice_dir() / "docs" / "interacting_with_data" / "_system_manifests.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")

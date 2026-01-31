@@ -10,7 +10,7 @@ The definition of a disconnect lives in a CSV file called a "Signals List".
 
 ??? info "Signals List"
 
-    {% include-markdown "interacting_with_data/signals_lists.md" %}
+    {% include-markdown "interacting_with_data/_signals_lists.md" %}
 
 
 ---
@@ -30,7 +30,7 @@ When a disconnect is rendered in Harnice, here's what happens:
 
     ??? info "Channel Types"
 
-        {% include-markdown "products/channel_type.md" %}
+        {% include-markdown "products/_channel_type.md" %}
 
 1. Make a folder for the part number of your disconnect somewhere on your computer. Run Harnice Render, which will generate an example disconnect that you can then edit.
 

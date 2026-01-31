@@ -54,7 +54,7 @@ Revision information can be referenced elsewhere, ex in pdf_generator
 ]
 
 harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "getting_started" / "data_structures.md"
+path = harnice_dir / "docs" / "getting_started" / "_data_structures.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -65,7 +65,7 @@ path.write_text("".join(md), encoding="utf-8")
 md = ["# Integrating Harnice with Git"]
 
 harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "getting_started" / "git_integration.md"
+path = harnice_dir / "docs" / "getting_started" / "_git_integration.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -140,7 +140,7 @@ md = [
 ]
 
 harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "getting_started" / "installation.md"
+path = harnice_dir / "docs" / "getting_started" / "_installation.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -166,6 +166,6 @@ When importing an item from library, you can request different versions or overw
 ]
 
 harnice_dir = Path(__file__).resolve().parents[2]
-path = harnice_dir / "docs" / "getting_started" / "libraries.md"
+path = harnice_dir / "docs" / "getting_started" / "_libraries.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")

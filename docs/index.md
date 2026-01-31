@@ -42,13 +42,13 @@ If your electrical system can be implemented by simple logic statements, Harnice
 
 ## :fontawesome-regular-pen-to-square: What's the workflow?
 1. Record how your devices work in a standardized, consolidated format.
-![Preamp signals list](assets/images/art_preamp_signals_list.png)
+![Preamp signals list](index_images/art_preamp_signals_list.png)
 
 1. Define which devices you want physically connected to which other devices.
-![Recording studio block diagram](assets/images/studio_block_diagram.png)
+![Recording studio block diagram](index_images/studio_block_diagram.png)
 
 1. Define your build rules, checks, part selections, channel mapping, naming conventions, color preferences, and more, in simple Python. 
-![Feature tree](assets/images/system_feature_tree_ex.png)
+![Feature tree](index_images/system_feature_tree_ex.png)
 
 1. Run `python3 harnice -r` in your command line to render all outputs. 
 
@@ -56,11 +56,11 @@ If your electrical system can be implemented by simple logic statements, Harnice
 
 ## :fontawesome-solid-warning: What do you get?
 - Professional, complete, and beautiful multi-page PDF harness build drawings, derived from your system definition, and ready for manufacture
-![Harness drawing](assets/images/0000251031-H01_ex.png)
+![Harness drawing](index_images/0000251031-H01_ex.png)
 - System-wide graphic channel or wire map renderings
-![System channel map](assets/images/system_chmap_viz_ex.png)
+![System channel map](index_images/system_chmap_viz_ex.png)
 - Bills of materials derived from your system definition, including your cable lengths
-![System instances list](assets/images/system_instances_list_ex.png)
+![System instances list](index_images/system_instances_list_ex.png)
 - Full electrical system behavior simulation *(in work)*
 - Complete reports on how to provision your involved devices for your use case *(in work)*
 
