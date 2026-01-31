@@ -1,6 +1,8 @@
 # Installation
 
-## :octicons-download-16: Quick install Harnice (*recommended*)
+---
+
+## :octicons-download-16: Quick install Harnice
 
 Install Harnice directly from PyPI:
 
@@ -10,9 +12,11 @@ pip install harnice
 
 *if you need help with this, check out [this guide](https://packaging.python.org/en/latest/tutorials/installing-packages/) about how to install packages, or python in the first place*
 
----
+...or...
 
-## :material-keyboard-outline: Development installation (*for contributing*):
+## :material-keyboard-outline: Development installation (*for contributing*)
+
+This approach is recommended because it would be great if you could contribute to adding your parts to the public library! Of course, you don't have to.
 
 ### 1. Clone the Repository
 
@@ -27,6 +31,7 @@ brew install git
 brew install gh
 gh auth login
 ```
+*if you need help with this, check out [the official git website](https://git-scm.com/book/en/v2), make an account on github, gitlab, or similar, and consult the many available youtube resources*
 
 ### 2. Install Dependencies
 
