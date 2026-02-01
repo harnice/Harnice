@@ -3,7 +3,7 @@
  - Every signal in the Signals List must be contained by a pre-defined channel type
 
     ??? info "Channel Types"
-        {% include-markdown "products/channel_type.md" %}
+        {% include-markdown "products/_channel_type.md" %}
 
  - Each signal in the signals list must have every other signal defined by its channel type also present in the list.
     - you can't just define 'positive' if the channel type requires 'positive' and 'negative'

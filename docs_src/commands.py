@@ -11,7 +11,7 @@ md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(library_utils.pull, module_prefix))
 md.append(docs_compiler.print_function_docs(library_utils.get_local_path, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "commands" / "library_utils.md"
+path = docs_compiler.harnice_dir() / "docs" / "commands" / "_library_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -29,7 +29,7 @@ md.append(docs_compiler.print_function_docs(circuit_utils.instances_of_circuit, 
 md.append(docs_compiler.print_function_docs(circuit_utils.instance_of_circuit_port_number, module_prefix))
 md.append(docs_compiler.print_function_docs(circuit_utils.circuit_instance_of_instance, module_prefix))
 md.append(docs_compiler.print_function_docs(circuit_utils.assign_cable_conductor, module_prefix))
-path = docs_compiler.harnice_dir() / "docs" / "commands" / "circuits_utils.md"
+path = docs_compiler.harnice_dir() / "docs" / "commands" / "_circuits_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -45,7 +45,7 @@ md.append(docs_compiler.print_function_docs(feature_tree_utils.lookup_outputcsys
 md.append(docs_compiler.print_function_docs(feature_tree_utils.copy_pdfs_to_cwd, module_prefix))
 md.append(docs_compiler.print_function_docs(feature_tree_utils.run_feature_for_relative, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "commands" / "feature_tree_utils.md"
+path = docs_compiler.harnice_dir() / "docs" / "commands" / "_feature_tree_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -60,7 +60,7 @@ md.append(docs_compiler.print_function_docs(formboard_utils.map_instance_to_segm
 md.append(docs_compiler.print_function_docs(formboard_utils.calculate_location, module_prefix))
 md.append(docs_compiler.print_function_docs(formboard_utils.draw_line, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "commands" / "formboard_utils.md"
+path = docs_compiler.harnice_dir() / "docs" / "commands" / "_formboard_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -84,7 +84,7 @@ md.append(docs_compiler.print_function_docs(note_utils.get_lib_build_notes, modu
 md.append(docs_compiler.print_function_docs(note_utils.get_lib_tools, module_prefix))
 md.append(docs_compiler.print_function_docs(note_utils.combine_notes, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "commands" / "note_utils.md"
+path = docs_compiler.harnice_dir() / "docs" / "commands" / "_note_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -101,7 +101,7 @@ md.append(docs_compiler.print_function_docs(svg_utils.add_entire_svg_file_conten
 md.append(docs_compiler.print_function_docs(svg_utils.find_and_replace_svg_group, module_prefix))
 md.append(docs_compiler.print_function_docs(svg_utils.draw_styled_path, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "commands" / "svg_utils.md"
+path = docs_compiler.harnice_dir() / "docs" / "commands" / "_svg_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -118,7 +118,7 @@ md.append(docs_compiler.print_function_docs(system_utils.make_instances_for_conn
 md.append(docs_compiler.print_function_docs(system_utils.add_chains_to_channel_map, module_prefix))
 md.append(docs_compiler.print_function_docs(system_utils.make_instances_from_bom, module_prefix))
 
-path = docs_compiler.harnice_dir() / "docs" / "commands" / "system_utils.md"
+path = docs_compiler.harnice_dir() / "docs" / "commands" / "_system_utils.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
 
@@ -159,6 +159,6 @@ md.append(docs_compiler.commands_header(module_prefix))
 md.append(docs_compiler.print_function_docs(appearance.parse, module_prefix))
 
 
-path = docs_compiler.harnice_dir() / "docs" / "commands" / "appearance.md"
+path = docs_compiler.harnice_dir() / "docs" / "commands" / "_appearance.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")

@@ -4,6 +4,8 @@ import re
 from types import ModuleType
 from pathlib import Path
 
+# NOTE THAT ANY MD FILE OR DIRECTORY STARTING IN _ IS DEFINED BY CODE RAN BY THIS FILE
+# ALL ELSE IS MANUALLY DEFINED.
 
 def harnice_dir():
     return Path(__file__).resolve().parents[1]
@@ -89,11 +91,11 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
         if desc.startswith("#"):
             desc = desc[1:].lstrip()
 
-        # 🔹 Expand escaped newlines
+        # Expand escaped newlines
         desc = desc.replace("\\n", "\n")
 
-        # 🔹 Re-indent multiline text for MkDocs
-        formatted_desc = "\n".join("    " + l for l in desc.splitlines())
+        # Re-indent multiline text for MkDocs
+        formatted_desc = "\n".join("    " + line for line in desc.splitlines())
 
         md.append(f'=== "`{name}`"\n\n')
         md.append(f"{formatted_desc}\n\n")
@@ -106,3 +108,4 @@ if __name__ == "__main__":
     runpy.run_path("getting_started.py", run_name="__main__")
     runpy.run_path("interacting_with_data.py", run_name="__main__")
     runpy.run_path("products.py", run_name="__main__")
+    runpy.run_path("fragments.py", run_name="__main__")
