@@ -2,7 +2,7 @@
 
 **Harnice** is a Python-based, electrical system CAD package.
 
-It designs harnesses **for you**... and does so much more... ***nicely***!
+It designs harnesses for you... and does so much more... *nicely*!
 
  --- 
 ## :octicons-rocket-16: Links
@@ -22,7 +22,7 @@ Let's face it: designing harnessing sucks. Managing how your devices talk to eac
 
 ==...*not anymore!!!*==
 
-I developed Harnice because **fuck that.** I'm tired of the fact that the world is used to Kicad, Google Sheets, FreeCad, and so many other amazing free tools, but there's nothing for electrical systems. 
+I developed Harnice because **fuck that.** I'm tired of the fact that the world is used to Vizio, Google Sheets, and so many other amazing free tools, but there's nothing for electrical systems. 
 
 Harnice consolidates all high-level electrical design problems into one concise, consistent, infinitely configurable, reusable platform, where you can define what you need. Any imaginable output can be directly derived from the product of the compilation of your design rules. 
 

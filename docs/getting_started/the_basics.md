@@ -68,20 +68,17 @@ Harnice takes many inputs and produces many outputs. These are all stored as fil
     {% include-markdown "commands/fileio.md" %}
 
 # :octicons-key-16: Part Numbering
-Harnice is designed to work with git: every file format works well with `git diff`. However, even so, revisions of products are inevitable.
+Harnice is designed to work with git: every file format works well with `git diff`. However, even so, revisions of products are inevitable: if you release a part, start building it, then realize something needs to change, what do you do?
 
 ```mermaid
     graph LR
-        A[Part Change Needed] --> B{Change in form/fit/function?};
-        B -->|Yes| C[New Revision<br/>ABC-123 Rev B];
-        B -->|No| D[New Part Number<br/>ABC-124 Rev A];
+        A[change in design required] --> B{change in form/fit/function?};
+        B -->|Yes| C[new revision<br/>ABC-123-rev2];
+        B -->|No| D[new part number<br/>ABC-124-rev1];
 ```
 
-[form, fit and function](https://en.wikipedia.org/wiki/Form,_fit_and_function)
+Change in [form, fit and function](https://en.wikipedia.org/wiki/Form,_fit_and_function) is a common way for engineers to draw the line between rolling a rev and rolling a part number. 
 
-# File Structure
+Harnice bakes revisions into part numbers, allowing you to spend your time worrying about engineering, not configuration management.
 
-To “render” a product (harness, part, etc) with Harnice, the CLI will force you to operate in a “rev folder”
-Revision data always stored in revision_history.tsv
-Harnice will not render a revision if there’s data in the “status” field, i.e. “released” or “outdated”
-Revision information can be referenced elsewhere, ex in pdf_generator
+Before you render a product, the CLI will force you to operate in a “rev folder”. Revision history and statuses of a product is stored in a csv, and Harnice will not render a revision if the "status" column is not blank. That column is where you can record if a revision has been released, superseded, obsoleted, etc.
