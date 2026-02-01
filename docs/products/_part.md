@@ -8,9 +8,9 @@ Reference the files in your product by calling `fileio.path("file key")` from yo
 
 ```
 fileio.dirpath("part_directory")       |-- yourpn/
-                                           |-- yourpn-earlier-revs/
-                                           |-- revhistory.csv
-fileio.dirpath("rev_directory")            L-- yourpn-revX/
+                                           |-- earlier revs/
+fileio.path("revision history")            |-- revhistory.csv
+fileio.dirpath("rev_directory")            L-- your rev/
 fileio.path("drawing")                         |-- yourpn-revX-drawing.svg
 fileio.path("drawing png")                     |-- yourpn-revX-drawing.png
 fileio.path("attributes")                      L-- yourpn-revX-attributes.json

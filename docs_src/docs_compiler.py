@@ -109,15 +109,6 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
 
     return "".join(md)
 
-from types import ModuleType
-from typing import Optional
-
-# Import state if available, otherwise set to None
-try:
-    from harnice import state
-except ImportError:
-    state = None
-
 
 def file_structure_to_markdown(product_module: ModuleType) -> str:
     """
@@ -260,11 +251,12 @@ def file_structure_to_markdown(product_module: ModuleType) -> str:
     
     # Earlier revs and revhistory.csv at part number level
     pn_level_indent = max_path_length + len(part_dir_padding) + 4  # +4 for "|-- "
-    full_tree_lines.append(" " * pn_level_indent + "|-- yourpn-earlier-revs/")
-    full_tree_lines.append(" " * pn_level_indent + "|-- revhistory.csv")
+    full_tree_lines.append(" " * pn_level_indent + "|-- earlier revs/")
+    revhistory_line = 'fileio.path("revision history")'.ljust(max_path_length) + " " * (pn_level_indent - max_path_length) + "|-- revhistory.csv"
+    full_tree_lines.append(revhistory_line)
 
     # Rev directory level - should align with part_directory on the left
-    rev_dir_line = 'fileio.dirpath("rev_directory")'.ljust(max_path_length) + " " * (pn_level_indent - max_path_length) + "L-- yourpn-revX/"
+    rev_dir_line = 'fileio.dirpath("rev_directory")'.ljust(max_path_length) + " " * (pn_level_indent - max_path_length) + "L-- your rev/"
     full_tree_lines.append(rev_dir_line)
 
     # Calculate the column where file connectors should align (under "your rev/")
@@ -312,7 +304,6 @@ def file_structure_to_markdown(product_module: ModuleType) -> str:
 
     # Add header and wrap in code blocks
     return f'\n\n## File Structure\n\nReference the files in your product by calling `fileio.path("file key")` from your script. They\'ll automatically use this structure:\n\n```\n{tree_text}\n```\n'
-
 
 if __name__ == "__main__":
     runpy.run_path("commands.py", run_name="__main__")

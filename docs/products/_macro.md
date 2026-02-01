@@ -111,7 +111,7 @@ Reference the files in your product by calling `fileio.path("file key")` from yo
 
 ```
 fileio.dirpath("part_directory")       |-- yourpn/
-                                           |-- yourpn-earlier-revs/
-                                           |-- revhistory.csv
-fileio.dirpath("rev_directory")            L-- yourpn-revX/
+                                           |-- earlier revs/
+fileio.path("revision history")            |-- revhistory.csv
+fileio.dirpath("rev_directory")            L-- your rev/
 ```
