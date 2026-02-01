@@ -1,4 +1,5 @@
 import docs_compiler
+from harnice.products import cable, device, disconnect, flagnote, harness, macro, part, system, tblock
 # ========================================================
 # CABLES
 # ========================================================
@@ -42,6 +43,8 @@ The primary data structure of a device is a TSV called a “signals_list”. Sig
 The definition of a device lives in a CSV file called a "Signals List".\n
 ??? info "Signals List"\n
     {% include-markdown "interacting_with_data/_signals_lists.md" %}""")
+
+md.append(docs_compiler.file_structure_to_markdown(device)) 
 
 md.append("""\n\n---\n\n## Rendering a device\n
 When a Device is rendered in Harnice, here's what happens:\n
@@ -91,6 +94,8 @@ The definition of a disconnect lives in a CSV file called a "Signals List".\n
 ??? info "Signals List"\n
     {% include-markdown "interacting_with_data/_signals_lists.md" %}\n""")
 
+md.append(docs_compiler.file_structure_to_markdown(disconnect)) 
+
 md.append("""\n\n---\n\n## Rendering a disconnect\n
 When a disconnect is rendered in Harnice, here's what happens:\n
 1. Harnice runs the feature tree if it's found in the device directory.
@@ -125,6 +130,9 @@ md = [
     "# Flagnotes\nA bubble shape on a drawing that usually points to something via a leader arrow."
 ]
 
+
+md.append(docs_compiler.file_structure_to_markdown(flagnote)) 
+
 path = docs_compiler.harnice_dir() / "docs" / "products" / "_flagnote.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -150,6 +158,8 @@ md.append("""\n\n---\n\n## How to define a new harness\n
 1. Edit the formboard graph of your new harness.\n
     ??? info "Editing the Formboard Graph of a Product"\n
         {% include-markdown "fragments/editing_formboard_graph.md" %}\n""")
+
+md.append(docs_compiler.file_structure_to_markdown(harness)) 
 
 path = docs_compiler.harnice_dir() / "docs" / "products" / "_harness.md"
 path.parent.mkdir(parents=True, exist_ok=True)
@@ -265,6 +275,8 @@ Analysis calcs
 Write your own!
 """)
 
+md.append(docs_compiler.file_structure_to_markdown(macro)) 
+
 path = docs_compiler.harnice_dir() / "docs" / "products" / "_macro.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -274,6 +286,9 @@ path.write_text("".join(md), encoding="utf-8")
 # ========================================================
 
 md = ["# Parts\nBuyable or buildable child item that goes into a harness.\n"]
+
+md.append(docs_compiler.file_structure_to_markdown(part)) 
+
 path = docs_compiler.harnice_dir() / "docs" / "products" / "_part.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
@@ -312,6 +327,8 @@ md.append("""\n\n---\n\n## Rendering a system\n
 1. The system is validated and verified.\n
 1. A KiCad symbol that can be used represent this system in a block diagram is generated or updated based on the system.\n""")
 
+md.append(docs_compiler.file_structure_to_markdown(system)) 
+
 md.append("""\n\n---\n\n## How to define a new system\n
 1. Make a folder for the part number of your system somewhere on your computer. Run Harnice Render, which will generate an example system that you can then edit.\n
     ??? info "Rendering a Product"\n
@@ -344,6 +361,9 @@ path.write_text("".join(md), encoding="utf-8")
 md = [
     "# Titleblocks\nA page SVG, usually with your name or company logo, that makes your drawings look professional."
 ]
+
+md.append(docs_compiler.file_structure_to_markdown(tblock)) 
+
 path = docs_compiler.harnice_dir() / "docs" / "products" / "_titleblock.md"
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text("".join(md), encoding="utf-8")
