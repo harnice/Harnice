@@ -22,12 +22,12 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       
       - name: Compile docs
-        run: python docs_compiler.py
+        run: python docs_src/docs_compiler.py
       
       - name: Check for uncommitted changes
         run: |
           git diff --exit-code docs/ || {
-            echo "❌ ERROR: Generated docs don't match committed files!"
+            echo "ERROR: Generated docs don't match committed files!"
             echo ""
             echo "The following files were changed by the docs compiler:"
             git diff --name-only docs/
@@ -35,4 +35,4 @@ jobs:
             echo "Please run 'python docs_compiler.py' locally and commit the changes."
             exit 1
           }
-          echo "✅ All docs are up to date!"
+          echo "All docs are up to date!"
