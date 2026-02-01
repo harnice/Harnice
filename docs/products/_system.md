@@ -61,16 +61,16 @@ Reference the files in your product by calling `fileio.path("file key")` from yo
 
 ```
 fileio.dirpath("part_directory")                                    |-- yourpn/
-                                                                        |-- earlier revs/
+                                                                        |-- yourpn-earlier-revs/
                                                                         |-- revhistory.csv
-fileio.dirpath("rev_directory")                                                                                                      L-- your rev/
+fileio.dirpath("rev_directory")                                         L-- yourpn-revX/
 fileio.path("feature tree")                                                 |-- yourpn-revX-feature_tree.py
 fileio.path("instances list")                                               |-- yourpn-revX-instances_list.tsv
 fileio.path("library history")                                              |-- yourpn-revX-library_import_history.tsv
-                                                                            |-- instance_data/
-                                                                            |-- features_for_relatives/
-                                                                            |-- harnesses/
-                                                                            |-- lists/
+fileio.dirpath("instance_data")                                             |-- instance_data/
+fileio.dirpath("features_for_relatives")                                    |-- features_for_relatives/
+fileio.dirpath("harnesses")                                                 |-- harnesses/
+fileio.dirpath("lists")                                                     |-- lists/
 fileio.path("bom")                                                          |   |-- yourpn-revX-bom.tsv
 fileio.path("circuits list")                                                |   |-- yourpn-revX-circuits_list.tsv
 fileio.path("post harness instances list")                                  |   |-- yourpn-revX-post_harness_instances_list.tsv
@@ -79,7 +79,7 @@ fileio.path("system connector list")                                        |   
 fileio.path("mapped channels set")                                          |   |-- yourpn-revX-mapped_channels_set.tsv
 fileio.path("mapped disconnects set")                                       |   |-- yourpn-revX-mapped_disconnect_channels_set.tsv
 fileio.path("mapped A-side channels through disconnects set")               |   L-- yourpn-revX-mapped_a_channels_through_disconnects_set.tsv
-                                                                            L-- maps/
+fileio.dirpath("maps")                                                      L-- maps/
 fileio.path("channel map")                                                      |-- yourpn-revX-channel_map.tsv
 fileio.path("disconnect map")                                                   L-- yourpn-revX-disconnect_map.tsv
 ```

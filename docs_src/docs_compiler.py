@@ -109,6 +109,14 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
 
     return "".join(md)
 
+from types import ModuleType
+from typing import Optional
+
+# Import state if available, otherwise set to None
+try:
+    from harnice import state
+except ImportError:
+    state = None
 
 
 def file_structure_to_markdown(product_module: ModuleType) -> str:
@@ -214,9 +222,16 @@ def file_structure_to_markdown(product_module: ModuleType) -> str:
 
             # Determine if value is a directory (dict) or file (string)
             if isinstance(value, dict):
-                # It's a directory - show directory name with connector
-                name = f"{key}/"
-                lines.append({"type": "dir", "prefix": prefix, "connector": connector, "name": name})
+                # It's a directory - store dirpath and directory name
+                dirpath_call = f'fileio.dirpath("{key}")'
+                dirname = f"{key}/"
+                lines.append({
+                    "type": "dir",
+                    "prefix": prefix,
+                    "connector": connector,
+                    "dirpath_call": dirpath_call,
+                    "dirname": dirname
+                })
                 # Recursively process the directory contents
                 lines.extend(_dict_to_tree(value, next_prefix, is_last_item))
             else:
@@ -245,11 +260,11 @@ def file_structure_to_markdown(product_module: ModuleType) -> str:
     
     # Earlier revs and revhistory.csv at part number level
     pn_level_indent = max_path_length + len(part_dir_padding) + 4  # +4 for "|-- "
-    full_tree_lines.append(" " * pn_level_indent + "|-- earlier revs/")
+    full_tree_lines.append(" " * pn_level_indent + "|-- yourpn-earlier-revs/")
     full_tree_lines.append(" " * pn_level_indent + "|-- revhistory.csv")
 
-    # Rev directory level - indented under yourpn/
-    rev_dir_line = 'fileio.dirpath("rev_directory")'.ljust(max_path_length) + " " * pn_level_indent + "L-- your rev/"
+    # Rev directory level - should align with part_directory on the left
+    rev_dir_line = 'fileio.dirpath("rev_directory")'.ljust(max_path_length) + " " * (pn_level_indent - max_path_length) + "L-- yourpn-revX/"
     full_tree_lines.append(rev_dir_line)
 
     # Calculate the column where file connectors should align (under "your rev/")
@@ -282,10 +297,14 @@ def file_structure_to_markdown(product_module: ModuleType) -> str:
         else:  # directory
             prefix = item["prefix"]
             connector = item["connector"]
-            name = item["name"]
+            dirpath_call = item["dirpath_call"]
+            dirname = item["dirname"]
             
-            # All items (root and nested) should maintain their prefix structure
-            line = " " * connector_col + prefix + connector + name
+            # Format: dirpath_call (aligned) + spacing + prefix + connector + dirname
+            aligned_dirpath = dirpath_call.ljust(max_path_length)
+            spacing = " " * (connector_col - max_path_length)
+            
+            line = aligned_dirpath + spacing + prefix + connector + dirname
             
             full_tree_lines.append(line)
 

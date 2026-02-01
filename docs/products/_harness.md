@@ -37,13 +37,13 @@ Reference the files in your product by calling `fileio.path("file key")` from yo
 
 ```
 fileio.dirpath("part_directory")                    |-- yourpn/
-                                                        |-- earlier revs/
+                                                        |-- yourpn-earlier-revs/
                                                         |-- revhistory.csv
-fileio.dirpath("rev_directory")                                                                      L-- your rev/
+fileio.dirpath("rev_directory")                         L-- yourpn-revX/
 fileio.path("feature tree")                                 |-- yourpn-revX-feature_tree.py
 fileio.path("instances list")                               |-- yourpn-revX-instances_list.tsv
 fileio.path("formboard graph definition png")               |-- yourpn-revX-formboard_graph_definition.png
 fileio.path("library history")                              |-- yourpn-revX-library_import_history.tsv
-                                                            L-- interactive_files/
+fileio.dirpath("interactive_files")                         L-- interactive_files/
 fileio.path("formboard graph definition")                       L-- yourpn-revX.formboard_graph_definition.tsv
 ```
