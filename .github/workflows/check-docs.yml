@@ -1,0 +1,38 @@
+name: Check Docs Compiled
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # adjust to your version
+      
+      - name: Install dependencies (if any)
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Compile docs
+        run: python docs_compiler.py
+      
+      - name: Check for uncommitted changes
+        run: |
+          git diff --exit-code docs/ || {
+            echo "❌ ERROR: Generated docs don't match committed files!"
+            echo ""
+            echo "The following files were changed by the docs compiler:"
+            git diff --name-only docs/
+            echo ""
+            echo "Please run 'python docs_compiler.py' locally and commit the changes."
+            exit 1
+          }
+          echo "✅ All docs are up to date!"
