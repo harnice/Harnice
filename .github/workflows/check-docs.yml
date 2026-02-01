@@ -14,19 +14,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'  # adjust to your version
-      
+          python-version: "3.11" # adjust to your version
+
       - name: Install dependencies (if any)
         run: |
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      
+
       - name: Compile docs
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
         run: python docs_src/docs_compiler.py
-      
+
       - name: Check for uncommitted changes
         run: |
           git diff --exit-code docs/ || {
