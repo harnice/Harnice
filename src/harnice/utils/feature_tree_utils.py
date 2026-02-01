@@ -103,7 +103,7 @@ def lookup_outputcsys_from_lib_used(instance, outputcsys, base_directory=None):
         "instance_data",
         instance.get("item_type"),
         instance.get("instance_name"),
-        f"{instance.get("instance_name")}-attributes.json",
+        f"{instance.get('instance_name')}-attributes.json",
     )
 
     try:
