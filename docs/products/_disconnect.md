@@ -13,6 +13,21 @@ The definition of a disconnect lives in a CSV file called a "Signals List".
     {% include-markdown "interacting_with_data/_signals_lists.md" %}
 
 
+## File Structure
+
+Reference the files in your product by calling `fileio.path("file key")` from your script. They'll automatically use this structure:
+
+```
+fileio.dirpath("part_directory")       |-- yourpn/
+                                           |-- earlier revs/
+fileio.path("revision history")            |-- revhistory.csv
+fileio.dirpath("rev_directory")            L-- your rev/
+fileio.path("feature tree")                    |-- yourpn-revX-feature_tree.py
+fileio.path("signals list")                    |-- yourpn-revX-signals_list.tsv
+fileio.path("attributes")                      L-- yourpn-revX-attributes.json
+```
+
+
 ---
 
 ## Rendering a disconnect

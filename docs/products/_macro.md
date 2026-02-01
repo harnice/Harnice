@@ -103,3 +103,15 @@ Formboard arrangement
 PDF drawing sheet
 Analysis calcs
 Write your own!
+
+
+## File Structure
+
+Reference the files in your product by calling `fileio.path("file key")` from your script. They'll automatically use this structure:
+
+```
+fileio.dirpath("part_directory")       |-- yourpn/
+                                           |-- earlier revs/
+fileio.path("revision history")            |-- revhistory.csv
+fileio.dirpath("rev_directory")            L-- your rev/
+```

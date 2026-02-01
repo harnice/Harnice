@@ -55,6 +55,36 @@ System data is stored in the following file formats.
 1. A KiCad symbol that can be used represent this system in a block diagram is generated or updated based on the system.
 
 
+## File Structure
+
+Reference the files in your product by calling `fileio.path("file key")` from your script. They'll automatically use this structure:
+
+```
+fileio.dirpath("part_directory")                                    |-- yourpn/
+                                                                        |-- earlier revs/
+fileio.path("revision history")                                         |-- revhistory.csv
+fileio.dirpath("rev_directory")                                         L-- your rev/
+fileio.path("feature tree")                                                 |-- yourpn-revX-feature_tree.py
+fileio.path("instances list")                                               |-- yourpn-revX-instances_list.tsv
+fileio.path("library history")                                              |-- yourpn-revX-library_import_history.tsv
+fileio.dirpath("instance_data")                                             |-- instance_data/
+fileio.dirpath("features_for_relatives")                                    |-- features_for_relatives/
+fileio.dirpath("harnesses")                                                 |-- harnesses/
+fileio.dirpath("lists")                                                     |-- lists/
+fileio.path("bom")                                                          |   |-- yourpn-revX-bom.tsv
+fileio.path("circuits list")                                                |   |-- yourpn-revX-circuits_list.tsv
+fileio.path("post harness instances list")                                  |   |-- yourpn-revX-post_harness_instances_list.tsv
+fileio.path("harness manifest")                                             |   |-- yourpn-revX-harness_manifest.tsv
+fileio.path("system connector list")                                        |   |-- yourpn-revX-system_connector_list.tsv
+fileio.path("mapped channels set")                                          |   |-- yourpn-revX-mapped_channels_set.tsv
+fileio.path("mapped disconnects set")                                       |   |-- yourpn-revX-mapped_disconnect_channels_set.tsv
+fileio.path("mapped A-side channels through disconnects set")               |   L-- yourpn-revX-mapped_a_channels_through_disconnects_set.tsv
+fileio.dirpath("maps")                                                      L-- maps/
+fileio.path("channel map")                                                      |-- yourpn-revX-channel_map.tsv
+fileio.path("disconnect map")                                                   L-- yourpn-revX-disconnect_map.tsv
+```
+
+
 ---
 
 ## How to define a new system
