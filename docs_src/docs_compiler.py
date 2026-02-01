@@ -108,3 +108,4 @@ if __name__ == "__main__":
     runpy.run_path("getting_started.py", run_name="__main__")
     runpy.run_path("interacting_with_data.py", run_name="__main__")
     runpy.run_path("products.py", run_name="__main__")
+    runpy.run_path("fragments.py", run_name="__main__")
