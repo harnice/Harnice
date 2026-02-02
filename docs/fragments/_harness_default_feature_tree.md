@@ -60,7 +60,7 @@
                 if instance.get("item_type") == "circuit":
                     circuit_instance = instance
                     connector_at_end_a = instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group")
-    new_instance_name = f"{circuit_instance.get("instance_name")}-special_contact"
+    new_instance_name = f"{circuit_instance.get('instance_name')}-special_contact"
     circuit_id = int(circuit_instance.get("circuit_id"))
     instances_list.new_instance(
         new_instance_name, {
@@ -79,7 +79,7 @@
     # example: add a backshell
     for instance in instances:
         if instance.get("instance_name") in ["X1.B.conn", "PREAMP2.in2.conn"]:
-            instances_list.new_instance(f"{instance.get("connector_group")}.bs", {
+            instances_list.new_instance(f"{instance.get('connector_group')}.bs", {
                 "bom_line_number": True,
                 "mpn": "M85049-90_9Z03",
                 "item_type": "backshell",
@@ -91,7 +91,7 @@
                 "lib_repo": "https://github.com/harnice/harnice"
             })
             instances_list.modify(instance.get("instance_name"), {
-                "parent_csys_instance_name": f"{instance.get("connector_group")}.bs",
+                "parent_csys_instance_name": f"{instance.get('connector_group')}.bs",
                 "parent_csys_outputcsys_name": "connector",
             })
     
@@ -168,23 +168,23 @@
     
             elif instance.get("item_type") in ["conductor", "conductor-segment"]:
                 instances_list.modify(instance.get("instance_name"), {
-                    "print_name": f"'{instance.get("cable_identifier")}' of '{instances_list.attribute_of(instance.get("cable_group"), "print_name")}'"
+                    "print_name": f"'{instance.get('cable_identifier')}' of '{instances_list.attribute_of(instance.get('cable_group'), 'print_name')}'"
                 })
     
             elif instance.get("item_type") == "net-channel":
-                print_name = f"'{instance.get("this_channel_from_device_channel_id")}' of '{instance.get("this_channel_from_device_refdes")}' to '{instance.get("this_channel_to_device_channel_id")}' of '{instance.get("this_channel_to_device_refdes")}'"
+                print_name = f"'{instance.get('this_channel_from_device_channel_id')}' of '{instance.get('this_channel_from_device_refdes')}' to '{instance.get('this_channel_to_device_channel_id')}' of '{instance.get('this_channel_to_device_refdes')}'"
                 instances_list.modify(instance.get("instance_name"), {"print_name": print_name})
     
             elif instance.get("item_type") == "net-channel-segment":
-                print_name = f"'{instances_list.attribute_of(instance.get("parent_instance"), "this_channel_from_device_channel_id")}' of '{instances_list.attribute_of(instance.get("parent_instance"), "this_channel_from_device_refdes")}' to '{instances_list.attribute_of(instance.get("parent_instance"), "this_channel_to_device_channel_id")}' of '{instances_list.attribute_of(instance.get("parent_instance"), "this_channel_to_device_refdes")}'"
+                print_name = f"'{instances_list.attribute_of(instance.get('parent_instance'), 'this_channel_from_device_channel_id')}' of '{instances_list.attribute_of(instance.get('parent_instance'), 'this_channel_from_device_refdes')}' to '{instances_list.attribute_of(instance.get('parent_instance'), 'this_channel_to_device_channel_id')}' of '{instances_list.attribute_of(instance.get('parent_instance'), 'this_channel_to_device_refdes')}'"
                 instances_list.modify(instance.get("instance_name"), {"print_name": print_name})
     
             elif instance.get("item_type") == "connector":
-                print_name = f"{instance.get("connector_group")}"
+                print_name = f"{instance.get('connector_group')}"
                 instances_list.modify(instance.get("instance_name"), {"print_name": print_name})
     
             elif instance.get("item_type") == "cable-segment":
-                print_name = f"{instance.get("cable_group")}"
+                print_name = f"{instance.get('cable_group')}"
                 instances_list.modify(instance.get("instance_name"), {"print_name": print_name})
     
             elif instance.get("item_type") == "contact":

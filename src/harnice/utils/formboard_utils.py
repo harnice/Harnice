@@ -502,14 +502,14 @@ def map_instance_to_segments(instance):
         != "node"
     ):
         raise ValueError(
-            f"While mapping '{instance.get("instance_name")}' to segments, location type of {instance.get('node_at_end_a')} is not a node."
+            f"While mapping '{instance.get('instance_name')}' to segments, location type of {instance.get('node_at_end_a')} is not a node."
         )
     if (
         instances_list.attribute_of(instance.get("node_at_end_b"), "location_type")
         != "node"
     ):
         raise ValueError(
-            f"While mapping '{instance.get("instance_name")}' to segments, location type of {instance.get('node_at_end_b')} is not a node."
+            f"While mapping '{instance.get('instance_name')}' to segments, location type of {instance.get('node_at_end_b')} is not a node."
         )
 
     # Resolve the node (item_type=="node") for each end's connector group
@@ -708,7 +708,7 @@ def calculate_location(lookup_instance, instances):
         rotation angle in degrees.
 
     **Raises:**
-    
+
     - `ValueError`: If parent coordinate system information is missing or invalid, or
         if parent instances cannot be found in the instances list.
     """
@@ -789,7 +789,6 @@ def calculate_location(lookup_instance, instances):
     angle = 0.0
 
     for chainlink in chain:
-
         # ==================================================================
         #   Resolve CHILD CSYS (the transform from parent output csys)
         # ==================================================================
@@ -816,7 +815,6 @@ def calculate_location(lookup_instance, instances):
         # Child CSYS: translation component
         # ------------------------------------------------------------------
         if relevant_csys_child is not None:
-
             # x/y explicit translation
             if relevant_csys_child.get("x") not in [
                 "",
@@ -932,7 +930,7 @@ def draw_line(
     # -------------------------
     svg_parts.append(
         f'<line x1="{fx}" y1="{fy}" x2="{tx}" y2="{ty}" '
-        f'stroke="{stroke}" stroke-width="{thickness/scale}"/>'
+        f'stroke="{stroke}" stroke-width="{thickness / scale}"/>'
     )
 
     # -------------------------
@@ -951,11 +949,7 @@ def draw_line(
         p2x = px - ux * arrow_len - perp_x * (arrow_wid / 2)
         p2y = py - uy * arrow_len - perp_y * (arrow_wid / 2)
 
-        return (
-            f'<polygon points="'
-            f'{px},{py} {p1x},{p1y} {p2x},{p2y}" '
-            f'fill="{stroke}"/>'
-        )
+        return f'<polygon points="{px},{py} {p1x},{p1y} {p2x},{p2y}" fill="{stroke}"/>'
 
     # -------------------------
     # Arrow at TO end

@@ -258,7 +258,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             {
                 "net": circuit.get("net"),
                 "item_type": "circuit",
-                "print_name": f"{circuit.get("signal")} of {circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')} <-> {circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
+                "print_name": f"{circuit.get('signal')} of {circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')} <-> {circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                 "channel_group": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                 "circuit_id": circuit.get("circuit_id"),
                 "node_at_end_a": from_cavity,
@@ -317,7 +317,7 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             },
             ignore_duplicates=True,
         )
-        
+
         # Find the chain of nets for this channel from the channel map
         # The chain_of_nets field contains semicolon-separated net names
         chain_of_nets = []
@@ -334,33 +334,55 @@ def make_instances_for_connectors_cavities_nodes_channels_circuits():
             ):
                 chain_of_nets = (channel.get("chain_of_nets") or "").split(";")
                 break
-        
+
         # Create net-channel instances for each net in the chain
         for net in chain_of_nets:
-            if circuit.get('net') == net:
+            if circuit.get("net") == net:
                 instances_list.new_instance(
                     f"{net}:channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-"
                     f"{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                     {
                         "net": net,
                         "item_type": "net-channel",
-                        "print_name": (f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')} <-> {circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"),
-                        "channel_group": (f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"),
+                        "print_name": (
+                            f"{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')} <-> {circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
+                        ),
+                        "channel_group": (
+                            f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}"
+                        ),
                         "location_type": "segment",
                         "parent_instance": f"channel-{circuit.get('from_side_device_refdes')}.{circuit.get('from_side_device_chname')}-{circuit.get('to_side_device_refdes')}.{circuit.get('to_side_device_chname')}",
                         "node_at_end_a": from_cavity,
                         "node_at_end_b": to_cavity,
-                        "this_net_from_device_refdes": circuit.get('net_from_refdes'),
-                        "this_net_from_device_channel_id": circuit.get('net_from_channel_id'),
-                        "this_net_from_device_connector_name": circuit.get('net_from_connector_name'),
-                        "this_net_to_device_refdes": circuit.get('net_to_refdes'),
-                        "this_net_to_device_channel_id": circuit.get('net_to_channel_id'),
-                        "this_net_to_device_connector_name": circuit.get('net_to_connector_name'),
-                        "this_channel_from_device_refdes": circuit.get("from_side_device_refdes"),
-                        "this_channel_from_device_channel_id": circuit.get("from_side_device_chname"),
-                        "this_channel_to_device_refdes": circuit.get("to_side_device_refdes"),
-                        "this_channel_to_device_channel_id": circuit.get("to_side_device_chname"),
-                        "this_channel_from_channel_type": circuit.get("from_channel_type"),
+                        "this_net_from_device_refdes": circuit.get("net_from_refdes"),
+                        "this_net_from_device_channel_id": circuit.get(
+                            "net_from_channel_id"
+                        ),
+                        "this_net_from_device_connector_name": circuit.get(
+                            "net_from_connector_name"
+                        ),
+                        "this_net_to_device_refdes": circuit.get("net_to_refdes"),
+                        "this_net_to_device_channel_id": circuit.get(
+                            "net_to_channel_id"
+                        ),
+                        "this_net_to_device_connector_name": circuit.get(
+                            "net_to_connector_name"
+                        ),
+                        "this_channel_from_device_refdes": circuit.get(
+                            "from_side_device_refdes"
+                        ),
+                        "this_channel_from_device_channel_id": circuit.get(
+                            "from_side_device_chname"
+                        ),
+                        "this_channel_to_device_refdes": circuit.get(
+                            "to_side_device_refdes"
+                        ),
+                        "this_channel_to_device_channel_id": circuit.get(
+                            "to_side_device_chname"
+                        ),
+                        "this_channel_from_channel_type": circuit.get(
+                            "from_channel_type"
+                        ),
                         "this_channel_to_channel_type": circuit.get("to_channel_type"),
                     },
                     ignore_duplicates=True,
@@ -474,7 +496,7 @@ def add_chains_to_channel_map():
                 if net not in net_to_connectors:
                     net_to_connectors[net] = []
                 net_to_connectors[net].append((i, dev, con))
-        
+
         # Build connector chain: for each net in net_chain, add net.connector_name pairs
         # Format: {net}.{connector_name} (e.g., "WH-1.MIC3out1" where "WH-1" is the net and "MIC3out1" is the connector)
         for net in net_chain:
