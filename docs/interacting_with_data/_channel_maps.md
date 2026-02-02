@@ -6,7 +6,7 @@ A list of channels on devices within merged_nets that are either mapped to other
 *Columns are automatically generated when `channel_map.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`merged_net`"
 
-    documentation needed
+    test documentation needed
 
 === "`from_device_refdes`"
 
