@@ -20,9 +20,10 @@ jobs:
         with:
           python-version: "3.11" # adjust to your version
 
-      - name: Install dependencies (if any)
+      - name: Install dependencies
         run: |
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -e .
 
       - name: Compile docs
         env:
