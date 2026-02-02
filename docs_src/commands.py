@@ -267,28 +267,28 @@ def main():
     md.append(
         r"""## Appearance Guide
 
-    The appearance of a segment is defined by a dictionary of the following format:
+The appearance of a segment is defined by a dictionary of the following format:
 
-    ~~~json
-    {
-        "base_color": "#000000",
-        "parallelstripe": ["#000000", "#000000"],
-        "perpstripe": ["#000000", "#000000"],
-        "twisted": null
-    }
-    ~~~
+~~~json
+{
+    "base_color": "#000000",
+    "parallelstripe": ["#000000", "#000000"],
+    "perpstripe": ["#000000", "#000000"],
+    "twisted": null
+}
+~~~
 
-    ### Arguments
+### Arguments
 
-    **Required**
-    - `base_color`: exactly one value
+**Required**
+- `base_color`: exactly one value
 
-    **Optional**
-    - `parallelstripe`: 0+ values (list)
-    - `perpstripe`: 0+ values (list)
-    - `twisted`: 0–1 value (`null`, `"RH"`, or `"LH"`)
-    - `outline_color`: 0–1 value
-    """
+**Optional**
+- `parallelstripe`: 0+ values (list)
+- `perpstripe`: 0+ values (list)
+- `twisted`: 0–1 value (`null`, `"RH"`, or `"LH"`)
+- `outline_color`: 0–1 value
+"""
     )
     md.append(docs_functions.commands_header(module_prefix))
     md.append(docs_functions.print_function_docs(appearance.parse, module_prefix))
