@@ -3,6 +3,14 @@ D38999 MIL-DTL-38999 Series III and IV Part Number Builder
 Constructs part numbers and returns specifications per MIL-DTL-38999
 """
 import math
+import os
+import itertools
+import json
+from pathlib import Path
+
+# Configuration constants
+REVISION = 1
+RELEASE_STATUS = None  # None, 'Draft', 'Review', 'Released', 'Obsolete'
 
 class D38999PartNumber:
     # Series definitions
@@ -501,67 +509,587 @@ class D38999PartNumber:
         return svg
 
 
+class D38999PartNumberGenerator:
+    """Generate multiple D38999 part numbers from ranges and perform batch operations"""
+    
+    def __init__(self, base_dir='.', revision=REVISION, release_status=RELEASE_STATUS):
+        self.base_dir = Path(base_dir)
+        self.generated_parts = []
+        self.revision = revision
+        self.release_status = release_status
+    
+    def generate_part_numbers(self, series_codes, class_codes, shell_codes, 
+                             insert_arrangements, contact_types, polarizations):
+        """
+        Generate all combinations of part numbers from the given ranges.
+        
+        Args:
+            series_codes: List of series codes (e.g., ['24', '26'])
+            class_codes: List of class codes (e.g., ['F', 'W', 'K', 'Z'])
+            shell_codes: List of shell codes (e.g., ['A', 'B', 'C'])
+            insert_arrangements: List of insert arrangements (e.g., ['35', 'A35', 'B35'])
+            contact_types: List of contact types (e.g., ['P', 'S'])
+            polarizations: List of polarizations (e.g., ['N', 'A', 'B'])
+        
+        Returns:
+            List of D38999PartNumber objects
+        """
+        self.generated_parts = []
+        invalid_parts = []
+        
+        # Generate all combinations
+        combinations = itertools.product(
+            series_codes,
+            class_codes,
+            shell_codes,
+            insert_arrangements,
+            contact_types,
+            polarizations
+        )
+        
+        for series, cls, shell, insert, contact, polar in combinations:
+            try:
+                part = D38999PartNumber(series, cls, shell, insert, contact, polar)
+                self.generated_parts.append(part)
+            except ValueError as e:
+                invalid_parts.append({
+                    'series': series,
+                    'class': cls,
+                    'shell': shell,
+                    'insert': insert,
+                    'contact': contact,
+                    'polarization': polar,
+                    'error': str(e)
+                })
+        
+        print(f"\nGenerated {len(self.generated_parts)} valid part numbers")
+        if invalid_parts:
+            print(f"Skipped {len(invalid_parts)} invalid combinations")
+        
+        return self.generated_parts
+    
+    def create_directories(self, root_dir=None, include_subdirs=False):
+        """
+        Create directory structure for all generated part numbers.
+        
+        Args:
+            root_dir: Root directory name. If None, creates directories at current level
+            include_subdirs: If True, create subdirectories for docs, drawings, etc.
+        
+        Returns:
+            Dictionary with statistics about created directories
+        """
+        if not self.generated_parts:
+            print("No part numbers generated. Run generate_part_numbers() first.")
+            return None
+        
+        # If root_dir is None, use current directory
+        if root_dir is None:
+            base_path = self.base_dir
+        else:
+            base_path = self.base_dir / root_dir
+            base_path.mkdir(exist_ok=True)
+        
+        stats = {
+            'created': 0,
+            'already_existed': 0,
+            'failed': 0,
+            'total': len(self.generated_parts)
+        }
+        
+        subdirs = []
+        if include_subdirs:
+            subdirs = ['drawings', 'specifications', 'test_reports', 'tooling', 'assembly']
+        
+        for part in self.generated_parts:
+            part_number = part.build_part_number()
+            # Clean part number for directory name (replace / with -)
+            dir_name = part_number.replace('/', '-')
+            part_dir = base_path / dir_name
+            
+            # Create revision directory inside part directory
+            rev_dir_name = f"{dir_name}-{self.revision}"
+            rev_dir = part_dir / rev_dir_name
+            
+            try:
+                if part_dir.exists() and rev_dir.exists():
+                    stats['already_existed'] += 1
+                else:
+                    # Create main part directory
+                    part_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Create revision directory
+                    rev_dir.mkdir(parents=True, exist_ok=True)
+                    stats['created'] += 1
+                    
+                    # Create subdirectories if requested (in revision directory)
+                    for subdir in subdirs:
+                        (rev_dir / subdir).mkdir(exist_ok=True)
+                    
+                    # Create attributes JSON file
+                    self._create_attributes_json(part, rev_dir, dir_name)
+                    
+                    # Create placeholder SVG file
+                    self._create_placeholder_svg(rev_dir, dir_name)
+                    
+                    # Create a README in the main part directory
+                    self._create_readme(part, part_dir)
+                    
+            except Exception as e:
+                stats['failed'] += 1
+                print(f"Failed to create directory for {part_number}: {e}")
+        
+        print(f"\nDirectory Creation Summary:")
+        if root_dir:
+            print(f"  Root directory: {base_path.absolute()}")
+        else:
+            print(f"  Location: Current directory ({base_path.absolute()})")
+        print(f"  Revision: {self.revision}")
+        print(f"  Release Status: {self.release_status if self.release_status else 'Not Set'}")
+        print(f"  Total part numbers: {stats['total']}")
+        print(f"  Directories created: {stats['created']}")
+        print(f"  Already existed: {stats['already_existed']}")
+        print(f"  Failed: {stats['failed']}")
+        
+        return stats
+    
+    def _create_attributes_json(self, part, directory, dir_name):
+        """Create JSON file with comprehensive part attributes"""
+        props = part.get_properties()
+        
+        # Build comprehensive attributes dictionary
+        attributes = {
+            'metadata': {
+                'part_number': props['part_number'],
+                'revision': self.revision,
+                'release_status': self.release_status,
+                'specification': props['specification'],
+                'created_date': None,  # Can be populated with actual date
+                'modified_date': None,
+                'created_by': None,
+                'approved_by': None
+            },
+            'identification': {
+                'series': props['series'],
+                'series_code': part.series_code,
+                'series_description': props['series_description'],
+                'manufacturer': 'Glenair / Various QPL',
+                'mil_spec': 'MIL-DTL-38999'
+            },
+            'finish_and_material': {
+                'class_code': props.get('class', 'N/A'),
+                'finish_name': props.get('finish', 'N/A'),
+                'material': props.get('material', 'N/A'),
+                'temperature_range': props.get('temperature_range', 'N/A'),
+                'salt_spray_rating': props.get('salt_spray', 'N/A'),
+                'conductive': props.get('conductive', False),
+                'space_grade': props.get('space_grade', False)
+            },
+            'mechanical': {
+                'shell_code': props.get('shell_code', 'N/A'),
+                'shell_size': props.get('shell_size', 'N/A'),
+                'thread_size': props.get('thread_size', 'N/A'),
+                'coupling_type': props.get('coupling_type', 'N/A'),
+                'dimensions': props.get('dimensions', {})
+            },
+            'contacts': {
+                'insert_arrangement': props.get('insert_arrangement', 'N/A'),
+                'contact_count': props.get('contact_count', 'N/A'),
+                'contact_size': props.get('contact_size', 'N/A'),
+                'service_rating': props.get('service_rating', 'N/A'),
+                'contact_gender': props.get('contact_gender', 'N/A'),
+                'contact_type_code': part.contact_type,
+                'mating_cycles': props.get('mating_cycles', 'N/A'),
+                'contact_positions': props.get('contact_positions', [])
+            },
+            'polarization': {
+                'polarization_code': part.polarization,
+                'polarization_description': props.get('polarization', 'N/A')
+            },
+            'electrical': {
+                'shielding': props.get('shielding', 'N/A'),
+                'voltage_rating': None,  # Can be derived from service rating
+                'current_rating': None,  # Depends on contact size
+                'dielectric_withstanding_voltage': None,
+                'insulation_resistance': None
+            },
+            'environmental': {
+                'sealing_class': props.get('sealing', 'N/A'),
+                'ip_rating': 'IP67',
+                'operating_temperature_min': props.get('temperature_range', '').split(' to ')[0] if ' to ' in props.get('temperature_range', '') else None,
+                'operating_temperature_max': props.get('temperature_range', '').split(' to ')[1] if ' to ' in props.get('temperature_range', '') else None,
+                'altitude_rating': '70,000 ft',
+                'vibration_rating': 'Per MIL-DTL-38999',
+                'shock_rating': 'Per MIL-DTL-38999'
+            },
+            'tooling': props.get('tooling', {}),
+            'standards_compliance': {
+                'mil_dtl_38999': True,
+                'mil_std_1560': True,
+                'rohs_compliant': None,
+                'reach_compliant': None,
+                'dfars_compliant': True
+            },
+            'procurement': {
+                'cage_code': '06324',  # Glenair CAGE code
+                'lead_time_weeks': None,
+                'minimum_order_quantity': None,
+                'unit_price': None,
+                'availability': None
+            },
+            'quality': {
+                'qpl_listed': True,
+                'test_reports_available': False,
+                'certificate_of_conformance': False,
+                'inspection_level': None
+            },
+            'notes': {
+                'general': f"D38999 Series {props['series']} connector per MIL-DTL-38999",
+                'assembly': "Requires appropriate crimp contacts and tooling",
+                'mating': f"Mates with corresponding {props['series']} series connector",
+                'warnings': []
+            }
+        }
+        
+        # Write JSON file
+        json_file = directory / f"{dir_name}-{self.revision}-attributes.json"
+        with open(json_file, 'w') as f:
+            json.dump(attributes, f, indent=2)
+    
+    def _create_placeholder_svg(self, directory, dir_name):
+        """Create placeholder SVG file for future drawing"""
+        svg_file = directory / f"{dir_name}-{self.revision}-drawing.svg"
+        
+        placeholder_svg = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .placeholder {{ fill: #f0f0f0; stroke: #999999; stroke-width: 2; stroke-dasharray: 5,5; }}
+      .text {{ font-family: Arial; font-size: 14px; fill: #666666; text-anchor: middle; }}
+    </style>
+  </defs>
+  
+  <rect x="10" y="10" width="380" height="380" class="placeholder"/>
+  <text x="200" y="190" class="text">{dir_name}</text>
+  <text x="200" y="210" class="text">Revision {self.revision}</text>
+  <text x="200" y="230" class="text">Drawing Placeholder</text>
+</svg>'''
+        
+        with open(svg_file, 'w') as f:
+            f.write(placeholder_svg)
+    
+    def _create_readme(self, part, directory):
+        """Create a README file with part specifications"""
+        readme_path = directory / 'README.txt'
+        props = part.get_properties()
+        
+        with open(readme_path, 'w') as f:
+            f.write("=" * 70 + "\n")
+            f.write(f"D38999 CONNECTOR SPECIFICATIONS\n")
+            f.write("=" * 70 + "\n")
+            f.write(f"Part Number: {props['part_number']}\n")
+            f.write(f"Specification: {props['specification']}\n")
+            f.write(f"Series: {props['series']}\n")
+            f.write(f"Description: {props['series_description']}\n\n")
+            
+            f.write("-" * 70 + "\n")
+            f.write("FINISH AND MATERIAL\n")
+            f.write("-" * 70 + "\n")
+            f.write(f"Class: {props.get('class', 'N/A')}\n")
+            f.write(f"Finish: {props.get('finish', 'N/A')}\n")
+            f.write(f"Material: {props.get('material', 'N/A')}\n")
+            f.write(f"Temperature Range: {props.get('temperature_range', 'N/A')}\n\n")
+            
+            f.write("-" * 70 + "\n")
+            f.write("MECHANICAL\n")
+            f.write("-" * 70 + "\n")
+            f.write(f"Shell Size: {props.get('shell_size', 'N/A')}\n")
+            f.write(f"Thread Size: {props.get('thread_size', 'N/A')}\n")
+            f.write(f"Coupling Type: {props.get('coupling_type', 'N/A')}\n\n")
+            
+            f.write("-" * 70 + "\n")
+            f.write("CONTACTS\n")
+            f.write("-" * 70 + "\n")
+            f.write(f"Insert Arrangement: {props.get('insert_arrangement', 'N/A')}\n")
+            f.write(f"Contact Count: {props.get('contact_count', 'N/A')}\n")
+            f.write(f"Contact Size: #{props.get('contact_size', 'N/A')}\n")
+            f.write(f"Contact Gender: {props.get('contact_gender', 'N/A')}\n")
+            f.write(f"Mating Cycles: {props.get('mating_cycles', 'N/A')}\n\n")
+            
+            f.write("=" * 70 + "\n")
+    
+    def generate_svgs(self, output_dir=None, populate_drawings=False):
+        """
+        Generate SVG drawings for all part numbers that have position data.
+        
+        Args:
+            output_dir: Directory where part number folders are located. 
+                       If None, uses current directory.
+            populate_drawings: If True, replace placeholder SVGs with actual drawings
+        """
+        if output_dir is None:
+            output_path = self.base_dir
+        else:
+            output_path = self.base_dir / output_dir
+            
+        generated = 0
+        skipped = 0
+        
+        for part in self.generated_parts:
+            part_number = part.build_part_number()
+            dir_name = part_number.replace('/', '-')
+            rev_dir_name = f"{dir_name}-{self.revision}"
+            
+            # Check if this part has position data
+            props = part.get_properties()
+            if 'contact_positions' in props and populate_drawings:
+                try:
+                    # Generate actual SVG with contact positions
+                    svg_file = output_path / dir_name / rev_dir_name / f"{dir_name}-{self.revision}-drawing.svg"
+                    part.generate_svg(str(svg_file))
+                    generated += 1
+                except Exception as e:
+                    print(f"Failed to generate SVG for {part_number}: {e}")
+                    skipped += 1
+            else:
+                if not populate_drawings:
+                    # Placeholder already created
+                    pass
+                else:
+                    skipped += 1
+        
+        if populate_drawings:
+            print(f"\nSVG Generation Summary:")
+            print(f"  SVGs generated: {generated}")
+            print(f"  Skipped (no position data): {skipped}")
+        else:
+            print(f"\nPlaceholder SVGs created for all parts")
+            print(f"  Use populate_drawings=True to generate actual drawings")
+    
+    def export_catalog(self, filename='part_catalog.csv'):
+        """
+        Export all generated part numbers to a CSV catalog.
+        
+        Args:
+            filename: Output CSV filename
+        """
+        if not self.generated_parts:
+            print("No part numbers to export.")
+            return
+        
+        output_path = self.base_dir / filename
+        
+        with open(output_path, 'w') as f:
+            # Header
+            f.write("Part Number,Series,Description,Class,Finish,Shell Size,")
+            f.write("Insert Arrangement,Contact Count,Contact Size,Contact Type,")
+            f.write("Polarization,Thread Size,Temperature Range\n")
+            
+            # Data rows
+            for part in self.generated_parts:
+                props = part.get_properties()
+                f.write(f"{props['part_number']},")
+                f.write(f"{props['series']},")
+                f.write(f"\"{props['series_description']}\",")
+                f.write(f"{props.get('class', '')},")
+                f.write(f"\"{props.get('finish', '')}\",")
+                f.write(f"{props.get('shell_size', '')},")
+                f.write(f"{props.get('insert_arrangement', '')},")
+                f.write(f"{props.get('contact_count', '')},")
+                f.write(f"{props.get('contact_size', '')},")
+                f.write(f"\"{props.get('contact_gender', '')}\",")
+                f.write(f"{props.get('polarization', '')},")
+                f.write(f"{props.get('thread_size', '')},")
+                f.write(f"\"{props.get('temperature_range', '')}\"\n")
+        
+        print(f"\nCatalog exported to: {output_path.absolute()}")
+        print(f"Total parts: {len(self.generated_parts)}")
+    
+    def filter_parts(self, **criteria):
+        """
+        Filter generated parts by criteria.
+        
+        Args:
+            **criteria: Key-value pairs to filter by (e.g., shell_size=11, contact_count=13)
+        
+        Returns:
+            List of matching D38999PartNumber objects
+        """
+        matching = []
+        
+        for part in self.generated_parts:
+            props = part.get_properties()
+            match = True
+            
+            for key, value in criteria.items():
+                if props.get(key) != value:
+                    match = False
+                    break
+            
+            if match:
+                matching.append(part)
+        
+        return matching
+    
+    def get_summary(self):
+        """Get summary statistics of generated part numbers"""
+        if not self.generated_parts:
+            return "No part numbers generated."
+        
+        summary = {
+            'total_parts': len(self.generated_parts),
+            'series': {},
+            'classes': {},
+            'shell_sizes': {},
+            'contact_types': {}
+        }
+        
+        for part in self.generated_parts:
+            props = part.get_properties()
+            
+            # Count by series
+            series = props['series']
+            summary['series'][series] = summary['series'].get(series, 0) + 1
+            
+            # Count by class
+            cls = props.get('class', 'Unknown')
+            summary['classes'][cls] = summary['classes'].get(cls, 0) + 1
+            
+            # Count by shell size
+            shell = props.get('shell_size', 'Unknown')
+            summary['shell_sizes'][shell] = summary['shell_sizes'].get(shell, 0) + 1
+            
+            # Count by contact type
+            contact = props.get('contact_gender', 'Unknown')
+            summary['contact_types'][contact] = summary['contact_types'].get(contact, 0) + 1
+        
+        return summary
+    
+    def print_summary(self):
+        """Print formatted summary statistics"""
+        summary = self.get_summary()
+        
+        if isinstance(summary, str):
+            print(summary)
+            return
+        
+        print(f"\n{'='*70}")
+        print("PART NUMBER GENERATION SUMMARY")
+        print(f"{'='*70}")
+        print(f"Total Part Numbers: {summary['total_parts']}")
+        
+        print(f"\nBy Series:")
+        for series, count in sorted(summary['series'].items()):
+            print(f"  Series {series}: {count}")
+        
+        print(f"\nBy Class:")
+        for cls, count in sorted(summary['classes'].items()):
+            print(f"  Class {cls}: {count}")
+        
+        print(f"\nBy Shell Size:")
+        for size, count in sorted(summary['shell_sizes'].items()):
+            print(f"  Size {size}: {count}")
+        
+        print(f"\nBy Contact Type:")
+        for contact, count in sorted(summary['contact_types'].items()):
+            print(f"  {contact}: {count}")
+        
+        print(f"{'='*70}\n")
+
+
 # Example usage
 if __name__ == "__main__":
-    # Example 1: Series III Plug with SVG generation
-    print("\nExample 1: Series III Environmental Plug")
-    connector1 = D38999PartNumber(
-        series_code='26',
-        class_code='W',
-        shell_code='A',
-        insert_arrangement='A35',
-        contact_type='P',
-        polarization='N'
+    print("\n" + "="*70)
+    print("D38999 CONNECTOR DIRECTORY GENERATOR")
+    print(f"Revision: {REVISION}")
+    print(f"Release Status: {RELEASE_STATUS if RELEASE_STATUS else 'Not Set'}")
+    print("="*70)
+    
+    # Create generator instance
+    generator = D38999PartNumberGenerator(revision=REVISION, release_status=RELEASE_STATUS)
+    
+    # Define ranges for batch generation
+    series_codes = ['24', '26']  # Jam-nut receptacle and Plug
+    class_codes = ['F', 'W', 'K', 'Z']  # Different finishes
+    shell_codes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J']  # All shell sizes
+    insert_arrangements = ['A35', 'B35', 'C35']  # Sample arrangements
+    contact_types = ['P', 'S']  # Pin and Socket
+    polarizations = ['N', 'A', 'B', 'C']  # Normal and alternates
+    
+    # Generate all combinations
+    print("\nGenerating part numbers from ranges...")
+    print(f"  Series: {series_codes}")
+    print(f"  Classes: {class_codes}")
+    print(f"  Shell Codes: {shell_codes}")
+    print(f"  Insert Arrangements: {insert_arrangements}")
+    print(f"  Contact Types: {contact_types}")
+    print(f"  Polarizations: {polarizations}")
+    
+    parts = generator.generate_part_numbers(
+        series_codes=series_codes,
+        class_codes=class_codes,
+        shell_codes=shell_codes,
+        insert_arrangements=insert_arrangements,
+        contact_types=contact_types,
+        polarizations=polarizations
     )
-    connector1.print_properties()
     
-    # Generate SVG
-    svg_output = connector1.generate_svg('d38999_connector.svg')
-    print("SVG Preview (first 500 chars):")
-    print(svg_output[:500] + "...")
+    # Print summary
+    generator.print_summary()
     
-    # Example 2: Series III Receptacle with more contacts
+    # Create directories at the same level as the script (no nesting)
     print("\n" + "="*70)
-    print("\nExample 2: Series III Jam-nut Receptacle")
-    connector2 = D38999PartNumber(
-        series_code='24',
-        class_code='F',
-        shell_code='B',
-        insert_arrangement='B35',
-        contact_type='S',
-        polarization='A'
+    print("CREATING CONNECTOR DIRECTORIES")
+    print("="*70)
+    print("Creating directories at current level...")
+    print(f"Structure: PartNumber/PartNumber-Rev{REVISION}/")
+    stats = generator.create_directories(
+        root_dir=None,  # None = create at current level, no nesting
+        include_subdirs=True
     )
-    connector2.print_properties()
     
-    # Example 3: Series IV Plug
+    # Export catalog
     print("\n" + "="*70)
-    print("\nExample 3: Series IV Plug")
-    connector3 = D38999PartNumber(
-        series_code='47',
-        class_code='W',
-        shell_code='D',
-        insert_arrangement='E26',
-        contact_type='P',
-        polarization='N'
-    )
-    connector3.print_properties()
+    print("EXPORTING CATALOG")
+    print("="*70)
+    generator.export_catalog('d38999_catalog.csv')
     
-    # Get contact specifications table
+    # Note about SVG generation
     print("\n" + "="*70)
-    print("\nContact Size Specifications:")
-    print("-" * 70)
-    print(f"{'Size':<8} {'Wire AWG':<15} {'Env Current':<15} {'Hermetic Current':<15}")
-    print("-" * 70)
-    for size, spec in D38999PartNumber.CONTACT_SPECS.items():
-        if 'wire_awg' in spec:
-            print(f"#{size:<7} {spec['wire_awg']:<15} {spec['env_current']} Amp{'':<10} {spec['hermetic_current']} Amp")
+    print("SVG DRAWINGS")
+    print("="*70)
+    print("Placeholder SVG files created for all parts")
+    print("To populate with actual drawings, call:")
+    print("  generator.generate_svgs(populate_drawings=True)")
     
-    # Available insert arrangements summary
+    # Example: Filter parts
     print("\n" + "="*70)
-    print("\nAvailable Insert Arrangements (Sample):")
-    print("-" * 70)
-    print(f"{'Arrangement':<15} {'Contacts':<10} {'Size':<10} {'Rating':<10}")
-    print("-" * 70)
-    for arr, info in list(D38999PartNumber.INSERT_ARRANGEMENTS.items())[:10]:
-        print(f"{arr:<15} {info['contacts']:<10} #{info['size']:<9} {info['service_rating']:<10}")
-    print(f"... and {len(D38999PartNumber.INSERT_ARRANGEMENTS) - 10} more arrangements")
+    print("FILTERING EXAMPLE")
+    print("="*70)
+    print("\nFinding all Size 11 shell connectors with 13 contacts...")
+    filtered = generator.filter_parts(shell_size=11, contact_count=13)
+    print(f"Found {len(filtered)} matching parts:")
+    for part in filtered[:5]:  # Show first 5
+        props = part.get_properties()
+        print(f"  {props['part_number']} - {props['series_description']}")
+    if len(filtered) > 5:
+        print(f"  ... and {len(filtered) - 5} more")
+    
+    print("\n" + "="*70)
+    print("OPERATION COMPLETE")
+    print("="*70)
+    print(f"\nAll connector directories created at:")
+    print(f"  {Path.cwd()}")
+    print(f"\nDirectory structure:")
+    print(f"  PartNumber/")
+    print(f"    ├── PartNumber-{REVISION}/")
+    print(f"    │   ├── PartNumber-{REVISION}-attributes.json")
+    print(f"    │   ├── PartNumber-{REVISION}-drawing.svg (placeholder)")
+    print(f"    │   ├── drawings/")
+    print(f"    │   ├── specifications/")
+    print(f"    │   ├── test_reports/")
+    print(f"    │   ├── tooling/")
+    print(f"    │   └── assembly/")
+    print(f"    └── README.txt")
+    print(f"\nTotal directories: {stats['created'] + stats['already_existed']}")
+    print(f"Catalog exported to: d38999_catalog.csv")
