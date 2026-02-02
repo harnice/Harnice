@@ -244,8 +244,7 @@ os.makedirs(
 
 # macro initialization complete. write the rest of the macro logic here. there are no remaining required functions to call.
 # ==========================================================================================================
-```
-    """)
+```\n""")
 
     md.append("""# Harnice Macros
 
