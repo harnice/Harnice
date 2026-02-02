@@ -6,71 +6,71 @@ A record of every revision of a part, and its release status
 *Columns are automatically generated when `rev_history.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`product`"
 
-    documentation needed
+    the harnice product type (e.g. "harness", "connector", "device", "system", "macro", "flagnote", "tblock")
 
 === "`mfg`"
 
-    documentation needed
+    who manufactures this product (blank ok)
 
 === "`pn`"
 
-    documentation needed
+    name, part number, other identifier of this part. mfg+mpn combination must be unique within the library.
 
 === "`desc`"
 
-    documentation needed
+    a brief description of this product
 
 === "`rev`"
 
-    documentation needed
+    the revision of the part
 
 === "`status`"
 
-    documentation needed
+    "released", "obsolete", etc. Harnice will not render a revision if the status has text in this field as a form of protection.
 
 === "`releaseticket`"
 
-    documentation needed
+    many companies do this, but it's not required.
 
 === "`library_repo`"
 
-    documentation needed
+    auto-filled on render if the current working directory is discovered to be a library repository.
 
 === "`library_subpath`"
 
-    documentation needed
+    auto-filled on render if in a library repository, this is the chain of directories between the product type and the part number
 
 === "`datestarted`"
 
-    documentation needed
+    auto-filled to be the date when this part was first intialized
 
 === "`datemodified`"
 
-    documentation needed
+    updates to today's date upon rendering
 
 === "`datereleased`"
 
-    documentation needed
+    up to user to fill in as needed
 
 === "`git_hash_of_harnice_src`"
 
-    documentation needed
+    auto-filled, git hash of the harnice source code during the latest render
 
 === "`drawnby`"
 
-    documentation needed
+    auto-filled, the person who created the part
 
 === "`checkedby`"
 
-    documentation needed
+    the person who checked the part, blank ok
 
 === "`revisionupdates`"
 
-    documentation needed
+    a brief description of the changes made to this revision
 
 === "`affectedinstances`"
 
-    documentation needed
+    the instance names of the instances that were affected by this revision. can be referenced later by PDF builders and more.
 
 
 ---

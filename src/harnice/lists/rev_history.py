@@ -6,23 +6,23 @@ from harnice import fileio, state
 
 # === Global Columns Definition ===
 COLUMNS = [
-    "product", #documentation needed
-    "mfg", #documentation needed
-    "pn", #documentation needed
-    "desc", #documentation needed
-    "rev", #documentation needed
-    "status", #documentation needed
-    "releaseticket", #documentation needed
-    "library_repo", #documentation needed
-    "library_subpath", #documentation needed
-    "datestarted", #documentation needed
-    "datemodified", #documentation needed
-    "datereleased", #documentation needed
-    "git_hash_of_harnice_src", #documentation needed
-    "drawnby", #documentation needed
-    "checkedby", #documentation needed
-    "revisionupdates", #documentation needed
-    "affectedinstances", #documentation needed
+    "product", # the harnice product type (e.g. "harness", "connector", "device", "system", "macro", "flagnote", "tblock")
+    "mfg", # who manufactures this product (blank ok)
+    "pn", # name, part number, other identifier of this part. mfg+mpn combination must be unique within the library.
+    "desc", # a brief description of this product
+    "rev", # the revision of the part
+    "status", # "released", "obsolete", etc. Harnice will not render a revision if the status has text in this field as a form of protection. 
+    "releaseticket", # many companies do this, but it's not required.
+    "library_repo", # auto-filled on render if the current working directory is discovered to be a library repository.
+    "library_subpath", # auto-filled on render if in a library repository, this is the chain of directories between the product type and the part number
+    "datestarted", # auto-filled to be the date when this part was first intialized
+    "datemodified", # updates to today's date upon rendering
+    "datereleased", # up to user to fill in as needed
+    "git_hash_of_harnice_src", # auto-filled, git hash of the harnice source code during the latest render
+    "drawnby", # auto-filled, the person who created the part
+    "checkedby", # the person who checked the part, blank ok
+    "revisionupdates", # a brief description of the changes made to this revision
+    "affectedinstances", # the instance names of the instances that were affected by this revision. can be referenced later by PDF builders and more.
 ]
 
 
