@@ -23,7 +23,7 @@ jobs:
           pip install -e .
       
       - name: Compile docs
-        working-dir: docs_src  # Run from docs_src directory like local
+        working-directory: docs_src
         run: python docs_compiler.py
       
       - name: Check for uncommitted changes
