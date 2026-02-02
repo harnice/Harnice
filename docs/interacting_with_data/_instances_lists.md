@@ -8,27 +8,27 @@ Instances lists are the single comprehensive source of truth for the product you
 *Columns are automatically generated when `instances_list.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`net`"
 
-    documentation needed
+    the physical harness (represented by a net in Kicad) that this instance is part of
 
 === "`instance_name`"
 
-    documentation needed
+    the unique name of this instance
 
 === "`print_name`"
 
-    documentation needed
+    the non-unique, human-readable name of this instance, used for printing on output documents
 
 === "`bom_line_number`"
 
-    documentation needed
+    if this instance represents a physical procurable good, it gets assigned a line number on a bill of materials
 
 === "`mfg`"
 
-    documentation needed
+    manufacturer of this instance
 
 === "`mpn`"
 
-    unique part identifier (manufacturer + part number concatenated)
+    manufacturer part number
 
 === "`item_type`"
 
@@ -56,7 +56,7 @@ Instances lists are the single comprehensive source of truth for the product you
 
 === "`channel_group`"
 
-    documentation needed
+    other instances associated with this one because they are part of the same channel will share this value
 
 === "`circuit_id`"
 
@@ -73,6 +73,14 @@ Instances lists are the single comprehensive source of truth for the product you
 === "`node_at_end_b`"
 
     derived from formboard definition
+
+=== "`print_name_at_end_a`"
+
+    human-readable name of this instance if needed, associated with 'node_at_end_a'
+
+=== "`print_name_at_end_b`"
+
+    human-readable name of this instance if needed, associated with 'node_at_end_b'
 
 === "`parent_csys_instance_name`"
 
@@ -104,15 +112,15 @@ Instances lists are the single comprehensive source of truth for the product you
 
 === "`cable_group`"
 
-    documentation needed
+    other instances associated with this one because they are part of the same cable will share this value
 
 === "`cable_container`"
 
-    documentation needed
+    which cable is this instance physically bundled inside of
 
 === "`cable_identifier`"
 
-    documentation needed
+    cable unique identifier
 
 === "`length`"
 
@@ -148,27 +156,27 @@ Instances lists are the single comprehensive source of truth for the product you
 
 === "`lib_repo`"
 
-    documentation needed
+    publically-traceable URL of the library this instance is from
 
 === "`lib_subpath`"
 
-    documentation needed
+    path to the instance within the library (directories between the product type and the part number)
 
 === "`lib_desc`"
 
-    documentation needed
+    description of the instance per the library's revision history
 
 === "`lib_latest_rev`"
 
-    documentation needed
+    the latest revision of the instance that exists in the remote library
 
 === "`lib_rev_used_here`"
 
-    documentation needed
+    the revision of the instance that is currently used in this project
 
 === "`lib_status`"
 
-    documentation needed
+    the status of the instance per the library's revision history
 
 === "`lib_releaseticket`"
 
@@ -176,35 +184,35 @@ Instances lists are the single comprehensive source of truth for the product you
 
 === "`lib_datestarted`"
 
-    documentation needed
+    the date this instance was first added to the library
 
 === "`lib_datemodified`"
 
-    documentation needed
+    the date this instance was last modified in the library
 
 === "`lib_datereleased`"
 
-    documentation needed
+    the date this instance was released in the library, if applicable, per the library's revision history
 
 === "`lib_drawnby`"
 
-    documentation needed
+    the name of the person who drew the instance, per the library's revision history
 
 === "`lib_checkedby`"
 
-    documentation needed
+    the name of the person who checked the instance, per the library's revision history
 
 === "`project_editable_lib_modified`"
 
-    documentation needed
+    a flag to indicate if the imported contents do not match the library's version (it's been locally modified)
 
 === "`lib_build_notes`"
 
-    documentation needed
+    recommended build notes that come with the instance from the library
 
 === "`lib_tools`"
 
-    documentation needed
+    recommended tools that come with the instance from the library
 
 === "`this_instance_mating_device_refdes`"
 
@@ -220,63 +228,63 @@ Instances lists are the single comprehensive source of truth for the product you
 
 === "`this_net_from_device_refdes`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the refdes of the device it interfaces with, just within this net
 
 === "`this_net_from_device_channel_id`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the channel id in the device it interfaces with, just within this net
 
 === "`this_net_from_device_connector_name`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the name of the connector it interfaces with, just within this net
 
 === "`this_net_to_device_refdes`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the refdes of the device it plugs into just within this net
 
 === "`this_net_to_device_channel_id`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the channel id in the device it plugs into, just within this net
 
 === "`this_net_to_device_connector_name`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the name of the connector it plugs into, just within this net
 
 === "`this_channel_from_device_refdes`"
 
-    if channel, refdes of the device on one side of the channel
+    if this instance is a channel, circuit, conductor, etc, the refdes of the device it interfaces with, at the very end of the channel
 
 === "`this_channel_from_device_channel_id`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the channel id in the device it interfaces with, at the very end of the channel
 
 === "`this_channel_to_device_refdes`"
 
-    if channel, refdes of the device on the other side of the channel
+    if this instance is a channel, circuit, conductor, etc, the refdes of the device it plugs into, at the very end of the channel
 
 === "`this_channel_to_device_channel_id`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the channel id in the device it plugs into, at the very end of the channel
 
 === "`this_channel_from_channel_type`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the type of the channel it interfaces with, at the very end of the channel
 
 === "`this_channel_to_channel_type`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the type of the channel it plugs into, at the very end of the channel
 
 === "`signal_of_channel_type`"
 
-    documentation needed
+    if this instance is a channel, circuit, conductor, etc, the signal of the channel it interfaces with, at the very end of the channel
 
 === "`debug`"
 
-    documentation needed
+    the call chain of the function that last modified this instance row
 
 === "`debug_cutoff`"
 
-    documentation needed
+    blank cell to visually cut off the previous column
 
 
 ---
