@@ -182,15 +182,21 @@ def update_datemodified():
         writer.writerows(rows)
 
 
-def new():
+def new(ignore_product=False):
     columns = COLUMNS
-    from harnice.cli import select_product_type
 
-    global product
-    product = select_product_type()
-    with open(fileio.path("revision history"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
-        writer.writeheader()
+    if not ignore_product:
+        from harnice.cli import select_product_type
+        global product
+        product = select_product_type()
+
+    if not os.path.exists(fileio.path("revision history")):
+        with open(fileio.path("revision history"), "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
+            writer.writeheader()
+
+    else:
+        raise ValueError("You tried to overwrite a revision history file- this is not allowed.")
 
 
 def append(next_rev=None):
