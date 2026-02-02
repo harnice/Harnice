@@ -3,7 +3,7 @@ import os
 import re
 import json
 import math
-from typing import Dict, Set, Tuple, List
+from typing import Dict, List
 from harnice import fileio, state
 from PIL import Image, ImageDraw, ImageFont
 from harnice.utils import svg_utils
@@ -11,7 +11,7 @@ from harnice.utils import svg_utils
 # Expected args (injected by caller or defaulted below):
 # artifact_id: str (optional override)
 # base_directory: str | None  (optional override)
-# item_type: filter placed on the instances list in the "item_type" column, filtering only instances we're trying to plot here. for example, "net-channel" or "circuit",
+# instances: list of instances to plot
 
 # define the artifact_id of this macro (treated the same as part number). should match the filename.
 artifact_id = "kicad_sch_parser"
@@ -25,10 +25,7 @@ KICAD_UNIT_SCALE = 1.0 / 25.4  # Convert from millimeters to inches
 OUTPUT_PRECISION = 5
 
 # Scale factor for labels (1.0 since coordinates are already in mm for SVG)
-try:
-    scale
-except NameError:
-    scale = 1.0
+scale = 1.0
 
 # Minimum segment length (in mm) to show white labels
 MIN_SEGMENT_LENGTH_FOR_LABEL_MM = 30.0
@@ -859,16 +856,10 @@ junction_nodes = sum(1 for n in graph["nodes"].keys() if n.startswith("wirejunct
 
 # =============== BUILD GRAPH PATHS ========================================================================
 
-# Open instances list and filter for the given item_type
-instances = []
-all_instances = fileio.read_tsv("instances list")
-for instance in all_instances:
-    if instance.get("item_type") == item_type:
-        instances.append(instance)
 
 # Map the instances to graph paths and assign segment_order
 path_found_count = 0
-for instance in instances:
+for instance in instances: # input arg
     from_device_refdes = instance.get("this_net_from_device_refdes")
     from_connector_name = instance.get("this_net_from_device_connector_name")
     to_device_refdes = instance.get("this_net_to_device_refdes")
@@ -1255,34 +1246,10 @@ for instance in instances:
         for order in [0, -1]:
             if order == 0:
                 # Start of path - use node_at_end_a print_name
-                node_name = instance.get("node_at_end_a")
-                if node_name:
-                    # Find the node instance in all_instances
-                    node_instance = next(
-                        (inst for inst in all_instances if inst.get("instance_name") == node_name),
-                        None
-                    )
-                    if node_instance:
-                        text = node_instance.get("print_name")
-                    else:
-                        text = node_name
-                else:
-                    text = instance.get("print_name")
+                text = instance.get("print_name_at_end_a")
             else:
                 # End of path - use node_at_end_b print_name
-                node_name = instance.get("node_at_end_b")
-                if node_name:
-                    # Find the node instance in all_instances
-                    node_instance = next(
-                        (inst for inst in all_instances if inst.get("instance_name") == node_name),
-                        None
-                    )
-                    if node_instance:
-                        text = node_instance.get("print_name")
-                    else:
-                        text = node_name
-                else:
-                    text = instance.get("print_name")
+                text = instance.get("print_name_at_end_b")
             
             # Ensure we have text
             if not text:
