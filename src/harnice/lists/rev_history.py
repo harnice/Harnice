@@ -279,7 +279,7 @@ def update_datemodified():
         writer.writerows(rows)
 
 
-def new(ignore_product=False):
+def new(ignore_product=False, path=None):
     """
     Create a new revision history file.
 
@@ -300,21 +300,21 @@ def new(ignore_product=False):
     """
     columns = COLUMNS
 
+    if path is None:
+        path = fileio.path("revision history")
+
     if not ignore_product:
         from harnice.cli import select_product_type
 
-        global product
-        product = select_product_type()
+        state.set_product(select_product_type())
 
-    if ignore_product and not product:
+    if ignore_product and not state.product:
         raise ValueError(
             "You tried to create a new revision history file without a product type. This is not allowed."
         )
 
-    if not os.path.exists(fileio.path("revision history")):
-        with open(
-            fileio.path("revision history"), "w", newline="", encoding="utf-8"
-        ) as f:
+    if not os.path.exists(path):
+        with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns, delimiter="\t")
             writer.writeheader()
 
@@ -349,28 +349,24 @@ def append(next_rev=None):
     """
     from harnice import cli
 
-    global product
-
     if not os.path.exists(fileio.path("revision history")):
         new()
     rows = fileio.read_tsv("revision history")
-    product_name = None
     if rows:
         for row in reversed(rows):
             candidate = (row.get("product") or "").strip()
             if candidate:
-                product_name = candidate
+                state.set_product(candidate)
                 break
-    if not product_name:
-        product_name = globals().get("product")
-    if not product_name:
-        product_name = cli.select_product_type()
-    product = product_name
+    if not state.product:
+        state.set_product(cli.select_product_type())
 
     default_desc = ""
-    if product_name:
+    if state.product:
         try:
-            product_module = importlib.import_module(f"harnice.products.{product_name}")
+            product_module = importlib.import_module(
+                f"harnice.products.{state.product}"
+            )
         except ModuleNotFoundError:
             product_module = None
         else:
@@ -405,7 +401,7 @@ def append(next_rev=None):
 
     if desc in [None, ""]:
         desc = cli.prompt(
-            f"Enter a description of this {product_name}",
+            f"Enter a description of this {state.product}",
             default=default_desc,
         )
 
@@ -458,7 +454,7 @@ def append(next_rev=None):
 
     rows.append(
         {
-            "product": product_name,
+            "product": state.product,
             "pn": state.pn,
             "rev": next_rev,
             "desc": desc,
@@ -525,15 +521,17 @@ def part_family_append(content_dict, rev_history_path):
         rows = []
 
     found = False
-    for row in rows:
+    for i, row in enumerate(rows):
         if row.get("rev") == actual_content_dict.get("rev"):
-            rows[rev] = actual_content_dict
+            rows[i] = actual_content_dict
             found = True
             break
 
     if not found:
         rows.append(actual_content_dict)
 
+    if not os.path.exists(rev_history_path):
+        new(path=rev_history_path, ignore_product=True)
     with open(rev_history_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
