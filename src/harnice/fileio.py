@@ -209,7 +209,7 @@ def verify_revision_structure():
             f"Harnice only renders revisions with a blank status."
         )
 
-    print(f"Working on PN: {state.pn}, Rev: {state.rev}")
+    print(f"Rendering PN: {state.pn}, Rev: {state.rev}")
     rev_history.update_datemodified()
 
 

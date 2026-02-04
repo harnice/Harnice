@@ -181,7 +181,7 @@ from harnice.lists import rev_history
     - `ValueError`: If the revision history file is not found.
     - `ValueError`: If the revision is not found in the revision history file.
 
-??? info "`rev_history.new(ignore_product=False)`"
+??? info "`rev_history.new(ignore_product=False, path=None)`"
 
     Create a new revision history file.
     

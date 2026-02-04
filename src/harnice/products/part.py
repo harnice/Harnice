@@ -635,6 +635,4 @@ def render():
     png_path = fileio.path("drawing png")
     img.save(png_path, dpi=(1000, 1000))
 
-    print()
-    print(f"Part file '{state.partnumber('pn')}' updated")
-    print()
+    print(f"Part file '{state.partnumber('pn')}' updated\n")
