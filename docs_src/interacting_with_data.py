@@ -305,6 +305,7 @@ A list of every physical or notional thing, drawing element, or concept that inc
     )
     md.append(docs_functions.print_function_docs(rev_history.new, module_prefix))
     md.append(docs_functions.print_function_docs(rev_history.append, module_prefix))
+    md.append(docs_functions.print_function_docs(rev_history.part_family_append, module_prefix))
     path = (
         docs_functions.harnice_dir()
         / "docs"

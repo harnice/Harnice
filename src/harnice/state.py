@@ -11,6 +11,10 @@ def set_rev(x):
     global rev
     rev = x
 
+def set_product(x):
+    global product
+    product = x
+
 
 def set_net(x):
     global net
