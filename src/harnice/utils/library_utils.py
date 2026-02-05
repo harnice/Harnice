@@ -303,7 +303,9 @@ def get_local_path(lib_repo):
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 
         with open(csv_path, "w", encoding="utf-8") as f:
-            f.write(f"https://github.com/harnice/harnice,{default_local_path}\n")
+            # Normalize the default path to ensure correct separators
+            normalized_path = os.path.normpath(default_local_path)
+            f.write(f"https://github.com/harnice/harnice,{normalized_path}\n")
 
         print(f"[harnice] Created '{csv_path}'")
         print(f"[harnice] Default library-public location: {default_local_path}")
@@ -328,6 +330,10 @@ def get_local_path(lib_repo):
             if url.lower() == lib_repo.lower().strip():
                 if not local:
                     raise ValueError(f"No local path found for '{lib_repo}'")
-                return os.path.expanduser(local)
+                # Expand user directory (~) and normalize path separators for current platform
+                expanded_path = os.path.expanduser(local)
+                # Normalize separators - os.path.normpath() converts forward slashes to
+                # backslashes on Windows, ensuring proper path format
+                return os.path.normpath(expanded_path)
 
     raise ValueError(f"'{lib_repo}' not found in library locations")
