@@ -80,13 +80,13 @@ A record of every revision of a part, and its release status
 from harnice.lists import rev_history
 ```
  then use as written.*
-??? info "`rev_history.overwrite(content_dict, path=None)`"
+??? info "`rev_history.overwrite(content_dict)`"
 
     Overwrite a revision history entry.
     
     **Arguments:**
     
-    - `content_dict` (dict): The content to overwrite the revision history entry with.
+     - `content_dict` (dict): The content to overwrite the revision history entry with.
         - This should be a dictionary with the keys and values to overwrite.
         - The keys should be the column names, and the values should be the new values.
         - Some keys are protected and cannot be overwritten:
@@ -99,20 +99,19 @@ from harnice.lists import rev_history
             - `"library_subpath"`
             - `"datestarted"`
     
-    - `path` (str): The path to the revision history file.
-        - If not provided, the function will use the default path: `"revision history"`.
+    The function will update the revision history file as referenced by the current product file structure.
     
     **Returns:**
     
-    - `None`
+     - `None`
     
     **Raises:**
     
-    - `KeyError`: If a key is provided that is not in the COLUMNS list.
-    - `KeyError`: If a protected key is provided.
-    - `ValueError`: If the revision history file is not found.
-    - `ValueError`: If the revision is not found in the revision history file.
-    - `RuntimeError`: If `state.rev` is not set.
+     - `KeyError`: If a key is provided that is not in the COLUMNS list.
+     - `KeyError`: If a protected key is provided.
+     - `ValueError`: If the revision history file is not found.
+     - `ValueError`: If the revision is not found in the revision history file.
+     - `RuntimeError`: If `state.rev` is not set.
 
 ??? info "`rev_history.info(rev=None, path=None, field=None, all=False)`"
 
