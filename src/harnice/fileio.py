@@ -41,13 +41,15 @@ def path(target_value, structure_dict=None, base_directory=None):
 
     # returns the filepath/filename of a filekey.
     """
-    Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
+Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
 
-    Args:
-        target_value (str): The value to search for.
+It's complicated ... check out https://harnice.io/commands/fileio/ for more information.
 
-    Returns:
-        list: A list of container names leading to the element containing the target value, or None if not found.
+Args:
+    target_value (str): The value to search for.
+
+Returns:
+    list: A list of container names leading to the element containing the target value, or None if not found.
     """
 
     # FILES NOT DEPENDENT ON PRODUCT TYPE
@@ -65,7 +67,20 @@ def path(target_value, structure_dict=None, base_directory=None):
         harnice_root = os.path.dirname(
             os.path.dirname(os.path.dirname(harnice.__file__))
         )
-        return os.path.join(harnice_root, "library_locations.csv")
+
+        library_locations_path = os.path.join(harnice_root, "library_locations.csv")
+
+        if not os.path.exists(library_locations_path):
+            from harnice import cli
+            answer = cli.prompt(f"Library locations file not found at {library_locations_path}. Create it?", default="y")
+            if answer.lower() not in ("y", "yes", ""):
+                exit()
+
+            with open(library_locations_path, "w") as f:
+                f.write("repo_url,local_path\n")
+                f.write(f"https://github.com/harnice/harnice,{os.path.join(harnice_root, 'library_public')}\n")
+
+        return library_locations_path
 
     if target_value == "project locations":
         import harnice
@@ -73,6 +88,17 @@ def path(target_value, structure_dict=None, base_directory=None):
         harnice_root = os.path.dirname(
             os.path.dirname(os.path.dirname(harnice.__file__))
         )
+        project_locations_path = os.path.join(harnice_root, "project_locations.csv")
+        if not os.path.exists(project_locations_path):
+            from harnice import cli
+            answer = cli.prompt(f"Project locations file not found at {project_locations_path}. Create it?", default="y")
+            if answer.lower() not in ("y", "yes", ""):
+                exit()
+
+            with open(project_locations_path, "w") as f:
+                f.write("traceable_key,local_path\n")
+                f.write("your project part number,local path to your project\n")
+
         return os.path.join(harnice_root, "project_locations.csv")
 
     if target_value == "drawnby":
@@ -81,7 +107,24 @@ def path(target_value, structure_dict=None, base_directory=None):
         harnice_root = os.path.dirname(
             os.path.dirname(os.path.dirname(harnice.__file__))
         )
-        return os.path.join(harnice_root, "drawnby.json")
+
+        drawnby_path = os.path.join(harnice_root, "drawnby.json")
+        if not os.path.exists(drawnby_path):
+            from harnice import cli
+            answer = cli.prompt(f"Drawnby file not found at {drawnby_path}. Create it?", default="y")
+            if answer.lower() not in ("y", "yes", ""):
+                exit()
+
+            name = cli.prompt("Enter your name: (recommended: first inital, last name, all caps: K SHUTT)")
+
+            while not name:
+                print("Name cannot be empty. Please try again.")
+                name = cli.prompt("Enter your name")
+
+            with open(drawnby_path, "w") as f:
+                f.write(f"{name}\n")
+
+        return drawnby_path
 
     # FILES INSIDE OF A STRUCURE DEFINED BY FILEIO
     # look up from default structure state if not provided

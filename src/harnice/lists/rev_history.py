@@ -32,32 +32,32 @@ Overwrite a revision history entry.
 
 **Arguments:**
 
- - `content_dict` (dict): The content to overwrite the revision history entry with.
-    - This should be a dictionary with the keys and values to overwrite.
-    - The keys should be the column names, and the values should be the new values.
-    - Some keys are protected and cannot be overwritten:
-        - `"product"`
-        - `"mfg"`
-        - `"pn"`
-        - `"rev"`
-        - `"releaseticket"`
-        - `"library_repo"`
-        - `"library_subpath"`
-        - `"datestarted"`
+- `content_dict` (dict): The content to overwrite the revision history entry with.
+- This should be a dictionary with the keys and values to overwrite.
+- The keys should be the column names, and the values should be the new values.
+- Some keys are protected and cannot be overwritten:
+    - `"product"`
+    - `"mfg"`
+    - `"pn"`
+    - `"rev"`
+    - `"releaseticket"`
+    - `"library_repo"`
+    - `"library_subpath"`
+    - `"datestarted"`
 
 The function will update the revision history file as referenced by the current product file structure.
 
 **Returns:**
 
- - `None`
+- `None`
 
 **Raises:**
 
- - `KeyError`: If a key is provided that is not in the COLUMNS list.
- - `KeyError`: If a protected key is provided.
- - `ValueError`: If the revision history file is not found.
- - `ValueError`: If the revision is not found in the revision history file.
- - `RuntimeError`: If `state.rev` is not set.
+- `KeyError`: If a key is provided that is not in the COLUMNS list.
+- `KeyError`: If a protected key is provided.
+- `ValueError`: If the revision history file is not found.
+- `ValueError`: If the revision is not found in the revision history file.
+- `RuntimeError`: If `state.rev` is not set.
     """
     PROTECTED_KEYS = [
         "product",
@@ -417,17 +417,24 @@ def append(next_rev=None):
     # add lib_repo if filepath is found in library locations
     library_repo = ""
     library_subpath = ""
-    cwd = str(os.getcwd()).lower().strip("~")
+    # Normalize path separators for comparison (handle both forward and backslashes)
+    cwd = str(os.getcwd()).lower().replace("\\", "/").strip("~")
 
     for row in fileio.read_tsv("library locations", delimiter=","):
-        lib_local_path = str(row.get("local_path", "")).lower().strip("~")
+        # Normalize path separators and expand user home directory if needed
+        lib_local_path_raw = str(row.get("local_path", "")).strip()
+        lib_local_path = (
+            os.path.expanduser(lib_local_path_raw).lower().replace("\\", "/").strip("~")
+        )
         if lib_local_path in cwd:
             library_repo = row.get("repo_url")
 
             # keep only the portion AFTER local_path
             idx = cwd.find(lib_local_path)
-            remainder = cwd[idx + len(lib_local_path) :].lstrip("/")
-            parts = remainder.split("/")
+            remainder = cwd[idx + len(lib_local_path) :]
+            # Normalize path separators - handle both forward and backslashes
+            remainder = remainder.replace("\\", "/").lstrip("/")
+            parts = remainder.split("/") if remainder else []
 
             # find the part number in the path
             pn = str(state.partnumber("pn")).lower()
@@ -438,6 +445,7 @@ def append(next_rev=None):
                 core_parts = parts
 
             # build library_subpath and product
+            # Use forward slashes for cross-platform compatibility (works in URLs and most contexts)
             if core_parts:
                 library_subpath = (
                     "/".join(core_parts[1:]) + "/" if len(core_parts) > 1 else ""
@@ -509,8 +517,6 @@ def part_family_append(content_dict, rev_history_path):
     actual_content_dict["git_hash_of_harnice_src"] = (
         fileio.get_git_hash_of_harnice_src()
     )
-
-    rev = content_dict.get("rev")
 
     if os.path.exists(rev_history_path):
         rows = fileio.read_tsv(rev_history_path)

@@ -86,32 +86,32 @@ from harnice.lists import rev_history
     
     **Arguments:**
     
-     - `content_dict` (dict): The content to overwrite the revision history entry with.
-        - This should be a dictionary with the keys and values to overwrite.
-        - The keys should be the column names, and the values should be the new values.
-        - Some keys are protected and cannot be overwritten:
-            - `"product"`
-            - `"mfg"`
-            - `"pn"`
-            - `"rev"`
-            - `"releaseticket"`
-            - `"library_repo"`
-            - `"library_subpath"`
-            - `"datestarted"`
+    - `content_dict` (dict): The content to overwrite the revision history entry with.
+    - This should be a dictionary with the keys and values to overwrite.
+    - The keys should be the column names, and the values should be the new values.
+    - Some keys are protected and cannot be overwritten:
+        - `"product"`
+        - `"mfg"`
+        - `"pn"`
+        - `"rev"`
+        - `"releaseticket"`
+        - `"library_repo"`
+        - `"library_subpath"`
+        - `"datestarted"`
     
     The function will update the revision history file as referenced by the current product file structure.
     
     **Returns:**
     
-     - `None`
+    - `None`
     
     **Raises:**
     
-     - `KeyError`: If a key is provided that is not in the COLUMNS list.
-     - `KeyError`: If a protected key is provided.
-     - `ValueError`: If the revision history file is not found.
-     - `ValueError`: If the revision is not found in the revision history file.
-     - `RuntimeError`: If `state.rev` is not set.
+    - `KeyError`: If a key is provided that is not in the COLUMNS list.
+    - `KeyError`: If a protected key is provided.
+    - `ValueError`: If the revision history file is not found.
+    - `ValueError`: If the revision is not found in the revision history file.
+    - `RuntimeError`: If `state.rev` is not set.
 
 ??? info "`rev_history.info(rev=None, path=None, field=None, all=False)`"
 
