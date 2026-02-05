@@ -28,36 +28,36 @@ COLUMNS = [
 
 def overwrite(content_dict):
     """
-    Overwrite a revision history entry.
+Overwrite a revision history entry.
 
-    **Arguments:**
+**Arguments:**
 
-     - `content_dict` (dict): The content to overwrite the revision history entry with.
-        - This should be a dictionary with the keys and values to overwrite.
-        - The keys should be the column names, and the values should be the new values.
-        - Some keys are protected and cannot be overwritten:
-            - `"product"`
-            - `"mfg"`
-            - `"pn"`
-            - `"rev"`
-            - `"releaseticket"`
-            - `"library_repo"`
-            - `"library_subpath"`
-            - `"datestarted"`
+- `content_dict` (dict): The content to overwrite the revision history entry with.
+- This should be a dictionary with the keys and values to overwrite.
+- The keys should be the column names, and the values should be the new values.
+- Some keys are protected and cannot be overwritten:
+    - `"product"`
+    - `"mfg"`
+    - `"pn"`
+    - `"rev"`
+    - `"releaseticket"`
+    - `"library_repo"`
+    - `"library_subpath"`
+    - `"datestarted"`
 
-    The function will update the revision history file as referenced by the current product file structure.
+The function will update the revision history file as referenced by the current product file structure.
 
-    **Returns:**
+**Returns:**
 
-     - `None`
+- `None`
 
-    **Raises:**
+**Raises:**
 
-     - `KeyError`: If a key is provided that is not in the COLUMNS list.
-     - `KeyError`: If a protected key is provided.
-     - `ValueError`: If the revision history file is not found.
-     - `ValueError`: If the revision is not found in the revision history file.
-     - `RuntimeError`: If `state.rev` is not set.
+- `KeyError`: If a key is provided that is not in the COLUMNS list.
+- `KeyError`: If a protected key is provided.
+- `ValueError`: If the revision history file is not found.
+- `ValueError`: If the revision is not found in the revision history file.
+- `RuntimeError`: If `state.rev` is not set.
     """
     PROTECTED_KEYS = [
         "product",

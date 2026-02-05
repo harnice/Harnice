@@ -41,13 +41,15 @@ def path(target_value, structure_dict=None, base_directory=None):
 
     # returns the filepath/filename of a filekey.
     """
-    Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
+Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
 
-    Args:
-        target_value (str): The value to search for.
+It's complicated ... check out https://harnice.io/commands/fileio/ for more information.
 
-    Returns:
-        list: A list of container names leading to the element containing the target value, or None if not found.
+Args:
+    target_value (str): The value to search for.
+
+Returns:
+    list: A list of container names leading to the element containing the target value, or None if not found.
     """
 
     # FILES NOT DEPENDENT ON PRODUCT TYPE
