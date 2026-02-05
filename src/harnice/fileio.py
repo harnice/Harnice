@@ -214,7 +214,8 @@ def verify_revision_structure():
 
 
 def today():
-    return datetime.date.today().strftime("%-m/%-d/%y")
+    d = datetime.date.today()
+    return f"{d.month}/{d.day}/{d.year % 100}"
 
 
 def get_git_hash_of_harnice_src():
