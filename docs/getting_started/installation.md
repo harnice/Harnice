@@ -1,8 +1,7 @@
 # Installation
 
 ---
-
-## :octicons-download-16: Quick install Harnice
+## :octicons-download-16: Option A) Install with pip
 
 Install Harnice directly from PyPI:
 
@@ -10,52 +9,63 @@ Install Harnice directly from PyPI:
 pip install harnice
 ```
 
-*if you need help with this, check out [this guide](https://packaging.python.org/en/latest/tutorials/installing-packages/) about how to install packages, or python in the first place*
+*if you need help with this, check out [this guide](https://packaging.python.org/en/latest/tutorials/installing-packages/) about how to install pip, packages, and python*
 
 ...or...
 
-## :material-keyboard-outline: Development installation (*for contributing*)
-
-This approach is recommended because it would be great if you could contribute to adding your parts to the public library! Of course, you don't have to.
+## :material-keyboard-outline: Option B) Clone and install locally
 
 ### 1. Clone the Repository
 
 ```bash
+cd folder/you/want/harnice/cloned/in
 git clone https://github.com/harnice/Harnice.git
-cd Harnice
 ```
 
-**Note:** If you're on macOS, ensure you have Homebrew and git installed:
-```bash
-brew install git
-brew install gh
-gh auth login
-```
-*if you need help with this, check out [the official git website](https://git-scm.com/book/en/v2), make an account on github, gitlab, or similar, and consult the many available youtube resources*
+*if you need help with this, check out [the official git website](https://git-scm.com/book/en/v2), make an account on github, gitlab, or similar, and consult youtube for git help*
 
-### 2. Install Dependencies
-
-Install Harnice in editable mode:
+### 2. Install Harnice from the locally-cloned repo
 
 ```bash
+cd path/to/harnice/root
 pip install -e .
-```
-
-Or install dependencies manually:
-
-```bash
-# Core dependencies
-pip install PySide6>=6.6 sexpdata Pillow PyYAML xlwt webcolors
-
-# System dependencies (macOS)
-brew install poppler  # for pdfunite
 ```
 
 ---
 
+## :material-microsoft-windows: If installing on Windows, add to PATH
+
+If you've done the above steps, you should be able to run Harnice immediately by typing into your command line:
+
+```powershell
+python3 -m harnice -r
+```
+
+However, in order to be able to type `harnice -r` directly, you'll need to add harnice to your PATH.
+
+### 1. Copy the path to Harnice to your clipboard `(C:../../../Harnice/)`
+
+If you installed with pip, this should give you a hint where all of your packages are installed. Go find Harnice inside and copy the path. 
+
+`python -m site --user-base`
+
+If you git cloned the repo, you should already know the path to Harnice. 
+
+### 2. Edit your Environment Variables.
+
+In the start menu, search for "environment variables". 
+
+Under "User variables" (top section), find and select "Path", then click "Edit"
+
+Click "New" and paste the Scripts directory path from Step 1
+
+Click "OK" on all windows to save
+
+At this point you should be able to run `harnice -r` directly from your command line.
+
 ## :octicons-arrow-switch-16: Configure Library Paths
 
-Create `library_locations.csv` in the root of your Harnice repository if it doesn't exist. Populate it with the following content: 
+Shortly after first install, you will be asked to create `library_locations.csv` in the root of your Harnice repository if it doesn't exist. The default will auto-generate in the Harnice repository root. Here's what the default content should be:
 
 ```csv
 repo_url,local_path
@@ -64,9 +74,7 @@ https://github.com/harnice/harnice,/Users/kenyonshutt/Documents/GitHub/harnice/l
 
 ![Library locations example](images/installation_images/library_locations.png)
 
-Add entries for any external libraries you want to use. The `local_path` points to where the library files live on your computer, but the repo_url should be traceable by your collaborators.
-
-This isn't included in the installation process because each user will have a different local path, and thus it must be ignored by git. 
+This is where you tell Harnice where the local paths to your external libraries are. The `local_path` points to where the library files live on your computer, but the repo_url should be traceable by your collaborators.
 
 ---
 
