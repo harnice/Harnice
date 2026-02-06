@@ -336,4 +336,4 @@ def get_local_path(lib_repo):
                 # backslashes on Windows, ensuring proper path format
                 return os.path.normpath(expanded_path)
 
-    raise ValueError(f"'{lib_repo}' not found in library locations")
+    raise ValueError(f"'{lib_repo}' not found in library locations. Check your library locations file at {csv_path}")
