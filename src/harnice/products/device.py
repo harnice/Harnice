@@ -719,9 +719,8 @@ def _validate_signals_list():
     if not headers:
         raise ValueError("Signals list has no header row.")
 
-    config_vars = configurations(signals_list)
-
-    print(json.dumps(config_vars, indent=4))
+    #config_vars = configurations(signals_list)
+    #print(json.dumps(config_vars, indent=4))
     # NEXT UP: WAIT UNTIL YOU HAVE A GOOD USE CASE OF CONFIGURED DEVICES.
     # CONFIRM THAT THIS PRINTS A DICTIONARY OF ALL THE VALID CONFIGURATION VARIABLES AND THEIR DEFINED STATES
     # THEN MAKE A LIST OF EVERY SINGLE FACTORIAL COMBINATION OF THE CONFIGURATION VARIABLES
