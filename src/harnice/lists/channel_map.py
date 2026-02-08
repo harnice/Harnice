@@ -17,6 +17,8 @@ COLUMNS = [
     "manual_map_channel_python_equiv", #documentation needed
 ]
 
+channel_documentation_description = 'A channel is a set of signals that are related to each other (positive and negative of "power supply out 1", the channel)'
+
 
 def new():
     """

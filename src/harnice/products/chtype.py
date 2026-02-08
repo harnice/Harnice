@@ -23,36 +23,51 @@ def path(channel_type):
 
 
 def parse(val):
-    """Convert stored string into a tuple (chid:int, lib_repo:str)."""
+    """
+    Convert stored string into a tuple (chid:int, lib_repo:str).
+    Handles both single tuples and extracts first tuple from lists.
+    """
     if not val:
         return None
     if isinstance(val, tuple):
         chid, lib_repo = val
     else:
-        chid, lib_repo = ast.literal_eval(str(val))
+        parsed = ast.literal_eval(str(val))
+        # If it's a list, take the first tuple
+        if isinstance(parsed, list):
+            chid, lib_repo = parsed[0]
+        else:
+            chid, lib_repo = parsed
     return (int(chid), str(lib_repo).strip())
-
 
 def compatibles(channel_type):
     """
     Look up compatible channel_types for the given channel_type.
-    Splits the TSV field by commas and parses each entry into (chid, lib_repo).
+    Expects compatible_channel_types column to contain AST-parseable format:
+    - Single tuple: (1, 'library_repo')
+    - List of tuples: [(1, 'library_repo'), (2, 'library_repo')]
     """
     channel_type_id, lib_repo = parse(channel_type)
+    
     for row in fileio.read_tsv(path((channel_type_id, lib_repo))):
-        if str(channel_type_id) != str(row.get("channel_type_id")):
-            continue
-
-        signals_str = row.get("compatible_channel_types", "").strip()
-        if not signals_str:
-            return []
-
-        values = [v.strip() for v in signals_str.split(";") if v.strip()]
-        parsed = []
-        for v in values:
-            parsed.append(parse(v))
-        return parsed
-
+        if int(row.get("channel_type_id")) == channel_type_id:
+            signals_str = row.get("compatible_channel_types", "").strip()
+            if not signals_str:
+                return []
+            
+            # Parse the AST-formatted string
+            parsed_value = ast.literal_eval(signals_str)
+            
+            # Normalize to list format
+            if isinstance(parsed_value, tuple):
+                # Single tuple, wrap it in a list
+                return [parsed_value]
+            elif isinstance(parsed_value, list):
+                # Already a list of tuples
+                return parsed_value
+            else:
+                return []
+    
     return []
 
 

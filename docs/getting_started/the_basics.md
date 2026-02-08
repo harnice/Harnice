@@ -82,3 +82,6 @@ Change in [form, fit and function](https://en.wikipedia.org/wiki/Form,_fit_and_f
 Harnice bakes revisions into part numbers, allowing you to spend your time worrying about engineering, not configuration management.
 
 Before you render a product, the CLI will force you to operate in a “rev folder”. Revision history and statuses of a product is stored in a csv, and Harnice will not render a revision if the "status" column is not blank. That column is where you can record if a revision has been released, superseded, obsoleted, etc.
+
+# Mapping Vocabulary
+{% include-markdown "fragments/_mapping_vocabulary.md" %}
