@@ -6,6 +6,7 @@ from harnice import fileio, state
 
 default_desc = "CABLE, FUNCTION, ATTRIBUTES, etc."
 
+documentation_description = "A cable is a COTS or custom physical item, purchased by length, that contains electrical conductors, and are physically installed inside harnesses."
 
 def file_structure():
     return {

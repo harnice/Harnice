@@ -5,6 +5,8 @@ from harnice import fileio
 list_type = None
 COLUMNS = []
 
+signal_documentation_description = "A signal is a physical conductive part inside a connector of a device that facilitiates electrical interface with the outside world. A signal must be part of a channel and live inside a connector."
+
 # Signals list column headers to match source of truth + compatibility change
 DEVICE_COLUMNS = [
     "channel_id",  # Unique identifier for the channel.

@@ -70,8 +70,6 @@ nav:
     - The Basics: getting_started/the_basics.md
     - Installation: getting_started/installation.md
     - Libraries: getting_started/libraries.md
-    - Where should i start?: getting_started/where_should_i_start.md
-    - Example Projects: getting_started/examples.md
 
   - Products:
     - Harnesses: products/_harness.md

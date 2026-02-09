@@ -1,5 +1,7 @@
 import docs_functions
-from harnice.products import harness, system
+from harnice.products import harness, system, cable
+from harnice.utils import circuit_utils
+from harnice.lists import channel_map, signals_list
 
 def main():
     #========================================================
@@ -40,5 +42,39 @@ def main():
 
     md.append("```")
     path = docs_functions.harnice_dir() / "docs" / "fragments" / "_system_default_feature_tree.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(md), encoding="utf-8")
+
+    #========================================================
+    # MAPPING VOCABULARY
+    #========================================================
+    module_prefix = "mapping_vocabulary"
+
+    md = ['??? note "Mapping vocabulary"']
+
+    md.append(f"\n\n    ![Vocabulary graphic](fragments_images/terminology.png)")
+
+    md.append(f"\n\n    **Net:**")
+    md.append(f"\n\n    - Requirement that a harness must exist to connect some connectors together.")
+    md.append(f"\n\n    **Harness:**")
+    md.append(f"\n\n    - {harness.documentation_description}\n\n")
+    md.append(f"\n\n    **Channel:**")
+    md.append(f"\n\n    - {channel_map.channel_documentation_description}\n\n")
+    md.append(f"\n\n    **Signal:**")
+    md.append(f"\n\n    - {signals_list.signal_documentation_description}\n\n")
+    md.append(f"\n\n    **Circuit:**")
+    md.append(f"\n\n    - {circuit_utils.circuit_documentation_description}\n\n")
+    md.append(f"\n\n    **Conductor:**")
+    md.append(f"\n\n    - {circuit_utils.conductor_documentation_description}\n\n")
+    md.append(f"\n\n    **Cable:**")
+    md.append(f"\n\n    - {cable.documentation_description}\n\n")
+    md.append(f"\n\n    ## Less important terms")
+    md.append(f"\n\n    - **Contact:**")
+    md.append(f"\n\n        - The metal parts of a connector that does the actual mating with the other connector, allows for termination to a wire. Can be pins, sockets, studs, terminals, etc.\n\n")
+    md.append(f"\n\n    - **Cavity:**")
+    md.append(f"\n\n        - The hole in a connector that physically holds a contact\n\n")
+
+
+    path = docs_functions.harnice_dir() / "docs" / "fragments" / "_mapping_vocabulary.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(md), encoding="utf-8")

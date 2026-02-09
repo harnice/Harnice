@@ -3,6 +3,8 @@ from harnice.lists import instances_list
 from harnice.utils import library_utils
 import os
 
+conductor_documentation_description = "A conductor is a piece of copper"
+circuit_documentation_description = 'A circuit is the requirement that there must exist an electrical path between two signals of connected devices. You can assign conductors or other electrical elements along it. Instances assigned along the circuit have "circuit ids" which represent the order in which the circuit passes through them.'
 
 def end_ports_of_circuit(circuit_id):
     """
@@ -208,6 +210,7 @@ def circuit_instance_of_instance(instance_name):
     )
 
 
+conductor_documentation_description = "A piece of copper, sometimes contained in a cable. Has as many properties, appearances, as you need"
 def assign_cable_conductor(
     cable_instance_name,  # unique identifier for the cable in your project
     cable_conductor_id,  # (container, identifier) tuple identifying the conductor in the cable being imported

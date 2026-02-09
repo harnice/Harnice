@@ -1,5 +1,6 @@
 import docs_functions
 from harnice.products import (
+    cable,
     device,
     disconnect,
     flagnote,
@@ -16,9 +17,8 @@ def main():
     # CABLES
     # ========================================================
 
-    md = [
-        "# Cables\nCOTS or custom physical item, purchased by length, that contains electrical conductors, and are physically installed inside harnesses."
-    ]
+    md = ["# Cables"]
+    md.append(f"\n\n{cable.documentation_description}")
 
     path = docs_functions.harnice_dir() / "docs" / "products" / "_cable.md"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -28,9 +28,8 @@ def main():
     # CHANNEL TYPES
     # ========================================================
 
-    md = [
-        "# Channel Types\nUniquely identifiable set of signals that allow electrical intent to be documented and later referenced."
-    ]
+    md = ["# Channel Types"]
+    md.append("\n\n---\n\n## How are channels mapped?")
 
     md.append("""\n\n---\n\n## How to define a new channel type
 1. In a repository of your choice (or start with [harnice_library_public](https://github.com/harnice/harnice) on your own branch), navigate to `library_repo/channel_types/channel_types.csv`
