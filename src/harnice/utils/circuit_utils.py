@@ -4,7 +4,7 @@ from harnice.utils import library_utils
 import os
 
 conductor_documentation_description = "A conductor is a piece of copper"
-circuit_documentation_description = 'A circuit is the entire electrical path between two signals of connected devices. You can assign conductors or other electrical elements along it. Instances assigned along the circuit have "circuit ids" which represent the order in which the circuit passes through them.'
+circuit_documentation_description = 'A circuit is the requirement that there must exist an electrical path between two signals of connected devices. You can assign conductors or other electrical elements along it. Instances assigned along the circuit have "circuit ids" which represent the order in which the circuit passes through them.'
 
 def end_ports_of_circuit(circuit_id):
     """

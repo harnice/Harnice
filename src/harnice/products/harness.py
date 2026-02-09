@@ -5,6 +5,7 @@ from harnice.lists import instances_list, library_history
 
 default_desc = "HARNESS, DOES A, FOR B"
 
+documentation_description = "A harness is an assembly of connectors, cables, and other electrical components that connect multiple devices together. It is the physical item that is built and installed in a system."
 
 def file_structure():
     return {
