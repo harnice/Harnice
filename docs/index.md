@@ -4,6 +4,7 @@
 
 It designs harnesses for you... and does so much more... *nicely*!
 
+## THIS PROJECT IS A WORK-IN PROGRESS! ONLINE DOCS HAVE A LONG WAY TO GO, AND THE CODE IS UNDER CONTINUOUS DEVELOPMENT.
  --- 
 ## :octicons-rocket-16: Links
 Download on pip: `pip install harnice`
