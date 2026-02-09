@@ -22,7 +22,7 @@ Let's face it: designing harnessing sucks. Managing how your devices talk to eac
 
 ==...*not anymore!!!*==
 
-I developed Harnice because **fuck that.** I'm tired of the fact that the world is used to Vizio, Google Sheets, and so many other amazing free tools, but there's nothing for electrical systems. 
+I developed Harnice because **fuck that.** I'm tired of the fact that the world doesn't have an amazing, free harness/system cad tool. There are great free tools out there for other things (Kicad, Freecad, Inkscape, Onshape, Google Sheets, etc), there are crappy harness design tools out there (Vizio, Microsoft Paint, Powerpoint, pen&paper, etc), and there are expensive harness tools out there (Zuken, Altium, RapidHarness, etc), but no full-featured **free, open-source** tools built for everyone. 
 
 Harnice consolidates all high-level electrical design problems into one concise, consistent, infinitely configurable, reusable platform, where you can define what you need. Any imaginable output can be directly derived from the product of the compilation of your design rules. 
 
@@ -42,13 +42,10 @@ If your electrical system can be implemented by simple logic statements, Harnice
 
 ## :fontawesome-regular-pen-to-square: What's the workflow?
 1. Record how your devices work in a standardized, consolidated format.
-![Preamp signals list](index_images/art_preamp_signals_list.png)
 
 1. Define which devices you want physically connected to which other devices.
-![Recording studio block diagram](index_images/studio_block_diagram.png)
 
 1. Define your build rules, checks, part selections, channel mapping, naming conventions, color preferences, and more, in simple Python. 
-![Feature tree](index_images/system_feature_tree_ex.png)
 
 1. Run `python3 harnice -r` in your command line to render all outputs. 
 
@@ -83,7 +80,7 @@ Probably! But if not, Harnice supports **Macros**, which are Python files that c
 ---
 
 ## :fontawesome-solid-sack-dollar: How much does it cost?
-Free, fully free, forever and always. Fuck the establishment, money is a construct, and this is FOR YOU as much as it is for me. Build cool shit, don't waste your time designing harnesses ever again, and as always, feel free to contribute if you can. 
+Free, fully free, forever and always. I made this tool because I never wanted to design harnesses manually ever again, and this is as much **FOR YOU** as much as it is for me. Build cool shit, don't waste your time doing automatable things, and as always, feel free to contribute if you can. 
 
 ---
 ## :octicons-question-16: Who am I?
