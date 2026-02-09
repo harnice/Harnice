@@ -85,3 +85,15 @@ Before you render a product, the CLI will force you to operate in a “rev folde
 
 # Mapping Vocabulary
 {% include-markdown "fragments/_mapping_vocabulary.md" %}
+
+# The Workflow
+![img_1](images/the_story_images/the_story-1.png)
+![img_2](images/the_story_images/the_story-2.png)
+![img_3](images/the_story_images/the_story-3.png)
+![img_4](images/the_story_images/the_story-4.png)
+![img_5](images/the_story_images/the_story-5.png)
+![img_6](images/the_story_images/the_story-6.png)
+![img_7](images/the_story_images/the_story-7.png)
+![img_8](images/the_story_images/the_story-8.png)
+![img_9](images/the_story_images/the_story-9.png)
+![img_10](images/the_story_images/the_story-10.png)
