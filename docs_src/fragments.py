@@ -52,6 +52,8 @@ def main():
 
     md = ['??? note "Mapping vocabulary"']
 
+    md.append(f"\n\n    ![Vocabulary graphic](fragments_images/terminology.png)")
+
     md.append(f"\n\n    **Cable:**")
     md.append(f"\n\n    - {cable.documentation_description}\n\n")
     md.append(f"\n\n    **Conductor:**")
