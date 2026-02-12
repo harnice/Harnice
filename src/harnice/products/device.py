@@ -729,8 +729,7 @@ def _validate_signals_list():
     counter = 2
     for signal in signals_list:
         print("Looking at csv row:", counter)
-        channel_type = chtype.parse(signal.get("channel_type"))
-        expected_signals = chtype.signals(channel_type)
+
         found_signals = set()
         connector_names = set()
 
@@ -747,6 +746,15 @@ def _validate_signals_list():
             raise ValueError("connector_mpn is blank")
         if signal.get("channel_type") in ["", None]:
             raise ValueError("channel_type is blank")
+        
+        # make sure channel type is formatted properly
+        try:
+            channel_type = chtype.parse(signal.get("channel_type"))
+        except:
+            raise TypeError("Channel type is not formatted correctly. See for more: https://harnice.io/products/_channel_type/")
+
+        # collect expected signals of channel type
+        expected_signals = chtype.signals(channel_type)
 
         # make sure signal is a valid signal of its channel type
         if signal.get("signal") not in chtype.signals(channel_type):
