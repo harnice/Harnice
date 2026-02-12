@@ -93,3 +93,23 @@ def signals(channel_type):
                 sig.strip() for sig in row.get("signals", "").split(",") if sig.strip()
             ]
     return []
+
+# search channel_types.tsv
+def attribute(channel_type, attribute):
+    """If you've defined other columns in your channel type, this will return that
+
+**Args**
+
+ - `channel_type` standard touple-format
+ - `attribute` header name of the attribute you need to find
+    """
+    chid, lib_repo = parse(channel_type)
+
+    ch_types_tsv_path = os.path.join(
+        library_utils.get_local_path(lib_repo), "channel_types", "channel_types.tsv"
+    )
+
+    for row in fileio.read_tsv(ch_types_tsv_path):
+        if str(row.get("channel_type_id", "")).strip() == str(chid):
+            return row.get(attribute)
+    return []
