@@ -1,6 +1,7 @@
 import docs_functions
 from harnice.products import (
     cable,
+    chtype,
     device,
     disconnect,
     flagnote,
@@ -28,6 +29,7 @@ def main():
     # CHANNEL TYPES
     # ========================================================
 
+    module_prefix = "chtype"
     md = ["# Channel Types"]
     md.append("\n\n---\n\n## How are channels mapped?")
 
@@ -37,6 +39,37 @@ def main():
 1. If you find the channel_type you're looking for, temporarily note it as a touple in a notepad somewhere with format `(ch_type_id, universal_library_repository)`. 
 1. If you don't find it, make a new one. It's important to try and reduce the number of channel_types in here to reduce complexity, but it's also important that you adhere to strict and true rules about what is allowed to be mapped to what. Modifications and additions to this document should be taken and reviewed very seriously.""")
 
+    md.append("\n\n")
+    md.append(
+        docs_functions.print_function_docs(
+            chtype.path, module_prefix
+        )
+    )
+    md.append(
+        docs_functions.print_function_docs(
+            chtype.parse, module_prefix
+        )
+    )
+    md.append(
+        docs_functions.print_function_docs(
+            chtype.compatibles, module_prefix
+        )
+    )
+    md.append(
+        docs_functions.print_function_docs(
+            chtype.attribute, module_prefix
+        )
+    )
+    md.append(
+        docs_functions.print_function_docs(
+            chtype.signals, module_prefix
+        )
+    )
+    md.append(
+        docs_functions.print_function_docs(
+            chtype.is_or_is_compatible_with, module_prefix
+        )
+    )
     path = docs_functions.harnice_dir() / "docs" / "products" / "_channel_type.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(md), encoding="utf-8")
