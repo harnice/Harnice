@@ -808,8 +808,9 @@ def render(lightweight=False):
                 connector_mpn="DB9_F",
             )
         else:
-            with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
-                f.write(device_feature_tree_utils_default)
+            if not os.path.exists(fileio.path("feature tree")):
+                with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
+                    f.write(device_feature_tree_utils_default)
 
     if os.path.exists(fileio.path("feature tree")):
         runpy.run_path(fileio.path("feature tree"))
