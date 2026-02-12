@@ -23,9 +23,9 @@ Let's face it: designing harnessing sucks. Managing how your devices talk to eac
 
 ==...*not anymore!!!*==
 
-I developed Harnice because **fuck that.** I'm tired of the fact that the world doesn't have an amazing, free harness/system cad tool. There are great free tools out there for other things (Kicad, Freecad, Inkscape, Onshape, Google Sheets, etc), there are crappy harness design tools out there (Vizio, Microsoft Paint, Powerpoint, pen&paper, etc), and there are expensive harness tools out there (Zuken, Altium, RapidHarness, etc), but no full-featured **free, open-source** tools built for everyone. 
+I developed Harnice because **it's time for something new.** We, the people, deserve better. Harnice is my attempt to consolidate all electrical-system related design tasks into one comprehensive, full-featured, **free, open-source** tool, built for everyone. 
 
-Harnice consolidates all high-level electrical design problems into one concise, consistent, infinitely configurable, reusable platform, where you can define what you need. Any imaginable output can be directly derived from the product of the compilation of your design rules. 
+With Harnice, you can consolidate all your electrical design problems into consistent, infinitely configurable, reusable data structures, where you can define what you need. From there, the software can help you derive any imaginable output directly from your design content.
 
 ---
 
@@ -81,7 +81,7 @@ Probably! But if not, Harnice supports **Macros**, which are Python files that c
 ---
 
 ## :fontawesome-solid-sack-dollar: How much does it cost?
-Free, fully free, forever and always. I made this tool because I never wanted to design harnesses manually ever again, and this is as much **FOR YOU** as much as it is for me. Build cool shit, don't waste your time doing automatable things, and as always, feel free to contribute if you can. 
+Free, fully free, forever and always. I made this tool because I never wanted to design harnesses manually ever again, and this is as much **FOR YOU** as much as it is for me. Go build cool stuff, don't waste your time doing automatable things, and as always, feel free to contribute if you can. 
 
 ---
 ## :octicons-question-16: Who am I?
