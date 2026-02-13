@@ -313,6 +313,10 @@ from harnice.lists import fileio
     name = fileio.drawnby().get("name")
     ```
 
+??? info "`fileio.today()`"
+
+    Return today's date as a short string: `M/D/YY` (e.g. `2/12/25`).
+
 This one happens behind the scenes, but here's how it knows you're in the right folder structure:
 
 ??? info "`fileio.verify_revision_structure()`"

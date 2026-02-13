@@ -413,6 +413,7 @@ Behind the scenes, Harnice stores the current part number and revision number in
     )
     md.append(docs_functions.print_function_docs(fileio.read_tsv, module_prefix))
     md.append(docs_functions.print_function_docs(fileio.drawnby, module_prefix))
+    md.append(docs_functions.print_function_docs(fileio.today, module_prefix))
     md.append(
         "This one happens behind the scenes, but here's how it knows you're in the right folder structure:\n\n"
     )
