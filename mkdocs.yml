@@ -84,7 +84,7 @@ nav:
     - Titleblocks: products/_titleblock.md
 
   - Commands:
-    - Manipulating Files: commands/fileio.md
+    - Manipulating Files: commands/_manipulating_files.md
     - Harnice Libraries: commands/_library_utils.md
     - Manipulating Circuits: commands/_circuits_utils.md
     - Feature Tree Utilities: commands/_feature_tree_utils.md

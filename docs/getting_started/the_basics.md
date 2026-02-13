@@ -60,13 +60,6 @@ Here's a more detailed diagram of the Harnice workflow including the information
 
 ![Workflow overview graph](images/the_basics_images/workflow_overview_2.png)
 
-# :material-folder-sync-outline: Keeping Track of Everything
-
-Harnice takes many inputs and produces many outputs. These are all stored as files on your computer. Harnice has built-in tools to help deal with all this. 
-
-??? info "Harnice File Structures"
-    {% include-markdown "commands/fileio.md" %}
-
 # :octicons-key-16: Part Numbering
 Harnice is designed to work with git: every file format works well with `git diff`. However, even so, revisions of products are inevitable: if you release a part, start building it, then realize something needs to change, what do you do?
 
