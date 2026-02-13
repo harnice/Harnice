@@ -9,8 +9,8 @@ Harnice requires a revision folder and a part number folder to be able to render
 ```python
 # suppose your part number is "123456" and your revision is "A"
 
-A123456/
-   A123456-revA
+|-- A123456/
+    L--   A123456-revA/
 ```
 
 If you're starting a new product, just make a new part number folder, run `harnice -r` from that folder in the command line, and the command line will help you build the right structure. 
@@ -165,7 +165,7 @@ Behind the scenes, Harnice stores the current part number and revision number in
 ##Commands:
 *Use the following functions by first importing the module in your script like this: 
 ```python
-from harnice.lists import <module 'harnice.fileio' from '/Users/kenyonshutt/Documents/GitHub/Harnice/src/harnice/fileio.py'>
+from harnice.lists import fileio
 ```
  then use as written.*
 ??? info "`state.partnumber(format)`"
