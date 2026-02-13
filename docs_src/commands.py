@@ -298,12 +298,12 @@ The appearance of a segment is defined by a dictionary of the following format:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(md), encoding="utf-8")
 
-
     # ========================================================
     # INTERACTING WITH FILES
     # ========================================================
 
-    md = ["""# Keeping Track of Files
+    md = [
+        """# Keeping Track of Files
 
 The `fileio` module keeps files organized! With the tools described in this page, you should never need to reference a file by constructing a path from scratch.
 
@@ -349,7 +349,8 @@ Here's the basics of how to read a file structure dictionary:
 - **Directories**: a directory is a key whose **value** is another dict (empty `{}` or more key–value pairs). The **key** is the directory name and is what you pass to `fileio.dirpath("dirname")`.
 
 ## Quick-start: accessing default files
-\n\n"""]
+\n\n"""
+    ]
 
     md.append(docs_functions.print_function_docs(fileio.path, "fileio"))
     md.append(docs_functions.print_function_docs(fileio.dirpath, "fileio"))
@@ -402,13 +403,24 @@ Behind the scenes, Harnice stores the current part number and revision number in
     md.append(docs_functions.print_function_docs(fileio.path, module_prefix))
     md.append(docs_functions.print_function_docs(fileio.dirpath, module_prefix))
     md.append(docs_functions.print_function_docs(fileio.silentremove, module_prefix))
-    md.append(docs_functions.print_function_docs(fileio.get_git_hash_of_harnice_src, module_prefix))
-    md.append(docs_functions.print_function_docs(fileio.get_path_to_project, module_prefix))
+    md.append(
+        docs_functions.print_function_docs(
+            fileio.get_git_hash_of_harnice_src, module_prefix
+        )
+    )
+    md.append(
+        docs_functions.print_function_docs(fileio.get_path_to_project, module_prefix)
+    )
     md.append(docs_functions.print_function_docs(fileio.read_tsv, module_prefix))
     md.append(docs_functions.print_function_docs(fileio.drawnby, module_prefix))
-    md.append("This one happens behind the scenes, but here's how it knows you're in the right folder structure:\n\n")
-    md.append(docs_functions.print_function_docs(fileio.verify_revision_structure, module_prefix))
-
+    md.append(
+        "This one happens behind the scenes, but here's how it knows you're in the right folder structure:\n\n"
+    )
+    md.append(
+        docs_functions.print_function_docs(
+            fileio.verify_revision_structure, module_prefix
+        )
+    )
 
     path = docs_functions.harnice_dir() / "docs" / "commands" / "_manipulating_files.md"
     path.parent.mkdir(parents=True, exist_ok=True)

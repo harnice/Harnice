@@ -48,20 +48,58 @@ Here's the basics of how to read a file structure dictionary:
 
 ??? info "`fileio.path(target_value, structure_dict=None, base_directory=None)`"
 
-    Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
+    Return the full path to a file identified by its file key.
     
-    It's complicated ... check out https://harnice.io/commands/fileio/ for more information.
+    * file structure dict (`state.file_structure`, or **structure_dict** if provided) is searched for a *value* equal to **target_value**. The path is built from the rev directory + **base_directory** (if any) + the key path to that value.
     
-    Args:
-        target_value (str): The value to search for.
+    **Special Target Values:**
     
-    Returns:
-        list: A list of container names leading to the element containing the target value, or None if not found.
+    - **`revision history`:** the revision history file of the product you're currently working on
+    - **`library locations`:** the library locations file on your computer
+    - **`project locations`:** the project locations file on your computer
+    - **`drawnby`:** the text file on your computer that stores your name
+    - **`rev directory`:** the revsion directory of the product you're currently working on
+    - **`part directory`:** the part directory of the product you're currently working on
+    
+    **Args:**
+    
+    - **target_value** — File key to look up (e.g. `"signals list"`, `"feature tree"`).
+    - **structure_dict** — Optional. Override the default structure (e.g. for a macro).
+        If `None`, uses `state.file_structure`.
+    - **base_directory** — Optional. Subdirectory under the rev directory to use as
+        the root for structure paths. If `None` or `""`, paths are under the rev directory only.
+    
+    **Returns:** Absolute path to the file (`str`).
+    
+    **Raises:** `TypeError` if **target_value** is not found in the structure (for non-special keys).
+    
+    **CLI interactions**
+    - If `library locations`, `project locations`, or `drawnby` files do not exist on your computer (maybe this is a newly run install?) the CLI will prompt you to create the default csv's in the correct location.
 
 ??? info "`fileio.dirpath(target_key, structure_dict=None, base_directory=None)`"
 
-    Returns the absolute path to a directory identified by its key
-    within a dict hierarchy.
+    Return the full path to a directory identified by its key in the file structure.
+    
+    Searches the file structure (`state.file_structure` or **structure_dict**) for a
+    *key* equal to **target_key** (directory names are keys; file keys are values).
+    The path is built from the rev directory + **base_directory** (if any) + the path to that key.
+    
+    **Special Target Keys:**
+    
+    - **`part directory`:** part directory of the product you're currently working on
+    - **`rev directory`:** rev directory of the product you're currently working on
+    
+    **Args:**
+    
+    - **target_key** — Directory name in the structure (e.g. `"lists"`, `"maps"`).
+        Pass `None` to get the rev directory (or rev + **base_directory**).
+    - **structure_dict** — Optional. Override the default structure. If `None`, uses `state.file_structure`.
+    - **base_directory** — Optional. Subdirectory under the rev directory. If `None` or `""`,
+        paths are under the rev directory only.
+    
+    **Returns:** Absolute path to the directory (`str`).
+    
+    **Raises:** `TypeError` if **target_key** is not `None` and not found in the structure.
 
 
 
@@ -105,7 +143,22 @@ Behind the scenes, Harnice stores the current part number and revision number in
 
 ??? info "`state.partnumber(format)`"
 
-    Documentation needed.
+    Return the current part number and/or revision in the requested format.
+    
+    Assumes `state.pn` and `state.rev` are set (e.g. by `fileio.verify_revision_structure()`).
+    For a part `"mypart"` and rev `1`:
+    
+    **Args:**
+    
+    - **format** — One of:
+        - `"pn-rev"`: full part-rev string, e.g. `"mypart-rev1"`
+        - `"pn"`: part number only, e.g. `"mypart"`
+        - `"rev"`: revision label, e.g. `"rev1"`
+        - `"R"`: revision number only, e.g. `"1"`
+    
+    **Returns:** The requested substring of `"pn-revRev"` (e.g. `"mypart-rev1"`) (`str`).
+    
+    **Raises:** `ValueError` if **format** is not one of the options above.
 
 
 ---
@@ -117,58 +170,163 @@ from harnice.lists import <module 'harnice.fileio' from '/Users/kenyonshutt/Docu
  then use as written.*
 ??? info "`state.partnumber(format)`"
 
-    Documentation needed.
+    Return the current part number and/or revision in the requested format.
+    
+    Assumes `state.pn` and `state.rev` are set (e.g. by `fileio.verify_revision_structure()`).
+    For a part `"mypart"` and rev `1`:
+    
+    **Args:**
+    
+    - **format** — One of:
+        - `"pn-rev"`: full part-rev string, e.g. `"mypart-rev1"`
+        - `"pn"`: part number only, e.g. `"mypart"`
+        - `"rev"`: revision label, e.g. `"rev1"`
+        - `"R"`: revision number only, e.g. `"1"`
+    
+    **Returns:** The requested substring of `"pn-revRev"` (e.g. `"mypart-rev1"`) (`str`).
+    
+    **Raises:** `ValueError` if **format** is not one of the options above.
 
 ??? info "`fileio.path(target_value, structure_dict=None, base_directory=None)`"
 
-    Recursively searches for a value in a nested JSON structure and returns the path to the element containing that value.
+    Return the full path to a file identified by its file key.
     
-    It's complicated ... check out https://harnice.io/commands/fileio/ for more information.
+    * file structure dict (`state.file_structure`, or **structure_dict** if provided) is searched for a *value* equal to **target_value**. The path is built from the rev directory + **base_directory** (if any) + the key path to that value.
     
-    Args:
-        target_value (str): The value to search for.
+    **Special Target Values:**
     
-    Returns:
-        list: A list of container names leading to the element containing the target value, or None if not found.
+    - **`revision history`:** the revision history file of the product you're currently working on
+    - **`library locations`:** the library locations file on your computer
+    - **`project locations`:** the project locations file on your computer
+    - **`drawnby`:** the text file on your computer that stores your name
+    - **`rev directory`:** the revsion directory of the product you're currently working on
+    - **`part directory`:** the part directory of the product you're currently working on
+    
+    **Args:**
+    
+    - **target_value** — File key to look up (e.g. `"signals list"`, `"feature tree"`).
+    - **structure_dict** — Optional. Override the default structure (e.g. for a macro).
+        If `None`, uses `state.file_structure`.
+    - **base_directory** — Optional. Subdirectory under the rev directory to use as
+        the root for structure paths. If `None` or `""`, paths are under the rev directory only.
+    
+    **Returns:** Absolute path to the file (`str`).
+    
+    **Raises:** `TypeError` if **target_value** is not found in the structure (for non-special keys).
+    
+    **CLI interactions**
+    - If `library locations`, `project locations`, or `drawnby` files do not exist on your computer (maybe this is a newly run install?) the CLI will prompt you to create the default csv's in the correct location.
 
 ??? info "`fileio.dirpath(target_key, structure_dict=None, base_directory=None)`"
 
-    Returns the absolute path to a directory identified by its key
-    within a dict hierarchy.
+    Return the full path to a directory identified by its key in the file structure.
+    
+    Searches the file structure (`state.file_structure` or **structure_dict**) for a
+    *key* equal to **target_key** (directory names are keys; file keys are values).
+    The path is built from the rev directory + **base_directory** (if any) + the path to that key.
+    
+    **Special Target Keys:**
+    
+    - **`part directory`:** part directory of the product you're currently working on
+    - **`rev directory`:** rev directory of the product you're currently working on
+    
+    **Args:**
+    
+    - **target_key** — Directory name in the structure (e.g. `"lists"`, `"maps"`).
+        Pass `None` to get the rev directory (or rev + **base_directory**).
+    - **structure_dict** — Optional. Override the default structure. If `None`, uses `state.file_structure`.
+    - **base_directory** — Optional. Subdirectory under the rev directory. If `None` or `""`,
+        paths are under the rev directory only.
+    
+    **Returns:** Absolute path to the directory (`str`).
+    
+    **Raises:** `TypeError` if **target_key** is not `None` and not found in the structure.
 
 ??? info "`fileio.silentremove(filepath)`"
 
-    Removes a file or directory and its contents.
+    Remove a file or directory and its contents if it exists.
     
-    Args:
-        filepath (str): The path to the file or directory to remove.
+    No-op if the path does not exist. Removes symlinks as files (does not follow).
+    
+    **Args:**
+    
+    - **filepath** — Path to the file or directory to remove.
 
 ??? info "`fileio.get_git_hash_of_harnice_src()`"
 
-    Documentation needed.
+    Return the git commit hash of the Harnice source repo (HEAD).
+    
+    Used for version/attribution in outputs. Returns `"UNKNOWN"` if git is
+    unavailable or the repo cannot be read.
 
 ??? info "`fileio.get_path_to_project(traceable_key)`"
 
-    Given a traceable identifier for a project (PN, URL, etc),
-    return the expanded local filesystem path.
+    Return the local filesystem path for a project identified by a traceable key.
     
-    Expects a CSV at the root of the repo named:
-        project_locations.csv
+    Reads `project_locations.csv` (at `fileio.path("project locations")`) and returns
+    the expanded local path for the row whose **traceable_key** matches. Used to
+    resolve paths to systems, libraries, or other projects by part number or URL.
     
-    Format (no headers):
-        traceable_key,local_path
+    **Args:**
+    
+    - **traceable_key** — Key to look up (e.g. part number or project identifier).
+        Leading/trailing whitespace is stripped.
+    
+    **Returns:** `os.path.expanduser(local_path)` for the matching row (`str`).
+    
+    **Raises:**
+    
+    - `FileNotFoundError` — If `project_locations.csv` does not exist.
+    - `ValueError` — If **traceable_key** is not found or has no local path.
 
 ??? info "`fileio.read_tsv(filepath, delimiter='\t')`"
 
-    Documentation needed.
+    Read a TSV file and return a list of row dicts (one dict per row, keys from header).
+    
+    If **filepath** is an existing file path, that file is read. If not, **filepath** is
+    treated as a file key and `fileio.path(filepath)` is used to resolve the path
+    (e.g. `"instances list"` or `"signals list"`).
+    
+    **Args:**
+    
+    - **filepath** — Path to a TSV file, or a file key (e.g. `"instances list"`).
+    - **delimiter** — Column delimiter; default `"\t"`.
+    
+    **Returns:** List of dicts, one per data row, with keys from the header row (`list`).
+    
+    **Raises:** `FileNotFoundError` if the path does not exist or the resolved path does not exist.
 
 ??? info "`fileio.drawnby()`"
 
-    Documentation needed.
+    Load and return the contents of the drawnby file (path from `fileio.path("drawnby")`).
+    
+    The drawnby file lives at the Harnice repo root and stores author/credits info.
+    
+    That file should be structured like this, and this function will return exactly the same as a json object:
+    ```json
+    {
+        "name": "K SHUTT"
+    }
+    ```
+    Use case:
+    ```python
+    name = fileio.drawnby().get("name")
+    ```
 
 This one happens behind the scenes, but here's how it knows you're in the right folder structure:
 
 ??? info "`fileio.verify_revision_structure()`"
 
-    Documentation needed.
+    Ensure the current directory is a valid revision folder and set `state.pn` and `state.rev`.
+    
+    Called by the CLI before rendering.
+    
+    **Behavior:**
+    
+    - If cwd is a `<part>-rev<N>` folder: sets `state.pn` and `state.rev` from the path.
+    - If cwd is a part folder that contains rev folders: prints a message and exits.
+    - Otherwise: prompts to create a new PN here, creates the first rev folder, and `chdir` into it.
+    
+    Ensures revision_history exists and that the revision status is blank (Harnice only
+    renders revisions with blank status). Updates revision_history datemodified.
 
