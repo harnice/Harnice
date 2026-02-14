@@ -40,18 +40,21 @@ channel type.
 
 def parse(val):
     """
-    Convert stored string into a tuple (chid:int, lib_repo:str).
-    Handles both single tuples and extracts first tuple from lists.
+Convert stored string into a tuple (chid:int, lib_repo:str).
+Handles both single tuples and extracts first tuple from lists.
     """
-    if not val:
-        return None
+    if val in [None, ""]:
+        raise ValueError("channel type is blank")
     if isinstance(val, tuple):
         chid, lib_repo = val
     else:
         parsed = ast.literal_eval(str(val))
         # If it's a list, take the first tuple
-        if isinstance(parsed, list):
-            chid, lib_repo = parsed[0]
+        if not isinstance(parsed, tuple):
+            if isinstance(parsed, list):
+                chid, lib_repo = parsed[0]
+            else:
+                raise ValueError(f"channel type {val} that is being parsed is malformed. Channel types must be touples or list of touples in format (int, string)")
         else:
             chid, lib_repo = parsed
     return (int(chid), str(lib_repo).strip())
