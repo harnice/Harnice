@@ -14,6 +14,9 @@ from harnice import state
 #  -  if multiple instances are found at the same hierarchy level with the same name,
 # this separates name from unique instance identifier
 
+def harnice_root():
+    import harnice
+    return os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
 
 def part_directory():
     """Return the part directory: the parent of the current working directory.
@@ -89,11 +92,6 @@ def path(target_value, structure_dict=None, base_directory=None):
     # FILES DEPENDENT ON HARNICE ROOT
 
     if target_value == "library locations":
-        import harnice
-
-        harnice_root = os.path.dirname(
-            os.path.dirname(os.path.dirname(harnice.__file__))
-        )
 
         library_locations_path = os.path.join(harnice_root, "library_locations.csv")
 
