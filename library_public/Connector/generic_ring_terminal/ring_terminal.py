@@ -35,16 +35,6 @@ AWG_OD = {
     "37": 0.004453,  "38": 0.003965,  "39": 0.003531,  "40": 0.003145,
 }
 
-# Approximate ampacity for copper ring terminals (free-air, single conductor).
-# Conservative values — derate for bundled / enclosed installations.
-AWG_AMPACITY = {
-    "4/0": 230, "3/0": 200, "2/0": 175, "1/0": 150,
-    "1": 130,   "2": 115,   "3": 100,   "4": 85,
-    "5": 75,    "6": 65,    "7": 55,    "8": 50,
-    "9": 40,    "10": 35,   "12": 25,   "14": 20,
-    "16": 13,   "18": 10,   "20": 7,    "22": 5,
-}
-
 # Standard insulation colour coding per wire-gauge band
 INSULATION_COLORS = {
     "red":    "#FF0000",  # 22-18 AWG
@@ -198,7 +188,6 @@ def compile_part_attributes(cfg: dict) -> dict:
     ring_od = ring_od_from_stud(stud_id)
     barrel_od = wire_od + 0.15  # shank diameter
     length = overall_length_from_wire(barrel_od, ring_od)
-    ampacity = AWG_AMPACITY.get(wire_gauge)
 
     return {
         # Identification
@@ -213,18 +202,10 @@ def compile_part_attributes(cfg: dict) -> dict:
         "barrel_od": round(barrel_od, 4),
         "overall_length": round(length, 4),
 
-        # Electrical
-        "ampacity_a": ampacity,
-        "voltage_rating_v": 600,  # typical for most commercial terminals
-
         # Material defaults (override per-manufacturer as needed)
         "barrel_material": "copper",
         "plating": "tin",
         "insulation_material": "vinyl" if insulation else None,
-
-        # Crimp tooling — populate from manufacturer data
-        "crimp_tool": None,
-        "crimp_die": None,
 
         # Drawing / harnice metadata
         "tools": None,
@@ -232,9 +213,7 @@ def compile_part_attributes(cfg: dict) -> dict:
         "csys_children": build_csys_children(
             ring_od=ring_od,
             overall_length=length,
-        ),
-        "contacts": None,
-        "shell_size": None,
+        )
     }
 
 

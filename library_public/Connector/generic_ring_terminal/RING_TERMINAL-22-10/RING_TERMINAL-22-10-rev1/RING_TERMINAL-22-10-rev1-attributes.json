@@ -7,13 +7,9 @@
   "ring_od": 0.4048,
   "barrel_od": 0.1753,
   "overall_length": 0.7555,
-  "ampacity_a": 5,
-  "voltage_rating_v": 600,
   "barrel_material": "copper",
   "plating": "tin",
   "insulation_material": null,
-  "crimp_tool": null,
-  "crimp_die": null,
   "tools": null,
   "build_notes": [],
   "csys_children": {
@@ -147,7 +143,5 @@
       "distance": 0.2424,
       "rotation": 0
     }
-  },
-  "contacts": null,
-  "shell_size": null
+  }
 }
