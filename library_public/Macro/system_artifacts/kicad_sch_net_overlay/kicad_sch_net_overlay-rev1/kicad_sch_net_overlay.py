@@ -675,6 +675,18 @@ def add_net_overlay_groups_to_svg(filepath):
         filepath (str): Path to the SVG file to modify
         artifact_id (str): Identifier to use in the group IDs
     """
+    if not os.path.exists(filepath):
+        # Create a minimal SVG from scratch with the net overlay group markers
+        minimal_svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg">\n'
+            f'  <g id="{artifact_id}-net-overlay-contents-start">\n'
+            "  </g>\n"
+            f'  <g id="{artifact_id}-net-overlay-contents-end"/>\n'
+            "</svg>\n"
+        )
+        with open(filepath, "w", encoding="utf-8") as file:
+            file.write(minimal_svg)
+        return
     with open(filepath, "r", encoding="utf-8") as file:
         svg_content = file.read()
 
