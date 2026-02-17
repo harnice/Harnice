@@ -189,23 +189,19 @@ def ring_terminal_svg(
 
     scale = 96   # pixels per inch
 
-    # Origin (0,0): far left of barrel, vertically centred
-    ox = 0
-    oy = max(ring_r, barrel_r) * scale
-
     # Ring center
-    rcx = ox + (overall_length - ring_r) * scale
-    rcy = oy
+    rcx = (overall_length - ring_r) * scale
+    rcy = 0
 
     # Barrel rectangle
-    bx1 = ox
-    bx2 = ox + barrel_len * scale
-    by1 = oy - barrel_r * scale
+    bx1 = 0
+    bx2 = barrel_len * scale
+    by1 = -barrel_r * scale
     bh = barrel_od * scale
 
     # Crimp bands
     crimp_w = barrel_len * 0.15
-    c1x = bx1 + barrel_len * scale * 0.1
+    c1x = barrel_len * scale * 0.1
     c2x = bx2 - barrel_len * scale * 0.1 - crimp_w * scale
 
     # Taper from barrel to ring
@@ -410,7 +406,7 @@ def main():
             overall_length=attributes["overall_length"],
             insulation=cfg["insulation"],
         )
-        svg_path = os.path.join(rev_dir, f"{pn}-rev{REVISION}.svg")
+        svg_path = os.path.join(rev_dir, f"{pn}-rev{REVISION}-drawing.svg")
         with open(svg_path, "w") as f:
             f.write(svg_content)
 
