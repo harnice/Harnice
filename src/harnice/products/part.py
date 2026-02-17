@@ -315,6 +315,73 @@ def render():
 
         return mat
 
+    def _normalize_color(color, default=None):
+        """
+        Convert a variety of SVG/CSS-style color strings into something
+        Pillow can understand. Falls back to the original value (and lets
+        drawing code catch/skip on failure) if we don't recognize it.
+        """
+        if color is None:
+            return default
+
+        c = str(color).strip()
+        if not c:
+            return default
+
+        # SVG "none" -> no paint
+        if c.lower() == "none":
+            return None
+
+        # rgba(r,g,b,a) where a is 0–1 or 0–255
+        m = re.match(r"rgba\s*\(([^)]+)\)", c, flags=re.IGNORECASE)
+        if m:
+            try:
+                nums = _parse_floats(m.group(1))
+                if len(nums) != 4:
+                    raise ValueError
+                r, g, b, a = nums
+                # Allow alpha 0–1 or 0–255
+                if a > 1.0:
+                    a = a / 255.0
+                a = max(0.0, min(1.0, a))
+
+                # Preblend onto white background so we can still render in RGB
+                def _blend(ch):
+                    return int(round(255 * (1 - a) + ch * a))
+
+                rr = max(0, min(255, _blend(r)))
+                gg = max(0, min(255, _blend(g)))
+                bb = max(0, min(255, _blend(b)))
+                return "#{:02X}{:02X}{:02X}".format(rr, gg, bb)
+            except Exception:
+                # Fall through to generic handling
+                pass
+
+        # rgb(r,g,b)
+        m = re.match(r"rgb\s*\(([^)]+)\)", c, flags=re.IGNORECASE)
+        if m:
+            try:
+                nums = _parse_floats(m.group(1))
+                if len(nums) != 3:
+                    raise ValueError
+                r, g, b = nums
+                rr = max(0, min(255, int(round(r))))
+                gg = max(0, min(255, int(round(g))))
+                bb = max(0, min(255, int(round(b))))
+                return "#{:02X}{:02X}{:02X}".format(rr, gg, bb)
+            except Exception:
+                pass
+
+        # Hex with or without alpha (#RGB, #RRGGBB, #RRGGBBAA)
+        if c.startswith("#"):
+            if len(c) == 9:
+                # Drop alpha for now
+                return c[:7]
+            return c
+
+        # Unknown specifier – let Pillow try, but caller will catch failures.
+        return c
+
     # ======================================================
     # 3. Parse actual shapes into SVG pixel space
     # ======================================================
@@ -574,34 +641,50 @@ def render():
 
     # --- SHAPES ---
     for typ, p in parsed_shapes:
-        if typ == "rect":
-            x1, y1 = map_xy(p["x"], p["y"])
-            x2, y2 = map_xy(p["x"] + p["w"], p["y"] + p["h"])
-            draw.rectangle(
-                (x1, y1, x2, y2),
-                fill=p["fill"],
-                outline=p["stroke"],
-                width=int(p["sw"]),
-            )
-        elif typ == "circle":
-            cx, cy = map_xy(p["cx"], p["cy"])
-            r = p["r"]
-            draw.ellipse(
-                (cx - r, cy - r, cx + r, cy + r),
-                fill=p["fill"],
-                outline=p["stroke"],
-                width=int(p["sw"]),
-            )
-        elif typ == "line":
-            x1, y1 = map_xy(p["x1"], p["y1"])
-            x2, y2 = map_xy(p["x2"], p["y2"])
-            draw.line((x1, y1, x2, y2), fill=p["stroke"], width=int(p["sw"]))
-        elif typ == "polygon":
-            pts2 = [map_xy(x, y) for x, y in p["points"]]
-            draw.polygon(pts2, fill=p["fill"], outline=p["stroke"])
-        elif typ == "text":
-            tx, ty = map_xy(p["x"], p["y"])
-            draw.text((tx, ty), p["text"], fill=p["fill"], font=font)
+        try:
+            if typ == "rect":
+                x1, y1 = map_xy(p["x"], p["y"])
+                x2, y2 = map_xy(p["x"] + p["w"], p["y"] + p["h"])
+                draw.rectangle(
+                    (x1, y1, x2, y2),
+                    fill=_normalize_color(p.get("fill")),
+                    outline=_normalize_color(p.get("stroke")),
+                    width=int(p["sw"]),
+                )
+            elif typ == "circle":
+                cx, cy = map_xy(p["cx"], p["cy"])
+                r = p["r"]
+                draw.ellipse(
+                    (cx - r, cy - r, cx + r, cy + r),
+                    fill=_normalize_color(p.get("fill")),
+                    outline=_normalize_color(p.get("stroke")),
+                    width=int(p["sw"]),
+                )
+            elif typ == "line":
+                x1, y1 = map_xy(p["x1"], p["y1"])
+                x2, y2 = map_xy(p["x2"], p["y2"])
+                draw.line(
+                    (x1, y1, x2, y2),
+                    fill=_normalize_color(p.get("stroke", "black")),
+                    width=int(p["sw"]),
+                )
+            elif typ == "polygon":
+                pts2 = [map_xy(x, y) for x, y in p["points"]]
+                draw.polygon(
+                    pts2,
+                    fill=_normalize_color(p.get("fill")),
+                    outline=_normalize_color(p.get("stroke")),
+                )
+            elif typ == "text":
+                tx, ty = map_xy(p["x"], p["y"])
+                draw.text(
+                    (tx, ty),
+                    p["text"],
+                    fill=_normalize_color(p.get("fill", "black")),
+                    font=font,
+                )
+        except Exception as e:
+            print(f"[WARNING] Failed to draw {typ} with params {p}: {e}")
 
     # --- CSYS ---
     dot_radius = 4
