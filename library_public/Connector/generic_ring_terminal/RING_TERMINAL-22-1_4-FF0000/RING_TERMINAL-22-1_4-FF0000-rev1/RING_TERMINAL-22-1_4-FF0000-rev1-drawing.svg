@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="400" height="400">
   <g id="RING_TERMINAL-22-1_4-FF0000-drawing-contents-start">
-    <rect x="0" y="-48" width="96" height="96" fill="#DC2330" stroke="black" stroke-width="1"/>
-  </g>
-  <g id="RING_TERMINAL-22-1_4-FF0000-drawing-contents-end">
+    <rect x="0.00" y="-8.41" width="35.67" height="16.83" fill="#898989" rx="2"/>
+    <polygon points="35.07,-7.90 33.67,-8.41 33.67,8.41 35.07,7.90" fill="#898989"/>
+    <circle cx="56.66" cy="0.00" r="22.99" fill="#898989"/>
+    <rect x="-4.00" y="-10.81" width="31.78" height="21.63" fill="#FF0000"/>
+    <circle cx="56.66" cy="0.00" r="12.72" fill="#ffffff" stroke="#666666" stroke-width="0.5"/>
+    <line x1="53.66" y1="0.00" x2="59.66" y2="0.00" stroke="#bbbbbb" stroke-width="0.5"/>
+    <line x1="56.66" y1="-3.00" x2="56.66" y2="3.00" stroke="#bbbbbb" stroke-width="0.5"/>
+</g>
+<g id="RING_TERMINAL-22-1_4-FF0000-drawing-contents-end">
   </g>
   <g id="output csys locations">
     <g id="flagnote-1">

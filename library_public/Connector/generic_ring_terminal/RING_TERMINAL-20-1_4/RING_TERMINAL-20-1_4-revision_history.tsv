@@ -1,2 +1,2 @@
 product	mfg	pn	desc	rev	status	releaseticket	library_repo	library_subpath	datestarted	datemodified	datereleased	git_hash_of_harnice_src	drawnby	checkedby	revisionupdates	affectedinstances
-part	mil spec	RING_TERMINAL-20-1_4		1			https://github.com/harnice/d38999	Connector	2/16/26	2/17/26		fdbbc15d53a9d626cefd3595d238c7a750c0258c	K SHUTT			
+part	mil spec	RING_TERMINAL-20-1_4		1			https://github.com/harnice/d38999	Connector	2/16/26	2/17/26		92a45a3fbdd34ec43d98c8dda09c25f601b2f83e	K SHUTT			
