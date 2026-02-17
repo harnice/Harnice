@@ -18,6 +18,7 @@ dependencies = [
     "sexpdata",
     "Pillow",
     "PyYAML",
+    "pypdf",
     "xlwt",
     "webcolors",
     "prompt_toolkit"

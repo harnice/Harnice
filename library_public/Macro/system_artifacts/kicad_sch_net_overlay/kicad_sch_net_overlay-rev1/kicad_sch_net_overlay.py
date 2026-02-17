@@ -4,6 +4,7 @@ import re
 import json
 import math
 from typing import Dict, List
+from pypdf import PdfWriter
 from harnice import fileio, state
 from PIL import Image, ImageDraw, ImageFont
 from harnice.utils import svg_utils
@@ -1406,10 +1407,11 @@ for svg_filename in svg_files:
     temp_pdfs.append(pdf_path)
 
 # Merge all PDFs
-subprocess.run(
-    ["pdfunite"] + temp_pdfs + [path("output pdf")],
-    check=True,
-)
+writer = PdfWriter()
+for pdf_path in temp_pdfs:
+    writer.append(pdf_path)
+writer.write(path("output pdf"))
+writer.close()
 
 # Optional cleanup
 for temp in temp_pdfs:
