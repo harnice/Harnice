@@ -31,7 +31,11 @@ scale = 1.0
 # Minimum segment length (in mm) to show white labels
 MIN_SEGMENT_LENGTH_FOR_LABEL_MM = 30.0
 
-print_circles_and_dots = False  # for debugging the path
+# line widths, inches
+MACRO_STROKE_WIDTH = 0.003
+
+# for debugging the path
+print_circles_and_dots = False
 
 """
 Known issues:
@@ -235,30 +239,38 @@ class KiCadSchematicParser:
         labels = []
 
         # Pattern for text labels: (text "..." (at x y angle) ...)
-        text_pattern = r'\(text\s+"([^"]+)"\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\)'
-        
+        text_pattern = (
+            r'\(text\s+"([^"]+)"\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\)'
+        )
+
         for match in re.finditer(text_pattern, self.content):
             text, x, y, angle = match.groups()
-            labels.append({
-                'text': text,
-                'x': float(x),
-                'y': float(y),
-                'angle': float(angle),
-                'type': 'text'
-            })
+            labels.append(
+                {
+                    "text": text,
+                    "x": float(x),
+                    "y": float(y),
+                    "angle": float(angle),
+                    "type": "text",
+                }
+            )
 
         # Pattern for net labels: (label "..." (at x y angle) ...)
-        label_pattern = r'\(label\s+"([^"]+)"\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\)'
-        
+        label_pattern = (
+            r'\(label\s+"([^"]+)"\s+\(at\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\)'
+        )
+
         for match in re.finditer(label_pattern, self.content):
             text, x, y, angle = match.groups()
-            labels.append({
-                'text': text,
-                'x': float(x),
-                'y': float(y),
-                'angle': float(angle),
-                'type': 'label'
-            })
+            labels.append(
+                {
+                    "text": text,
+                    "x": float(x),
+                    "y": float(y),
+                    "angle": float(angle),
+                    "type": "label",
+                }
+            )
 
         return labels
 
@@ -704,13 +716,13 @@ def label_svg(
 ):
     """
     Generate SVG label with text in a rectangular box.
-    
+
     Units: All parameters and calculations are in millimeters (mm).
     - x, y: Position coordinates in mm (SVG coordinate system, Y increases downward)
     - angle: Rotation angle in degrees (tangent angle of wire segment)
     - font_size: Font size in mm (default 0.2mm)
     - All dimensions (width, height, padding, stroke) are in mm
-    
+
     Args:
         x: X coordinate in mm
         y: Y coordinate in mm (KiCad coordinates, will be flipped for SVG)
@@ -722,7 +734,7 @@ def label_svg(
         font_size: Font size in mm (default 0.2mm)
         font_family: Font family name
         font_weight: Font weight
-    
+
     Returns:
         SVG string for the label group
     """
@@ -730,30 +742,29 @@ def label_svg(
     text_str = str(text) if text is not None else ""
     if not text_str.strip():
         text_str = "?"
-    
+
     # Escape XML/SVG special characters in text
     text_escaped = (
-        text_str
-        .replace("&", "&amp;")
+        text_str.replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
         .replace('"', "&quot;")
         .replace("'", "&apos;")
     )
-    
+
     # All units are in millimeters (mm)
     # x, y coordinates are already in mm from point_chain (converted from inches earlier)
     # font_size parameter is in mm
     font_size_mm = font_size  # Explicitly named for clarity, but same value
-    
+
     # Flip Y coordinate for SVG (KiCad Y increases downward, SVG Y increases upward)
     y_svg = -y
-    
+
     # Normalize angle to 0-360 range
     angle = angle % 360
     if angle < 0:
         angle += 360
-    
+
     # The tangent angle represents the direction of the wire segment
     # For SVG, we want text parallel to the wire direction
     # SVG rotate() is counter-clockwise, and Y increases downward
@@ -768,20 +779,20 @@ def label_svg(
     # Character width: each character takes 1.2x the font size in width
     char_width_mm = font_size_mm * 1.2
     text_width_mm = len(text_escaped) * char_width_mm
-    
+
     # Horizontal padding (left/right) in mm
     horizontal_padding_mm = 0.3
     # Box width: text width + padding, then multiplied by 1.75 for extra width
     width_mm = (text_width_mm + horizontal_padding_mm * 2) * 1.75
-    
+
     # Box height: 4x the font size (provides vertical padding around text)
     # Text size remains font_size_mm, box is taller for better visibility
     height_mm = font_size_mm * 4
-    
+
     # Center the rectangle around the origin (for rotation)
     rect_x_mm = -width_mm / 2
     rect_y_mm = -height_mm / 2
-    
+
     # Stroke settings (all in mm)
     # White labels: thin border (0.05mm) for subtle outline
     # Black labels: stroke matches background (invisible, but set for consistency)
@@ -861,7 +872,7 @@ junction_nodes = sum(1 for n in graph["nodes"].keys() if n.startswith("wirejunct
 
 # Map the instances to graph paths and assign segment_order
 path_found_count = 0
-for instance in instances: # input arg
+for instance in instances:  # input arg
     from_device_refdes = instance.get("this_net_from_device_refdes")
     from_connector_name = instance.get("this_net_from_device_connector_name")
     to_device_refdes = instance.get("this_net_to_device_refdes")
@@ -985,7 +996,7 @@ for node_id, node_coords in graph["nodes"].items():
     components_in_node = 0
     components_seen = []
 
-    for instance in instances:
+    for instance in instances:  # input arg
         parent_name = instance.get("parent_instance") or instance.get("instance_name")
         if parent_name in components_seen:
             continue
@@ -1016,7 +1027,7 @@ for node_id, node_coords in graph["nodes"].items():
     for seg_angle, seg_uuid in zip(node_segment_angles, node_segments):
         # Collect instances that use this segment
         instances_using_segment = []
-        for instance in instances:
+        for instance in instances:  # input arg
             if seg_uuid in instance.get("graph_path_segments", []):
                 instances_using_segment.append(instance.get("instance_name"))
 
@@ -1139,7 +1150,7 @@ for wire_uuid, wire_coords in wire_locations_scaled.items():
 cleaned_chains = {}
 
 # Iterate over each instance to build its path
-for instance in instances:
+for instance in instances:  # input arg
     path_segments = instance.get("graph_path_segments", [])
     path_directions = instance.get("graph_path_directions", [])
 
@@ -1239,7 +1250,7 @@ for instance in instances:
         # Draw the styled path
         svg_utils.draw_styled_path(
             point_chain,
-            0.003,  # stroke width in inches
+            MACRO_STROKE_WIDTH,
             appearance_data,
             svg_groups,
         )
@@ -1252,17 +1263,17 @@ for instance in instances:
             else:
                 # End of path - use node_at_end_b print_name
                 text = instance.get("print_name_at_end_b")
-            
+
             # Ensure we have text
             if not text:
                 text = "?"
-            
+
             # Get coordinates and tangent from point_chain
             point = point_chain[order]
             x_mm = point["x"]
             y_mm = point["y"]
             tangent = point["tangent"]
-            
+
             svg_groups.append(
                 label_svg(
                     x_mm,
@@ -1274,7 +1285,7 @@ for instance in instances:
                     outline="black",
                 )
             )
-        
+
         # Add white label in the middle of each segment (each pair of consecutive points)
         # Only add labels for segments longer than the threshold
         instance_print_name = instance.get("print_name")
@@ -1283,19 +1294,21 @@ for instance in instances:
         for i in range(len(point_chain) - 1):
             point_a = point_chain[i]
             point_b = point_chain[i + 1]
-            
+
             # Calculate segment length
             dx = point_b["x"] - point_a["x"]
             dy = point_b["y"] - point_a["y"]
             segment_length_mm = math.sqrt(dx * dx + dy * dy)
-            
+
             # Only add label if segment is long enough
             if segment_length_mm >= MIN_SEGMENT_LENGTH_FOR_LABEL_MM:
                 # Calculate midpoint of this segment
                 x_mm = (point_a["x"] + point_b["x"]) / 2
                 y_mm = (point_a["y"] + point_b["y"]) / 2
-                tangent = point_a["tangent"]  # Use the tangent from the first point of the segment
-                
+                tangent = point_a[
+                    "tangent"
+                ]  # Use the tangent from the first point of the segment
+
                 svg_groups.append(
                     label_svg(
                         x_mm,
