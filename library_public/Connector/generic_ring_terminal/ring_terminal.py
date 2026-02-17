@@ -2,10 +2,8 @@ import os
 import json
 import subprocess
 import math
-
 from harnice.lists import rev_history
 from harnice import state
-import harnice.products.part as part
 
 REVISION = "1"
 DATE_STARTED = "2/16/26"
@@ -54,34 +52,116 @@ INSULATION_COLORS = {
     "yellow": "#FFFF00",  # 12-10 AWG
 }
 
-STANDARD_CSYS_CHILDREN = {
-    "flagnote-1":              {"angle":   0, "distance": 3,    "rotation": 0},
-    "flagnote-1-leader_dest":  {"angle":   0, "distance": 1,    "rotation": 0},
-    "flagnote-2":              {"angle":  15, "distance": 3,    "rotation": 0},
-    "flagnote-2-leader_dest":  {"angle":  15, "distance": 1.03, "rotation": 0},
-    "flagnote-3":              {"angle": -15, "distance": 3,    "rotation": 0},
-    "flagnote-3-leader_dest":  {"angle": -15, "distance": 1.03, "rotation": 0},
-    "flagnote-4":              {"angle":  30, "distance": 3,    "rotation": 0},
-    "flagnote-4-leader_dest":  {"angle":  30, "distance": 1,    "rotation": 0},
-    "flagnote-5":              {"angle": -30, "distance": 3,    "rotation": 0},
-    "flagnote-5-leader_dest":  {"angle": -30, "distance": 1,    "rotation": 0},
-    "flagnote-6":              {"angle":  45, "distance": 3,    "rotation": 0},
-    "flagnote-6-leader_dest":  {"angle":  45, "distance": 0.72, "rotation": 0},
-    "flagnote-7":              {"angle": -45, "distance": 3,    "rotation": 0},
-    "flagnote-7-leader_dest":  {"angle": -45, "distance": 0.72, "rotation": 0},
-    "flagnote-8":              {"angle":  60, "distance": 3,    "rotation": 0},
-    "flagnote-8-leader_dest":  {"angle":  60, "distance": 0.58, "rotation": 0},
-    "flagnote-9":              {"angle": -60, "distance": 3,    "rotation": 0},
-    "flagnote-9-leader_dest":  {"angle": -60, "distance": 0.58, "rotation": 0},
-    "flagnote-10":             {"angle": -75, "distance": 3,    "rotation": 0},
-    "flagnote-10-leader_dest": {"angle": -75, "distance": 0.52, "rotation": 0},
-    "flagnote-11":             {"angle":  75, "distance": 3,    "rotation": 0},
-    "flagnote-11-leader_dest": {"angle":  75, "distance": 0.52, "rotation": 0},
-    "flagnote-12":             {"angle": -90, "distance": 3,    "rotation": 0},
-    "flagnote-12-leader_dest": {"angle": -90, "distance": 0.52, "rotation": 0},
-    "flagnote-13":             {"angle":  90, "distance": 3,    "rotation": 0},
-    "flagnote-13-leader_dest": {"angle":  90, "distance": 0.5,  "rotation": 0},
-}
+
+def terminal_outline_distance(
+    angle_deg: float,
+    ring_od: float,
+    overall_length: float,
+    padding: float = 0.04,
+) -> float:
+    """Distance from center of a rounded rectangle to its perimeter at a given angle.
+
+    The terminal silhouette is approximated as a rounded rectangle:
+      - width  = overall_length
+      - height = ring_od
+      - corner radius = ring_od / 2  (so the ring end is a perfect semicircle)
+
+    The centroid sits at the geometric center of this rounded rect.
+
+    Args:
+        angle_deg: Angle in degrees (0 = toward ring tip, 90 = up, 180 = barrel end).
+        ring_od: Ring outer diameter (sets height AND corner radius).
+        overall_length: Overall terminal length (sets width).
+        padding: Extra gap beyond the surface.
+
+    Returns:
+        Distance from centroid to perimeter + padding.
+    """
+    r = ring_od / 2            # corner radius = half the height
+    hh = r                     # half-height equals corner radius
+
+    # Since hh == r, the inner rect has zero vertical extent (iy = 0),
+    # so arc centers sit along the x-axis at y = 0.
+    ix = overall_length - r  # distance between origin and beginning of ring
+
+    ang = math.radians(angle_deg)
+    cos_a = math.cos(ang)
+    sin_a = math.sin(ang)
+
+    # Ray from origin: P(t) = t * (cos_a, sin_a), t > 0.
+    # A rounded rect with hh == r has only two zone types:
+    #   - Flat top/bottom edges (between the two arc centers)
+    #   - Semicircular caps on left and right
+
+    # --- Flat top/bottom: y = ±hh, x in [-ix, ix] ---
+    t_best = math.inf
+    if abs(sin_a) > 1e-12:
+        for edge_y in (hh, -hh):
+            t = edge_y / sin_a
+            if t > 1e-9:
+                x_hit = t * cos_a
+                if -ix - 1e-9 <= x_hit <= ix + 1e-9:
+                    t_best = min(t_best, t)
+
+    # --- Semicircular caps centered at (±ix, 0), radius r ---
+    for cx in (ix, -ix):
+        # |P(t) - (cx, 0)|^2 = r^2
+        # t^2 - 2*t*cos_a*cx + cx^2 - r^2 = 0
+        b = -2.0 * cos_a * cx
+        c = cx * cx - r * r
+        disc = b * b - 4.0 * c
+        if disc >= 0:
+            sqrt_d = math.sqrt(disc)
+            for sign in (1, -1):
+                t = (-b + sign * sqrt_d) / 2.0
+                if t > 1e-9:
+                    # Verify the hit is in the cap's angular domain:
+                    # Right cap (cx = +ix): hit x >= ix
+                    # Left cap  (cx = -ix): hit x <= -ix
+                    x_hit = t * cos_a
+                    if (cx > 0 and x_hit >= cx - 1e-9) or (cx < 0 and x_hit <= cx + 1e-9):
+                        t_best = min(t_best, t)
+
+    if t_best == math.inf:
+        # Fallback — should not happen for well-formed inputs
+        return overall_length / 2 + padding
+
+    return t_best + padding
+
+
+def build_csys_children(
+    ring_od: float,
+    overall_length: float,
+    num_flagnotes: int = 13,
+    label_distance: float = 3.0,
+    padding: float = 0.04,
+) -> dict:
+    """Build csys_children with leader_dest points on the rounded-rect outline.
+
+    Angles are distributed symmetrically: 0, ±15, ±30, …
+    """
+    angles = [0]
+    step = 15
+    a = step
+    while len(angles) < num_flagnotes:
+        angles.append(a)
+        if len(angles) < num_flagnotes:
+            angles.append(-a)
+        a += step
+
+    children = {}
+    for i, angle in enumerate(angles, start=1):
+        dest_dist = terminal_outline_distance(
+            angle, ring_od, overall_length, padding=padding,
+        )
+        children[f"flagnote-{i}"] = {
+            "angle": angle, "distance": label_distance, "rotation": 0,
+        }
+        children[f"flagnote-{i}-leader_dest"] = {
+            "angle": angle, "distance": round(dest_dist, 4), "rotation": 0,
+        }
+
+    return children
 
 # ---------------------------------------------------------------------------
 # Geometry helpers
@@ -149,7 +229,10 @@ def compile_part_attributes(cfg: dict) -> dict:
         # Drawing / harnice metadata
         "tools": None,
         "build_notes": [],
-        "csys_children": STANDARD_CSYS_CHILDREN,
+        "csys_children": build_csys_children(
+            ring_od=ring_od,
+            overall_length=length,
+        ),
         "contacts": None,
         "shell_size": None,
     }
