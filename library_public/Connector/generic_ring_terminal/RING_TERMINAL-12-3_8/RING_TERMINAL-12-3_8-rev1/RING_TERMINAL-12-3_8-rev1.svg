@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="104" height="60">
+<g id="RING_TERMINAL-12-3_8-drawing-contents-start">
+    <rect x="0.00" y="18.70" width="46.31" height="22.16" fill="#898989" rx="2"/>
+    <polygon points="46.18,19.40 44.31,18.70 44.31,40.86 46.18,40.16" fill="#898989"/>
+    <circle cx="74.09" cy="29.78" r="29.78" fill="#898989"/>
+    <circle cx="74.09" cy="29.78" r="18.72" fill="#ffffff" stroke="#666666" stroke-width="0.5"/>
+    <rect x="4.43" y="18.70" width="6.65" height="22.16" fill="rgba(0,0,0,0.15)" rx="1"/>
+    <line x1="4.43" y1="18.70" x2="11.08" y2="18.70" stroke="#777777" stroke-width="0.8"/>
+    <line x1="4.43" y1="40.86" x2="11.08" y2="40.86" stroke="#777777" stroke-width="0.8"/>
+    <rect x="33.24" y="18.70" width="6.65" height="22.16" fill="rgba(0,0,0,0.15)" rx="1"/>
+    <line x1="33.24" y1="18.70" x2="39.88" y2="18.70" stroke="#777777" stroke-width="0.8"/>
+    <line x1="33.24" y1="40.86" x2="39.88" y2="40.86" stroke="#777777" stroke-width="0.8"/>
+    <ellipse cx="0.00" cy="29.78" rx="2" ry="11.08" fill="#6a6a6a" stroke="#777777" stroke-width="0.5"/>
+    <line x1="71.09" y1="29.78" x2="77.09" y2="29.78" stroke="#bbbbbb" stroke-width="0.5"/>
+    <line x1="74.09" y1="26.78" x2="74.09" y2="32.78" stroke="#bbbbbb" stroke-width="0.5"/>
+</g>
+<g id="RING_TERMINAL-12-3_8-drawing-contents-end">
+</g>
+</svg>

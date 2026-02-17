@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="80" height="46">
+<g id="RING_TERMINAL-22-1_4-FF0000-drawing-contents-start">
+    <rect x="0.00" y="14.58" width="35.67" height="16.83" fill="#898989" rx="2"/>
+    <polygon points="35.07,15.09 33.67,14.58 33.67,31.41 35.07,30.89" fill="#898989"/>
+    <circle cx="56.66" cy="22.99" r="22.99" fill="#898989"/>
+    <rect x="-4.00" y="12.18" width="31.78" height="21.63" fill="#FF0000"/>
+    <circle cx="56.66" cy="22.99" r="12.72" fill="#ffffff" stroke="#666666" stroke-width="0.5"/>
+    <line x1="53.66" y1="22.99" x2="59.66" y2="22.99" stroke="#bbbbbb" stroke-width="0.5"/>
+    <line x1="56.66" y1="19.99" x2="56.66" y2="25.99" stroke="#bbbbbb" stroke-width="0.5"/>
+</g>
+<g id="RING_TERMINAL-22-1_4-FF0000-drawing-contents-end">
+</g>
+</svg>

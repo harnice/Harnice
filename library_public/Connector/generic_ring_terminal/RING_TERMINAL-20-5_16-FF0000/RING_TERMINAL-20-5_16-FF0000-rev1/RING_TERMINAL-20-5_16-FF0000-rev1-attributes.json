@@ -1,0 +1,153 @@
+{
+  "wire_gauge_awg": "20",
+  "stud_size": "5/16",
+  "insulation_color": "#FF0000",
+  "insulated": true,
+  "stud_hole_id": 0.328,
+  "ring_od": 0.5495,
+  "barrel_od": 0.182,
+  "overall_length": 0.9134,
+  "ampacity_a": 7,
+  "voltage_rating_v": 600,
+  "barrel_material": "copper",
+  "plating": "tin",
+  "insulation_material": "vinyl",
+  "crimp_tool": null,
+  "crimp_die": null,
+  "tools": null,
+  "build_notes": [],
+  "csys_children": {
+    "flagnote-1": {
+      "angle": 0,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-1-leader_dest": {
+      "angle": 0,
+      "distance": 1,
+      "rotation": 0
+    },
+    "flagnote-2": {
+      "angle": 15,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-2-leader_dest": {
+      "angle": 15,
+      "distance": 1.03,
+      "rotation": 0
+    },
+    "flagnote-3": {
+      "angle": -15,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-3-leader_dest": {
+      "angle": -15,
+      "distance": 1.03,
+      "rotation": 0
+    },
+    "flagnote-4": {
+      "angle": 30,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-4-leader_dest": {
+      "angle": 30,
+      "distance": 1,
+      "rotation": 0
+    },
+    "flagnote-5": {
+      "angle": -30,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-5-leader_dest": {
+      "angle": -30,
+      "distance": 1,
+      "rotation": 0
+    },
+    "flagnote-6": {
+      "angle": 45,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-6-leader_dest": {
+      "angle": 45,
+      "distance": 0.72,
+      "rotation": 0
+    },
+    "flagnote-7": {
+      "angle": -45,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-7-leader_dest": {
+      "angle": -45,
+      "distance": 0.72,
+      "rotation": 0
+    },
+    "flagnote-8": {
+      "angle": 60,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-8-leader_dest": {
+      "angle": 60,
+      "distance": 0.58,
+      "rotation": 0
+    },
+    "flagnote-9": {
+      "angle": -60,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-9-leader_dest": {
+      "angle": -60,
+      "distance": 0.58,
+      "rotation": 0
+    },
+    "flagnote-10": {
+      "angle": -75,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-10-leader_dest": {
+      "angle": -75,
+      "distance": 0.52,
+      "rotation": 0
+    },
+    "flagnote-11": {
+      "angle": 75,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-11-leader_dest": {
+      "angle": 75,
+      "distance": 0.52,
+      "rotation": 0
+    },
+    "flagnote-12": {
+      "angle": -90,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-12-leader_dest": {
+      "angle": -90,
+      "distance": 0.52,
+      "rotation": 0
+    },
+    "flagnote-13": {
+      "angle": 90,
+      "distance": 3,
+      "rotation": 0
+    },
+    "flagnote-13-leader_dest": {
+      "angle": 90,
+      "distance": 0.5,
+      "rotation": 0
+    }
+  },
+  "contacts": null,
+  "shell_size": null
+}
