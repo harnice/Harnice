@@ -88,6 +88,7 @@ def dirpath(target_value):
 
 os.makedirs(dirpath(None), exist_ok=True)
 os.makedirs(dirpath("overlay_svgs"), exist_ok=True)
+os.makedirs(dirpath(f"{artifact_id}-kicad-direct-export"), exist_ok=True)
 
 # =============== PARSER CLASS =============================================================================
 
