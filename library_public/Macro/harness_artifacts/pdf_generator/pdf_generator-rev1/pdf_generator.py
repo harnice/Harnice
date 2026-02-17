@@ -1,6 +1,8 @@
 import os
 import json
 import subprocess
+from pypdf import PdfWriter
+
 from harnice import fileio, state
 from harnice.utils import svg_utils, library_utils
 from harnice.lists import rev_history
@@ -355,10 +357,11 @@ for page_name in [p.get("name") for p in page_data.get("pages", [])]:
     temp_pdfs.append(pdf_path)
 
 # Merge all PDFs
-subprocess.run(
-    ["pdfunite"] + temp_pdfs + [path("output pdf")],
-    check=True,
-)
+writer = PdfWriter()
+for pdf_path in temp_pdfs:
+    writer.append(pdf_path)
+writer.write(path("output pdf"))
+writer.close()
 
 # Optional cleanup
 for temp in temp_pdfs:
