@@ -2,6 +2,8 @@ import csv
 import os
 import inspect
 from threading import Lock
+import tempfile
+import time
 from harnice import fileio, state
 
 COLUMNS = [
@@ -155,7 +157,7 @@ def modify(instance_name, instance_data):
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t")
             rows = list(reader)
-            fieldnames = reader.fieldnames or []
+            fieldnames = list(reader.fieldnames or [])
 
         # --- Add debug info before updating ---
         instance_data["debug"] = _get_call_chain_str()
@@ -173,20 +175,33 @@ def modify(instance_name, instance_data):
                 row.update(instance_data)
                 found = True
                 break
-
         if not found:
             raise ValueError(f"Instance '{instance_name}' not found")
 
         # --- Write atomically ---
-        tmp = path + ".tmp"
-        with open(tmp, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
-            writer.writeheader()
-            writer.writerows(rows)
-            f.flush()
-            os.fsync(f.fileno())
+        tmp_fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
+        try:
+            with os.fdopen(tmp_fd, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+                writer.writeheader()
+                writer.writerows(rows)
+                f.flush()
+                os.fsync(f.fileno())
 
-        os.replace(tmp, path)
+            for attempt in range(10):
+                try:
+                    os.replace(tmp, path)
+                    break
+                except PermissionError:
+                    if attempt == 9:
+                        raise
+                    time.sleep(0.05 * (attempt + 1))
+        except:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
 
 
 def remove_instance(instance_to_delete):
