@@ -1,7 +1,7 @@
-def default_build_macro_block(system_pn, system_rev, target_net):
-    return f"""
+
+
 # ===========================================================================
-#                   build_macro SCRIPTING
+#                 pull harness definition from system
 # ===========================================================================
 system_pn = "{system_pn}" # enter your system part number
 system_rev = "{system_rev}" # enter your system revision
@@ -28,4 +28,4 @@ rev_history.overwrite(
         "desc": f"HARNESS '{{system_target_net}}' FROM SYSTEM '{{system_pn}}-{{system_rev}}'",
     }}
 )
-"""
+

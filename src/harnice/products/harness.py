@@ -4,7 +4,7 @@ from harnice import fileio, cli, state
 from harnice.lists import instances_list, library_history
 from harnice.utils import feature_tree_utils
 
-default_desc = "HARNESS, DOES A, FOR B"
+default_desc = "HARNESS, DOES A FOR B"
 
 documentation_description = "A harness is an assembly of connectors, cables, and other electrical components that connect multiple devices together. It is the physical item that is built and installed in a system."
 
@@ -26,20 +26,6 @@ def generate_structure():
         fileio.dirpath("interactive_files", structure_dict=file_structure()),
         exist_ok=True,
     )
-
-
-def _prompt_build_macro():
-    # Prompt for system/no-system
-
-    print(
-        "  's'   Enter 's' for system (or just hit enter) "
-        "if this harness is pulling data from a system instances list"
-    )
-    print(
-        "  'n'   Enter 'n' for none to build your harness entirely "
-        "out of rules in feature tree (you're hardcore)"
-    )
-    return cli.prompt("")
 
 
 def render():
@@ -97,9 +83,15 @@ def render():
         # ------------------------------------------------------------------
         # Write feature tree file
         # ------------------------------------------------------------------
-        feature_tree_text = _make_feature_tree(build_macro_block, push_block)
+        feature_tree_text = feature_tree_utils.default_feature_tree_contents(
+            "harness_default_feature_tree.py",
+            {
+                "build_macro_block": build_macro_block,
+                "push_block": push_block,
+            }
+        )
 
-        with open(feature_tree_path, "w", encoding="utf-8") as f:
+        with open(fileio.path("feature tree"), "w", encoding="utf-8") as f:
             f.write(feature_tree_text)
 
     # ======================================================================
