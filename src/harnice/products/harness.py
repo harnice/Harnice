@@ -112,6 +112,6 @@ def render():
     # 3. Run the feature tree
     # ======================================================================
     cli.print_import_status_headers()
-    runpy.run_path(feature_tree_path, run_name="__main__")
+    runpy.run_path(fileio.path("feature tree"), run_name="__main__")
 
     print(f"Harnice: harness {state.partnumber('pn')} rendered successfully!\n")

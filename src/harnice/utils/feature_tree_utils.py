@@ -192,6 +192,6 @@ def default_feature_tree_contents(filename, replacements=None):
 
     if replacements:
         for key, value in replacements.items():
-            content = content.replace(f"{{{key}}}", value)
+            content = content.replace("{key}", value)
             
     return content

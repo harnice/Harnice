@@ -396,7 +396,7 @@ resolve paths to systems, libraries, or other projects by part number or URL.
                     )
                 return os.path.expanduser(local)
 
-    raise ValueError(f"Could not find project traceable key '{traceable_key}'")
+    raise ValueError(f"Could not find project traceable key '{traceable_key}' in the project_locations.csv file. Add it here: {fileio.path("project locations")}")
 
 
 def read_tsv(filepath, delimiter="\t"):
