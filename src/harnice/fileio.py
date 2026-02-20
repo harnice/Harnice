@@ -14,6 +14,9 @@ from harnice import state
 #  -  if multiple instances are found at the same hierarchy level with the same name,
 # this separates name from unique instance identifier
 
+def harnice_root():
+    import harnice
+    return os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
 
 def part_directory():
     """Return the part directory: the parent of the current working directory.
@@ -89,13 +92,8 @@ def path(target_value, structure_dict=None, base_directory=None):
     # FILES DEPENDENT ON HARNICE ROOT
 
     if target_value == "library locations":
-        import harnice
 
-        harnice_root = os.path.dirname(
-            os.path.dirname(os.path.dirname(harnice.__file__))
-        )
-
-        library_locations_path = os.path.join(harnice_root, "library_locations.csv")
+        library_locations_path = os.path.join(harnice_root(), "library_locations.csv")
 
         if not os.path.exists(library_locations_path):
             from harnice import cli
@@ -110,18 +108,14 @@ def path(target_value, structure_dict=None, base_directory=None):
             with open(library_locations_path, "w") as f:
                 f.write("repo_url,local_path\n")
                 f.write(
-                    f"https://github.com/harnice/harnice,{os.path.join(harnice_root, 'library_public')}\n"
+                    f"https://github.com/harnice/harnice, {os.path.join(harnice_root(), 'library_public')}\n"
                 )
 
         return library_locations_path
 
     if target_value == "project locations":
-        import harnice
 
-        harnice_root = os.path.dirname(
-            os.path.dirname(os.path.dirname(harnice.__file__))
-        )
-        project_locations_path = os.path.join(harnice_root, "project_locations.csv")
+        project_locations_path = os.path.join(harnice_root(), "project_locations.csv")
         if not os.path.exists(project_locations_path):
             from harnice import cli
 
@@ -136,16 +130,11 @@ def path(target_value, structure_dict=None, base_directory=None):
                 f.write("traceable_key,local_path\n")
                 f.write("your project part number,local path to your project\n")
 
-        return os.path.join(harnice_root, "project_locations.csv")
+        return os.path.join(harnice_root(), "project_locations.csv")
 
     if target_value == "drawnby":
-        import harnice
 
-        harnice_root = os.path.dirname(
-            os.path.dirname(os.path.dirname(harnice.__file__))
-        )
-
-        drawnby_path = os.path.join(harnice_root, "drawnby.json")
+        drawnby_path = os.path.join(harnice_root(), "drawnby.json")
         if not os.path.exists(drawnby_path):
             from harnice import cli
 
@@ -349,13 +338,9 @@ Used for version/attribution in outputs. Returns `"UNKNOWN"` if git is
 unavailable or the repo cannot be read.
     """
     try:
-        # get path to harnice package directory
-        import harnice
-
-        repo_dir = os.path.dirname(os.path.dirname(harnice.__file__))
         # ask git for commit hash
         return (
-            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_dir)
+            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=harnice_root())
             .decode("utf-8")
             .strip()
         )
@@ -411,7 +396,7 @@ resolve paths to systems, libraries, or other projects by part number or URL.
                     )
                 return os.path.expanduser(local)
 
-    raise ValueError(f"Could not find project traceable key '{traceable_key}'")
+    raise ValueError(f"Could not find project traceable key '{traceable_key}' in the project_locations.csv file. Add it here: {fileio.path("project locations")}")
 
 
 def read_tsv(filepath, delimiter="\t"):

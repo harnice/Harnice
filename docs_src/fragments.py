@@ -1,4 +1,6 @@
+import os
 import docs_functions
+from harnice import fileio
 from harnice.products import harness, system, cable
 from harnice.utils import circuit_utils
 from harnice.lists import channel_map, signals_list
@@ -9,21 +11,15 @@ def main():
     #========================================================
     module_prefix = "harness_default_feature_tree"
 
-    md = ['''??? note "Default harness feature tree"\n    ```python''']
+    md = ['''??? note "Default harness feature tree"\n    ```python\n''']
 
-    feature_tree = harness._make_feature_tree(
-        harness.default_build_macro_block(
-            "system_part_number",
-            "system_revision",
-            "target_net"
-        ),
-        push_block=harness.default_push_block()
-    )
+    with open(os.path.join(fileio.harnice_root(),"src","harnice","default_product_feature_trees","harness_default_feature_tree.py") , "r") as f:
+        feature_tree = f.read()
 
     for line in feature_tree.split("\n"):
         md.append("\n    " + line)
 
-    md.append("```")
+    md.append("\n    ```")
     path = docs_functions.harnice_dir() / "docs" / "fragments" / "_harness_default_feature_tree.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(md), encoding="utf-8")
