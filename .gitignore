@@ -64,6 +64,7 @@ coverage.xml
 secrets.*
 library_locations.csv
 project_locations.csv
+.harness_system_references
 
 # ===================================
 # IDEs / Editors
