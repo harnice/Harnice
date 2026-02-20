@@ -184,14 +184,19 @@ def run_feature_for_relative(project_key, referenced_pn_rev, feature_tree_utils_
 
 
 def default_feature_tree_contents(filename, replacements=None):
-
-    path = os.path.join(fileio.harnice_root(), "src", "harnice", "default_product_feature_trees", filename)
+    path = os.path.join(
+        fileio.harnice_root(),
+        "src",
+        "harnice",
+        "default_product_feature_trees",
+        filename,
+    )
 
     with open(path, "r") as f:
         content = f.read()
 
     if replacements:
         for key, value in replacements.items():
-            content = content.replace("{key}", value)
-            
+            content = content.replace("{" + key + "}", str(value))
+
     return content

@@ -8,7 +8,9 @@ from harnice.utils import (
     feature_tree_utils,
 )
 from harnice.lists import (
-    instances_list
+    instances_list,
+    post_harness_instances_list,
+    rev_history
 )
 
 {build_macro_block}

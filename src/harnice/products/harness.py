@@ -58,8 +58,8 @@ def render():
             build_macro_block = feature_tree_utils.default_feature_tree_contents(
                 "harness_default_build_macro_block.py",
                 replacements={
-                    "system_pn": system_pn,
-                    "system_rev": system_rev,
+                    "system_part_number": system_pn,
+                    "system_revision": system_rev,
                     "target_net": target_net,
                 },
             )
