@@ -28,21 +28,21 @@ for instance in instances:
             if instance.get("item_type") == "circuit":
                 circuit_instance = instance
                 connector_at_end_a = instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group")
-new_instance_name = f"{circuit_instance.get('instance_name')}-special_contact"
-circuit_id = int(circuit_instance.get("circuit_id"))
-instances_list.new_instance(
-    new_instance_name, {
-        "bom_line_number": True,
-        "mpn": "TXPS20",
-        "item_type": "contact",
-        "location_type": "node",
-        "circuit_id": circuit_id,
-        "connector_group": connector_at_end_a
-    }
-)
-circuit_utils.squeeze_instance_between_ports_in_circuit(
-    new_instance_name, circuit_id, 1
-)
+                new_instance_name = f"{circuit_instance.get('instance_name')}-special_contact"
+                circuit_id = int(circuit_instance.get("circuit_id"))
+                instances_list.new_instance(
+                    new_instance_name, {
+                        "bom_line_number": True,
+                        "mpn": "TXPS20",
+                        "item_type": "contact",
+                        "location_type": "node",
+                        "circuit_id": circuit_id,
+                        "connector_group": connector_at_end_a
+                    }
+                )
+                circuit_utils.squeeze_instance_between_ports_in_circuit(
+                    new_instance_name, circuit_id, 1
+                )
 
 # example: add a backshell
 for instance in instances:
