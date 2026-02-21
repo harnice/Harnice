@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFileDialog,
     QMenu,
+    QLabel,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QObject
 from PySide6.QtGui import QPainter, QPen
@@ -58,6 +59,23 @@ def button_color_for_product(product_type):
         return getattr(product_module, "button_color", None)
     except Exception:
         return None
+
+
+def _pn_and_rev_from_path(rev_folder):
+    """
+    Return (part_number, rev) for display from a revision folder path,
+    e.g. ("MyPart", "rev1"). Returns (None, None) if path doesn't match.
+    """
+    rev_folder = os.path.normpath(rev_folder)
+    part_dir = os.path.dirname(rev_folder)
+    rev_folder_name = os.path.basename(rev_folder)
+    part_dir_name = os.path.basename(part_dir)
+    if not rev_folder_name.startswith(f"{part_dir_name}-rev"):
+        return (None, None)
+    rev_str = rev_folder_name.split("-rev")[-1]
+    if not rev_str.isdigit():
+        return (None, None)
+    return (part_dir_name, f"rev{rev_str}")
 
 
 def product_type_for_revision_folder(rev_folder):
@@ -191,7 +209,15 @@ class PartButton(QPushButton):
     def __init__(
         self, parent, label, path, grid_x, grid_y, main_window=None, product_type=None
     ):
-        super().__init__(label, parent)
+        pn, rev = _pn_and_rev_from_path(path)
+        if pn and rev:
+            display_text = f"{pn}\n{rev}"
+            rich_text = f"<b>{pn}</b><br><i>{rev}</i>"
+        else:
+            display_text = label
+            rich_text = label.replace("\n", "<br>")
+        self._plain_label = display_text
+        super().__init__("", parent)
         self.parent_grid = parent
         self.path = path
         self.grid_x = grid_x
@@ -223,10 +249,28 @@ class PartButton(QPushButton):
         self.setStyleSheet(self.default_style)
 
         self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
+        self._text_label = QLabel(self)
+        self._text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self._text_label.setTextFormat(Qt.TextFormat.RichText)
+        self._text_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+        self._text_label.setText(rich_text)
+        self._text_label.setStyleSheet("background: transparent;")
+        self._text_label.show()
+        self._update_text_label_geometry()
+
         self.dragStartPosition = None
         self.is_dragging = False
         self.show()
         self.update_position()
+
+    def _update_text_label_geometry(self):
+        self._text_label.setGeometry(8, 0, self.width() - 14, self.height())
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._update_text_label_geometry()
 
     def update_position(self):
         x, y = self.parent_grid.grid_to_screen(self.grid_x, self.grid_y)
@@ -434,7 +478,7 @@ class HarniceGUI(QWidget):
             },
             "buttons": [
                 {
-                    "label": b.text(),
+                    "label": getattr(b, "_plain_label", b.text()) or "",
                     "path": b.path,
                     "grid_x": b.grid_x,
                     "grid_y": b.grid_y,
