@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Graph Editor</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: #1a1a2e;
+      color: #eee;
+    }
+
+    #sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #16213e;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      border-right: 1px solid #0f3460;
+    }
+
+    h2 {
+      font-size: 14px;
+      color: #e94560;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .section {
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    button {
+      background: #e94560;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #c73652;
+    }
+
+    button.secondary {
+      background: #0f3460;
+      border: 1px solid #e94560;
+    }
+
+    button.secondary:hover {
+      background: #1a4a80;
+    }
+
+    button.danger {
+      background: #7c1a2e;
+    }
+
+    button.danger:hover {
+      background: #a02040;
+    }
+
+    label {
+      font-size: 11px;
+      color: #aaa;
+      display: block;
+      margin-top: 6px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 5px 7px;
+      border-radius: 4px;
+      background: #1a1a2e;
+      border: 1px solid #0f3460;
+      color: #eee;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      cursor: default;
+    }
+
+    #mode-indicator {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(15, 52, 96, 0.9);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      pointer-events: none;
+      border: 1px solid #e94560;
+    }
+
+    #toolbar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    #toolbar button {
+      width: auto;
+      flex: 1;
+    }
+
+    .props-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .props-row>div {
+      flex: 1;
+    }
+
+    #csv-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    #csv-actions button {
+      flex: 1;
+    }
+
+    #revision-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    #revision-actions button {
+      flex: 1;
+    }
+
+    .revision-msg {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="sidebar">
+    <div class="section">
+      <h2>File</h2>
+      <div id="revision-actions">
+        <button onclick="loadFromRevision()">Load from revision</button>
+        <button class="secondary" onclick="saveToRevision()">Save to revision</button>
+      </div>
+      <div id="revision-msg" class="revision-msg"></div>
+      <label style="margin-top:8px;">Load TSV (file)</label>
+      <input type="file" id="file-input" accept=".tsv,.txt" style="margin-top:4px;">
+      <div id="csv-actions" style="margin-top:8px;">
+        <button onclick="exportTSV()">⬇ Export TSV</button>
+        <button class="secondary" onclick="clearAll()">✕ Clear</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Tools</h2>
+      <div id="toolbar">
+        <button id="btn-select" class="secondary" onclick="setMode('select')">▶ Select</button>
+        <button id="btn-add-node" class="secondary" onclick="setMode('add-node')">＋ Add Node</button>
+        <button id="btn-connect" class="secondary" onclick="setMode('connect')">⟶ Connect</button>
+        <button id="btn-delete" class="secondary" onclick="setMode('delete')">✕ Delete</button>
+      </div>
+    </div>
+
+    <div class="section" id="props-panel" style="display:none;">
+      <h2 id="props-title">Properties</h2>
+      <div id="props-content"></div>
+      <button class="danger" style="margin-top:8px;" onclick="deleteSelected()">Delete</button>
+    </div>
+
+    <div class="section">
+      <h2>View</h2>
+      <button class="secondary" onclick="fitView()">Fit View</button>
+    </div>
+  </div>
+
+  <div id="canvas-wrap">
+    <div id="mode-indicator">Mode: Select</div>
+    <svg id="svg">
+      <g id="root"></g>
+    </svg>
+  </div>
+
+  <script>
+    // ---- Constants (screen pixels, scale-invariant) ----
+    const NODE_R = 5;
+    const NODE_STROKE = 1.5;
+    const EDGE_W = 1.5;
+    const EDGE_HIT = 10;
+    const FONT_SIZE = 11;
+    const LABEL_OFFSET = 10;
+
+    // ---- State ----
+    let nodes = [];
+    let edges = [];
+    let idCounter = 1;
+    let edgeIdCounter = 1;
+    let mode = 'select';
+    let selected = null;
+    let connectStart = null;
+
+    let panX = 0, panY = 0, scale = 1;
+    let isPanning = false, panStart = { x: 0, y: 0 };
+
+    const svg = document.getElementById('svg');
+    const root = document.getElementById('root');
+
+    // ---- Coordinate helpers ----
+    function w2s(wx, wy) { return { x: wx * scale + panX, y: wy * scale + panY }; }
+    function s2w(sx, sy) { return { x: (sx - panX) / scale, y: (sy - panY) / scale }; }
+
+    function svgPos(e) {
+      const rect = svg.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    // ---- Rendering ----
+    function render() {
+      root.innerHTML = '';
+      edges.forEach(drawEdge);
+      nodes.forEach(drawNode);
+    }
+
+    function drawNode(n) {
+      const s = w2s(n.x, n.y);
+      const isSel = selected?.type === 'node' && selected.id === n.id;
+      const isConn = connectStart === n.id;
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', s.x); c.setAttribute('cy', s.y); c.setAttribute('r', NODE_R);
+      c.setAttribute('fill', isSel ? '#e94560' : isConn ? '#f0a500' : '#4a90d9');
+      c.setAttribute('stroke', '#eee'); c.setAttribute('stroke-width', NODE_STROKE);
+      g.appendChild(c);
+
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', s.x); t.setAttribute('y', s.y - LABEL_OFFSET);
+      t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', FONT_SIZE);
+      t.setAttribute('fill', '#eee'); t.setAttribute('pointer-events', 'none');
+      t.textContent = n.label || n.id;
+      g.appendChild(t);
+
+      g.addEventListener('mousedown', e => onNodeMouseDown(e, n.id));
+      root.appendChild(g);
+    }
+
+    function drawEdge(e) {
+      const na = nodes.find(n => n.id === e.a), nb = nodes.find(n => n.id === e.b);
+      if (!na || !nb) return;
+
+      let bx = nb.x, by = nb.y;
+      const len = parseFloat(e.length), ang = parseFloat(e.angle);
+      if (isFinite(len) && len > 0 && isFinite(ang)) {
+        const rad = ang * Math.PI / 180;
+        bx = na.x + len * Math.cos(rad);
+        by = na.y - len * Math.sin(rad);
+        nb.x = bx; nb.y = by;
+      }
+
+      const sa = w2s(na.x, na.y), sb = w2s(bx, by);
+      const mx = (sa.x + sb.x) / 2, my = (sa.y + sb.y) / 2;
+      const isSel = selected?.type === 'edge' && selected.id === e.id;
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', sa.x); line.setAttribute('y1', sa.y);
+      line.setAttribute('x2', sb.x); line.setAttribute('y2', sb.y);
+      line.setAttribute('stroke', isSel ? '#e94560' : '#4a90d9');
+      line.setAttribute('stroke-width', EDGE_W);
+      g.appendChild(line);
+
+      const hit = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      hit.setAttribute('x1', sa.x); hit.setAttribute('y1', sa.y);
+      hit.setAttribute('x2', sb.x); hit.setAttribute('y2', sb.y);
+      hit.setAttribute('stroke', 'transparent'); hit.setAttribute('stroke-width', EDGE_HIT);
+      hit.addEventListener('mousedown', ev => onEdgeMouseDown(ev, e.id));
+      g.appendChild(hit);
+
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      lbl.setAttribute('x', mx); lbl.setAttribute('y', my - 7);
+      lbl.setAttribute('text-anchor', 'middle'); lbl.setAttribute('font-size', FONT_SIZE);
+      lbl.setAttribute('fill', '#aaa'); lbl.setAttribute('pointer-events', 'none');
+      lbl.textContent = e.label || e.id;
+      g.appendChild(lbl);
+
+      if (e.length !== '' && e.length != null) {
+        const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        sub.setAttribute('x', mx); sub.setAttribute('y', my + 12);
+        sub.setAttribute('text-anchor', 'middle'); sub.setAttribute('font-size', 9);
+        sub.setAttribute('fill', '#888'); sub.setAttribute('pointer-events', 'none');
+        sub.textContent = `L:${e.length}` + (e.diameter ? ` D:${e.diameter}` : '');
+        g.appendChild(sub);
+      }
+
+      root.insertBefore(g, root.firstChild);
+    }
+
+    // ---- Temp line for connect mode ----
+    let tempLineEl = null;
+    function showTempLine(x1, y1, x2, y2) {
+      if (!tempLineEl) {
+        tempLineEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tempLineEl.setAttribute('stroke', '#f0a500');
+        tempLineEl.setAttribute('stroke-width', 1.5);
+        tempLineEl.setAttribute('stroke-dasharray', '5,4');
+        tempLineEl.setAttribute('pointer-events', 'none');
+        root.appendChild(tempLineEl);
+      }
+      tempLineEl.setAttribute('x1', x1); tempLineEl.setAttribute('y1', y1);
+      tempLineEl.setAttribute('x2', x2); tempLineEl.setAttribute('y2', y2);
+      tempLineEl.style.display = '';
+    }
+    function hideTempLine() { if (tempLineEl) tempLineEl.style.display = 'none'; }
+
+    // ---- Event handlers ----
+    function onNodeMouseDown(e, id) {
+      e.stopPropagation();
+      if (mode === 'delete') { deleteNode(id); return; }
+      if (mode === 'connect') {
+        if (!connectStart) { connectStart = id; render(); }
+        else if (connectStart !== id) {
+          addEdge(connectStart, id);
+          connectStart = null; hideTempLine(); render();
+        }
+        return;
+      }
+      selected = { type: 'node', id };
+      showProps(); render();
+
+      let dragging = true;
+      const onMove = ev => {
+        if (!dragging) return;
+        const sp = svgPos(ev);
+        const wp = s2w(sp.x, sp.y);
+        const n = nodes.find(n => n.id === id);
+
+        const constraints = [];
+        edges.forEach(ed => {
+          const len = parseFloat(ed.length);
+          if (!isFinite(len) || len <= 0) return;
+          if (ed.a === id) { const nb = nodes.find(n => n.id === ed.b); if (nb) constraints.push({ cx: nb.x, cy: nb.y, r: len }); }
+          else if (ed.b === id) { const na = nodes.find(n => n.id === ed.a); if (na) constraints.push({ cx: na.x, cy: na.y, r: len }); }
+        });
+
+        if (constraints.length === 0) {
+          n.x = wp.x; n.y = wp.y;
+        } else if (constraints.length === 1) {
+          const { cx, cy, r } = constraints[0];
+          const dx = wp.x - cx, dy = wp.y - cy;
+          const d = Math.sqrt(dx * dx + dy * dy) || 1e-9;
+          n.x = cx + (dx / d) * r; n.y = cy + (dy / d) * r;
+        } else {
+          let px = wp.x, py = wp.y;
+          for (let i = 0; i < 20; i++) {
+            for (const { cx, cy, r } of constraints) {
+              const dx = px - cx, dy = py - cy;
+              const d = Math.sqrt(dx * dx + dy * dy) || 1e-9;
+              px = cx + (dx / d) * r; py = cy + (dy / d) * r;
+            }
+          }
+          n.x = px; n.y = py;
+        }
+
+        edges.forEach(ed => {
+          if (ed.a === id || ed.b === id) {
+            const na = nodes.find(n => n.id === ed.a), nb = nodes.find(n => n.id === ed.b);
+            if (na && nb) {
+              const dx = nb.x - na.x, dy = nb.y - na.y;
+              ed.angle = Math.round(Math.atan2(-dy, dx) * 180 / Math.PI);
+            }
+          }
+        });
+
+        if (selected?.type === 'edge') showProps();
+        render();
+      };
+      const onUp = () => { dragging = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    }
+
+    function onEdgeMouseDown(e, id) {
+      e.stopPropagation();
+      if (mode === 'delete') { deleteEdge(id); return; }
+      selected = { type: 'edge', id };
+      showProps(); render();
+    }
+
+    svg.addEventListener('mousedown', e => {
+      if (e.target !== svg && e.target !== root) return;
+      const sp = svgPos(e);
+      if (mode === 'add-node') {
+        const wp = s2w(sp.x, sp.y);
+        addNode(wp.x, wp.y);
+        return;
+      }
+      if (mode === 'select') { selected = null; showProps(); render(); }
+      isPanning = true;
+      panStart = { x: e.clientX - panX, y: e.clientY - panY };
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (isPanning) {
+        panX = e.clientX - panStart.x;
+        panY = e.clientY - panStart.y;
+        render();
+      }
+      if (mode === 'connect' && connectStart) {
+        const sp = svgPos(e);
+        const n = nodes.find(n => n.id === connectStart);
+        const sn = w2s(n.x, n.y);
+        showTempLine(sn.x, sn.y, sp.x, sp.y);
+      }
+    });
+
+    window.addEventListener('mouseup', () => { isPanning = false; });
+
+    svg.addEventListener('wheel', e => {
+      e.preventDefault();
+      const sp = svgPos(e);
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newScale = Math.max(0.05, Math.min(50, scale * factor));
+      panX = sp.x - (sp.x - panX) * (newScale / scale);
+      panY = sp.y - (sp.y - panY) * (newScale / scale);
+      scale = newScale;
+      render();
+    }, { passive: false });
+
+    // ---- CRUD ----
+    function addNode(wx, wy) {
+      const id = 'N' + (idCounter++);
+      nodes.push({ id, x: wx, y: wy, label: id });
+      selected = { type: 'node', id };
+      showProps(); render();
+    }
+
+    function addEdge(a, b) {
+      if (edges.find(e => (e.a === a && e.b === b) || (e.a === b && e.b === a))) return;
+      const id = 'S' + (edgeIdCounter++);
+      const na = nodes.find(n => n.id === a), nb = nodes.find(n => n.id === b);
+      const dx = nb.x - na.x, dy = nb.y - na.y;
+      const angle = Math.round(Math.atan2(-dy, dx) * 180 / Math.PI);
+      edges.push({ id, a, b, length: '', angle, diameter: '', label: id });
+      selected = { type: 'edge', id };
+      showProps(); render();
+    }
+
+    function deleteNode(id) {
+      nodes = nodes.filter(n => n.id !== id);
+      edges = edges.filter(e => e.a !== id && e.b !== id);
+      if (selected?.id === id) { selected = null; showProps(); }
+      render();
+    }
+
+    function deleteEdge(id) {
+      edges = edges.filter(e => e.id !== id);
+      if (selected?.id === id) { selected = null; showProps(); }
+      render();
+    }
+
+    function deleteSelected() {
+      if (!selected) return;
+      selected.type === 'node' ? deleteNode(selected.id) : deleteEdge(selected.id);
+    }
+
+    // ---- Properties ----
+    function showProps() {
+      const panel = document.getElementById('props-panel');
+      const content = document.getElementById('props-content');
+      const title = document.getElementById('props-title');
+      if (!selected) { panel.style.display = 'none'; return; }
+      panel.style.display = '';
+
+      if (selected.type === 'node') {
+        const n = nodes.find(n => n.id === selected.id);
+        title.textContent = 'Node: ' + n.id;
+        content.innerHTML = `<label>Label / ID</label><input id="p-node-label" value="${(n.label || n.id).replace(/"/g, '&quot;')}">`;
+        document.getElementById('p-node-label').addEventListener('input', ev => { n.label = ev.target.value; render(); });
+      } else {
+        const e = edges.find(e => e.id === selected.id);
+        title.textContent = 'Segment: ' + e.id;
+        content.innerHTML = `
+      <label>Segment ID</label><input id="p-e-id" value="${(e.id || '').replace(/"/g, '&quot;')}">
+      <label>Node A</label><input id="p-e-a" value="${(e.a || '').replace(/"/g, '&quot;')}">
+      <label>Node B</label><input id="p-e-b" value="${(e.b || '').replace(/"/g, '&quot;')}">
+      <div class="props-row">
+        <div><label>Length</label><input id="p-e-len" type="number" value="${e.length ?? ''}"></div>
+        <div><label>Angle (°)</label><input id="p-e-ang" type="number" value="${e.angle ?? ''}"></div>
+      </div>
+      <label>Diameter</label><input id="p-e-dia" value="${(e.diameter ?? '').replace(/"/g, '&quot;')}">
+    `;
+        const upd = () => {
+          e.id = document.getElementById('p-e-id').value || e.id;
+          e.a = document.getElementById('p-e-a').value || e.a;
+          e.b = document.getElementById('p-e-b').value || e.b;
+          e.length = document.getElementById('p-e-len').value;
+          e.angle = document.getElementById('p-e-ang').value;
+          e.diameter = document.getElementById('p-e-dia').value;
+          render();
+        };
+        ['p-e-id', 'p-e-a', 'p-e-b', 'p-e-len', 'p-e-ang', 'p-e-dia'].forEach(id => document.getElementById(id).addEventListener('input', upd));
+      }
+    }
+
+    // ---- TSV serialization ----
+    function tsvFromState() {
+      const rows = ['segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tangle\tdiameter'];
+      edges.forEach(e => rows.push([e.id, e.a, e.b, e.length ?? '', e.angle ?? '', e.diameter ?? ''].join('\t')));
+      return rows.join('\n');
+    }
+
+    function loadTSV(text) {
+      const lines = text.trim().split('\n');
+      const headers = lines[0].split('\t').map(h => h.trim());
+      const idx = h => headers.indexOf(h);
+      const nodeSet = new Set();
+      const rawEdges = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split('\t').map(c => c.trim());
+        if (cols.length < 2) continue;
+        const segId = cols[idx('segment_id')] || ('S' + edgeIdCounter++);
+        const a = cols[idx('node_at_end_a')] || '';
+        const b = cols[idx('node_at_end_b')] || '';
+        nodeSet.add(a); nodeSet.add(b);
+        rawEdges.push({
+          id: segId, a, b,
+          length: cols[idx('length')] || '',
+          angle: cols[idx('angle')] || '',
+          diameter: cols[idx('diameter')] || '',
+          label: segId
+        });
+      }
+      nodes = []; edges = [];
+      const nodeArr = [...nodeSet].filter(Boolean);
+      const r = Math.max(150, nodeArr.length * 25);
+      nodeArr.forEach((id, i) => {
+        const theta = (2 * Math.PI * i) / nodeArr.length;
+        nodes.push({ id, x: r * Math.cos(theta), y: r * Math.sin(theta), label: id });
+      });
+      edges = rawEdges;
+      idCounter = 1; edgeIdCounter = 1;
+      fitView();
+      render();
+    }
+
+    // ---- Revision API ----
+    function setRevisionMsg(msg, isError) {
+      const el = document.getElementById('revision-msg');
+      el.textContent = msg || '';
+      el.style.color = isError ? '#e94560' : '#888';
+    }
+
+    async function loadFromRevision() {
+      setRevisionMsg('Loading…');
+      try {
+        const r = await fetch('/api/tsv');
+        if (!r.ok) throw new Error(r.statusText);
+        const text = await r.text();
+        if (!text.trim()) { setRevisionMsg('(empty)'); return; }
+        loadTSV(text);
+        setRevisionMsg('Loaded from revision.');
+      } catch (e) {
+        setRevisionMsg('Load failed: ' + e.message, true);
+      }
+    }
+
+    async function saveToRevision() {
+      setRevisionMsg('Saving…');
+      try {
+        const r = await fetch('/api/tsv', { method: 'POST', headers: { 'Content-Type': 'text/tab-separated-values' }, body: tsvFromState() });
+        if (!r.ok) throw new Error(r.statusText);
+        setRevisionMsg('Saved to revision.');
+      } catch (e) {
+        setRevisionMsg('Save failed: ' + e.message, true);
+      }
+    }
+
+    // ---- File input / export ----
+    document.getElementById('file-input').addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = ev => loadTSV(ev.target.result);
+      reader.readAsText(f);
+    });
+
+    function exportTSV() {
+      const blob = new Blob([tsvFromState()], { type: 'text/tab-separated-values' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'graph.tsv'; a.click();
+    }
+
+    function clearAll() {
+      if (!confirm('Clear all nodes and edges?')) return;
+      nodes = []; edges = []; selected = null; showProps(); render();
+    }
+
+    function fitView() {
+      if (!nodes.length) return;
+      const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const rect = svg.getBoundingClientRect();
+      const pad = 60;
+      const rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
+      scale = Math.min((rect.width - pad * 2) / rangeX, (rect.height - pad * 2) / rangeY);
+      panX = -minX * scale + (rect.width - rangeX * scale) / 2;
+      panY = -minY * scale + (rect.height - rangeY * scale) / 2;
+      render();
+    }
+
+    // ---- Init: load from revision if available ----
+    setMode('select');
+    render();
+    loadFromRevision();
+
+    function setMode(m) {
+      mode = m;
+      connectStart = null; hideTempLine();
+      document.getElementById('mode-indicator').textContent = 'Mode: ' + m.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+      document.querySelectorAll('#toolbar button').forEach(b => b.className = 'secondary');
+      const btn = document.getElementById('btn-' + m);
+      if (btn) btn.className = '';
+      if (m !== 'select') { selected = null; showProps(); render(); }
+    }
+  </script>
+</body>
+
+</html>

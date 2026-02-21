@@ -76,12 +76,22 @@ def main():
         help="Launch the Harnice GUI launcher",
     )
 
+    group.add_argument(
+        "--graph-editor",
+        action="store_true",
+        help="Launch the formboard graph editor (harness product)",
+    )
+
     args = parser.parse_args()
 
     if args.gui:
         from harnice.gui.launcher import main as gui_main
 
         gui_main()
+        return
+
+    if args.graph_editor:
+        _run_graph_editor()
         return
 
     # -----------------------------
@@ -137,6 +147,40 @@ def main():
         product_module.render()
 
     return
+
+
+def _run_graph_editor():
+    """Launch the formboard graph editor (must be run from a revision that has a formboard graph)."""
+    fileio.verify_revision_structure()
+    item_type = rev_history.info(field="product")
+
+    try:
+        product_module = __import__(
+            f"harnice.products.{item_type}", fromlist=[item_type]
+        )
+    except ModuleNotFoundError:
+        sys.exit(f"Unknown product: '{item_type}'")
+
+    if hasattr(product_module, "file_structure"):
+        structure = product_module.file_structure()
+        state.set_file_structure(structure)
+    else:
+        sys.exit(f"Product '{item_type}' must define file_structure()")
+
+    try:
+        fileio.path("formboard graph definition")
+    except TypeError:
+        sys.exit(
+            f"Product '{item_type}' does not have a formboard graph definition. "
+            "The graph editor is only available for products that define one (e.g. harness)."
+        )
+
+    if hasattr(product_module, "generate_structure"):
+        product_module.generate_structure()
+
+    from harnice.gui.graph_editor_server import run_server
+
+    run_server(port=0, open_browser=True)
 
 
 def prompt(text, default=None):
@@ -200,9 +244,7 @@ def select_product_type():
     def get_product_types():
         products_dir = Path(products_pkg.__file__).parent
         return sorted(
-            p.stem
-            for p in products_dir.glob("*.py")
-            if p.name != "__init__.py"
+            p.stem for p in products_dir.glob("*.py") if p.name != "__init__.py"
         )
 
     product_types = get_product_types()
