@@ -6,8 +6,9 @@ import math
 from typing import Dict, List
 from pypdf import PdfWriter
 from harnice import fileio, state
-from PIL import Image, ImageDraw, ImageFont
+from harnice.paths import get_inkscape_bin, get_kicad_cli
 from harnice.utils import svg_utils
+from PIL import Image, ImageDraw, ImageFont
 
 # Expected args (injected by caller or defaulted below):
 # artifact_id: str (optional override)
@@ -1343,7 +1344,7 @@ try:
 
     result = subprocess.run(
         [
-            "kicad-cli",
+            get_kicad_cli(),
             "sch",
             "export",
             "svg",
@@ -1402,7 +1403,7 @@ svg_utils.find_and_replace_svg_group(
 
 # === PRODUCE MULTIPAGE PDF ===
 temp_pdfs = []
-inkscape_bin = "/Applications/Inkscape.app/Contents/MacOS/inkscape"  # adjust if needed
+inkscape_bin = get_inkscape_bin()
 
 # Get all SVG files from the directory, sorted for consistent page order
 svg_files = sorted(

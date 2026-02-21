@@ -1,6 +1,7 @@
 import os
 import subprocess
 from harnice import fileio, state
+from harnice.paths import get_kicad_cli
 
 build_macro_mpn = "kicad_pro_to_pdf"
 
@@ -25,7 +26,7 @@ if not os.path.isfile(fileio.path("kicad sch", structure_dict=file_structure()))
     )
 
 cmd = [
-    "kicad-cli",
+    get_kicad_cli(),
     "sch",
     "export",
     "pdf",

@@ -66,6 +66,9 @@ library_locations.csv
 project_locations.csv
 .harness_system_references
 
+# Centralized tool paths (copy paths/paths.example.json to paths/paths.json)
+paths/paths.json
+
 # ===================================
 # IDEs / Editors
 # ===================================

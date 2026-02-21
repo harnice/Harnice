@@ -4,6 +4,7 @@ import subprocess
 from pypdf import PdfWriter
 
 from harnice import fileio, state
+from harnice.paths import get_inkscape_bin
 from harnice.utils import svg_utils, library_utils
 from harnice.lists import rev_history
 
@@ -334,7 +335,7 @@ for page in page_data.get("pages", []):
 #            PRODUCE MULTIPAGE PDF
 # ============================================
 temp_pdfs = []
-inkscape_bin = "/Applications/Inkscape.app/Contents/MacOS/inkscape"  # adjust if needed
+inkscape_bin = get_inkscape_bin()
 
 page_counter = 0
 for page_name in [p.get("name") for p in page_data.get("pages", [])]:
