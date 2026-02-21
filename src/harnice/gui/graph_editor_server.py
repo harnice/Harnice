@@ -5,6 +5,7 @@ Must be run after fileio state is set (e.g. from CLI in a revision directory).
 """
 
 import http.server
+import json
 import os
 import threading
 import webbrowser
@@ -14,6 +15,24 @@ from harnice import fileio
 
 # Default TSV header when file does not exist (matches formboard_graph.COLUMNS)
 _TSV_HEADER = "segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tangle\tdiameter\n"
+
+
+def _pn_and_rev_from_path(rev_folder):
+    """
+    Return (part_number, rev) for display from a revision folder path,
+    e.g. ("MyPart", "rev1"). Returns (None, None) if path doesn't match.
+    Same logic as launcher._pn_and_rev_from_path / product_type derivation.
+    """
+    rev_folder = os.path.normpath(rev_folder)
+    part_dir = os.path.dirname(rev_folder)
+    rev_folder_name = os.path.basename(rev_folder)
+    part_dir_name = os.path.basename(part_dir)
+    if not rev_folder_name.startswith(f"{part_dir_name}-rev"):
+        return (None, None)
+    rev_str = rev_folder_name.split("-rev")[-1]
+    if not rev_str.isdigit():
+        return (None, None)
+    return (part_dir_name, f"rev{rev_str}")
 
 
 def _editor_html_path():
@@ -34,6 +53,8 @@ class GraphEditorHandler(http.server.BaseHTTPRequestHandler):
             self._serve_editor()
         elif self.path == "/api/tsv":
             self._serve_tsv()
+        elif self.path == "/api/info":
+            self._serve_info()
         elif self.path == "/api/close":
             self._close_server()
         else:
@@ -59,6 +80,18 @@ class GraphEditorHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _serve_info(self):
+        rev_folder = fileio.rev_directory()
+        part_number, rev = _pn_and_rev_from_path(rev_folder)
+        part_number = part_number if part_number is not None else ""
+        rev = rev if rev is not None else ""
+        body = json.dumps({"part_number": part_number, "rev": rev}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def _serve_tsv(self):
         path = _tsv_path()

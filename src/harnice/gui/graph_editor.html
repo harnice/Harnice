@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Graph Editor</title>
+  <title>Harnice formboard graph editor</title>
   <style>
     * {
       box-sizing: border-box;
@@ -182,11 +182,33 @@
       color: #888;
       margin-top: 4px;
     }
+
+    #editor-title {
+      font-size: 13px;
+      color: #eee;
+      margin-bottom: 8px;
+      line-height: 1.3;
+      font-weight: normal;
+    }
+
+    #part-rev-display {
+      font-size: 11px;
+      color: #aaa;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    #part-rev-display span {
+      color: #eee;
+    }
   </style>
 </head>
 
 <body>
   <div id="sidebar">
+    <h1 id="editor-title">Harnice formboard graph editor</h1>
+    <div id="part-rev-display">Part number: <span id="display-part-number">—</span><br>Rev: <span
+        id="display-rev">—</span></div>
     <div class="section">
       <h2>File</h2>
       <div id="revision-actions">
@@ -259,9 +281,18 @@
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     }
 
+    function normalizeAngle(deg) {
+      const a = Number(deg);
+      if (!isFinite(a)) return deg;
+      let n = a % 360;
+      if (n < 0) n += 360;
+      return Math.round(n);
+    }
+
     // ---- Rendering ----
     function render() {
       root.innerHTML = '';
+      tempLineEl = null;
       edges.forEach(drawEdge);
       nodes.forEach(drawNode);
     }
@@ -335,7 +366,7 @@
         sub.setAttribute('x', mx); sub.setAttribute('y', my + 12);
         sub.setAttribute('text-anchor', 'middle'); sub.setAttribute('font-size', 9);
         sub.setAttribute('fill', '#888'); sub.setAttribute('pointer-events', 'none');
-        sub.textContent = `L:${e.length}` + (e.diameter ? ` D:${e.diameter}` : '');
+        sub.textContent = `L:${e.length}`;
         g.appendChild(sub);
       }
 
@@ -414,7 +445,7 @@
             const na = nodes.find(n => n.id === ed.a), nb = nodes.find(n => n.id === ed.b);
             if (na && nb) {
               const dx = nb.x - na.x, dy = nb.y - na.y;
-              ed.angle = Math.round(Math.atan2(-dy, dx) * 180 / Math.PI);
+              ed.angle = normalizeAngle(Math.atan2(-dy, dx) * 180 / Math.PI);
             }
           }
         });
@@ -465,6 +496,14 @@
 
     window.addEventListener('mouseup', () => { isPanning = false; });
 
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && mode === 'connect' && connectStart) {
+        connectStart = null;
+        hideTempLine();
+        render();
+      }
+    });
+
     svg.addEventListener('wheel', e => {
       e.preventDefault();
       const sp = svgPos(e);
@@ -476,6 +515,14 @@
       render();
     }, { passive: false });
 
+    function nextUniqueSegmentId(existingIds) {
+      const used = new Set(existingIds != null ? existingIds : edges.map(e => e.id));
+      let n = 1;
+      let id;
+      do { id = 'S' + n++; } while (used.has(id));
+      return id;
+    }
+
     // ---- CRUD ----
     function addNode(wx, wy) {
       const id = 'N' + (idCounter++);
@@ -486,12 +533,12 @@
 
     function addEdge(a, b) {
       if (edges.find(e => (e.a === a && e.b === b) || (e.a === b && e.b === a))) return;
-      const id = 'S' + (edgeIdCounter++);
+      const id = nextUniqueSegmentId();
       const na = nodes.find(n => n.id === a), nb = nodes.find(n => n.id === b);
       const dx = nb.x - na.x, dy = nb.y - na.y;
-      const angle = Math.round(Math.atan2(-dy, dx) * 180 / Math.PI);
+      const angle = normalizeAngle(Math.atan2(-dy, dx) * 180 / Math.PI);
       const length = Math.round(Math.sqrt(dx * dx + dy * dy) * 100) / 100;
-      edges.push({ id, a, b, length: String(length), angle, diameter: '1', label: id });
+      edges.push({ id, a, b, length: String(length), angle, diameter: '0.3', label: id });
       selected = { type: 'edge', id };
       showProps(); render();
     }
@@ -536,7 +583,7 @@
       <label>Node B</label><input id="p-e-b" value="${(e.b || '').replace(/"/g, '&quot;')}">
       <div class="props-row">
         <div><label>Length</label><input id="p-e-len" type="number" value="${e.length ?? ''}"></div>
-        <div><label>Angle (°)</label><input id="p-e-ang" type="number" value="${e.angle ?? ''}"></div>
+        <div><label>Angle (°)</label><input id="p-e-ang" type="number" min="0" max="360" value="${e.angle !== '' && e.angle != null && isFinite(Number(e.angle)) ? normalizeAngle(Number(e.angle)) : (e.angle ?? '')}"></div>
       </div>
       <label>Diameter</label><input id="p-e-dia" value="${(e.diameter ?? '').replace(/"/g, '&quot;')}">
     `;
@@ -545,7 +592,8 @@
           e.a = document.getElementById('p-e-a').value || e.a;
           e.b = document.getElementById('p-e-b').value || e.b;
           e.length = document.getElementById('p-e-len').value;
-          e.angle = document.getElementById('p-e-ang').value;
+          const angVal = document.getElementById('p-e-ang').value;
+          e.angle = angVal !== '' && isFinite(Number(angVal)) ? normalizeAngle(Number(angVal)) : angVal;
           e.diameter = document.getElementById('p-e-dia').value;
           render();
         };
@@ -558,8 +606,10 @@
       const rows = ['segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tangle\tdiameter'];
       edges.forEach(e => {
         const len = (e.length != null && e.length !== '') ? String(e.length) : '';
-        const dia = (e.diameter != null && e.diameter !== '') ? String(e.diameter) : '1';
-        rows.push([e.id, e.a, e.b, len, e.angle ?? '', dia].join('\t'));
+        const dia = (e.diameter != null && e.diameter !== '') ? String(e.diameter) : '0.3';
+        const ang = e.angle ?? '';
+        const angOut = ang !== '' && isFinite(Number(ang)) ? normalizeAngle(Number(ang)) : ang;
+        rows.push([e.id, e.a, e.b, len, angOut, dia].join('\t'));
       });
       return rows.join('\n');
     }
@@ -570,18 +620,23 @@
       const idx = h => headers.indexOf(h);
       const nodeSet = new Set();
       const rawEdges = [];
+      const usedSegmentIds = new Set();
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split('\t').map(c => c.trim());
         if (cols.length < 2) continue;
-        const segId = cols[idx('segment_id')] || ('S' + edgeIdCounter++);
+        let segId = (cols[idx('segment_id')] || '').trim();
+        if (!segId || usedSegmentIds.has(segId)) segId = nextUniqueSegmentId(Array.from(usedSegmentIds));
+        usedSegmentIds.add(segId);
         const a = cols[idx('node_at_end_a')] || '';
         const b = cols[idx('node_at_end_b')] || '';
         nodeSet.add(a); nodeSet.add(b);
+        const rawAng = cols[idx('angle')] || '';
+        const angle = rawAng !== '' && isFinite(Number(rawAng)) ? normalizeAngle(Number(rawAng)) : rawAng;
         rawEdges.push({
           id: segId, a, b,
           length: cols[idx('length')] || '',
-          angle: cols[idx('angle')] || '',
-          diameter: (cols[idx('diameter')] || '').trim() || '1',
+          angle,
+          diameter: (cols[idx('diameter')] || '').trim() || '0.3',
           label: segId
         });
       }
@@ -669,7 +724,22 @@
       render();
     }
 
-    // ---- Init: load from revision, then auto fit to view ----
+    // ---- Init: load part/rev title, then load from revision and fit view ----
+    (async function initTitle() {
+      try {
+        const r = await fetch('/api/info');
+        if (r.ok) {
+          const info = await r.json();
+          const partNumber = String(info.part_number ?? '').trim();
+          const rev = String(info.rev ?? '').trim();
+          const title = 'Harnice formboard graph editor for ' + partNumber + ' ' + rev;
+          document.title = title.trim() || 'Harnice formboard graph editor';
+          document.getElementById('editor-title').textContent = title.trim() || 'Harnice formboard graph editor';
+          document.getElementById('display-part-number').textContent = partNumber || '—';
+          document.getElementById('display-rev').textContent = rev || '—';
+        }
+      } catch (_) { }
+    })();
     setMode('select');
     render();
     loadFromRevision().then(() => {
