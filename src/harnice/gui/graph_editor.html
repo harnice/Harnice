@@ -107,6 +107,17 @@
       flex: 1;
       position: relative;
       overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+    #canvas-wrap * {
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
     }
 
     svg {
@@ -350,6 +361,7 @@
 
     // ---- Event handlers ----
     function onNodeMouseDown(e, id) {
+      e.preventDefault();
       e.stopPropagation();
       if (mode === 'delete') { deleteNode(id); return; }
       if (mode === 'connect') {
@@ -416,6 +428,7 @@
     }
 
     function onEdgeMouseDown(e, id) {
+      e.preventDefault();
       e.stopPropagation();
       if (mode === 'delete') { deleteEdge(id); return; }
       selected = { type: 'edge', id };
@@ -423,6 +436,7 @@
     }
 
     svg.addEventListener('mousedown', e => {
+      e.preventDefault();
       if (e.target !== svg && e.target !== root) return;
       const sp = svgPos(e);
       if (mode === 'add-node') {
@@ -476,7 +490,8 @@
       const na = nodes.find(n => n.id === a), nb = nodes.find(n => n.id === b);
       const dx = nb.x - na.x, dy = nb.y - na.y;
       const angle = Math.round(Math.atan2(-dy, dx) * 180 / Math.PI);
-      edges.push({ id, a, b, length: '', angle, diameter: '', label: id });
+      const length = Math.round(Math.sqrt(dx * dx + dy * dy) * 100) / 100;
+      edges.push({ id, a, b, length: String(length), angle, diameter: '1', label: id });
       selected = { type: 'edge', id };
       showProps(); render();
     }
@@ -541,7 +556,11 @@
     // ---- TSV serialization ----
     function tsvFromState() {
       const rows = ['segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tangle\tdiameter'];
-      edges.forEach(e => rows.push([e.id, e.a, e.b, e.length ?? '', e.angle ?? '', e.diameter ?? ''].join('\t')));
+      edges.forEach(e => {
+        const len = (e.length != null && e.length !== '') ? String(e.length) : '';
+        const dia = (e.diameter != null && e.diameter !== '') ? String(e.diameter) : '1';
+        rows.push([e.id, e.a, e.b, len, e.angle ?? '', dia].join('\t'));
+      });
       return rows.join('\n');
     }
 
@@ -562,7 +581,7 @@
           id: segId, a, b,
           length: cols[idx('length')] || '',
           angle: cols[idx('angle')] || '',
-          diameter: cols[idx('diameter')] || '',
+          diameter: (cols[idx('diameter')] || '').trim() || '1',
           label: segId
         });
       }
