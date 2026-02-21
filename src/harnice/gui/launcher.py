@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFileDialog,
     QMenu,
+    QLabel,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QObject
 from PySide6.QtGui import QPainter, QPen
@@ -19,6 +20,87 @@ def layout_config_path():
     Save layout JSON into the root of the harnice project directory.
     """
     return Path(__file__).resolve().parents[2] / "gui_layout.json"
+
+
+def _hex_adjust_brightness(hex_color, toward_white_ratio=0.0):
+    """
+    Adjust brightness of a #rrggbb or #rgb hex color.
+    toward_white_ratio: 0 = no change; 0.2 = 20% blend toward white (lighter);
+                       negative = blend toward black (darker), e.g. -0.15.
+    """
+    hex_color = hex_color.strip().lstrip("#")
+    if len(hex_color) == 3:
+        hex_color = "".join(c * 2 for c in hex_color)
+    if len(hex_color) != 6:
+        return "#" + hex_color
+    r, g, b = (int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+    if toward_white_ratio >= 0:
+        r = int(r + (255 - r) * toward_white_ratio)
+        g = int(g + (255 - g) * toward_white_ratio)
+        b = int(b + (255 - b) * toward_white_ratio)
+    else:
+        r = int(r * (1 + toward_white_ratio))
+        g = int(g * (1 + toward_white_ratio))
+        b = int(b * (1 + toward_white_ratio))
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def button_color_for_product(product_type):
+    """
+    Return the button_color from the product module for the given product_type,
+    or None if the product has no button_color.
+    """
+    if not product_type:
+        return None
+    try:
+        product_module = __import__(
+            f"harnice.products.{product_type}", fromlist=[product_type]
+        )
+        return getattr(product_module, "button_color", None)
+    except Exception:
+        return None
+
+
+def _pn_and_rev_from_path(rev_folder):
+    """
+    Return (part_number, rev) for display from a revision folder path,
+    e.g. ("MyPart", "rev1"). Returns (None, None) if path doesn't match.
+    """
+    rev_folder = os.path.normpath(rev_folder)
+    part_dir = os.path.dirname(rev_folder)
+    rev_folder_name = os.path.basename(rev_folder)
+    part_dir_name = os.path.basename(part_dir)
+    if not rev_folder_name.startswith(f"{part_dir_name}-rev"):
+        return (None, None)
+    rev_str = rev_folder_name.split("-rev")[-1]
+    if not rev_str.isdigit():
+        return (None, None)
+    return (part_dir_name, f"rev{rev_str}")
+
+
+def product_type_for_revision_folder(rev_folder):
+    """
+    Return the Harnice product type (e.g. "harness", "device") for a revision
+    folder path, or None if it cannot be determined.
+    """
+    rev_folder = os.path.normpath(rev_folder)
+    part_dir = os.path.dirname(rev_folder)
+    rev_folder_name = os.path.basename(rev_folder)
+    part_dir_name = os.path.basename(part_dir)
+    if not rev_folder_name.startswith(f"{part_dir_name}-rev"):
+        return None
+    rev_str = rev_folder_name.split("-rev")[-1]
+    if not rev_str.isdigit():
+        return None
+    rev_history_path = os.path.join(part_dir, f"{part_dir_name}-revision_history.tsv")
+    if not os.path.exists(rev_history_path):
+        return None
+    try:
+        from harnice.lists import rev_history
+
+        return rev_history.info(rev=rev_str, path=rev_history_path, field="product")
+    except Exception:
+        return None
 
 
 def run_harnice_render(cwd, lightweight=False):
@@ -124,35 +206,99 @@ class GridWidget(QWidget):
 
 
 class PartButton(QPushButton):
-    def __init__(self, parent, label, path, grid_x, grid_y, main_window=None):
-        super().__init__(label, parent)
+    def __init__(
+        self, parent, label, path, grid_x, grid_y, main_window=None, product_type=None
+    ):
+        pn, rev = _pn_and_rev_from_path(path)
+        if pn and rev:
+            display_text = f"{pn}\n{rev}"
+            rich_text = f"<b>{pn}</b><br><i>{rev}</i>"
+        else:
+            display_text = label
+            rich_text = label.replace("\n", "<br>")
+        self._plain_label = display_text
+        super().__init__("", parent)
         self.parent_grid = parent
         self.path = path
         self.grid_x = grid_x
         self.grid_y = grid_y
         self.main_window = main_window
+        self.product_type = (
+            product_type
+            if product_type is not None
+            else product_type_for_revision_folder(path)
+        )
 
-        # ✅ Store the intended "default / unclicked" theme
-        self.default_style = """
-            QPushButton {
-                background-color: #e6e6e6;
+        # Store the intended "default / unclicked" theme
+        bg = button_color_for_product(self.product_type) or "#e6e6e6"
+        bg_hover = _hex_adjust_brightness(bg, 0.18)
+        bg_pressed = _hex_adjust_brightness(bg, -0.12)
+        self.default_style = f"""
+            QPushButton {{
+                background-color: {bg};
                 border: 1px solid #666;
                 border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #f2f2f2;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {bg_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {bg_pressed};
+            }}
         """
         self.setStyleSheet(self.default_style)
 
         self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
+        self._harness_action_btn = None
+        self._text_label = QLabel(self)
+        self._text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self._text_label.setTextFormat(Qt.TextFormat.RichText)
+        self._text_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+        self._text_label.setText(rich_text)
+        self._text_label.setStyleSheet("background: transparent;")
+        self._text_label.show()
+        self._update_text_label_geometry()
+
+        if self.product_type == "harness":
+            self._harness_action_btn = QPushButton(self)
+            self._harness_action_btn.setFixedSize(20, 20)
+            self._harness_action_btn.setStyleSheet(
+                """
+                QPushButton {
+                    background-color: #ccc;
+                    border: 1px solid #888;
+                    border-radius: 4px;
+                }
+                QPushButton:hover { background-color: #ddd; }
+                QPushButton:pressed { background-color: #bbb; }
+                """
+            )
+            self._harness_action_btn.clicked.connect(lambda: print("hello world"))
+            self._harness_action_btn.show()
+            self._update_harness_action_geometry()
+            self._update_text_label_geometry()
+
         self.dragStartPosition = None
         self.is_dragging = False
         self.show()
         self.update_position()
+
+    def _update_text_label_geometry(self):
+        right_margin = 28 if self._harness_action_btn is not None else 14
+        self._text_label.setGeometry(8, 0, self.width() - right_margin, self.height())
+
+    def _update_harness_action_geometry(self):
+        if self._harness_action_btn is not None:
+            margin = 4
+            x = self.width() - self._harness_action_btn.width() - margin
+            self._harness_action_btn.move(x, margin)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._update_text_label_geometry()
+        self._update_harness_action_geometry()
 
     def update_position(self):
         x, y = self.parent_grid.grid_to_screen(self.grid_x, self.grid_y)
@@ -286,7 +432,9 @@ class HarniceGUI(QWidget):
         )
 
         if btn:
-            btn.setStyleSheet("background-color: #b1ffb1;")  # Green while running
+            btn.setStyleSheet(
+                btn.default_style + " QPushButton { border: 3px solid #22aa22; } "
+            )
 
         self.thread = QThread()
         self.worker = RenderWorker(cwd, False)
@@ -310,7 +458,9 @@ class HarniceGUI(QWidget):
             btn.setStyleSheet(btn.default_style)
             btn.update()
         else:
-            btn.setStyleSheet("background-color: #ffb1b1;")  # Error red
+            btn.setStyleSheet(
+                btn.default_style + " QPushButton { border: 3px solid #cc3333; } "
+            )
             # Print error message and traceback to console in color
             if error_msg:
                 # ANSI color codes
@@ -356,10 +506,11 @@ class HarniceGUI(QWidget):
             },
             "buttons": [
                 {
-                    "label": b.text(),
+                    "label": getattr(b, "_plain_label", b.text()) or "",
                     "path": b.path,
                     "grid_x": b.grid_x,
                     "grid_y": b.grid_y,
+                    "product_type": getattr(b, "product_type", None) or "",
                 }
                 for (gx, gy), b in self.grid.grid_buttons.items()
                 if isinstance(b, PartButton)
@@ -402,6 +553,7 @@ class HarniceGUI(QWidget):
                 item["grid_x"],
                 item["grid_y"],
                 main_window=self,
+                product_type=item.get("product_type") or None,
             )
             btn.clicked.connect(
                 lambda checked=False, p=item["path"]: self.run_render(p)
