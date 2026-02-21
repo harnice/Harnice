@@ -249,6 +249,7 @@ class PartButton(QPushButton):
         self.setStyleSheet(self.default_style)
 
         self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
+        self._harness_action_btn = None
         self._text_label = QLabel(self)
         self._text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._text_label.setTextFormat(Qt.TextFormat.RichText)
@@ -260,17 +261,44 @@ class PartButton(QPushButton):
         self._text_label.show()
         self._update_text_label_geometry()
 
+        if self.product_type == "harness":
+            self._harness_action_btn = QPushButton(self)
+            self._harness_action_btn.setFixedSize(20, 20)
+            self._harness_action_btn.setStyleSheet(
+                """
+                QPushButton {
+                    background-color: #ccc;
+                    border: 1px solid #888;
+                    border-radius: 4px;
+                }
+                QPushButton:hover { background-color: #ddd; }
+                QPushButton:pressed { background-color: #bbb; }
+                """
+            )
+            self._harness_action_btn.clicked.connect(lambda: print("hello world"))
+            self._harness_action_btn.show()
+            self._update_harness_action_geometry()
+            self._update_text_label_geometry()
+
         self.dragStartPosition = None
         self.is_dragging = False
         self.show()
         self.update_position()
 
     def _update_text_label_geometry(self):
-        self._text_label.setGeometry(8, 0, self.width() - 14, self.height())
+        right_margin = 28 if self._harness_action_btn is not None else 14
+        self._text_label.setGeometry(8, 0, self.width() - right_margin, self.height())
+
+    def _update_harness_action_geometry(self):
+        if self._harness_action_btn is not None:
+            margin = 4
+            x = self.width() - self._harness_action_btn.width() - margin
+            self._harness_action_btn.move(x, margin)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._update_text_label_geometry()
+        self._update_harness_action_geometry()
 
     def update_position(self):
         x, y = self.parent_grid.grid_to_screen(self.grid_x, self.grid_y)
