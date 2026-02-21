@@ -5,6 +5,7 @@ import subprocess
 import csv
 from typing import Dict
 from harnice import fileio, state
+from harnice.paths import get_kicad_cli
 
 build_macro_mpn = "kicad_pro_to_system_connector_list"
 
@@ -55,15 +56,9 @@ def export_netlist() -> str:
     if not os.path.exists(sch_file):
         raise FileNotFoundError("No schematic file (.kicad_sch) found")
 
-    kicad_cli = shutil.which("kicad-cli")
-    if not kicad_cli:
-        fallback = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
-        if os.path.exists(fallback):
-            kicad_cli = fallback
-        else:
-            raise RuntimeError(
-                "kicad-cli not found (neither on PATH nor in /Applications/KiCad)"
-            )
+    kicad_cli = get_kicad_cli()
+    if not os.path.isfile(kicad_cli):
+        kicad_cli = shutil.which(kicad_cli) or kicad_cli
 
     try:
         proc = subprocess.run(
