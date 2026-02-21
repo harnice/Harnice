@@ -6,27 +6,27 @@ A table that describes the geometry of the formboard, and the nodes and segments
 *Columns are automatically generated when `formboard_graph.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 === "`segment_id`"
 
-    documentation needed
+    the unique name of the segment that this line describes
 
 === "`node_at_end_a`"
 
-    documentation needed
+    one of two ends of this segment
 
 === "`node_at_end_b`"
 
-    documentation needed
+    one of two ends of this segment
 
 === "`length`"
 
-    documentation needed
+    length of this segment
 
 === "`angle`"
 
-    documentation needed
+    what angle is the segment visualized on a formboard, with respect to the x axis
 
 === "`diameter`"
 
-    documentation needed
+    what is the diameter of this segment
 
 
 ---
