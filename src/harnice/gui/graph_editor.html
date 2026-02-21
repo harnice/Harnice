@@ -16,38 +16,38 @@
       display: flex;
       height: 100vh;
       overflow: hidden;
-      background: #1a1a2e;
+      background: #1a1a1a;
       color: #eee;
     }
 
     #sidebar {
       width: 280px;
       min-width: 280px;
-      background: #16213e;
+      background: #252525;
       padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 10px;
       overflow-y: auto;
-      border-right: 1px solid #0f3460;
+      border-right: 1px solid #404040;
     }
 
     h2 {
       font-size: 14px;
-      color: #e94560;
+      color: #bbb;
       text-transform: uppercase;
       letter-spacing: 1px;
       margin-bottom: 4px;
     }
 
     .section {
-      background: #0f3460;
+      background: #333;
       border-radius: 8px;
       padding: 10px;
     }
 
     button {
-      background: #e94560;
+      background: #555;
       color: #fff;
       border: none;
       border-radius: 5px;
@@ -58,29 +58,29 @@
     }
 
     button:hover {
-      background: #c73652;
+      background: #666;
     }
 
     button.secondary {
-      background: #0f3460;
-      border: 1px solid #e94560;
+      background: #333;
+      border: 1px solid #666;
     }
 
     button.secondary:hover {
-      background: #1a4a80;
+      background: #404040;
     }
 
     button.danger {
-      background: #7c1a2e;
+      background: #444;
     }
 
     button.danger:hover {
-      background: #a02040;
+      background: #555;
     }
 
     label {
       font-size: 11px;
-      color: #aaa;
+      color: #999;
       display: block;
       margin-top: 6px;
     }
@@ -90,8 +90,8 @@
       width: 100%;
       padding: 5px 7px;
       border-radius: 4px;
-      background: #1a1a2e;
-      border: 1px solid #0f3460;
+      background: #1a1a1a;
+      border: 1px solid #404040;
       color: #eee;
       font-size: 12px;
       margin-top: 2px;
@@ -100,7 +100,7 @@
     input:focus,
     select:focus {
       outline: none;
-      border-color: #e94560;
+      border-color: #888;
     }
 
     #canvas-wrap {
@@ -130,12 +130,12 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(15, 52, 96, 0.9);
+      background: rgba(45, 45, 45, 0.9);
       padding: 6px 12px;
       border-radius: 20px;
       font-size: 12px;
       pointer-events: none;
-      border: 1px solid #e94560;
+      border: 1px solid #666;
     }
 
     #toolbar {
@@ -147,6 +147,22 @@
     #toolbar button {
       width: auto;
       flex: 1;
+    }
+
+    #btn-connect {
+      border: 1px solid #b8860b;
+    }
+
+    #btn-connect.secondary {
+      border-color: #b8860b;
+    }
+
+    #btn-add-node {
+      border: 1px solid #c73652;
+    }
+
+    #btn-add-node.secondary {
+      border-color: #c73652;
     }
 
     .props-row {
@@ -224,7 +240,7 @@
       <div id="toolbar">
         <button id="btn-select" class="secondary" onclick="setMode('select')">▶ Select</button>
         <button id="btn-add-node" class="secondary" onclick="setMode('add-node')">＋ Add Node</button>
-        <button id="btn-connect" class="secondary" onclick="setMode('connect')">⟶ Connect</button>
+        <button id="btn-connect" class="secondary" onclick="setMode('connect')">⟶ Connect nodes</button>
         <button id="btn-delete" class="secondary" onclick="setMode('delete')">✕ Delete</button>
       </div>
     </div>
@@ -306,7 +322,7 @@
 
       const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       c.setAttribute('cx', s.x); c.setAttribute('cy', s.y); c.setAttribute('r', NODE_R);
-      c.setAttribute('fill', isSel ? '#e94560' : isConn ? '#f0a500' : '#4a90d9');
+      c.setAttribute('fill', isSel ? '#ccc' : isConn ? '#b8860b' : '#c73652');
       c.setAttribute('stroke', '#eee'); c.setAttribute('stroke-width', NODE_STROKE);
       g.appendChild(c);
 
@@ -343,7 +359,7 @@
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', sa.x); line.setAttribute('y1', sa.y);
       line.setAttribute('x2', sb.x); line.setAttribute('y2', sb.y);
-      line.setAttribute('stroke', isSel ? '#e94560' : '#4a90d9');
+      line.setAttribute('stroke', isSel ? '#ccc' : '#888');
       line.setAttribute('stroke-width', EDGE_W);
       g.appendChild(line);
 
@@ -378,7 +394,7 @@
     function showTempLine(x1, y1, x2, y2) {
       if (!tempLineEl) {
         tempLineEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        tempLineEl.setAttribute('stroke', '#f0a500');
+        tempLineEl.setAttribute('stroke', '#b8860b');
         tempLineEl.setAttribute('stroke-width', 1.5);
         tempLineEl.setAttribute('stroke-dasharray', '5,4');
         tempLineEl.setAttribute('pointer-events', 'none');
@@ -658,7 +674,7 @@
     function setRevisionMsg(msg, isError) {
       const el = document.getElementById('revision-msg');
       el.textContent = msg || '';
-      el.style.color = isError ? '#e94560' : '#888';
+      el.style.color = isError ? '#ccc' : '#888';
     }
 
     async function loadFromRevision() {
