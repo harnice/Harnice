@@ -5,7 +5,12 @@ from harnice.products import chtype
 verbose = False
 extra_verbose = False
 
-for required_channel in fileio.read_tsv("disconnect map"):
+# Read once; assign() still writes the file each time, but we avoid re-reading
+# after each write (which was very slow on Windows). We rely on the
+# already-assigned set checks to skip candidates that were assigned in prior iterations.
+disconnect_map_rows = fileio.read_tsv("disconnect map")
+
+for required_channel in disconnect_map_rows:
     # skip available channel rows (A-side empty)
     if required_channel.get("A-side_device_refdes") in [None, ""]:
         continue
@@ -30,7 +35,7 @@ for required_channel in fileio.read_tsv("disconnect map"):
     # collect available candidates for the same disconnect_refdes
     available_candidates = [
         c
-        for c in fileio.read_tsv("disconnect map")
+        for c in disconnect_map_rows
         if c.get("A-side_device_refdes") in [None, ""]
         and c.get("disconnect_refdes") == disconnect_refdes
     ]
