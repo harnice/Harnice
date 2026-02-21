@@ -1,6 +1,5 @@
 import os
 import runpy
-from harnice.products.cable import button_color
 import sexpdata
 import json
 import csv
