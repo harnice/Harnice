@@ -86,3 +86,18 @@ Make sure you have these applications installed for working with Harnice files:
 - **SVG editor** - Designed to work with [Inkscape](https://inkscape.org/)
 - **CSV editor** - Excel or similar spreadsheet application
 - [**KiCad**](https://www.kicad.org/) - For drawing block diagrams
+
+Point Harnice to the command line version of these apps.
+
+go to harnice root and locate paths/paths.example.json
+
+rename to paths.json
+
+open and edit.
+
+if on mac, i don't know what to put here yet.
+
+if on windows, find your kicad and inkscape bin directory (usually in c:/program files/kicad/ etc), and copy the path to the inkscape.exe file. be sure to switch the slashes to forward slashes because backwards ones will not work here.
+
+inkscape.exe
+kicad-cli.exe
