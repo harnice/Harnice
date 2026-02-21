@@ -229,7 +229,7 @@ class PartButton(QPushButton):
             else product_type_for_revision_folder(path)
         )
 
-        # ✅ Store the intended "default / unclicked" theme
+        # Store the intended "default / unclicked" theme
         bg = button_color_for_product(self.product_type) or "#e6e6e6"
         bg_hover = _hex_adjust_brightness(bg, 0.18)
         bg_pressed = _hex_adjust_brightness(bg, -0.12)
