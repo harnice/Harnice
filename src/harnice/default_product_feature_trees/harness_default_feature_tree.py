@@ -7,11 +7,7 @@ from harnice.utils import (
     library_utils,
     feature_tree_utils,
 )
-from harnice.lists import (
-    instances_list,
-    post_harness_instances_list,
-    rev_history
-)
+from harnice.lists import instances_list, post_harness_instances_list, rev_history
 
 {build_macro_block}
 
@@ -27,18 +23,23 @@ for instance in instances:
         if instance.get("signal_of_channel_type") == "pos":
             if instance.get("item_type") == "circuit":
                 circuit_instance = instance
-                connector_at_end_a = instances_list.attribute_of(instance.get("node_at_end_a"), "connector_group")
-                new_instance_name = f"{circuit_instance.get('instance_name')}-special_contact"
+                connector_at_end_a = instances_list.attribute_of(
+                    instance.get("node_at_end_a"), "connector_group"
+                )
+                new_instance_name = (
+                    f"{circuit_instance.get('instance_name')}-special_contact"
+                )
                 circuit_id = int(circuit_instance.get("circuit_id"))
                 instances_list.new_instance(
-                    new_instance_name, {
+                    new_instance_name,
+                    {
                         "bom_line_number": True,
                         "mpn": "TXPS20",
                         "item_type": "contact",
                         "location_type": "node",
                         "circuit_id": circuit_id,
-                        "connector_group": connector_at_end_a
-                    }
+                        "connector_group": connector_at_end_a,
+                    },
                 )
                 circuit_utils.squeeze_instance_between_ports_in_circuit(
                     new_instance_name, circuit_id, 1
@@ -47,21 +48,31 @@ for instance in instances:
 # example: add a backshell
 for instance in instances:
     if instance.get("instance_name") in ["X1.B.conn", "PREAMP2.in2.conn"]:
-        instances_list.new_instance(f"{instance.get('connector_group')}.bs", {
-            "bom_line_number": True,
-            "mpn": "M85049-90_9Z03",
-            "item_type": "backshell",
-            "parent_instance": instance.get("instance_name"),
-            "location_type": "node",
-            "connector_group": instance.get("connector_group"),
-            "parent_csys_instance_name": (instances_list.instance_in_connector_group_with_item_type(instance.get("connector_group"), "node")).get("instance_name"),
-            "parent_csys_outputcsys_name": "origin",
-            "lib_repo": "https://github.com/harnice/harnice"
-        })
-        instances_list.modify(instance.get("instance_name"), {
-            "parent_csys_instance_name": f"{instance.get('connector_group')}.bs",
-            "parent_csys_outputcsys_name": "connector",
-        })
+        instances_list.new_instance(
+            f"{instance.get('connector_group')}.bs",
+            {
+                "bom_line_number": True,
+                "mpn": "M85049-90_9Z03",
+                "item_type": "backshell",
+                "parent_instance": instance.get("instance_name"),
+                "location_type": "node",
+                "connector_group": instance.get("connector_group"),
+                "parent_csys_instance_name": (
+                    instances_list.instance_in_connector_group_with_item_type(
+                        instance.get("connector_group"), "node"
+                    )
+                ).get("instance_name"),
+                "parent_csys_outputcsys_name": "origin",
+                "lib_repo": "https://github.com/harnice/harnice",
+            },
+        )
+        instances_list.modify(
+            instance.get("instance_name"),
+            {
+                "parent_csys_instance_name": f"{instance.get('connector_group')}.bs",
+                "parent_csys_outputcsys_name": "connector",
+            },
+        )
 
 
 # ===========================================================================
@@ -113,7 +124,7 @@ for instance in fileio.read_tsv("instances list"):
         for instance2 in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
                 if instance2.get("length", "").strip():
-                    length += int(instance2.get("length").strip())
+                    length += float(instance2.get("length").strip())
         instances_list.modify(instance.get("instance_name"), {"length": length})
 
 # ===========================================================================
@@ -131,39 +142,52 @@ for x in range(2):
     for instance in fileio.read_tsv("instances list"):
         if instance.get("item_type") == "connector_cavity":
             instance_name = instance.get("instance_name", "")
-            print_name = f"cavity {instance_name.split(".")[-1] if "." in instance_name else instance_name}"
+            print_name = f"cavity {instance_name.split('.')[-1] if '.' in instance_name else instance_name}"
             instances_list.modify(instance_name, {"print_name": print_name})
 
         elif instance.get("item_type") in ["conductor", "conductor-segment"]:
-            instances_list.modify(instance.get("instance_name"), {
-                "print_name": f"'{instance.get('cable_identifier')}' of '{instances_list.attribute_of(instance.get('cable_group'), 'print_name')}'"
-            })
+            instances_list.modify(
+                instance.get("instance_name"),
+                {
+                    "print_name": f"'{instance.get('cable_identifier')}' of '{instances_list.attribute_of(instance.get('cable_group'), 'print_name')}'"
+                },
+            )
 
         elif instance.get("item_type") == "net-channel":
             print_name = f"'{instance.get('this_channel_from_device_channel_id')}' of '{instance.get('this_channel_from_device_refdes')}' to '{instance.get('this_channel_to_device_channel_id')}' of '{instance.get('this_channel_to_device_refdes')}'"
-            instances_list.modify(instance.get("instance_name"), {"print_name": print_name})
+            instances_list.modify(
+                instance.get("instance_name"), {"print_name": print_name}
+            )
 
         elif instance.get("item_type") == "net-channel-segment":
             print_name = f"'{instances_list.attribute_of(instance.get('parent_instance'), 'this_channel_from_device_channel_id')}' of '{instances_list.attribute_of(instance.get('parent_instance'), 'this_channel_from_device_refdes')}' to '{instances_list.attribute_of(instance.get('parent_instance'), 'this_channel_to_device_channel_id')}' of '{instances_list.attribute_of(instance.get('parent_instance'), 'this_channel_to_device_refdes')}'"
-            instances_list.modify(instance.get("instance_name"), {"print_name": print_name})
+            instances_list.modify(
+                instance.get("instance_name"), {"print_name": print_name}
+            )
 
         elif instance.get("item_type") == "connector":
             print_name = f"{instance.get('connector_group')}"
-            instances_list.modify(instance.get("instance_name"), {"print_name": print_name})
+            instances_list.modify(
+                instance.get("instance_name"), {"print_name": print_name}
+            )
 
         elif instance.get("item_type") == "cable-segment":
             print_name = f"{instance.get('cable_group')}"
-            instances_list.modify(instance.get("instance_name"), {"print_name": print_name})
+            instances_list.modify(
+                instance.get("instance_name"), {"print_name": print_name}
+            )
 
         elif instance.get("item_type") == "contact":
             print_name = instance.get("mpn")
             instances_list.modify(
-                instance.get("instance_name"),
-                {"print_name": print_name}
+                instance.get("instance_name"), {"print_name": print_name}
             )
 
         else:
-            instances_list.modify(instance.get("instance_name"), {"print_name": instance.get("instance_name")})
+            instances_list.modify(
+                instance.get("instance_name"),
+                {"print_name": instance.get("instance_name")},
+            )
 
 # ===========================================================================
 #                  ADD BUILD NOTES
@@ -175,9 +199,7 @@ for rev_row in fileio.read_tsv("revision history"):
 for instance in fileio.read_tsv("instances list"):
     for note in note_utils.get_lib_build_notes(instance):
         note_utils.new_note(
-            "build_note",
-            note,
-            affectedinstances=[instance.get("instance_name")]
+            "build_note", note, affectedinstances=[instance.get("instance_name")]
         )
 
 note_utils.assign_buildnote_numbers()
@@ -194,7 +216,7 @@ note_utils.assign_buildnote_numbers()
 # )
 
 # example: combine buildnotes if their texts are similar
-#note_utils.combine_notes("Torque backshell to connector at 40 in-lbs","Torque backshell to connector at about 40 in-lbs")
+# note_utils.combine_notes("Torque backshell to connector at 40 in-lbs","Torque backshell to connector at about 40 in-lbs")
 
 
 # ===========================================================================
@@ -209,7 +231,13 @@ for instance in instances:
 formboard_overview_instances = []
 formboard_detail_instances = []
 for instance in instances:
-    if instance.get("item_type") not in ["connector", "backshell", "segment", "node", "origin"]:
+    if instance.get("item_type") not in [
+        "connector",
+        "backshell",
+        "segment",
+        "node",
+        "origin",
+    ]:
         continue
 
     formboard_overview_instances.append(instance)
@@ -219,28 +247,48 @@ for instance in instances:
     overview_flag_note_counter = 1
 
     if instance.get("item_type") in ["connector", "backshell"]:
-        formboard_detail_instances.append(note_utils.make_bom_flagnote(instance, f"flagnote-{detail_flag_note_counter}"))
+        formboard_detail_instances.append(
+            note_utils.make_bom_flagnote(
+                instance, f"flagnote-{detail_flag_note_counter}"
+            )
+        )
         detail_flag_note_counter += 1
 
-        formboard_detail_instances.append(note_utils.make_part_name_flagnote(instance, f"flagnote-{detail_flag_note_counter}"))
+        formboard_detail_instances.append(
+            note_utils.make_part_name_flagnote(
+                instance, f"flagnote-{detail_flag_note_counter}"
+            )
+        )
         detail_flag_note_counter += 1
 
     if instance.get("item_type") == "connector":
-        formboard_overview_instances.append(note_utils.make_part_name_flagnote(instance, f"flagnote-{overview_flag_note_counter}"))
+        formboard_overview_instances.append(
+            note_utils.make_part_name_flagnote(
+                instance, f"flagnote-{overview_flag_note_counter}"
+            )
+        )
         overview_flag_note_counter += 1
 
     for note_instance in note_instances:
         if note_instance.get("note_type") == "build_note":
-            if instance.get("instance_name") in note_instance.get("note_affected_instances"):
+            if instance.get("instance_name") in note_instance.get(
+                "note_affected_instances"
+            ):
                 formboard_detail_instances.append(
-                    note_utils.make_buildnote_flagnote(note_instance, instance, f"flagnote-{detail_flag_note_counter}")
+                    note_utils.make_buildnote_flagnote(
+                        note_instance, instance, f"flagnote-{detail_flag_note_counter}"
+                    )
                 )
                 detail_flag_note_counter += 1
 
         if note_instance.get("note_type") == "rev_change_callout":
-            if instance.get("instance_name") in note_instance.get("note_affected_instances"):
+            if instance.get("instance_name") in note_instance.get(
+                "note_affected_instances"
+            ):
                 formboard_detail_instances.append(
-                    note_utils.make_rev_change_flagnote(note_instance, instance, f"flagnote-{detail_flag_note_counter}")
+                    note_utils.make_rev_change_flagnote(
+                        note_instance, instance, f"flagnote-{detail_flag_note_counter}"
+                    )
                 )
                 detail_flag_note_counter += 1
 
@@ -315,7 +363,10 @@ feature_tree_utils.run_macro(
 
 build_notes_list_instances = []
 for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") == "note" and instance.get("note_type") == "build_note":
+    if (
+        instance.get("item_type") == "note"
+        and instance.get("note_type") == "build_note"
+    ):
         build_notes_list_instances.append(instance)
 
 feature_tree_utils.run_macro(
