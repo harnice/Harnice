@@ -7,6 +7,8 @@ from harnice import fileio, cli, state
 
 default_desc = "FLAGNOTE, PURPOSE"
 
+button_color = "#6f7075"
+
 
 def file_structure():
     return {

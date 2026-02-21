@@ -1,5 +1,6 @@
 import os
 import runpy
+from harnice.products.cable import button_color
 import sexpdata
 import json
 import csv
@@ -8,6 +9,8 @@ from harnice.lists import signals_list, rev_history
 from harnice.products import chtype
 
 default_desc = "DEVICE, FUNCTION, ATTRIBUTES, etc."
+
+button_color = "#d376f5"
 
 device_feature_tree_utils_default = """
 from harnice.lists import signals_list
