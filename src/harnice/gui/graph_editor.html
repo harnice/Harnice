@@ -179,16 +179,11 @@
     <div class="section">
       <h2>File</h2>
       <div id="revision-actions">
-        <button onclick="loadFromRevision()">Load from revision</button>
-        <button class="secondary" onclick="saveToRevision()">Save to revision</button>
+        <button class="secondary" onclick="loadFromRevision()">Revert</button>
+        <button onclick="saveToRevision()">Save</button>
+        <button class="secondary" onclick="closeEditor()">Close</button>
       </div>
       <div id="revision-msg" class="revision-msg"></div>
-      <label style="margin-top:8px;">Load TSV (file)</label>
-      <input type="file" id="file-input" accept=".tsv,.txt" style="margin-top:4px;">
-      <div id="csv-actions" style="margin-top:8px;">
-        <button onclick="exportTSV()">⬇ Export TSV</button>
-        <button class="secondary" onclick="clearAll()">✕ Clear</button>
-      </div>
     </div>
 
     <div class="section">
@@ -582,6 +577,7 @@
       idCounter = 1; edgeIdCounter = 1;
       fitView();
       render();
+      requestAnimationFrame(() => { fitView(); });
     }
 
     // ---- Revision API ----
@@ -616,14 +612,19 @@
       }
     }
 
-    // ---- File input / export ----
-    document.getElementById('file-input').addEventListener('change', e => {
-      const f = e.target.files[0]; if (!f) return;
-      const reader = new FileReader();
-      reader.onload = ev => loadTSV(ev.target.result);
-      reader.readAsText(f);
-    });
+    async function closeEditor() {
+      setRevisionMsg('Saving…');
+      try {
+        const r = await fetch('/api/tsv', { method: 'POST', headers: { 'Content-Type': 'text/tab-separated-values' }, body: tsvFromState() });
+        if (!r.ok) throw new Error(r.statusText);
+        await fetch('/api/close', { method: 'POST' });
+        window.close();
+      } catch (e) {
+        setRevisionMsg('Close failed: ' + e.message, true);
+      }
+    }
 
+    // ---- File actions (Revert/Save/Close in UI) ----
     function exportTSV() {
       const blob = new Blob([tsvFromState()], { type: 'text/tab-separated-values' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -649,10 +650,12 @@
       render();
     }
 
-    // ---- Init: load from revision if available ----
+    // ---- Init: load from revision, then auto fit to view ----
     setMode('select');
     render();
-    loadFromRevision();
+    loadFromRevision().then(() => {
+      requestAnimationFrame(() => { fitView(); });
+    });
 
     function setMode(m) {
       mode = m;

@@ -6,6 +6,7 @@ Must be run after fileio state is set (e.g. from CLI in a revision directory).
 
 import http.server
 import os
+import threading
 import webbrowser
 from pathlib import Path
 
@@ -33,12 +34,16 @@ class GraphEditorHandler(http.server.BaseHTTPRequestHandler):
             self._serve_editor()
         elif self.path == "/api/tsv":
             self._serve_tsv()
+        elif self.path == "/api/close":
+            self._close_server()
         else:
             self.send_error(404)
 
     def do_POST(self):
         if self.path == "/api/tsv":
             self._save_tsv()
+        elif self.path == "/api/close":
+            self._close_server()
         else:
             self.send_error(404)
 
@@ -79,6 +84,17 @@ class GraphEditorHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
+
+    def _close_server(self):
+        """Send 200 then shut down the server so serve_forever() returns."""
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+        def shutdown():
+            self.server.shutdown()
+
+        threading.Thread(target=shutdown, daemon=True).start()
 
 
 def run_server(port=0, open_browser=True):
