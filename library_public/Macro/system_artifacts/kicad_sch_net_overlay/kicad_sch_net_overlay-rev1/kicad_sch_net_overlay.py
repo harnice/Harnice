@@ -1025,7 +1025,7 @@ for node_id, node_coords in graph["nodes"].items():
         continue
 
     # Calculate node radius based on number of components
-    node_radius_inches = (max(components_in_node, 4) + 2) * segment_spacing_inches
+    node_radius_inches = components_in_node * segment_spacing_inches
     node_radius_mm = (
         node_radius_inches * 25.4
     )  # Convert to mm to match KiCad SVG coordinate system
