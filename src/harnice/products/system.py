@@ -229,6 +229,7 @@ for instance in fileio.read_tsv("instances list"):
 #                   SYSTEM ARTIFACT GENERATORS
 # ===========================================================================
 
+# map channels passing through disconnects to available channels inside disconnects
 # prepare the channel map block diagram overlay
 chmap_instances = []
 for instance in fileio.read_tsv("instances list"):

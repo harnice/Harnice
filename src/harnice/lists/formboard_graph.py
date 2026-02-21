@@ -3,13 +3,16 @@ import os
 from harnice import fileio
 
 COLUMNS = [
-    "segment_id", #documentation needed
-    "node_at_end_a", #documentation needed
-    "node_at_end_b", #documentation needed
-    "length", #documentation needed
-    "angle", #documentation needed
-    "diameter", #documentation needed
+    "segment_id", # the unique name of the segment that this line describes
+    "node_at_end_a", # one of two ends of this segment
+    "node_at_end_b", # one of two ends of this segment
+    "length", # length of this segment
+    "angle", # what angle is the segment visualized on a formboard, with respect to the x axis
+    "diameter", # what is the diameter of this segment
 ]
+
+#TODO; https://github.com/harnice/Harnice/issues/610
+# move angle and diameter out of the formboard definition. this list should only describe the part, not the visualization of the part. 
 
 
 def new():

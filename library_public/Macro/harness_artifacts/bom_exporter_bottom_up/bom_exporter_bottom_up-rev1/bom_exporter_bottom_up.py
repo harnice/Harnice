@@ -70,8 +70,8 @@ for i in range(1, highest_bom_number + 1):
             lib_repo = instance.get("lib_repo")
             lib_subpath = instance.get("lib_subpath")
             if not instance.get("length") == "":
-                total_length_exact += int(instance.get("length"))
-                total_length_plus_margin += int(instance.get("length")) + LENGTH_MARGIN
+                total_length_exact += float(instance.get("length"))
+                total_length_plus_margin += float(instance.get("length")) + LENGTH_MARGIN
             else:
                 total_length_exact = ""
                 total_length_plus_margin = ""
