@@ -9,6 +9,8 @@ from harnice.products import chtype
 
 default_desc = "DEVICE, FUNCTION, ATTRIBUTES, etc."
 
+button_color = "#d376f5"
+
 device_feature_tree_utils_default = """
 from harnice.lists import signals_list
 from harnice.products import chtype

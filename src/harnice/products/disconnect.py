@@ -7,6 +7,8 @@ from harnice.lists import signals_list
 
 default_desc = "DISCONNECT, FUNCTION, ATTRIBUTES, etc."
 
+button_color = "#9de3c5"
+
 disconnect_feature_tree_utils_default = """
 from harnice.lists import signals_list
 from harnice.products import chtype

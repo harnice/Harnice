@@ -9,6 +9,8 @@ _HARNESS_SYSTEM_HISTORY_FILENAME = ".harness_system_references"
 
 default_desc = "HARNESS, DOES A FOR B"
 
+button_color = "#ffa58a"
+
 
 def _system_ref_history_path():
     """Path to the persisted system name / revision history file (in repo root)."""

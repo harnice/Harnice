@@ -5,6 +5,8 @@ from harnice.lists import post_harness_instances_list, instances_list, library_h
 
 default_desc = "SYSTEM, SCOPE, etc."
 
+button_color = "#86e1eb"
+
 system_feature_tree_utils_default = """from harnice import fileio
 from harnice.utils import system_utils, feature_tree_utils
 from harnice.lists import instances_list, manifest, channel_map, circuits_list, disconnect_map

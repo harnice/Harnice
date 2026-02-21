@@ -10,6 +10,7 @@ from harnice.utils import svg_utils
 
 default_desc = "COTS COMPONENT, SIZE, COLOR, etc."
 
+button_color = "#e1e8a2"
 
 def file_structure():
     return {

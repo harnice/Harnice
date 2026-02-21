@@ -7,6 +7,7 @@ from harnice import fileio, cli, state
 
 default_desc = "TITLEBLOCK, PAPER SIZE, DESIGN"
 
+button_color = "#526e21"
 
 def file_structure():
     return {
