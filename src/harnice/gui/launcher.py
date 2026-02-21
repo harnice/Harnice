@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import subprocess
 from pathlib import Path
 
 from PySide6.QtWidgets import (
@@ -12,7 +13,7 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QObject
-from PySide6.QtGui import QPainter, QPen
+from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPixmap, QIcon
 
 
 def layout_config_path():
@@ -43,6 +44,50 @@ def _hex_adjust_brightness(hex_color, toward_white_ratio=0.0):
         g = int(g * (1 + toward_white_ratio))
         b = int(b * (1 + toward_white_ratio))
     return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _wye_graph_icon(size=20):
+    """
+    Pixmap icon: three circles connected by lines in an asymmetrical wye shape.
+    """
+    pm = QPixmap(size, size)
+    pm.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pm)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+    # Asymmetrical wye: junction slightly off-center; three node positions
+    junction = (size * 0.5, size * 0.42)
+    node_top = (size * 0.5, size * 0.2)
+    node_bl = (size * 0.22, size * 0.78)
+    node_br = (size * 0.78, size * 0.72)
+    r = max(1.2, size / 12)
+    pen = QPen(QColor(60, 60, 60), max(1, size / 14))
+    painter.setPen(pen)
+    painter.setBrush(QBrush(QColor(60, 60, 60)))
+    # Lines from junction to each node
+    painter.drawLine(
+        int(junction[0]),
+        int(junction[1]),
+        int(node_top[0]),
+        int(node_top[1]),
+    )
+    painter.drawLine(
+        int(junction[0]),
+        int(junction[1]),
+        int(node_bl[0]),
+        int(node_bl[1]),
+    )
+    painter.drawLine(
+        int(junction[0]),
+        int(junction[1]),
+        int(node_br[0]),
+        int(node_br[1]),
+    )
+    # Three circles
+    for cx, cy in (node_top, node_bl, node_br):
+        painter.drawEllipse(int(cx - r), int(cy - r), int(2 * r), int(2 * r))
+    painter.end()
+    return QIcon(pm)
 
 
 def button_color_for_product(product_type):
@@ -264,6 +309,8 @@ class PartButton(QPushButton):
         if self.product_type == "harness":
             self._harness_action_btn = QPushButton(self)
             self._harness_action_btn.setFixedSize(20, 20)
+            self._harness_action_btn.setIcon(_wye_graph_icon(20))
+            self._harness_action_btn.setIconSize(self._harness_action_btn.size())
             self._harness_action_btn.setStyleSheet(
                 """
                 QPushButton {
@@ -275,7 +322,11 @@ class PartButton(QPushButton):
                 QPushButton:pressed { background-color: #bbb; }
                 """
             )
-            self._harness_action_btn.clicked.connect(lambda: print("hello world"))
+            self._harness_action_btn.clicked.connect(
+                lambda: self.main_window.launch_graph_editor(self.path)
+                if self.main_window
+                else None
+            )
             self._harness_action_btn.show()
             self._update_harness_action_geometry()
             self._update_text_label_geometry()
@@ -479,6 +530,19 @@ class HarniceGUI(QWidget):
         self.grid.grid_buttons.pop((button.grid_x, button.grid_y), None)
         button.deleteLater()
         self.save_layout()
+
+    def launch_graph_editor(self, revision_path):
+        """
+        Launch the formboard graph definition editor for the given harness revision.
+        Runs in a subprocess so the launcher stays responsive.
+        """
+        subprocess.Popen(
+            [sys.executable, "-m", "harnice", "--graph-editor"],
+            cwd=revision_path,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     def new_rev(self, button):
         """
