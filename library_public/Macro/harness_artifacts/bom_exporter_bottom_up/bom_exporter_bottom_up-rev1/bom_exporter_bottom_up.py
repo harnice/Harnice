@@ -209,26 +209,9 @@ with open(
 
 # ============= ADD SYMBOLS TO TABLE =======================================================================
 for symbol in symbols_to_build:
-    path_to_symbol = os.path.join(dirpath("instance_data"), symbol.get("instance_name"))
-    library_utils.pull(
-        symbol,
-        update_instances_list=False,
-        destination_directory=path_to_symbol,
+    path_to_symbol = os.path.join(
+        dirpath("instance_data"), "flagnote", symbol.get("instance_name")
     )
-
-    # perform text replacement
-    with open(
-        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "r"
-    ) as f:
-        svg_content = f.read()
-
-    svg_content = svg_content.replace("flagnote-text", symbol.get("note_text"))
-
-    with open(
-        os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"), "w"
-    ) as f:
-        f.write(svg_content)
-
     svg_utils.find_and_replace_svg_group(
         os.path.join(path_to_symbol, f"{symbol.get('instance_name')}-drawing.svg"),
         symbol.get("instance_name"),
