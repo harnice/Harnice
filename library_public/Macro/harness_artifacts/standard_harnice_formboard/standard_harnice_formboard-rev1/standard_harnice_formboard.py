@@ -87,7 +87,7 @@ def make_new_flagnote_drawing(instance, location):
         f.write(svg)
 
 
-def make_new_segment_drawing(instance, location):
+def make_new_segment_drawing(instance, location, dimension, dimension_units):
     if instance.get("item_type") != "segment":
         raise ValueError(
             f"you just tried to make a segment drawing out of a non-segment instance '{instance.get('instance_name')}'"
@@ -98,6 +98,8 @@ def make_new_segment_drawing(instance, location):
         "harness_artifacts",
         "https://github.com/harnice/harnice",
         scale=scale,
+        dimension=dimension,
+        dimension_units = dimension_units,
         artifact_id=f"{artifact_id}-{instance.get('instance_name')}",
         instance=instance,
         base_directory=location,
@@ -233,7 +235,14 @@ for instance in input_instances:
                 f"{artifact_id}-{instance.get('instance_name')}",
             )
             if instance.get("item_type") == "segment":
-                make_new_segment_drawing(instance, generated_instance_location)
+
+                if float(instance.get("length")) >= 2: #only print if the segment is 2 inches or longer
+                    dimension = 50 #percent opacity
+                else:
+                    dimension = 0
+
+                make_new_segment_drawing(instance, generated_instance_location, dimension=dimension, dimension_units="in")
+
             svg_utils.find_and_replace_svg_group(
                 os.path.join(
                     generated_instance_location,
