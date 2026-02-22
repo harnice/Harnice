@@ -124,7 +124,10 @@ for instance in fileio.read_tsv("instances list"):
         for instance2 in fileio.read_tsv("instances list"):
             if instance2.get("parent_instance") == instance.get("instance_name"):
                 if instance2.get("length", "").strip():
-                    length += float(instance2.get("length").strip())
+                    if instance.get("item_type") == "conductor":
+                        length += float(instance2.get("length").strip())
+                    else:
+                        length = max(length, float(instance2.get("length").strip()))
         instances_list.modify(instance.get("instance_name"), {"length": length})
 
 # ===========================================================================
