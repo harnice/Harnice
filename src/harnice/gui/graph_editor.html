@@ -554,7 +554,7 @@
       const dx = nb.x - na.x, dy = nb.y - na.y;
       const angle = normalizeAngle(Math.atan2(-dy, dx) * 180 / Math.PI);
       const length = Math.round(Math.sqrt(dx * dx + dy * dy) * 100) / 100;
-      edges.push({ id, a, b, length: String(length), angle, diameter: '0.3', label: id });
+      edges.push({ id, a, b, length: String(length), angle, diameter: '0.3', length_tolerance: '', label: id });
       selected = { type: 'edge', id };
       showProps(); render();
     }
@@ -601,6 +601,7 @@
         <div><label>Length</label><input id="p-e-len" type="number" value="${e.length ?? ''}"></div>
         <div><label>Angle (°)</label><input id="p-e-ang" type="number" min="0" max="360" value="${e.angle !== '' && e.angle != null && isFinite(Number(e.angle)) ? normalizeAngle(Number(e.angle)) : (e.angle ?? '')}"></div>
       </div>
+      <label>Length tolerance</label><input id="p-e-tolerance" type="text" value="${(e.length_tolerance ?? '').replace(/"/g, '&quot;')}">
       <label>Diameter</label><input id="p-e-dia" value="${(e.diameter ?? '').replace(/"/g, '&quot;')}">
     `;
         const upd = () => {
@@ -610,22 +611,24 @@
           e.length = document.getElementById('p-e-len').value;
           const angVal = document.getElementById('p-e-ang').value;
           e.angle = angVal !== '' && isFinite(Number(angVal)) ? normalizeAngle(Number(angVal)) : angVal;
+          e.length_tolerance = document.getElementById('p-e-tolerance').value;
           e.diameter = document.getElementById('p-e-dia').value;
           render();
         };
-        ['p-e-id', 'p-e-a', 'p-e-b', 'p-e-len', 'p-e-ang', 'p-e-dia'].forEach(id => document.getElementById(id).addEventListener('input', upd));
+        ['p-e-id', 'p-e-a', 'p-e-b', 'p-e-len', 'p-e-ang', 'p-e-tolerance', 'p-e-dia'].forEach(id => document.getElementById(id).addEventListener('input', upd));
       }
     }
 
     // ---- TSV serialization ----
     function tsvFromState() {
-      const rows = ['segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tangle\tdiameter'];
+      const rows = ['segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tlength_tolerance\tangle\tdiameter'];
       edges.forEach(e => {
         const len = (e.length != null && e.length !== '') ? String(e.length) : '';
+        const tol = (e.length_tolerance != null) ? String(e.length_tolerance) : '';
         const dia = (e.diameter != null && e.diameter !== '') ? String(e.diameter) : '0.3';
         const ang = e.angle ?? '';
         const angOut = ang !== '' && isFinite(Number(ang)) ? normalizeAngle(Number(ang)) : ang;
-        rows.push([e.id, e.a, e.b, len, angOut, dia].join('\t'));
+        rows.push([e.id, e.a, e.b, len, tol, angOut, dia].join('\t'));
       });
       return rows.join('\n');
     }
@@ -651,6 +654,7 @@
         rawEdges.push({
           id: segId, a, b,
           length: cols[idx('length')] || '',
+          length_tolerance: (cols[idx('length_tolerance')] || '').trim(),
           angle,
           diameter: (cols[idx('diameter')] || '').trim() || '0.3',
           label: segId

@@ -7,6 +7,7 @@ COLUMNS = [
     "node_at_end_a", # one of two ends of this segment
     "node_at_end_b", # one of two ends of this segment
     "length", # length of this segment
+    "length_tolerance", # string describing length tolerance
     "angle", # what angle is the segment visualized on a formboard, with respect to the x axis
     "diameter", # what is the diameter of this segment
 ]

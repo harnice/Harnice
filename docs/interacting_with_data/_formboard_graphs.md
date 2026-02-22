@@ -20,6 +20,10 @@ A table that describes the geometry of the formboard, and the nodes and segments
 
     length of this segment
 
+=== "`length_tolerance`"
+
+    string describing length tolerance
+
 === "`angle`"
 
     what angle is the segment visualized on a formboard, with respect to the x axis
