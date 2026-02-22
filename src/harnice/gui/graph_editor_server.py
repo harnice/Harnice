@@ -14,7 +14,7 @@ from pathlib import Path
 from harnice import fileio
 
 # Default TSV header when file does not exist (matches formboard_graph.COLUMNS)
-_TSV_HEADER = "segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tangle\tdiameter\n"
+_TSV_HEADER = "segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tlength_tolerance\tangle\tdiameter\n"
 
 
 def _pn_and_rev_from_path(rev_folder):
