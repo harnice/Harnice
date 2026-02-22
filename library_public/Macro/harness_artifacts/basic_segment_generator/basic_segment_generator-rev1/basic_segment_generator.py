@@ -119,7 +119,6 @@ svg_content = f"""
         <line x1="0" y1="0" x2="{svg_length}" y2="0" stroke="black" stroke-width="{svg_diameter}" />
         <line x1="0" y1="0" x2="{svg_length}" y2="0" stroke="white" stroke-width="{svg_diameter - outline_thickness}" />
         <line x1="0" y1="0" x2="{svg_length}" y2="0" stroke="black" style="stroke-width:{centerline_thickness};stroke-dasharray:18,18;stroke-dashoffset:0" />
-        <!-- Dimension (opacity from dimension 0–100, sizes scaled by 1/scale) -->
         <g opacity="{dim_opacity}">
             <line x1="0" y1="0" x2="0" y2="{dim_offset}" stroke="black" stroke-width="{dim_stroke_width_s}" />
             <line x1="{svg_length}" y1="0" x2="{svg_length}" y2="{dim_offset}" stroke="black" stroke-width="{dim_stroke_width_s}" />
