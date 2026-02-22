@@ -37,6 +37,7 @@ COLUMNS = [
     "cable_container", # which cable is this instance physically bundled inside of
     "cable_identifier", # cable unique identifier
     "length",  # derived from formboard definition, the length of a segment
+    "length_tolerance",  # derived from formboard definition, the tolerance on the length of a segment
     "diameter",  # apparent diameter of a segment <---------- change to print_diameter
     "appearance",  # see harnice.utils.appearance for details
     "note_type",  # build_note, rev_note, etc

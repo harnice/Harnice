@@ -126,6 +126,10 @@ Instances lists are the single comprehensive source of truth for the product you
 
     derived from formboard definition, the length of a segment
 
+=== "`length_tolerance`"
+
+    derived from formboard definition, the tolerance on the length of a segment
+
 === "`diameter`"
 
     apparent diameter of a segment <---------- change to print_diameter

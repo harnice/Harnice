@@ -179,6 +179,7 @@ def validate_nodes():
                 "location_type": "segment",
                 "segment_group": segment.get("segment_id"),
                 "length": segment.get("length"),
+                "length_tolerance": segment.get("length_tolerance"),
                 "diameter": segment.get("diameter"),
                 "parent_csys_instance_name": segment.get("node_at_end_a"),
                 "parent_csys_outputcsys_name": "origin",

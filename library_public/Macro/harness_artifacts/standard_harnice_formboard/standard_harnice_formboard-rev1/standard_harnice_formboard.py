@@ -97,6 +97,7 @@ def make_new_segment_drawing(instance, location):
         "basic_segment_generator",
         "harness_artifacts",
         "https://github.com/harnice/harnice",
+        scale=scale,
         artifact_id=f"{artifact_id}-{instance.get('instance_name')}",
         instance=instance,
         base_directory=location,
