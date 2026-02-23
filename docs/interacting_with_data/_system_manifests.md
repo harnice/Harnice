@@ -4,13 +4,11 @@ A table that relates reference designator to part number(s), and may contain oth
 ---
 ##Columns 
 *Columns are automatically generated when `manifest.new()` is called. Additional columns are not supported and may result in an error when parsing.*
-=== "`net`"
 
-    documentation needed
-
-=== "`harness_pn`"
-
-    documentation needed
+| Column | Description |
+|--------|-------------|
+| `net` | documentation needed |
+| `harness_pn` | documentation needed |
 
 
 ---

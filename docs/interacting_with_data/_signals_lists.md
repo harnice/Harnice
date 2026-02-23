@@ -10,75 +10,29 @@ A Signals List is an exhaustive list of every signal is going into or out of a t
 ##Columns 
 *Columns are automatically generated when `signals_list.new()` is called. Additional columns are not supported and may result in an error when parsing.*
 ### Columns of Signals Lists for Devices 
-=== "`channel_id`"
 
-    Unique identifier for the channel.
-
-=== "`signal`"
-
-    Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
-
-=== "`connector_name`"
-
-    Unique identifier for the connector that this signal and channel is a part of.
-
-=== "`cavity`"
-
-    Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within its connector.
-
-=== "`connector_mpn`"
-
-    MPN of the connector in this device (NOT the mating connector).
-
-=== "`channel_type`"
-
-    The channel type of this signal. 
-    {% include-markdown "fragments/channel_type_reference.md" %}
-
-=== "`config_variable`"
-
-    Change header or add more headers as needed. Blank: row is true across all values of this field. Otherwise, row is only true when configuration matches the value of this field.
+| Column | Description |
+|--------|-------------|
+| `channel_id` | Unique identifier for the channel. |
+| `signal` | Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive" |
+| `connector_name` | Unique identifier for the connector that this signal and channel is a part of. |
+| `cavity` | Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within its connector. |
+| `connector_mpn` | MPN of the connector in this device (NOT the mating connector). |
+| `channel_type` | The channel type of this signal. <br>{% include-markdown "fragments/channel_type_reference.md" %} |
+| `config_variable` | Change header or add more headers as needed. Blank: row is true across all values of this field. Otherwise, row is only true when configuration matches the value of this field. |
 
 ### Columns of Signals Lists for Disconnects 
-=== "`channel_id`"
 
-    Unique identifier for the channel.
-
-=== "`signal`"
-
-    Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive"
-
-=== "`A_cavity`"
-
-    Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within that side of the connector.
-    ??? question "Why are A and B different here?"
-        Sometimes it's possible to have connectors that have cavities that may mate electrically, but have different names. For example, suppose two connectors physically mate, but are made by different manufacturers. One manufacturer used lowercase (a, b, c) to reference the cavities but the other used uppercase (A, B, C), or numbers (1, 2, 3), or colors (red, green, blue), etc.
-
-=== "`B_cavity`"
-
-    Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within that side of the connector.
-    ??? question "Why are A and B different here?"
-        Sometimes it's possible to have connectors that have cavities that may mate electrically, but have different names. For example, suppose two connectors physically mate, but are made by different manufacturers. One manufacturer used lowercase (a, b, c) to reference the cavities but the other used uppercase (A, B, C), or numbers (1, 2, 3), or colors (red, green, blue), etc.
-
-=== "`A_connector_mpn`"
-
-    MPN of the connector of the harness on this side of the disconnect
-
-=== "`A_channel_type`"
-
-    The channel type of this side of the discconect.
-    ??? question "Why are A and B different here?"
-        It's important to keep track of which side has which channel type so that you cannot accidentally flip pins and sockets, for example, by mapping the wrong channel type to the wrong pin gender. Careful validation should be done when mapping channels through disconnects to ensure the disconnects have channels that pass through them in the correct direction.
-
-=== "`B_connector_mpn`"
-
-    MPN of the connector of the harness on this side of the disconnect
-
-=== "`B_channel_type`"
-
-    The channel type of this side of the discconect.
-    ??? question "Why are A and B different here?"
-        It's important to keep track of which side has which channel type so that you cannot accidentally flip pins and sockets, for example, by mapping the wrong channel type to the wrong pin gender. Careful validation should be done when mapping channels through disconnects to ensure the disconnects have channels that pass through them in the correct direction.
+| Column | Description |
+|--------|-------------|
+| `channel_id` | Unique identifier for the channel. |
+| `signal` | Name of the electrical function of that signal, as it pertains to its channel type defition. i.e. "positive" |
+| `A_cavity` | Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within that side of the connector.<br>??? question "Why are A and B different here?"<br>    Sometimes it's possible to have connectors that have cavities that may mate electrically, but have different names. For example, suppose two connectors physically mate, but are made by different manufacturers. One manufacturer used lowercase (a, b, c) to reference the cavities but the other used uppercase (A, B, C), or numbers (1, 2, 3), or colors (red, green, blue), etc. |
+| `B_cavity` | Identifier of the pin, socket, stud, etc, that this signal is internally electrically routed to within that side of the connector.<br>??? question "Why are A and B different here?"<br>    Sometimes it's possible to have connectors that have cavities that may mate electrically, but have different names. For example, suppose two connectors physically mate, but are made by different manufacturers. One manufacturer used lowercase (a, b, c) to reference the cavities but the other used uppercase (A, B, C), or numbers (1, 2, 3), or colors (red, green, blue), etc. |
+| `A_connector_mpn` | MPN of the connector of the harness on this side of the disconnect |
+| `A_channel_type` | The channel type of this side of the discconect.<br>??? question "Why are A and B different here?"<br>    It's important to keep track of which side has which channel type so that you cannot accidentally flip pins and sockets, for example, by mapping the wrong channel type to the wrong pin gender. Careful validation should be done when mapping channels through disconnects to ensure the disconnects have channels that pass through them in the correct direction. |
+| `B_connector_mpn` | MPN of the connector of the harness on this side of the disconnect |
+| `B_channel_type` | The channel type of this side of the discconect.<br>??? question "Why are A and B different here?"<br>    It's important to keep track of which side has which channel type so that you cannot accidentally flip pins and sockets, for example, by mapping the wrong channel type to the wrong pin gender. Careful validation should be done when mapping channels through disconnects to ensure the disconnects have channels that pass through them in the correct direction. |
 
 
 

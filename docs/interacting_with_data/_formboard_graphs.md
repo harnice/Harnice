@@ -4,33 +4,16 @@ A table that describes the geometry of the formboard, and the nodes and segments
 ---
 ##Columns 
 *Columns are automatically generated when `formboard_graph.new()` is called. Additional columns are not supported and may result in an error when parsing.*
-=== "`segment_id`"
 
-    the unique name of the segment that this line describes
-
-=== "`node_at_end_a`"
-
-    one of two ends of this segment
-
-=== "`node_at_end_b`"
-
-    one of two ends of this segment
-
-=== "`length`"
-
-    length of this segment
-
-=== "`length_tolerance`"
-
-    string describing length tolerance
-
-=== "`angle`"
-
-    what angle is the segment visualized on a formboard, with respect to the x axis
-
-=== "`diameter`"
-
-    what is the diameter of this segment
+| Column | Description |
+|--------|-------------|
+| `segment_id` | the unique name of the segment that this line describes |
+| `node_at_end_a` | one of two ends of this segment |
+| `node_at_end_b` | one of two ends of this segment |
+| `length` | length of this segment |
+| `length_tolerance` | string describing length tolerance |
+| `angle` | what angle is the segment visualized on a formboard, with respect to the x axis |
+| `diameter` | what is the diameter of this segment |
 
 
 ---
