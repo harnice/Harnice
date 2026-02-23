@@ -586,6 +586,37 @@
       border: 1px solid #4a2a2a;
     }
 
+    /* Global channel type display toggle (bottom left) */
+    #channel-type-display-wrap {
+      margin: 8px 12px 12px;
+      padding: 8px 10px;
+      background: #222;
+      border: 1px solid #404040;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    #channel-type-display-wrap label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #999;
+      margin: 0;
+    }
+
+    #channel-type-display-wrap input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+      cursor: pointer;
+      accent-color: #b8860b;
+    }
+
+    #channel-type-display-wrap .channel-type-display-label {
+      color: #888;
+    }
+
     /* ---- Channel / Disconnect / Circuits viewer headers (above table when tab active) ---- */
     #channel-viewer-header,
     #disconnect-viewer-header,
@@ -755,6 +786,13 @@
     <div id="tab-bar-title">Files</div>
     <div id="tab-list"></div>
     <div id="sse-status" class="err">⏳ connecting…</div>
+    <div id="channel-type-display-wrap">
+      <label>
+        <input type="checkbox" id="channel-type-human-readable"
+          title="Show channel types as description (direction) instead of raw tuple">
+        <span class="channel-type-display-label">Channel types: human-readable</span>
+      </label>
+    </div>
   </div>
 
   <!-- Main content -->
@@ -955,9 +993,34 @@
     const POST_HARNESS_INSTANCES_LIST_KEY = 'post harness instances list';
     let instancesListSourceKey = INSTANCES_LIST_KEY;
     let channelTypeCompatibleCache = {};
+    const CHANNEL_TYPE_HEADERS = ['from_channel_type', 'to_channel_type', 'A-side_device_channel_type', 'B-side_device_channel_type'];
+    let channelTypeDisplayCache = {};
+    let useHumanReadableChannelTypes = false;
 
     function getDataKey() {
       return (activeLabel === INSTANCES_LIST_KEY) ? instancesListSourceKey : activeLabel;
+    }
+
+    function fetchChannelTypeDisplays(typeStrings) {
+      if (!typeStrings || !typeStrings.length) return Promise.resolve({});
+      const url = '/api/channel-type-display?' + typeStrings.map(t => 'type=' + encodeURIComponent(t)).join('&');
+      return fetch(url)
+        .then(r => r.json())
+        .then(map => {
+          Object.assign(channelTypeDisplayCache, map);
+          return map;
+        })
+        .catch(() => ({}));
+    }
+
+    function getChannelTypeDisplay(raw) {
+      if (!raw || !useHumanReadableChannelTypes) return raw ?? '';
+      const key = (typeof raw === 'string') ? raw.trim() : String(raw);
+      return (channelTypeDisplayCache[key] ?? key) || '';
+    }
+
+    function isChannelTypeColumn(headerName) {
+      return CHANNEL_TYPE_HEADERS.includes(headerName);
     }
 
     function getState(label) {
@@ -1083,7 +1146,7 @@
         return [...set].sort((a, b) => a.localeCompare(b));
       }
 
-      function fillSelect(id, options, anyLabel, preserve) {
+      function fillSelect(id, options, anyLabel, preserve, displayMap) {
         const el = document.getElementById(id);
         const cur = preserve ? el.value : null;
         el.innerHTML = '';
@@ -1094,7 +1157,7 @@
         options.forEach(v => {
           const opt = document.createElement('option');
           opt.value = v;
-          opt.textContent = v;
+          opt.textContent = (displayMap && displayMap[v] !== undefined ? displayMap[v] : v);
           el.appendChild(opt);
         });
         if (preserve && cur !== null && (cur === '' || options.includes(cur))) el.value = cur;
@@ -1105,7 +1168,12 @@
       fillSelect('ch-chan-a', uniquesEither(fromChanCol, toChanCol), 'any channel', true);
       fillSelect('ch-dev-b', uniquesEither(fromDevCol, toDevCol), 'any device', true);
       fillSelect('ch-chan-b', uniquesEither(fromChanCol, toChanCol), 'any channel', true);
-      fillSelect('ch-type-val', fromTypeCol >= 0 ? uniques(fromTypeCol) : [], '—', true);
+      const chTypeOpts = fromTypeCol >= 0 ? uniques(fromTypeCol) : [];
+      if (useHumanReadableChannelTypes && chTypeOpts.length) {
+        fetchChannelTypeDisplays(chTypeOpts).then(() => fillSelect('ch-type-val', chTypeOpts, '—', true, channelTypeDisplayCache));
+      } else {
+        fillSelect('ch-type-val', chTypeOpts, '—', true);
+      }
     }
 
     function applyDisconnectFilters(st, rows) {
@@ -1199,7 +1267,7 @@
         return [...set].sort((a, b) => a.localeCompare(b));
       }
 
-      function fillSelect(id, options, anyLabel, preserve) {
+      function fillSelect(id, options, anyLabel, preserve, displayMap) {
         const el = document.getElementById(id);
         const cur = preserve ? el.value : null;
         el.innerHTML = '';
@@ -1210,7 +1278,7 @@
         options.forEach(v => {
           const opt = document.createElement('option');
           opt.value = v;
-          opt.textContent = v;
+          opt.textContent = (displayMap && displayMap[v] !== undefined ? displayMap[v] : v);
           el.appendChild(opt);
         });
         if (preserve && cur !== null && (cur === '' || options.includes(cur))) el.value = cur;
@@ -1222,7 +1290,12 @@
       fillSelect('dc-chan-a', uniquesEither(aChanCol, bChanCol), 'any channel', true);
       fillSelect('dc-dev-b', uniquesEither(aDevCol, bDevCol), 'any device', true);
       fillSelect('dc-chan-b', uniquesEither(aChanCol, bChanCol), 'any channel', true);
-      fillSelect('dc-type-val', uniquesEither(aTypeCol, bTypeCol), '—', true);
+      const dcTypeOpts = uniquesEither(aTypeCol, bTypeCol);
+      if (useHumanReadableChannelTypes && dcTypeOpts.length) {
+        fetchChannelTypeDisplays(dcTypeOpts).then(() => fillSelect('dc-type-val', dcTypeOpts, '—', true, channelTypeDisplayCache));
+      } else {
+        fillSelect('dc-type-val', dcTypeOpts, '—', true);
+      }
     }
 
     function applyCircuitsFilters(st, rows) {
@@ -1313,7 +1386,7 @@
         return [...set].sort((a, b) => a.localeCompare(b));
       }
 
-      function fillSelect(id, options, anyLabel, preserve) {
+      function fillSelect(id, options, anyLabel, preserve, displayMap) {
         const el = document.getElementById(id);
         const cur = preserve ? el.value : null;
         el.innerHTML = '';
@@ -1324,7 +1397,7 @@
         options.forEach(v => {
           const opt = document.createElement('option');
           opt.value = v;
-          opt.textContent = v;
+          opt.textContent = (displayMap && displayMap[v] !== undefined ? displayMap[v] : v);
           el.appendChild(opt);
         });
         if (preserve && cur !== null && (cur === '' || options.includes(cur))) el.value = cur;
@@ -1336,7 +1409,12 @@
       fillSelect('ci-chan-b', uniquesEither(fromChanCol, toChanCol), 'any channel', true);
       fillSelect('ci-conn-b', uniquesEither(fromConnCol, toConnCol), 'any connector', true);
       fillSelect('ci-dev-b', uniquesEither(fromDevCol, toDevCol), 'any device', true);
-      fillSelect('ci-type-val', uniquesEither(fromTypeCol, toTypeCol), '—', true);
+      const ciTypeOpts = uniquesEither(fromTypeCol, toTypeCol);
+      if (useHumanReadableChannelTypes && ciTypeOpts.length) {
+        fetchChannelTypeDisplays(ciTypeOpts).then(() => fillSelect('ci-type-val', ciTypeOpts, '—', true, channelTypeDisplayCache));
+      } else {
+        fillSelect('ci-type-val', ciTypeOpts, '—', true);
+      }
       fillSelect('ci-signal', signalCol >= 0 ? uniques(signalCol) : [], 'any', true);
     }
 
@@ -1511,35 +1589,52 @@
         tbody.innerHTML = `<tr class="no-rows"><td colspan="${st.headers.length}">No matching rows</td></tr>`;
         return;
       }
-      const frag = document.createDocumentFragment();
-      const isBom = (label === BOM_KEY);
-      const refdesIdx = isBom ? st.headers.indexOf('device_refdes') : -1;
+      const channelTypeColIdxs = st.headers.map((h, i) => isChannelTypeColumn(h) ? i : -1).filter(i => i >= 0);
+      const uniqueTypes = new Set();
+      if (useHumanReadableChannelTypes && channelTypeColIdxs.length) {
+        rows.forEach(r => { channelTypeColIdxs.forEach(i => { const v = (r[i] ?? '').trim(); if (v) uniqueTypes.add(v); }); });
+      }
+      function renderTbody() {
+        const frag = document.createDocumentFragment();
+        const isBom = (label === BOM_KEY);
+        const refdesIdx = isBom ? st.headers.indexOf('device_refdes') : -1;
+        rows.forEach(row => {
+          const tr = document.createElement('tr');
+          if (isBom && refdesIdx >= 0) {
+            tr.classList.add('device-row');
+            tr.dataset.deviceRefdes = (row[refdesIdx] ?? '').trim();
+          }
+          st.headers.forEach((h, i) => {
+            const td = document.createElement('td');
+            const raw = row[i] ?? '';
+            if (useHumanReadableChannelTypes && isChannelTypeColumn(h)) {
+              td.textContent = getChannelTypeDisplay(raw);
+              td.title = raw;
+            } else {
+              td.textContent = raw;
+              td.title = raw;
+            }
+            tr.appendChild(td);
+          });
+          frag.appendChild(tr);
 
-      rows.forEach(row => {
-        const tr = document.createElement('tr');
-        if (isBom && refdesIdx >= 0) {
-          tr.classList.add('device-row');
-          tr.dataset.deviceRefdes = (row[refdesIdx] ?? '').trim();
-        }
-        st.headers.forEach((_, i) => {
-          const td = document.createElement('td');
-          td.textContent = row[i] ?? '';
-          td.title = row[i] ?? '';
-          tr.appendChild(td);
+          if (isBom && refdesIdx >= 0 && tr.dataset.deviceRefdes) {
+            const detailTr = document.createElement('tr');
+            detailTr.classList.add('signals-detail-row');
+            const detailTd = document.createElement('td');
+            detailTd.colSpan = st.headers.length;
+            detailTd.innerHTML = '<div class="signals-viewer-wrap"><span class="loading">Click row to load signals list</span></div>';
+            detailTr.appendChild(detailTd);
+            frag.appendChild(detailTr);
+          }
         });
-        frag.appendChild(tr);
-
-        if (isBom && refdesIdx >= 0 && tr.dataset.deviceRefdes) {
-          const detailTr = document.createElement('tr');
-          detailTr.classList.add('signals-detail-row');
-          const detailTd = document.createElement('td');
-          detailTd.colSpan = st.headers.length;
-          detailTd.innerHTML = '<div class="signals-viewer-wrap"><span class="loading">Click row to load signals list</span></div>';
-          detailTr.appendChild(detailTd);
-          frag.appendChild(detailTr);
-        }
-      });
-      tbody.appendChild(frag);
+        tbody.appendChild(frag);
+      }
+      if (uniqueTypes.size) {
+        fetchChannelTypeDisplays([...uniqueTypes]).then(renderTbody);
+      } else {
+        renderTbody();
+      }
     }
 
     function parseTsv(tsvText) {
@@ -1572,10 +1667,16 @@
       tbody.innerHTML = '';
       rows.forEach(row => {
         const tr = document.createElement('tr');
-        st.headers.forEach((_, i) => {
+        st.headers.forEach((h, i) => {
           const td = document.createElement('td');
-          td.textContent = row[i] ?? '';
-          td.title = row[i] ?? '';
+          const raw = row[i] ?? '';
+          if (useHumanReadableChannelTypes && isChannelTypeColumn(h)) {
+            td.textContent = getChannelTypeDisplay(raw);
+            td.title = raw;
+          } else {
+            td.textContent = raw;
+            td.title = raw;
+          }
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -1684,6 +1785,12 @@
         table.appendChild(tbody);
         wrap.appendChild(table);
         renderSignalsTableBody(wrap);
+        if (useHumanReadableChannelTypes && headers.length) {
+          const typeColIdxs = headers.map((h, i) => isChannelTypeColumn(h) ? i : -1).filter(i => i >= 0);
+          const uniqueTypes = new Set();
+          typeColIdxs.forEach(i => { rows.forEach(r => { const v = (r[i] ?? '').trim(); if (v) uniqueTypes.add(v); }); });
+          if (uniqueTypes.size) fetchChannelTypeDisplays([...uniqueTypes]).then(() => renderSignalsTableBody(wrap));
+        }
       } catch (e) {
         wrap.innerHTML = '<span class="error">' + (e.message || 'Failed to parse') + '</span>';
       }
@@ -1768,6 +1875,16 @@
       }
     }
 
+    document.getElementById('channel-type-human-readable').addEventListener('change', () => {
+      useHumanReadableChannelTypes = document.getElementById('channel-type-human-readable').checked;
+      if (activeLabel === CHANNEL_MAP_KEY) buildChannelDropdowns();
+      if (activeLabel === DISCONNECT_MAP_KEY) buildDisconnectDropdowns();
+      if (activeLabel === CIRCUITS_LIST_KEY) buildCircuitsDropdowns();
+      if (activeLabel) renderTable(activeLabel);
+      document.querySelectorAll('.signals-viewer-wrap').forEach(wrap => {
+        if (wrap._signalsState) renderSignalsTableBody(wrap);
+      });
+    });
     document.getElementById('ch-clear').addEventListener('click', clearChannelFilters);
     document.getElementById('ch-unmapped').addEventListener('change', onChannelFilterChange);
     document.getElementById('ch-net').addEventListener('change', onChannelFilterChange);
@@ -1950,6 +2067,8 @@
 
     function renderDDList(q) {
       const vals = q ? ddAllValues.filter(v => v.toLowerCase().includes(q.toLowerCase())) : ddAllValues;
+      const colHeader = (ddLabel === '__signals__' && ddSignalsWrap && ddSignalsWrap._signalsState) ? (ddSignalsWrap._signalsState.headers[ddColIdx] || '') : (ddLabel ? (getState(ddLabel).headers[ddColIdx] || '') : '');
+      const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       let html = '';
       if (!q) {
         const allC = vals.every(v => ddPending.checked.has(v));
@@ -1961,7 +2080,8 @@
       }
       vals.forEach((v, i) => {
         const chk = ddPending.checked.has(v) ? 'checked' : '';
-        const disp = v === '' ? '<em style="color:#555">(blank)</em>' : v;
+        const rawDisp = v === '' ? '(blank)' : (useHumanReadableChannelTypes && isChannelTypeColumn(colHeader) ? getChannelTypeDisplay(v) : v);
+        const disp = v === '' ? '<em style="color:#555">(blank)</em>' : esc(rawDisp);
         html += `<div class="dd-item" data-val="${v.replace(/"/g, '&quot;').replace(/'/g, "&#39;")}">
       <input type="checkbox" id="dd-v${i}" ${chk}>
       <label for="dd-v${i}">${disp}</label>
