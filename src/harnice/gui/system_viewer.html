@@ -419,6 +419,100 @@
       color: #a55;
       border: 1px solid #4a2a2a;
     }
+
+    /* ---- Channel viewer header (above table when Channel Map tab active) ---- */
+    #channel-viewer-header {
+      background: #222;
+      border-bottom: 1px solid #404040;
+      padding: 12px 14px;
+      flex-shrink: 0;
+      display: none;
+    }
+
+    #channel-viewer-header.visible {
+      display: block;
+    }
+
+    .channel-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .channel-toggle-wrap input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+      cursor: pointer;
+      accent-color: #666;
+    }
+
+    .channel-toggle-wrap label {
+      margin: 0;
+      font-size: 12px;
+      color: #888;
+      cursor: pointer;
+    }
+
+    .channel-sentence {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 6px;
+    }
+
+    .channel-sentence select {
+      background: #1a1a1a;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      color: #999;
+      padding: 4px 8px;
+      font-size: 12px;
+      min-width: 80px;
+      max-width: 160px;
+    }
+
+    .channel-sentence select:focus {
+      outline: none;
+      border-color: #555;
+    }
+
+    .channel-type-row {
+      font-size: 12px;
+      color: #888;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .channel-type-row select {
+      background: #1a1a1a;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      color: #999;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .channel-clear-btn {
+      background: #333;
+      border: 1px solid #505050;
+      color: #999;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .channel-clear-btn:hover {
+      background: #404040;
+      color: #ccc;
+    }
   </style>
 </head>
 
@@ -437,6 +531,46 @@
       <input type="text" id="search-input" placeholder="Search all columns…">
       <button class="icon-btn" onclick="clearAllFilters()">✕ Clear filters</button>
       <span class="badge" id="row-badge">—</span>
+    </div>
+    <!-- Channel viewer header: shown only when Channel Map tab is active -->
+    <div id="channel-viewer-header">
+      <div class="channel-toggle-wrap">
+        <input type="checkbox" id="ch-unmapped">
+        <label for="ch-unmapped">Show unmapped channels</label>
+      </div>
+      <p class="channel-sentence">
+        Show me channels in
+        <select id="ch-net">
+          <option value="">any merged net</option>
+        </select>
+        that connect
+        <select id="ch-chan-a">
+          <option value="">any channel</option>
+        </select>
+        of
+        <select id="ch-dev-a">
+          <option value="">any device</option>
+        </select>
+        to
+        <select id="ch-chan-b">
+          <option value="">any channel</option>
+        </select>
+        of
+        <select id="ch-dev-b">
+          <option value="">any device</option>
+        </select>.
+      </p>
+      <p class="channel-type-row">
+        Channel type
+        <select id="ch-type-rel">
+          <option value="any">is any</option>
+          <option value="is_or_compatible">is or is compatible with</option>
+        </select>
+        <select id="ch-type-val" style="display:none;">
+          <option value="">—</option>
+        </select>
+        <button type="button" class="channel-clear-btn" id="ch-clear">Clear</button>
+      </p>
     </div>
     <div id="table-wrap">
       <div id="empty-state">
@@ -478,6 +612,7 @@
     const fileStates = {};
     const keyToLabel = {};
     let activeLabel = null;   // current file key
+    const CHANNEL_MAP_KEY = 'channel map';
 
     function getState(label) {
       if (!fileStates[label]) {
@@ -514,6 +649,114 @@
       st.rows = rows;
     }
 
+    function channelColIdx(st, name) {
+      const i = st.headers.indexOf(name);
+      return i >= 0 ? i : -1;
+    }
+
+    function applyChannelFilters(st, rows) {
+      const netCol = channelColIdx(st, 'merged_net');
+      const fromDevCol = channelColIdx(st, 'from_device_refdes');
+      const fromChanCol = channelColIdx(st, 'from_device_channel_id');
+      const toDevCol = channelColIdx(st, 'to_device_refdes');
+      const toChanCol = channelColIdx(st, 'to_device_channel_id');
+      const fromTypeCol = channelColIdx(st, 'from_channel_type');
+
+      if (!document.getElementById('ch-unmapped').checked) {
+        const filled = (v) => v !== undefined && v !== null && String(v).trim() !== '';
+        rows = rows.filter(r => filled(r[toDevCol]) && filled(r[toChanCol]));
+      }
+
+      const netVal = document.getElementById('ch-net').value;
+      const devAVal = document.getElementById('ch-dev-a').value;
+      const chanAVal = document.getElementById('ch-chan-a').value;
+      const devBVal = document.getElementById('ch-dev-b').value;
+      const chanBVal = document.getElementById('ch-chan-b').value;
+
+      if (netVal && netCol >= 0) {
+        rows = rows.filter(r => (r[netCol] ?? '').trim() === netVal);
+      }
+
+      const fromDev = (r) => (r[fromDevCol] ?? '').trim();
+      const toDev = (r) => (r[toDevCol] ?? '').trim();
+      const fromChan = (r) => (r[fromChanCol] ?? '').trim();
+      const toChan = (r) => (r[toChanCol] ?? '').trim();
+      const pairOnFrom = (r, dev, chan) =>
+        (dev === '' || fromDev(r) === dev) && (chan === '' || fromChan(r) === chan);
+      const pairOnTo = (r, dev, chan) =>
+        (dev === '' || toDev(r) === dev) && (chan === '' || toChan(r) === chan);
+      const oneEndMatches = (r, dev, chan) => pairOnFrom(r, dev, chan) || pairOnTo(r, dev, chan);
+      const pair1Set = devAVal !== '' || chanAVal !== '';
+      const pair2Set = devBVal !== '' || chanBVal !== '';
+
+      if (pair1Set && pair2Set) {
+        rows = rows.filter(r =>
+          (pairOnFrom(r, devAVal, chanAVal) && pairOnTo(r, devBVal, chanBVal)) ||
+          (pairOnFrom(r, devBVal, chanBVal) && pairOnTo(r, devAVal, chanAVal))
+        );
+      } else if (pair1Set) {
+        rows = rows.filter(r => oneEndMatches(r, devAVal, chanAVal));
+      } else if (pair2Set) {
+        rows = rows.filter(r => oneEndMatches(r, devBVal, chanBVal));
+      }
+
+      const typeRel = document.getElementById('ch-type-rel').value;
+      const typeVal = document.getElementById('ch-type-val').value;
+      if (typeRel === 'is_or_compatible' && typeVal && fromTypeCol >= 0) {
+        const rowType = (r) => (r[fromTypeCol] ?? '').trim();
+        rows = rows.filter(r => rowType(r) === typeVal);
+      }
+
+      return rows;
+    }
+
+    function buildChannelDropdowns() {
+      const st = getState(CHANNEL_MAP_KEY);
+      if (!st.headers.length) return;
+      const netCol = channelColIdx(st, 'merged_net');
+      const fromDevCol = channelColIdx(st, 'from_device_refdes');
+      const fromChanCol = channelColIdx(st, 'from_device_channel_id');
+      const toDevCol = channelColIdx(st, 'to_device_refdes');
+      const toChanCol = channelColIdx(st, 'to_device_channel_id');
+      const fromTypeCol = channelColIdx(st, 'from_channel_type');
+
+      function uniques(colIdx) {
+        if (colIdx < 0) return [];
+        const set = new Set(st.rows.map(r => (r[colIdx] ?? '').trim()).filter(Boolean));
+        return [...set].sort((a, b) => a.localeCompare(b));
+      }
+      function uniquesEither(colA, colB) {
+        const set = new Set();
+        if (colA >= 0) st.rows.forEach(r => { const v = (r[colA] ?? '').trim(); if (v) set.add(v); });
+        if (colB >= 0) st.rows.forEach(r => { const v = (r[colB] ?? '').trim(); if (v) set.add(v); });
+        return [...set].sort((a, b) => a.localeCompare(b));
+      }
+
+      function fillSelect(id, options, anyLabel, preserve) {
+        const el = document.getElementById(id);
+        const cur = preserve ? el.value : null;
+        el.innerHTML = '';
+        const anyOpt = document.createElement('option');
+        anyOpt.value = '';
+        anyOpt.textContent = anyLabel;
+        el.appendChild(anyOpt);
+        options.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          el.appendChild(opt);
+        });
+        if (preserve && cur !== null && (cur === '' || options.includes(cur))) el.value = cur;
+      }
+
+      fillSelect('ch-net', netCol >= 0 ? uniques(netCol) : [], 'any merged net', true);
+      fillSelect('ch-dev-a', uniquesEither(fromDevCol, toDevCol), 'any device', true);
+      fillSelect('ch-chan-a', uniquesEither(fromChanCol, toChanCol), 'any channel', true);
+      fillSelect('ch-dev-b', uniquesEither(fromDevCol, toDevCol), 'any device', true);
+      fillSelect('ch-chan-b', uniquesEither(fromChanCol, toChanCol), 'any channel', true);
+      fillSelect('ch-type-val', fromTypeCol >= 0 ? uniques(fromTypeCol) : [], '—', true);
+    }
+
     // ---- Tabs ----
     function buildTabs(keys, labelsMap) {
       const list = document.getElementById('tab-list');
@@ -538,6 +781,15 @@
       const st = getState(key);
       document.getElementById('search-input').value = st.search;
       buildHeader(key);
+      const chHeader = document.getElementById('channel-viewer-header');
+      if (key === CHANNEL_MAP_KEY) {
+        chHeader.classList.add('visible');
+        buildChannelDropdowns();
+        document.getElementById('ch-type-val').style.display =
+          document.getElementById('ch-type-rel').value === 'is_or_compatible' ? 'inline-block' : 'none';
+      } else {
+        chHeader.classList.remove('visible');
+      }
       renderTable(key);
     }
 
@@ -609,6 +861,7 @@
       const q = st.search.toLowerCase();
       if (q) rows = rows.filter(r => r.some(c => c.toLowerCase().includes(q)));
       st.colFilters.forEach((f, i) => { if (f) rows = rows.filter(r => f.has(r[i] ?? '')); });
+      if (label === CHANNEL_MAP_KEY) rows = applyChannelFilters(st, rows);
 
       if (st.sortCol >= 0) {
         rows.sort((a, b) => {
@@ -647,6 +900,40 @@
       getState(activeLabel).search = e.target.value;
       renderTable(activeLabel);
     });
+
+    // ---- Channel viewer header: re-render when controls change ----
+    function onChannelFilterChange() {
+      if (activeLabel === CHANNEL_MAP_KEY) renderTable(activeLabel);
+    }
+
+    function clearChannelFilters() {
+      document.getElementById('ch-unmapped').checked = true;
+      document.getElementById('ch-net').value = '';
+      document.getElementById('ch-chan-a').value = '';
+      document.getElementById('ch-dev-a').value = '';
+      document.getElementById('ch-chan-b').value = '';
+      document.getElementById('ch-dev-b').value = '';
+      document.getElementById('ch-type-rel').value = 'any';
+      document.getElementById('ch-type-val').style.display = 'none';
+      if (activeLabel === CHANNEL_MAP_KEY) {
+        buildChannelDropdowns();
+        renderTable(activeLabel);
+      }
+    }
+
+    document.getElementById('ch-clear').addEventListener('click', clearChannelFilters);
+    document.getElementById('ch-unmapped').addEventListener('change', onChannelFilterChange);
+    document.getElementById('ch-net').addEventListener('change', onChannelFilterChange);
+    document.getElementById('ch-dev-a').addEventListener('change', onChannelFilterChange);
+    document.getElementById('ch-chan-a').addEventListener('change', onChannelFilterChange);
+    document.getElementById('ch-dev-b').addEventListener('change', onChannelFilterChange);
+    document.getElementById('ch-chan-b').addEventListener('change', onChannelFilterChange);
+    document.getElementById('ch-type-rel').addEventListener('change', () => {
+      const rel = document.getElementById('ch-type-rel').value;
+      document.getElementById('ch-type-val').style.display = (rel === 'is_or_compatible') ? 'inline-block' : 'none';
+      onChannelFilterChange();
+    });
+    document.getElementById('ch-type-val').addEventListener('change', onChannelFilterChange);
 
     function clearAllFilters() {
       if (!activeLabel) return;
@@ -805,6 +1092,7 @@
           markUpdated(key);
           if (key === activeLabel) {
             buildHeader(key);
+            if (key === CHANNEL_MAP_KEY) buildChannelDropdowns();
             renderTable(key);
           }
         } catch (_) { }
