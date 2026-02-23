@@ -254,14 +254,16 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(b"invalid device_refdes parameter")
             return
         try:
-            base = os.path.abspath(fileio.dirpath("instance_data"))
+            # Normalize the base instance_data directory to a real, absolute path
+            safe_base = os.path.realpath(os.path.abspath(fileio.dirpath("instance_data")))
             path = None
             for kind in ("device", "disconnect"):
                 candidate = os.path.join(
-                    base, kind, refdes, f"{refdes}-signals_list.tsv"
+                    safe_base, kind, refdes, f"{refdes}-signals_list.tsv"
                 )
-                resolved = os.path.abspath(candidate)
-                if os.path.commonpath([base, resolved]) != base:
+                # Normalize the candidate path before checking containment
+                resolved = os.path.realpath(os.path.abspath(candidate))
+                if os.path.commonpath([safe_base, resolved]) != safe_base:
                     continue
                 if os.path.isfile(resolved):
                     path = resolved
