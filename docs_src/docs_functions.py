@@ -50,10 +50,11 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
     Read `var_name = [...]` from the module's source file and convert
     inline-commented entries like:
         "channel_id",  # Unique identifier
-    into MkDocs tab markdown:
-        === "`channel_id`"
-            Unique identifier
-    Supports escaped newlines \\n inside comments.
+    into MkDocs markdown table:
+        | Column | Description |
+        |--------|-------------|
+        | `channel_id` | Unique identifier |
+    Supports escaped newlines \\n inside comments (rendered as <br>).
     """
     module_path = inspect.getsourcefile(module)
     if not module_path:
@@ -75,7 +76,7 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
     # Parse lines like: "name",  # description
     item_re = re.compile(r'"(?P<name>[^"]+)"\s*,?\s*#\s*(?P<desc>.*)\s*$')
 
-    md = []
+    rows = []
     for line in body.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -92,16 +93,20 @@ def columns_to_markdown(module: ModuleType, var_name: str) -> str:
         if desc.startswith("#"):
             desc = desc[1:].lstrip()
 
-        # Expand escaped newlines
-        desc = desc.replace("\\n", "\n")
+        # Expand escaped newlines, then use <br> for table cells
+        desc = desc.replace("\\n", "\n").replace("\n", "<br>")
 
-        # Re-indent multiline text for MkDocs
-        formatted_desc = "\n".join("    " + line for line in desc.splitlines())
+        # Escape pipe so cell content doesn't break the table
+        name_escaped = name.replace("|", "\\|")
+        desc_escaped = desc.replace("|", "\\|")
 
-        md.append(f'=== "`{name}`"\n\n')
-        md.append(f"{formatted_desc}\n\n")
+        rows.append(f"| `{name_escaped}` | {desc_escaped} |")
 
-    return "".join(md)
+    if not rows:
+        return ""
+
+    table = "| Column | Description |\n|--------|-------------|\n" + "\n".join(rows)
+    return "\n" + table + "\n\n"
 
 
 def file_structure_to_markdown(product_module: ModuleType) -> str:
@@ -210,26 +215,30 @@ def file_structure_to_markdown(product_module: ModuleType) -> str:
                 # It's a directory - store dirpath and directory name
                 dirpath_call = f'fileio.dirpath("{key}")'
                 dirname = f"{key}/"
-                lines.append({
-                    "type": "dir",
-                    "prefix": prefix,
-                    "connector": connector,
-                    "dirpath_call": dirpath_call,
-                    "dirname": dirname
-                })
+                lines.append(
+                    {
+                        "type": "dir",
+                        "prefix": prefix,
+                        "connector": connector,
+                        "dirpath_call": dirpath_call,
+                        "dirname": dirname,
+                    }
+                )
                 # Recursively process the directory contents
                 lines.extend(_dict_to_tree(value, next_prefix, is_last_item))
             else:
                 # It's a file - store path_call and filename separately for formatting
                 path_call = f'fileio.path("{value}")'
                 filename = key
-                lines.append({
-                    "type": "file",
-                    "prefix": prefix,
-                    "connector": connector,
-                    "path_call": path_call,
-                    "filename": filename
-                })
+                lines.append(
+                    {
+                        "type": "file",
+                        "prefix": prefix,
+                        "connector": connector,
+                        "path_call": path_call,
+                        "filename": filename,
+                    }
+                )
 
         return lines
 
@@ -240,17 +249,29 @@ def file_structure_to_markdown(product_module: ModuleType) -> str:
 
     # Part directory level
     part_dir_padding = " " * 7  # Space before |-- yourpn/
-    part_dir_line = 'fileio.dirpath("part_directory")'.ljust(max_path_length) + part_dir_padding + "|-- yourpn/"
+    part_dir_line = (
+        'fileio.dirpath("part_directory")'.ljust(max_path_length)
+        + part_dir_padding
+        + "|-- yourpn/"
+    )
     full_tree_lines.append(part_dir_line)
-    
+
     # Earlier revs and revhistory.csv at part number level
     pn_level_indent = max_path_length + len(part_dir_padding) + 4  # +4 for "|-- "
     full_tree_lines.append(" " * pn_level_indent + "|-- earlier revs/")
-    revhistory_line = 'fileio.path("revision history")'.ljust(max_path_length) + " " * (pn_level_indent - max_path_length) + "|-- revhistory.csv"
+    revhistory_line = (
+        'fileio.path("revision history")'.ljust(max_path_length)
+        + " " * (pn_level_indent - max_path_length)
+        + "|-- revhistory.csv"
+    )
     full_tree_lines.append(revhistory_line)
 
     # Rev directory level - should align with part_directory on the left
-    rev_dir_line = 'fileio.dirpath("rev_directory")'.ljust(max_path_length) + " " * (pn_level_indent - max_path_length) + "L-- your rev/"
+    rev_dir_line = (
+        'fileio.dirpath("rev_directory")'.ljust(max_path_length)
+        + " " * (pn_level_indent - max_path_length)
+        + "L-- your rev/"
+    )
     full_tree_lines.append(rev_dir_line)
 
     # Calculate the column where file connectors should align (under "your rev/")
@@ -272,26 +293,26 @@ def file_structure_to_markdown(product_module: ModuleType) -> str:
             prefix = item["prefix"]
             connector = item["connector"]
             filename = item["filename"]
-            
+
             # Align path_call, then add spacing to reach connector column, then add prefix structure
             aligned_path = path_call.ljust(max_path_length)
             spacing = " " * (connector_col - max_path_length)
-            
+
             line = aligned_path + spacing + prefix + connector + filename
             full_tree_lines.append(line)
-                
+
         else:  # directory
             prefix = item["prefix"]
             connector = item["connector"]
             dirpath_call = item["dirpath_call"]
             dirname = item["dirname"]
-            
+
             # Format: dirpath_call (aligned) + spacing + prefix + connector + dirname
             aligned_dirpath = dirpath_call.ljust(max_path_length)
             spacing = " " * (connector_col - max_path_length)
-            
+
             line = aligned_dirpath + spacing + prefix + connector + dirname
-            
+
             full_tree_lines.append(line)
 
     tree_text = "\n".join(full_tree_lines)

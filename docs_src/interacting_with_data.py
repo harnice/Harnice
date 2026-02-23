@@ -171,7 +171,7 @@ def main():
     md.append(
         """\nInstances lists are the single comprehensive source of truth for the product you are working on. Other documents like the Feature Tree, etc, build this list, and all output documentation are derived from it.\n"""
     )
-    md.append(docs_functions.columns_header(module_prefix))
+    md.append(docs_functions.columns_header(module_prefix, additional_columns=True))
     md.append(docs_functions.columns_to_markdown(instances_list, "COLUMNS"))
     md.append(docs_functions.commands_header(module_prefix))
     md.append(

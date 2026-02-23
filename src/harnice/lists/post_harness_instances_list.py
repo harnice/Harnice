@@ -44,16 +44,19 @@ def rebuild():
                 if system_instance.get("net", "").strip() == net:
                     post_harness_instances.append(system_instance)
 
-    # --- Determine fieldnames dynamically ---
-    fieldnames = set()
+    # --- Determine fieldnames dynamically (COLUMNS first, then any unknown headers) ---
+    all_keys = set()
     for instance in post_harness_instances:
-        fieldnames.update(instance.keys())
+        all_keys.update(instance.keys())
+    fieldnames = list(instances_list.COLUMNS) + [
+        k for k in sorted(all_keys) if k not in instances_list.COLUMNS
+    ]
 
     # --- Write TSV file ---
     with open(
         fileio.path("post harness instances list"), "w", newline="", encoding="utf-8"
     ) as f:
-        writer = csv.DictWriter(f, fieldnames=instances_list.COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
         for instance in post_harness_instances:
             writer.writerow({k: instance.get(k, "") for k in fieldnames})
