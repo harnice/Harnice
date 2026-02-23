@@ -256,6 +256,8 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
         try:
             # Normalize the base instance_data directory to a real, absolute path
             safe_base = os.path.realpath(os.path.abspath(fileio.dirpath("instance_data")))
+            # Ensure we only serve files from within this base directory
+            safe_base_prefix = safe_base if safe_base.endswith(os.sep) else safe_base + os.sep
             path = None
             for kind in ("device", "disconnect"):
                 candidate = os.path.join(
@@ -263,7 +265,7 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
                 )
                 # Normalize the candidate path before checking containment
                 resolved = os.path.realpath(os.path.abspath(candidate))
-                if os.path.commonpath([safe_base, resolved]) != safe_base:
+                if not (resolved == safe_base or resolved.startswith(safe_base_prefix)):
                     continue
                 if os.path.isfile(resolved):
                     path = resolved
