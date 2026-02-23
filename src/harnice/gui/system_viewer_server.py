@@ -48,9 +48,9 @@ TAB_ORDER = [
 ]
 TAB_DISPLAY_LABELS = {
     "instances list": "Instances List",
-    "bom": "Bill of Materials",
+    "bom": "Devices",
     "circuits list": "Circuits",
-    "harness manifest": "Manifest",
+    "harness manifest": "Harnesses",
     "channel map": "Channel Map",
     "disconnect map": "Disconnect Map",
 }
