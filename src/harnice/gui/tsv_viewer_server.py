@@ -37,6 +37,33 @@ def _tsv_file_keys_from_structure(structure_dict):
     return keys
 
 
+# Tab order and display names for the left tab bar (file_key -> display label)
+TAB_ORDER = [
+    "instances list",
+    "bom",
+    "circuits list",
+    "harness manifest",
+    "channel map",
+    "disconnect map",
+]
+TAB_DISPLAY_LABELS = {
+    "instances list": "Instances List",
+    "bom": "Bill of Materials",
+    "circuits list": "Circuits",
+    "harness manifest": "Manifest",
+    "channel map": "Channel Map",
+    "disconnect map": "Disconnect Map",
+}
+
+
+def _display_label(file_key):
+    """Return the display label for a file key (tab text)."""
+    if file_key in TAB_DISPLAY_LABELS:
+        return TAB_DISPLAY_LABELS[file_key]
+    # Fallback: title-case the key (e.g. "library history" -> "Library History")
+    return file_key.replace("_", " ").title()
+
+
 def _read_file_content(file_key):
     """Return raw file content for a file key, or a single header line if missing."""
     try:
@@ -53,13 +80,20 @@ def _read_file_content(file_key):
 
 
 def _get_all_files():
-    """Return dict of label -> content for all TSV/CSV files in current file_structure."""
+    """Return dict of file_key -> { content, label } only for the allowed tabs (TAB_ORDER)."""
     try:
         structure = state.file_structure
     except NameError:
         return {}
-    keys = _tsv_file_keys_from_structure(structure)
-    return {label: _read_file_content(label) for label in keys}
+    raw_keys = _tsv_file_keys_from_structure(structure)
+    ordered = [k for k in TAB_ORDER if k in raw_keys]
+    return {
+        key: {
+            "content": _read_file_content(key),
+            "label": _display_label(key),
+        }
+        for key in ordered
+    }
 
 
 # SSE: list of queues; watcher pushes (label, content); each client thread blocks on its queue
@@ -74,14 +108,19 @@ def _file_watcher_loop():
     while not _watcher_stop.is_set():
         try:
             structure = state.file_structure
-        except NameError:
+        except (NameError, AttributeError):
             time.sleep(1.5)
             continue
-        keys = _tsv_file_keys_from_structure(structure)
+        try:
+            raw_keys = _tsv_file_keys_from_structure(structure)
+            keys = [k for k in TAB_ORDER if k in raw_keys]
+        except Exception:
+            time.sleep(1.5)
+            continue
         for file_key in keys:
             try:
                 path = fileio.path(file_key)
-            except TypeError:
+            except (TypeError, Exception):
                 continue
             if not path:
                 continue
@@ -90,11 +129,15 @@ def _file_watcher_loop():
             except OSError:
                 mtime = 0
             if path in last_mtimes and last_mtimes[path] != mtime:
-                content = _read_file_content(file_key)
+                try:
+                    content = _read_file_content(file_key)
+                    label = _display_label(file_key)
+                except Exception:
+                    continue
                 with _sse_lock:
                     for q in _sse_queues:
                         try:
-                            q.put((file_key, content))
+                            q.put((file_key, label, content))
                         except Exception:
                             pass
             last_mtimes[path] = mtime
@@ -133,7 +176,7 @@ class TSVViewerHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def _serve_files(self):
-        files = _get_all_files()
+        files = _get_all_files()  # file_key -> { content, label }
         body = json.dumps(files).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -152,20 +195,41 @@ class TSVViewerHandler(http.server.BaseHTTPRequestHandler):
         q = queue.Queue()
         with _sse_lock:
             _sse_queues.append(q)
+        # Send an immediate keepalive so the client sees activity (avoids ~30s "reconnecting")
+        try:
+            self.wfile.write(": connected\n\n".encode("utf-8"))
+            self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            with _sse_lock:
+                if q in _sse_queues:
+                    _sse_queues.remove(q)
+            return
+
         try:
             while True:
                 try:
-                    label, content = q.get(timeout=30)
+                    item = q.get(timeout=15)
                 except queue.Empty:
-                    # Send comment keepalive
+                    # Send comment keepalive every 15s so the client doesn't think the connection died
                     try:
                         self.wfile.write(": keepalive\n\n".encode("utf-8"))
                         self.wfile.flush()
                     except (BrokenPipeError, ConnectionResetError, OSError):
                         break
                     continue
+                # Support both (file_key, content) and (file_key, label, content)
                 try:
-                    payload = json.dumps({"label": label, "content": content})
+                    if len(item) == 3:
+                        file_key, label, content = item
+                    else:
+                        file_key, content = item
+                        label = _display_label(file_key)
+                except (ValueError, TypeError):
+                    continue
+                try:
+                    payload = json.dumps(
+                        {"key": file_key, "label": label, "content": content}
+                    )
                     self.wfile.write(f"data: {payload}\n\n".encode("utf-8"))
                     self.wfile.flush()
                 except (BrokenPipeError, ConnectionResetError, OSError):

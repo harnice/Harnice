@@ -473,9 +473,11 @@
   <script>
     // ============================================================
     // Per-file state: { rows, headers, sortCol, sortDir, colFilters, search }
+    // key = file key (e.g. "instances list"); keyToLabel[key] = tab display text
     // ============================================================
-    const fileStates = {};   // label -> state object
-    let activeLabel = null;
+    const fileStates = {};
+    const keyToLabel = {};
+    let activeLabel = null;   // current file key
 
     function getState(label) {
       if (!fileStates[label]) {
@@ -513,34 +515,44 @@
     }
 
     // ---- Tabs ----
-    function buildTabs(labels) {
+    function buildTabs(keys, labelsMap) {
       const list = document.getElementById('tab-list');
-      labels.forEach(label => {
-        if (list.querySelector(`[data-label="${CSS.escape(label)}"]`)) return; // already exists
+      keys.forEach(key => {
+        if (list.querySelector(`[data-label="${CSS.escape(key)}"]`)) return;
+        const display = (labelsMap && labelsMap[key]) || key;
         const el = document.createElement('div');
         el.className = 'tab';
-        el.dataset.label = label;
-        el.innerHTML = `<span class="tab-dot"></span><span class="tab-name" title="${label}">${label}</span>`;
-        el.addEventListener('click', () => switchTab(label));
+        el.dataset.label = key;
+        el.innerHTML = `<span class="tab-dot"></span><span class="tab-name" title="${display}">${display}</span>`;
+        el.addEventListener('click', () => switchTab(key));
         list.appendChild(el);
       });
     }
 
-    function switchTab(label) {
-      activeLabel = label;
+    function switchTab(key) {
+      activeLabel = key;
       document.querySelectorAll('.tab').forEach(t => {
-        t.classList.toggle('active', t.dataset.label === label);
-        if (t.dataset.label === label) t.classList.remove('updated');
+        t.classList.toggle('active', t.dataset.label === key);
+        if (t.dataset.label === key) t.classList.remove('updated');
       });
-      const st = getState(label);
+      const st = getState(key);
       document.getElementById('search-input').value = st.search;
-      buildHeader(label);
-      renderTable(label);
+      buildHeader(key);
+      renderTable(key);
     }
 
-    function markUpdated(label) {
-      const tab = document.querySelector(`.tab[data-label="${CSS.escape(label)}"]`);
-      if (tab && label !== activeLabel) tab.classList.add('updated');
+    function markUpdated(key) {
+      const tab = document.querySelector(`.tab[data-label="${CSS.escape(key)}"]`);
+      if (tab && key !== activeLabel) tab.classList.add('updated');
+    }
+
+    function setTabDisplayName(key, display) {
+      keyToLabel[key] = display;
+      const tab = document.querySelector(`.tab[data-label="${CSS.escape(key)}"]`);
+      if (tab) {
+        const nameEl = tab.querySelector('.tab-name');
+        if (nameEl) { nameEl.textContent = display; nameEl.title = display; }
+      }
     }
 
     // ---- Header ----
@@ -778,12 +790,22 @@
       };
       es.onmessage = e => {
         try {
-          const { label, content } = JSON.parse(e.data);
-          applyFileContent(label, content);
-          markUpdated(label);
-          if (label === activeLabel) {
-            buildHeader(label);
-            renderTable(label);
+          const data = JSON.parse(e.data);
+          const key = data.key ?? data.label;
+          const label = data.label ?? key;
+          const content = data.content;
+          if (key == null || content === undefined) return;
+          if (label) keyToLabel[key] = label;
+          applyFileContent(key, content);
+          if (!document.querySelector(`.tab[data-label="${CSS.escape(key)}"]`)) {
+            buildTabs([key], keyToLabel);
+          } else {
+            setTabDisplayName(key, keyToLabel[key] || key);
+          }
+          markUpdated(key);
+          if (key === activeLabel) {
+            buildHeader(key);
+            renderTable(key);
           }
         } catch (_) { }
       };
@@ -795,17 +817,21 @@
     (async function init() {
       try {
         const r = await fetch('/api/files');
-        const files = await r.json(); // { label: content, ... }
-        const labels = Object.keys(files);
-        if (!labels.length) {
+        const files = await r.json(); // { fileKey: { content, label }, ... }
+        const keys = Object.keys(files);
+        if (!keys.length) {
           document.getElementById('empty-msg').textContent = 'No files loaded.';
           return;
         }
-        labels.forEach(label => {
-          applyFileContent(label, files[label]);
+        keys.forEach(key => {
+          const item = files[key];
+          const content = typeof item === 'string' ? item : (item && item.content);
+          const label = (item && item.label) || key;
+          keyToLabel[key] = label;
+          applyFileContent(key, content);
         });
-        buildTabs(labels);
-        switchTab(labels[0]);
+        buildTabs(keys, keyToLabel);
+        switchTab(keys[0]);
         connectSSE();
       } catch (e) {
         document.getElementById('empty-msg').textContent = 'Could not connect to server.';
