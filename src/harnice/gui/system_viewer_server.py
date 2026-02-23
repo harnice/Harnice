@@ -247,19 +247,26 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(b"missing device_refdes parameter")
             return
         refdes = refdes.strip()
-        if not _VALID_REFDES_RE.match(refdes):
+        if not _VALID_REFDES_RE.match(refdes) or refdes in (".", ".."):
             self.send_response(400)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.end_headers()
             self.wfile.write(b"invalid device_refdes parameter")
             return
         try:
-            base = fileio.dirpath("instance_data")
+            base = os.path.abspath(fileio.dirpath("instance_data"))
+            path = None
             for kind in ("device", "disconnect"):
-                path = os.path.join(base, kind, refdes, f"{refdes}-signals_list.tsv")
-                if os.path.isfile(path):
+                candidate = os.path.join(
+                    base, kind, refdes, f"{refdes}-signals_list.tsv"
+                )
+                resolved = os.path.abspath(candidate)
+                if os.path.commonpath([base, resolved]) != base:
+                    continue
+                if os.path.isfile(resolved):
+                    path = resolved
                     break
-            else:
+            if path is None:
                 self.send_response(404)
                 self.send_header("Content-Type", "text/plain; charset=utf-8")
                 self.end_headers()
