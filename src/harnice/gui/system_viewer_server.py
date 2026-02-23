@@ -8,6 +8,7 @@ import http.server
 import json
 import os
 import queue
+import re
 import socketserver
 import threading
 import time
@@ -18,6 +19,9 @@ from urllib.parse import parse_qs, urlparse
 
 from harnice import fileio, state
 from harnice.products import chtype
+
+# Restrict device_refdes to safe characters (no path separators or traversal)
+_VALID_REFDES_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 
 def _tsv_file_keys_from_structure(structure_dict):
@@ -243,6 +247,12 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(b"missing device_refdes parameter")
             return
         refdes = refdes.strip()
+        if not _VALID_REFDES_RE.match(refdes):
+            self.send_response(400)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"invalid device_refdes parameter")
+            return
         try:
             base = fileio.dirpath("instance_data")
             for kind in ("device", "disconnect"):
