@@ -82,6 +82,12 @@ def main():
         help="Launch the formboard graph editor (harness product)",
     )
 
+    group.add_argument(
+        "--tsv-viewer",
+        action="store_true",
+        help="Launch the TSV/CSV viewer for this revision's lists (e.g. system product)",
+    )
+
     args = parser.parse_args()
 
     if args.gui:
@@ -92,6 +98,10 @@ def main():
 
     if args.graph_editor:
         _run_graph_editor()
+        return
+
+    if args.tsv_viewer:
+        _run_tsv_viewer()
         return
 
     # -----------------------------
@@ -179,6 +189,32 @@ def _run_graph_editor():
         product_module.generate_structure()
 
     from harnice.gui.graph_editor_server import run_server
+
+    run_server(port=0, open_browser=True)
+
+
+def _run_tsv_viewer():
+    """Launch the TSV/CSV viewer (must be run from a revision directory)."""
+    fileio.verify_revision_structure()
+    item_type = rev_history.info(field="product")
+
+    try:
+        product_module = __import__(
+            f"harnice.products.{item_type}", fromlist=[item_type]
+        )
+    except ModuleNotFoundError:
+        sys.exit(f"Unknown product: '{item_type}'")
+
+    if hasattr(product_module, "file_structure"):
+        structure = product_module.file_structure()
+        state.set_file_structure(structure)
+    else:
+        sys.exit(f"Product '{item_type}' must define file_structure()")
+
+    if hasattr(product_module, "generate_structure"):
+        product_module.generate_structure()
+
+    from harnice.gui.tsv_viewer_server import run_server
 
     run_server(port=0, open_browser=True)
 

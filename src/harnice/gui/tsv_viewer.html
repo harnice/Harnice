@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>TSV Viewer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: #1a1a1a;
+      color: #eee;
+    }
+
+    /* ---- Left tab bar ---- */
+    #tab-bar {
+      width: 200px;
+      min-width: 200px;
+      background: #252525;
+      border-right: 1px solid #404040;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    #tab-bar-title {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 14px 12px 8px;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      padding: 10px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #888;
+      border-left: 3px solid transparent;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .1s;
+      user-select: none;
+    }
+
+    .tab:hover {
+      background: #2e2e2e;
+      color: #ccc;
+    }
+
+    .tab.active {
+      background: #2a2a2a;
+      color: #eee;
+      border-left-color: #b8860b;
+    }
+
+    .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #b8860b;
+      flex-shrink: 0;
+      display: none;
+    }
+
+    .tab.updated .tab-dot {
+      display: block;
+    }
+
+    .tab-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    /* ---- Main pane ---- */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #top-bar {
+      background: #252525;
+      border-bottom: 1px solid #404040;
+      padding: 8px 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    #search-input {
+      flex: 1;
+      min-width: 140px;
+      padding: 5px 8px;
+      background: #1a1a1a;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      color: #eee;
+      font-size: 12px;
+    }
+
+    #search-input:focus {
+      outline: none;
+      border-color: #888;
+    }
+
+    .badge {
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      color: #888;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      background: #333;
+      border: 1px solid #505050;
+      color: #999;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      width: auto;
+    }
+
+    .icon-btn:hover {
+      background: #404040;
+      color: #eee;
+    }
+
+    #table-wrap {
+      flex: 1;
+      overflow: auto;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    th {
+      background: #252525;
+      padding: 0;
+      border-bottom: 2px solid #404040;
+      white-space: nowrap;
+    }
+
+    .th-inner {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 10px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .th-inner:hover {
+      color: #b8860b;
+    }
+
+    .sort-btn {
+      opacity: .35;
+      font-style: normal;
+      font-size: 10px;
+      margin-left: 2px;
+      flex-shrink: 0;
+    }
+
+    th.asc .sort-btn,
+    th.desc .sort-btn {
+      opacity: 1;
+      color: #b8860b;
+    }
+
+    .filter-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #b8860b;
+      flex-shrink: 0;
+      display: none;
+    }
+
+    .th-inner.filtered .filter-dot {
+      display: block;
+    }
+
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #282828;
+      color: #ccc;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    tr:hover td {
+      background: #252525;
+    }
+
+    tr:nth-child(even) td {
+      background: #1e1e1e;
+    }
+
+    tr:nth-child(even):hover td {
+      background: #252525;
+    }
+
+    .no-rows td {
+      text-align: center;
+      color: #555;
+      padding: 24px;
+    }
+
+    #empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #444;
+      gap: 8px;
+    }
+
+    #empty-state svg {
+      opacity: .25;
+    }
+
+    #empty-state p {
+      font-size: 13px;
+    }
+
+    /* ---- Column dropdown ---- */
+    .col-dropdown {
+      position: fixed;
+      z-index: 1000;
+      background: #2a2a2a;
+      border: 1px solid #505050;
+      border-radius: 6px;
+      width: 220px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, .6);
+      display: none;
+      flex-direction: column;
+      font-size: 12px;
+      overflow: hidden;
+    }
+
+    .col-dropdown.open {
+      display: flex;
+    }
+
+    .dd-search-wrap {
+      padding: 8px;
+      border-bottom: 1px solid #404040;
+    }
+
+    .dd-search-wrap input {
+      width: 100%;
+      padding: 5px 7px;
+      border-radius: 4px;
+      background: #1a1a1a;
+      border: 1px solid #404040;
+      color: #eee;
+      font-size: 12px;
+    }
+
+    .dd-search-wrap input:focus {
+      outline: none;
+      border-color: #888;
+    }
+
+    .dd-sort {
+      display: flex;
+      border-bottom: 1px solid #404040;
+    }
+
+    .dd-sort button {
+      flex: 1;
+      background: #222;
+      border: none;
+      border-radius: 0;
+      color: #999;
+      font-size: 11px;
+      padding: 7px 4px;
+      cursor: pointer;
+    }
+
+    .dd-sort button:hover {
+      background: #333;
+      color: #eee;
+    }
+
+    .dd-sort button.active {
+      color: #b8860b;
+      background: #2a2400;
+    }
+
+    .dd-list {
+      overflow-y: auto;
+      max-height: 220px;
+    }
+
+    .dd-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .dd-item:hover {
+      background: #333;
+    }
+
+    .dd-item input[type=checkbox] {
+      width: auto;
+      margin: 0;
+      cursor: pointer;
+      accent-color: #b8860b;
+    }
+
+    .dd-item label {
+      margin: 0;
+      color: #ccc;
+      font-size: 12px;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .dd-item.select-all label {
+      color: #aaa;
+      font-style: italic;
+    }
+
+    .dd-footer {
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      border-top: 1px solid #404040;
+    }
+
+    .dd-footer button {
+      flex: 1;
+      padding: 5px;
+      font-size: 11px;
+      background: #555;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .dd-footer button:hover {
+      background: #666;
+    }
+
+    .dd-footer button.secondary {
+      background: #333;
+      border: 1px solid #666;
+    }
+
+    .dd-footer button.secondary:hover {
+      background: #404040;
+    }
+
+    #sse-status {
+      font-size: 10px;
+      padding: 4px 8px;
+      margin: 8px 12px 4px;
+      border-radius: 4px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    #sse-status.ok {
+      background: #1a2e1a;
+      color: #5a9;
+      border: 1px solid #2a4a2a;
+    }
+
+    #sse-status.err {
+      background: #2e1a1a;
+      color: #a55;
+      border: 1px solid #4a2a2a;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Left tab bar -->
+  <div id="tab-bar">
+    <div id="tab-bar-title">Files</div>
+    <div id="tab-list"></div>
+    <div id="sse-status" class="err">⏳ connecting…</div>
+  </div>
+
+  <!-- Main content -->
+  <div id="main">
+    <div id="top-bar">
+      <input type="text" id="search-input" placeholder="Search all columns…">
+      <button class="icon-btn" onclick="clearAllFilters()">✕ Clear filters</button>
+      <span class="badge" id="row-badge">—</span>
+    </div>
+    <div id="table-wrap">
+      <div id="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+        <p id="empty-msg">Waiting for files…</p>
+      </div>
+      <table id="data-table" style="display:none;">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Column dropdown -->
+  <div class="col-dropdown" id="col-dropdown">
+    <div class="dd-search-wrap"><input type="text" id="dd-search" placeholder="Search values…"></div>
+    <div class="dd-sort">
+      <button id="dd-asc" onclick="ddSort(1)">↑ A→Z</button>
+      <button id="dd-desc" onclick="ddSort(-1)">↓ Z→A</button>
+      <button id="dd-nosort" onclick="ddSort(0)">✕ None</button>
+    </div>
+    <div class="dd-list" id="dd-list"></div>
+    <div class="dd-footer">
+      <button class="secondary" onclick="ddCancel()">Cancel</button>
+      <button onclick="ddApply()">Apply</button>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // Per-file state: { rows, headers, sortCol, sortDir, colFilters, search }
+    // ============================================================
+    const fileStates = {};   // label -> state object
+    let activeLabel = null;
+
+    function getState(label) {
+      if (!fileStates[label]) {
+        fileStates[label] = { rows: [], headers: [], sortCol: -1, sortDir: 1, colFilters: [], search: '' };
+      }
+      return fileStates[label];
+    }
+
+    // ---- Parse TSV/CSV text into { headers, rows } ----
+    function parseText(text) {
+      if (!text || !text.trim()) return { headers: [], rows: [] };
+      const sep = text.includes('\t') ? '\t' : ',';
+      const lines = text.trim().split(/\r?\n/);
+      const headers = lines[0].split(sep).map(h => h.trim());
+      const rows = lines.slice(1).filter(l => l.trim()).map(l => l.split(sep).map(c => c.trim()));
+      return { headers, rows };
+    }
+
+    // ---- Load a file into state, preserving filters/sort where columns still match ----
+    function applyFileContent(label, text) {
+      const st = getState(label);
+      const { headers, rows } = parseText(text);
+
+      // Preserve col filters if headers are identical
+      const sameHeaders = headers.length === st.headers.length && headers.every((h, i) => h === st.headers[i]);
+      if (!sameHeaders) {
+        st.colFilters = headers.map(() => null);
+        st.sortCol = -1;
+      } else {
+        // Extend if new columns added (shouldn't happen but safe)
+        while (st.colFilters.length < headers.length) st.colFilters.push(null);
+      }
+      st.headers = headers;
+      st.rows = rows;
+    }
+
+    // ---- Tabs ----
+    function buildTabs(labels) {
+      const list = document.getElementById('tab-list');
+      labels.forEach(label => {
+        if (list.querySelector(`[data-label="${CSS.escape(label)}"]`)) return; // already exists
+        const el = document.createElement('div');
+        el.className = 'tab';
+        el.dataset.label = label;
+        el.innerHTML = `<span class="tab-dot"></span><span class="tab-name" title="${label}">${label}</span>`;
+        el.addEventListener('click', () => switchTab(label));
+        list.appendChild(el);
+      });
+    }
+
+    function switchTab(label) {
+      activeLabel = label;
+      document.querySelectorAll('.tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.label === label);
+        if (t.dataset.label === label) t.classList.remove('updated');
+      });
+      const st = getState(label);
+      document.getElementById('search-input').value = st.search;
+      buildHeader(label);
+      renderTable(label);
+    }
+
+    function markUpdated(label) {
+      const tab = document.querySelector(`.tab[data-label="${CSS.escape(label)}"]`);
+      if (tab && label !== activeLabel) tab.classList.add('updated');
+    }
+
+    // ---- Header ----
+    function buildHeader(label) {
+      const st = getState(label);
+      const tr = document.createElement('tr');
+      st.headers.forEach((h, i) => {
+        const th = document.createElement('th');
+        th.dataset.i = i;
+        th.innerHTML = `<div class="th-inner" data-i="${i}">
+      <span>${h}</span>
+      <i class="sort-btn">⇅</i>
+      <span class="filter-dot"></span>
+    </div>`;
+        th.querySelector('.th-inner').addEventListener('click', e => openDropdown(label, i, th, e));
+        tr.appendChild(th);
+      });
+      const thead = document.getElementById('thead');
+      thead.innerHTML = '';
+      thead.appendChild(tr);
+      updateHeaderUI(label);
+    }
+
+    function updateHeaderUI(label) {
+      const st = getState(label);
+      document.querySelectorAll('#thead th').forEach((th, i) => {
+        const inner = th.querySelector('.th-inner');
+        const si = th.querySelector('.sort-btn');
+        th.className = '';
+        si.textContent = '⇅';
+        if (i === st.sortCol) {
+          th.className = st.sortDir === 1 ? 'asc' : 'desc';
+          si.textContent = st.sortDir === 1 ? '↑' : '↓';
+        }
+        inner.className = 'th-inner' + (st.colFilters[i] ? ' filtered' : '');
+      });
+    }
+
+    // ---- Render ----
+    function renderTable(label) {
+      const st = getState(label);
+      const empty = document.getElementById('empty-state');
+      const table = document.getElementById('data-table');
+
+      if (!st.headers.length) {
+        empty.style.display = 'flex';
+        table.style.display = 'none';
+        return;
+      }
+      empty.style.display = 'none';
+      table.style.display = '';
+
+      let rows = [...st.rows];
+      const q = st.search.toLowerCase();
+      if (q) rows = rows.filter(r => r.some(c => c.toLowerCase().includes(q)));
+      st.colFilters.forEach((f, i) => { if (f) rows = rows.filter(r => f.has(r[i] ?? '')); });
+
+      if (st.sortCol >= 0) {
+        rows.sort((a, b) => {
+          const av = a[st.sortCol] ?? '', bv = b[st.sortCol] ?? '';
+          const an = parseFloat(av), bn = parseFloat(bv);
+          if (!isNaN(an) && !isNaN(bn)) return (an - bn) * st.sortDir;
+          return av.localeCompare(bv) * st.sortDir;
+        });
+      }
+
+      document.getElementById('row-badge').textContent = rows.length + ' / ' + st.rows.length + ' rows';
+
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+      if (!rows.length) {
+        tbody.innerHTML = `<tr class="no-rows"><td colspan="${st.headers.length}">No matching rows</td></tr>`;
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        st.headers.forEach((_, i) => {
+          const td = document.createElement('td');
+          td.textContent = row[i] ?? '';
+          td.title = row[i] ?? '';
+          tr.appendChild(td);
+        });
+        frag.appendChild(tr);
+      });
+      tbody.appendChild(frag);
+    }
+
+    // ---- Search ----
+    document.getElementById('search-input').addEventListener('input', e => {
+      if (!activeLabel) return;
+      getState(activeLabel).search = e.target.value;
+      renderTable(activeLabel);
+    });
+
+    function clearAllFilters() {
+      if (!activeLabel) return;
+      const st = getState(activeLabel);
+      st.colFilters = st.headers.map(() => null);
+      st.sortCol = -1; st.sortDir = 1;
+      st.search = '';
+      document.getElementById('search-input').value = '';
+      updateHeaderUI(activeLabel);
+      renderTable(activeLabel);
+    }
+
+    // ============================================================
+    // Column dropdown
+    // ============================================================
+    const dropdown = document.getElementById('col-dropdown');
+    const ddList = document.getElementById('dd-list');
+    const ddSearchEl = document.getElementById('dd-search');
+    let ddLabel = null, ddColIdx = -1;
+    let ddPending = { sortDir: 0, checked: null };
+    let ddAllValues = [];
+
+    function openDropdown(label, colIdx, thEl, evt) {
+      evt.stopPropagation();
+      ddLabel = label; ddColIdx = colIdx;
+      const st = getState(label);
+      const valSet = new Set(st.rows.map(r => r[colIdx] ?? ''));
+      ddAllValues = [...valSet].sort((a, b) => {
+        const an = parseFloat(a), bn = parseFloat(b);
+        return (!isNaN(an) && !isNaN(bn)) ? an - bn : a.localeCompare(b);
+      });
+      ddPending.checked = st.colFilters[colIdx] ? new Set(st.colFilters[colIdx]) : new Set(ddAllValues);
+      ddPending.sortDir = (st.sortCol === colIdx) ? st.sortDir : 0;
+      ddSearchEl.value = '';
+      renderDDList('');
+      updateDDSortBtns();
+      const rect = thEl.getBoundingClientRect();
+      dropdown.style.top = (rect.bottom + 2) + 'px';
+      dropdown.style.left = Math.min(rect.left, window.innerWidth - 228) + 'px';
+      dropdown.classList.add('open');
+      ddSearchEl.focus();
+    }
+
+    function renderDDList(q) {
+      const vals = q ? ddAllValues.filter(v => v.toLowerCase().includes(q.toLowerCase())) : ddAllValues;
+      let html = '';
+      if (!q) {
+        const allC = vals.every(v => ddPending.checked.has(v));
+        const someC = vals.some(v => ddPending.checked.has(v));
+        html += `<div class="dd-item select-all" data-val="__all__">
+      <input type="checkbox" id="dd-all" ${allC ? 'checked' : ''}>
+      <label for="dd-all">(Select All)</label>
+    </div>`;
+      }
+      vals.forEach((v, i) => {
+        const chk = ddPending.checked.has(v) ? 'checked' : '';
+        const disp = v === '' ? '<em style="color:#555">(blank)</em>' : v;
+        html += `<div class="dd-item" data-val="${v.replace(/"/g, '&quot;').replace(/'/g, "&#39;")}">
+      <input type="checkbox" id="dd-v${i}" ${chk}>
+      <label for="dd-v${i}">${disp}</label>
+    </div>`;
+      });
+      ddList.innerHTML = html;
+      const allCb = ddList.querySelector('#dd-all');
+      if (allCb) {
+        const allC = vals.every(v => ddPending.checked.has(v));
+        const someC = vals.some(v => ddPending.checked.has(v));
+        allCb.indeterminate = !allC && someC;
+      }
+      ddList.querySelectorAll('.dd-item').forEach(item => {
+        item.addEventListener('click', e => {
+          if (e.target.tagName === 'INPUT') return;
+          const cb = item.querySelector('input[type=checkbox]');
+          cb.checked = !cb.checked;
+          cb.dispatchEvent(new Event('change'));
+        });
+        item.querySelector('input').addEventListener('change', () => {
+          const val = item.dataset.val;
+          const q2 = ddSearchEl.value;
+          const vis = q2 ? ddAllValues.filter(v => v.toLowerCase().includes(q2.toLowerCase())) : ddAllValues;
+          if (val === '__all__') {
+            const cb = item.querySelector('input');
+            if (cb.checked) vis.forEach(v => ddPending.checked.add(v));
+            else vis.forEach(v => ddPending.checked.delete(v));
+            renderDDList(q2);
+          } else {
+            const cb = item.querySelector('input');
+            if (cb.checked) ddPending.checked.add(val);
+            else ddPending.checked.delete(val);
+            const allCb2 = ddList.querySelector('#dd-all');
+            if (allCb2) {
+              const allC = vis.every(v => ddPending.checked.has(v));
+              const someC = vis.some(v => ddPending.checked.has(v));
+              allCb2.checked = allC;
+              allCb2.indeterminate = !allC && someC;
+            }
+          }
+        });
+      });
+    }
+
+    ddSearchEl.addEventListener('input', () => renderDDList(ddSearchEl.value));
+
+    function updateDDSortBtns() {
+      document.getElementById('dd-asc').className = ddPending.sortDir === 1 ? 'active' : '';
+      document.getElementById('dd-desc').className = ddPending.sortDir === -1 ? 'active' : '';
+      document.getElementById('dd-nosort').className = ddPending.sortDir === 0 ? 'active' : '';
+    }
+    function ddSort(dir) { ddPending.sortDir = dir; updateDDSortBtns(); }
+
+    function ddApply() {
+      const st = getState(ddLabel);
+      if (ddPending.sortDir !== 0) { st.sortCol = ddColIdx; st.sortDir = ddPending.sortDir; }
+      else if (st.sortCol === ddColIdx) { st.sortCol = -1; }
+      const allSel = ddAllValues.every(v => ddPending.checked.has(v));
+      st.colFilters[ddColIdx] = allSel ? null : new Set(ddPending.checked);
+      dropdown.classList.remove('open');
+      if (ddLabel === activeLabel) { updateHeaderUI(ddLabel); renderTable(ddLabel); }
+    }
+    function ddCancel() { dropdown.classList.remove('open'); }
+
+    document.addEventListener('click', e => {
+      if (!dropdown.contains(e.target) && !e.target.closest('.th-inner')) dropdown.classList.remove('open');
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') dropdown.classList.remove('open'); });
+
+    // ============================================================
+    // SSE — receive file updates from server
+    // ============================================================
+    function connectSSE() {
+      const status = document.getElementById('sse-status');
+      const es = new EventSource('/api/sse');
+
+      es.onopen = () => {
+        status.className = 'ok';
+        status.textContent = '● live';
+      };
+      es.onerror = () => {
+        status.className = 'err';
+        status.textContent = '○ reconnecting…';
+      };
+      es.onmessage = e => {
+        try {
+          const { label, content } = JSON.parse(e.data);
+          applyFileContent(label, content);
+          markUpdated(label);
+          if (label === activeLabel) {
+            buildHeader(label);
+            renderTable(label);
+          }
+        } catch (_) { }
+      };
+    }
+
+    // ============================================================
+    // Boot — fetch all files, build tabs, activate first
+    // ============================================================
+    (async function init() {
+      try {
+        const r = await fetch('/api/files');
+        const files = await r.json(); // { label: content, ... }
+        const labels = Object.keys(files);
+        if (!labels.length) {
+          document.getElementById('empty-msg').textContent = 'No files loaded.';
+          return;
+        }
+        labels.forEach(label => {
+          applyFileContent(label, files[label]);
+        });
+        buildTabs(labels);
+        switchTab(labels[0]);
+        connectSSE();
+      } catch (e) {
+        document.getElementById('empty-msg').textContent = 'Could not connect to server.';
+      }
+    })();
+  </script>
+</body>
+
+</html>

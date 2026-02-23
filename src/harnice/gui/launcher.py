@@ -90,6 +90,34 @@ def _wye_graph_icon(size=20):
     return QIcon(pm)
 
 
+def _table_icon(size=20):
+    """
+    Pixmap icon: table with 2 columns and 3 rows for TSV viewer.
+    """
+    pm = QPixmap(size, size)
+    pm.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pm)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+    pen = QPen(QColor(60, 60, 60), max(1, size / 14))
+    painter.setPen(pen)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    margin = size * 0.1
+    x1, y1 = margin, margin
+    w = size - 2 * margin
+    h = size - 2 * margin
+    # Outer rect
+    painter.drawRect(int(x1), int(y1), int(w), int(h))
+    # One vertical line -> 2 columns
+    painter.drawLine(int(x1 + w / 2), int(y1), int(x1 + w / 2), int(y1 + h))
+    # Two horizontal lines -> 3 rows
+    for i in (1, 2):
+        yy = y1 + h * i / 3
+        painter.drawLine(int(x1), int(yy), int(x1 + w), int(yy))
+    painter.end()
+    return QIcon(pm)
+
+
 def button_color_for_product(product_type):
     """
     Return the button_color from the product module for the given product_type,
@@ -295,6 +323,7 @@ class PartButton(QPushButton):
 
         self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
         self._harness_action_btn = None
+        self._tsv_viewer_btn = None
         self._text_label = QLabel(self)
         self._text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._text_label.setTextFormat(Qt.TextFormat.RichText)
@@ -331,20 +360,50 @@ class PartButton(QPushButton):
             self._update_harness_action_geometry()
             self._update_text_label_geometry()
 
+        if self.product_type == "system":
+            self._tsv_viewer_btn = QPushButton(self)
+            self._tsv_viewer_btn.setFixedSize(20, 20)
+            self._tsv_viewer_btn.setIcon(_table_icon(20))
+            self._tsv_viewer_btn.setIconSize(self._tsv_viewer_btn.size())
+            self._tsv_viewer_btn.setStyleSheet(
+                """
+                QPushButton {
+                    background-color: #ccc;
+                    border: 1px solid #888;
+                    border-radius: 4px;
+                }
+                QPushButton:hover { background-color: #ddd; }
+                QPushButton:pressed { background-color: #bbb; }
+                """
+            )
+            self._tsv_viewer_btn.setToolTip("View TSV/CSV lists")
+            self._tsv_viewer_btn.clicked.connect(
+                lambda: self.main_window.launch_tsv_viewer(self.path)
+                if self.main_window
+                else None
+            )
+            self._tsv_viewer_btn.show()
+            self._update_harness_action_geometry()
+            self._update_text_label_geometry()
+
         self.dragStartPosition = None
         self.is_dragging = False
         self.show()
         self.update_position()
 
     def _update_text_label_geometry(self):
-        right_margin = 28 if self._harness_action_btn is not None else 14
+        has_action = (
+            self._harness_action_btn is not None or self._tsv_viewer_btn is not None
+        )
+        right_margin = 28 if has_action else 14
         self._text_label.setGeometry(8, 0, self.width() - right_margin, self.height())
 
     def _update_harness_action_geometry(self):
-        if self._harness_action_btn is not None:
-            margin = 4
-            x = self.width() - self._harness_action_btn.width() - margin
-            self._harness_action_btn.move(x, margin)
+        margin = 4
+        btn = self._harness_action_btn or self._tsv_viewer_btn
+        if btn is not None:
+            x = self.width() - btn.width() - margin
+            btn.move(x, margin)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -538,6 +597,19 @@ class HarniceGUI(QWidget):
         """
         subprocess.Popen(
             [sys.executable, "-m", "harnice", "--graph-editor"],
+            cwd=revision_path,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def launch_tsv_viewer(self, revision_path):
+        """
+        Launch the TSV/CSV viewer for the given revision (e.g. system product lists).
+        Runs in a subprocess so the launcher stays responsive.
+        """
+        subprocess.Popen(
+            [sys.executable, "-m", "harnice", "--tsv-viewer"],
             cwd=revision_path,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
