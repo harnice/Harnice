@@ -704,6 +704,10 @@
         <select id="ci-chan-a">
           <option value="">any channel</option>
         </select>
+        on
+        <select id="ci-conn-a">
+          <option value="">any connector</option>
+        </select>
         of
         <select id="ci-dev-a">
           <option value="">any device</option>
@@ -711,6 +715,10 @@
         to
         <select id="ci-chan-b">
           <option value="">any channel</option>
+        </select>
+        on
+        <select id="ci-conn-b">
+          <option value="">any connector</option>
         </select>
         of
         <select id="ci-dev-b">
@@ -1053,8 +1061,10 @@
     function applyCircuitsFilters(st, rows) {
       const fromDevCol = channelColIdx(st, 'from_side_device_refdes');
       const fromChanCol = channelColIdx(st, 'from_side_device_chname');
+      const fromConnCol = channelColIdx(st, 'net_from_connector_name');
       const toDevCol = channelColIdx(st, 'to_side_device_refdes');
       const toChanCol = channelColIdx(st, 'to_side_device_chname');
+      const toConnCol = channelColIdx(st, 'net_to_connector_name');
       const fromTypeCol = channelColIdx(st, 'from_channel_type');
       const toTypeCol = channelColIdx(st, 'to_channel_type');
       const signalCol = channelColIdx(st, 'signal');
@@ -1063,27 +1073,31 @@
       const toDev = (r) => (r[toDevCol] ?? '').trim();
       const fromChan = (r) => (r[fromChanCol] ?? '').trim();
       const toChan = (r) => (r[toChanCol] ?? '').trim();
-      const pairOnFrom = (r, dev, chan) =>
-        (dev === '' || fromDev(r) === dev) && (chan === '' || fromChan(r) === chan);
-      const pairOnTo = (r, dev, chan) =>
-        (dev === '' || toDev(r) === dev) && (chan === '' || toChan(r) === chan);
-      const oneEndMatches = (r, dev, chan) => pairOnFrom(r, dev, chan) || pairOnTo(r, dev, chan);
+      const fromConn = (r) => (r[fromConnCol] ?? '').trim();
+      const toConn = (r) => (r[toConnCol] ?? '').trim();
+      const pairOnFrom = (r, dev, chan, conn) =>
+        (dev === '' || fromDev(r) === dev) && (chan === '' || fromChan(r) === chan) && (conn === '' || fromConn(r) === conn);
+      const pairOnTo = (r, dev, chan, conn) =>
+        (dev === '' || toDev(r) === dev) && (chan === '' || toChan(r) === chan) && (conn === '' || toConn(r) === conn);
+      const oneEndMatches = (r, dev, chan, conn) => pairOnFrom(r, dev, chan, conn) || pairOnTo(r, dev, chan, conn);
       const devAVal = document.getElementById('ci-dev-a').value;
       const chanAVal = document.getElementById('ci-chan-a').value;
+      const connAVal = document.getElementById('ci-conn-a').value;
       const devBVal = document.getElementById('ci-dev-b').value;
       const chanBVal = document.getElementById('ci-chan-b').value;
-      const pair1Set = devAVal !== '' || chanAVal !== '';
-      const pair2Set = devBVal !== '' || chanBVal !== '';
+      const connBVal = document.getElementById('ci-conn-b').value;
+      const pair1Set = devAVal !== '' || chanAVal !== '' || connAVal !== '';
+      const pair2Set = devBVal !== '' || chanBVal !== '' || connBVal !== '';
 
       if (pair1Set && pair2Set) {
         rows = rows.filter(r =>
-          (pairOnFrom(r, devAVal, chanAVal) && pairOnTo(r, devBVal, chanBVal)) ||
-          (pairOnFrom(r, devBVal, chanBVal) && pairOnTo(r, devAVal, chanAVal))
+          (pairOnFrom(r, devAVal, chanAVal, connAVal) && pairOnTo(r, devBVal, chanBVal, connBVal)) ||
+          (pairOnFrom(r, devBVal, chanBVal, connBVal) && pairOnTo(r, devAVal, chanAVal, connAVal))
         );
       } else if (pair1Set) {
-        rows = rows.filter(r => oneEndMatches(r, devAVal, chanAVal));
+        rows = rows.filter(r => oneEndMatches(r, devAVal, chanAVal, connAVal));
       } else if (pair2Set) {
-        rows = rows.filter(r => oneEndMatches(r, devBVal, chanBVal));
+        rows = rows.filter(r => oneEndMatches(r, devBVal, chanBVal, connBVal));
       }
 
       const typeRel = document.getElementById('ci-type-rel').value;
@@ -1112,8 +1126,10 @@
       if (!st.headers.length) return;
       const fromDevCol = channelColIdx(st, 'from_side_device_refdes');
       const fromChanCol = channelColIdx(st, 'from_side_device_chname');
+      const fromConnCol = channelColIdx(st, 'net_from_connector_name');
       const toDevCol = channelColIdx(st, 'to_side_device_refdes');
       const toChanCol = channelColIdx(st, 'to_side_device_chname');
+      const toConnCol = channelColIdx(st, 'net_to_connector_name');
       const fromTypeCol = channelColIdx(st, 'from_channel_type');
       const toTypeCol = channelColIdx(st, 'to_channel_type');
       const signalCol = channelColIdx(st, 'signal');
@@ -1147,10 +1163,12 @@
         if (preserve && cur !== null && (cur === '' || options.includes(cur))) el.value = cur;
       }
 
-      fillSelect('ci-dev-a', uniquesEither(fromDevCol, toDevCol), 'any device', true);
       fillSelect('ci-chan-a', uniquesEither(fromChanCol, toChanCol), 'any channel', true);
-      fillSelect('ci-dev-b', uniquesEither(fromDevCol, toDevCol), 'any device', true);
+      fillSelect('ci-conn-a', uniquesEither(fromConnCol, toConnCol), 'any connector', true);
+      fillSelect('ci-dev-a', uniquesEither(fromDevCol, toDevCol), 'any device', true);
       fillSelect('ci-chan-b', uniquesEither(fromChanCol, toChanCol), 'any channel', true);
+      fillSelect('ci-conn-b', uniquesEither(fromConnCol, toConnCol), 'any connector', true);
+      fillSelect('ci-dev-b', uniquesEither(fromDevCol, toDevCol), 'any device', true);
       fillSelect('ci-type-val', uniquesEither(fromTypeCol, toTypeCol), '—', true);
       fillSelect('ci-signal', signalCol >= 0 ? uniques(signalCol) : [], 'any', true);
     }
@@ -1489,10 +1507,12 @@
     }
 
     function clearCircuitsFilters() {
-      document.getElementById('ci-dev-a').value = '';
       document.getElementById('ci-chan-a').value = '';
-      document.getElementById('ci-dev-b').value = '';
+      document.getElementById('ci-conn-a').value = '';
+      document.getElementById('ci-dev-a').value = '';
       document.getElementById('ci-chan-b').value = '';
+      document.getElementById('ci-conn-b').value = '';
+      document.getElementById('ci-dev-b').value = '';
       document.getElementById('ci-type-rel').value = 'any';
       document.getElementById('ci-type-val').style.display = 'none';
       document.getElementById('ci-signal').value = '';
@@ -1503,10 +1523,12 @@
     }
 
     document.getElementById('ci-clear').addEventListener('click', clearCircuitsFilters);
-    document.getElementById('ci-dev-a').addEventListener('change', onCircuitsFilterChange);
     document.getElementById('ci-chan-a').addEventListener('change', onCircuitsFilterChange);
-    document.getElementById('ci-dev-b').addEventListener('change', onCircuitsFilterChange);
+    document.getElementById('ci-conn-a').addEventListener('change', onCircuitsFilterChange);
+    document.getElementById('ci-dev-a').addEventListener('change', onCircuitsFilterChange);
     document.getElementById('ci-chan-b').addEventListener('change', onCircuitsFilterChange);
+    document.getElementById('ci-conn-b').addEventListener('change', onCircuitsFilterChange);
+    document.getElementById('ci-dev-b').addEventListener('change', onCircuitsFilterChange);
     document.getElementById('ci-type-rel').addEventListener('change', () => {
       const rel = document.getElementById('ci-type-rel').value;
       document.getElementById('ci-type-val').style.display = (rel === 'is_or_compatible') ? 'inline-block' : 'none';
