@@ -261,7 +261,7 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
             path = None
             for kind in ("device", "disconnect"):
                 candidate = os.path.join(
-                    base, kind, refdes, f"{refdes}-signals_list.tsv"
+                    safe_base, kind, refdes, f"{refdes}-signals_list.tsv"
                 )
                 resolved = os.path.abspath(candidate)
                 # Reject anything that doesn't sit inside base
