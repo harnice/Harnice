@@ -7,11 +7,11 @@ import time
 from harnice import fileio, state
 
 COLUMNS = [
-    "net", # the physical harness (represented by a net in Kicad) that this instance is part of
-    "instance_name", # the unique name of this instance
-    "print_name", # the non-unique, human-readable name of this instance, used for printing on output documents
-    "bom_line_number", # if this instance represents a physical procurable good, it gets assigned a line number on a bill of materials
-    "mfg", # manufacturer of this instance
+    "net",  # the physical harness (represented by a net in Kicad) that this instance is part of
+    "instance_name",  # the unique name of this instance
+    "print_name",  # the non-unique, human-readable name of this instance, used for printing on output documents
+    "bom_line_number",  # if this instance represents a physical procurable good, it gets assigned a line number on a bill of materials
+    "mfg",  # manufacturer of this instance
     "mpn",  # manufacturer part number
     "item_type",  # connector, backshell, whatever
     "parent_instance",  # general purpose reference
@@ -19,13 +19,13 @@ COLUMNS = [
     "segment_group",  # the group of segments that this instance is part of
     "segment_order",  # the sequential id of this item in its segment group
     "connector_group",  # a group of co-located parts (connectors, backshells, nodes)
-    "channel_group", # other instances associated with this one because they are part of the same channel will share this value
+    "channel_group",  # other instances associated with this one because they are part of the same channel will share this value
     "circuit_id",  # which signal this component is electrically connected to
     "circuit_port_number",  # the sequential id of this item in its signal chain
     "node_at_end_a",  # derived from formboard definition
     "node_at_end_b",  # derived from formboard definition
-    "print_name_at_end_a", # human-readable name of this instance if needed, associated with 'node_at_end_a'
-    "print_name_at_end_b", # human-readable name of this instance if needed, associated with 'node_at_end_b'
+    "print_name_at_end_a",  # human-readable name of this instance if needed, associated with 'node_at_end_a'
+    "print_name_at_end_b",  # human-readable name of this instance if needed, associated with 'node_at_end_b'
     "parent_csys_instance_name",  # the other instance upon which this instance's location is based
     "parent_csys_outputcsys_name",  # the specific output coordinate system of the parent that this instance's location is based
     "translate_x",  # derived from parent_csys and parent_csys_name
@@ -33,9 +33,9 @@ COLUMNS = [
     "rotate_csys",  # derived from parent_csys and parent_csys_name
     "absolute_rotation",  # manual add, not nominally used unless it's a flagnote, segment, or node
     "csys_children",  # imported csys children from library attributes file
-    "cable_group", # other instances associated with this one because they are part of the same cable will share this value
-    "cable_container", # which cable is this instance physically bundled inside of
-    "cable_identifier", # cable unique identifier
+    "cable_group",  # other instances associated with this one because they are part of the same cable will share this value
+    "cable_container",  # which cable is this instance physically bundled inside of
+    "cable_identifier",  # cable unique identifier
     "length",  # derived from formboard definition, the length of a segment
     "length_tolerance",  # derived from formboard definition, the tolerance on the length of a segment
     "diameter",  # apparent diameter of a segment <---------- change to print_diameter
@@ -45,65 +45,61 @@ COLUMNS = [
     "note_parent",  # the instance the note applies to. typically don't use this in the instances list, just note_utils
     "note_text",  # the content of the note
     "note_affected_instances",  # list of instances that are affected by the note
-    "lib_repo", # publically-traceable URL of the library this instance is from
-    "lib_subpath", # path to the instance within the library (directories between the product type and the part number)
-    "lib_desc", # description of the instance per the library's revision history
-    "lib_latest_rev", # the latest revision of the instance that exists in the remote library
-    "lib_rev_used_here", # the revision of the instance that is currently used in this project
-    "lib_status", # the status of the instance per the library's revision history
-    "lib_releaseticket", #documentation needed
-    "lib_datestarted", # the date this instance was first added to the library
-    "lib_datemodified", # the date this instance was last modified in the library
-    "lib_datereleased", # the date this instance was released in the library, if applicable, per the library's revision history
-    "lib_drawnby", # the name of the person who drew the instance, per the library's revision history
-    "lib_checkedby", # the name of the person who checked the instance, per the library's revision history
-    "project_editable_lib_modified", # a flag to indicate if the imported contents do not match the library's version (it's been locally modified)
-    "lib_build_notes", # recommended build notes that come with the instance from the library
-    "lib_tools", # recommended tools that come with the instance from the library
+    "lib_repo",  # publically-traceable URL of the library this instance is from
+    "lib_subpath",  # path to the instance within the library (directories between the product type and the part number)
+    "lib_desc",  # description of the instance per the library's revision history
+    "lib_latest_rev",  # the latest revision of the instance that exists in the remote library
+    "lib_rev_used_here",  # the revision of the instance that is currently used in this project
+    "lib_status",  # the status of the instance per the library's revision history
+    "lib_releaseticket",  # documentation needed
+    "lib_datestarted",  # the date this instance was first added to the library
+    "lib_datemodified",  # the date this instance was last modified in the library
+    "lib_datereleased",  # the date this instance was released in the library, if applicable, per the library's revision history
+    "lib_drawnby",  # the name of the person who drew the instance, per the library's revision history
+    "lib_checkedby",  # the name of the person who checked the instance, per the library's revision history
+    "project_editable_lib_modified",  # a flag to indicate if the imported contents do not match the library's version (it's been locally modified)
+    "lib_build_notes",  # recommended build notes that come with the instance from the library
+    "lib_tools",  # recommended tools that come with the instance from the library
     "this_instance_mating_device_refdes",  # if connector, refdes of the device it plugs into
     "this_instance_mating_device_connector",  # if connector, name of the connector it plugs into
     "this_instance_mating_device_connector_mpn",  # if connector, mpn of the connector it plugs into
-    "this_net_from_device_refdes", # if this instance is a channel, circuit, conductor, etc, the refdes of the device it interfaces with, just within this net
-    "this_net_from_device_channel_id", # if this instance is a channel, circuit, conductor, etc, the channel id in the device it interfaces with, just within this net
-    "this_net_from_device_connector_name", # if this instance is a channel, circuit, conductor, etc, the name of the connector it interfaces with, just within this net
-    "this_net_to_device_refdes", # if this instance is a channel, circuit, conductor, etc, the refdes of the device it plugs into just within this net
-    "this_net_to_device_channel_id", # if this instance is a channel, circuit, conductor, etc, the channel id in the device it plugs into, just within this net
-    "this_net_to_device_connector_name", # if this instance is a channel, circuit, conductor, etc, the name of the connector it plugs into, just within this net
+    "this_net_from_device_refdes",  # if this instance is a channel, circuit, conductor, etc, the refdes of the device it interfaces with, just within this net
+    "this_net_from_device_channel_id",  # if this instance is a channel, circuit, conductor, etc, the channel id in the device it interfaces with, just within this net
+    "this_net_from_device_connector_name",  # if this instance is a channel, circuit, conductor, etc, the name of the connector it interfaces with, just within this net
+    "this_net_to_device_refdes",  # if this instance is a channel, circuit, conductor, etc, the refdes of the device it plugs into just within this net
+    "this_net_to_device_channel_id",  # if this instance is a channel, circuit, conductor, etc, the channel id in the device it plugs into, just within this net
+    "this_net_to_device_connector_name",  # if this instance is a channel, circuit, conductor, etc, the name of the connector it plugs into, just within this net
     "this_channel_from_device_refdes",  # if this instance is a channel, circuit, conductor, etc, the refdes of the device it interfaces with, at the very end of the channel
-    "this_channel_from_device_channel_id", # if this instance is a channel, circuit, conductor, etc, the channel id in the device it interfaces with, at the very end of the channel
+    "this_channel_from_device_channel_id",  # if this instance is a channel, circuit, conductor, etc, the channel id in the device it interfaces with, at the very end of the channel
     "this_channel_to_device_refdes",  # if this instance is a channel, circuit, conductor, etc, the refdes of the device it plugs into, at the very end of the channel
-    "this_channel_to_device_channel_id", # if this instance is a channel, circuit, conductor, etc, the channel id in the device it plugs into, at the very end of the channel
-    "this_channel_from_channel_type", # if this instance is a channel, circuit, conductor, etc, the type of the channel it interfaces with, at the very end of the channel
-    "this_channel_to_channel_type", # if this instance is a channel, circuit, conductor, etc, the type of the channel it plugs into, at the very end of the channel
-    "signal_of_channel_type", # if this instance is a channel, circuit, conductor, etc, the signal of the channel it interfaces with, at the very end of the channel
-    "debug", # the call chain of the function that last modified this instance row
-    "debug_cutoff", # blank cell to visually cut off the previous column
+    "this_channel_to_device_channel_id",  # if this instance is a channel, circuit, conductor, etc, the channel id in the device it plugs into, at the very end of the channel
+    "this_channel_from_channel_type",  # if this instance is a channel, circuit, conductor, etc, the type of the channel it interfaces with, at the very end of the channel
+    "this_channel_to_channel_type",  # if this instance is a channel, circuit, conductor, etc, the type of the channel it plugs into, at the very end of the channel
+    "signal_of_channel_type",  # if this instance is a channel, circuit, conductor, etc, the signal of the channel it interfaces with, at the very end of the channel
+    "debug",  # the call chain of the function that last modified this instance row
+    "debug_cutoff",  # blank cell to visually cut off the previous column
 ]
 
 
 def new_instance(instance_name, instance_data, ignore_duplicates=False):
     """
-    New Instance
+        New Instance
 
-instances_list.new_instance(
-    instance_name,
-    instance_data,
-    ignore_duplicates=False
-)
+    instances_list.new_instance(
+        instance_name,
+        instance_data,
+        ignore_duplicates=False
+    )
 
-Add a new instance to your instances list.
+    Add a new instance to your instances list.
 
-    instance_name is a string and must be unique within the list.
-    instance_data is a dictionary of columns (above). You may or may not include instance_name in this dict, though if you do and it doesn't match the argument, the code will fail.
-    Setting ignore_duplicates to True will cause the line to pass silently if you try to add an instance with an instance_name that already exists. By default, False, if you do this, the code will raise an error if you try to add a duplicate instance_name.
+        Args:
+        instance_name: string and must be unique within the list.
+        instance_data: dictionary of the columns you want to write to and their value. You may or may not include instance_name in this dict, though if you do and it doesn't match the argument, the code will fail.
+        ignore_duplicates: boolean: True will cause the line to pass silently if you try to add an instance with an instance_name that already exists. By default (false): if you do this, the code will raise an error if you try to add a duplicate instance_name.
 
-    Args:
-        instance_name: string, must be unique within the list
-        instance_data: dictionary of columns (above)
-        ignore_duplicates: boolean, default False
-
-    Returns:
-        -1 if the instance was added successfully, otherwise raises an error
+        Returns:
+            -1 if the instance was added successfully, otherwise raises an error
     """
     if instance_name in ["", None]:
         raise ValueError(
@@ -118,10 +114,11 @@ Add a new instance to your instances list.
             f"Inconsistent instance_name: argument='{instance_name}' vs data['instance_name']='{instance_data['instance_name']}'"
         )
 
-    if any(
-        row.get("instance_name") == instance_name
-        for row in fileio.read_tsv("instances list")
-    ):
+    try:
+        existing_rows = fileio.read_tsv("instances list")
+    except FileNotFoundError:
+        existing_rows = []
+    if any(row.get("instance_name") == instance_name for row in existing_rows):
         if not ignore_duplicates:
             raise ValueError(
                 f"An instance with the name '{instance_name}' already exists"
@@ -142,9 +139,28 @@ Add a new instance to your instances list.
     # add argumet to data added
     instance_data["instance_name"] = instance_name
 
-    with open(fileio.path("instances list"), "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
-        writer.writerow({key: instance_data.get(key, "") for key in COLUMNS})
+    path = fileio.path("instances list")
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            fieldnames = list(reader.fieldnames or [])
+            rows = list(reader)
+    except FileNotFoundError:
+        fieldnames = []
+        rows = []
+    # Ensure we have COLUMNS (for new file) and allow unknown headers from instance_data
+    for key in COLUMNS:
+        if key not in fieldnames:
+            fieldnames.append(key)
+    for key in instance_data:
+        if key not in fieldnames:
+            fieldnames.append(key)
+    rows.append({key: instance_data.get(key, "") for key in fieldnames})
+
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 _instances_lock = Lock()
@@ -164,7 +180,7 @@ def modify(instance_name, instance_data):
         instance_data["debug"] = _get_call_chain_str()
         instance_data["debug_cutoff"] = " "
 
-        # Ensure any new keys are part of the header
+        # Ensure any new keys (including unknown headers) are part of the header
         for key in instance_data:
             if key not in fieldnames:
                 fieldnames.append(key)
@@ -206,15 +222,19 @@ def modify(instance_name, instance_data):
 
 
 def remove_instance(instance_to_delete):
-    instances_list = fileio.read_tsv("instances list")
+    path = fileio.path("instances list")
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        fieldnames = list(reader.fieldnames or [])
+        instances_list = list(reader)
     new_list = []
     for instance in instances_list:
         if instance.get("instance_name") == instance_to_delete.get("instance_name"):
             continue
         new_list.append(instance)
 
-    with open(fileio.path("instances list"), "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
         writer.writerows(new_list)
 

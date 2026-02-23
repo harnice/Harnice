@@ -637,7 +637,7 @@ def map_instance_to_segments(instance):
                 "parent_instance": instance.get("instance_name"),
                 "segment_group": seg_name,
                 "segment_order": f"{i}-{direction}",
-                "parent_csys": seg_name,
+                "parent_csys_instance_name": seg_name,
                 "location_type": "segment",
                 "channel_group": instance.get("channel_group"),
                 "circuit_id": instance.get("circuit_id"),
