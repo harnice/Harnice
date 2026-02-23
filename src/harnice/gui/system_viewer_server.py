@@ -179,6 +179,8 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
             self._serve_sse()
         elif self.path.startswith("/api/channel-type-compatible"):
             self._serve_channel_type_compatible()
+        elif self.path.startswith("/api/channel-type-display"):
+            self._serve_channel_type_display()
         elif self.path.startswith("/api/signals-list"):
             self._serve_signals_list()
         else:
@@ -230,6 +232,40 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         body = json.dumps(out).encode("utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_channel_type_display(self):
+        """GET /api/channel-type-display?type=...&type=... returns JSON { type_str: human_readable, ... }."""
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        types = params.get("type") or []
+        result = {}
+        for type_str in types:
+            if not type_str or not type_str.strip():
+                continue
+            type_str = type_str.strip()
+            try:
+                desc = chtype.attribute(type_str, "description")
+                direction = chtype.attribute(type_str, "direction")
+                if desc == [] or desc is None:
+                    desc = ""
+                if direction == [] or direction is None:
+                    direction = ""
+                desc = str(desc).strip()
+                direction = str(direction).strip()
+                if direction:
+                    result[type_str] = (
+                        f"{desc} ({direction})" if desc else f"({direction})"
+                    )
+                else:
+                    result[type_str] = desc or type_str
+            except Exception:
+                result[type_str] = type_str
+        body = json.dumps(result).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
