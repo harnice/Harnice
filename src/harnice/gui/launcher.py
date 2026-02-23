@@ -323,7 +323,7 @@ class PartButton(QPushButton):
 
         self.setFixedSize(parent.BUTTON_WIDTH, parent.BUTTON_HEIGHT)
         self._harness_action_btn = None
-        self._tsv_viewer_btn = None
+        self._system_viewer_btn = None
         self._text_label = QLabel(self)
         self._text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._text_label.setTextFormat(Qt.TextFormat.RichText)
@@ -361,11 +361,11 @@ class PartButton(QPushButton):
             self._update_text_label_geometry()
 
         if self.product_type == "system":
-            self._tsv_viewer_btn = QPushButton(self)
-            self._tsv_viewer_btn.setFixedSize(20, 20)
-            self._tsv_viewer_btn.setIcon(_table_icon(20))
-            self._tsv_viewer_btn.setIconSize(self._tsv_viewer_btn.size())
-            self._tsv_viewer_btn.setStyleSheet(
+            self._system_viewer_btn = QPushButton(self)
+            self._system_viewer_btn.setFixedSize(20, 20)
+            self._system_viewer_btn.setIcon(_table_icon(20))
+            self._system_viewer_btn.setIconSize(self._system_viewer_btn.size())
+            self._system_viewer_btn.setStyleSheet(
                 """
                 QPushButton {
                     background-color: #ccc;
@@ -376,13 +376,13 @@ class PartButton(QPushButton):
                 QPushButton:pressed { background-color: #bbb; }
                 """
             )
-            self._tsv_viewer_btn.setToolTip("View TSV/CSV lists")
-            self._tsv_viewer_btn.clicked.connect(
-                lambda: self.main_window.launch_tsv_viewer(self.path)
+            self._system_viewer_btn.setToolTip("View system lists")
+            self._system_viewer_btn.clicked.connect(
+                lambda: self.main_window.launch_system_viewer(self.path)
                 if self.main_window
                 else None
             )
-            self._tsv_viewer_btn.show()
+            self._system_viewer_btn.show()
             self._update_harness_action_geometry()
             self._update_text_label_geometry()
 
@@ -393,14 +393,14 @@ class PartButton(QPushButton):
 
     def _update_text_label_geometry(self):
         has_action = (
-            self._harness_action_btn is not None or self._tsv_viewer_btn is not None
+            self._harness_action_btn is not None or self._system_viewer_btn is not None
         )
         right_margin = 28 if has_action else 14
         self._text_label.setGeometry(8, 0, self.width() - right_margin, self.height())
 
     def _update_harness_action_geometry(self):
         margin = 4
-        btn = self._harness_action_btn or self._tsv_viewer_btn
+        btn = self._harness_action_btn or self._system_viewer_btn
         if btn is not None:
             x = self.width() - btn.width() - margin
             btn.move(x, margin)
@@ -603,13 +603,13 @@ class HarniceGUI(QWidget):
             stderr=subprocess.DEVNULL,
         )
 
-    def launch_tsv_viewer(self, revision_path):
+    def launch_system_viewer(self, revision_path):
         """
-        Launch the TSV/CSV viewer for the given revision (e.g. system product lists).
+        Launch the system viewer for the given revision (e.g. system product lists).
         Runs in a subprocess so the launcher stays responsive.
         """
         subprocess.Popen(
-            [sys.executable, "-m", "harnice", "--tsv-viewer"],
+            [sys.executable, "-m", "harnice", "--system-viewer"],
             cwd=revision_path,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,

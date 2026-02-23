@@ -83,9 +83,9 @@ def main():
     )
 
     group.add_argument(
-        "--tsv-viewer",
+        "--system-viewer",
         action="store_true",
-        help="Launch the TSV/CSV viewer for this revision's lists (e.g. system product)",
+        help="Launch the system viewer for this revision's lists (e.g. system product)",
     )
 
     args = parser.parse_args()
@@ -100,8 +100,8 @@ def main():
         _run_graph_editor()
         return
 
-    if args.tsv_viewer:
-        _run_tsv_viewer()
+    if args.system_viewer:
+        _run_system_viewer()
         return
 
     # -----------------------------
@@ -193,8 +193,8 @@ def _run_graph_editor():
     run_server(port=0, open_browser=True)
 
 
-def _run_tsv_viewer():
-    """Launch the TSV/CSV viewer (must be run from a revision directory)."""
+def _run_system_viewer():
+    """Launch the system viewer (must be run from a revision directory)."""
     fileio.verify_revision_structure()
     item_type = rev_history.info(field="product")
 
@@ -214,7 +214,7 @@ def _run_tsv_viewer():
     if hasattr(product_module, "generate_structure"):
         product_module.generate_structure()
 
-    from harnice.gui.tsv_viewer_server import run_server
+    from harnice.gui.system_viewer_server import run_server
 
     run_server(port=0, open_browser=True)
 

@@ -1,6 +1,6 @@
 """
-Minimal HTTP server for the TSV/CSV viewer (e.g. system product lists).
-Serves the viewer HTML, GET /api/files (all TSV/CSV from file_structure), and GET /api/sse (live updates).
+Minimal HTTP server for the system viewer (system product lists).
+Serves the viewer HTML, GET /api/files (allowed tabs from file_structure), and GET /api/sse (live updates).
 Must be run after fileio state is set (e.g. from CLI in a revision directory).
 """
 
@@ -145,10 +145,10 @@ def _file_watcher_loop():
 
 
 def _viewer_html_path():
-    return Path(__file__).resolve().parent / "tsv_viewer.html"
+    return Path(__file__).resolve().parent / "system_viewer.html"
 
 
-class TSVViewerHandler(http.server.BaseHTTPRequestHandler):
+class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
@@ -165,7 +165,7 @@ class TSVViewerHandler(http.server.BaseHTTPRequestHandler):
     def _serve_viewer(self):
         html_path = _viewer_html_path()
         if not html_path.exists():
-            self.send_error(500, "TSV viewer HTML not found")
+            self.send_error(500, "System viewer HTML not found")
             return
         with open(html_path, "rb") as f:
             data = f.read()
@@ -242,18 +242,18 @@ class TSVViewerHandler(http.server.BaseHTTPRequestHandler):
 
 def run_server(port=0, open_browser=True):
     """
-    Run the TSV viewer server and optionally open the default browser.
+    Run the system viewer server and optionally open the default browser.
     Uses port 0 to pick an ephemeral port; returns the actual port.
     """
     watcher = threading.Thread(target=_file_watcher_loop, daemon=True)
     watcher.start()
 
-    server = http.server.HTTPServer(("127.0.0.1", port), TSVViewerHandler)
+    server = http.server.HTTPServer(("127.0.0.1", port), SystemViewerHandler)
     actual_port = server.server_address[1]
     url = f"http://127.0.0.1:{actual_port}/"
     if open_browser:
         webbrowser.open(url)
-    print(f"TSV viewer: {url}")
+    print(f"System viewer: {url}")
     print("Press Ctrl+C to stop the server.")
     try:
         server.serve_forever()
