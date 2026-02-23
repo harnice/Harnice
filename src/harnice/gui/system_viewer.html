@@ -420,8 +420,9 @@
       border: 1px solid #4a2a2a;
     }
 
-    /* ---- Channel viewer header (above table when Channel Map tab active) ---- */
-    #channel-viewer-header {
+    /* ---- Channel / Disconnect viewer headers (above table when tab active) ---- */
+    #channel-viewer-header,
+    #disconnect-viewer-header {
       background: #222;
       border-bottom: 1px solid #404040;
       padding: 12px 14px;
@@ -429,7 +430,8 @@
       display: none;
     }
 
-    #channel-viewer-header.visible {
+    #channel-viewer-header.visible,
+    #disconnect-viewer-header.visible {
       display: block;
     }
 
@@ -572,6 +574,50 @@
         <button type="button" class="channel-clear-btn" id="ch-clear">Clear</button>
       </p>
     </div>
+    <!-- Disconnect viewer header: shown only when Disconnect Map tab is active -->
+    <div id="disconnect-viewer-header">
+      <div class="channel-toggle-wrap">
+        <input type="checkbox" id="dc-available">
+        <label for="dc-available">Show available disconnect channels</label>
+      </div>
+      <p class="channel-sentence">
+        Show me channels that pass through
+        <select id="dc-disc-chan">
+          <option value="">any channel</option>
+        </select>
+        of
+        <select id="dc-disc">
+          <option value="">any disconnect</option>
+        </select>
+        that connect
+        <select id="dc-chan-a">
+          <option value="">any channel</option>
+        </select>
+        of
+        <select id="dc-dev-a">
+          <option value="">any device</option>
+        </select>
+        to
+        <select id="dc-chan-b">
+          <option value="">any channel</option>
+        </select>
+        of
+        <select id="dc-dev-b">
+          <option value="">any device</option>
+        </select>.
+      </p>
+      <p class="channel-type-row">
+        Channel type
+        <select id="dc-type-rel">
+          <option value="any">is any</option>
+          <option value="is_or_compatible">is or is compatible with</option>
+        </select>
+        <select id="dc-type-val" style="display:none;">
+          <option value="">—</option>
+        </select>
+        <button type="button" class="channel-clear-btn" id="dc-clear">Clear</button>
+      </p>
+    </div>
     <div id="table-wrap">
       <div id="empty-state">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -613,6 +659,7 @@
     const keyToLabel = {};
     let activeLabel = null;   // current file key
     const CHANNEL_MAP_KEY = 'channel map';
+    const DISCONNECT_MAP_KEY = 'disconnect map';
 
     function getState(label) {
       if (!fileStates[label]) {
@@ -757,6 +804,118 @@
       fillSelect('ch-type-val', fromTypeCol >= 0 ? uniques(fromTypeCol) : [], '—', true);
     }
 
+    function applyDisconnectFilters(st, rows) {
+      const aDevCol = channelColIdx(st, 'A-side_device_refdes');
+      const aChanCol = channelColIdx(st, 'A-side_device_channel_id');
+      const bDevCol = channelColIdx(st, 'B-side_device_refdes');
+      const bChanCol = channelColIdx(st, 'B-side_device_channel_id');
+      const discCol = channelColIdx(st, 'disconnect_refdes');
+      const discChanCol = channelColIdx(st, 'disconnect_channel_id');
+      const aTypeCol = channelColIdx(st, 'A-side_device_channel_type');
+      const bTypeCol = channelColIdx(st, 'B-side_device_channel_type');
+
+      if (!document.getElementById('dc-available').checked) {
+        const filled = (v) => v !== undefined && v !== null && String(v).trim() !== '';
+        rows = rows.filter(r => filled(r[aDevCol]) && filled(r[bDevCol]));
+      }
+
+      const discVal = document.getElementById('dc-disc').value;
+      const discChanVal = document.getElementById('dc-disc-chan').value;
+      if (discCol >= 0 && discVal) {
+        rows = rows.filter(r => (r[discCol] ?? '').trim() === discVal);
+      }
+      if (discChanCol >= 0 && discChanVal) {
+        rows = rows.filter(r => (r[discChanCol] ?? '').trim() === discChanVal);
+      }
+
+      const aDev = (r) => (r[aDevCol] ?? '').trim();
+      const bDev = (r) => (r[bDevCol] ?? '').trim();
+      const aChan = (r) => (r[aChanCol] ?? '').trim();
+      const bChan = (r) => (r[bChanCol] ?? '').trim();
+      const pairOnA = (r, dev, chan) =>
+        (dev === '' || aDev(r) === dev) && (chan === '' || aChan(r) === chan);
+      const pairOnB = (r, dev, chan) =>
+        (dev === '' || bDev(r) === dev) && (chan === '' || bChan(r) === chan);
+      const oneEndMatches = (r, dev, chan) => pairOnA(r, dev, chan) || pairOnB(r, dev, chan);
+      const devAVal = document.getElementById('dc-dev-a').value;
+      const chanAVal = document.getElementById('dc-chan-a').value;
+      const devBVal = document.getElementById('dc-dev-b').value;
+      const chanBVal = document.getElementById('dc-chan-b').value;
+      const pair1Set = devAVal !== '' || chanAVal !== '';
+      const pair2Set = devBVal !== '' || chanBVal !== '';
+
+      if (pair1Set && pair2Set) {
+        rows = rows.filter(r =>
+          (pairOnA(r, devAVal, chanAVal) && pairOnB(r, devBVal, chanBVal)) ||
+          (pairOnA(r, devBVal, chanBVal) && pairOnB(r, devAVal, chanAVal))
+        );
+      } else if (pair1Set) {
+        rows = rows.filter(r => oneEndMatches(r, devAVal, chanAVal));
+      } else if (pair2Set) {
+        rows = rows.filter(r => oneEndMatches(r, devBVal, chanBVal));
+      }
+
+      const typeRel = document.getElementById('dc-type-rel').value;
+      const typeVal = document.getElementById('dc-type-val').value;
+      if (typeRel === 'is_or_compatible' && typeVal && (aTypeCol >= 0 || bTypeCol >= 0)) {
+        const rowTypeA = (r) => (r[aTypeCol] ?? '').trim();
+        const rowTypeB = (r) => (r[bTypeCol] ?? '').trim();
+        rows = rows.filter(r => rowTypeA(r) === typeVal || rowTypeB(r) === typeVal);
+      }
+
+      return rows;
+    }
+
+    function buildDisconnectDropdowns() {
+      const st = getState(DISCONNECT_MAP_KEY);
+      if (!st.headers.length) return;
+      const aDevCol = channelColIdx(st, 'A-side_device_refdes');
+      const aChanCol = channelColIdx(st, 'A-side_device_channel_id');
+      const bDevCol = channelColIdx(st, 'B-side_device_refdes');
+      const bChanCol = channelColIdx(st, 'B-side_device_channel_id');
+      const discCol = channelColIdx(st, 'disconnect_refdes');
+      const discChanCol = channelColIdx(st, 'disconnect_channel_id');
+      const aTypeCol = channelColIdx(st, 'A-side_device_channel_type');
+      const bTypeCol = channelColIdx(st, 'B-side_device_channel_type');
+
+      function uniques(colIdx) {
+        if (colIdx < 0) return [];
+        const set = new Set(st.rows.map(r => (r[colIdx] ?? '').trim()).filter(Boolean));
+        return [...set].sort((a, b) => a.localeCompare(b));
+      }
+      function uniquesEither(colA, colB) {
+        const set = new Set();
+        if (colA >= 0) st.rows.forEach(r => { const v = (r[colA] ?? '').trim(); if (v) set.add(v); });
+        if (colB >= 0) st.rows.forEach(r => { const v = (r[colB] ?? '').trim(); if (v) set.add(v); });
+        return [...set].sort((a, b) => a.localeCompare(b));
+      }
+
+      function fillSelect(id, options, anyLabel, preserve) {
+        const el = document.getElementById(id);
+        const cur = preserve ? el.value : null;
+        el.innerHTML = '';
+        const anyOpt = document.createElement('option');
+        anyOpt.value = '';
+        anyOpt.textContent = anyLabel;
+        el.appendChild(anyOpt);
+        options.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          el.appendChild(opt);
+        });
+        if (preserve && cur !== null && (cur === '' || options.includes(cur))) el.value = cur;
+      }
+
+      fillSelect('dc-disc', discCol >= 0 ? uniques(discCol) : [], 'any disconnect', true);
+      fillSelect('dc-disc-chan', discChanCol >= 0 ? uniques(discChanCol) : [], 'any channel', true);
+      fillSelect('dc-dev-a', uniquesEither(aDevCol, bDevCol), 'any device', true);
+      fillSelect('dc-chan-a', uniquesEither(aChanCol, bChanCol), 'any channel', true);
+      fillSelect('dc-dev-b', uniquesEither(aDevCol, bDevCol), 'any device', true);
+      fillSelect('dc-chan-b', uniquesEither(aChanCol, bChanCol), 'any channel', true);
+      fillSelect('dc-type-val', uniquesEither(aTypeCol, bTypeCol), '—', true);
+    }
+
     // ---- Tabs ----
     function buildTabs(keys, labelsMap) {
       const list = document.getElementById('tab-list');
@@ -782,13 +941,22 @@
       document.getElementById('search-input').value = st.search;
       buildHeader(key);
       const chHeader = document.getElementById('channel-viewer-header');
+      const dcHeader = document.getElementById('disconnect-viewer-header');
       if (key === CHANNEL_MAP_KEY) {
         chHeader.classList.add('visible');
+        dcHeader.classList.remove('visible');
         buildChannelDropdowns();
         document.getElementById('ch-type-val').style.display =
           document.getElementById('ch-type-rel').value === 'is_or_compatible' ? 'inline-block' : 'none';
+      } else if (key === DISCONNECT_MAP_KEY) {
+        chHeader.classList.remove('visible');
+        dcHeader.classList.add('visible');
+        buildDisconnectDropdowns();
+        document.getElementById('dc-type-val').style.display =
+          document.getElementById('dc-type-rel').value === 'is_or_compatible' ? 'inline-block' : 'none';
       } else {
         chHeader.classList.remove('visible');
+        dcHeader.classList.remove('visible');
       }
       renderTable(key);
     }
@@ -862,6 +1030,7 @@
       if (q) rows = rows.filter(r => r.some(c => c.toLowerCase().includes(q)));
       st.colFilters.forEach((f, i) => { if (f) rows = rows.filter(r => f.has(r[i] ?? '')); });
       if (label === CHANNEL_MAP_KEY) rows = applyChannelFilters(st, rows);
+      if (label === DISCONNECT_MAP_KEY) rows = applyDisconnectFilters(st, rows);
 
       if (st.sortCol >= 0) {
         rows.sort((a, b) => {
@@ -934,6 +1103,42 @@
       onChannelFilterChange();
     });
     document.getElementById('ch-type-val').addEventListener('change', onChannelFilterChange);
+
+    // ---- Disconnect viewer header: re-render when controls change ----
+    function onDisconnectFilterChange() {
+      if (activeLabel === DISCONNECT_MAP_KEY) renderTable(activeLabel);
+    }
+
+    function clearDisconnectFilters() {
+      document.getElementById('dc-available').checked = true;
+      document.getElementById('dc-disc').value = '';
+      document.getElementById('dc-disc-chan').value = '';
+      document.getElementById('dc-dev-a').value = '';
+      document.getElementById('dc-chan-a').value = '';
+      document.getElementById('dc-dev-b').value = '';
+      document.getElementById('dc-chan-b').value = '';
+      document.getElementById('dc-type-rel').value = 'any';
+      document.getElementById('dc-type-val').style.display = 'none';
+      if (activeLabel === DISCONNECT_MAP_KEY) {
+        buildDisconnectDropdowns();
+        renderTable(activeLabel);
+      }
+    }
+
+    document.getElementById('dc-clear').addEventListener('click', clearDisconnectFilters);
+    document.getElementById('dc-available').addEventListener('change', onDisconnectFilterChange);
+    document.getElementById('dc-disc').addEventListener('change', onDisconnectFilterChange);
+    document.getElementById('dc-disc-chan').addEventListener('change', onDisconnectFilterChange);
+    document.getElementById('dc-dev-a').addEventListener('change', onDisconnectFilterChange);
+    document.getElementById('dc-chan-a').addEventListener('change', onDisconnectFilterChange);
+    document.getElementById('dc-dev-b').addEventListener('change', onDisconnectFilterChange);
+    document.getElementById('dc-chan-b').addEventListener('change', onDisconnectFilterChange);
+    document.getElementById('dc-type-rel').addEventListener('change', () => {
+      const rel = document.getElementById('dc-type-rel').value;
+      document.getElementById('dc-type-val').style.display = (rel === 'is_or_compatible') ? 'inline-block' : 'none';
+      onDisconnectFilterChange();
+    });
+    document.getElementById('dc-type-val').addEventListener('change', onDisconnectFilterChange);
 
     function clearAllFilters() {
       if (!activeLabel) return;
@@ -1093,6 +1298,7 @@
           if (key === activeLabel) {
             buildHeader(key);
             if (key === CHANNEL_MAP_KEY) buildChannelDropdowns();
+            if (key === DISCONNECT_MAP_KEY) buildDisconnectDropdowns();
             renderTable(key);
           }
         } catch (_) { }
