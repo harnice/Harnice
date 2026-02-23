@@ -433,8 +433,70 @@
 
     #channel-viewer-header.visible,
     #disconnect-viewer-header.visible,
-    #circuits-viewer-header.visible {
+    #circuits-viewer-header.visible,
+    #instances-viewer-header.visible {
       display: block;
+    }
+
+    #instances-viewer-header {
+      background: #222;
+      border-bottom: 1px solid #404040;
+      padding: 12px 14px;
+      flex-shrink: 0;
+      display: none;
+    }
+
+    .instances-source-options {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .instances-source-option {
+      flex: 1;
+      min-width: 140px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #2a2a2a;
+      border: 2px solid #404040;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+
+    .instances-source-option:hover {
+      background: #333;
+      border-color: #555;
+    }
+
+    .instances-source-option input[type="radio"] {
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      flex-shrink: 0;
+      accent-color: #b8860b;
+      cursor: pointer;
+    }
+
+    .instances-source-option.selected {
+      border-color: #b8860b;
+      background: #2a2600;
+    }
+
+    .instances-source-option span {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: #ccc;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .instances-source-option.selected span {
+      color: #e8d088;
     }
 
     .channel-toggle-wrap {
@@ -535,6 +597,21 @@
       <input type="text" id="search-input" placeholder="Search all columns…">
       <button class="icon-btn" onclick="clearAllFilters()">✕ Clear filters</button>
       <span class="badge" id="row-badge">—</span>
+    </div>
+    <!-- Instances viewer header: shown only when Instances List tab is active -->
+    <div id="instances-viewer-header">
+      <p class="channel-sentence" style="margin-bottom: 10px;">Show:</p>
+      <div class="instances-source-options">
+        <label class="instances-source-option" id="instances-option-instances" data-value="instances list">
+          <input type="radio" name="instances-source" value="instances list">
+          <span>Instances list</span>
+        </label>
+        <label class="instances-source-option" id="instances-option-postharness"
+          data-value="post harness instances list">
+          <input type="radio" name="instances-source" value="post harness instances list">
+          <span>Post harness instances list</span>
+        </label>
+      </div>
     </div>
     <!-- Channel viewer header: shown only when Channel Map tab is active -->
     <div id="channel-viewer-header">
@@ -699,6 +776,14 @@
     const CHANNEL_MAP_KEY = 'channel map';
     const DISCONNECT_MAP_KEY = 'disconnect map';
     const CIRCUITS_LIST_KEY = 'circuits list';
+    const INSTANCES_LIST_KEY = 'instances list';
+    const POST_HARNESS_INSTANCES_LIST_KEY = 'post harness instances list';
+    let instancesListSourceKey = INSTANCES_LIST_KEY;
+    let channelTypeCompatibleCache = {};
+
+    function getDataKey() {
+      return (activeLabel === INSTANCES_LIST_KEY) ? instancesListSourceKey : activeLabel;
+    }
 
     function getState(label) {
       if (!fileStates[label]) {
@@ -790,7 +875,12 @@
       const typeVal = document.getElementById('ch-type-val').value;
       if (typeRel === 'is_or_compatible' && typeVal && fromTypeCol >= 0) {
         const rowType = (r) => (r[fromTypeCol] ?? '').trim();
-        rows = rows.filter(r => rowType(r) === typeVal);
+        const allowed = channelTypeCompatibleCache[typeVal];
+        if (allowed && allowed.size) {
+          rows = rows.filter(r => allowed.has(rowType(r)));
+        } else {
+          rows = rows.filter(r => rowType(r) === typeVal);
+        }
       }
 
       return rows;
@@ -899,7 +989,12 @@
       if (typeRel === 'is_or_compatible' && typeVal && (aTypeCol >= 0 || bTypeCol >= 0)) {
         const rowTypeA = (r) => (r[aTypeCol] ?? '').trim();
         const rowTypeB = (r) => (r[bTypeCol] ?? '').trim();
-        rows = rows.filter(r => rowTypeA(r) === typeVal || rowTypeB(r) === typeVal);
+        const allowed = channelTypeCompatibleCache[typeVal];
+        if (allowed && allowed.size) {
+          rows = rows.filter(r => allowed.has(rowTypeA(r)) || allowed.has(rowTypeB(r)));
+        } else {
+          rows = rows.filter(r => rowTypeA(r) === typeVal || rowTypeB(r) === typeVal);
+        }
       }
 
       return rows;
@@ -996,7 +1091,12 @@
       if (typeRel === 'is_or_compatible' && typeVal && (fromTypeCol >= 0 || toTypeCol >= 0)) {
         const rowTypeFrom = (r) => (r[fromTypeCol] ?? '').trim();
         const rowTypeTo = (r) => (r[toTypeCol] ?? '').trim();
-        rows = rows.filter(r => rowTypeFrom(r) === typeVal || rowTypeTo(r) === typeVal);
+        const allowed = channelTypeCompatibleCache[typeVal];
+        if (allowed && allowed.size) {
+          rows = rows.filter(r => allowed.has(rowTypeFrom(r)) || allowed.has(rowTypeTo(r)));
+        } else {
+          rows = rows.filter(r => rowTypeFrom(r) === typeVal || rowTypeTo(r) === typeVal);
+        }
       }
 
       const signalVal = document.getElementById('ci-signal').value;
@@ -1076,12 +1176,23 @@
         t.classList.toggle('active', t.dataset.label === key);
         if (t.dataset.label === key) t.classList.remove('updated');
       });
-      const st = getState(key);
+      const dataKey = getDataKey();
+      const st = getState(dataKey);
       document.getElementById('search-input').value = st.search;
       buildHeader(key);
+      const instHeader = document.getElementById('instances-viewer-header');
       const chHeader = document.getElementById('channel-viewer-header');
       const dcHeader = document.getElementById('disconnect-viewer-header');
       const ciHeader = document.getElementById('circuits-viewer-header');
+      if (key === INSTANCES_LIST_KEY) {
+        instHeader.classList.add('visible');
+        chHeader.classList.remove('visible');
+        dcHeader.classList.remove('visible');
+        ciHeader.classList.remove('visible');
+        updateInstancesSourceUI();
+      } else {
+        instHeader.classList.remove('visible');
+      }
       if (key === CHANNEL_MAP_KEY) {
         chHeader.classList.add('visible');
         dcHeader.classList.remove('visible');
@@ -1089,6 +1200,10 @@
         buildChannelDropdowns();
         document.getElementById('ch-type-val').style.display =
           document.getElementById('ch-type-rel').value === 'is_or_compatible' ? 'inline-block' : 'none';
+        if (document.getElementById('ch-type-rel').value === 'is_or_compatible') {
+          const v = document.getElementById('ch-type-val').value;
+          if (v) fetchChannelTypeCompatible(v);
+        }
       } else if (key === DISCONNECT_MAP_KEY) {
         chHeader.classList.remove('visible');
         dcHeader.classList.add('visible');
@@ -1096,6 +1211,10 @@
         buildDisconnectDropdowns();
         document.getElementById('dc-type-val').style.display =
           document.getElementById('dc-type-rel').value === 'is_or_compatible' ? 'inline-block' : 'none';
+        if (document.getElementById('dc-type-rel').value === 'is_or_compatible') {
+          const v = document.getElementById('dc-type-val').value;
+          if (v) fetchChannelTypeCompatible(v);
+        }
       } else if (key === CIRCUITS_LIST_KEY) {
         chHeader.classList.remove('visible');
         dcHeader.classList.remove('visible');
@@ -1103,11 +1222,16 @@
         buildCircuitsDropdowns();
         document.getElementById('ci-type-val').style.display =
           document.getElementById('ci-type-rel').value === 'is_or_compatible' ? 'inline-block' : 'none';
+        if (document.getElementById('ci-type-rel').value === 'is_or_compatible') {
+          const v = document.getElementById('ci-type-val').value;
+          if (v) fetchChannelTypeCompatible(v);
+        }
       } else {
         chHeader.classList.remove('visible');
         dcHeader.classList.remove('visible');
         ciHeader.classList.remove('visible');
       }
+      if (key !== INSTANCES_LIST_KEY) instHeader.classList.remove('visible');
       renderTable(key);
     }
 
@@ -1127,7 +1251,8 @@
 
     // ---- Header ----
     function buildHeader(label) {
-      const st = getState(label);
+      const dataKey = (label === INSTANCES_LIST_KEY) ? instancesListSourceKey : label;
+      const st = getState(dataKey);
       const tr = document.createElement('tr');
       st.headers.forEach((h, i) => {
         const th = document.createElement('th');
@@ -1137,13 +1262,13 @@
       <i class="sort-btn">⇅</i>
       <span class="filter-dot"></span>
     </div>`;
-        th.querySelector('.th-inner').addEventListener('click', e => openDropdown(label, i, th, e));
+        th.querySelector('.th-inner').addEventListener('click', e => openDropdown(dataKey, i, th, e));
         tr.appendChild(th);
       });
       const thead = document.getElementById('thead');
       thead.innerHTML = '';
       thead.appendChild(tr);
-      updateHeaderUI(label);
+      updateHeaderUI(dataKey);
     }
 
     function updateHeaderUI(label) {
@@ -1163,7 +1288,8 @@
 
     // ---- Render ----
     function renderTable(label) {
-      const st = getState(label);
+      const dataKey = (label === INSTANCES_LIST_KEY) ? instancesListSourceKey : label;
+      const st = getState(dataKey);
       const empty = document.getElementById('empty-state');
       const table = document.getElementById('data-table');
 
@@ -1217,13 +1343,28 @@
     // ---- Search ----
     document.getElementById('search-input').addEventListener('input', e => {
       if (!activeLabel) return;
-      getState(activeLabel).search = e.target.value;
+      getState(getDataKey()).search = e.target.value;
       renderTable(activeLabel);
     });
 
     // ---- Channel viewer header: re-render when controls change ----
+    function fetchChannelTypeCompatible(typeVal) {
+      if (!typeVal) return;
+      fetch('/api/channel-type-compatible?type=' + encodeURIComponent(typeVal))
+        .then(r => r.json())
+        .then(data => {
+          channelTypeCompatibleCache[typeVal] = new Set(Array.isArray(data) ? data : []);
+          if (activeLabel) renderTable(activeLabel);
+        })
+        .catch(() => { channelTypeCompatibleCache[typeVal] = new Set([typeVal]); });
+    }
+
     function onChannelFilterChange() {
       if (activeLabel === CHANNEL_MAP_KEY) renderTable(activeLabel);
+      if (document.getElementById('ch-type-rel').value === 'is_or_compatible') {
+        const v = document.getElementById('ch-type-val').value;
+        if (v) fetchChannelTypeCompatible(v);
+      }
     }
 
     function clearChannelFilters() {
@@ -1253,11 +1394,58 @@
       document.getElementById('ch-type-val').style.display = (rel === 'is_or_compatible') ? 'inline-block' : 'none';
       onChannelFilterChange();
     });
-    document.getElementById('ch-type-val').addEventListener('change', onChannelFilterChange);
+    document.getElementById('ch-type-val').addEventListener('change', () => {
+      onChannelFilterChange();
+    });
+
+    function updateInstancesSourceUI() {
+      document.querySelectorAll('.instances-source-option').forEach(el => {
+        const val = el.getAttribute('data-value');
+        const radio = el.querySelector('input[type="radio"]');
+        const selected = val === instancesListSourceKey;
+        if (radio) radio.checked = selected;
+        el.classList.toggle('selected', selected);
+      });
+    }
+
+    function copyInstancesFilterState(fromKey, toKey) {
+      const from = getState(fromKey);
+      const to = getState(toKey);
+      to.search = from.search;
+      if (to.headers.length === from.headers.length) {
+        to.sortCol = from.sortCol;
+        to.sortDir = from.sortDir;
+        if (from.colFilters) {
+          to.colFilters = from.colFilters.map(s => s ? new Set(s) : null);
+        }
+      } else {
+        to.sortCol = -1;
+        to.sortDir = 1;
+      }
+    }
+
+    document.querySelectorAll('input[name="instances-source"]').forEach(radio => {
+      radio.addEventListener('change', e => {
+        if (activeLabel !== INSTANCES_LIST_KEY) return;
+        const prevKey = instancesListSourceKey;
+        instancesListSourceKey = e.target.value;
+        if (prevKey !== instancesListSourceKey) {
+          copyInstancesFilterState(prevKey, instancesListSourceKey);
+        }
+        updateInstancesSourceUI();
+        document.getElementById('search-input').value = getState(instancesListSourceKey).search;
+        buildHeader(INSTANCES_LIST_KEY);
+        renderTable(INSTANCES_LIST_KEY);
+      });
+    });
 
     // ---- Disconnect viewer header: re-render when controls change ----
     function onDisconnectFilterChange() {
       if (activeLabel === DISCONNECT_MAP_KEY) renderTable(activeLabel);
+      if (document.getElementById('dc-type-rel').value === 'is_or_compatible') {
+        const v = document.getElementById('dc-type-val').value;
+        if (v) fetchChannelTypeCompatible(v);
+      }
     }
 
     function clearDisconnectFilters() {
@@ -1294,6 +1482,10 @@
     // ---- Circuits viewer header: re-render when controls change ----
     function onCircuitsFilterChange() {
       if (activeLabel === CIRCUITS_LIST_KEY) renderTable(activeLabel);
+      if (document.getElementById('ci-type-rel').value === 'is_or_compatible') {
+        const v = document.getElementById('ci-type-val').value;
+        if (v) fetchChannelTypeCompatible(v);
+      }
     }
 
     function clearCircuitsFilters() {
@@ -1325,12 +1517,13 @@
 
     function clearAllFilters() {
       if (!activeLabel) return;
-      const st = getState(activeLabel);
+      const dataKey = getDataKey();
+      const st = getState(dataKey);
       st.colFilters = st.headers.map(() => null);
       st.sortCol = -1; st.sortDir = 1;
       st.search = '';
       document.getElementById('search-input').value = '';
-      updateHeaderUI(activeLabel);
+      updateHeaderUI(dataKey);
       renderTable(activeLabel);
     }
 
@@ -1472,18 +1665,20 @@
           if (key == null || content === undefined) return;
           if (label) keyToLabel[key] = label;
           applyFileContent(key, content);
-          if (!document.querySelector(`.tab[data-label="${CSS.escape(key)}"]`)) {
-            buildTabs([key], keyToLabel);
-          } else {
-            setTabDisplayName(key, keyToLabel[key] || key);
+          if (key !== POST_HARNESS_INSTANCES_LIST_KEY) {
+            if (!document.querySelector(`.tab[data-label="${CSS.escape(key)}"]`)) {
+              buildTabs([key], keyToLabel);
+            } else {
+              setTabDisplayName(key, keyToLabel[key] || key);
+            }
+            markUpdated(key);
           }
-          markUpdated(key);
-          if (key === activeLabel) {
-            buildHeader(key);
+          if (key === activeLabel || (key === POST_HARNESS_INSTANCES_LIST_KEY && activeLabel === INSTANCES_LIST_KEY && instancesListSourceKey === POST_HARNESS_INSTANCES_LIST_KEY)) {
+            buildHeader(activeLabel);
             if (key === CHANNEL_MAP_KEY) buildChannelDropdowns();
             if (key === DISCONNECT_MAP_KEY) buildDisconnectDropdowns();
             if (key === CIRCUITS_LIST_KEY) buildCircuitsDropdowns();
-            renderTable(key);
+            renderTable(activeLabel);
           }
         } catch (_) { }
       };
@@ -1508,8 +1703,9 @@
           keyToLabel[key] = label;
           applyFileContent(key, content);
         });
-        buildTabs(keys, keyToLabel);
-        switchTab(keys[0]);
+        const tabKeys = keys.filter(k => k !== POST_HARNESS_INSTANCES_LIST_KEY);
+        buildTabs(tabKeys, keyToLabel);
+        switchTab(tabKeys[0] || keys[0]);
         connectSSE();
       } catch (e) {
         document.getElementById('empty-msg').textContent = 'Could not connect to server.';

@@ -13,7 +13,10 @@ import time
 import webbrowser
 from pathlib import Path
 
+from urllib.parse import parse_qs, urlparse
+
 from harnice import fileio, state
+from harnice.products import chtype
 
 
 def _tsv_file_keys_from_structure(structure_dict):
@@ -47,7 +50,7 @@ TAB_ORDER = [
     "disconnect map",
 ]
 TAB_DISPLAY_LABELS = {
-    "instances list": "Instances List",
+    "instances list": "Instances Lists",
     "bom": "Devices",
     "circuits list": "Circuits",
     "harness manifest": "Harnesses",
@@ -80,13 +83,18 @@ def _read_file_content(file_key):
 
 
 def _get_all_files():
-    """Return dict of file_key -> { content, label } only for the allowed tabs (TAB_ORDER)."""
+    """Return dict of file_key -> { content, label } for tabs and instances-list alternates."""
     try:
         structure = state.file_structure
     except NameError:
         return {}
     raw_keys = _tsv_file_keys_from_structure(structure)
     ordered = [k for k in TAB_ORDER if k in raw_keys]
+    if (
+        "post harness instances list" in raw_keys
+        and "post harness instances list" not in ordered
+    ):
+        ordered.append("post harness instances list")
     return {
         key: {
             "content": _read_file_content(key),
@@ -114,6 +122,11 @@ def _file_watcher_loop():
         try:
             raw_keys = _tsv_file_keys_from_structure(structure)
             keys = [k for k in TAB_ORDER if k in raw_keys]
+            if (
+                "post harness instances list" in raw_keys
+                and "post harness instances list" not in keys
+            ):
+                keys.append("post harness instances list")
         except Exception:
             time.sleep(1.5)
             continue
@@ -159,6 +172,8 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
             self._serve_files()
         elif self.path == "/api/sse":
             self._serve_sse()
+        elif self.path.startswith("/api/channel-type-compatible"):
+            self._serve_channel_type_compatible()
         else:
             self.send_error(404)
 
@@ -180,6 +195,34 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
         body = json.dumps(files).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_channel_type_compatible(self):
+        """GET /api/channel-type-compatible?type=... returns JSON list of channel type strings (type + compatibles)."""
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        type_str = (params.get("type") or [None])[0]
+        if not type_str:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b'{"error": "missing type parameter"}')
+            return
+        try:
+            allowed = chtype.is_or_is_compatible_with(type_str)
+            # Return string forms that match TSV storage (repr of tuple)
+            out = [repr(t) for t in allowed if t is not None]
+        except Exception:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps([type_str]).encode("utf-8"))
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        body = json.dumps(out).encode("utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
