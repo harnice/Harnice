@@ -195,6 +195,8 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
     )
     revhistory_row = rev_history.info(rev=rev_to_use, path=revhistory_path)
 
+    attributes_data = {}
+    
     try:
         with open(
             os.path.join(
@@ -234,6 +236,7 @@ def pull(input_dict, update_instances_list=True, destination_directory=None):
         "lib_tools": tools,
         "lib_build_notes": build_notes,
         "project_editable_lib_modified": Modified,
+        "attributes_json": attributes_data
     }
 
     if update_instances_list:
