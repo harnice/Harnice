@@ -239,13 +239,26 @@ def select_product_type():
     from pathlib import Path
     import harnice.products as products_pkg
     from prompt_toolkit import prompt
+    from prompt_toolkit.application.current import get_app
     from prompt_toolkit.completion import WordCompleter
 
     def get_product_types():
         products_dir = Path(products_pkg.__file__).parent
-        return sorted(
+        all_types = sorted(
             p.stem for p in products_dir.glob("*.py") if p.name != "__init__.py"
         )
+        priority = ["harness", "system", "device", "disconnect", "macro"]
+        ordered = [p for p in priority if p in all_types]
+        ordered += sorted(p for p in all_types if p not in priority)
+        return ordered
+
+    def show_completions_immediately():
+        app = get_app()
+        buf = app.current_buffer
+        if buf.complete_state:
+            buf.complete_next()
+        else:
+            buf.start_completion(select_first=False)
 
     product_types = get_product_types()
     product_map = {p.lower(): p for p in product_types}
@@ -258,13 +271,13 @@ def select_product_type():
 
     while True:
         value = prompt(
-            "What product type are you working on? ",
+            "Select product type: ",
             completer=completer,
-            default="harness",
+            pre_run=show_completions_immediately,
         ).strip()
 
         if not value:
-            value = "harness"
+            continue
 
         key = value.lower()
         if key in product_map:
