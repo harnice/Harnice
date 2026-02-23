@@ -8,6 +8,7 @@ import http.server
 import json
 import os
 import queue
+import socketserver
 import threading
 import time
 import webbrowser
@@ -174,6 +175,8 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
             self._serve_sse()
         elif self.path.startswith("/api/channel-type-compatible"):
             self._serve_channel_type_compatible()
+        elif self.path.startswith("/api/signals-list"):
+            self._serve_signals_list()
         else:
             self.send_error(404)
 
@@ -223,6 +226,50 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         body = json.dumps(out).encode("utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_signals_list(self):
+        """GET /api/signals-list?device_refdes=... returns TSV content.
+        Looks under instance_data/device/{refdes}/ first, then instance_data/disconnect/{refdes}/."""
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        refdes = (params.get("device_refdes") or [None])[0]
+        if not refdes or not refdes.strip():
+            self.send_response(400)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"missing device_refdes parameter")
+            return
+        refdes = refdes.strip()
+        try:
+            base = fileio.dirpath("instance_data")
+            for kind in ("device", "disconnect"):
+                path = os.path.join(base, kind, refdes, f"{refdes}-signals_list.tsv")
+                if os.path.isfile(path):
+                    break
+            else:
+                self.send_response(404)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(
+                    f"signals list not found for device or disconnect {refdes}".encode(
+                        "utf-8"
+                    )
+                )
+                return
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except (TypeError, OSError) as e:
+            self.send_response(500)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(str(e).encode("utf-8"))
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/tab-separated-values; charset=utf-8")
+        body = content.encode("utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -291,7 +338,10 @@ def run_server(port=0, open_browser=True):
     watcher = threading.Thread(target=_file_watcher_loop, daemon=True)
     watcher.start()
 
-    server = http.server.HTTPServer(("127.0.0.1", port), SystemViewerHandler)
+    class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+        daemon_threads = True
+
+    server = ThreadedHTTPServer(("127.0.0.1", port), SystemViewerHandler)
     actual_port = server.server_address[1]
     url = f"http://127.0.0.1:{actual_port}/"
     if open_browser:

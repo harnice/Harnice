@@ -152,6 +152,172 @@
       overflow: auto;
     }
 
+    /* Devices tab: clickable row + embedded signals list viewer (subset styling) */
+    tr.device-row {
+      cursor: pointer;
+    }
+
+    tr.device-row:hover {
+      background: #2a2a2a;
+    }
+
+    tr.device-row.signals-expanded td {
+      background: #3d3500 !important;
+      color: #f0e68c;
+    }
+
+    tr.device-row.signals-expanded:hover td {
+      background: #4a4000 !important;
+    }
+
+    tr.signals-detail-row {
+      display: none;
+      background: #1a1a1a;
+    }
+
+    tr.signals-detail-row.expanded {
+      display: table-row;
+    }
+
+    tr.signals-detail-row td {
+      padding: 0;
+      border-bottom: 1px solid #333;
+      vertical-align: top;
+    }
+
+    /* Same font, padding, and borders as main table; thick border + tint to show subset */
+    .signals-viewer-wrap {
+      padding: 0;
+      max-height: 280px;
+      overflow: auto;
+      font-size: 12px;
+      border: 3px solid #404040;
+      border-radius: 4px;
+      background: #1e1e1e;
+      margin: 6px 10px 10px;
+    }
+
+    .signals-viewer-wrap table {
+      width: 100%;
+      font-size: 12px;
+      border-collapse: collapse;
+    }
+
+    .signals-viewer-wrap thead th {
+      background: #252525;
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 2px solid #404040;
+      white-space: nowrap;
+    }
+
+    .signals-viewer-wrap tbody td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #282828;
+      color: #ccc;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .signals-viewer-wrap tbody tr:nth-child(even) td {
+      background: #1e1e1e;
+    }
+
+    .signals-viewer-wrap tbody tr:nth-child(odd) td {
+      background: #1a1a1a;
+    }
+
+    .signals-viewer-wrap tbody tr:hover td {
+      background: #252525;
+    }
+
+    .signals-viewer-wrap .signals-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-bottom: 1px solid #333;
+      background: #252525;
+    }
+
+    .signals-viewer-wrap .signals-search {
+      flex: 1;
+      min-width: 120px;
+      padding: 5px 8px;
+      background: #1a1a1a;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      color: #eee;
+      font-size: 12px;
+    }
+
+    .signals-viewer-wrap .signals-search:focus {
+      outline: none;
+      border-color: #888;
+    }
+
+    .signals-viewer-wrap .signals-row-badge {
+      font-size: 11px;
+      color: #888;
+      white-space: nowrap;
+    }
+
+    .signals-viewer-wrap .signals-clear-btn {
+      flex-shrink: 0;
+      background: #333;
+      border: 1px solid #505050;
+      color: #999;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .signals-viewer-wrap .signals-clear-btn:hover {
+      background: #404040;
+      color: #eee;
+    }
+
+    .signals-viewer-wrap .th-inner {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .signals-viewer-wrap .th-inner:hover {
+      color: #b8860b;
+    }
+
+    .signals-viewer-wrap .th-inner.filtered .filter-dot {
+      display: block;
+    }
+
+    .signals-viewer-wrap .loading,
+    .signals-viewer-wrap .error {
+      padding: 8px 10px;
+      color: #888;
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .signals-viewer-wrap .error {
+      color: #c66;
+    }
+
     /* Table */
     table {
       width: 100%;
@@ -784,6 +950,7 @@
     const CHANNEL_MAP_KEY = 'channel map';
     const DISCONNECT_MAP_KEY = 'disconnect map';
     const CIRCUITS_LIST_KEY = 'circuits list';
+    const BOM_KEY = 'bom';
     const INSTANCES_LIST_KEY = 'instances list';
     const POST_HARNESS_INSTANCES_LIST_KEY = 'post harness instances list';
     let instancesListSourceKey = INSTANCES_LIST_KEY;
@@ -1345,6 +1512,64 @@
         return;
       }
       const frag = document.createDocumentFragment();
+      const isBom = (label === BOM_KEY);
+      const refdesIdx = isBom ? st.headers.indexOf('device_refdes') : -1;
+
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        if (isBom && refdesIdx >= 0) {
+          tr.classList.add('device-row');
+          tr.dataset.deviceRefdes = (row[refdesIdx] ?? '').trim();
+        }
+        st.headers.forEach((_, i) => {
+          const td = document.createElement('td');
+          td.textContent = row[i] ?? '';
+          td.title = row[i] ?? '';
+          tr.appendChild(td);
+        });
+        frag.appendChild(tr);
+
+        if (isBom && refdesIdx >= 0 && tr.dataset.deviceRefdes) {
+          const detailTr = document.createElement('tr');
+          detailTr.classList.add('signals-detail-row');
+          const detailTd = document.createElement('td');
+          detailTd.colSpan = st.headers.length;
+          detailTd.innerHTML = '<div class="signals-viewer-wrap"><span class="loading">Click row to load signals list</span></div>';
+          detailTr.appendChild(detailTd);
+          frag.appendChild(detailTr);
+        }
+      });
+      tbody.appendChild(frag);
+    }
+
+    function parseTsv(tsvText) {
+      const lines = tsvText.trim().split(/\r?\n/);
+      if (!lines.length) return { headers: [], rows: [] };
+      const headers = lines[0].split(/\t/);
+      const rows = lines.slice(1).map(line => line.split(/\t/));
+      return { headers, rows };
+    }
+
+    let ddSignalsWrap = null; // when column dropdown is open for a signals list
+
+    function renderSignalsTableBody(wrap) {
+      const st = wrap._signalsState;
+      if (!st || !st.headers.length) return;
+      let rows = [...st.fullRows];
+      const q = (st.search || '').toLowerCase();
+      if (q) rows = rows.filter(r => r.some(c => (c ?? '').toLowerCase().includes(q)));
+      st.colFilters.forEach((f, i) => { if (f) rows = rows.filter(r => f.has(r[i] ?? '')); });
+      if (st.sortCol >= 0) {
+        rows.sort((a, b) => {
+          const av = a[st.sortCol] ?? '', bv = b[st.sortCol] ?? '';
+          const an = parseFloat(av), bn = parseFloat(bv);
+          if (!isNaN(an) && !isNaN(bn)) return (an - bn) * st.sortDir;
+          return ('' + av).localeCompare('' + bv) * st.sortDir;
+        });
+      }
+      const tbody = wrap.querySelector('table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
       rows.forEach(row => {
         const tr = document.createElement('tr');
         st.headers.forEach((_, i) => {
@@ -1353,10 +1578,153 @@
           td.title = row[i] ?? '';
           tr.appendChild(td);
         });
-        frag.appendChild(tr);
+        tbody.appendChild(tr);
       });
-      tbody.appendChild(frag);
+      const badge = wrap.querySelector('.signals-row-badge');
+      if (badge) badge.textContent = rows.length + ' / ' + st.fullRows.length + ' rows';
     }
+
+    function openDropdownForSignals(wrap, colIdx, thEl, evt) {
+      evt.stopPropagation();
+      ddLabel = '__signals__';
+      ddSignalsWrap = wrap;
+      ddColIdx = colIdx;
+      const st = wrap._signalsState;
+      const valSet = new Set(st.fullRows.map(r => r[colIdx] ?? ''));
+      ddAllValues = [...valSet].sort((a, b) => {
+        const an = parseFloat(a), bn = parseFloat(b);
+        return (!isNaN(an) && !isNaN(bn)) ? an - bn : ('' + a).localeCompare('' + b);
+      });
+      ddPending.checked = st.colFilters[colIdx] ? new Set(st.colFilters[colIdx]) : new Set(ddAllValues);
+      ddPending.sortDir = (st.sortCol === colIdx) ? st.sortDir : 0;
+      ddSearchEl.value = '';
+      renderDDList('');
+      updateDDSortBtns();
+      const rect = thEl.getBoundingClientRect();
+      dropdown.style.top = (rect.bottom + 2) + 'px';
+      dropdown.style.left = Math.min(rect.left, window.innerWidth - 228) + 'px';
+      dropdown.classList.add('open');
+      ddSearchEl.focus();
+    }
+
+    function updateSignalsHeaderUI(wrap) {
+      const st = wrap._signalsState;
+      if (!st) return;
+      wrap.querySelectorAll('table thead th').forEach((th, i) => {
+        const inner = th.querySelector('.th-inner');
+        if (!inner) return;
+        inner.className = 'th-inner' + (st.colFilters[i] ? ' filtered' : '');
+      });
+    }
+
+    function renderSignalsTable(container, tsvText) {
+      const wrap = container.querySelector('.signals-viewer-wrap') || container;
+      wrap.innerHTML = '';
+      try {
+        const { headers, rows } = parseTsv(tsvText);
+        if (!headers.length) {
+          wrap.innerHTML = '<span class="loading">No columns</span>';
+          return;
+        }
+        wrap._signalsState = {
+          search: '',
+          colFilters: headers.map(() => null),
+          fullRows: rows,
+          headers,
+          sortCol: -1,
+          sortDir: 1
+        };
+        const toolbar = document.createElement('div');
+        toolbar.className = 'signals-toolbar';
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'signals-search';
+        searchInput.placeholder = 'Search all columns…';
+        searchInput.addEventListener('input', () => {
+          wrap._signalsState.search = searchInput.value;
+          renderSignalsTableBody(wrap);
+        });
+        const badge = document.createElement('span');
+        badge.className = 'signals-row-badge';
+        badge.textContent = rows.length + ' / ' + rows.length + ' rows';
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'signals-clear-btn';
+        clearBtn.textContent = 'Clear filters';
+        clearBtn.addEventListener('click', () => {
+          const st = wrap._signalsState;
+          if (!st) return;
+          st.search = '';
+          st.colFilters = st.headers.map(() => null);
+          st.sortCol = -1;
+          searchInput.value = '';
+          updateSignalsHeaderUI(wrap);
+          renderSignalsTableBody(wrap);
+        });
+        toolbar.appendChild(searchInput);
+        toolbar.appendChild(badge);
+        toolbar.appendChild(clearBtn);
+        wrap.appendChild(toolbar);
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const thr = document.createElement('tr');
+        headers.forEach((h, i) => {
+          const th = document.createElement('th');
+          th.dataset.i = i;
+          th.innerHTML = `<div class="th-inner" data-i="${i}">
+      <span>${h.replace(/</g, '&lt;')}</span>
+      <span class="filter-dot"></span>
+    </div>`;
+          th.querySelector('.th-inner').addEventListener('click', e => openDropdownForSignals(wrap, i, th, e));
+          thr.appendChild(th);
+        });
+        thead.appendChild(thr);
+        table.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+        wrap.appendChild(table);
+        renderSignalsTableBody(wrap);
+      } catch (e) {
+        wrap.innerHTML = '<span class="error">' + (e.message || 'Failed to parse') + '</span>';
+      }
+    }
+
+    document.getElementById('tbody').addEventListener('click', e => {
+      const tr = e.target.closest('tr');
+      if (!tr || !tr.classList.contains('device-row')) return;
+      const refdes = tr.dataset.deviceRefdes;
+      if (!refdes) return;
+      const detailTr = tr.nextElementSibling;
+      if (!detailTr || !detailTr.classList.contains('signals-detail-row')) return;
+      // Only one signals list visible: collapse any other expanded one
+      document.querySelectorAll('tr.signals-detail-row.expanded').forEach(row => {
+        if (row !== detailTr) row.classList.remove('expanded');
+        row.previousElementSibling?.classList?.remove('signals-expanded');
+      });
+      detailTr.classList.toggle('expanded');
+      if (detailTr.classList.contains('expanded')) {
+        tr.classList.add('signals-expanded');
+      } else {
+        tr.classList.remove('signals-expanded');
+      }
+      if (!detailTr.classList.contains('expanded')) return;
+      const wrap = detailTr.querySelector('.signals-viewer-wrap');
+      const placeholder = wrap && wrap.querySelector('.loading');
+      if (!placeholder || placeholder.textContent !== 'Click row to load signals list') return;
+      wrap.innerHTML = '<span class="loading">Loading…</span>';
+      fetch('/api/signals-list?device_refdes=' + encodeURIComponent(refdes))
+        .then(r => {
+          if (!r.ok) throw new Error(r.status === 404 ? 'Signals list not found for this device' : r.statusText);
+          return r.text();
+        })
+        .then(tsv => {
+          renderSignalsTable(detailTr, tsv);
+        })
+        .catch(err => {
+          const w = detailTr.querySelector('.signals-viewer-wrap');
+          if (w) w.innerHTML = '<span class="error">' + (err.message || 'Load failed') + '</span>';
+        });
+    });
 
     // ---- Search ----
     document.getElementById('search-input').addEventListener('input', e => {
@@ -1648,6 +2016,20 @@
     function ddSort(dir) { ddPending.sortDir = dir; updateDDSortBtns(); }
 
     function ddApply() {
+      if (ddLabel === '__signals__' && ddSignalsWrap) {
+        const st = ddSignalsWrap._signalsState;
+        if (st) {
+          if (ddPending.sortDir !== 0) { st.sortCol = ddColIdx; st.sortDir = ddPending.sortDir; }
+          else if (st.sortCol === ddColIdx) { st.sortCol = -1; }
+          const allSel = ddAllValues.every(v => ddPending.checked.has(v));
+          st.colFilters[ddColIdx] = allSel ? null : new Set(ddPending.checked);
+          updateSignalsHeaderUI(ddSignalsWrap);
+          renderSignalsTableBody(ddSignalsWrap);
+        }
+        dropdown.classList.remove('open');
+        ddSignalsWrap = null;
+        return;
+      }
       const st = getState(ddLabel);
       if (ddPending.sortDir !== 0) { st.sortCol = ddColIdx; st.sortDir = ddPending.sortDir; }
       else if (st.sortCol === ddColIdx) { st.sortCol = -1; }
