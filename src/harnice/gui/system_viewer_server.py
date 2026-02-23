@@ -255,27 +255,21 @@ class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
             return
         try:
             base = os.path.abspath(fileio.dirpath("instance_data"))
+            # Ensure base ends with sep so commonpath can't match a sibling
+            # directory that shares a prefix (e.g. instance_data_evil vs instance_data)
+            base_with_sep = base if base.endswith(os.sep) else base + os.sep
             path = None
             for kind in ("device", "disconnect"):
                 candidate = os.path.join(
                     base, kind, refdes, f"{refdes}-signals_list.tsv"
                 )
                 resolved = os.path.abspath(candidate)
-                if os.path.commonpath([base, resolved]) != base:
+                # Reject anything that doesn't sit inside base
+                if not resolved.startswith(base_with_sep):
                     continue
                 if os.path.isfile(resolved):
                     path = resolved
                     break
-            if path is None:
-                self.send_response(404)
-                self.send_header("Content-Type", "text/plain; charset=utf-8")
-                self.end_headers()
-                self.wfile.write(
-                    f"signals list not found for device or disconnect {refdes}".encode(
-                        "utf-8"
-                    )
-                )
-                return
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
         except (TypeError, OSError) as e:
