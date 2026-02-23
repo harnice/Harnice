@@ -62,6 +62,7 @@ Instances lists are the single comprehensive source of truth for the product you
 | `project_editable_lib_modified` | a flag to indicate if the imported contents do not match the library's version (it's been locally modified) |
 | `lib_build_notes` | recommended build notes that come with the instance from the library |
 | `lib_tools` | recommended tools that come with the instance from the library |
+| `attributes_json` | if an instance is imported with an attributes json attached, it's added here |
 | `this_instance_mating_device_refdes` | if connector, refdes of the device it plugs into |
 | `this_instance_mating_device_connector` | if connector, name of the connector it plugs into |
 | `this_instance_mating_device_connector_mpn` | if connector, mpn of the connector it plugs into |
