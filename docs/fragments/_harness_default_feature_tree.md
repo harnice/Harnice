@@ -311,6 +311,12 @@
         artifact_id="bom-1",
     )
     feature_tree_utils.run_macro(
+        "tooling_list_exporter",
+        "harness_artifacts",
+        "https://github.com/harnice/harnice",
+        artifact_id="tool_list-1",
+    )
+    feature_tree_utils.run_macro(
         "standard_harnice_formboard",
         "harness_artifacts",
         "https://github.com/harnice/harnice",
