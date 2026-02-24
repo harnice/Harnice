@@ -1,3 +1,4 @@
+import ast
 import csv
 import os
 import inspect
@@ -83,24 +84,18 @@ COLUMNS = [
 
 
 def new_instance(instance_name, instance_data, ignore_duplicates=False):
-    """
-        New Instance
+    """Add a new instance to the instances list.
 
-    instances_list.new_instance(
-        instance_name,
-        instance_data,
-        ignore_duplicates=False
-    )
+    ## Usage
+    `new_instance(instance_name, instance_data, ignore_duplicates=False)`
 
-    Add a new instance to your instances list.
+    ## Args
+    - `instance_name`: String; must be unique within the list.
+    - `instance_data`: Dict of column names to values. May include `instance_name`; if present it must match the `instance_name` argument or the code will fail.
+    - `ignore_duplicates`: If True, does nothing when an instance with the same `instance_name` already exists. If False (default), raises an error on duplicate.
 
-        Args:
-        instance_name: string and must be unique within the list.
-        instance_data: dictionary of the columns you want to write to and their value. You may or may not include instance_name in this dict, though if you do and it doesn't match the argument, the code will fail.
-        ignore_duplicates: boolean: True will cause the line to pass silently if you try to add an instance with an instance_name that already exists. By default (false): if you do this, the code will raise an error if you try to add a duplicate instance_name.
-
-        Returns:
-            -1 if the instance was added successfully, otherwise raises an error
+    ## Returns
+    -1 on success. Raises on invalid input or duplicate (when `ignore_duplicates` is False).
     """
     if instance_name in ["", None]:
         raise ValueError(
@@ -168,6 +163,15 @@ _instances_lock = Lock()
 
 
 def modify(instance_name, instance_data):
+    """Update columns for an existing instance by name.
+
+    ## Args
+    - `instance_name`: The unique name of the instance to modify.
+    - `instance_data`: Dict of column names to new values. Only provided keys are updated; others are unchanged.
+
+    ## Raises
+    ValueError if no instance with `instance_name` exists.
+    """
     with _instances_lock:
         path = fileio.path("instances list")
 
@@ -223,6 +227,11 @@ def modify(instance_name, instance_data):
 
 
 def remove_instance(instance_to_delete):
+    """Remove one instance from the instances list.
+
+    ## Args
+    - `instance_to_delete`: Instance row dict (or any dict) whose `instance_name` key identifies the instance to remove. Matching is done by `instance_name` only.
+    """
     path = fileio.path("instances list")
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -241,6 +250,7 @@ def remove_instance(instance_to_delete):
 
 
 def new():
+    """Create a new empty instances list file with only the standard header (COLUMNS). Overwrites existing file if present."""
     with open(fileio.path("instances list"), "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
         writer.writeheader()
@@ -248,6 +258,13 @@ def new():
 
 
 def assign_bom_line_numbers():
+    """Assign sequential BOM line numbers to instances that have `bom_line_number` set to "True".
+
+    Groups by MPN and assigns the same line number to all instances sharing an MPN. Requires every such instance to have a non-empty `mpn`. Line numbers are assigned in order of first occurrence of each MPN.
+
+    ## Raises
+    ValueError if any instance marked for BOM has an empty `mpn`.
+    """
     bom = []
     for instance in fileio.read_tsv("instances list"):
         if instance.get("bom_line_number") == "True":
@@ -269,12 +286,43 @@ def assign_bom_line_numbers():
 
 
 def attribute_of(target_instance, attribute):
+    """Return the value of one column for a single instance.
+
+        String values that look like Python literals (list or dict, e.g. starting with `[` or `{`) are parsed with `ast.literal_eval` and the parsed value is returned; otherwise the raw string is returned.
+
+    ## Args
+    - `target_instance`: The `instance_name` of the instance to look up.
+    - `attribute`: The column name to read (e.g. `"mpn"`, `"net"`).
+
+    ## Returns
+    The value of that column for the matching instance, or None if not found or attribute missing. List/dict-like strings are returned as list/dict.
+    """
     for instance in fileio.read_tsv("instances list"):
         if instance.get("instance_name") == target_instance:
-            return instance.get(attribute)
+            raw = instance.get(attribute)
+            if isinstance(raw, str) and raw.strip():
+                s = raw.strip()
+                if s.startswith("[") or s.startswith("{"):
+                    try:
+                        return ast.literal_eval(raw)
+                    except (ValueError, SyntaxError):
+                        pass
+            return raw
 
 
 def instance_in_connector_group_with_item_type(connector_group, item_type):
+    """Return the single instance in a connector group with the given item type.
+
+    ## Args
+    - `connector_group`: The `connector_group` value to match.
+    - `item_type`: The `item_type` value to match (e.g. connector, backshell).
+
+    ## Returns
+    The matching instance row dict, or 0 if no match.
+
+    ## Raises
+    ValueError if `connector_group` or `item_type` is blank, or if more than one instance matches.
+    """
     if connector_group in ["", None]:
         raise ValueError("Connector group is blank")
     if item_type in ["", None]:
@@ -296,9 +344,10 @@ def instance_in_connector_group_with_item_type(connector_group, item_type):
 
 
 def _get_call_chain_str():
-    """
-    Returns the call chain as a readable string:
-    filename:line in function -> filename:line in function ...
+    """Return the current call chain as a single readable string.
+
+    ## Returns
+    A string of the form `filename:line in function() -> filename:line in function() ...` for the current stack (excluding this function).
     """
     stack = inspect.stack()
     chain_parts = []
@@ -311,6 +360,14 @@ def _get_call_chain_str():
 
 
 def list_of_uniques(attribute):
+    """Return a list of unique non-empty values for one column across all instances.
+
+    ## Args
+    - `attribute`: The column name to collect (e.g. `"net"`, `"item_type"`).
+
+    ## Returns
+    List of unique values; blanks and None are omitted. Order follows first occurrence in the instances list.
+    """
     output = []
     for instance in fileio.read_tsv("instances list"):
         if instance.get(attribute) not in output:

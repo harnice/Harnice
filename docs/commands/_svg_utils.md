@@ -20,12 +20,14 @@ from harnice.lists import svg_utils
     )
     ```
     ### Arguments
+    
     - `layout_dict` expects a dictionary describing in which direction the table is built
     - `format_dict` expects a dictionary containing a description of how you want your table to appear.
     - `columns_list` expects a list containing your column header content, width, and formatting rules.
     - `content_list` expects a list containing what is actually presented on your table.
     
     ### Returns
+    
     - A string of SVG primatives in xml format intended to look like a table. 
     
     ---
@@ -45,6 +47,7 @@ from harnice.lists import svg_utils
     ### Origin Corner
     
     The origin is defined to be at one of the four corners of the first row `content[0]`. Valid options:
+    
     - `top-left`
     - `top-right`
     - `bottom-left`
@@ -52,6 +55,7 @@ from harnice.lists import svg_utils
     
     ### Build Direction 
     When building a table, you can choose to build rows downwards (below the previous, positive y in svg coords) or upwards (above the previous, negative y in svg coords). The direction property defines this:
+    
     - `down` → rows appear below the previous
     - `up` → new rows appear above the previous
     
@@ -79,10 +83,12 @@ from harnice.lists import svg_utils
         },
     }
     ```
+    
     The only reserved key is `globals` which can optionally be used to define fallbacks for any row that does not have a style explicitly called out.
     
     ### Format Arguments
     Any of the following keys can be defined in any of the format dictionaries. 
+    
     - `font_size` *(number, default=12)* Default font size (px) for all text
     - `font_family` *(string, default=helvetica)* Default font family (e.g., "Arial", "Helvetica")
     - `font_weight`*(`BIU`, default=None)* Add each character for bold, italic, or underline
@@ -100,6 +106,7 @@ from harnice.lists import svg_utils
     If something is defined at the row level, it takes precedent over some parameter defined at the column level, which takes precedent over a definition in key `globals`, if defined. If something is not defined at all, the above defaults will apply. 
     
     ### Color Standard
+    
     - Default color: **black**
     - Accepted formats:
     - Named SVG colors https://www.w3.org/TR/SVG11/types.html#ColorKeywords
@@ -132,6 +139,7 @@ from harnice.lists import svg_utils
     
     ### Column Arguments
     Each field must have the following required keys:
+    
     - `name` *(string)* Used to identify a column when defining contents later. Must be unique.
     - `width` *(number)* Self-explanatory (px)
     
@@ -191,6 +199,7 @@ from harnice.lists import svg_utils
     `columns` is a dictionary that contains the actual content you want to appear in each column. The name of each key at this level must match one of the keys in the `columns` argument. It is agnostic to order, and by leaving a key out, simply nothing will appear in that cell. Existing formatting (cell fill and border) will still apply.
     
     The value of each column key may take one of the following forms:
+    
     - string or number → single-line text, prints directly
     - list[str] → multi-line text where the 0th element prints highest within the cell. Use format key `line_spacing` as needed. 
     - dict → custom 
