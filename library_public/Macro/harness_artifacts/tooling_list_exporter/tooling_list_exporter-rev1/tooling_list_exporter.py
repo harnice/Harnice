@@ -83,8 +83,8 @@ for instance in instances:
 
 # ============= BUILD TABLE ===========================================================
 layout_dict = {
-    "origin_corner": "top-left",
-    "build_direction": "down",
+    "origin_corner": "bottom-left",
+    "build_direction": "up",
 }
 
 format_dict = {
