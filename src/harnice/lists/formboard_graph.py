@@ -2,7 +2,34 @@ import csv
 import os
 from harnice import fileio
 
-COLUMNS = [
+AVAILABLE_NETWORK: {
+    "segments": [
+        {
+            "segment_id": "name",
+            "location_at_end_a": [x,y,z],
+            "location_at_end_b": [x,y,z],
+            "spline_control_points": [ # from A to B. if this section exists, it must have at least one control point.
+            # tangent points and pass-throughs should be defined as entirely different segments that meet up
+                [x,y,z],
+                [x,y,z]
+            ],
+            "chosen": True
+        }
+    ],
+    "nodes": [ #optional. this section allows you to specify names or rotations of points in space if you want to
+        {
+            "node_id": "name",
+            "location": [x,y,z],
+            "alpha": 0, #optional
+            "beta": 0, #optional 
+            "gamma": 0, #optional
+            "chosen": True
+        }
+    ]
+}
+
+
+FLATTENED_COLUMNS = [
     "segment_id", # the unique name of the segment that this line describes
     "node_at_end_a", # one of two ends of this segment
     "node_at_end_b", # one of two ends of this segment
@@ -12,8 +39,6 @@ COLUMNS = [
     "diameter", # what is the diameter of this segment
 ]
 
-#TODO; https://github.com/harnice/Harnice/issues/610
-# move angle and diameter out of the formboard definition. this list should only describe the part, not the visualization of the part. 
 
 
 def new():

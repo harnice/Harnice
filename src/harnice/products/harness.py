@@ -120,9 +120,9 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
         f"{state.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
         f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
-        "interactive_files": {
-            f"{state.partnumber('pn-rev')}.formboard_graph_definition.tsv": "formboard graph definition",
-        },
+        f"{state.partnumber('pn-rev')}.flattened_network.tsv": "flattened network",
+        f"{state.partnumber('pn-rev')}.available_network.json": "available network",
+        f"{state.partnumber('pn-rev')}.chosen_network.json": "chosen network",
     }
 
 

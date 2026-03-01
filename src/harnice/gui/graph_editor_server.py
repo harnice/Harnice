@@ -1,9 +1,10 @@
 """
-Minimal HTTP server for the formboard graph editor.
-Serves the graph editor HTML and GET/POST /api/tsv for the revision's formboard graph definition.
-Must be run after fileio state is set (e.g. from CLI in a revision directory).
+graph_server.py
+HTTP server for the formboard network editor.
+Serves the editor HTML and provides REST API for reading/writing network files.
 """
 
+import csv
 import http.server
 import json
 import os
@@ -13,133 +14,178 @@ from pathlib import Path
 
 from harnice import fileio
 
-# Default TSV header when file does not exist (matches formboard_graph.COLUMNS)
-_TSV_HEADER = "segment_id\tnode_at_end_a\tnode_at_end_b\tlength\tlength_tolerance\tangle\tdiameter\n"
+# ---------------------------------------------------------------------------
+# Path helpers
+# ---------------------------------------------------------------------------
 
+def _available_path():   return Path(fileio.path("available network"))
+def _chosen_list_path(): return Path(fileio.path("chosen entity list"))
+def _flattened_path():   return Path(fileio.path("flattened network"))
+def _chosen_net_path():  return Path(fileio.path("chosen network"))
+def _editor_html_path(): return Path(__file__).resolve().parent / "graph_editor.html"
 
-def _pn_and_rev_from_path(rev_folder):
-    """
-    Return (part_number, rev) for display from a revision folder path,
-    e.g. ("MyPart", "rev1"). Returns (None, None) if path doesn't match.
-    Same logic as launcher._pn_and_rev_from_path / product_type derivation.
-    """
-    rev_folder = os.path.normpath(rev_folder)
-    part_dir = os.path.dirname(rev_folder)
-    rev_folder_name = os.path.basename(rev_folder)
-    part_dir_name = os.path.basename(part_dir)
-    if not rev_folder_name.startswith(f"{part_dir_name}-rev"):
-        return (None, None)
-    rev_str = rev_folder_name.split("-rev")[-1]
+def _pn_and_rev():
+    rev_folder = os.path.normpath(fileio.rev_directory())
+    part_dir   = os.path.dirname(rev_folder)
+    rev_name   = os.path.basename(rev_folder)
+    part_name  = os.path.basename(part_dir)
+    if not rev_name.startswith(f"{part_name}-rev"):
+        return "", ""
+    rev_str = rev_name.split("-rev")[-1]
     if not rev_str.isdigit():
-        return (None, None)
-    return (part_dir_name, f"rev{rev_str}")
+        return "", ""
+    return part_name, f"rev{rev_str}"
 
+# ---------------------------------------------------------------------------
+# File I/O helpers
+# ---------------------------------------------------------------------------
 
-def _editor_html_path():
-    return Path(__file__).resolve().parent / "graph_editor.html"
+def _read_json(path: Path, default):
+    if path.exists():
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return default
 
+def _write_json(path: Path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
 
-def _tsv_path():
-    return fileio.path("formboard graph definition")
+def _read_csv(path: Path):
+    if not path.exists():
+        return [], []
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        return reader.fieldnames or [], list(reader)
 
+def _write_csv(path: Path, fieldnames, rows):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
 
-class GraphEditorHandler(http.server.BaseHTTPRequestHandler):
+# ---------------------------------------------------------------------------
+# Handler
+# ---------------------------------------------------------------------------
+
+class NetworkEditorHandler(http.server.BaseHTTPRequestHandler):
+
     def log_message(self, format, *args):
-        # Quiet by default; override to reduce noise
-        pass
+        pass  # suppress access log noise
 
     def do_GET(self):
-        if self.path == "/" or self.path == "/index.html":
-            self._serve_editor()
-        elif self.path == "/api/tsv":
-            self._serve_tsv()
-        elif self.path == "/api/info":
-            self._serve_info()
-        elif self.path == "/api/close":
-            self._close_server()
+        routes = {
+            "/":                  self._serve_html,
+            "/index.html":        self._serve_html,
+            "/api/info":          self._serve_info,
+            "/api/available":     self._serve_available,
+            "/api/chosen_list":   self._serve_chosen_list,
+            "/api/chosen_net":    self._serve_chosen_net,
+            "/api/flattened":     self._serve_flattened,
+        }
+        handler = routes.get(self.path)
+        if handler:
+            handler()
         else:
             self.send_error(404)
 
     def do_POST(self):
-        if self.path == "/api/tsv":
-            self._save_tsv()
-        elif self.path == "/api/close":
-            self._close_server()
+        routes = {
+            "/api/available":   self._save_available,
+            "/api/chosen_list": self._save_chosen_list,
+            "/api/flattened":   self._save_flattened,
+            "/api/close":       self._close,
+        }
+        handler = routes.get(self.path)
+        if handler:
+            handler()
         else:
             self.send_error(404)
 
-    def _serve_editor(self):
-        html_path = _editor_html_path()
-        if not html_path.exists():
-            self.send_error(500, "Graph editor HTML not found")
+    # ---- GET handlers ----
+
+    def _serve_html(self):
+        p = _editor_html_path()
+        if not p.exists():
+            self.send_error(500, "graph_editor.html not found")
             return
-        with open(html_path, "rb") as f:
-            data = f.read()
+        self._send_bytes(p.read_bytes(), "text/html; charset=utf-8")
+
+    def _serve_info(self):
+        pn, rev = _pn_and_rev()
+        self._send_json({"part_number": pn, "rev": rev})
+
+    def _serve_available(self):
+        data = _read_json(_available_path(), {"segments": [], "nodes": []})
+        self._send_json(data)
+
+    def _serve_chosen_list(self):
+        data = _read_json(_chosen_list_path(), [])
+        self._send_json(data)
+
+    def _serve_chosen_net(self):
+        data = _read_json(_chosen_net_path(), None)
+        self._send_json(data)  # null if pipeline hasn't run
+
+    def _serve_flattened(self):
+        fieldnames, rows = _read_csv(_flattened_path())
+        self._send_json({"fieldnames": fieldnames, "rows": rows})
+
+    # ---- POST handlers ----
+
+    def _save_available(self):
+        data = self._read_body_json()
+        _write_json(_available_path(), data)
+        self._send_ok()
+
+    def _save_chosen_list(self):
+        data = self._read_body_json()
+        _write_json(_chosen_list_path(), data)
+        self._send_ok()
+
+    def _save_flattened(self):
+        data = self._read_body_json()
+        fieldnames = data.get("fieldnames", [])
+        rows = data.get("rows", [])
+        _write_csv(_flattened_path(), fieldnames, rows)
+        self._send_ok()
+
+    def _close(self):
+        self._send_ok()
+        threading.Thread(target=self.server.shutdown, daemon=True).start()
+
+    # ---- Helpers ----
+
+    def _read_body_json(self):
+        length = int(self.headers.get("Content-Length", 0))
+        return json.loads(self.rfile.read(length).decode("utf-8"))
+
+    def _send_json(self, data):
+        body = json.dumps(data).encode("utf-8")
+        self._send_bytes(body, "application/json; charset=utf-8")
+
+    def _send_bytes(self, data: bytes, content_type: str):
         self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
 
-    def _serve_info(self):
-        rev_folder = fileio.rev_directory()
-        part_number, rev = _pn_and_rev_from_path(rev_folder)
-        part_number = part_number if part_number is not None else ""
-        rev = rev if rev is not None else ""
-        body = json.dumps({"part_number": part_number, "rev": rev}).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def _serve_tsv(self):
-        path = _tsv_path()
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                data = f.read()
-        else:
-            data = _TSV_HEADER
-        body = data.encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "text/tab-separated-values; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def _save_tsv(self):
-        content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length).decode("utf-8")
-        path = _tsv_path()
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8", newline="") as f:
-            f.write(body)
+    def _send_ok(self):
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
 
-    def _close_server(self):
-        """Send 200 then shut down the server so serve_forever() returns."""
-        self.send_response(200)
-        self.send_header("Content-Length", "0")
-        self.end_headers()
-
-        def shutdown():
-            self.server.shutdown()
-
-        threading.Thread(target=shutdown, daemon=True).start()
-
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 
 def run_server(port=0, open_browser=True):
-    """
-    Run the graph editor server and optionally open the default browser.
-    Uses port 0 to pick an ephemeral port; returns the actual port.
-    """
-    server = http.server.HTTPServer(("127.0.0.1", port), GraphEditorHandler)
-    actual_port = server.server_address[1]
-    url = f"http://127.0.0.1:{actual_port}/"
+    server = http.server.HTTPServer(("127.0.0.1", port), NetworkEditorHandler)
+    port = server.server_address[1]
+    url = f"http://127.0.0.1:{port}/"
     if open_browser:
         webbrowser.open(url)
-    print(f"Graph editor: {url}")
-    print("Press Ctrl+C to stop the server.")
+    print(f"Network editor: {url}  (Ctrl+C to stop)")
     server.serve_forever()

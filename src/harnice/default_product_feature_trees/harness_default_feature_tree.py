@@ -1,3 +1,4 @@
+from doctest import run_docstring_examples
 import os
 from harnice import fileio, state
 from harnice.utils import (
@@ -7,7 +8,7 @@ from harnice.utils import (
     library_utils,
     feature_tree_utils,
 )
-from harnice.lists import instances_list, post_harness_instances_list, rev_history
+from harnice.lists import instances_list, post_harness_instances_list, rev_history, flattened_network, chosen_network
 
 {build_macro_block}
 
@@ -87,7 +88,41 @@ for instance in fileio.read_tsv("instances list"):
 # ===========================================================================
 #                  PROCESS HARNESS LAYOUT GRAPH
 # ===========================================================================
+
+available_network.validate()
+
+# --- build the chosen network
+chosen = chosen_network.build_chosen_network(
+    available_path=fileio.path("available network"),
+    chosen_segment_ids=["S1", "S2", "S3"],
+    chosen_path=fileio.path("chosen network"),
+)
+
+# --- modify the chosen network with build rules
+# example: rename an auto-generated node to match a connector
+for node in chosen.nodes:
+    if node.location == (0.0, 0.0, 0.0):
+        node.node_id = "X1.connector_node"
+
+# example: add 5% service loop to a segment
+for segment in chosen.segments:
+    if segment.segment_id == "S2":
+        segment.length *= 1.05
+
+# write modifications back to disk
+chosen_network.write_chosen_network(chosen, fileio.path("chosen network"))
+
+# --- build the flattened network
+flattened_network.build_flattened_network(
+    chosen_path=fileio.path("chosen network"),
+    flattened_path=fileio.path("flattened network"),
+)
+
 formboard_utils.validate_nodes()
+
+# ===========================================================================
+#                  ASSING CABLES AND CONDUCTORS
+# ===========================================================================
 
 instances = fileio.read_tsv("instances list")
 for instance in instances:
