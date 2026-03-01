@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMenu,
     QLabel,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QObject
 from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPixmap, QIcon
@@ -595,13 +596,21 @@ class HarniceGUI(QWidget):
         Launch the formboard graph definition editor for the given harness revision.
         Runs in a subprocess so the launcher stays responsive.
         """
-        subprocess.Popen(
-            [sys.executable, "-m", "harnice", "--graph-editor"],
-            cwd=revision_path,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        try:
+            subprocess.Popen(
+                [sys.executable, "-m", "harnice", "--graph-editor"],
+                cwd=revision_path,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except OSError as e:
+            # e.g. python not found; show feedback so user knows the click did something
+            QMessageBox.warning(
+                self,
+                "Network editor",
+                f"Could not start the network editor: {e}",
+            )
 
     def launch_system_viewer(self, revision_path):
         """
