@@ -88,7 +88,6 @@ nav:
     - Harnice Libraries: commands/_library_utils.md
     - Manipulating Circuits: commands/_circuits_utils.md
     - Feature Tree Utilities: commands/_feature_tree_utils.md
-    - Formboard Utilities: commands/_formboard_utils.md
     - Working with Harnice Notes: commands/_note_utils.md
     - System Utilities: commands/_system_utils.md
     - Appearance Utilities: commands/_appearance.md

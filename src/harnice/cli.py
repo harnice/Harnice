@@ -162,31 +162,20 @@ def main():
 def _run_graph_editor():
     """Launch the formboard graph editor (must be run from a revision that has a formboard graph)."""
     fileio.verify_revision_structure()
-    item_type = rev_history.info(field="product")
+    product_type = rev_history.info(field="product")
 
     try:
         product_module = __import__(
-            f"harnice.products.{item_type}", fromlist=[item_type]
+            f"harnice.products.{product_type}", fromlist=[product_type]
         )
     except ModuleNotFoundError:
-        sys.exit(f"Unknown product: '{item_type}'")
+        sys.exit(f"Unknown product: '{product_type}'")
 
     if hasattr(product_module, "file_structure"):
         structure = product_module.file_structure()
         state.set_file_structure(structure)
     else:
-        sys.exit(f"Product '{item_type}' must define file_structure()")
-
-    try:
-        fileio.path("formboard graph definition")
-    except TypeError:
-        sys.exit(
-            f"Product '{item_type}' does not have a formboard graph definition. "
-            "The graph editor is only available for products that define one (e.g. harness)."
-        )
-
-    if hasattr(product_module, "generate_structure"):
-        product_module.generate_structure()
+        sys.exit(f"Product '{product_type}' must define file_structure()")
 
     from harnice.gui.graph_editor_server import run_server
 

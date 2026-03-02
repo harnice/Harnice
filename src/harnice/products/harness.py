@@ -118,19 +118,15 @@ def file_structure():
     return {
         f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
         f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
-        f"{state.partnumber('pn-rev')}-formboard_graph_definition.png": "formboard graph definition png",
         f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
-        f"{state.partnumber('pn-rev')}.flattened_network.tsv": "flattened network",
-        f"{state.partnumber('pn-rev')}.available_network.json": "available network",
-        f"{state.partnumber('pn-rev')}.chosen_network.json": "chosen network",
+        f"{state.partnumber('pn-rev')}-flattened_network.tsv": "flattened network",
+        f"{state.partnumber('pn-rev')}-available_network.json": "available network",
+        f"{state.partnumber('pn-rev')}-chosen_network.json": "chosen network",
     }
 
 
 def generate_structure():
-    os.makedirs(
-        fileio.dirpath("interactive_files", structure_dict=file_structure()),
-        exist_ok=True,
-    )
+    pass
 
 
 def render():

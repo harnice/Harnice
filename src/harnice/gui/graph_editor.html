@@ -6,8 +6,6 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:sans-serif;background:#1a1a1a;color:#eee;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-
-/* ---- Top bar ---- */
 #topbar{display:flex;align-items:center;gap:12px;padding:6px 14px;background:#252525;border-bottom:1px solid #404040;flex-shrink:0}
 #topbar h1{font-size:13px;color:#bbb;font-weight:normal;margin-right:8px}
 #part-rev{font-size:11px;color:#777}
@@ -15,13 +13,9 @@ body{font-family:sans-serif;background:#1a1a1a;color:#eee;height:100vh;display:f
 .tab{padding:5px 16px;border-radius:5px 5px 0 0;cursor:pointer;font-size:12px;background:#333;border:1px solid #404040;border-bottom:none;color:#aaa;transition:background .15s}
 .tab.active{background:#1a1a1a;color:#eee;border-color:#666}
 .tab:hover:not(.active){background:#3a3a3a}
-
-/* ---- Main area ---- */
 #main{flex:1;display:flex;overflow:hidden}
 .panel{display:none;flex:1;overflow:hidden}
 .panel.active{display:flex}
-
-/* ---- Sidebar ---- */
 .sidebar{width:260px;min-width:260px;background:#252525;border-right:1px solid #404040;display:flex;flex-direction:column;gap:8px;padding:10px;overflow-y:auto}
 .section{background:#2e2e2e;border-radius:6px;padding:9px}
 .section h2{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
@@ -31,36 +25,22 @@ button.active-tool{background:#b8860b;color:#fff}
 button.danger{background:#5a2020}
 button.danger:hover{background:#6e2828}
 label{font-size:11px;color:#888;display:block;margin-top:6px}
-input,select{width:100%;padding:4px 7px;border-radius:4px;background:#1a1a1a;border:1px solid #404040;color:#eee;font-size:12px;margin-top:2px}
-input:focus,select:focus{outline:none;border-color:#888}
+input{width:100%;padding:4px 7px;border-radius:4px;background:#1a1a1a;border:1px solid #404040;color:#eee;font-size:12px;margin-top:2px}
+input:focus{outline:none;border-color:#888}
 .row{display:flex;gap:5px}
 .row>*{flex:1}
 #autosave-indicator{font-size:10px;color:#555;text-align:right;padding:2px 4px}
-
-/* ---- 3D viewport ---- */
 .viewport{flex:1;position:relative;overflow:hidden}
-canvas.three{width:100%;height:100%;display:block;outline:none}
-
-/* ---- View cube ---- */
-#viewcube-av,#viewcube-ch{position:absolute;bottom:12px;right:12px;width:90px;height:90px;pointer-events:none}
-#viewcube-av canvas,#viewcube-ch canvas{width:90px;height:90px}
-.view-btns{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:3px}
-.view-btns button{width:auto;padding:3px 8px;font-size:11px;background:rgba(40,40,40,.85);border:1px solid #555}
-.view-btns button:hover{background:rgba(80,80,80,.9)}
-
-/* ---- Flattened 2D ---- */
+.viewcube-wrap{position:absolute;top:12px;right:12px;width:84px;z-index:10;}
+.viewcube-wrap canvas{display:block;cursor:pointer;}
 #flat-wrap{flex:1;position:relative;overflow:hidden}
 #flat-svg{width:100%;height:100%;display:block;cursor:default}
-#flat-sidebar .read-only-val{font-size:12px;color:#ccc;padding:3px 0 0 2px;display:block}
-
-/* ---- Props panel ---- */
-#props-av,#props-ch,#props-flat{display:none}
+.read-only-val{font-size:12px;color:#ccc;padding:3px 0 0 2px;display:block}
+#props-av,#props-ch{display:none}
 .props-visible{display:block !important}
 </style>
 </head>
 <body>
-
-<!-- TOP BAR -->
 <div id="topbar">
   <h1>Harnice Network Editor</h1>
   <span id="part-rev"></span>
@@ -71,1054 +51,802 @@ canvas.three{width:100%;height:100%;display:block;outline:none}
   </div>
   <span id="autosave-indicator">●</span>
 </div>
-
-<!-- MAIN -->
 <div id="main">
-
-  <!-- ===== AVAILABLE TAB ===== -->
+  <!-- AVAILABLE -->
   <div class="panel active" id="panel-available">
-    <div class="sidebar" id="av-sidebar">
+    <div class="sidebar">
       <div class="section">
         <h2>Tools</h2>
-        <button id="btn-av-select"  onclick="avSetTool('select')" class="active-tool">▶ Select</button>
+        <button id="btn-av-select" onclick="avSetTool('select')" class="active-tool">▶ Select</button>
         <button id="btn-av-addnode" onclick="avSetTool('add-node')">＋ Add Node</button>
-        <button id="btn-av-addseg"  onclick="avSetTool('add-seg')">⟶ Add Segment</button>
-        <button id="btn-av-delete"  onclick="avSetTool('delete')">✕ Delete</button>
+        <button id="btn-av-addseg" onclick="avSetTool('add-seg')">⟶ Add Segment</button>
+        <button id="btn-av-delete" onclick="avSetTool('delete')">✕ Delete</button>
       </div>
       <div class="section" id="props-av">
         <h2 id="props-av-title">Properties</h2>
         <div id="props-av-content"></div>
         <button class="danger" style="margin-top:8px" onclick="avDeleteSelected()">Delete</button>
       </div>
-      <div class="section">
-        <h2>View</h2>
-        <div class="row">
-          <button onclick="avFitView()">Fit</button>
-        </div>
-      </div>
+      <div class="section"><h2>View</h2><button onclick="avFitView()">Fit View</button></div>
     </div>
     <div class="viewport" id="av-viewport">
-      <canvas id="av-canvas" tabindex="0"></canvas>
-      <div class="view-btns" id="av-view-btns">
-        <button onclick="avSetView('top')">Top</button>
-        <button onclick="avSetView('bottom')">Bottom</button>
-        <button onclick="avSetView('front')">Front</button>
-        <button onclick="avSetView('back')">Back</button>
-        <button onclick="avSetView('right')">Right</button>
-        <button onclick="avSetView('left')">Left</button>
-        <button onclick="avSetView('iso')">Iso</button>
+      <canvas id="av-canvas" tabindex="0" style="width:100%;height:100%;display:block"></canvas>
+      <div class="viewcube-wrap">
+        <canvas id="av-cube-canvas" width="84" height="84"></canvas>
+
       </div>
-      <canvas id="av-cube-canvas" style="position:absolute;bottom:12px;right:12px;width:90px;height:90px;pointer-events:none"></canvas>
     </div>
   </div>
-
-  <!-- ===== CHOSEN TAB ===== -->
+  <!-- CHOSEN -->
   <div class="panel" id="panel-chosen">
-    <div class="sidebar" id="ch-sidebar">
+    <div class="sidebar">
       <div class="section">
         <h2>Instructions</h2>
-        <p style="font-size:11px;color:#888;line-height:1.5">Click a segment to toggle chosen/unchosen.<br>Yellow = chosen. Gray = not chosen.<br>Red nodes from last pipeline run.</p>
+        <p style="font-size:11px;color:#888;line-height:1.6">Click a segment to toggle.<br>
+        <span style="color:#d4a017">■</span> Chosen &nbsp;<span style="color:#555">■</span> Not chosen<br>
+        <span style="color:#c73652">●</span> Resolved nodes</p>
       </div>
       <div class="section" id="props-ch">
         <h2 id="props-ch-title">Selection</h2>
         <div id="props-ch-content"></div>
       </div>
-      <div class="section">
-        <h2>View</h2>
-        <div class="row">
-          <button onclick="chFitView()">Fit</button>
-        </div>
-      </div>
+      <div class="section"><h2>View</h2><button onclick="chFitView()">Fit View</button></div>
     </div>
     <div class="viewport" id="ch-viewport">
-      <canvas id="ch-canvas" tabindex="0"></canvas>
-      <div class="view-btns">
-        <button onclick="chSetView('top')">Top</button>
-        <button onclick="chSetView('bottom')">Bottom</button>
-        <button onclick="chSetView('front')">Front</button>
-        <button onclick="chSetView('back')">Back</button>
-        <button onclick="chSetView('right')">Right</button>
-        <button onclick="chSetView('left')">Left</button>
-        <button onclick="chSetView('iso')">Iso</button>
+      <canvas id="ch-canvas" tabindex="0" style="width:100%;height:100%;display:block"></canvas>
+      <div class="viewcube-wrap">
+        <canvas id="ch-cube-canvas" width="84" height="84"></canvas>
+
       </div>
-      <canvas id="ch-cube-canvas" style="position:absolute;bottom:12px;right:12px;width:90px;height:90px;pointer-events:none"></canvas>
     </div>
   </div>
-
-  <!-- ===== FLATTENED TAB ===== -->
+  <!-- FLATTENED -->
   <div class="panel" id="panel-flattened">
-    <div class="sidebar" id="flat-sidebar">
+    <div class="sidebar">
       <div class="section">
         <h2>Segment</h2>
-        <div id="props-flat">
-          <label>ID</label><span class="read-only-val" id="flat-prop-id">—</span>
-          <label>Node A</label><span class="read-only-val" id="flat-prop-na">—</span>
-          <label>Node B</label><span class="read-only-val" id="flat-prop-nb">—</span>
-          <label>Length</label><span class="read-only-val" id="flat-prop-len">—</span>
-          <label>Angle (°)</label>
-          <input id="flat-prop-angle" type="number" min="0" max="360" step="1" oninput="flatAngleChanged(this.value)">
-        </div>
-        <p id="flat-no-sel" style="font-size:11px;color:#666">Click a segment to edit its angle.</p>
+        <label>ID</label><span class="read-only-val" id="flat-prop-id">—</span>
+        <label>Node A</label><span class="read-only-val" id="flat-prop-na">—</span>
+        <label>Node B</label><span class="read-only-val" id="flat-prop-nb">—</span>
+        <label>Length</label><span class="read-only-val" id="flat-prop-len">—</span>
+        <label>Angle (°)</label>
+        <input id="flat-prop-angle" type="number" min="0" max="360" step="1" oninput="flatAngleChanged(this.value)">
+        <p id="flat-no-sel" style="font-size:11px;color:#666;margin-top:6px">Click a segment to edit its angle.</p>
       </div>
-      <div class="section">
-        <h2>View</h2>
-        <button onclick="flatFitView()">Fit</button>
-      </div>
+      <div class="section"><h2>View</h2><button onclick="flatFitView()">Fit View</button></div>
     </div>
-    <div id="flat-wrap">
-      <svg id="flat-svg"></svg>
-    </div>
+    <div id="flat-wrap"><svg id="flat-svg"></svg></div>
   </div>
-
-</div><!-- /main -->
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 'use strict';
 
-// ============================================================
-//  GLOBALS
-// ============================================================
-const AUTOSAVE_MS = 3000;
-const YELLOW = 0xd4a017;
-const RED    = 0xc73652;
-const GRAY   = 0x555555;
-const WHITE  = 0xffffff;
-const GREEN  = 0x44bb44;
+// ── Constants ─────────────────────────────────────────────────────────────────
+var C_YELLOW=0xd4a017, C_RED=0xc73652, C_GRAY=0x4a4a4a, C_WHITE=0xffffff;
+var AUTOSAVE_MS=3000;
 
-let currentTab = 'available';
-let autosaveTimers = {available: null, chosen: null, flattened: null};
-let dirty = {available: false, chosen: false, flattened: false};
+// ── State ─────────────────────────────────────────────────────────────────────
+var dirty={available:false,chosen:false,flattened:false};
+var saveTimers={};
+var currentTab='available';
+var avData={segments:[],nodes:[]};
+var chosenList=[], chosenNetData=null;
+var flatData={fieldnames:[],rows:[]};
+var avSelected=null, avTool='select', avConnectStart=null;
+var avArrows=[], avDragNode=null, avDragAxis=null, avDragStartMouse=null, avDragStartLoc=null;
+var flatPan={x:400,y:300}, flatScale=1, flatIsPanning=false, flatPanStart={x:0,y:0}, flatSelected=null;
 
-// ---- Available network state ----
-let avData = {segments: [], nodes: []};  // mirrors available_network.json
-let avSelected = null;   // {type:'node'|'segment', id}
-let avTool = 'select';
-let avConnectStart = null;
+var avRenderer, avScene, avCamera, avOrbit, avCube, avNodeMeshes={}, avSegLines={}, avRay;
+var chRenderer, chScene, chCamera, chOrbit, chCube, chSegLines={}, chNodeMeshes={}, chRay;
 
-// ---- Chosen state ----
-let chosenList = [];       // array of segment_ids
-let chosenNetData = null;  // chosen_network.json (read-only)
-
-// ---- Flattened state ----
-let flatData = {fieldnames: [], rows: []};
-let flatSelected = null;   // row index
-
-// ============================================================
-//  AUTOSAVE INDICATOR
-// ============================================================
-function markDirty(tab) {
-  dirty[tab] = true;
-  document.getElementById('autosave-indicator').style.color = '#b8860b';
-  clearTimeout(autosaveTimers[tab]);
-  autosaveTimers[tab] = setTimeout(() => saveTab(tab), AUTOSAVE_MS);
+// ── Autosave ──────────────────────────────────────────────────────────────────
+function markDirty(tab){
+  dirty[tab]=true;
+  document.getElementById('autosave-indicator').style.color='#b8860b';
+  clearTimeout(saveTimers[tab]);
+  saveTimers[tab]=setTimeout(function(){saveTab(tab);},AUTOSAVE_MS);
+}
+async function saveTab(tab){
+  try{
+    if(tab==='available') await fetch('/api/available',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(avData)});
+    if(tab==='chosen')    await fetch('/api/chosen_list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(chosenList)});
+    if(tab==='flattened') await fetch('/api/flattened',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(flatData)});
+    dirty[tab]=false;
+    if(!Object.values(dirty).some(Boolean)) document.getElementById('autosave-indicator').style.color='#555';
+  }catch(e){ document.getElementById('autosave-indicator').style.color='#c73652'; }
 }
 
-async function saveTab(tab) {
-  try {
-    if (tab === 'available') {
-      await fetch('/api/available', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(avData)});
-    } else if (tab === 'chosen') {
-      await fetch('/api/chosen_list', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(chosenList)});
-    } else if (tab === 'flattened') {
-      await fetch('/api/flattened', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(flatData)});
-    }
-    dirty[tab] = false;
-    if (!dirty.available && !dirty.chosen && !dirty.flattened)
-      document.getElementById('autosave-indicator').style.color = '#555';
-  } catch(e) {
-    document.getElementById('autosave-indicator').style.color = '#c73652';
-  }
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(t){
+  currentTab=t;
+  document.querySelectorAll('.tab').forEach(function(el,i){el.classList.toggle('active',['available','chosen','flattened'][i]===t);});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('panel-'+t).classList.add('active');
+  setTimeout(function(){
+    if(t==='available'){avOnResize();avRender();}
+    if(t==='chosen'){chOnResize();chRender();}
+    if(t==='flattened') flatRender();
+  },30);
 }
 
-// ============================================================
-//  TAB SWITCHING
-// ============================================================
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['available','chosen','flattened'][i] === tab);
-  });
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
-  // resize renderers
-  setTimeout(() => {
-    if (tab === 'available') { avOnResize(); avRender(); }
-    if (tab === 'chosen')    { chOnResize(); chRender(); }
-    if (tab === 'flattened') { flatRender(); }
-  }, 30);
-}
-
-// ============================================================
-//  LOAD ALL DATA
-// ============================================================
-async function loadAll() {
-  const [info, avResp, clResp, cnResp, flatResp] = await Promise.all([
-    fetch('/api/info').then(r=>r.json()).catch(()=>({})),
-    fetch('/api/available').then(r=>r.json()).catch(()=>({segments:[],nodes:[]})),
-    fetch('/api/chosen_list').then(r=>r.json()).catch(()=>[]),
-    fetch('/api/chosen_net').then(r=>r.json()).catch(()=>null),
-    fetch('/api/flattened').then(r=>r.json()).catch(()=>({fieldnames:[],rows:[]})),
+// ── Data load ─────────────────────────────────────────────────────────────────
+async function loadAll(){
+  var res=await Promise.all([
+    fetch('/api/info').then(function(r){return r.json();}).catch(function(){return {};}),
+    fetch('/api/available').then(function(r){return r.json();}).catch(function(){return {segments:[],nodes:[]};}),
+    fetch('/api/chosen_list').then(function(r){return r.json();}).catch(function(){return [];}),
+    fetch('/api/chosen_net').then(function(r){return r.json();}).catch(function(){return null;}),
+    fetch('/api/flattened').then(function(r){return r.json();}).catch(function(){return {fieldnames:[],rows:[]};})
   ]);
-
-  if (info.part_number || info.rev)
-    document.getElementById('part-rev').textContent = `${info.part_number} ${info.rev}`.trim();
-
-  avData       = avResp;
-  chosenList   = clResp || [];
-  chosenNetData= cnResp;
-  flatData     = flatResp;
-
-  avBuildScene();
-  chBuildScene();
-  flatRender();
+  var info=res[0];
+  if(info.part_number||info.rev)
+    document.getElementById('part-rev').textContent=((info.part_number||'')+' '+(info.rev||'')).trim();
+  avData=res[1]; chosenList=res[2]||[]; chosenNetData=res[3]; flatData=res[4];
+  avBuildScene(); chBuildScene(); flatRender();
 }
 
-// ============================================================
-//  THREE.JS HELPERS
-// ============================================================
-function makeRenderer(canvas) {
-  const r = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+// ── Three.js helpers ──────────────────────────────────────────────────────────
+function makeRenderer(canvas){
+  var r=new THREE.WebGLRenderer({canvas:canvas,antialias:true});
   r.setPixelRatio(window.devicePixelRatio);
   r.setClearColor(0x1a1a1a);
   return r;
 }
-
-function makeCamera() {
-  const cam = new THREE.PerspectiveCamera(45, 1, 0.001, 10000);
-  cam.position.set(10, -10, 8);
-  cam.up.set(0, 0, 1);
-  return cam;
+function makeCamera(){
+  var c=new THREE.PerspectiveCamera(45,1,0.001,10000);
+  c.position.set(0,0,30); c.up.set(0,1,0); c.lookAt(0,0,0);
+  return c;
+}
+function makeWorldAxes(size){
+  var g=new THREE.Group();
+  function addAxis(dir,col){
+    var geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(size)]);
+    g.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:col,linewidth:2})));
+    var cone=new THREE.Mesh(new THREE.ConeGeometry(size*0.04,size*0.15,8),new THREE.MeshBasicMaterial({color:col}));
+    cone.position.copy(dir.clone().multiplyScalar(size));
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+    g.add(cone);
+  }
+  addAxis(new THREE.Vector3(1,0,0),0xff3333);
+  addAxis(new THREE.Vector3(0,1,0),0x44cc44);
+  addAxis(new THREE.Vector3(0,0,1),0x4499ff);
+  return g;
 }
 
-function makeCubeRenderer(canvas) {
-  const r = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
-  r.setPixelRatio(window.devicePixelRatio);
-  r.setClearColor(0x000000, 0);
-  r.setSize(90, 90);
-  return r;
+// ══════════════════════════════════════════════════════════════════════════════
+//  STANDALONE-STYLE VIEW CUBE  (ported from the standalone viewer)
+//  Each instance has its own cam state {fwd, up} that tracks the Three.js
+//  orbit camera, plus drag-to-rotate on the cube canvas itself.
+// ══════════════════════════════════════════════════════════════════════════════
+function cv3(x,y,z){return{x:x,y:y,z:z};}
+function cvadd(a,b){return cv3(a.x+b.x,a.y+b.y,a.z+b.z);}
+function cvscale(v,s){return cv3(v.x*s,v.y*s,v.z*s);}
+function cvdot(a,b){return a.x*b.x+a.y*b.y+a.z*b.z;}
+function cvnorm(v){var l=Math.sqrt(cvdot(v,v))||1;return cvscale(v,1/l);}
+function cvcross(a,b){return cv3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);}
+function cvlerp(a,b,t){return cvadd(cvscale(a,1-t),cvscale(b,t));}
+function cvrotAxis(v,ax,c,s){return cvadd(cvadd(cvscale(v,c),cvscale(cvcross(ax,v),s)),cvscale(ax,cvdot(ax,v)*(1-c)));}
+function cvOrthogonalize(cam){cam.fwd=cvnorm(cam.fwd);var r=cvnorm(cvcross(cam.fwd,cam.up));cam.up=cvnorm(cvcross(r,cam.fwd));}
+
+// Face definitions: name, outward normal, snapFwd (camera looks FROM this dir),
+// snapUp (camera up when snapped to this face)
+var CV_FACE_DEFS=[
+  {name:'Right',  normal:cv3( 1, 0, 0), snapFwd:cv3(-1, 0, 0), snapUp:cv3(0,0,1)},
+  {name:'Left',   normal:cv3(-1, 0, 0), snapFwd:cv3( 1, 0, 0), snapUp:cv3(0,0,1)},
+  {name:'Back',   normal:cv3( 0, 1, 0), snapFwd:cv3( 0,-1, 0), snapUp:cv3(0,0,1)},
+  {name:'Front',  normal:cv3( 0,-1, 0), snapFwd:cv3( 0, 1, 0), snapUp:cv3(0,0,1)},
+  {name:'Top',    normal:cv3( 0, 0, 1), snapFwd:cv3( 0, 0,-1), snapUp:cv3(0,1,0)},
+  {name:'Bottom', normal:cv3( 0, 0,-1), snapFwd:cv3( 0, 0, 1), snapUp:cv3(0,1,0)},
+];
+
+var CV_GAP=0.15, CV_T=0.02, CV_AX_LEN=1.18;
+var CV_AXES=[
+  {dir:cv3(1,0,0),color:'#ff4444',label:'X'},
+  {dir:cv3(0,1,0),color:'#44cc44',label:'Y'},
+  {dir:cv3(0,0,1),color:'#4499ff',label:'Z'},
+];
+
+function cvBuildSlab(fd){
+  // Derive axis and side from the normal vector directly, not from the name
+  var n=fd.normal;
+  var ax= n.x!==0 ? 0 : n.y!==0 ? 1 : 2;
+  var hi= (ax===0?n.x:ax===1?n.y:n.z) > 0 ? 1 : 0;
+  var outer=hi?1.0:0.0, inner=hi?1.0-CV_T:CV_T;
+  var ta=ax===0?1:0, tb=ax===0?2:ax===1?2:1;
+  var lo=CV_GAP, hi2=1-CV_GAP;
+  function pt(a0,a1,a2){var r=[0,0,0];r[ax]=a0;r[ta]=a1;r[tb]=a2;return cv3(r[0],r[1],r[2]);}
+  var inNorm=cvscale(fd.normal,-1);
+  var quads=[];
+  quads.push({pts:[pt(outer,lo,lo),pt(outer,hi2,lo),pt(outer,hi2,hi2),pt(outer,lo,hi2)],normal:fd.normal,shade:1.0,isOuter:true});
+  quads.push({pts:[pt(inner,lo,lo),pt(inner,lo,hi2),pt(inner,hi2,hi2),pt(inner,hi2,lo)],normal:inNorm,shade:0.6});
+  [{pts:[pt(outer,lo,lo),pt(inner,lo,lo),pt(inner,lo,hi2),pt(outer,lo,hi2)],ni:ta,ns:-1},
+   {pts:[pt(outer,hi2,lo),pt(outer,hi2,hi2),pt(inner,hi2,hi2),pt(inner,hi2,lo)],ni:ta,ns:1},
+   {pts:[pt(outer,lo,lo),pt(outer,hi2,lo),pt(inner,hi2,lo),pt(inner,lo,lo)],ni:tb,ns:-1},
+   {pts:[pt(outer,lo,hi2),pt(inner,lo,hi2),pt(inner,hi2,hi2),pt(outer,hi2,hi2)],ni:tb,ns:1},
+  ].forEach(function(s){var n=[0,0,0];n[s.ni]=s.ns;quads.push({pts:s.pts,normal:cv3(n[0],n[1],n[2]),shade:0.75});});
+  return quads;
 }
 
-// Orbit controller (minimal, no external dep)
-function makeOrbit(camera, domEl, renderFn) {
-  let state = {btn:-1, last:{x:0,y:0}, phi:Math.PI/4, theta:Math.PI/4, target:new THREE.Vector3(), dist:30};
+function makeViewCube(canvasEl, getThreeCam, onSnapRequest){
+  var S=canvasEl.width;
+  var DS=0.55; // display scale (matches standalone)
+  var ctx=canvasEl.getContext('2d');
 
-  function update() {
-    const x = state.target.x + state.dist * Math.sin(state.phi) * Math.cos(state.theta);
-    const y = state.target.y + state.dist * Math.sin(state.phi) * Math.sin(state.theta);
-    const z = state.target.z + state.dist * Math.cos(state.phi);
-    camera.position.set(x, y, z);
+  // Internal cam state — mirrors the Three.js camera orientation
+  var cam={fwd:cv3(0,0,-1), up:cv3(0,1,0)};
+
+  function syncFromThree(){
+    var tc=getThreeCam();
+    var fwd=new THREE.Vector3(); tc.getWorldDirection(fwd);
+    // Convert THREE.Vector3 → plain cv3
+    cam.fwd=cv3(fwd.x,fwd.y,fwd.z);
+    cam.up=cv3(tc.up.x,tc.up.y,tc.up.z);
+    cvOrthogonalize(cam);
+  }
+
+  function project(v){
+    var cv=cv3(v.x-0.5,v.y-0.5,v.z-0.5);
+    var right=cvnorm(cvcross(cam.fwd,cam.up));
+    return{
+      x: S/2+cvdot(cv,right)*S*DS,
+      y: S/2-cvdot(cv,cam.up)*S*DS,
+      depth: cvdot(cv,cam.fwd)
+    };
+  }
+
+  function draw(){
+    syncFromThree();
+    ctx.clearRect(0,0,S,S);
+
+    // Collect all visible quads from all 6 face slabs
+    var allQuads=[];
+    CV_FACE_DEFS.forEach(function(fd){
+      cvBuildSlab(fd).forEach(function(q){
+        if(cvdot(q.normal,cam.fwd)<0.02){
+          var pts2d=q.pts.map(project);
+          var avgDepth=pts2d.reduce(function(s,p){return s+p.depth;},0)/pts2d.length;
+          allQuads.push({pts2d:pts2d,shade:q.shade,avgDepth:avgDepth,labelName:q.isOuter?fd.name:null});
+        }
+      });
+    });
+    allQuads.sort(function(a,b){return b.avgDepth-a.avgDepth;});
+
+    // Axes (drawn before faces so faces paint over back-facing axis stubs)
+    var orig2d=project(cv3(0,0,0));
+    CV_AXES.map(function(ax){return{ax:ax,tip2d:project(cvscale(ax.dir,CV_AX_LEN))};})
+      .sort(function(a,b){return b.tip2d.depth-a.tip2d.depth;})
+      .forEach(function(item){
+        var tip=item.tip2d,ax=item.ax;
+        ctx.globalAlpha=tip.depth<0.02?1.0:0.22;
+        ctx.strokeStyle=ax.color;ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(orig2d.x,orig2d.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
+        var dx=tip.x-orig2d.x,dy=tip.y-orig2d.y,l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l;
+        ctx.fillStyle=ax.color;
+        ctx.beginPath();ctx.moveTo(tip.x,tip.y);
+        ctx.lineTo(tip.x-ux*7-uy*3.5,tip.y-uy*7+ux*3.5);
+        ctx.lineTo(tip.x-ux*7+uy*3.5,tip.y-uy*7-ux*3.5);
+        ctx.closePath();ctx.fill();
+        ctx.globalAlpha=tip.depth<0.02?1.0:0.35;
+        ctx.fillStyle=ax.color;ctx.font='bold 10px sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(ax.label,tip.x+ux*12,tip.y+uy*12);
+      });
+    ctx.globalAlpha=1.0;
+
+    // Face quads (depth sorted)
+    allQuads.forEach(function(q){
+      var pts=q.pts2d,b=Math.round(80+q.shade*120);
+      ctx.fillStyle=q.labelName?'rgb('+b+','+b+','+b+')':'#2255cc';
+      ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+      for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);
+      ctx.closePath();ctx.fill();
+    });
+
+    // Face labels (second pass so they're on top)
+    allQuads.forEach(function(q){
+      if(!q.labelName)return;
+      var pts=q.pts2d,cx=0,cy=0;
+      pts.forEach(function(p){cx+=p.x;cy+=p.y;});cx/=4;cy/=4;
+      ctx.fillStyle='#1a1a1a';ctx.font='bold 9px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(q.labelName,cx,cy);
+    });
+  }
+
+  // Click on cube face → snap
+  var lastMoved=false;
+  canvasEl.addEventListener('mousedown',function(){lastMoved=false;});
+  canvasEl.addEventListener('click',function(e){
+    if(lastMoved)return;
+    syncFromThree();
+    var rect=canvasEl.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    var best=null,bestDist=Infinity;
+    CV_FACE_DEFS.forEach(function(fd){
+      if(cvdot(fd.normal,cam.fwd)>=0.02)return;
+      var cp=project(cvadd(cv3(0.5,0.5,0.5),cvscale(fd.normal,0.5)));
+      var d=Math.hypot(cp.x-mx,cp.y-my);
+      if(d<bestDist){bestDist=d;best=fd;}
+    });
+    if(best&&bestDist<S*0.45)onSnapRequest(best.name);
+  });
+
+  return {draw:draw};
+}
+
+// ── CUBE_FACES used by animateCameraToFace ────────────────────────────────────
+// Maps face name → Three.js normal + up vectors for the orbit snap
+var CUBE_FACES=[
+  {name:'Front',  normal:new THREE.Vector3( 0,-1, 0), up:new THREE.Vector3(0,0,1)},
+  {name:'Back',   normal:new THREE.Vector3( 0, 1, 0), up:new THREE.Vector3(0,0,1)},
+  {name:'Right',  normal:new THREE.Vector3( 1, 0, 0), up:new THREE.Vector3(0,0,1)},
+  {name:'Left',   normal:new THREE.Vector3(-1, 0, 0), up:new THREE.Vector3(0,0,1)},
+  {name:'Top',    normal:new THREE.Vector3( 0, 0, 1), up:new THREE.Vector3(0,1,0)},
+  {name:'Bottom', normal:new THREE.Vector3( 0, 0,-1), up:new THREE.Vector3(0,1,0)},
+];
+
+// ── Smooth camera snap ────────────────────────────────────────────────────────
+function animateCameraToFace(orbit,face){
+  var dist=orbit.state.dist;
+  var endPos=face.normal.clone().multiplyScalar(dist).add(orbit.state.target);
+  var startPos=orbit.camera.position.clone();
+  var startUp=orbit.camera.up.clone();
+  var t0=performance.now(), dur=400;
+  function step(now){
+    var t=Math.min((now-t0)/dur,1);
+    var ease=t<0.5?2*t*t:-1+(4-2*t)*t;
+    orbit.camera.position.lerpVectors(startPos,endPos,ease);
+    orbit.camera.up.lerpVectors(startUp,face.up,ease).normalize();
+    orbit.camera.lookAt(orbit.state.target);
+    var rel=orbit.camera.position.clone().sub(orbit.state.target);
+    orbit.state.phi=Math.acos(Math.max(-1,Math.min(1,rel.y/rel.length())));
+    orbit.state.theta=Math.atan2(rel.z,rel.x);
+    orbit.renderFn();
+    if(t<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ── Snap by name (buttons) ────────────────────────────────────────────────────
+function avSnapTo(name){var f=CUBE_FACES.find(function(f){return f.name===name;});if(f)animateCameraToFace(avOrbit,f);}
+function chSnapTo(name){var f=CUBE_FACES.find(function(f){return f.name===name;});if(f)animateCameraToFace(chOrbit,f);}
+
+// ── Orbit controller ──────────────────────────────────────────────────────────
+function makeOrbit(camera,domEl,renderFn){
+  var state={btn:-1,last:{x:0,y:0},target:new THREE.Vector3(),dist:30};
+  var rel=camera.position.clone().sub(state.target);
+  state.phi=Math.acos(Math.max(-1,Math.min(1,rel.y/rel.length())));
+  state.theta=Math.atan2(rel.z,rel.x);
+
+  function apply(){
+    var r=state.dist;
+    camera.position.set(
+      state.target.x+r*Math.sin(state.phi)*Math.cos(state.theta),
+      state.target.y+r*Math.cos(state.phi),
+      state.target.z+r*Math.sin(state.phi)*Math.sin(state.theta)
+    );
     camera.lookAt(state.target);
     renderFn();
   }
 
-  domEl.addEventListener('mousedown', e => {
-    state.btn = e.button;
-    state.last = {x: e.clientX, y: e.clientY};
-    e.preventDefault();
+  domEl.addEventListener('mousedown',function(e){
+    if(e.button===0||e.button===2){state.btn=e.button;state.last={x:e.clientX,y:e.clientY};e.preventDefault();}
   });
-  window.addEventListener('mousemove', e => {
-    if (state.btn < 0) return;
-    const dx = e.clientX - state.last.x, dy = e.clientY - state.last.y;
-    state.last = {x: e.clientX, y: e.clientY};
-    if (state.btn === 0) { // rotate
-      state.theta -= dx * 0.01;
-      state.phi   = Math.max(0.05, Math.min(Math.PI - 0.05, state.phi + dy * 0.01));
-    } else if (state.btn === 2) { // pan
-      const right = new THREE.Vector3();
-      const up2   = new THREE.Vector3();
-      camera.getWorldDirection(up2);
-      right.crossVectors(up2, camera.up).normalize();
-      up2.crossVectors(right, up2).normalize();
-      const spd = state.dist * 0.001;
-      state.target.addScaledVector(right, -dx * spd);
-      state.target.addScaledVector(up2,   dy * spd);
+  window.addEventListener('mousemove',function(e){
+    if(state.btn<0) return;
+    var dx=e.clientX-state.last.x, dy=e.clientY-state.last.y;
+    state.last={x:e.clientX,y:e.clientY};
+    if(state.btn===0){
+      state.theta+=dx*0.008;
+      state.phi=Math.max(0.01,Math.min(Math.PI-0.01,state.phi-dy*0.008));
+    } else {
+      var fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
+      var right=new THREE.Vector3().crossVectors(fwd,camera.up).normalize();
+      var up2=right.clone().cross(fwd).normalize();
+      var spd=state.dist*0.0008;
+      state.target.addScaledVector(right,-dx*spd);
+      state.target.addScaledVector(up2,dy*spd);
     }
-    update();
+    apply();
   });
-  window.addEventListener('mouseup', () => { state.btn = -1; });
-  domEl.addEventListener('wheel', e => {
-    state.dist = Math.max(0.1, state.dist * (1 + e.deltaY * 0.001));
-    update();
-    e.preventDefault();
-  }, {passive:false});
-  domEl.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('mouseup',function(){state.btn=-1;});
+  domEl.addEventListener('wheel',function(e){
+    state.dist=Math.max(0.05,state.dist*(1+e.deltaY*0.001));
+    apply(); e.preventDefault();
+  },{passive:false});
+  domEl.addEventListener('contextmenu',function(e){e.preventDefault();});
 
-  update();
-  return {state, update,
-    setView(phi, theta) { state.phi = phi; state.theta = theta; update(); },
-    fitToBox(box) {
-      const size = box.getSize(new THREE.Vector3()).length();
-      const center = box.getCenter(new THREE.Vector3());
-      state.target.copy(center);
-      state.dist = size * 1.5 || 30;
-      update();
-    }
+  var self={state:state,camera:camera,renderFn:renderFn,update:apply};
+  self.fitToBox=function(box){
+    var sz=box.getSize(new THREE.Vector3()).length()||10;
+    box.getCenter(state.target); state.dist=sz*1.4; apply();
   };
+  apply();
+  return self;
 }
 
-// Axis lines helper
-function makeAxes(size=1) {
-  const g = new THREE.Group();
-  const mat = c => new THREE.LineBasicMaterial({color:c});
-  const line = (pts, m) => {
-    const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    return new THREE.Line(geo, m);
-  };
-  g.add(line([new THREE.Vector3(0,0,0), new THREE.Vector3(size,0,0)], mat(0xff3333))); // X red
-  g.add(line([new THREE.Vector3(0,0,0), new THREE.Vector3(0,size,0)], mat(0x33cc33))); // Y green
-  g.add(line([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,size)], mat(0x3399ff))); // Z blue
-  return g;
+// ── Mesh helpers ──────────────────────────────────────────────────────────────
+function makeSegLine(seg,color,width){
+  var geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...seg.location_at_end_a),new THREE.Vector3(...seg.location_at_end_b)]);
+  var line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:color,linewidth:width||2}));
+  line.userData={type:'segment',id:seg.segment_id}; return line;
+}
+function makeNodeSphere(loc,color,r){
+  r=r||0.15;
+  var mesh=new THREE.Mesh(new THREE.SphereGeometry(r,12,12),new THREE.MeshLambertMaterial({color:color}));
+  mesh.position.set(loc[0],loc[1],loc[2]); return mesh;
 }
 
-// View cube scene
-function makeCubeScene() {
-  const scene = new THREE.Scene();
-  const geo = new THREE.BoxGeometry(1,1,1);
-  const mats = [
-    new THREE.MeshLambertMaterial({color:0x555599}), // +X right
-    new THREE.MeshLambertMaterial({color:0x555599}), // -X left
-    new THREE.MeshLambertMaterial({color:0x555599}), // +Y
-    new THREE.MeshLambertMaterial({color:0x555599}), // -Y
-    new THREE.MeshLambertMaterial({color:0x555599}), // +Z top
-    new THREE.MeshLambertMaterial({color:0x555599}), // -Z bottom
-  ];
-  const cube = new THREE.Mesh(geo, mats);
-  scene.add(cube);
-  const light = new THREE.DirectionalLight(0xffffff, 0.8);
-  light.position.set(1,1,2);
-  scene.add(light);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-  const cam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-  cam.up.set(0,0,1);
-  return {scene, cam};
+// ── Render functions ──────────────────────────────────────────────────────────
+function avRender(){ if(!avRenderer||!avCube) return; avRenderer.render(avScene,avCamera); avCube.draw(); }
+function chRender(){ if(!chRenderer||!chCube) return; chRenderer.render(chScene,chCamera); chCube.draw(); }
+
+// ═══════════════════════════════════════════════════════
+//  AVAILABLE — init
+// ═══════════════════════════════════════════════════════
+function initAv(){
+  avRenderer=makeRenderer(document.getElementById('av-canvas'));
+  avScene=new THREE.Scene();
+  avCamera=makeCamera();
+  avScene.add(new THREE.AmbientLight(0xffffff,0.5));
+  var dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(5,8,10); avScene.add(dl);
+  avScene.add(makeWorldAxes(1.5));
+  avRay=new THREE.Raycaster(); avRay.params.Line.threshold=0.12;
+  avCube=makeViewCube(
+    document.getElementById('av-cube-canvas'),
+    function(){return avCamera;},
+    function(name){avSnapTo(name);}
+  );
+  avOrbit=makeOrbit(avCamera,document.getElementById('av-canvas'),avRender);
+  avOrbit.state.phi=Math.PI/2;
+  avOrbit.state.theta=Math.PI/2;
+  avOrbit.state.dist=30;
+  avCamera.up.set(0,1,0);
+  avOrbit.update();
 }
 
-function renderCube(renderer, cubeScene, mainCamera) {
-  const {scene, cam} = cubeScene;
-  const dir = new THREE.Vector3();
-  mainCamera.getWorldDirection(dir);
-  cam.position.copy(dir.negate().multiplyScalar(4));
-  cam.lookAt(0,0,0);
-  cam.up.copy(mainCamera.up);
-  renderer.render(scene, cam);
-}
-
-// Segment geometry helpers
-function segmentPoints(seg) {
-  const a = new THREE.Vector3(...seg.location_at_end_a);
-  const b = new THREE.Vector3(...seg.location_at_end_b);
-  return [a, b];
-}
-
-function makeSegmentLine(seg, color, linewidth) {
-  const pts = segmentPoints(seg);
-  const geo = new THREE.BufferGeometry().setFromPoints(pts);
-  const mat = new THREE.LineBasicMaterial({color, linewidth: linewidth||1});
-  return new THREE.Line(geo, mat);
-}
-
-function makeNodeSphere(pos, color, radius=0.12) {
-  const geo = new THREE.SphereGeometry(radius, 10, 10);
-  const mat = new THREE.MeshLambertMaterial({color});
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(...pos);
-  return mesh;
-}
-
-// ============================================================
-//  AVAILABLE NETWORK — 3D
-// ============================================================
-const avCanvas    = document.getElementById('av-canvas');
-const avRenderer  = makeRenderer(avCanvas);
-const avScene     = new THREE.Scene();
-const avCamera    = makeCamera();
-const avCubeRend  = makeCubeRenderer(document.getElementById('av-cube-canvas'));
-const avCubeScene = makeCubeScene();
-avScene.add(new THREE.AmbientLight(0xffffff, 0.5));
-const avDirLight  = new THREE.DirectionalLight(0xffffff, 0.8);
-avDirLight.position.set(5,5,10); avScene.add(avDirLight);
-avScene.add(makeAxes(2));
-const avOrbit = makeOrbit(avCamera, avCanvas, avRender);
-
-// Object maps: id -> THREE object
-let avNodeMeshes = {};   // node_id -> Mesh
-let avSegLines   = {};   // segment_id -> Line
-let avHighlight  = null;
-
-function avBuildScene() {
-  // Clear old objects
-  Object.values(avNodeMeshes).forEach(m => avScene.remove(m));
-  Object.values(avSegLines).forEach(l => avScene.remove(l));
-  avNodeMeshes = {}; avSegLines = {};
-
-  (avData.segments||[]).forEach(seg => {
-    const col = (avSelected?.type==='segment' && avSelected.id===seg.segment_id) ? WHITE : YELLOW;
-    const line = makeSegmentLine(seg, col, 2);
-    line.userData = {type:'segment', id:seg.segment_id};
-    avSegLines[seg.segment_id] = line;
-    avScene.add(line);
-  });
-
-  (avData.nodes||[]).forEach(n => {
-    const col = (avSelected?.type==='node' && avSelected.id===n.node_id) ? WHITE : RED;
-    const mesh = makeNodeSphere(n.location, col);
-    mesh.userData = {type:'node', id:n.node_id};
-    avNodeMeshes[n.node_id] = mesh;
-    avScene.add(mesh);
-  });
-
-  avRender();
-}
-
-function avRender() {
-  avRenderer.render(avScene, avCamera);
-  renderCube(avCubeRend, avCubeScene, avCamera);
-}
-
-function avOnResize() {
-  const vp = document.getElementById('av-viewport');
-  const w = vp.clientWidth, h = vp.clientHeight;
-  avRenderer.setSize(w, h);
-  avCamera.aspect = w / h;
+function avOnResize(){
+  var vp=document.getElementById('av-viewport');
+  avRenderer.setSize(vp.clientWidth,vp.clientHeight);
+  avCamera.aspect=vp.clientWidth/vp.clientHeight;
   avCamera.updateProjectionMatrix();
 }
-
-function avFitView() {
-  const box = new THREE.Box3();
-  [...Object.values(avNodeMeshes), ...Object.values(avSegLines)].forEach(o => box.expandByObject(o));
-  if (!box.isEmpty()) avOrbit.fitToBox(box);
+function avFitView(){
+  var box=new THREE.Box3();
+  Object.values(avNodeMeshes).concat(Object.values(avSegLines)).forEach(function(o){box.expandByObject(o);});
+  if(!box.isEmpty()) avOrbit.fitToBox(box); else avRender();
+}
+function avBuildScene(){
+  Object.values(avNodeMeshes).forEach(function(m){avScene.remove(m);});
+  Object.values(avSegLines).forEach(function(l){avScene.remove(l);});
+  avArrows.forEach(function(a){avScene.remove(a);});
+  avNodeMeshes={}; avSegLines={}; avArrows=[];
+  (avData.segments||[]).forEach(function(seg){
+    var isSel=avSelected&&avSelected.type==='segment'&&avSelected.id===seg.segment_id;
+    var line=makeSegLine(seg,isSel?C_WHITE:C_YELLOW,isSel?4:2.5);
+    avSegLines[seg.segment_id]=line; avScene.add(line);
+  });
+  (avData.nodes||[]).forEach(function(n){
+    var isSel=avSelected&&avSelected.type==='node'&&avSelected.id===n.node_id;
+    var mesh=makeNodeSphere(n.location,isSel?C_WHITE:C_RED,0.15);
+    mesh.userData={type:'node',id:n.node_id};
+    avNodeMeshes[n.node_id]=mesh; avScene.add(mesh);
+  });
+  if(avSelected&&avSelected.type==='node'){
+    var n=avData.nodes.find(function(n){return n.node_id===avSelected.id;});
+    if(n) avShowArrows(n);
+  }
+  avRender();
 }
 
-function avSetView(name) {
-  const views = {
-    top:    [0.01, Math.PI/2],
-    bottom: [Math.PI-0.01, Math.PI/2],
-    front:  [Math.PI/2, Math.PI],
-    back:   [Math.PI/2, 0],
-    right:  [Math.PI/2, Math.PI/2],
-    left:   [Math.PI/2, -Math.PI/2],
-    iso:    [Math.PI/4, Math.PI/4],
-  };
-  const [phi, theta] = views[name] || views.iso;
-  avOrbit.setView(phi, theta);
-}
-
-function avSetTool(t) {
-  avTool = t;
-  avConnectStart = null;
-  document.querySelectorAll('#av-sidebar button[id^=btn-av]').forEach(b => b.classList.remove('active-tool'));
-  document.getElementById('btn-av-' + t.replace('-',''))?.classList.add('active-tool');
-}
-
-// Raycasting
-const avRaycaster = new THREE.Raycaster();
-avRaycaster.params.Line.threshold = 0.15;
-const avMouse = new THREE.Vector2();
-
-avCanvas.addEventListener('click', e => {
-  const rect = avCanvas.getBoundingClientRect();
-  avMouse.set(
-    ((e.clientX - rect.left) / rect.width)  *  2 - 1,
-    ((e.clientY - rect.top)  / rect.height) * -2 + 1
-  );
-  avRaycaster.setFromCamera(avMouse, avCamera);
-
-  if (avTool === 'add-node') {
-    avAddNode();
-    return;
-  }
-
-  // hit test nodes first, then segments
-  const nodeMeshArr = Object.values(avNodeMeshes);
-  const segLineArr  = Object.values(avSegLines);
-  let hit = null;
-
-  const nHits = avRaycaster.intersectObjects(nodeMeshArr);
-  if (nHits.length) hit = nHits[0].object.userData;
-  else {
-    const sHits = avRaycaster.intersectObjects(segLineArr);
-    if (sHits.length) hit = sHits[0].object.userData;
-  }
-
-  if (avTool === 'delete' && hit) {
-    if (hit.type === 'node')    avDeleteNode(hit.id);
-    if (hit.type === 'segment') avDeleteSegment(hit.id);
-    return;
-  }
-
-  if (avTool === 'add-seg') {
-    if (hit?.type === 'node') {
-      if (!avConnectStart) {
-        avConnectStart = hit.id;
-        // highlight
-        const m = avNodeMeshes[hit.id];
-        if (m) m.material.color.set(0xffa500);
-        avRender();
-      } else if (avConnectStart !== hit.id) {
-        avAddSegment(avConnectStart, hit.id);
-        avConnectStart = null;
-        avBuildScene();
-      }
+document.getElementById('av-canvas').addEventListener('click',function(e){
+  if(avDragAxis) return;
+  var rect=document.getElementById('av-canvas').getBoundingClientRect();
+  var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+  avRay.setFromCamera(m,avCamera);
+  if(avTool==='add-node'){avAddNode();return;}
+  var nHits=avRay.intersectObjects(Object.values(avNodeMeshes));
+  var sHits=avRay.intersectObjects(Object.values(avSegLines));
+  var hit=nHits.length?nHits[0].object.userData:sHits.length?sHits[0].object.userData:null;
+  if(avTool==='delete'&&hit){hit.type==='node'?avDeleteNode(hit.id):avDeleteSegment(hit.id);return;}
+  if(avTool==='add-seg'&&hit&&hit.type==='node'){
+    if(!avConnectStart){
+      avConnectStart=hit.id;
+      if(avNodeMeshes[hit.id]) avNodeMeshes[hit.id].material.color.set(0xffa500);
+      avRender();
+    } else if(avConnectStart!==hit.id){
+      avAddSegment(avConnectStart,hit.id); avConnectStart=null; avBuildScene();
     }
     return;
   }
-
-  // select
-  avSelected = hit || null;
-  avBuildScene();
-  avShowProps();
+  avSelected=hit||null; avBuildScene(); avShowProps();
 });
 
-// Arrow drag for selected node
-let avDragNode = null;
-let avDragAxis = null; // 'x'|'y'|'z'
-let avArrows = [];
-
-avCanvas.addEventListener('mousedown', e => {
-  if (avTool !== 'select') return;
-  if (!avSelected || avSelected.type !== 'node') return;
-  // Check if clicking an arrow handle
-  const rect = avCanvas.getBoundingClientRect();
-  avMouse.set(
-    ((e.clientX - rect.left) / rect.width)  *  2 - 1,
-    ((e.clientY - rect.top)  / rect.height) * -2 + 1
-  );
-  avRaycaster.setFromCamera(avMouse, avCamera);
-  const hits = avRaycaster.intersectObjects(avArrows);
-  if (hits.length) {
-    avDragNode = avSelected.id;
-    avDragAxis = hits[0].object.userData.axis;
-    e.stopPropagation();
-  }
+document.getElementById('av-canvas').addEventListener('mousedown',function(e){
+  if(avTool!=='select'||!avSelected||avSelected.type!=='node') return;
+  var rect=document.getElementById('av-canvas').getBoundingClientRect();
+  var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+  avRay.setFromCamera(m,avCamera);
+  var cones=avArrows.filter(function(a){return a.geometry&&a.geometry.type==='ConeGeometry';});
+  var hits=avRay.intersectObjects(cones);
+  if(!hits.length) return;
+  avDragAxis=hits[0].object.userData.axis;
+  avDragNode=avSelected.id;
+  avDragStartMouse={x:e.clientX,y:e.clientY};
+  var node=avData.nodes.find(function(n){return n.node_id===avDragNode;});
+  avDragStartLoc=node?node.location.slice():null;
+  e.stopPropagation();
 });
 
-window.addEventListener('mousemove', e => {
-  if (!avDragNode || !avDragAxis) return;
-  const node = avData.nodes.find(n => n.node_id === avDragNode);
-  if (!node) return;
-  // Project mouse delta onto axis
-  const rect = avCanvas.getBoundingClientRect();
-  const m0 = new THREE.Vector2(
-    ((e.clientX - 1 - rect.left) / rect.width)  *  2 - 1,
-    ((e.clientY - 1 - rect.top)  / rect.height) * -2 + 1
-  );
-  const m1 = new THREE.Vector2(
-    ((e.clientX - rect.left) / rect.width)  *  2 - 1,
-    ((e.clientY - rect.top)  / rect.height) * -2 + 1
-  );
-  // World-space axis direction
-  const axDir = {x: new THREE.Vector3(1,0,0), y: new THREE.Vector3(0,1,0), z: new THREE.Vector3(0,0,1)}[avDragAxis];
-  // Project node position to screen, project node+axis to screen, get screen direction
-  const nodePos = new THREE.Vector3(...node.location);
-  const axisEnd = nodePos.clone().add(axDir);
-  const toScreen = v => {
-    const c = v.clone().project(avCamera);
-    return new THREE.Vector2(c.x, c.y);
-  };
-  const screenDir = toScreen(axisEnd).sub(toScreen(nodePos)).normalize();
-  const mouseDelta = m1.clone().sub(m0);
-  const delta = mouseDelta.dot(screenDir) * avOrbit.state.dist * 0.5;
-  node.location = [...node.location];
-  const idx = {x:0, y:1, z:2}[avDragAxis];
-  node.location[idx] = Math.round((node.location[idx] + delta) * 1000) / 1000;
-  // Update segment endpoints that use this node
-  avData.segments.forEach(seg => {
-    if (seg.location_at_end_a._nodeId === avDragNode) seg.location_at_end_a = [...node.location];
-    if (seg.location_at_end_b._nodeId === avDragNode) seg.location_at_end_b = [...node.location];
-  });
-  avBuildScene();
-  avShowArrows(node);
-  avShowProps();
-  markDirty('available');
+window.addEventListener('mousemove',function(e){
+  if(!avDragNode||!avDragAxis||!avDragStartLoc) return;
+  var node=avData.nodes.find(function(n){return n.node_id===avDragNode;});
+  if(!node) return;
+  var axDirs={x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),z:new THREE.Vector3(0,0,1)};
+  var axDir=axDirs[avDragAxis];
+  var nodePos=new THREE.Vector3(avDragStartLoc[0],avDragStartLoc[1],avDragStartLoc[2]);
+  function toScreen(v){var c=v.clone().project(avCamera);return new THREE.Vector2(c.x,c.y);}
+  var screenDir=toScreen(nodePos.clone().add(axDir)).sub(toScreen(nodePos)).normalize();
+  var rect=document.getElementById('av-canvas').getBoundingClientRect();
+  var dm=new THREE.Vector2((e.clientX-avDragStartMouse.x)/rect.width*2,-(e.clientY-avDragStartMouse.y)/rect.height*2);
+  var delta=dm.dot(screenDir)*avOrbit.state.dist*0.7;
+  var idx={x:0,y:1,z:2}[avDragAxis];
+  node.location=avDragStartLoc.slice();
+  node.location[idx]=Math.round((avDragStartLoc[idx]+delta)*1000)/1000;
+  avBuildScene(); avShowProps(); markDirty('available');
 });
 
-window.addEventListener('mouseup', () => { avDragNode = null; avDragAxis = null; });
+window.addEventListener('mouseup',function(){avDragNode=null;avDragAxis=null;avDragStartLoc=null;avDragStartMouse=null;});
 
-function avShowArrows(node) {
-  avArrows.forEach(a => avScene.remove(a));
-  avArrows = [];
-  if (!node) return;
-  const pos = new THREE.Vector3(...node.location);
-  const len = avOrbit.state.dist * 0.12;
-  const axes = [{axis:'x',dir:[1,0,0],col:0xff3333},{axis:'y',dir:[0,1,0],col:0x33cc33},{axis:'z',dir:[0,0,1],col:0x3399ff}];
-  axes.forEach(({axis,dir,col}) => {
-    const end = pos.clone().add(new THREE.Vector3(...dir).multiplyScalar(len));
-    const geo = new THREE.BufferGeometry().setFromPoints([pos, end]);
-    const mat = new THREE.LineBasicMaterial({color:col, linewidth:3});
-    const line = new THREE.Line(geo, mat);
-    line.userData = {axis};
-    // Cone arrowhead
-    const cGeo = new THREE.ConeGeometry(len*0.08, len*0.2, 8);
-    const cMat = new THREE.MeshLambertMaterial({color:col});
-    const cone = new THREE.Mesh(cGeo, cMat);
+function avShowArrows(node){
+  avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
+  var pos=new THREE.Vector3(node.location[0],node.location[1],node.location[2]);
+  var len=avOrbit.state.dist*0.10;
+  [{axis:'x',dir:[1,0,0],col:0xff3333},{axis:'y',dir:[0,1,0],col:0x44cc44},{axis:'z',dir:[0,0,1],col:0x4499ff}].forEach(function(ax){
+    var end=pos.clone().add(new THREE.Vector3(ax.dir[0],ax.dir[1],ax.dir[2]).multiplyScalar(len));
+    var line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pos,end]),new THREE.LineBasicMaterial({color:ax.col,linewidth:3}));
+    line.userData={axis:ax.axis};
+    var cone=new THREE.Mesh(new THREE.ConeGeometry(len*0.07,len*0.18,8),new THREE.MeshLambertMaterial({color:ax.col}));
     cone.position.copy(end);
-    const up = new THREE.Vector3(0,1,0);
-    const axVec = new THREE.Vector3(...dir);
-    cone.quaternion.setFromUnitVectors(up, axVec);
-    cone.userData = {axis};
-    avArrows.push(line, cone);
-    avScene.add(line, cone);
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(ax.dir[0],ax.dir[1],ax.dir[2]));
+    cone.userData={axis:ax.axis};
+    avArrows.push(line,cone); avScene.add(line,cone);
   });
   avRender();
 }
 
-function avAddNode() {
-  // Place at center of view (target)
-  const pos = [
-    Math.round(avOrbit.state.target.x * 100)/100,
-    Math.round(avOrbit.state.target.y * 100)/100,
-    Math.round(avOrbit.state.target.z * 100)/100,
-  ];
-  const id = avNextNodeId();
-  avData.nodes.push({node_id: id, location: pos, alpha: null, beta: null, gamma: null});
-  avSelected = {type:'node', id};
-  avBuildScene();
-  avShowProps();
-  const node = avData.nodes.find(n => n.node_id === id);
-  avShowArrows(node);
+function avNextNodeId(){var ids=new Set(avData.nodes.map(function(n){return n.node_id;}));var i=1;while(ids.has('N'+i))i++;return 'N'+i;}
+function avNextSegId(){var ids=new Set(avData.segments.map(function(s){return s.segment_id;}));var i=1;while(ids.has('S'+i))i++;return 'S'+i;}
+function avAddNode(){
+  var t=avOrbit.state.target;
+  var id=avNextNodeId();
+  avData.nodes.push({node_id:id,location:[Math.round(t.x*100)/100,Math.round(t.y*100)/100,Math.round(t.z*100)/100],alpha:null,beta:null,gamma:null});
+  avSelected={type:'node',id:id}; avBuildScene(); avShowProps(); markDirty('available');
+}
+function avAddSegment(idA,idB){
+  var na=avData.nodes.find(function(n){return n.node_id===idA;}), nb=avData.nodes.find(function(n){return n.node_id===idB;});
+  if(!na||!nb) return;
+  avData.segments.push({segment_id:avNextSegId(),type:'line',location_at_end_a:na.location.slice(),location_at_end_b:nb.location.slice(),spline_control_points:[]});
   markDirty('available');
 }
-
-function avNextNodeId() {
-  const ids = new Set(avData.nodes.map(n => n.node_id));
-  let i = 1;
-  while (ids.has('N'+i)) i++;
-  return 'N'+i;
+function avDeleteNode(id){
+  avData.nodes=avData.nodes.filter(function(n){return n.node_id!==id;});
+  if(avSelected&&avSelected.id===id) avSelected=null;
+  avBuildScene(); avShowProps(); markDirty('available');
 }
-
-function avNextSegId() {
-  const ids = new Set(avData.segments.map(s => s.segment_id));
-  let i = 1;
-  while (ids.has('S'+i)) i++;
-  return 'S'+i;
+function avDeleteSegment(id){
+  avData.segments=avData.segments.filter(function(s){return s.segment_id!==id;});
+  if(avSelected&&avSelected.id===id) avSelected=null;
+  avBuildScene(); avShowProps(); markDirty('available');
 }
-
-function avAddSegment(idA, idB) {
-  const na = avData.nodes.find(n => n.node_id === idA);
-  const nb = avData.nodes.find(n => n.node_id === idB);
-  if (!na || !nb) return;
-  const id = avNextSegId();
-  avData.segments.push({
-    segment_id: id,
-    type: 'line',
-    location_at_end_a: [...na.location],
-    location_at_end_b: [...nb.location],
-    spline_control_points: []
-  });
-  markDirty('available');
+function avDeleteSelected(){if(!avSelected)return;avSelected.type==='node'?avDeleteNode(avSelected.id):avDeleteSegment(avSelected.id);}
+function avSetTool(t){
+  avTool=t; avConnectStart=null;
+  document.querySelectorAll('[id^=btn-av]').forEach(function(b){b.classList.remove('active-tool');});
+  var btn=document.getElementById('btn-av-'+t.replace('-',''));
+  if(btn) btn.classList.add('active-tool');
 }
-
-function avDeleteNode(id) {
-  avData.nodes    = avData.nodes.filter(n => n.node_id !== id);
-  avData.segments = avData.segments.filter(s =>
-    s.location_at_end_a._nodeId !== id && s.location_at_end_b._nodeId !== id
-  );
-  if (avSelected?.id === id) avSelected = null;
-  avBuildScene(); avShowProps();
-  markDirty('available');
-}
-
-function avDeleteSegment(id) {
-  avData.segments = avData.segments.filter(s => s.segment_id !== id);
-  if (avSelected?.id === id) avSelected = null;
-  avBuildScene(); avShowProps();
-  markDirty('available');
-}
-
-function avDeleteSelected() {
-  if (!avSelected) return;
-  if (avSelected.type === 'node')    avDeleteNode(avSelected.id);
-  if (avSelected.type === 'segment') avDeleteSegment(avSelected.id);
-}
-
-function avShowProps() {
-  const panel = document.getElementById('props-av');
-  const content = document.getElementById('props-av-content');
-  const title = document.getElementById('props-av-title');
-
-  // Hide arrows if nothing selected
-  if (!avSelected) {
+function avShowProps(){
+  var panel=document.getElementById('props-av'),content=document.getElementById('props-av-content'),title=document.getElementById('props-av-title');
+  if(!avSelected){
     panel.classList.remove('props-visible');
-    avArrows.forEach(a => avScene.remove(a)); avArrows = [];
+    avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
     avRender(); return;
   }
   panel.classList.add('props-visible');
-
-  if (avSelected.type === 'node') {
-    const n = avData.nodes.find(n => n.node_id === avSelected.id);
-    if (!n) return;
-    title.textContent = 'Node';
-    content.innerHTML = `
-      <label>ID</label><input id="av-p-nid" value="${n.node_id}">
-      <label>X</label><input id="av-p-nx" type="number" step="0.001" value="${n.location[0]}">
-      <label>Y</label><input id="av-p-ny" type="number" step="0.001" value="${n.location[1]}">
-      <label>Z</label><input id="av-p-nz" type="number" step="0.001" value="${n.location[2]}">
-    `;
-    const upd = () => {
-      n.node_id    = document.getElementById('av-p-nid').value;
-      n.location   = [
-        parseFloat(document.getElementById('av-p-nx').value)||0,
-        parseFloat(document.getElementById('av-p-ny').value)||0,
-        parseFloat(document.getElementById('av-p-nz').value)||0,
-      ];
-      avSelected.id = n.node_id;
-      avBuildScene(); avShowArrows(n); markDirty('available');
-    };
-    ['av-p-nid','av-p-nx','av-p-ny','av-p-nz'].forEach(id => document.getElementById(id).addEventListener('input', upd));
-    avShowArrows(n);
-
+  if(avSelected.type==='node'){
+    var n=avData.nodes.find(function(n){return n.node_id===avSelected.id;}); if(!n) return;
+    title.textContent='Node';
+    content.innerHTML='<label>ID</label><input id="pnid" value="'+n.node_id+'">'
+      +'<label>X</label><input id="pnx" type="number" step="0.001" value="'+n.location[0]+'">'
+      +'<label>Y</label><input id="pny" type="number" step="0.001" value="'+n.location[1]+'">'
+      +'<label>Z</label><input id="pnz" type="number" step="0.001" value="'+n.location[2]+'">';
+    function upd(){
+      n.node_id=document.getElementById('pnid').value;
+      n.location=[parseFloat(document.getElementById('pnx').value)||0,parseFloat(document.getElementById('pny').value)||0,parseFloat(document.getElementById('pnz').value)||0];
+      avSelected.id=n.node_id; avBuildScene(); markDirty('available');
+    }
+    ['pnid','pnx','pny','pnz'].forEach(function(id){document.getElementById(id).addEventListener('input',upd);});
   } else {
-    const s = avData.segments.find(s => s.segment_id === avSelected.id);
-    if (!s) return;
-    title.textContent = 'Segment';
-    const fmt = arr => arr.join(', ');
-    content.innerHTML = `
-      <label>ID</label><input id="av-p-sid" value="${s.segment_id}">
-      <label>End A (x,y,z)</label>
-      <div class="row">
-        <input id="av-p-sax" type="number" step="0.001" value="${s.location_at_end_a[0]}">
-        <input id="av-p-say" type="number" step="0.001" value="${s.location_at_end_a[1]}">
-        <input id="av-p-saz" type="number" step="0.001" value="${s.location_at_end_a[2]}">
-      </div>
-      <label>End B (x,y,z)</label>
-      <div class="row">
-        <input id="av-p-sbx" type="number" step="0.001" value="${s.location_at_end_b[0]}">
-        <input id="av-p-sby" type="number" step="0.001" value="${s.location_at_end_b[1]}">
-        <input id="av-p-sbz" type="number" step="0.001" value="${s.location_at_end_b[2]}">
-      </div>
-    `;
-    const upd = () => {
-      s.segment_id = document.getElementById('av-p-sid').value;
-      s.location_at_end_a = [
-        parseFloat(document.getElementById('av-p-sax').value)||0,
-        parseFloat(document.getElementById('av-p-say').value)||0,
-        parseFloat(document.getElementById('av-p-saz').value)||0,
-      ];
-      s.location_at_end_b = [
-        parseFloat(document.getElementById('av-p-sbx').value)||0,
-        parseFloat(document.getElementById('av-p-sby').value)||0,
-        parseFloat(document.getElementById('av-p-sbz').value)||0,
-      ];
-      avSelected.id = s.segment_id;
-      avBuildScene(); markDirty('available');
-    };
-    ['av-p-sid','av-p-sax','av-p-say','av-p-saz','av-p-sbx','av-p-sby','av-p-sbz'].forEach(id =>
-      document.getElementById(id).addEventListener('input', upd)
-    );
+    var s=avData.segments.find(function(s){return s.segment_id===avSelected.id;}); if(!s) return;
+    title.textContent='Segment';
+    content.innerHTML='<label>ID</label><input id="psid" value="'+s.segment_id+'">'
+      +'<label>End A</label><div class="row"><input id="psax" type="number" step="0.001" value="'+s.location_at_end_a[0]+'"><input id="psay" type="number" step="0.001" value="'+s.location_at_end_a[1]+'"><input id="psaz" type="number" step="0.001" value="'+s.location_at_end_a[2]+'"></div>'
+      +'<label>End B</label><div class="row"><input id="psbx" type="number" step="0.001" value="'+s.location_at_end_b[0]+'"><input id="psby" type="number" step="0.001" value="'+s.location_at_end_b[1]+'"><input id="psbz" type="number" step="0.001" value="'+s.location_at_end_b[2]+'"></div>';
+    function upd(){
+      s.segment_id=document.getElementById('psid').value;
+      s.location_at_end_a=[parseFloat(document.getElementById('psax').value)||0,parseFloat(document.getElementById('psay').value)||0,parseFloat(document.getElementById('psaz').value)||0];
+      s.location_at_end_b=[parseFloat(document.getElementById('psbx').value)||0,parseFloat(document.getElementById('psby').value)||0,parseFloat(document.getElementById('psbz').value)||0];
+      avSelected.id=s.segment_id; avBuildScene(); markDirty('available');
+    }
+    ['psid','psax','psay','psaz','psbx','psby','psbz'].forEach(function(id){document.getElementById(id).addEventListener('input',upd);});
   }
 }
 
-// ============================================================
-//  CHOSEN NETWORK — 3D
-// ============================================================
-const chCanvas    = document.getElementById('ch-canvas');
-const chRenderer  = makeRenderer(chCanvas);
-const chScene     = new THREE.Scene();
-const chCamera    = makeCamera();
-const chCubeRend  = makeCubeRenderer(document.getElementById('ch-cube-canvas'));
-const chCubeScene = makeCubeScene();
-chScene.add(new THREE.AmbientLight(0xffffff,0.5));
-const chDirLight  = new THREE.DirectionalLight(0xffffff,0.8);
-chDirLight.position.set(5,5,10); chScene.add(chDirLight);
-chScene.add(makeAxes(2));
-const chOrbit = makeOrbit(chCamera, chCanvas, chRender);
+// ═══════════════════════════════════════════════════════
+//  CHOSEN — init
+// ═══════════════════════════════════════════════════════
+function initCh(){
+  chRenderer=makeRenderer(document.getElementById('ch-canvas'));
+  chScene=new THREE.Scene();
+  chCamera=makeCamera();
+  chScene.add(new THREE.AmbientLight(0xffffff,0.5));
+  var dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(5,8,10); chScene.add(dl);
+  chScene.add(makeWorldAxes(1.5));
+  chRay=new THREE.Raycaster(); chRay.params.Line.threshold=0.12;
+  chCube=makeViewCube(
+    document.getElementById('ch-cube-canvas'),
+    function(){return chCamera;},
+    function(name){chSnapTo(name);}
+  );
+  chOrbit=makeOrbit(chCamera,document.getElementById('ch-canvas'),chRender);
+  chOrbit.state.phi=Math.PI/2;
+  chOrbit.state.theta=Math.PI/2;
+  chOrbit.state.dist=30;
+  chCamera.up.set(0,1,0);
+  chOrbit.update();
+}
 
-let chSegLines  = {};
-let chNodeMeshes = {};
-
-function chBuildScene() {
-  Object.values(chSegLines).forEach(l => chScene.remove(l));
-  Object.values(chNodeMeshes).forEach(m => chScene.remove(m));
-  chSegLines = {}; chNodeMeshes = {};
-
-  (avData.segments||[]).forEach(seg => {
-    const chosen = chosenList.includes(seg.segment_id);
-    const col = chosen ? YELLOW : GRAY;
-    const line = makeSegmentLine(seg, col, chosen ? 3 : 1);
-    line.userData = {type:'segment', id: seg.segment_id};
-    chSegLines[seg.segment_id] = line;
-    chScene.add(line);
+function chOnResize(){
+  var vp=document.getElementById('ch-viewport');
+  chRenderer.setSize(vp.clientWidth,vp.clientHeight);
+  chCamera.aspect=vp.clientWidth/vp.clientHeight;
+  chCamera.updateProjectionMatrix();
+}
+function chFitView(){
+  var box=new THREE.Box3();
+  Object.values(chSegLines).concat(Object.values(chNodeMeshes)).forEach(function(o){box.expandByObject(o);});
+  if(!box.isEmpty()) chOrbit.fitToBox(box); else chRender();
+}
+function chBuildScene(){
+  Object.values(chSegLines).forEach(function(l){chScene.remove(l);});
+  Object.values(chNodeMeshes).forEach(function(m){chScene.remove(m);});
+  chSegLines={}; chNodeMeshes={};
+  (avData.segments||[]).forEach(function(seg){
+    var chosen=chosenList.indexOf(seg.segment_id)>=0;
+    var line=makeSegLine(seg,chosen?C_YELLOW:C_GRAY,chosen?3.5:1.5);
+    chSegLines[seg.segment_id]=line; chScene.add(line);
   });
-
-  // Show resolved nodes from chosen_network.json if available
-  if (chosenNetData?.nodes?.length) {
-    chosenNetData.nodes.forEach(n => {
-      const mesh = makeNodeSphere(n.location, RED);
-      mesh.userData = {type:'node', id:n.node_id};
-      chNodeMeshes[n.node_id] = mesh;
-      chScene.add(mesh);
+  if(chosenNetData&&chosenNetData.nodes&&chosenNetData.nodes.length){
+    chosenNetData.nodes.forEach(function(n){
+      var mesh=makeNodeSphere(n.location,C_RED,0.15);
+      mesh.userData={type:'node',id:n.node_id};
+      chNodeMeshes[n.node_id]=mesh; chScene.add(mesh);
     });
   } else {
-    // fallback: show raw endpoints as gray dots
-    (avData.segments||[]).forEach(seg => {
-      [seg.location_at_end_a, seg.location_at_end_b].forEach(loc => {
-        const key = loc.join(',');
-        if (!chNodeMeshes[key]) {
-          const mesh = makeNodeSphere(loc, GRAY, 0.08);
-          chNodeMeshes[key] = mesh;
-          chScene.add(mesh);
-        }
+    var seen=new Set();
+    (avData.segments||[]).forEach(function(seg){
+      [seg.location_at_end_a,seg.location_at_end_b].forEach(function(loc){
+        var k=loc.join(','); if(seen.has(k)) return; seen.add(k);
+        var mesh=makeNodeSphere(loc,C_GRAY,0.09);
+        chNodeMeshes[k]=mesh; chScene.add(mesh);
       });
     });
   }
-
   chRender();
 }
 
-function chRender() {
-  chRenderer.render(chScene, chCamera);
-  renderCube(chCubeRend, chCubeScene, chCamera);
-}
-
-function chOnResize() {
-  const vp = document.getElementById('ch-viewport');
-  const w = vp.clientWidth, h = vp.clientHeight;
-  chRenderer.setSize(w, h);
-  chCamera.aspect = w/h;
-  chCamera.updateProjectionMatrix();
-}
-
-function chFitView() {
-  const box = new THREE.Box3();
-  [...Object.values(chSegLines), ...Object.values(chNodeMeshes)].forEach(o => box.expandByObject(o));
-  if (!box.isEmpty()) chOrbit.fitToBox(box);
-}
-
-function chSetView(name) {
-  const views = {
-    top:[0.01,Math.PI/2], bottom:[Math.PI-0.01,Math.PI/2],
-    front:[Math.PI/2,Math.PI], back:[Math.PI/2,0],
-    right:[Math.PI/2,Math.PI/2], left:[Math.PI/2,-Math.PI/2],
-    iso:[Math.PI/4,Math.PI/4],
-  };
-  const [phi,theta] = views[name]||views.iso;
-  chOrbit.setView(phi,theta);
-}
-
-const chRaycaster = new THREE.Raycaster();
-chRaycaster.params.Line.threshold = 0.15;
-const chMouse = new THREE.Vector2();
-
-chCanvas.addEventListener('click', e => {
-  const rect = chCanvas.getBoundingClientRect();
-  chMouse.set(
-    ((e.clientX - rect.left)/rect.width) * 2 - 1,
-    ((e.clientY - rect.top)/rect.height) * -2 + 1
-  );
-  chRaycaster.setFromCamera(chMouse, chCamera);
-  const hits = chRaycaster.intersectObjects(Object.values(chSegLines));
-  if (!hits.length) return;
-  const id = hits[0].object.userData.id;
-  if (chosenList.includes(id)) {
-    chosenList = chosenList.filter(x => x !== id);
-  } else {
-    chosenList.push(id);
-  }
-  chBuildScene();
-  chShowProps(id);
-  markDirty('chosen');
+document.getElementById('ch-canvas').addEventListener('click',function(e){
+  var rect=document.getElementById('ch-canvas').getBoundingClientRect();
+  var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+  chRay.setFromCamera(m,chCamera);
+  var hits=chRay.intersectObjects(Object.values(chSegLines));
+  if(!hits.length) return;
+  var id=hits[0].object.userData.id;
+  if(chosenList.indexOf(id)>=0) chosenList=chosenList.filter(function(x){return x!==id;});
+  else chosenList.push(id);
+  chBuildScene(); chShowProps(id); markDirty('chosen');
 });
 
-function chShowProps(id) {
-  const panel = document.getElementById('props-ch');
-  const content = document.getElementById('props-ch-content');
-  const title = document.getElementById('props-ch-title');
-  if (!id) return;
-  const chosen = chosenList.includes(id);
-  title.textContent = 'Segment: ' + id;
-  content.innerHTML = `<p style="font-size:12px;color:${chosen?'#d4a017':'#888'};margin-top:4px">${chosen ? '✓ Chosen' : '○ Not chosen'}</p>`;
+function chShowProps(id){
+  document.getElementById('props-ch').classList.add('props-visible');
+  document.getElementById('props-ch-title').textContent='Segment: '+id;
+  var chosen=chosenList.indexOf(id)>=0;
+  document.getElementById('props-ch-content').innerHTML='<p style="font-size:12px;color:'+(chosen?'#d4a017':'#888')+';margin-top:4px">'+(chosen?'✓ Chosen':'○ Not chosen')+'</p>';
 }
 
-// ============================================================
-//  FLATTENED NETWORK — 2D SVG
-// ============================================================
-const flatSvg = document.getElementById('flat-svg');
-let flatPan = {x:0,y:0}, flatScale = 1;
-let flatIsPanning = false, flatPanStart = {x:0,y:0};
-
-function flatNorm(deg) {
-  if (deg === '' || deg == null) return null;
-  const n = parseFloat(deg);
-  return isFinite(n) ? ((n%360)+360)%360 : null;
-}
-
-function flatAutoAngle(idx, total) {
-  // Random but seeded per segment index for stability
-  return Math.round((idx / total) * 360);
-}
-
-function flatGetRows() { return flatData.rows || []; }
-
-function flatRender() {
-  const rows = flatGetRows();
-  // Assign missing angles
-  rows.forEach((row, i) => {
-    if (row.angle === '' || row.angle == null)
-      row.angle = String(flatAutoAngle(i, rows.length));
-  });
-
-  // Compute 2D positions from angle + length
-  // Layout: chain from (0,0), each segment starts from the end of the previous
-  // For simplicity: each segment starts at origin, rendered radially
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-  flatSvg.innerHTML = '';
-
-  const g = document.createElementNS(SVG_NS, 'g');
-  g.setAttribute('id', 'flat-root');
+// ═══════════════════════════════════════════════════════
+//  FLATTENED
+// ═══════════════════════════════════════════════════════
+function flatNorm(deg){if(deg===''||deg==null)return null;var n=parseFloat(deg);return isFinite(n)?((n%360)+360)%360:null;}
+function flatAutoAngle(i,tot){return Math.round((i/tot)*360);}
+function flatRender(){
+  var rows=flatData.rows||[];
+  rows.forEach(function(row,i){if(row.angle===''||row.angle==null)row.angle=String(flatAutoAngle(i,rows.length));});
+  var NS='http://www.w3.org/2000/svg'; flatSvg.innerHTML='';
+  var g=document.createElementNS(NS,'g');
+  g.setAttribute('transform','translate('+flatPan.x+','+flatPan.y+') scale('+flatScale+')');
   flatSvg.appendChild(g);
-
-  const points = {}; // node_id -> {x,y}
-  // Place all segments from origin with angle/length
-  rows.forEach(row => {
-    const ang = flatNorm(row.angle) ?? 0;
-    const len = parseFloat(row.length) || 50;
-    const scale = 20; // pixels per inch
-    const rad = ang * Math.PI / 180;
-
-    const pA = row.pos_a_x && row.pos_a_y
-      ? {x: parseFloat(row.pos_a_x), y: parseFloat(row.pos_a_y)}
-      : {x: 0, y: 0};
-    const pB = row.pos_b_x && row.pos_b_y
-      ? {x: parseFloat(row.pos_b_x), y: parseFloat(row.pos_b_y)}
-      : {x: pA.x + len * scale * Math.cos(rad), y: pA.y - len * scale * Math.sin(rad)};
-
-    points[row.node_at_end_a] = pA;
-    points[row.node_at_end_b] = pB;
+  var pts={};
+  rows.forEach(function(row){
+    var ang=flatNorm(row.angle)||0, len=parseFloat(row.length)||50, sc=20, rad=ang*Math.PI/180;
+    var pA=row.pos_a_x&&row.pos_a_y?{x:parseFloat(row.pos_a_x),y:parseFloat(row.pos_a_y)}:{x:0,y:0};
+    var pB=row.pos_b_x&&row.pos_b_y?{x:parseFloat(row.pos_b_x),y:parseFloat(row.pos_b_y)}:{x:pA.x+len*sc*Math.cos(rad),y:pA.y-len*sc*Math.sin(rad)};
+    pts[row.node_at_end_a]=pA; pts[row.node_at_end_b]=pB;
   });
-
-  // Apply pan/zoom
-  const root = document.getElementById('flat-root');
-  root.setAttribute('transform', `translate(${flatPan.x},${flatPan.y}) scale(${flatScale})`);
-
-  rows.forEach((row, idx) => {
-    const pA = points[row.node_at_end_a] || {x:0,y:0};
-    const pB = points[row.node_at_end_b] || {x:50,y:0};
-    const isSel = flatSelected === idx;
-
-    const line = document.createElementNS(SVG_NS, 'line');
-    line.setAttribute('x1', pA.x); line.setAttribute('y1', pA.y);
-    line.setAttribute('x2', pB.x); line.setAttribute('y2', pB.y);
-    line.setAttribute('stroke', isSel ? '#fff' : '#888');
-    line.setAttribute('stroke-width', isSel ? 3/flatScale : 2/flatScale);
-    line.style.cursor = 'pointer';
-    line.addEventListener('click', () => { flatSelected = idx; flatRender(); flatShowProps(idx); });
-    root.appendChild(line);
-
-    // hit zone
-    const hit = document.createElementNS(SVG_NS, 'line');
-    hit.setAttribute('x1', pA.x); hit.setAttribute('y1', pA.y);
-    hit.setAttribute('x2', pB.x); hit.setAttribute('y2', pB.y);
-    hit.setAttribute('stroke', 'transparent');
-    hit.setAttribute('stroke-width', 12/flatScale);
-    hit.style.cursor = 'pointer';
-    hit.addEventListener('click', () => { flatSelected = idx; flatRender(); flatShowProps(idx); });
-    root.appendChild(hit);
-
-    // Labels
-    const mx = (pA.x+pB.x)/2, my = (pA.y+pB.y)/2;
-    const lbl = document.createElementNS(SVG_NS, 'text');
-    lbl.setAttribute('x', mx); lbl.setAttribute('y', my - 8/flatScale);
-    lbl.setAttribute('text-anchor','middle');
-    lbl.setAttribute('font-size', 11/flatScale);
-    lbl.setAttribute('fill','#aaa');
-    lbl.setAttribute('pointer-events','none');
-    lbl.textContent = row.segment_id || '';
-    root.appendChild(lbl);
-
-    const lenLbl = document.createElementNS(SVG_NS, 'text');
-    lenLbl.setAttribute('x', mx); lenLbl.setAttribute('y', my + 14/flatScale);
-    lenLbl.setAttribute('text-anchor','middle');
-    lenLbl.setAttribute('font-size', 9/flatScale);
-    lenLbl.setAttribute('fill','#666');
-    lenLbl.setAttribute('pointer-events','none');
-    lenLbl.textContent = row.length ? `L:${row.length}` : '';
-    root.appendChild(lenLbl);
-
-    // Node dots
-    [pA, pB].forEach((p, ni) => {
-      const nodeId = ni===0 ? row.node_at_end_a : row.node_at_end_b;
-      const c = document.createElementNS(SVG_NS, 'circle');
-      c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
-      c.setAttribute('r', 4/flatScale);
-      c.setAttribute('fill', '#c73652');
-      c.setAttribute('pointer-events','none');
-      root.appendChild(c);
-      const t = document.createElementNS(SVG_NS, 'text');
-      t.setAttribute('x', p.x); t.setAttribute('y', p.y - 8/flatScale);
-      t.setAttribute('text-anchor','middle');
-      t.setAttribute('font-size', 10/flatScale);
-      t.setAttribute('fill','#eee');
-      t.setAttribute('pointer-events','none');
-      t.textContent = nodeId || '';
-      root.appendChild(t);
+  rows.forEach(function(row,idx){
+    var pA=pts[row.node_at_end_a]||{x:0,y:0}, pB=pts[row.node_at_end_b]||{x:50,y:0};
+    var isSel=flatSelected===idx;
+    function mk(tag,attrs){var el=document.createElementNS(NS,tag);Object.entries(attrs).forEach(function(kv){el.setAttribute(kv[0],kv[1]);});return el;}
+    g.appendChild(mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:isSel?'#fff':'#888','stroke-width':(isSel?3.5:2.5)/flatScale}));
+    var hit=mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:'transparent','stroke-width':14/flatScale,cursor:'pointer'});
+    hit.addEventListener('click',function(){flatSelected=idx;flatRender();flatShowProps(idx);});
+    g.appendChild(hit);
+    var mx=(pA.x+pB.x)/2, my=(pA.y+pB.y)/2;
+    var lbl=mk('text',{x:mx,y:my-9/flatScale,'text-anchor':'middle','font-size':11/flatScale,fill:'#aaa','pointer-events':'none'});
+    lbl.textContent=row.segment_id||''; g.appendChild(lbl);
+    var ll=mk('text',{x:mx,y:my+14/flatScale,'text-anchor':'middle','font-size':9/flatScale,fill:'#666','pointer-events':'none'});
+    ll.textContent=row.length?'L:'+row.length:''; g.appendChild(ll);
+    [pA,pB].forEach(function(p,ni){
+      var nid=ni===0?row.node_at_end_a:row.node_at_end_b;
+      g.appendChild(mk('circle',{cx:p.x,cy:p.y,r:4.5/flatScale,fill:'#c73652','pointer-events':'none'}));
+      var t=mk('text',{x:p.x,y:p.y-9/flatScale,'text-anchor':'middle','font-size':10/flatScale,fill:'#eee','pointer-events':'none'});
+      t.textContent=nid||''; g.appendChild(t);
     });
   });
 }
-
-function flatShowProps(idx) {
-  const row = flatGetRows()[idx];
-  document.getElementById('flat-no-sel').style.display = 'none';
-  document.getElementById('flat-prop-id').textContent  = row.segment_id  || '—';
-  document.getElementById('flat-prop-na').textContent  = row.node_at_end_a || '—';
-  document.getElementById('flat-prop-nb').textContent  = row.node_at_end_b || '—';
-  document.getElementById('flat-prop-len').textContent = row.length || '—';
-  document.getElementById('flat-prop-angle').value     = flatNorm(row.angle) ?? '';
+var flatSvg=document.getElementById('flat-svg');
+function flatShowProps(idx){
+  var row=(flatData.rows||[])[idx]; if(!row) return;
+  document.getElementById('flat-no-sel').style.display='none';
+  document.getElementById('flat-prop-id').textContent=row.segment_id||'—';
+  document.getElementById('flat-prop-na').textContent=row.node_at_end_a||'—';
+  document.getElementById('flat-prop-nb').textContent=row.node_at_end_b||'—';
+  document.getElementById('flat-prop-len').textContent=row.length||'—';
+  document.getElementById('flat-prop-angle').value=flatNorm(row.angle)||'';
 }
-
-function flatAngleChanged(val) {
-  if (flatSelected == null) return;
-  const rows = flatGetRows();
-  rows[flatSelected].angle = val;
-  markDirty('flattened');
-  flatRender();
+function flatAngleChanged(val){
+  if(flatSelected==null) return;
+  (flatData.rows||[])[flatSelected].angle=val;
+  markDirty('flattened'); flatRender();
 }
+function flatFitView(){flatPan={x:flatSvg.clientWidth/2,y:flatSvg.clientHeight/2};flatScale=1;flatRender();}
+flatSvg.addEventListener('mousedown',function(e){if(e.button===1||e.button===2){flatIsPanning=true;flatPanStart={x:e.clientX-flatPan.x,y:e.clientY-flatPan.y};e.preventDefault();}});
+window.addEventListener('mousemove',function(e){if(!flatIsPanning)return;flatPan={x:e.clientX-flatPanStart.x,y:e.clientY-flatPanStart.y};flatRender();});
+window.addEventListener('mouseup',function(){flatIsPanning=false;});
+flatSvg.addEventListener('wheel',function(e){e.preventDefault();flatScale=Math.max(0.05,Math.min(20,flatScale*(e.deltaY>0?0.9:1.1)));flatRender();},{passive:false});
+flatSvg.addEventListener('contextmenu',function(e){e.preventDefault();});
 
-function flatFitView() {
-  // Reset pan/zoom
-  flatPan = {x: flatSvg.clientWidth/2, y: flatSvg.clientHeight/2};
-  flatScale = 1;
-  flatRender();
-}
-
-flatSvg.addEventListener('mousedown', e => {
-  if (e.button !== 1 && e.button !== 2) return;
-  flatIsPanning = true;
-  flatPanStart = {x: e.clientX - flatPan.x, y: e.clientY - flatPan.y};
-  e.preventDefault();
-});
-window.addEventListener('mousemove', e => {
-  if (!flatIsPanning) return;
-  flatPan = {x: e.clientX - flatPanStart.x, y: e.clientY - flatPanStart.y};
-  flatRender();
-});
-window.addEventListener('mouseup', () => { flatIsPanning = false; });
-flatSvg.addEventListener('wheel', e => {
-  e.preventDefault();
-  const factor = e.deltaY > 0 ? 0.9 : 1.1;
-  flatScale = Math.max(0.05, Math.min(20, flatScale * factor));
-  flatRender();
-},{passive:false});
-flatSvg.addEventListener('contextmenu', e => e.preventDefault());
-
-// ============================================================
-//  RESIZE OBSERVER
-// ============================================================
-new ResizeObserver(() => {
-  avOnResize(); avRender();
-  chOnResize(); chRender();
+// ═══════════════════════════════════════════════════════
+//  RESIZE & INIT
+// ═══════════════════════════════════════════════════════
+new ResizeObserver(function(){
+  if(avRenderer){avOnResize();avRender();}
+  if(chRenderer){chOnResize();chRender();}
 }).observe(document.getElementById('main'));
 
-// ============================================================
-//  INIT
-// ============================================================
-avOnResize();
-chOnResize();
-flatPan = {x: 400, y: 300};
-loadAll().then(() => {
-  avFitView();
-  chFitView();
-  flatFitView();
+requestAnimationFrame(function(){
+  initAv();
+  initCh();
+  avOnResize();
+  chOnResize();
+  flatPan={x:(document.getElementById('flat-wrap').clientWidth||800)/2,y:300};
+  loadAll().then(function(){
+    requestAnimationFrame(function(){
+      avFitView(); chFitView(); flatFitView();
+    });
+  });
 });
 </script>
 </body>

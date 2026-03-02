@@ -112,7 +112,7 @@ def write(network: AvailableNetwork, path: Path) -> None:
             for n in network.nodes
         ],
     }
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
 
@@ -136,7 +136,7 @@ def _next_segment_id(network: AvailableNetwork) -> str:
 # Verification
 # ---------------------------------------------------------------------------
 
-def verify(path: Path, proximity_threshold: float = 1e-6) -> None:
+def verify() -> None:
     """
     Cross-references available network segment endpoints against the instances list.
     For any endpoint that has no matching AvailableNode within proximity threshold
@@ -144,10 +144,46 @@ def verify(path: Path, proximity_threshold: float = 1e-6) -> None:
     line segment connecting it to the first segment's end A (wheel-spoke, random angle,
     Z=0). Writes the updated network back to disk.
     """
+    PROXIMITY_THRESHOLD = 1e-6
+    path = Path(fileio.path("available network"))
+
+    if not path.exists():
+        write(AvailableNetwork(), path)
+        print("verify(): available_network.json not found, created empty file.")
+
     network = read(path)
 
     if not network.segments:
-        raise ValueError("Available network has no segments.")
+        # Seed from instances list — make a spoke for every node instance
+        node_instances = [
+            i for i in fileio.read_tsv("instances list")
+            if i.get("item_type") == "node"
+        ]
+        if len(node_instances) < 2:
+            raise ValueError("Available network has no segments and fewer than 2 node instances to seed from.")
+        origin = (0.0, 0.0, 0.0)
+        for inst in node_instances:
+            seg_id = _next_segment_id(network)
+            angle  = random.uniform(0, 2 * math.pi)
+            length = random.uniform(6, 18)
+            endpoint = (
+                round(origin[0] + length * math.cos(angle), 4),
+                round(origin[1] + length * math.sin(angle), 4),
+                0.0,
+            )
+            network.segments.append(AvailableSegment(
+                segment_id=seg_id,
+                type=SegmentType.LINE,
+                location_at_end_a=origin,
+                location_at_end_b=endpoint,
+            ))
+            network.nodes.append(AvailableNode(
+                node_id=inst.get("instance_name"),
+                location=endpoint,
+            ))
+            print(f"verify(): seeded segment '{seg_id}' for node '{inst.get('instance_name')}'")
+        write(network, path)
+        return
 
     # Collect instance names from instances list
     instance_names = {
@@ -163,7 +199,7 @@ def verify(path: Path, proximity_threshold: float = 1e-6) -> None:
     for seg in network.segments:
         for endpoint in (seg.location_at_end_a, seg.location_at_end_b):
             matched_node = next(
-                (n for n in network.nodes if _euclidean(n.location, endpoint) <= proximity_threshold),
+                (n for n in network.nodes if _euclidean(n.location, endpoint) <= PROXIMITY_THRESHOLD),
                 None
             )
             if matched_node is None or matched_node.node_id not in instance_names:

@@ -3,12 +3,18 @@ import os
 from harnice import fileio, state
 from harnice.utils import (
     circuit_utils,
-    formboard_utils,
     note_utils,
     library_utils,
     feature_tree_utils,
 )
-from harnice.lists import instances_list, post_harness_instances_list, rev_history, flattened_network, chosen_network
+from harnice.lists import (
+    instances_list, 
+    post_harness_instances_list, 
+    rev_history, 
+    flattened_network, 
+    chosen_network,
+    available_network
+)
 
 {build_macro_block}
 
@@ -118,7 +124,6 @@ flattened_network.build_flattened_network(
     flattened_path=fileio.path("flattened network"),
 )
 
-formboard_utils.validate_nodes()
 
 # ===========================================================================
 #                  ASSING CABLES AND CONDUCTORS
@@ -148,10 +153,6 @@ for instance in instances:
                         },
                     )
                     break
-
-for instance in fileio.read_tsv("instances list"):
-    if instance.get("item_type") in ["conductor", "cable", "net-channel"]:
-        formboard_utils.map_instance_to_segments(instance)
 
 for instance in fileio.read_tsv("instances list"):
     if instance.get("item_type") in ["conductor", "cable"]:

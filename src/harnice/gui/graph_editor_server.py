@@ -18,17 +18,32 @@ from harnice import fileio
 # Path helpers
 # ---------------------------------------------------------------------------
 
-def _available_path():   return Path(fileio.path("available network"))
-def _chosen_list_path(): return Path(fileio.path("chosen entity list"))
-def _flattened_path():   return Path(fileio.path("flattened network"))
-def _chosen_net_path():  return Path(fileio.path("chosen network"))
-def _editor_html_path(): return Path(__file__).resolve().parent / "graph_editor.html"
+
+def _available_path():
+    return Path(fileio.path("available network"))
+
+
+def _chosen_list_path():
+    return Path(fileio.path("chosen entity list"))
+
+
+def _flattened_path():
+    return Path(fileio.path("flattened network"))
+
+
+def _chosen_net_path():
+    return Path(fileio.path("chosen network"))
+
+
+def _editor_html_path():
+    return Path(__file__).resolve().parent / "graph_editor.html"
+
 
 def _pn_and_rev():
     rev_folder = os.path.normpath(fileio.rev_directory())
-    part_dir   = os.path.dirname(rev_folder)
-    rev_name   = os.path.basename(rev_folder)
-    part_name  = os.path.basename(part_dir)
+    part_dir = os.path.dirname(rev_folder)
+    rev_name = os.path.basename(rev_folder)
+    part_name = os.path.basename(part_dir)
     if not rev_name.startswith(f"{part_name}-rev"):
         return "", ""
     rev_str = rev_name.split("-rev")[-1]
@@ -36,9 +51,11 @@ def _pn_and_rev():
         return "", ""
     return part_name, f"rev{rev_str}"
 
+
 # ---------------------------------------------------------------------------
 # File I/O helpers
 # ---------------------------------------------------------------------------
+
 
 def _read_json(path: Path, default):
     if path.exists():
@@ -46,10 +63,12 @@ def _read_json(path: Path, default):
             return json.load(f)
     return default
 
+
 def _write_json(path: Path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
+
 
 def _read_csv(path: Path):
     if not path.exists():
@@ -58,6 +77,7 @@ def _read_csv(path: Path):
         reader = csv.DictReader(f)
         return reader.fieldnames or [], list(reader)
 
+
 def _write_csv(path: Path, fieldnames, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="") as f:
@@ -65,24 +85,25 @@ def _write_csv(path: Path, fieldnames, rows):
         writer.writeheader()
         writer.writerows(rows)
 
+
 # ---------------------------------------------------------------------------
 # Handler
 # ---------------------------------------------------------------------------
 
-class NetworkEditorHandler(http.server.BaseHTTPRequestHandler):
 
+class NetworkEditorHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass  # suppress access log noise
 
     def do_GET(self):
         routes = {
-            "/":                  self._serve_html,
-            "/index.html":        self._serve_html,
-            "/api/info":          self._serve_info,
-            "/api/available":     self._serve_available,
-            "/api/chosen_list":   self._serve_chosen_list,
-            "/api/chosen_net":    self._serve_chosen_net,
-            "/api/flattened":     self._serve_flattened,
+            "/": self._serve_html,
+            "/index.html": self._serve_html,
+            "/api/info": self._serve_info,
+            "/api/available": self._serve_available,
+            "/api/chosen_list": self._serve_chosen_list,
+            "/api/chosen_net": self._serve_chosen_net,
+            "/api/flattened": self._serve_flattened,
         }
         handler = routes.get(self.path)
         if handler:
@@ -92,10 +113,10 @@ class NetworkEditorHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         routes = {
-            "/api/available":   self._save_available,
+            "/api/available": self._save_available,
             "/api/chosen_list": self._save_chosen_list,
-            "/api/flattened":   self._save_flattened,
-            "/api/close":       self._close,
+            "/api/flattened": self._save_flattened,
+            "/api/close": self._close,
         }
         handler = routes.get(self.path)
         if handler:
@@ -177,14 +198,22 @@ class NetworkEditorHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", "0")
         self.end_headers()
 
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def run_server(port=0, open_browser=True):
     server = http.server.HTTPServer(("127.0.0.1", port), NetworkEditorHandler)
     port = server.server_address[1]
     url = f"http://127.0.0.1:{port}/"
+    url_file = os.environ.get("HARNICE_GRAPH_EDITOR_URL_FILE")
+    if url_file:
+        try:
+            Path(url_file).write_text(url, encoding="utf-8")
+        except Exception:
+            pass
     if open_browser:
         webbrowser.open(url)
     print(f"Network editor: {url}  (Ctrl+C to stop)")
