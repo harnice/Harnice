@@ -147,9 +147,11 @@ var drag = {
   mode: null,
   startX: 0, startY: 0,
   lastX: 0, lastY: 0,
+  moved: false,
+  wasTriad: false,     // survives mouseup so the click handler can check it
   // triad-specific
   axis: null, nodeId: null, startLoc: null,
-  // orbit-specific (which orbit instance)
+  // orbit-specific
   orbit: null
 };
 
@@ -469,15 +471,16 @@ function onCanvasMouseDown(e, orbit, ray, nodeObjects, arrowList, getArrows){
 
   // Check for triad hit first (only on left button, only in select mode with a node selected)
   if(e.button===0 && avTool==='select' && avSelected && avSelected.type==='node' && orbit===avOrbit){
-    var cones=[];
+    // Test against all mesh children of arrow groups (cones + invisible hit cylinders)
+    var hitMeshes=[];
     getArrows().forEach(function(obj){
       obj.traverse(function(child){
-        if(child.geometry&&child.geometry.type==='ConeGeometry') cones.push(child);
+        if(child.isMesh) hitMeshes.push(child);
       });
     });
-    if(cones.length){
+    if(hitMeshes.length){
       ray.setFromCamera(m,orbit.camera);
-      var hits=ray.intersectObjects(cones,true);
+      var hits=ray.intersectObjects(hitMeshes,true);
       if(hits.length){
         // Find axis by walking up
         var obj=hits[0].object;
@@ -485,6 +488,8 @@ function onCanvasMouseDown(e, orbit, ray, nodeObjects, arrowList, getArrows){
         if(obj&&obj.userData.axis){
           var node=avData.nodes.find(function(n){return n.node_id===avSelected.id;});
           drag.mode='triad';
+  drag.moved=false;
+  drag.wasTriad=true;
           drag.axis=obj.userData.axis;
           drag.nodeId=avSelected.id;
           drag.startLoc=node?node.location.slice():null;
@@ -498,12 +503,15 @@ function onCanvasMouseDown(e, orbit, ray, nodeObjects, arrowList, getArrows){
 
   // Otherwise start an orbit drag
   drag.mode = e.button===0 ? 'orbit-rotate' : 'orbit-pan';
+  drag.moved=false;
+  drag.wasTriad=false;
   drag.lastX=e.clientX; drag.lastY=e.clientY;
   drag.orbit=orbit;
 }
 
 window.addEventListener('mousemove',function(e){
   if(!drag.mode) return;
+  drag.moved=true;
   var orbit=drag.orbit;
 
   if(drag.mode==='triad'){
@@ -547,9 +555,11 @@ window.addEventListener('mousemove',function(e){
 });
 
 window.addEventListener('mouseup',function(){
-  drag.mode=null;
+  drag.mode=null; drag.moved=false;
   drag.axis=null; drag.nodeId=null; drag.startLoc=null;
   drag.orbit=null;
+  // wasTriad intentionally NOT cleared here — click fires after mouseup
+  // and needs to read it. Cleared in the click handler instead.
 });
 
 // ── Zoom (wheel) — always on the canvas, not routed through drag ──────────────
@@ -675,7 +685,8 @@ function avBuildScene(){
 }
 
 document.getElementById('av-canvas').addEventListener('click',function(e){
-  if(drag.mode==='triad') return; // consumed by triad
+  if(drag.wasTriad){ drag.wasTriad=false; return; }
+  drag.wasTriad=false;
   var rect=document.getElementById('av-canvas').getBoundingClientRect();
   var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
   avRay.setFromCamera(m,avCamera);
@@ -702,17 +713,38 @@ function avShowArrows(node){
   var pos=new THREE.Vector3(node.location[0],node.location[1],node.location[2]);
   var group=new THREE.Group();
   group.position.copy(pos);
-  group.userData.fixedPxRadius=50;
+  // Arm length = 0.6 units in group-local space (group scale drives screen size).
+  // Cone is fat and short for a stubby look. Hit cylinder is wide and invisible.
+  var ARM=0.6, CONE_R=0.13, CONE_H=0.28, SHAFT_R=0.04;
+  group.userData.fixedPxRadius=38;
   group.userData.isArrowGroup=true;
   [{axis:'x',dir:[1,0,0],col:0xff3333},{axis:'y',dir:[0,1,0],col:0x44cc44},{axis:'z',dir:[0,0,1],col:0x4499ff}].forEach(function(ax){
     var dir=new THREE.Vector3(ax.dir[0],ax.dir[1],ax.dir[2]);
-    var line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir]),new THREE.LineBasicMaterial({color:ax.col,linewidth:3}));
-    line.userData={axis:ax.axis};
-    var cone=new THREE.Mesh(new THREE.ConeGeometry(0.07,0.18,8),new THREE.MeshLambertMaterial({color:ax.col}));
-    cone.position.copy(dir);
-    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);
+    // Shaft as cylinder
+    var shaft=new THREE.Mesh(
+      new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,ARM,8),
+      new THREE.MeshLambertMaterial({color:ax.col})
+    );
+    shaft.position.copy(dir.clone().multiplyScalar(ARM*0.5));
+    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+    shaft.userData={axis:ax.axis};
+    // Cone tip
+    var cone=new THREE.Mesh(
+      new THREE.ConeGeometry(CONE_R,CONE_H,10),
+      new THREE.MeshLambertMaterial({color:ax.col})
+    );
+    cone.position.copy(dir.clone().multiplyScalar(ARM));
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
     cone.userData={axis:ax.axis};
-    group.add(line,cone);
+    // Invisible hit cylinder covering the full arm length — much easier to click
+    var hitCyl=new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18,0.18,ARM+CONE_H,8),
+      new THREE.MeshBasicMaterial({visible:false,side:THREE.DoubleSide})
+    );
+    hitCyl.position.copy(dir.clone().multiplyScalar((ARM+CONE_H)*0.5));
+    hitCyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+    hitCyl.userData={axis:ax.axis};
+    group.add(shaft,cone,hitCyl);
   });
   avScene.add(group); avArrows=[group];
   avRender();
