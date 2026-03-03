@@ -124,6 +124,7 @@ input:focus{outline:none;border-color:#888}
 // ── Constants ─────────────────────────────────────────────────────────────────
 var C_YELLOW=0xd4a017, C_RED=0xc73652, C_GRAY=0x4a4a4a, C_WHITE=0xffffff;
 var AUTOSAVE_MS=3000;
+var PX_PER_MM = (window.devicePixelRatio||1) * 96 / 25.4;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var dirty={available:false,chosen:false,flattened:false};
@@ -133,11 +134,24 @@ var avData={segments:[],nodes:[]};
 var chosenList=[], chosenNetData=null;
 var flatData={fieldnames:[],rows:[]};
 var avSelected=null, avTool='select', avConnectStart=null;
-var avArrows=[], avDragNode=null, avDragAxis=null, avDragStartMouse=null, avDragStartLoc=null;
+var avArrows=[];
 var flatPan={x:400,y:300}, flatScale=1, flatIsPanning=false, flatPanStart={x:0,y:0}, flatSelected=null;
 
 var avRenderer, avScene, avCamera, avOrbit, avCube, avNodeMeshes={}, avSegLines={}, avRay;
 var chRenderer, chScene, chCamera, chOrbit, chCube, chSegLines={}, chNodeMeshes={}, chRay;
+
+// ── Unified pointer drag state ────────────────────────────────────────────────
+// Only one drag can be active at a time. 'mode' determines what happens on move.
+// modes: null | 'orbit-rotate' | 'orbit-pan' | 'triad'
+var drag = {
+  mode: null,
+  startX: 0, startY: 0,
+  lastX: 0, lastY: 0,
+  // triad-specific
+  axis: null, nodeId: null, startLoc: null,
+  // orbit-specific (which orbit instance)
+  orbit: null
+};
 
 // ── Autosave ──────────────────────────────────────────────────────────────────
 function markDirty(tab){
@@ -193,37 +207,32 @@ function makeRenderer(canvas){
   return r;
 }
 
-// Create an OrthographicCamera sized to the given viewport dimensions.
-// halfSize is the world-space half-height; we keep it in sync with zoom.
-function makeOrthoCamera(w, h){
-  var hs = 15; // initial half-size (world units)
-  var asp = w / (h || 1);
-  var c = new THREE.OrthographicCamera(-hs*asp, hs*asp, hs, -hs, -10000, 10000);
-  c.position.set(0, 0, 100);
-  c.up.set(0, 1, 0);
-  c.lookAt(0, 0, 0);
-  c.userData.halfSize = hs;
+function makeOrthoCamera(w,h){
+  var hs=15;
+  var asp=w/(h||1);
+  var c=new THREE.OrthographicCamera(-hs*asp,hs*asp,hs,-hs,-10000,10000);
+  c.position.set(0,0,500);
+  c.up.set(0,1,0);
+  c.lookAt(0,0,0);
+  c.userData.halfSize=hs;
   return c;
 }
 
-// Update ortho frustum after resize or zoom change.
-function updateOrthoFrustum(cam, w, h){
-  var hs = cam.userData.halfSize;
-  var asp = w / (h || 1);
-  cam.left   = -hs * asp;
-  cam.right  =  hs * asp;
-  cam.top    =  hs;
-  cam.bottom = -hs;
+function updateOrthoFrustum(cam,w,h){
+  var hs=cam.userData.halfSize;
+  var asp=w/(h||1);
+  cam.left=-hs*asp; cam.right=hs*asp; cam.top=hs; cam.bottom=-hs;
   cam.updateProjectionMatrix();
 }
 
 function makeWorldAxes(size){
   var g=new THREE.Group();
+  g.userData.fixedPxRadius=size*28;
   function addAxis(dir,col){
-    var geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(size)]);
+    var geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().normalize().multiplyScalar(size)]);
     g.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:col,linewidth:2})));
     var cone=new THREE.Mesh(new THREE.ConeGeometry(size*0.04,size*0.15,8),new THREE.MeshBasicMaterial({color:col}));
-    cone.position.copy(dir.clone().multiplyScalar(size));
+    cone.position.copy(dir.clone().normalize().multiplyScalar(size));
     cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
     g.add(cone);
   }
@@ -233,10 +242,23 @@ function makeWorldAxes(size){
   return g;
 }
 
+// ── Scale fixed-pixel objects ─────────────────────────────────────────────────
+function scaleFixedPx(scene,cam,renderer){
+  var sz=renderer.getSize(new THREE.Vector2());
+  var worldPerPx=(2*cam.userData.halfSize)/sz.height;
+  var segWorldWidth=worldPerPx*PX_PER_MM*0.5;
+  scene.traverse(function(obj){
+    if(obj.userData.fixedPxRadius){
+      obj.scale.setScalar(obj.userData.fixedPxRadius*worldPerPx);
+    }
+    if(obj.userData.fixedSegWidth){
+      obj.scale.set(obj.userData.segLen,segWorldWidth,segWorldWidth);
+    }
+  });
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
-//  VIEW CUBE  — true orthographic parallel projection
-//  The cube canvas uses its own pure-math orthographic projector that exactly
-//  mirrors the Three.js camera orientation (fwd / up / right are orthonormal).
+//  VIEW CUBE — true orthographic parallel projection
 // ══════════════════════════════════════════════════════════════════════════════
 function cv3(x,y,z){return{x:x,y:y,z:z};}
 function cvadd(a,b){return cv3(a.x+b.x,a.y+b.y,a.z+b.z);}
@@ -244,35 +266,26 @@ function cvscale(v,s){return cv3(v.x*s,v.y*s,v.z*s);}
 function cvdot(a,b){return a.x*b.x+a.y*b.y+a.z*b.z;}
 function cvnorm(v){var l=Math.sqrt(cvdot(v,v))||1;return cvscale(v,1/l);}
 function cvcross(a,b){return cv3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);}
-function cvOrthogonalize(cam){
-  cam.fwd=cvnorm(cam.fwd);
-  var r=cvnorm(cvcross(cam.fwd,cam.up));
-  cam.up=cvnorm(cvcross(r,cam.fwd));
-}
+function cvOrthogonalize(cam){cam.fwd=cvnorm(cam.fwd);var r=cvnorm(cvcross(cam.fwd,cam.up));cam.up=cvnorm(cvcross(r,cam.fwd));}
 
-var CV_GAP=0.15, CV_T=0.02, CV_AX_LEN=1.18;
-var CV_AXES=[
-  {dir:cv3(1,0,0),color:'#ff4444',label:'X'},
-  {dir:cv3(0,1,0),color:'#44cc44',label:'Y'},
-  {dir:cv3(0,0,1),color:'#4499ff',label:'Z'},
-];
-
+var CV_GAP=0.15,CV_T=0.02,CV_AX_LEN=1.18;
+var CV_AXES=[{dir:cv3(1,0,0),color:'#ff4444',label:'X'},{dir:cv3(0,1,0),color:'#44cc44',label:'Y'},{dir:cv3(0,0,1),color:'#4499ff',label:'Z'}];
 var CV_FACE_DEFS=[
-  {name:'Right',  normal:cv3( 1, 0, 0), snapFwd:cv3(-1, 0, 0), snapUp:cv3(0,0,1)},
-  {name:'Left',   normal:cv3(-1, 0, 0), snapFwd:cv3( 1, 0, 0), snapUp:cv3(0,0,1)},
-  {name:'Back',   normal:cv3( 0, 1, 0), snapFwd:cv3( 0,-1, 0), snapUp:cv3(0,0,1)},
-  {name:'Front',  normal:cv3( 0,-1, 0), snapFwd:cv3( 0, 1, 0), snapUp:cv3(0,0,1)},
-  {name:'Top',    normal:cv3( 0, 0, 1), snapFwd:cv3( 0, 0,-1), snapUp:cv3(0,1,0)},
-  {name:'Bottom', normal:cv3( 0, 0,-1), snapFwd:cv3( 0, 0, 1), snapUp:cv3(0,1,0)},
+  {name:'Right', normal:cv3( 1,0,0),snapFwd:cv3(-1,0,0),snapUp:cv3(0,0,1)},
+  {name:'Left',  normal:cv3(-1,0,0),snapFwd:cv3( 1,0,0),snapUp:cv3(0,0,1)},
+  {name:'Back',  normal:cv3(0, 1,0),snapFwd:cv3(0,-1,0),snapUp:cv3(0,0,1)},
+  {name:'Front', normal:cv3(0,-1,0),snapFwd:cv3(0, 1,0),snapUp:cv3(0,0,1)},
+  {name:'Top',   normal:cv3(0,0, 1),snapFwd:cv3(0,0,-1),snapUp:cv3(0,1,0)},
+  {name:'Bottom',normal:cv3(0,0,-1),snapFwd:cv3(0,0, 1),snapUp:cv3(0,1,0)},
 ];
 
 function cvBuildSlab(fd){
   var n=fd.normal;
-  var ax= n.x!==0 ? 0 : n.y!==0 ? 1 : 2;
-  var hi= (ax===0?n.x:ax===1?n.y:n.z) > 0 ? 1 : 0;
-  var outer=hi?1.0:0.0, inner=hi?1.0-CV_T:CV_T;
-  var ta=ax===0?1:0, tb=ax===0?2:ax===1?2:1;
-  var lo=CV_GAP, hi2=1-CV_GAP;
+  var ax=n.x!==0?0:n.y!==0?1:2;
+  var hi=(ax===0?n.x:ax===1?n.y:n.z)>0?1:0;
+  var outer=hi?1.0:0.0,inner=hi?1.0-CV_T:CV_T;
+  var ta=ax===0?1:0,tb=ax===0?2:ax===1?2:1;
+  var lo=CV_GAP,hi2=1-CV_GAP;
   function pt(a0,a1,a2){var r=[0,0,0];r[ax]=a0;r[ta]=a1;r[tb]=a2;return cv3(r[0],r[1],r[2]);}
   var inNorm=cvscale(fd.normal,-1);
   var quads=[];
@@ -286,15 +299,10 @@ function cvBuildSlab(fd){
   return quads;
 }
 
-function makeViewCube(canvasEl, getThreeCam, onSnapRequest){
-  var S=canvasEl.width;
-  // Display scale: fraction of canvas half-size used for the cube extent.
-  // With orthographic projection we use a fixed world-space half-size of 0.75
-  // (cube goes 0..1, centred at 0.5) mapped to S*DS pixels.
-  var DS=0.55;
+function makeViewCube(canvasEl,getThreeCam,onSnapRequest){
+  var S=canvasEl.width,DS=0.55;
   var ctx=canvasEl.getContext('2d');
-  var cam={fwd:cv3(0,0,-1), up:cv3(0,1,0)};
-
+  var cam={fwd:cv3(0,0,-1),up:cv3(0,1,0)};
   function syncFromThree(){
     var tc=getThreeCam();
     var fwd=new THREE.Vector3(); tc.getWorldDirection(fwd);
@@ -302,27 +310,14 @@ function makeViewCube(canvasEl, getThreeCam, onSnapRequest){
     cam.up=cv3(tc.up.x,tc.up.y,tc.up.z);
     cvOrthogonalize(cam);
   }
-
-  // True orthographic parallel projection:
-  //   right = fwd × up  (normalised, already done by cvOrthogonalize)
-  //   screen_x =  dot(v - centre, right)
-  //   screen_y = -dot(v - centre, up)
-  //   depth    =  dot(v - centre, fwd)   (for painter's-sort only)
   function project(v){
-    var cv=cv3(v.x-0.5,v.y-0.5,v.z-0.5); // centre cube at origin
+    var cv=cv3(v.x-0.5,v.y-0.5,v.z-0.5);
     var right=cvnorm(cvcross(cam.fwd,cam.up));
-    return{
-      x: S/2 + cvdot(cv,right)*S*DS,
-      y: S/2 - cvdot(cv,cam.up)*S*DS,
-      depth: cvdot(cv,cam.fwd)
-    };
+    return{x:S/2+cvdot(cv,right)*S*DS, y:S/2-cvdot(cv,cam.up)*S*DS, depth:cvdot(cv,cam.fwd)};
   }
-
   function draw(){
     syncFromThree();
     ctx.clearRect(0,0,S,S);
-
-    // Collect visible quads
     var allQuads=[];
     CV_FACE_DEFS.forEach(function(fd){
       cvBuildSlab(fd).forEach(function(q){
@@ -334,8 +329,6 @@ function makeViewCube(canvasEl, getThreeCam, onSnapRequest){
       });
     });
     allQuads.sort(function(a,b){return b.avgDepth-a.avgDepth;});
-
-    // Axes
     var orig2d=project(cv3(0,0,0));
     CV_AXES.map(function(ax){return{ax:ax,tip2d:project(cvscale(ax.dir,CV_AX_LEN))};})
       .sort(function(a,b){return b.tip2d.depth-a.tip2d.depth;})
@@ -356,8 +349,6 @@ function makeViewCube(canvasEl, getThreeCam, onSnapRequest){
         ctx.fillText(ax.label,tip.x+ux*12,tip.y+uy*12);
       });
     ctx.globalAlpha=1.0;
-
-    // Face quads
     allQuads.forEach(function(q){
       var pts=q.pts2d,b=Math.round(80+q.shade*120);
       ctx.fillStyle=q.labelName?'rgb('+b+','+b+','+b+')':'#2255cc';
@@ -365,8 +356,6 @@ function makeViewCube(canvasEl, getThreeCam, onSnapRequest){
       for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);
       ctx.closePath();ctx.fill();
     });
-
-    // Face labels
     allQuads.forEach(function(q){
       if(!q.labelName)return;
       var pts=q.pts2d,cx=0,cy=0;
@@ -376,12 +365,7 @@ function makeViewCube(canvasEl, getThreeCam, onSnapRequest){
       ctx.fillText(q.labelName,cx,cy);
     });
   }
-
-  // Click → snap to nearest face (orthographic hit test: same project())
-  var lastMoved=false;
-  canvasEl.addEventListener('mousedown',function(){lastMoved=false;});
   canvasEl.addEventListener('click',function(e){
-    if(lastMoved)return;
     syncFromThree();
     var rect=canvasEl.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;
     var best=null,bestDist=Infinity;
@@ -393,43 +377,36 @@ function makeViewCube(canvasEl, getThreeCam, onSnapRequest){
     });
     if(best&&bestDist<S*0.45)onSnapRequest(best.name);
   });
-
-  return {draw:draw};
+  return{draw:draw};
 }
 
-// ── CUBE_FACES for animateCameraToFace ────────────────────────────────────────
+// ── Camera snap ───────────────────────────────────────────────────────────────
 var CUBE_FACES=[
-  {name:'Front',  normal:new THREE.Vector3( 0,-1, 0), up:new THREE.Vector3(0,0,1)},
-  {name:'Back',   normal:new THREE.Vector3( 0, 1, 0), up:new THREE.Vector3(0,0,1)},
-  {name:'Right',  normal:new THREE.Vector3( 1, 0, 0), up:new THREE.Vector3(0,0,1)},
-  {name:'Left',   normal:new THREE.Vector3(-1, 0, 0), up:new THREE.Vector3(0,0,1)},
-  {name:'Top',    normal:new THREE.Vector3( 0, 0, 1), up:new THREE.Vector3(0,1,0)},
-  {name:'Bottom', normal:new THREE.Vector3( 0, 0,-1), up:new THREE.Vector3(0,1,0)},
+  {name:'Front', normal:new THREE.Vector3(0,-1,0),up:new THREE.Vector3(0,0,1)},
+  {name:'Back',  normal:new THREE.Vector3(0, 1,0),up:new THREE.Vector3(0,0,1)},
+  {name:'Right', normal:new THREE.Vector3(1, 0,0),up:new THREE.Vector3(0,0,1)},
+  {name:'Left',  normal:new THREE.Vector3(-1,0,0),up:new THREE.Vector3(0,0,1)},
+  {name:'Top',   normal:new THREE.Vector3(0, 0,1),up:new THREE.Vector3(0,1,0)},
+  {name:'Bottom',normal:new THREE.Vector3(0, 0,-1),up:new THREE.Vector3(0,1,0)},
 ];
 
-// ── Smooth camera snap ────────────────────────────────────────────────────────
-// For an ortho camera we only need to orient the camera; distance doesn't
-// affect framing (halfSize does).  We place the camera far along the normal
-// so it never clips geometry.
-function animateCameraToFace(orbit, face){
-  var CAM_DIST=500; // large fixed distance; ortho so it doesn't matter visually
-  var endPos=face.normal.clone().multiplyScalar(CAM_DIST).add(orbit.state.target);
+function animateCameraToFace(orbit,face){
+  var CAM_DIST=500;
+  var endPos=face.normal.clone().multiplyScalar(CAM_DIST).add(orbit.target);
   var startPos=orbit.camera.position.clone();
   var startUp=orbit.camera.up.clone();
-  var t0=performance.now(), dur=400;
+  var t0=performance.now(),dur=400;
   function step(now){
     var t=Math.min((now-t0)/dur,1);
     var ease=t<0.5?2*t*t:-1+(4-2*t)*t;
     orbit.camera.position.lerpVectors(startPos,endPos,ease);
     orbit.camera.up.lerpVectors(startUp,face.up,ease).normalize();
-    orbit.camera.lookAt(orbit.state.target);
-    // Keep phi/theta in sync so subsequent orbit drags start correctly
-    var rel=orbit.camera.position.clone().sub(orbit.state.target);
-    var rn=rel.clone().normalize();
-    orbit.state.phi=Math.acos(Math.max(-1,Math.min(1,rn.y)));
-    orbit.state.theta=Math.atan2(rn.z,rn.x);
+    orbit.camera.lookAt(orbit.target);
+    var rel=orbit.camera.position.clone().sub(orbit.target).normalize();
+    orbit.phi=Math.acos(Math.max(-1,Math.min(1,rel.y)));
+    orbit.theta=Math.atan2(rel.z,rel.x);
     orbit.renderFn();
-    if(t<1) requestAnimationFrame(step);
+    if(t<1)requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
@@ -437,133 +414,211 @@ function animateCameraToFace(orbit, face){
 function avSnapTo(name){var f=CUBE_FACES.find(function(f){return f.name===name;});if(f)animateCameraToFace(avOrbit,f);}
 function chSnapTo(name){var f=CUBE_FACES.find(function(f){return f.name===name;});if(f)animateCameraToFace(chOrbit,f);}
 
-// ── Orbit controller (ortho-aware) ────────────────────────────────────────────
-// Pan pans by modifying target and recomputing position.
-// Zoom adjusts camera.userData.halfSize and calls updateOrthoFrustum.
-// Rotate orbits the camera position around target (no perspective dist needed).
-function makeOrbit(camera, domEl, renderFn, getViewportSize){
-  var CAM_DIST=500; // fixed orbital radius for ortho cam
-  var state={btn:-1,last:{x:0,y:0},target:new THREE.Vector3()};
-  // Derive initial spherical angles from initial camera position
-  var rel=camera.position.clone().sub(state.target).normalize();
-  state.phi=Math.acos(Math.max(-1,Math.min(1,rel.y)));
-  state.theta=Math.atan2(rel.z,rel.x);
-
-  function apply(){
+// ── Orbit controller ──────────────────────────────────────────────────────────
+// Does NOT register any mouse listeners. The global dispatcher calls
+// orbitStartRotate / orbitStartPan / orbitZoom / orbitApply directly.
+function makeOrbit(camera,renderFn,getViewportSize){
+  var CAM_DIST=500;
+  var o={
+    camera:camera, renderFn:renderFn, getViewportSize:getViewportSize,
+    target:new THREE.Vector3(), phi:Math.PI/2, theta:Math.PI/2
+  };
+  o.apply=function(){
     camera.position.set(
-      state.target.x + CAM_DIST*Math.sin(state.phi)*Math.cos(state.theta),
-      state.target.y + CAM_DIST*Math.cos(state.phi),
-      state.target.z + CAM_DIST*Math.sin(state.phi)*Math.sin(state.theta)
+      o.target.x+CAM_DIST*Math.sin(o.phi)*Math.cos(o.theta),
+      o.target.y+CAM_DIST*Math.cos(o.phi),
+      o.target.z+CAM_DIST*Math.sin(o.phi)*Math.sin(o.theta)
     );
-    camera.lookAt(state.target);
+    camera.lookAt(o.target);
     renderFn();
-  }
-
-  domEl.addEventListener('mousedown',function(e){
-    if(e.button===0||e.button===2){state.btn=e.button;state.last={x:e.clientX,y:e.clientY};e.preventDefault();}
-  });
-  window.addEventListener('mousemove',function(e){
-    if(state.btn<0) return;
-    var dx=e.clientX-state.last.x, dy=e.clientY-state.last.y;
-    state.last={x:e.clientX,y:e.clientY};
-    if(state.btn===0){
-      // Rotate
-      state.theta+=dx*0.008;
-      state.phi=Math.max(0.01,Math.min(Math.PI-0.01,state.phi-dy*0.008));
-    } else {
-      // Pan: move target in camera-space XY plane
-      // 1 pixel = (2*halfSize / viewportHeight) world units
-      var sz=getViewportSize();
-      var hs=camera.userData.halfSize;
-      var worldPerPx=2*hs/(sz.h||600);
-      var fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
-      var right=new THREE.Vector3().crossVectors(fwd,camera.up).normalize();
-      var up2=right.clone().cross(fwd).normalize();
-      state.target.addScaledVector(right,-dx*worldPerPx);
-      state.target.addScaledVector(up2, dy*worldPerPx);
-    }
-    apply();
-  });
-  window.addEventListener('mouseup',function(){state.btn=-1;});
-
-  domEl.addEventListener('wheel',function(e){
-    // Zoom by scaling halfSize
-    var factor=e.deltaY>0?1.12:1/1.12;
-    camera.userData.halfSize=Math.max(0.01,Math.min(5000,camera.userData.halfSize*factor));
-    var sz=getViewportSize();
-    updateOrthoFrustum(camera,sz.w,sz.h);
-    apply();
-    e.preventDefault();
-  },{passive:false});
-
-  domEl.addEventListener('contextmenu',function(e){e.preventDefault();});
-
-  var self={state:state,camera:camera,renderFn:renderFn,update:apply};
-
-  // Fit the ortho camera to a bounding box
-  self.fitToBox=function(box){
+  };
+  o.fitToBox=function(box){
     var center=new THREE.Vector3(); box.getCenter(center);
     var size=new THREE.Vector3();   box.getSize(size);
-    state.target.copy(center);
+    o.target.copy(center);
     var sz=getViewportSize();
     var asp=(sz.w||800)/(sz.h||600);
-    // Half-size needed to fit the bounding box with a little margin
     var neededH=size.y/2*1.4||10;
     var neededW=size.x/2*1.4||10;
-    camera.userData.halfSize=Math.max(neededH, neededW/asp, 0.1);
+    camera.userData.halfSize=Math.max(neededH,neededW/asp,0.1);
     updateOrthoFrustum(camera,sz.w,sz.h);
-    apply();
+    o.apply();
   };
-  apply();
-  return self;
-}
-
-// ── Mesh helpers ──────────────────────────────────────────────────────────────
-function makeSegLine(seg,color,width){
-  var geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...seg.location_at_end_a),new THREE.Vector3(...seg.location_at_end_b)]);
-  var line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:color,linewidth:width||2}));
-  line.userData={type:'segment',id:seg.segment_id}; return line;
-}
-// Returns world-space radius that maps to a fixed pixel size for an ortho camera.
-function screenPxToWorld(cam, px){
-  return cam.userData.halfSize * px / ((cam.top - cam.bottom) / 2 * (window.devicePixelRatio||1));
-}
-
-function makeNodeSphere(loc,color,r){
-  r=r||0.15;
-  var mesh=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),new THREE.MeshLambertMaterial({color:color}));
-  mesh.position.set(loc[0],loc[1],loc[2]);
-      mesh.userData.fixedPxRadius=1.4; // desired screen-space radius in px
-  return mesh;
-}
-
-// ── Scale fixed-pixel objects before each render ──────────────────────────────
-function scaleFixedPx(scene, cam, renderer){
-  var sz = renderer.getSize(new THREE.Vector2());
-  var worldPerPx = (2 * cam.userData.halfSize) / sz.height;
-  scene.traverse(function(obj){
-    if(!obj.userData.fixedPxRadius) return;
-    obj.scale.setScalar(obj.userData.fixedPxRadius * worldPerPx);
-  });
-}
-
-// ── Render functions ──────────────────────────────────────────────────────────
-function avRender(){
-  if(!avRenderer||!avCube) return;
-  scaleFixedPx(avScene, avCamera, avRenderer);
-  avRenderer.render(avScene,avCamera);
-  avCube.draw();
-}
-function chRender(){
-  if(!chRenderer||!chCube) return;
-  scaleFixedPx(chScene, chCamera, chRenderer);
-  chRenderer.render(chScene,chCamera);
-  chCube.draw();
+  o.apply();
+  return o;
 }
 
 // ── Viewport size helpers ─────────────────────────────────────────────────────
 function avViewSize(){var vp=document.getElementById('av-viewport');return{w:vp.clientWidth,h:vp.clientHeight};}
 function chViewSize(){var vp=document.getElementById('ch-viewport');return{w:vp.clientWidth,h:vp.clientHeight};}
+
+// ── Global unified mouse dispatcher ──────────────────────────────────────────
+// Every mousedown on an av/ch canvas goes through here.
+// It decides what kind of drag to start and records it in `drag`.
+// The single window mousemove/mouseup then acts on `drag.mode` exclusively.
+
+function onCanvasMouseDown(e, orbit, ray, nodeObjects, arrowList, getArrows){
+  if(e.button!==0 && e.button!==2) return;
+  e.preventDefault();
+
+  var canvas=e.currentTarget;
+  var rect=canvas.getBoundingClientRect();
+  var ndcX=((e.clientX-rect.left)/rect.width)*2-1;
+  var ndcY=-((e.clientY-rect.top)/rect.height)*2+1;
+  var m=new THREE.Vector2(ndcX,ndcY);
+
+  // Check for triad hit first (only on left button, only in select mode with a node selected)
+  if(e.button===0 && avTool==='select' && avSelected && avSelected.type==='node' && orbit===avOrbit){
+    var cones=[];
+    getArrows().forEach(function(obj){
+      obj.traverse(function(child){
+        if(child.geometry&&child.geometry.type==='ConeGeometry') cones.push(child);
+      });
+    });
+    if(cones.length){
+      ray.setFromCamera(m,orbit.camera);
+      var hits=ray.intersectObjects(cones,true);
+      if(hits.length){
+        // Find axis by walking up
+        var obj=hits[0].object;
+        while(obj&&!obj.userData.axis&&obj.parent) obj=obj.parent;
+        if(obj&&obj.userData.axis){
+          var node=avData.nodes.find(function(n){return n.node_id===avSelected.id;});
+          drag.mode='triad';
+          drag.axis=obj.userData.axis;
+          drag.nodeId=avSelected.id;
+          drag.startLoc=node?node.location.slice():null;
+          drag.startX=e.clientX; drag.startY=e.clientY;
+          drag.orbit=orbit;
+          return; // triad wins, do not fall through to orbit
+        }
+      }
+    }
+  }
+
+  // Otherwise start an orbit drag
+  drag.mode = e.button===0 ? 'orbit-rotate' : 'orbit-pan';
+  drag.lastX=e.clientX; drag.lastY=e.clientY;
+  drag.orbit=orbit;
+}
+
+window.addEventListener('mousemove',function(e){
+  if(!drag.mode) return;
+  var orbit=drag.orbit;
+
+  if(drag.mode==='triad'){
+    var node=avData.nodes.find(function(n){return n.node_id===drag.nodeId;});
+    if(!node||!drag.startLoc) return;
+    var axDir=({x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),z:new THREE.Vector3(0,0,1)})[drag.axis];
+    var sz=avViewSize();
+    var cam=avCamera;
+    var nodePos=new THREE.Vector3(drag.startLoc[0],drag.startLoc[1],drag.startLoc[2]);
+    var nNDC=nodePos.clone().project(cam);
+    var tipNDC=nodePos.clone().add(axDir).project(cam);
+    var screenDir=new THREE.Vector2((tipNDC.x-nNDC.x)*sz.w/2,-(tipNDC.y-nNDC.y)*sz.h/2).normalize();
+    var dm=new THREE.Vector2(e.clientX-drag.startX, e.clientY-drag.startY);
+    var worldPerPx=(2*cam.userData.halfSize)/(sz.h||600);
+    var delta=dm.dot(screenDir)*worldPerPx;
+    var idx={x:0,y:1,z:2}[drag.axis];
+    node.location=drag.startLoc.slice();
+    node.location[idx]=Math.round((drag.startLoc[idx]+delta)*1000)/1000;
+    avBuildScene(); avShowProps(); markDirty('available');
+    return;
+  }
+
+  var dx=e.clientX-drag.lastX, dy=e.clientY-drag.lastY;
+  drag.lastX=e.clientX; drag.lastY=e.clientY;
+
+  if(drag.mode==='orbit-rotate'){
+    orbit.theta+=dx*0.008;
+    orbit.phi=Math.max(0.01,Math.min(Math.PI-0.01,orbit.phi-dy*0.008));
+    orbit.apply();
+  } else if(drag.mode==='orbit-pan'){
+    var sz=orbit.getViewportSize();
+    var hs=orbit.camera.userData.halfSize;
+    var worldPerPx=2*hs/(sz.h||600);
+    var fwd=new THREE.Vector3(); orbit.camera.getWorldDirection(fwd);
+    var right=new THREE.Vector3().crossVectors(fwd,orbit.camera.up).normalize();
+    var up2=right.clone().cross(fwd).normalize();
+    orbit.target.addScaledVector(right,-dx*worldPerPx);
+    orbit.target.addScaledVector(up2, dy*worldPerPx);
+    orbit.apply();
+  }
+});
+
+window.addEventListener('mouseup',function(){
+  drag.mode=null;
+  drag.axis=null; drag.nodeId=null; drag.startLoc=null;
+  drag.orbit=null;
+});
+
+// ── Zoom (wheel) — always on the canvas, not routed through drag ──────────────
+function attachZoom(canvasEl, orbit, getViewportSize){
+  canvasEl.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var factor=e.deltaY>0?1.12:1/1.12;
+    var cam=orbit.camera;
+    var oldHs=cam.userData.halfSize;
+    var newHs=Math.max(0.01,Math.min(5000,oldHs*factor));
+    var rect=canvasEl.getBoundingClientRect();
+    var ndcX=((e.clientX-rect.left)/rect.width)*2-1;
+    var ndcY=-((e.clientY-rect.top)/rect.height)*2+1;
+    var sz=getViewportSize();
+    var asp=sz.w/(sz.h||1);
+    var worldX=orbit.target.x+ndcX*oldHs*asp;
+    var worldY=orbit.target.y+ndcY*oldHs;
+    cam.userData.halfSize=newHs;
+    updateOrthoFrustum(cam,sz.w,sz.h);
+    orbit.target.x=worldX-ndcX*newHs*asp;
+    orbit.target.y=worldY-ndcY*newHs;
+    orbit.apply();
+  },{passive:false});
+  canvasEl.addEventListener('contextmenu',function(e){e.preventDefault();});
+}
+
+// ── Mesh helpers ──────────────────────────────────────────────────────────────
+function makeSegLine(seg,color){
+  var aVec=new THREE.Vector3(...seg.location_at_end_a);
+  var bVec=new THREE.Vector3(...seg.location_at_end_b);
+  var mid=aVec.clone().add(bVec).multiplyScalar(0.5);
+  var len=aVec.distanceTo(bVec)||0.001;
+  var dir=bVec.clone().sub(aVec).normalize();
+  var mesh=new THREE.Mesh(
+    new THREE.BoxGeometry(1,1,1),
+    new THREE.MeshBasicMaterial({color:color})
+  );
+  mesh.position.copy(mid);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  mesh.userData.type='segment';
+  mesh.userData.id=seg.segment_id;
+  mesh.userData.segLen=len;
+  mesh.userData.fixedSegWidth=true;
+  return mesh;
+}
+
+function makeNodeSphere(loc,color){
+  var mesh=new THREE.Mesh(
+    new THREE.SphereGeometry(1,12,12),
+    new THREE.MeshLambertMaterial({color:color})
+  );
+  mesh.position.set(loc[0],loc[1],loc[2]);
+  mesh.userData.fixedPxRadius=PX_PER_MM*0.75; // 1.5mm diameter
+  return mesh;
+}
+
+// ── Render functions ──────────────────────────────────────────────────────────
+function avRender(){
+  if(!avRenderer||!avCube) return;
+  scaleFixedPx(avScene,avCamera,avRenderer);
+  avRenderer.render(avScene,avCamera);
+  avCube.draw();
+}
+function chRender(){
+  if(!chRenderer||!chCube) return;
+  scaleFixedPx(chScene,chCamera,chRenderer);
+  chRenderer.render(chScene,chCamera);
+  chCube.draw();
+}
 
 // ═══════════════════════════════════════════════════════
 //  AVAILABLE — init
@@ -573,27 +628,22 @@ function initAv(){
   avScene=new THREE.Scene();
   var sz=avViewSize();
   avCamera=makeOrthoCamera(sz.w,sz.h);
-  avCamera.userData.halfHeightPx = sz.h / 2;
   avScene.add(new THREE.AmbientLight(0xffffff,0.5));
   var dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(5,8,10); avScene.add(dl);
   avScene.add(makeWorldAxes(1.5));
   avRay=new THREE.Raycaster(); avRay.params.Line.threshold=0.12;
-  avCube=makeViewCube(
-    document.getElementById('av-cube-canvas'),
-    function(){return avCamera;},
-    function(name){avSnapTo(name);}
-  );
-  avOrbit=makeOrbit(avCamera,document.getElementById('av-canvas'),avRender,avViewSize);
-  avOrbit.state.phi=Math.PI/2;
-  avOrbit.state.theta=Math.PI/2;
-  avCamera.up.set(0,1,0);
-  avOrbit.update();
+  avCube=makeViewCube(document.getElementById('av-cube-canvas'),function(){return avCamera;},avSnapTo);
+  avOrbit=makeOrbit(avCamera,avRender,avViewSize);
+  // Attach canvas mousedown to dispatcher
+  document.getElementById('av-canvas').addEventListener('mousedown',function(e){
+    onCanvasMouseDown(e,avOrbit,avRay,avNodeMeshes,avArrows,function(){return avArrows;});
+  });
+  attachZoom(document.getElementById('av-canvas'),avOrbit,avViewSize);
 }
 
 function avOnResize(){
   var sz=avViewSize();
   avRenderer.setSize(sz.w,sz.h);
-  avCamera.userData.halfHeightPx = sz.h / 2;
   updateOrthoFrustum(avCamera,sz.w,sz.h);
 }
 function avFitView(){
@@ -604,16 +654,16 @@ function avFitView(){
 function avBuildScene(){
   Object.values(avNodeMeshes).forEach(function(m){avScene.remove(m);});
   Object.values(avSegLines).forEach(function(l){avScene.remove(l);});
-  avArrows.forEach(function(a){avScene.remove(a);});
-  avNodeMeshes={}; avSegLines={}; avArrows=[];
+  avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
+  avNodeMeshes={}; avSegLines={};
   (avData.segments||[]).forEach(function(seg){
     var isSel=avSelected&&avSelected.type==='segment'&&avSelected.id===seg.segment_id;
-    var line=makeSegLine(seg,isSel?C_WHITE:C_YELLOW,isSel?4:2.5);
+    var line=makeSegLine(seg,isSel?C_WHITE:C_YELLOW);
     avSegLines[seg.segment_id]=line; avScene.add(line);
   });
   (avData.nodes||[]).forEach(function(n){
     var isSel=avSelected&&avSelected.type==='node'&&avSelected.id===n.node_id;
-    var mesh=makeNodeSphere(n.location,isSel?C_WHITE:C_RED,0.15);
+    var mesh=makeNodeSphere(n.location,isSel?C_WHITE:C_RED);
     mesh.userData.type='node'; mesh.userData.id=n.node_id;
     avNodeMeshes[n.node_id]=mesh; avScene.add(mesh);
   });
@@ -625,7 +675,7 @@ function avBuildScene(){
 }
 
 document.getElementById('av-canvas').addEventListener('click',function(e){
-  if(avDragAxis) return;
+  if(drag.mode==='triad') return; // consumed by triad
   var rect=document.getElementById('av-canvas').getBoundingClientRect();
   var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
   avRay.setFromCamera(m,avCamera);
@@ -647,101 +697,37 @@ document.getElementById('av-canvas').addEventListener('click',function(e){
   avSelected=hit||null; avBuildScene(); avShowProps();
 });
 
-document.getElementById('av-canvas').addEventListener('mousedown',function(e){
-  if(avTool!=='select'||!avSelected||avSelected.type!=='node') return;
-  var rect=document.getElementById('av-canvas').getBoundingClientRect();
-  var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
-  avRay.setFromCamera(m,avCamera);
-  // Collect all cone meshes inside arrow groups
-  var cones=[];
-  avArrows.forEach(function(obj){
-    obj.traverse(function(child){
-      if(child.geometry&&child.geometry.type==='ConeGeometry') cones.push(child);
-    });
-  });
-  var hits=avRay.intersectObjects(cones,true);
-  if(!hits.length) return;
-  // Walk up to find axis userData
-  var obj=hits[0].object;
-  while(obj&&!obj.userData.axis&&obj.parent) obj=obj.parent;
-  if(!obj||!obj.userData.axis) return;
-  avDragAxis=obj.userData.axis;
-  avDragNode=avSelected.id;
-  avDragStartMouse={x:e.clientX,y:e.clientY};
-  var node=avData.nodes.find(function(n){return n.node_id===avDragNode;});
-  avDragStartLoc=node?node.location.slice():null;
-  e.stopPropagation();
-});
-
-window.addEventListener('mousemove',function(e){
-  if(!avDragNode||!avDragAxis||!avDragStartLoc) return;
-  var node=avData.nodes.find(function(n){return n.node_id===avDragNode;});
-  if(!node) return;
-  var axDirs={x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),z:new THREE.Vector3(0,0,1)};
-  var axDir=axDirs[avDragAxis];
-  var nodePos=new THREE.Vector3(avDragStartLoc[0],avDragStartLoc[1],avDragStartLoc[2]);
-  // Ortho: project node and node+axDir to screen and measure pixel delta per world unit
-  function toNDC(v){return v.clone().project(avCamera);}
-  var sz=avViewSize();
-  var nNDC=toNDC(nodePos);
-  var tipNDC=toNDC(nodePos.clone().add(axDir));
-  // NDC difference → pixel difference (NDC is -1..1 mapped to 0..w)
-  var screenDir=new THREE.Vector2((tipNDC.x-nNDC.x)*sz.w/2, -(tipNDC.y-nNDC.y)*sz.h/2).normalize();
-  var dm=new THREE.Vector2(e.clientX-avDragStartMouse.x, e.clientY-avDragStartMouse.y);
-  // pixels dragged along axis direction × (world units per pixel)
-  var hs=avCamera.userData.halfSize;
-  var worldPerPx=2*hs/(sz.h||600);
-  var delta=dm.dot(screenDir)*worldPerPx;
-  var idx={x:0,y:1,z:2}[avDragAxis];
-  node.location=avDragStartLoc.slice();
-  node.location[idx]=Math.round((avDragStartLoc[idx]+delta)*1000)/1000;
-  avBuildScene(); avShowProps(); markDirty('available');
-});
-
-window.addEventListener('mouseup',function(){avDragNode=null;avDragAxis=null;avDragStartLoc=null;avDragStartMouse=null;});
-
 function avShowArrows(node){
   avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
   var pos=new THREE.Vector3(node.location[0],node.location[1],node.location[2]);
-  // Arrow geometry is built in unit scale; we apply a uniform scale via a group
-  // so the whole gizmo stays a fixed pixel size regardless of zoom.
   var group=new THREE.Group();
   group.position.copy(pos);
-  group.userData.fixedPxRadius=50; // half-length of each arm in screen pixels
+  group.userData.fixedPxRadius=50;
   group.userData.isArrowGroup=true;
-
   [{axis:'x',dir:[1,0,0],col:0xff3333},{axis:'y',dir:[0,1,0],col:0x44cc44},{axis:'z',dir:[0,0,1],col:0x4499ff}].forEach(function(ax){
     var dir=new THREE.Vector3(ax.dir[0],ax.dir[1],ax.dir[2]);
-    var line=new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), dir]),
-      new THREE.LineBasicMaterial({color:ax.col,linewidth:3})
-    );
+    var line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir]),new THREE.LineBasicMaterial({color:ax.col,linewidth:3}));
     line.userData={axis:ax.axis};
-    var cone=new THREE.Mesh(
-      new THREE.ConeGeometry(0.07,0.18,8),
-      new THREE.MeshLambertMaterial({color:ax.col})
-    );
+    var cone=new THREE.Mesh(new THREE.ConeGeometry(0.07,0.18,8),new THREE.MeshLambertMaterial({color:ax.col}));
     cone.position.copy(dir);
     cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);
     cone.userData={axis:ax.axis};
     group.add(line,cone);
   });
-
-  avScene.add(group);
-  avArrows=[group];
+  avScene.add(group); avArrows=[group];
   avRender();
 }
 
 function avNextNodeId(){var ids=new Set(avData.nodes.map(function(n){return n.node_id;}));var i=1;while(ids.has('N'+i))i++;return 'N'+i;}
 function avNextSegId(){var ids=new Set(avData.segments.map(function(s){return s.segment_id;}));var i=1;while(ids.has('S'+i))i++;return 'S'+i;}
 function avAddNode(){
-  var t=avOrbit.state.target;
+  var t=avOrbit.target;
   var id=avNextNodeId();
   avData.nodes.push({node_id:id,location:[Math.round(t.x*100)/100,Math.round(t.y*100)/100,Math.round(t.z*100)/100],alpha:null,beta:null,gamma:null});
   avSelected={type:'node',id:id}; avBuildScene(); avShowProps(); markDirty('available');
 }
 function avAddSegment(idA,idB){
-  var na=avData.nodes.find(function(n){return n.node_id===idA;}), nb=avData.nodes.find(function(n){return n.node_id===idB;});
+  var na=avData.nodes.find(function(n){return n.node_id===idA;}),nb=avData.nodes.find(function(n){return n.node_id===idB;});
   if(!na||!nb) return;
   avData.segments.push({segment_id:avNextSegId(),type:'line',location_at_end_a:na.location.slice(),location_at_end_b:nb.location.slice(),spline_control_points:[]});
   markDirty('available');
@@ -808,27 +794,21 @@ function initCh(){
   chScene=new THREE.Scene();
   var sz=chViewSize();
   chCamera=makeOrthoCamera(sz.w,sz.h);
-  chCamera.userData.halfHeightPx = sz.h / 2;
   chScene.add(new THREE.AmbientLight(0xffffff,0.5));
   var dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(5,8,10); chScene.add(dl);
   chScene.add(makeWorldAxes(1.5));
   chRay=new THREE.Raycaster(); chRay.params.Line.threshold=0.12;
-  chCube=makeViewCube(
-    document.getElementById('ch-cube-canvas'),
-    function(){return chCamera;},
-    function(name){chSnapTo(name);}
-  );
-  chOrbit=makeOrbit(chCamera,document.getElementById('ch-canvas'),chRender,chViewSize);
-  chOrbit.state.phi=Math.PI/2;
-  chOrbit.state.theta=Math.PI/2;
-  chCamera.up.set(0,1,0);
-  chOrbit.update();
+  chCube=makeViewCube(document.getElementById('ch-cube-canvas'),function(){return chCamera;},chSnapTo);
+  chOrbit=makeOrbit(chCamera,chRender,chViewSize);
+  document.getElementById('ch-canvas').addEventListener('mousedown',function(e){
+    onCanvasMouseDown(e,chOrbit,chRay,chNodeMeshes,[],function(){return [];});
+  });
+  attachZoom(document.getElementById('ch-canvas'),chOrbit,chViewSize);
 }
 
 function chOnResize(){
   var sz=chViewSize();
   chRenderer.setSize(sz.w,sz.h);
-  chCamera.userData.halfHeightPx = sz.h / 2;
   updateOrthoFrustum(chCamera,sz.w,sz.h);
 }
 function chFitView(){
@@ -842,12 +822,12 @@ function chBuildScene(){
   chSegLines={}; chNodeMeshes={};
   (avData.segments||[]).forEach(function(seg){
     var chosen=chosenList.indexOf(seg.segment_id)>=0;
-    var line=makeSegLine(seg,chosen?C_YELLOW:C_GRAY,chosen?3.5:1.5);
+    var line=makeSegLine(seg,chosen?C_YELLOW:C_GRAY);
     chSegLines[seg.segment_id]=line; chScene.add(line);
   });
   if(chosenNetData&&chosenNetData.nodes&&chosenNetData.nodes.length){
     chosenNetData.nodes.forEach(function(n){
-      var mesh=makeNodeSphere(n.location,C_RED,0.15);
+      var mesh=makeNodeSphere(n.location,C_RED);
       mesh.userData.type='node'; mesh.userData.id=n.node_id;
       chNodeMeshes[n.node_id]=mesh; chScene.add(mesh);
     });
@@ -855,8 +835,8 @@ function chBuildScene(){
     var seen=new Set();
     (avData.segments||[]).forEach(function(seg){
       [seg.location_at_end_a,seg.location_at_end_b].forEach(function(loc){
-        var k=loc.join(','); if(seen.has(k)) return; seen.add(k);
-        var mesh=makeNodeSphere(loc,C_GRAY,0.09);
+        var k=loc.join(','); if(seen.has(k))return; seen.add(k);
+        var mesh=makeNodeSphere(loc,C_GRAY);
         chNodeMeshes[k]=mesh; chScene.add(mesh);
       });
     });
@@ -869,7 +849,7 @@ document.getElementById('ch-canvas').addEventListener('click',function(e){
   var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
   chRay.setFromCamera(m,chCamera);
   var hits=chRay.intersectObjects(Object.values(chSegLines));
-  if(!hits.length) return;
+  if(!hits.length)return;
   var id=hits[0].object.userData.id;
   if(chosenList.indexOf(id)>=0) chosenList=chosenList.filter(function(x){return x!==id;});
   else chosenList.push(id);
@@ -897,20 +877,20 @@ function flatRender(){
   flatSvg.appendChild(g);
   var pts={};
   rows.forEach(function(row){
-    var ang=flatNorm(row.angle)||0, len=parseFloat(row.length)||50, sc=20, rad=ang*Math.PI/180;
+    var ang=flatNorm(row.angle)||0,len=parseFloat(row.length)||50,sc=20,rad=ang*Math.PI/180;
     var pA=row.pos_a_x&&row.pos_a_y?{x:parseFloat(row.pos_a_x),y:parseFloat(row.pos_a_y)}:{x:0,y:0};
     var pB=row.pos_b_x&&row.pos_b_y?{x:parseFloat(row.pos_b_x),y:parseFloat(row.pos_b_y)}:{x:pA.x+len*sc*Math.cos(rad),y:pA.y-len*sc*Math.sin(rad)};
     pts[row.node_at_end_a]=pA; pts[row.node_at_end_b]=pB;
   });
   rows.forEach(function(row,idx){
-    var pA=pts[row.node_at_end_a]||{x:0,y:0}, pB=pts[row.node_at_end_b]||{x:50,y:0};
+    var pA=pts[row.node_at_end_a]||{x:0,y:0},pB=pts[row.node_at_end_b]||{x:50,y:0};
     var isSel=flatSelected===idx;
     function mk(tag,attrs){var el=document.createElementNS(NS,tag);Object.entries(attrs).forEach(function(kv){el.setAttribute(kv[0],kv[1]);});return el;}
     g.appendChild(mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:isSel?'#fff':'#888','stroke-width':(isSel?3.5:2.5)/flatScale}));
     var hit=mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:'transparent','stroke-width':14/flatScale,cursor:'pointer'});
     hit.addEventListener('click',function(){flatSelected=idx;flatRender();flatShowProps(idx);});
     g.appendChild(hit);
-    var mx=(pA.x+pB.x)/2, my=(pA.y+pB.y)/2;
+    var mx=(pA.x+pB.x)/2,my=(pA.y+pB.y)/2;
     var lbl=mk('text',{x:mx,y:my-9/flatScale,'text-anchor':'middle','font-size':11/flatScale,fill:'#aaa','pointer-events':'none'});
     lbl.textContent=row.segment_id||''; g.appendChild(lbl);
     var ll=mk('text',{x:mx,y:my+14/flatScale,'text-anchor':'middle','font-size':9/flatScale,fill:'#666','pointer-events':'none'});
@@ -925,7 +905,7 @@ function flatRender(){
 }
 var flatSvg=document.getElementById('flat-svg');
 function flatShowProps(idx){
-  var row=(flatData.rows||[])[idx]; if(!row) return;
+  var row=(flatData.rows||[])[idx]; if(!row)return;
   document.getElementById('flat-no-sel').style.display='none';
   document.getElementById('flat-prop-id').textContent=row.segment_id||'—';
   document.getElementById('flat-prop-na').textContent=row.node_at_end_a||'—';
@@ -934,7 +914,7 @@ function flatShowProps(idx){
   document.getElementById('flat-prop-angle').value=flatNorm(row.angle)||'';
 }
 function flatAngleChanged(val){
-  if(flatSelected==null) return;
+  if(flatSelected==null)return;
   (flatData.rows||[])[flatSelected].angle=val;
   markDirty('flattened'); flatRender();
 }
@@ -954,15 +934,11 @@ new ResizeObserver(function(){
 }).observe(document.getElementById('main'));
 
 requestAnimationFrame(function(){
-  initAv();
-  initCh();
-  avOnResize();
-  chOnResize();
+  initAv(); initCh();
+  avOnResize(); chOnResize();
   flatPan={x:(document.getElementById('flat-wrap').clientWidth||800)/2,y:300};
   loadAll().then(function(){
-    requestAnimationFrame(function(){
-      avFitView(); chFitView(); flatFitView();
-    });
+    requestAnimationFrame(function(){avFitView();chFitView();flatFitView();});
   });
 });
 </script>
