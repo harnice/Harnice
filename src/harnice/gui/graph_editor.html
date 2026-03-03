@@ -29,6 +29,10 @@ input{width:100%;padding:4px 7px;border-radius:4px;background:#1a1a1a;border:1px
 input:focus{outline:none;border-color:#888}
 .row{display:flex;gap:5px}
 .row>*{flex:1}
+.input-zero{display:flex;gap:4px;margin-top:2px}
+.input-zero input{margin-top:0;flex:1}
+.zero-btn{flex:none;width:28px;padding:0;font-size:10px;background:#333;border:1px solid #555;border-radius:4px;color:#888;cursor:pointer;margin-top:0}
+.zero-btn:hover{background:#444;color:#eee}
 .sep{border:none;border-top:1px solid #3a3a3a;margin:8px 0}
 #autosave-indicator{font-size:10px;color:#555;text-align:right;padding:2px 4px}
 .viewport{flex:1;position:relative;overflow:hidden}
@@ -961,16 +965,24 @@ function avShowProps(){
   if(avSelected.type==='node'){
     var n=avData.nodes.find(function(n){return n.node_id===avSelected.id;}); if(!n) return;
     title.textContent='Node';
+    function iz(id,lbl){
+      return '<label>'+lbl+'</label><div class="input-zero"><input id="'+id+'" type="number" step="0.001"><button class="zero-btn" data-zero="'+id+'">0</button></div>';
+    }
+    function iza(id,lbl){
+      return '<label>'+lbl+'</label><div class="input-zero"><input id="'+id+'" type="number" step="0.1"><button class="zero-btn" data-zero="'+id+'">0</button></div>';
+    }
     content.innerHTML=
       '<label>ID</label><input id="pnid" value="'+n.node_id+'">'
-      +'<label>X</label><input id="pnx" type="number" step="0.001" value="'+n.location[0]+'">'
-      +'<label>Y</label><input id="pny" type="number" step="0.001" value="'+n.location[1]+'">'
-      +'<label>Z</label><input id="pnz" type="number" step="0.001" value="'+n.location[2]+'">'
+      +iz('pnx','X')+iz('pny','Y')+iz('pnz','Z')
       +'<hr class="sep">'
       +'<label style="color:#aaa;font-size:10px">ZYX Intrinsic Euler (degrees)</label>'
-      +'<label>α (rot X)</label><input id="pna" type="number" step="0.1" value="'+(n.alpha||0)+'">'
-      +'<label>β (rot Y)</label><input id="pnb" type="number" step="0.1" value="'+(n.beta||0)+'">'
-      +'<label>γ (rot Z)</label><input id="png" type="number" step="0.1" value="'+(n.gamma||0)+'">';
+      +iza('pna','α (rot X)')+iza('pnb','β (rot Y)')+iza('png','γ (rot Z)');
+    document.getElementById('pnx').value=n.location[0];
+    document.getElementById('pny').value=n.location[1];
+    document.getElementById('pnz').value=n.location[2];
+    document.getElementById('pna').value=n.alpha||0;
+    document.getElementById('pnb').value=n.beta||0;
+    document.getElementById('png').value=n.gamma||0;
     function upd(){
       n.node_id=document.getElementById('pnid').value;
       n.location=[
@@ -984,6 +996,12 @@ function avShowProps(){
       avSelected.id=n.node_id; avBuildScene(); markDirty('available');
     }
     ['pnid','pnx','pny','pnz','pna','pnb','png'].forEach(function(id){document.getElementById(id).addEventListener('input',upd);});
+    content.querySelectorAll('.zero-btn').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var el=document.getElementById(btn.dataset.zero);
+        el.value=0; el.dispatchEvent(new Event('input'));
+      });
+    });
   } else {
     var s=avData.segments.find(function(s){return s.segment_id===avSelected.id;}); if(!s) return;
     title.textContent='Segment';
