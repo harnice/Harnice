@@ -38,6 +38,8 @@ input:focus{outline:none;border-color:#888}
 .viewport{flex:1;position:relative;overflow:hidden}
 .viewcube-wrap{position:absolute;top:12px;right:12px;width:84px;z-index:10}
 .viewcube-wrap canvas{display:block;cursor:pointer}
+#av-3d-btn,#ch-3d-btn{width:84px;padding:7px 0;font-size:11px;background:#2a2200;border:1px solid #b8860b;border-radius:5px;color:#d4a017;cursor:pointer;margin-top:0;text-align:center}
+#av-3d-btn:hover,#ch-3d-btn:hover{background:#332900;border-color:#d4a017;color:#f0c040}
 #flat-wrap{flex:1;position:relative;overflow:hidden}
 #flat-svg{width:100%;height:100%;display:block;cursor:default}
 .read-only-val{font-size:12px;color:#ccc;padding:3px 0 0 2px;display:block}
@@ -89,7 +91,10 @@ input:focus{outline:none;border-color:#888}
     </div>
     <div class="viewport" id="av-viewport">
       <canvas id="av-canvas" tabindex="0" style="width:100%;height:100%;display:block"></canvas>
-      <div class="viewcube-wrap"><canvas id="av-cube-canvas" width="84" height="84"></canvas></div>
+      <div class="viewcube-wrap">
+        <canvas id="av-cube-canvas" width="84" height="84"></canvas>
+        <button id="av-3d-btn" style="display:none" onclick="enable3D('available')">3D Editor</button>
+      </div>
     </div>
   </div>
   <div class="panel" id="panel-chosen">
@@ -108,7 +113,10 @@ input:focus{outline:none;border-color:#888}
     </div>
     <div class="viewport" id="ch-viewport">
       <canvas id="ch-canvas" tabindex="0" style="width:100%;height:100%;display:block"></canvas>
-      <div class="viewcube-wrap"><canvas id="ch-cube-canvas" width="84" height="84"></canvas></div>
+      <div class="viewcube-wrap">
+        <canvas id="ch-cube-canvas" width="84" height="84"></canvas>
+        <button id="ch-3d-btn" style="display:none" onclick="enable3D('chosen')">3D Editor</button>
+      </div>
     </div>
   </div>
   <div class="panel" id="panel-flattened">
@@ -156,6 +164,42 @@ var chRenderer,chScene,chCamera,chOrbit,chCube,chSegLines={},chNodeMeshes={},chR
 // followLinks: Map<segId, {a: nodeId|null, b: nodeId|null}>
 // Purely runtime — never serialised.
 var followLinks = {};
+
+// ── 2D / 3D mode ──────────────────────────────────────────────────────────────
+// Per-viewport runtime flag. Once the user clicks "3D Editor" it stays true.
+var force3D = {available: false, chosen: false};
+
+function isDataFlat(){
+  var eps=1e-6;
+  var nodes=avData.nodes||[], segs=avData.segments||[];
+  if(!nodes.length&&!segs.length) return false;
+  for(var i=0;i<nodes.length;i++) if(Math.abs(nodes[i].location[2])>eps) return false;
+  for(var i=0;i<segs.length;i++){
+    if(Math.abs(segs[i].location_at_end_a[2])>eps) return false;
+    if(Math.abs(segs[i].location_at_end_b[2])>eps) return false;
+  }
+  return true;
+}
+function is2D(tab){ return !force3D[tab] && isDataFlat(); }
+
+function apply2DMode(tab, orbit, camera, viewSize){
+  var CAM_DIST=500;
+  camera.position.set(orbit.target.x, orbit.target.y, orbit.target.z+CAM_DIST);
+  camera.up.set(0,1,0);
+  camera.lookAt(orbit.target);
+  orbit.phi=Math.PI/2; orbit.theta=Math.PI/2;
+  var sz=viewSize();
+  updateOrthoFrustum(camera,sz.w,sz.h);
+}
+
+function updateViewCubeVisibility(tab, orbit, camera, viewSize){
+  var cubeId   = tab==='available'?'av-cube-canvas':'ch-cube-canvas';
+  var btnId    = tab==='available'?'av-3d-btn':'ch-3d-btn';
+  var flat     = is2D(tab);
+  document.getElementById(cubeId).style.display = flat?'none':'block';
+  document.getElementById(btnId).style.display  = flat?'block':'none';
+  if(flat) apply2DMode(tab, orbit, camera, viewSize);
+}
 
 function followGet(segId) {
   return followLinks[segId] || {a:null, b:null};
@@ -494,6 +538,14 @@ function animateCameraToFace(orbit,face){
   }
   requestAnimationFrame(step);
 }
+function enable3D(tab){
+  force3D[tab]=true;
+  var cubeId=tab==='available'?'av-cube-canvas':'ch-cube-canvas';
+  var btnId =tab==='available'?'av-3d-btn':'ch-3d-btn';
+  document.getElementById(cubeId).style.display='block';
+  document.getElementById(btnId).style.display='none';
+}
+
 function avSnapTo(name){var f=CUBE_FACES.find(function(f){return f.name===name;});if(f)animateCameraToFace(avOrbit,f);}
 function chSnapTo(name){var f=CUBE_FACES.find(function(f){return f.name===name;});if(f)animateCameraToFace(chOrbit,f);}
 
@@ -725,9 +777,11 @@ window.addEventListener('mousemove',function(e){
   var dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
   drag.lastX=e.clientX; drag.lastY=e.clientY;
   if(drag.mode==='orbit-rotate'){
-    orbit.theta+=dx*0.008;
-    orbit.phi=Math.max(0.01,Math.min(Math.PI-0.01,orbit.phi-dy*0.008));
-    orbit.apply();
+    if(!is2D(drag.orbit===avOrbit?'available':'chosen')){
+      orbit.theta+=dx*0.008;
+      orbit.phi=Math.max(0.01,Math.min(Math.PI-0.01,orbit.phi-dy*0.008));
+      orbit.apply();
+    }
   } else if(drag.mode==='orbit-pan'){
     var sz=orbit.getViewportSize(),wpp=2*orbit.camera.userData.halfSize/(sz.h||600);
     var fwd=new THREE.Vector3(); orbit.camera.getWorldDirection(fwd);
@@ -848,6 +902,7 @@ function avBuildScene(){
     if(n){var triad=buildTriad(n);avScene.add(triad);avArrows=[triad];}
   }
   avRender();
+  updateViewCubeVisibility('available', avOrbit, avCamera, avViewSize);
 }
 
 document.getElementById('av-canvas').addEventListener('click',function(e){
@@ -1107,6 +1162,7 @@ function chBuildScene(){
     });
   }
   chRender();
+  updateViewCubeVisibility('chosen', chOrbit, chCamera, chViewSize);
 }
 document.getElementById('ch-canvas').addEventListener('click',function(e){
   var rect=document.getElementById('ch-canvas').getBoundingClientRect();
