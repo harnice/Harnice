@@ -585,7 +585,8 @@ function buildTriad(node){
     var bm=makeBasis(rd.basisY,rd.basisX);
     group.setRotationFromMatrix(bm);
 
-    var START_ANG=-ARC_DEG,SEGS=20;
+    var START_ANG=-ARC_DEG-15,SEGS=20;
+    var END_ANG=-15;
     var pts=makeArcPoints(START_ANG,ARC_DEG,SEGS).map(function(p){return p.multiplyScalar(ARC_R);});
 
     // Visible arc tube (tube of small segments)
@@ -604,7 +605,7 @@ function buildTriad(node){
     // Arrowhead at the arc end
     var endPt=pts[pts.length-1];
     // Tangent at end: perpendicular to radius in arc plane (local XZ of group)
-    var endAngle=0;
+    var endAngle=END_ANG*DEG;
     var tangentLocal=new THREE.Vector3(-Math.sin(endAngle),0,Math.cos(endAngle)).normalize();
     var cone=makeArcArrow(endPt,tangentLocal,rd.col);
     cone.userData={triadType:'rotate',axis:rd.axis};
@@ -613,8 +614,8 @@ function buildTriad(node){
     // Invisible fat torus-like hit mesh (use a tube ring approximation: many thin cylinders in a circle)
     var HIT_SEGS=24,HIT_R=0.16;
     for(var j=0;j<HIT_SEGS;j++){
-      var a0=(-ARC_DEG+(j/HIT_SEGS)*ARC_DEG)*DEG;
-      var a1=(-ARC_DEG+((j+1)/HIT_SEGS)*ARC_DEG)*DEG;
+      var a0=(START_ANG+(j/HIT_SEGS)*ARC_DEG)*DEG;
+      var a1=(START_ANG+((j+1)/HIT_SEGS)*ARC_DEG)*DEG;
       var p0=new THREE.Vector3(Math.cos(a0)*ARC_R,0,Math.sin(a0)*ARC_R);
       var p1=new THREE.Vector3(Math.cos(a1)*ARC_R,0,Math.sin(a1)*ARC_R);
       var hm=new THREE.Mesh(
@@ -627,10 +628,33 @@ function buildTriad(node){
       group.add(hm);
     }
 
+    // Store the world-space rotation axis on the group for visibility culling
+    group.userData.rotWorldAxis = ({x:axes.x, y:axes.y, z:axes.z})[rd.axis].clone();
     master.add(group);
   });
 
   return master;
+}
+
+// Called every render: hide arc groups whose rotation axis is within 5° of perpendicular
+// to the camera view direction (i.e. the arc plane is edge-on).
+var EDGE_ON_COS = Math.cos((90 - 5) * DEG); // cos(85°)
+function updateArcVisibility(camera) {
+  var fwd = new THREE.Vector3();
+  camera.getWorldDirection(fwd);
+  avArrows.forEach(function(master) {
+    master.children.forEach(function(group) {
+      if (group.userData.triadType !== 'rotate') return;
+      var ax = group.userData.rotWorldAxis;
+      if (!ax) return;
+      var dot = Math.abs(ax.dot(fwd)); // |cos(angle between axis and view)|
+      // dot~1 → axis parallel to view → plane face-on → visible
+      // dot~0 → axis perpendicular to view → plane edge-on → hide
+      var edgeOn = dot < EDGE_ON_COS;
+      group.visible = !edgeOn;
+      group.traverse(function(c) { c.raycast = edgeOn ? function(){} : c.constructor.prototype.raycast; });
+    });
+  });
 }
 
 // ── Global unified mouse dispatcher ──────────────────────────────────────────
@@ -835,6 +859,7 @@ function makeNodeSphere(loc,color){
 // ── Render functions ──────────────────────────────────────────────────────────
 function avRender(){
   if(!avRenderer||!avCube) return;
+  updateArcVisibility(avCamera);
   scaleFixedPx(avScene,avCamera,avRenderer);
   avRenderer.render(avScene,avCamera);
   avCube.draw();
