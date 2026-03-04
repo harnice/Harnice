@@ -1482,6 +1482,18 @@
           ribbonTube.userData.splineTube = true;
           ribbonTube.userData.type = 'segment'; ribbonTube.userData.id = seg.segment_id;
           group.add(ribbonTube);
+          if (opts.showControlPolyline) {
+            var ctrlPts = getSegmentSplineControlPoints(seg);
+            if (ctrlPts.length >= 2) {
+              var dashGeo = new THREE.BufferGeometry().setFromPoints(ctrlPts);
+              var dashMat = new THREE.LineDashedMaterial({ color: 0x888888, dashSize: 0.15, gapSize: 0.1 });
+              var dashLine = new THREE.Line(dashGeo, dashMat);
+              dashLine.computeLineDistances();
+              dashLine.userData.type = 'segment';
+              dashLine.userData.id = seg.segment_id;
+              group.add(dashLine);
+            }
+          }
           return group;
         }
       }
@@ -1969,7 +1981,7 @@
       (avData.segments || []).forEach(function (seg) {
         var isSel = avSelected && avSelected.type === 'segment' && avSelected.id === seg.segment_id;
         var col = isSel ? 0xffffff : C_SEG_DEFAULT;
-        var grp = makeSegLine(seg, col, { glowColor: col, glowOpacity: isSel ? 0.28 : 0.13, useSpline: true });
+        var grp = makeSegLine(seg, col, { glowColor: col, glowOpacity: isSel ? 0.28 : 0.13, useSpline: true, showControlPolyline: isSel });
         avSegLines[seg.segment_id] = grp; avScene.add(grp);
       });
       (avData.nodes || []).forEach(function (n) {
