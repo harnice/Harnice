@@ -1474,10 +1474,62 @@ function avShowProps(){
         +'<input id="'+pre+'z" type="number" step="0.001" value="'+vals[2]+'">'
         +'</div>';
     }
+
+    // Compute derived values
+    function segLen(seg){
+      var dx=seg.location_at_end_b[0]-seg.location_at_end_a[0];
+      var dy=seg.location_at_end_b[1]-seg.location_at_end_a[1];
+      var dz=seg.location_at_end_b[2]-seg.location_at_end_a[2];
+      return Math.sqrt(dx*dx+dy*dy+dz*dz)||0.001;
+    }
+    function segDir(seg){
+      var l=segLen(seg);
+      return[
+        round3((seg.location_at_end_b[0]-seg.location_at_end_a[0])/l),
+        round3((seg.location_at_end_b[1]-seg.location_at_end_a[1])/l),
+        round3((seg.location_at_end_b[2]-seg.location_at_end_a[2])/l)
+      ];
+    }
+
+    var curLen=round3(segLen(s));
+    var curDir=segDir(s);
+
     content.innerHTML=
       '<label>ID</label><input id="psid" value="'+s.segment_id+'">'
+      +'<hr class="sep">'
+      +'<label>Length</label><input id="pslen" type="number" step="0.001" min="0.001" value="'+curLen+'">'
+      +'<label style="margin-top:6px;font-size:10px;color:#555">Direction (i j k) — B w/r/t A, unit vector</label>'
+      +'<div class="row" style="margin-top:2px">'
+        +'<input id="psdi" type="number" step="0.001" value="'+curDir[0]+'">'
+        +'<input id="psdj" type="number" step="0.001" value="'+curDir[1]+'">'
+        +'<input id="psdk" type="number" step="0.001" value="'+curDir[2]+'">'
+      +'</div>'
+      +'<hr class="sep">'
       +'<div class="end-block"><div class="end-label" style="color:#ff8c00">▲ End A</div>'+xyzRow('psa',s.location_at_end_a)+pillHtml('a',!!lk.a,candA)+'</div>'
       +'<div class="end-block" style="margin-top:8px"><div class="end-label" style="color:#00c8a0">▲ End B</div>'+xyzRow('psb',s.location_at_end_b)+pillHtml('b',!!lk.b,candB)+'</div>';
+
+    // Recompute B from A + length * normalise(i,j,k), flood from B
+    function applyLenDir(){
+      var len=Math.max(0.001,parseFloat(document.getElementById('pslen').value)||0.001);
+      var i=parseFloat(document.getElementById('psdi').value)||0;
+      var j=parseFloat(document.getElementById('psdj').value)||0;
+      var k=parseFloat(document.getElementById('psdk').value)||0;
+      var mag=Math.sqrt(i*i+j*j+k*k)||1;
+      i/=mag; j/=mag; k/=mag;
+      var ax=s.location_at_end_a[0],ay=s.location_at_end_a[1],az=s.location_at_end_a[2];
+      var newBx=round3(ax+i*len),newBy=round3(ay+j*len),newBz=round3(az+k*len);
+      var dx=newBx-s.location_at_end_b[0];
+      var dy=newBy-s.location_at_end_b[1];
+      var dz=newBz-s.location_at_end_b[2];
+      if(dx===0&&dy===0&&dz===0) return;
+      floodTranslate(s.segment_id,'b',dx,dy,dz);
+      // Refresh xyz inputs for B to match
+      var el;
+      el=document.getElementById('psbx'); if(el) el.value=s.location_at_end_b[0];
+      el=document.getElementById('psby'); if(el) el.value=s.location_at_end_b[1];
+      el=document.getElementById('psbz'); if(el) el.value=s.location_at_end_b[2];
+      avBuildScene(); markDirty('available');
+    }
 
     function updSeg(){
       s.segment_id=document.getElementById('psid').value;
@@ -1491,11 +1543,25 @@ function avShowProps(){
         parseFloat(document.getElementById('psby').value)||0,
         parseFloat(document.getElementById('psbz').value)||0
       ];
-      syncNodeFromSeg(s,'a'); syncNodeFromSeg(s,'b');
+      // Refresh derived fields
+      var el;
+      el=document.getElementById('pslen'); if(el) el.value=round3(segLen(s));
+      var d=segDir(s);
+      el=document.getElementById('psdi'); if(el) el.value=d[0];
+      el=document.getElementById('psdj'); if(el) el.value=d[1];
+      el=document.getElementById('psdk'); if(el) el.value=d[2];
       avSelected.id=s.segment_id;
-      avBuildScene(); avShowProps(); markDirty('available');
+      avBuildScene(); markDirty('available');
     }
-    ['psid','psax','psay','psaz','psbx','psby','psbz'].forEach(function(id){
+
+    document.getElementById('psid').addEventListener('input',function(){
+      s.segment_id=document.getElementById('psid').value;
+      avSelected.id=s.segment_id; avBuildScene(); markDirty('available');
+    });
+    ['pslen','psdi','psdj','psdk'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.addEventListener('input',applyLenDir);
+    });
+    ['psax','psay','psaz','psbx','psby','psbz'].forEach(function(id){
       var el=document.getElementById(id); if(el) el.addEventListener('input',updSeg);
     });
 
