@@ -151,6 +151,10 @@ var C_SEG_NOTCHOSEN = 0x1e2433;
 var C_NODE_SEL_RING = 0xffffff;
 var C_SEG_END_A     = 0xff8c00;
 var C_SEG_END_B     = 0x00c8a0;
+// Rel-triad colours: length arrow = magenta, arc1 = cyan-teal, arc2 = yellow-green
+var C_REL_LEN  = 0xee44cc;
+var C_REL_ARC1 = 0x22ddcc;
+var C_REL_ARC2 = 0xaaee22;
 
 var AUTOSAVE_MS = 3000;
 var PX_PER_MM   = (window.devicePixelRatio||1)*96/25.4;
@@ -167,6 +171,7 @@ var flatData={fieldnames:[],rows:[]};
 var avSelected=null,avTool='select',avConnectStart=null,avPendingLink=null;
 var avArrows=[];
 var avSegEndTriads=[];
+var avSegRelTriads=[];   // NEW: relative triads (length + arc1 + arc2)
 var flatPan={x:400,y:300},flatScale=1,flatIsPanning=false,flatPanStart={x:0,y:0},flatSelected=null;
 var avRenderer,avScene,avCamera,avOrbit,avCube,avNodeMeshes={},avSegLines={},avRay;
 var chRenderer,chScene,chCamera,chOrbit,chCube,chSegLines={},chNodeMeshes={},chRay;
@@ -262,7 +267,9 @@ function normaliseNode(n){
 var drag={mode:null,moved:false,wasTriad:false,lastX:0,lastY:0,
   axis:null,nodeId:null,startLoc:null,startX:0,startY:0,screenDir:null,
   rotAxis:null,startQ:null,nodeScrPx:null,prevAngle:0,orbit:null,v0x:0,v0y:0,
-  segId:null,segEnd:null};
+  segId:null,segEnd:null,
+  // seg-rel fields
+  relPivot:null,relStartVec:null,relLen:0,relArcAxis:null};
 
 // ── Autosave ──────────────────────────────────────────────────────────────────
 function markDirty(tab){
@@ -678,7 +685,7 @@ function updateTriadVisibility(camera){
       g.traverse(function(c){if(c.isMesh) c.raycast=show?THREE.Mesh.prototype.raycast:function(){};});
     });
   });
-  // seg-end triads: translation only, same axis-hide rule
+  // world-axis seg-end triads
   avSegEndTriads.forEach(function(entry){
     entry.group.children.forEach(function(g){
       if(!g.userData.transWorldAxis) return;
@@ -687,9 +694,23 @@ function updateTriadVisibility(camera){
       g.traverse(function(c){if(c.isMesh) c.raycast=show?THREE.Mesh.prototype.raycast:function(){};});
     });
   });
+  // relative triads: length arrow hide when nearly parallel to view,
+  // arc handles hide when arc-axis nearly perpendicular to view
+  avSegRelTriads.forEach(function(entry){
+    entry.group.children.forEach(function(g){
+      var tt=g.userData.triadType;
+      var show=true;
+      if(tt==='seg-rel-length'&&g.userData.transWorldAxis)
+        show=Math.abs(g.userData.transWorldAxis.dot(fwd))<TRANS_HIDE_DOT;
+      else if((tt==='seg-rel-arc1'||tt==='seg-rel-arc2')&&g.userData.arcAxis)
+        show=Math.abs(g.userData.arcAxis.dot(fwd))>=ROT_HIDE_DOT;
+      g.visible=show;
+      g.traverse(function(c){if(c.isMesh) c.raycast=show?THREE.Mesh.prototype.raycast:function(){};});
+    });
+  });
 }
 
-// ── Segment-end triad ─────────────────────────────────────────────────────────
+// ── Segment-end world-axis triad ──────────────────────────────────────────────
 function buildSegEndTriad(seg,end){
   var loc=end==='a'?seg.location_at_end_a:seg.location_at_end_b;
   var master=new THREE.Group();
@@ -720,11 +741,132 @@ function buildSegEndTriad(seg,end){
     hit.userData={triadType:'seg-end-translate',axis:td.axis,segId:seg.segment_id,segEnd:end};
     g.add(shaft,cone,hit); master.add(g);
   });
-  // colour-coded end dot
   var dotCol=end==='a'?C_SEG_END_A:C_SEG_END_B;
   var dot=new THREE.Mesh(new THREE.SphereGeometry(1,10,10),new THREE.MeshLambertMaterial({color:dotCol}));
   dot.userData.fixedPxRadius=PX_PER_MM*0.55;
   master.add(dot);
+  return master;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SEGMENT-RELATIVE TRIAD  (length + arc1 + arc2)
+// ══════════════════════════════════════════════════════════════════════════════
+// Placed at `end`, pivoting about the *other* end.
+// Length arrow   → along seg axis pointing away from pivot
+// Arc1 handle    → sweeps in plane containing seg axis and arcAxis1
+// Arc2 handle    → sweeps in plane containing seg axis and arcAxis2
+// arcAxis1 = cross(segAxis, worldZ) normalised  (fallback: cross(segAxis,worldX))
+// arcAxis2 = cross(segAxis, arcAxis1)
+function segRelAxes(seg,end){
+  var aVec=new THREE.Vector3(seg.location_at_end_a[0],seg.location_at_end_a[1],seg.location_at_end_a[2]);
+  var bVec=new THREE.Vector3(seg.location_at_end_b[0],seg.location_at_end_b[1],seg.location_at_end_b[2]);
+  // segAxis points from pivot to end
+  var pivot=end==='a'?bVec:aVec;
+  var endPt=end==='a'?aVec:bVec;
+  var segAxis=endPt.clone().sub(pivot);
+  var len=segAxis.length()||0.001;
+  segAxis.normalize();
+  var wZ=new THREE.Vector3(0,0,1);
+  var wX=new THREE.Vector3(1,0,0);
+  var a1=new THREE.Vector3().crossVectors(segAxis,wZ);
+  if(a1.lengthSq()<0.01) a1.crossVectors(segAxis,wX);
+  a1.normalize();
+  var a2=new THREE.Vector3().crossVectors(segAxis,a1).normalize();
+  return{segAxis:segAxis,arcAxis1:a1,arcAxis2:a2,pivot:pivot,endPt:endPt,len:len};
+}
+
+function buildSegRelTriad(seg,end){
+  var info=segRelAxes(seg,end);
+  var loc=end==='a'?seg.location_at_end_a:seg.location_at_end_b;
+  var master=new THREE.Group();
+  master.position.set(loc[0],loc[1],loc[2]);
+  master.userData.fixedPxRadius=52;
+  master.userData.isSegRelTriad=true;
+  master.userData.segId=seg.segment_id;
+  master.userData.segEnd=end;
+
+  var ARM=0.72,CONE_R=0.11,CONE_H=0.24,SHAFT_R=0.035;
+  var ARC_R=0.9,ARC_DEG=55,ARC_START=-ARC_DEG*0.5;
+
+  // ── Length arrow (magenta, along segAxis) ────────────────────────────────
+  (function(){
+    var g=new THREE.Group();
+    g.userData.triadType='seg-rel-length'; g.userData.segId=seg.segment_id; g.userData.segEnd=end;
+    g.userData.transWorldAxis=info.segAxis.clone();
+    var shaft=new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,ARM,8),new THREE.MeshLambertMaterial({color:C_REL_LEN}));
+    shaft.position.copy(info.segAxis.clone().multiplyScalar(ARM*0.5));
+    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),info.segAxis.clone());
+    shaft.userData={triadType:'seg-rel-length',segId:seg.segment_id,segEnd:end};
+    var cone=new THREE.Mesh(new THREE.ConeGeometry(CONE_R,CONE_H,10),new THREE.MeshLambertMaterial({color:C_REL_LEN}));
+    cone.position.copy(info.segAxis.clone().multiplyScalar(ARM+CONE_H*0.5));
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),info.segAxis.clone());
+    cone.userData={triadType:'seg-rel-length',segId:seg.segment_id,segEnd:end};
+    var hit=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,ARM+CONE_H,8),new THREE.MeshBasicMaterial({visible:false,side:THREE.DoubleSide}));
+    hit.position.copy(info.segAxis.clone().multiplyScalar((ARM+CONE_H)*0.5));
+    hit.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),info.segAxis.clone());
+    hit.userData={triadType:'seg-rel-length',segId:seg.segment_id,segEnd:end};
+    g.add(shaft,cone,hit); master.add(g);
+  })();
+
+  // ── Arc handles factory ──────────────────────────────────────────────────
+  function buildArc(arcAxis,col,tt){
+    var g=new THREE.Group();
+    g.userData.triadType=tt; g.userData.segId=seg.segment_id; g.userData.segEnd=end;
+    g.userData.arcAxis=arcAxis.clone();
+    // Arc lives in the plane with normal = arcAxis.
+    // We need a tangent in that plane: tangent = cross(arcAxis, segAxis)
+    var tan=new THREE.Vector3().crossVectors(arcAxis,info.segAxis).normalize();
+    // Build arc points in local coords where Y=arcAxis, X=tan, Z=cross(Y,X)
+    // ARC_R scaled in local space (fixedPxRadius handles world scale)
+    var localY=arcAxis.clone().normalize();
+    var localX=tan.clone();
+    var localZ=new THREE.Vector3().crossVectors(localX,localY).normalize();
+    // pts in world offsets from master position (which is the end point)
+    var pts=[];
+    var SEGS=18;
+    for(var i=0;i<=SEGS;i++){
+      var a=(ARC_START+i*(ARC_DEG/SEGS))*DEG;
+      // rotate segAxis by `a` around arcAxis to get the radial direction
+      var q=new THREE.Quaternion().setFromAxisAngle(arcAxis,a);
+      var rad=info.segAxis.clone().applyQuaternion(q).multiplyScalar(ARC_R);
+      pts.push(rad);
+    }
+    for(var i=0;i<pts.length-1;i++){
+      var p0=pts[i],p1=pts[i+1];
+      var seg2=new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,p0.distanceTo(p1),4),new THREE.MeshLambertMaterial({color:col}));
+      seg2.position.copy(p0.clone().add(p1).multiplyScalar(0.5));
+      seg2.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),p1.clone().sub(p0).normalize());
+      g.add(seg2);
+    }
+    // Arrowhead at end of arc
+    var endPt2=pts[pts.length-1];
+    var nextQ=new THREE.Quaternion().setFromAxisAngle(arcAxis,(ARC_START+ARC_DEG+2)*DEG);
+    var tangentDir=info.segAxis.clone().applyQuaternion(nextQ).normalize();
+    var endQ2=new THREE.Quaternion().setFromAxisAngle(arcAxis,(ARC_START+ARC_DEG)*DEG);
+    var endRad=info.segAxis.clone().applyQuaternion(endQ2).multiplyScalar(ARC_R);
+    var coneTip=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.20,8),new THREE.MeshLambertMaterial({color:col}));
+    coneTip.position.copy(endRad);
+    coneTip.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangentDir);
+    coneTip.userData={triadType:tt,segId:seg.segment_id,segEnd:end};
+    g.add(coneTip);
+    // Hit volumes
+    var HIT_SEGS=18,HIT_R=0.16;
+    for(var j=0;j<HIT_SEGS;j++){
+      var qa=new THREE.Quaternion().setFromAxisAngle(arcAxis,(ARC_START+j*(ARC_DEG/HIT_SEGS))*DEG);
+      var qb=new THREE.Quaternion().setFromAxisAngle(arcAxis,(ARC_START+(j+1)*(ARC_DEG/HIT_SEGS))*DEG);
+      var pa=info.segAxis.clone().applyQuaternion(qa).multiplyScalar(ARC_R);
+      var pb=info.segAxis.clone().applyQuaternion(qb).multiplyScalar(ARC_R);
+      var hm=new THREE.Mesh(new THREE.CylinderGeometry(HIT_R,HIT_R,pa.distanceTo(pb)*1.1,5),new THREE.MeshBasicMaterial({visible:false,side:THREE.DoubleSide}));
+      hm.position.copy(pa.clone().add(pb).multiplyScalar(0.5));
+      hm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),pb.clone().sub(pa).normalize());
+      hm.userData={triadType:tt,segId:seg.segment_id,segEnd:end};
+      g.add(hm);
+    }
+    master.add(g);
+  }
+  buildArc(info.arcAxis1,C_REL_ARC1,'seg-rel-arc1');
+  buildArc(info.arcAxis2,C_REL_ARC2,'seg-rel-arc2');
+
   return master;
 }
 
@@ -769,6 +911,15 @@ function computeScreenDir(worldAxisDir,originWorldPos,orbit,viewSize){
   return new THREE.Vector2(sdx/slen,sdy/slen);
 }
 
+// Compute screen tangent direction for an arc drag about arcAxis, at point endPos (the dragged end).
+// The tangent is the direction the endPos would move on screen for a small positive rotation.
+function computeArcScreenTangent(arcAxis,endWorldPos,pivotWorldPos,orbit,viewSize){
+  // tangent in world = cross(arcAxis, endPos - pivot) normalised
+  var r=endWorldPos.clone().sub(pivotWorldPos);
+  var tangent=new THREE.Vector3().crossVectors(arcAxis,r).normalize();
+  return computeScreenDir(tangent,endWorldPos,orbit,viewSize);
+}
+
 // ── Render ────────────────────────────────────────────────────────────────────
 function avRender(){
   if(!avRenderer||!avCube) return;
@@ -805,7 +956,7 @@ function resolveHit(hitObj){
 // ══════════════════════════════════════════════════════════════════════════════
 //  MOUSE
 // ══════════════════════════════════════════════════════════════════════════════
-function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects,getSegEndTriads){
+function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects,getSegEndTriads,getSegRelTriads){
   if(e.button!==0&&e.button!==2) return;
   e.preventDefault();
   var rect=e.currentTarget.getBoundingClientRect();
@@ -816,8 +967,47 @@ function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects,getSegEndTria
 
   if(e.button===0&&avTool==='select'&&orbit===avOrbit){
 
-    // ── Seg-end triads first ─────────────────────────────────────────────────
+    // ── Seg-relative triads FIRST (highest priority when segment selected) ──
     if(avSelected&&avSelected.type==='segment'){
+      var relGroups=getSegRelTriads(),relMeshes=[];
+      relGroups.forEach(function(entry){
+        entry.group.traverse(function(c){
+          if(c.isMesh&&c.userData.triadType&&c.userData.triadType.startsWith('seg-rel-'))
+            relMeshes.push(c);
+        });
+      });
+      if(relMeshes.length){
+        var hits=ray.intersectObjects(relMeshes,false);
+        if(hits.length){
+          var h=hits[0].object;
+          var tt=h.userData.triadType;
+          var seg=avData.segments.find(function(s){return s.segment_id===h.userData.segId;});
+          if(seg){
+            var info=segRelAxes(seg,h.userData.segEnd);
+            drag.wasTriad=true; drag.moved=false; drag.orbit=orbit;
+            drag.segId=h.userData.segId; drag.segEnd=h.userData.segEnd;
+            drag.startX=e.clientX; drag.startY=e.clientY;
+            drag.relPivot=info.pivot.clone();
+            drag.relStartVec=info.endPt.clone().sub(info.pivot); // vec from pivot to end at drag start
+            drag.relLen=info.len;
+            if(tt==='seg-rel-length'){
+              drag.mode='seg-rel-length';
+              drag.screenDir=computeScreenDir(info.segAxis,info.endPt,orbit,avViewSize);
+            } else if(tt==='seg-rel-arc1'){
+              drag.mode='seg-rel-arc';
+              drag.relArcAxis=info.arcAxis1.clone();
+              drag.screenDir=computeArcScreenTangent(info.arcAxis1,info.endPt,info.pivot,orbit,avViewSize);
+            } else if(tt==='seg-rel-arc2'){
+              drag.mode='seg-rel-arc';
+              drag.relArcAxis=info.arcAxis2.clone();
+              drag.screenDir=computeArcScreenTangent(info.arcAxis2,info.endPt,info.pivot,orbit,avViewSize);
+            }
+            return;
+          }
+        }
+      }
+
+      // ── World-axis seg-end triads ────────────────────────────────────────
       var setGroups=getSegEndTriads(),setMeshes=[];
       setGroups.forEach(function(entry){
         entry.group.traverse(function(c){
@@ -891,7 +1081,56 @@ window.addEventListener('mousemove',function(e){
   drag.moved=true;
   var orbit=drag.orbit;
 
-  // ── Seg-end translate ────────────────────────────────────────────────────
+  // ── Seg-relative length ──────────────────────────────────────────────────
+  if(drag.mode==='seg-rel-length'){
+    var seg=avData.segments.find(function(s){return s.segment_id===drag.segId;});
+    if(!seg) return;
+    var info=segRelAxes(seg,drag.segEnd);
+    // compute delta along seg axis in world units
+    var sz=avViewSize(),worldPerPx=(2*avCamera.userData.halfSize)/(sz.h||600);
+    var dm=new THREE.Vector2(e.clientX-drag.startX,e.clientY-drag.startY);
+    var delta=dm.dot(drag.screenDir)*worldPerPx;
+    // new end = pivot + segAxis*(originalLen + delta)
+    var newLen=Math.max(0.001,drag.relLen+delta);
+    var newEnd=drag.relPivot.clone().addScaledVector(drag.relStartVec.clone().normalize(),newLen);
+    if(drag.segEnd==='a') seg.location_at_end_a=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
+    else                  seg.location_at_end_b=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
+    syncNodeFromSeg(seg,drag.segEnd);
+    var lk=followLinks[drag.segId];
+    var linkedNodeId=lk&&(drag.segEnd==='a'?lk.a:lk.b);
+    if(linkedNodeId) syncFollowers(linkedNodeId);
+    avBuildScene(); avShowProps(); markDirty('available'); return;
+  }
+
+  // ── Seg-relative arc ─────────────────────────────────────────────────────
+  if(drag.mode==='seg-rel-arc'){
+    var seg=avData.segments.find(function(s){return s.segment_id===drag.segId;});
+    if(!seg) return;
+    var sz=avViewSize(),worldPerPx=(2*avCamera.userData.halfSize)/(sz.h||600);
+    var dm=new THREE.Vector2(e.clientX-drag.startX,e.clientY-drag.startY);
+    // pixels moved along screen tangent → angle in radians
+    // 1 world unit on screen = 1/worldPerPx pixels; arc radius = ARC_R world units (in fixed-px space, ~0.9)
+    // but we want intuitive feel: map pixel movement to angle so the tip follows the mouse
+    // effective radius of arc on screen = ARC_R / worldPerPx * (fixedPxRadius/52) ... complex.
+    // Simpler: treat screen pixels / (arcRadius_in_px) as angle
+    // ARC_R in world = 0.9 * fixedPxRadius/1 (since fixedPxRadius=52 means at render time scale=52*wpp)
+    // arc tip screen radius ≈ 0.9 * 52 px = ~47 px
+    var arcScreenRadius=0.9*52;
+    var angle=dm.dot(drag.screenDir)/arcScreenRadius;
+    // rotate startVec around arcAxis by angle
+    var q=new THREE.Quaternion().setFromAxisAngle(drag.relArcAxis,angle);
+    var newVec=drag.relStartVec.clone().applyQuaternion(q);
+    var newEnd=drag.relPivot.clone().add(newVec);
+    if(drag.segEnd==='a') seg.location_at_end_a=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
+    else                  seg.location_at_end_b=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
+    syncNodeFromSeg(seg,drag.segEnd);
+    var lk=followLinks[drag.segId];
+    var linkedNodeId=lk&&(drag.segEnd==='a'?lk.a:lk.b);
+    if(linkedNodeId) syncFollowers(linkedNodeId);
+    avBuildScene(); avShowProps(); markDirty('available'); return;
+  }
+
+  // ── Seg-end world-axis translate ─────────────────────────────────────────
   if(drag.mode==='seg-end-translate'){
     var seg=avData.segments.find(function(s){return s.segment_id===drag.segId;});
     if(!seg||!drag.startLoc) return;
@@ -899,11 +1138,7 @@ window.addEventListener('mousemove',function(e){
     var sz=avViewSize(),worldPerPx=(2*avCamera.userData.halfSize)/(sz.h||600);
     var dm=new THREE.Vector2(e.clientX-drag.startX,e.clientY-drag.startY);
     var delta=dm.dot(drag.screenDir)*worldPerPx;
-    var newLoc=[
-      Math.round((drag.startLoc[0]+axDir.x*delta)*1000)/1000,
-      Math.round((drag.startLoc[1]+axDir.y*delta)*1000)/1000,
-      Math.round((drag.startLoc[2]+axDir.z*delta)*1000)/1000
-    ];
+    var newLoc=[round3(drag.startLoc[0]+axDir.x*delta),round3(drag.startLoc[1]+axDir.y*delta),round3(drag.startLoc[2]+axDir.z*delta)];
     if(drag.segEnd==='a') seg.location_at_end_a=newLoc;
     else                  seg.location_at_end_b=newLoc;
     syncNodeFromSeg(seg,drag.segEnd);
@@ -921,11 +1156,7 @@ window.addEventListener('mousemove',function(e){
     var sz=avViewSize(),worldPerPx=(2*avCamera.userData.halfSize)/(sz.h||600);
     var dm=new THREE.Vector2(e.clientX-drag.startX,e.clientY-drag.startY);
     var delta=dm.dot(drag.screenDir)*worldPerPx;
-    node.location=[
-      Math.round((drag.startLoc[0]+axDir.x*delta)*1000)/1000,
-      Math.round((drag.startLoc[1]+axDir.y*delta)*1000)/1000,
-      Math.round((drag.startLoc[2]+axDir.z*delta)*1000)/1000
-    ];
+    node.location=[round3(drag.startLoc[0]+axDir.x*delta),round3(drag.startLoc[1]+axDir.y*delta),round3(drag.startLoc[2]+axDir.z*delta)];
     syncFollowers(node.node_id); avBuildScene(); avShowProps(); markDirty('available'); return;
   }
 
@@ -969,7 +1200,10 @@ window.addEventListener('mouseup',function(){
   drag.rotAxis=null; drag.startQ=null; drag.v0x=0; drag.v0y=0;
   drag.nodeScrPx=null; drag.prevAngle=0; drag.orbit=null;
   drag.segId=null; drag.segEnd=null;
+  drag.relPivot=null; drag.relStartVec=null; drag.relLen=0; drag.relArcAxis=null;
 });
+
+function round3(v){return Math.round(v*1000)/1000;}
 
 function attachZoom(canvasEl,orbit,getViewportSize){
   canvasEl.addEventListener('wheel',function(e){
@@ -1007,7 +1241,8 @@ function initAv(){
   document.getElementById('av-canvas').addEventListener('mousedown',function(e){
     onCanvasMouseDown(e,avOrbit,avRay,avNodeMeshes,
       function(){return avArrows;},
-      function(){return avSegEndTriads;});
+      function(){return avSegEndTriads;},
+      function(){return avSegRelTriads;});
   });
   attachZoom(document.getElementById('av-canvas'),avOrbit,avViewSize);
 }
@@ -1022,6 +1257,7 @@ function avBuildScene(){
   Object.values(avSegLines).forEach(function(l){avScene.remove(l);});
   avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
   avSegEndTriads.forEach(function(e){avScene.remove(e.group);}); avSegEndTriads=[];
+  avSegRelTriads.forEach(function(e){avScene.remove(e.group);}); avSegRelTriads=[];
   avNodeMeshes={}; avSegLines={};
 
   (avData.segments||[]).forEach(function(seg){
@@ -1043,12 +1279,16 @@ function avBuildScene(){
     var n=avData.nodes.find(function(n){return n.node_id===avSelected.id;});
     if(n){var triad=buildTriad(n); avScene.add(triad); avArrows=[triad];}
   }
-  // Seg-end triads
+  // Seg-end triads (world axes + relative)
   if(avSelected&&avSelected.type==='segment'){
     var seg=avData.segments.find(function(s){return s.segment_id===avSelected.id;});
     if(seg){
+      // World-axis triads
       var tA=buildSegEndTriad(seg,'a'); avScene.add(tA); avSegEndTriads.push({group:tA,end:'a',segId:seg.segment_id});
       var tB=buildSegEndTriad(seg,'b'); avScene.add(tB); avSegEndTriads.push({group:tB,end:'b',segId:seg.segment_id});
+      // Relative triads
+      var rA=buildSegRelTriad(seg,'a'); avScene.add(rA); avSegRelTriads.push({group:rA,end:'a',segId:seg.segment_id});
+      var rB=buildSegRelTriad(seg,'b'); avScene.add(rB); avSegRelTriads.push({group:rB,end:'b',segId:seg.segment_id});
     }
   }
 
@@ -1072,7 +1312,6 @@ document.getElementById('av-canvas').addEventListener('click',function(e){
   var sData=sHits.length?resolveHit(sHits[0].object):null;
   var hit=nData||sData;
 
-  // Pending-link mode: clicking a node completes the link
   if(avPendingLink){
     if(nData&&nData.type==='node'){
       followSet(avPendingLink.segId,avPendingLink.end,nData.id);
@@ -1106,6 +1345,7 @@ function avShowProps(){
     panel.classList.remove('props-visible');
     avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
     avSegEndTriads.forEach(function(e){avScene.remove(e.group);}); avSegEndTriads=[];
+    avSegRelTriads.forEach(function(e){avScene.remove(e.group);}); avSegRelTriads=[];
     avRender(); return;
   }
   panel.classList.add('props-visible');
@@ -1247,7 +1487,7 @@ function avNextNodeId(){var ids=new Set(avData.nodes.map(function(n){return n.no
 function avNextSegId(){var ids=new Set(avData.segments.map(function(s){return s.segment_id;}));var i=1;while(ids.has('S'+i))i++;return 'S'+i;}
 function avAddNode(){
   var t=avOrbit.target,id=avNextNodeId();
-  avData.nodes.push({node_id:id,location:[Math.round(t.x*100)/100,Math.round(t.y*100)/100,Math.round(t.z*100)/100],alpha:0,beta:0,gamma:0});
+  avData.nodes.push({node_id:id,location:[round3(t.x),round3(t.y),round3(t.z)],alpha:0,beta:0,gamma:0});
   avSelected={type:'node',id:id}; avBuildScene(); avShowProps(); markDirty('available');
 }
 function avAddSegment(idA,idB){
@@ -1296,7 +1536,7 @@ function initCh(){
   chCube=makeViewCube(document.getElementById('ch-cube-canvas'),function(){return chCamera;},chSnapTo);
   chOrbit=makeOrbit(chCamera,chRender,chViewSize);
   document.getElementById('ch-canvas').addEventListener('mousedown',function(e){
-    onCanvasMouseDown(e,chOrbit,chRay,chNodeMeshes,function(){return [];},function(){return [];});
+    onCanvasMouseDown(e,chOrbit,chRay,chNodeMeshes,function(){return [];},function(){return [];},function(){return [];});
   });
   attachZoom(document.getElementById('ch-canvas'),chOrbit,chViewSize);
 }
