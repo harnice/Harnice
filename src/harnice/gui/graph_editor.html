@@ -383,10 +383,10 @@ function scaleFixedPx(scene,cam,renderer){
   scene.traverse(function(obj){
     if(obj.userData.fixedPxRadius) obj.scale.setScalar(obj.userData.fixedPxRadius*worldPerPx);
     if(obj.userData.fixedSegWidth){
-      var ribbonH=worldPerPx*PX_PER_MM*0.55;
-      var glowH  =worldPerPx*PX_PER_MM*1.4;
-      if(obj.userData.isGlow) obj.scale.set(obj.userData.segLen, glowH, 1);
-      else                    obj.scale.set(obj.userData.segLen, ribbonH, 1);
+      var ribbonR=worldPerPx*PX_PER_MM*0.28;
+      var glowR  =worldPerPx*PX_PER_MM*0.72;
+      if(obj.userData.isGlow) obj.scale.set(glowR, obj.userData.segLen, glowR);
+      else                    obj.scale.set(ribbonR, obj.userData.segLen, ribbonR);
     }
   });
 }
@@ -418,16 +418,17 @@ function makeSegLine(seg, color, opts){
   group.userData.type='segment';
   group.userData.id=seg.segment_id;
 
-  // Glow plane (slightly wider, behind, semi-transparent)
   var glowColor=opts.glowColor!==undefined?opts.glowColor:color;
+
+  // Glow cylinder — slightly fatter, semi-transparent
   var glowMat=new THREE.MeshBasicMaterial({
     color:glowColor,
     transparent:true,
     opacity:opts.glowOpacity!==undefined?opts.glowOpacity:0.13,
     depthWrite:false
   });
-  var glowMesh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),glowMat);
-  glowMesh.position.z=-0.005;
+  var glowMesh=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,12),glowMat);
+  glowMesh.rotation.z=Math.PI/2; // align with X axis (segment direction)
   glowMesh.userData.fixedSegWidth=true;
   glowMesh.userData.isGlow=true;
   glowMesh.userData.segLen=len;
@@ -435,14 +436,15 @@ function makeSegLine(seg, color, opts){
   glowMesh.userData.id=seg.segment_id;
   group.add(glowMesh);
 
-  // Ribbon plane
+  // Core cylinder
   var ribbonMat=new THREE.MeshStandardMaterial({
     color:color,
     metalness:0.25,
     roughness:0.55,
     envMapIntensity:0.6
   });
-  var ribbon=new THREE.Mesh(new THREE.PlaneGeometry(1,1),ribbonMat);
+  var ribbon=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,12),ribbonMat);
+  ribbon.rotation.z=Math.PI/2;
   ribbon.userData.fixedSegWidth=true;
   ribbon.userData.isGlow=false;
   ribbon.userData.segLen=len;
