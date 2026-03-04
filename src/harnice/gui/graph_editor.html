@@ -86,6 +86,16 @@ input:focus{outline:none;border-color:#666}
         <div id="props-av-content"></div>
         <button class="danger" style="margin-top:8px" onclick="avDeleteSelected()">Delete</button>
       </div>
+      <div class="section">
+        <h2>Step Size</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:10px;color:#555">0.01</span>
+          <span id="step-label" style="font-size:12px;color:#d4a017;font-weight:bold">1</span>
+          <span style="font-size:10px;color:#555">100</span>
+        </div>
+        <input id="step-slider" type="range" min="0" max="1" step="0.0001"
+          style="width:100%;accent-color:#d4a017;cursor:pointer;margin:0">
+      </div>
       <div class="section"><h2>View</h2><button onclick="avFitView()">Fit View</button></div>
     </div>
     <div class="viewport" id="av-viewport">
@@ -1257,6 +1267,61 @@ window.addEventListener('mouseup',function(){
 
 function round3(v){return Math.round(v*1000)/1000;}
 
+// ── Step size slider ──────────────────────────────────────────────────────────
+var STEP_SNAPS=(function(){
+  var s=[];
+  [0.01,0.1,1,10,100].forEach(function(mag){[1,2,5].forEach(function(m){s.push(mag*m);});});
+  // deduplicate and sort
+  s=s.filter(function(v,i,a){return a.indexOf(v)===i;}).sort(function(a,b){return a-b;});
+  return s; // [0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,200,500]
+})();
+var LOG_MIN=Math.log10(STEP_SNAPS[0]);
+var LOG_MAX=Math.log10(STEP_SNAPS[STEP_SNAPS.length-1]);
+
+function sliderValToStep(t){
+  // t in [0,1] → log-interpolate, then snap to nearest STEP_SNAPS value
+  var logVal=LOG_MIN+t*(LOG_MAX-LOG_MIN);
+  var raw=Math.pow(10,logVal);
+  var best=STEP_SNAPS[0],bestDist=Infinity;
+  STEP_SNAPS.forEach(function(s){
+    var d=Math.abs(Math.log10(raw)-Math.log10(s));
+    if(d<bestDist){bestDist=d;best=s;}
+  });
+  return best;
+}
+function stepToSliderVal(step){
+  return (Math.log10(step)-LOG_MIN)/(LOG_MAX-LOG_MIN);
+}
+
+var currentStep=1;
+
+function applyStepToInputs(step){
+  var panel=document.getElementById('props-av-content');
+  if(!panel) return;
+  panel.querySelectorAll('input[type="number"]').forEach(function(inp){
+    inp.step=step;
+  });
+  // also hit the flat angle input if visible
+  var fa=document.getElementById('flat-prop-angle');
+  if(fa) fa.step=step;
+}
+
+requestAnimationFrame(function(){
+  var slider=document.getElementById('step-slider');
+  var label=document.getElementById('step-label');
+  // Set initial position to 1
+  slider.value=stepToSliderVal(1);
+  label.textContent='1';
+  slider.addEventListener('input',function(){
+    var step=sliderValToStep(parseFloat(slider.value));
+    // Snap slider thumb to exact log position of snapped value
+    slider.value=stepToSliderVal(step);
+    currentStep=step;
+    label.textContent=step<1?step.toString():step%1===0?step.toFixed(0):step.toString();
+    applyStepToInputs(step);
+  });
+});
+
 function attachZoom(canvasEl,orbit,getViewportSize){
   canvasEl.addEventListener('wheel',function(e){
     e.preventDefault();
@@ -1401,6 +1466,8 @@ function avShowProps(){
     avRender(); return;
   }
   panel.classList.add('props-visible');
+  // Apply current step to any inputs about to be created
+  requestAnimationFrame(function(){applyStepToInputs(currentStep);});
 
   if(avSelected.type==='node'){
     var n=avData.nodes.find(function(n){return n.node_id===avSelected.id;}); if(!n) return;
