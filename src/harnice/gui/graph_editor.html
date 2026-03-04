@@ -5,60 +5,56 @@
 <title>Harnice Network Editor</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:sans-serif;background:#1a1a1a;color:#eee;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-#topbar{display:flex;align-items:center;gap:12px;padding:6px 14px;background:#252525;border-bottom:1px solid #404040;flex-shrink:0}
-#topbar h1{font-size:13px;color:#bbb;font-weight:normal;margin-right:8px}
-#part-rev{font-size:11px;color:#777}
+body{font-family:sans-serif;background:#111214;color:#eee;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#topbar{display:flex;align-items:center;gap:12px;padding:6px 14px;background:#18191c;border-bottom:1px solid #2a2b30;flex-shrink:0}
+#topbar h1{font-size:13px;color:#9a9ba0;font-weight:normal;margin-right:8px;letter-spacing:.04em}
+#part-rev{font-size:11px;color:#555}
 .tabs{display:flex;gap:4px;margin-left:auto}
-.tab{padding:5px 16px;border-radius:5px 5px 0 0;cursor:pointer;font-size:12px;background:#333;border:1px solid #404040;border-bottom:none;color:#aaa;transition:background .15s}
-.tab.active{background:#1a1a1a;color:#eee;border-color:#666}
-.tab:hover:not(.active){background:#3a3a3a}
+.tab{padding:5px 16px;border-radius:5px 5px 0 0;cursor:pointer;font-size:12px;background:#1e1f23;border:1px solid #2a2b30;border-bottom:none;color:#666;transition:background .15s,color .15s}
+.tab.active{background:#111214;color:#d4a017;border-color:#3a3b40;border-bottom-color:#111214}
+.tab:hover:not(.active){background:#25262a;color:#aaa}
 #main{flex:1;display:flex;overflow:hidden}
 .panel{display:none;flex:1;overflow:hidden}
 .panel.active{display:flex}
-.sidebar{width:260px;min-width:260px;background:#252525;border-right:1px solid #404040;display:flex;flex-direction:column;gap:8px;padding:10px;overflow-y:auto}
-.section{background:#2e2e2e;border-radius:6px;padding:9px}
-.section h2{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
-button{background:#444;color:#eee;border:none;border-radius:4px;padding:5px 9px;cursor:pointer;font-size:12px;width:100%;margin-top:4px}
-button:hover{background:#555}
-button.active-tool{background:#b8860b;color:#fff}
-button.danger{background:#5a2020}
-button.danger:hover{background:#6e2828}
-label{font-size:11px;color:#888;display:block;margin-top:6px}
-input{width:100%;padding:4px 7px;border-radius:4px;background:#1a1a1a;border:1px solid #404040;color:#eee;font-size:12px;margin-top:2px}
-input:focus{outline:none;border-color:#888}
+.sidebar{width:260px;min-width:260px;background:#18191c;border-right:1px solid #2a2b30;display:flex;flex-direction:column;gap:8px;padding:10px;overflow-y:auto}
+.section{background:#1e1f23;border-radius:6px;padding:9px;border:1px solid #2a2b30}
+.section h2{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+button{background:#25262a;color:#bbb;border:1px solid #2e2f34;border-radius:4px;padding:5px 9px;cursor:pointer;font-size:12px;width:100%;margin-top:4px;transition:background .12s,border-color .12s,color .12s}
+button:hover{background:#2d2e33;border-color:#444;color:#eee}
+button.active-tool{background:#2a2200;border:1px solid #d4a017;color:#d4a017}
+button.danger{background:#1e1010;border-color:#5a2020;color:#c06060}
+button.danger:hover{background:#2a1515;border-color:#7a3030;color:#e07070}
+label{font-size:11px;color:#555;display:block;margin-top:6px}
+input{width:100%;padding:4px 7px;border-radius:4px;background:#111214;border:1px solid #2e2f34;color:#ccc;font-size:12px;margin-top:2px;transition:border-color .15s}
+input:focus{outline:none;border-color:#666}
 .row{display:flex;gap:5px}
 .row>*{flex:1}
 .input-zero{display:flex;gap:4px;margin-top:2px}
 .input-zero input{margin-top:0;flex:1}
-.zero-btn{flex:none;width:28px;padding:0;font-size:10px;background:#333;border:1px solid #555;border-radius:4px;color:#888;cursor:pointer;margin-top:0}
-.zero-btn:hover{background:#444;color:#eee}
-.sep{border:none;border-top:1px solid #3a3a3a;margin:8px 0}
-#autosave-indicator{font-size:10px;color:#555;text-align:right;padding:2px 4px}
-.viewport{flex:1;position:relative;overflow:hidden}
+.zero-btn{flex:none;width:28px;padding:0;font-size:10px;background:#1a1b1f;border:1px solid #333;border-radius:4px;color:#555;cursor:pointer;margin-top:0}
+.zero-btn:hover{background:#25262a;color:#aaa}
+.sep{border:none;border-top:1px solid #2a2b30;margin:8px 0}
+#autosave-indicator{font-size:10px;color:#333;text-align:right;padding:2px 4px}
+.viewport{flex:1;position:relative;overflow:hidden;display:flex}
 .viewcube-wrap{position:absolute;top:12px;right:12px;width:84px;z-index:10}
 .viewcube-wrap canvas{display:block;cursor:pointer}
-#av-3d-btn,#ch-3d-btn{width:84px;padding:7px 0;font-size:11px;background:#2a2200;border:1px solid #b8860b;border-radius:5px;color:#d4a017;cursor:pointer;margin-top:0;text-align:center}
-#av-3d-btn:hover,#ch-3d-btn:hover{background:#332900;border-color:#d4a017;color:#f0c040}
+#av-3d-btn,#ch-3d-btn{width:84px;padding:7px 0;font-size:11px;background:#1a1600;border:1px solid #d4a017;border-radius:5px;color:#d4a017;cursor:pointer;margin-top:0;text-align:center;transition:background .12s}
+#av-3d-btn:hover,#ch-3d-btn:hover{background:#221c00;color:#f0c040}
 #flat-wrap{flex:1;position:relative;overflow:hidden}
 #flat-svg{width:100%;height:100%;display:block;cursor:default}
 .read-only-val{font-size:12px;color:#ccc;padding:3px 0 0 2px;display:block}
 #props-av,#props-ch{display:none}
 .props-visible{display:block !important}
-.follow-pill{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:3px 8px 3px 7px;border-radius:12px;font-size:11px;
-  cursor:pointer;border:1px solid #555;background:#333;color:#aaa;
-  width:auto;margin-top:5px;transition:background .12s,border-color .12s;
-}
-.follow-pill:hover{background:#3e3e3e;border-color:#888}
-.follow-pill.linked{background:#1a3020;border-color:#3a7a50;color:#5de08a}
-.follow-pill.linked:hover{background:#1f3a27;border-color:#5de08a}
-.follow-pill.orphan{background:#2a2200;border-color:#7a6000;color:#d4a017}
-.follow-pill.orphan:hover{background:#332900;border-color:#b8860b}
+.follow-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 7px;border-radius:12px;font-size:11px;cursor:pointer;border:1px solid #333;background:#1e1f23;color:#666;width:auto;margin-top:5px;transition:background .12s,border-color .12s}
+.follow-pill:hover{background:#25262a;border-color:#666}
+.follow-pill.linked{background:#0e2016;border-color:#2a6040;color:#4db87a}
+.follow-pill.linked:hover{background:#132819;border-color:#4db87a}
+.follow-pill.orphan{background:#1a1600;border-color:#5a4800;color:#d4a017}
+.follow-pill.orphan:hover{background:#221c00;border-color:#d4a017}
 .follow-pill .pill-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.sep{border:none;border-top:1px solid #2a2b30;margin:8px 0}
 .end-block{margin-top:6px}
-.end-block .end-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.end-block .end-label{font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -90,7 +86,8 @@ input:focus{outline:none;border-color:#888}
       <div class="section"><h2>View</h2><button onclick="avFitView()">Fit View</button></div>
     </div>
     <div class="viewport" id="av-viewport">
-      <canvas id="av-canvas" tabindex="0" style="width:100%;height:100%;display:block"></canvas>
+      <canvas id="av-canvas" tabindex="0" style="width:100%;height:100%;display:block;position:absolute;top:0;left:0"></canvas>
+      <canvas id="av-label-canvas" style="width:100%;height:100%;display:block;position:absolute;top:0;left:0;pointer-events:none"></canvas>
       <div class="viewcube-wrap">
         <canvas id="av-cube-canvas" width="84" height="84"></canvas>
         <button id="av-3d-btn" style="display:none" onclick="enable3D('available')">3D Editor</button>
@@ -101,8 +98,8 @@ input:focus{outline:none;border-color:#888}
     <div class="sidebar">
       <div class="section">
         <h2>Instructions</h2>
-        <p style="font-size:11px;color:#888;line-height:1.6">Click a segment to toggle.<br>
-        <span style="color:#d4a017">■</span> Chosen &nbsp;<span style="color:#555">■</span> Not chosen<br>
+        <p style="font-size:11px;color:#555;line-height:1.7">Click a segment to toggle.<br>
+        <span style="color:#d4a017">■</span> Chosen &nbsp;<span style="color:#2a2b30">■</span> Not chosen<br>
         <span style="color:#c73652">●</span> Resolved nodes</p>
       </div>
       <div class="section" id="props-ch">
@@ -112,7 +109,8 @@ input:focus{outline:none;border-color:#888}
       <div class="section"><h2>View</h2><button onclick="chFitView()">Fit View</button></div>
     </div>
     <div class="viewport" id="ch-viewport">
-      <canvas id="ch-canvas" tabindex="0" style="width:100%;height:100%;display:block"></canvas>
+      <canvas id="ch-canvas" tabindex="0" style="width:100%;height:100%;display:block;position:absolute;top:0;left:0"></canvas>
+      <canvas id="ch-label-canvas" style="width:100%;height:100%;display:block;position:absolute;top:0;left:0;pointer-events:none"></canvas>
       <div class="viewcube-wrap">
         <canvas id="ch-cube-canvas" width="84" height="84"></canvas>
         <button id="ch-3d-btn" style="display:none" onclick="enable3D('chosen')">3D Editor</button>
@@ -129,7 +127,7 @@ input:focus{outline:none;border-color:#888}
         <label>Length</label><span class="read-only-val" id="flat-prop-len">—</span>
         <label>Angle (°)</label>
         <input id="flat-prop-angle" type="number" min="0" max="360" step="1" oninput="flatAngleChanged(this.value)">
-        <p id="flat-no-sel" style="font-size:11px;color:#666;margin-top:6px">Click a segment to edit its angle.</p>
+        <p id="flat-no-sel" style="font-size:11px;color:#444;margin-top:6px">Click a segment to edit its angle.</p>
       </div>
       <div class="section"><h2>View</h2><button onclick="flatFitView()">Fit View</button></div>
     </div>
@@ -141,7 +139,22 @@ input:focus{outline:none;border-color:#888}
 <script>
 'use strict';
 
-var C_YELLOW=0xd4a017,C_RED=0xc73652,C_GRAY=0x4a4a4a,C_WHITE=0xffffff;
+// ── Palette ───────────────────────────────────────────────────────────────────
+// Semantic colors (role-coded, unchanged)
+var C_AMBER  = 0xd4a017;   // chosen / segment default
+var C_RED    = 0xc73652;   // node default
+var C_SEL    = 0xffffff;   // selected
+
+// Visual upgrade palette
+var C_SEG_DEFAULT   = 0x3a6ea5;  // cool slate-blue ribbon
+var C_SEG_GLOW      = 0x1a3a5c;  // darker behind-glow ribbon
+var C_SEG_CHOSEN    = 0xd4a017;  // amber (semantic)
+var C_SEG_NOTCHOSEN = 0x1e2433;  // near-black blue-grey
+var C_NODE_DEFAULT  = 0x4a7ab5;  // matches seg hue, brighter ring
+var C_NODE_CHOSEN   = 0xc73652;  // red (semantic)
+var C_NODE_SEL_RING = 0xffffff;
+var C_NODE_SEL_FILL = 0xd4a017;
+
 var AUTOSAVE_MS=3000;
 var PX_PER_MM=(window.devicePixelRatio||1)*96/25.4;
 var DEG=Math.PI/180;
@@ -160,15 +173,10 @@ var flatPan={x:400,y:300},flatScale=1,flatIsPanning=false,flatPanStart={x:0,y:0}
 var avRenderer,avScene,avCamera,avOrbit,avCube,avNodeMeshes={},avSegLines={},avRay;
 var chRenderer,chScene,chCamera,chOrbit,chCube,chSegLines={},chNodeMeshes={},chRay;
 
-// ── In-memory follow links ────────────────────────────────────────────────────
-// followLinks: Map<segId, {a: nodeId|null, b: nodeId|null}>
-// Purely runtime — never serialised.
 var followLinks = {};
-
-// ── 2D / 3D mode ──────────────────────────────────────────────────────────────
-// Per-viewport runtime flag. Once the user clicks "3D Editor" it stays true.
 var force3D = {available: false, chosen: false};
 
+// ── Data flat check ───────────────────────────────────────────────────────────
 function isDataFlat(){
   var eps=1e-6;
   var nodes=avData.nodes||[], segs=avData.segments||[];
@@ -201,16 +209,12 @@ function updateViewCubeVisibility(tab, orbit, camera, viewSize){
   if(flat) apply2DMode(tab, orbit, camera, viewSize);
 }
 
-function followGet(segId) {
-  return followLinks[segId] || {a:null, b:null};
-}
+function followGet(segId) { return followLinks[segId] || {a:null, b:null}; }
 function followSet(segId, end, nodeId) {
   if(!followLinks[segId]) followLinks[segId]={a:null,b:null};
   followLinks[segId][end]=nodeId;
 }
-function followClear(segId) {
-  delete followLinks[segId];
-}
+function followClear(segId) { delete followLinks[segId]; }
 
 function locEq(a,b){
   return Math.abs(a[0]-b[0])<FOLLOW_EPS &&
@@ -221,8 +225,6 @@ function nodeAtLoc(loc){
   var n=(avData.nodes||[]).find(function(n){return locEq(n.location,loc);});
   return n?n.node_id:null;
 }
-
-// Rebuild follow links from scratch by testing coincidence — called after load
 function rebuildFollowLinks(){
   followLinks={};
   (avData.segments||[]).forEach(function(seg){
@@ -231,8 +233,6 @@ function rebuildFollowLinks(){
     if(a||b) followLinks[seg.segment_id]={a:a||null,b:b||null};
   });
 }
-
-// Push a node's current position to all segments following it
 function syncFollowers(nodeId){
   var n=(avData.nodes||[]).find(function(n){return n.node_id===nodeId;});
   if(!n) return;
@@ -243,8 +243,6 @@ function syncFollowers(nodeId){
     if(lk.b===nodeId) seg.location_at_end_b=n.location.slice();
   });
 }
-
-// Push a segment endpoint to its followed node
 function syncNodeFromSeg(seg, end){
   var lk=followLinks[seg.segment_id];
   if(!lk) return;
@@ -254,8 +252,6 @@ function syncNodeFromSeg(seg, end){
   if(!n) return;
   n.location=(end==='a'?seg.location_at_end_a:seg.location_at_end_b).slice();
 }
-
-// Strip follow-link fields before saving (keep data clean)
 function cleanSegForSave(seg){
   var s=Object.assign({},seg);
   delete s.node_at_end_a; delete s.node_at_end_b;
@@ -293,22 +289,20 @@ var drag={
 // ── Autosave ──────────────────────────────────────────────────────────────────
 function markDirty(tab){
   dirty[tab]=true;
-  document.getElementById('autosave-indicator').style.color='#b8860b';
+  document.getElementById('autosave-indicator').style.color='#d4a017';
   clearTimeout(saveTimers[tab]);
   saveTimers[tab]=setTimeout(function(){saveTab(tab);},AUTOSAVE_MS);
 }
 async function saveTab(tab){
   try{
     if(tab==='available'){
-      var payload=Object.assign({},avData,{
-        segments:(avData.segments||[]).map(cleanSegForSave)
-      });
+      var payload=Object.assign({},avData,{segments:(avData.segments||[]).map(cleanSegForSave)});
       await fetch('/api/available',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     }
     if(tab==='chosen')    await fetch('/api/chosen_list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(chosenList)});
     if(tab==='flattened') await fetch('/api/flattened',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(flatData)});
     dirty[tab]=false;
-    if(!Object.values(dirty).some(Boolean)) document.getElementById('autosave-indicator').style.color='#555';
+    if(!Object.values(dirty).some(Boolean)) document.getElementById('autosave-indicator').style.color='#333';
   }catch(e){document.getElementById('autosave-indicator').style.color='#c73652';}
 }
 
@@ -346,9 +340,11 @@ async function loadAll(){
 
 // ── Three.js helpers ──────────────────────────────────────────────────────────
 function makeRenderer(canvas){
-  var r=new THREE.WebGLRenderer({canvas:canvas,antialias:true});
+  var r=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:false});
   r.setPixelRatio(window.devicePixelRatio);
-  r.setClearColor(0x1a1a1a);
+  r.setClearColor(0x111214);
+  r.shadowMap.enabled=true;
+  r.shadowMap.type=THREE.PCFSoftShadowMap;
   return r;
 }
 function makeOrthoCamera(w,h){
@@ -379,13 +375,19 @@ function makeWorldAxes(size){
   addAxis(new THREE.Vector3(0,0,1),0x4499ff);
   return g;
 }
+
 function scaleFixedPx(scene,cam,renderer){
   var sz=renderer.getSize(new THREE.Vector2());
   var worldPerPx=(2*cam.userData.halfSize)/sz.height;
   var segWorldWidth=worldPerPx*PX_PER_MM*0.5;
   scene.traverse(function(obj){
     if(obj.userData.fixedPxRadius) obj.scale.setScalar(obj.userData.fixedPxRadius*worldPerPx);
-    if(obj.userData.fixedSegWidth) obj.scale.set(obj.userData.segLen,segWorldWidth,segWorldWidth);
+    if(obj.userData.fixedSegWidth){
+      var ribbonH=worldPerPx*PX_PER_MM*0.55;
+      var glowH  =worldPerPx*PX_PER_MM*1.4;
+      if(obj.userData.isGlow) obj.scale.set(obj.userData.segLen, glowH, 1);
+      else                    obj.scale.set(obj.userData.segLen, ribbonH, 1);
+    }
   });
 }
 
@@ -394,15 +396,72 @@ function getNodeScreenPos(node,cam){
   var ndc=new THREE.Vector3(node.location[0],node.location[1],node.location[2]).project(cam);
   var canvas=document.getElementById('av-canvas');
   var rect=canvas.getBoundingClientRect();
-  return{
-    x:(ndc.x*0.5+0.5)*rect.width+rect.left,
-    y:(-ndc.y*0.5+0.5)*rect.height+rect.top
-  };
+  return{x:(ndc.x*0.5+0.5)*rect.width+rect.left,y:(-ndc.y*0.5+0.5)*rect.height+rect.top};
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  VIEW CUBE
+//  MESH FACTORIES — visual upgrade
 // ══════════════════════════════════════════════════════════════════════════════
+
+// Segment: flat ribbon + glow plane behind it
+function makeSegLine(seg, color, opts){
+  opts = opts||{};
+  var aVec=new THREE.Vector3(...seg.location_at_end_a);
+  var bVec=new THREE.Vector3(...seg.location_at_end_b);
+  var mid=aVec.clone().add(bVec).multiplyScalar(0.5);
+  var len=aVec.distanceTo(bVec)||0.001;
+  var dir=bVec.clone().sub(aVec).normalize();
+
+  var group=new THREE.Group();
+  group.position.copy(mid);
+  group.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  group.userData.type='segment';
+  group.userData.id=seg.segment_id;
+
+  // Glow plane (slightly wider, behind, semi-transparent)
+  var glowColor=opts.glowColor!==undefined?opts.glowColor:color;
+  var glowMat=new THREE.MeshBasicMaterial({
+    color:glowColor,
+    transparent:true,
+    opacity:opts.glowOpacity!==undefined?opts.glowOpacity:0.13,
+    depthWrite:false
+  });
+  var glowMesh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),glowMat);
+  glowMesh.position.z=-0.005;
+  glowMesh.userData.fixedSegWidth=true;
+  glowMesh.userData.isGlow=true;
+  glowMesh.userData.segLen=len;
+  glowMesh.userData.type='segment';
+  glowMesh.userData.id=seg.segment_id;
+  group.add(glowMesh);
+
+  // Ribbon plane
+  var ribbonMat=new THREE.MeshStandardMaterial({
+    color:color,
+    metalness:0.25,
+    roughness:0.55,
+    envMapIntensity:0.6
+  });
+  var ribbon=new THREE.Mesh(new THREE.PlaneGeometry(1,1),ribbonMat);
+  ribbon.userData.fixedSegWidth=true;
+  ribbon.userData.isGlow=false;
+  ribbon.userData.segLen=len;
+  ribbon.userData.type='segment';
+  ribbon.userData.id=seg.segment_id;
+  group.add(ribbon);
+
+  return group;
+}
+
+// Node: ring (torus) + small filled disc
+function makeNodeDisc(loc, ringColor){
+  var mesh=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),new THREE.MeshLambertMaterial({color:ringColor}));
+  mesh.position.set(loc[0],loc[1],loc[2]);
+  mesh.userData.fixedPxRadius=PX_PER_MM*0.75;
+  return mesh;
+}
+
+// ── View Cube (unchanged logic) ───────────────────────────────────────────────
 function cv3(x,y,z){return{x:x,y:y,z:z};}
 function cvscale(v,s){return cv3(v.x*s,v.y*s,v.z*s);}
 function cvdot(a,b){return a.x*b.x+a.y*b.y+a.z*b.z;}
@@ -482,8 +541,9 @@ function makeViewCube(canvasEl,getThreeCam,onSnapRequest){
       });
     ctx.globalAlpha=1.0;
     allQuads.forEach(function(q){
-      var pts=q.pts2d,b=Math.round(80+q.shade*120);
-      ctx.fillStyle=q.labelName?'rgb('+b+','+b+','+b+')':'#2255cc';
+      var pts=q.pts2d;
+      var v=Math.round(18+q.shade*32);
+      ctx.fillStyle=q.labelName?'rgb('+v+','+(v+2)+','+(v+6)+')':'#0d1a33';
       ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
       for(var i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
       ctx.closePath(); ctx.fill();
@@ -492,7 +552,7 @@ function makeViewCube(canvasEl,getThreeCam,onSnapRequest){
       if(!q.labelName) return;
       var pts=q.pts2d,cx=0,cy=0;
       pts.forEach(function(p){cx+=p.x;cy+=p.y;}); cx/=4; cy/=4;
-      ctx.fillStyle='#1a1a1a'; ctx.font='bold 9px sans-serif';
+      ctx.fillStyle='#8899bb'; ctx.font='bold 8px sans-serif';
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(q.labelName,cx,cy);
     });
@@ -540,12 +600,9 @@ function animateCameraToFace(orbit,face){
 }
 function enable3D(tab){
   force3D[tab]=true;
-  var cubeId=tab==='available'?'av-cube-canvas':'ch-cube-canvas';
-  var btnId =tab==='available'?'av-3d-btn':'ch-3d-btn';
-  document.getElementById(cubeId).style.display='block';
-  document.getElementById(btnId).style.display='none';
+  document.getElementById(tab==='available'?'av-cube-canvas':'ch-cube-canvas').style.display='block';
+  document.getElementById(tab==='available'?'av-3d-btn':'ch-3d-btn').style.display='none';
 }
-
 function avSnapTo(name){var f=CUBE_FACES.find(function(f){return f.name===name;});if(f)animateCameraToFace(avOrbit,f);}
 function chSnapTo(name){var f=CUBE_FACES.find(function(f){return f.name===name;});if(f)animateCameraToFace(chOrbit,f);}
 
@@ -578,7 +635,7 @@ function avViewSize(){var vp=document.getElementById('av-viewport');return{w:vp.
 function chViewSize(){var vp=document.getElementById('ch-viewport');return{w:vp.clientWidth,h:vp.clientHeight};}
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  TRIAD
+//  TRIAD (unchanged)
 // ══════════════════════════════════════════════════════════════════════════════
 function makeBasis(axisDir,tangent){
   var y=axisDir.clone().normalize();
@@ -660,7 +717,6 @@ function buildTriad(node){
   return master;
 }
 
-// ── Triad visibility ──────────────────────────────────────────────────────────
 var TRANS_HIDE_DOT=Math.cos(5*DEG);
 var ROT_HIDE_DOT  =Math.sin(5*DEG);
 function updateTriadVisibility(camera){
@@ -680,9 +736,7 @@ function updateTriadVisibility(camera){
   });
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  MOUSE
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Mouse ─────────────────────────────────────────────────────────────────────
 function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects){
   if(e.button!==0&&e.button!==2){return;}
   e.preventDefault();
@@ -800,7 +854,6 @@ window.addEventListener('mouseup',function(){
   drag.nodeScrPx=null; drag.prevAngle=0; drag.orbit=null;
 });
 
-// ── Zoom ──────────────────────────────────────────────────────────────────────
 function attachZoom(canvasEl,orbit,getViewportSize){
   canvasEl.addEventListener('wheel',function(e){
     e.preventDefault();
@@ -820,40 +873,93 @@ function attachZoom(canvasEl,orbit,getViewportSize){
   canvasEl.addEventListener('contextmenu',function(e){e.preventDefault();});
 }
 
-// ── Mesh helpers ──────────────────────────────────────────────────────────────
-function makeSegLine(seg,color){
-  var aVec=new THREE.Vector3(...seg.location_at_end_a);
-  var bVec=new THREE.Vector3(...seg.location_at_end_b);
-  var mid=aVec.clone().add(bVec).multiplyScalar(0.5);
-  var len=aVec.distanceTo(bVec)||0.001;
-  var dir=bVec.clone().sub(aVec).normalize();
-  var mesh=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial({color:color}));
-  mesh.position.copy(mid);
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
-  mesh.userData.type='segment'; mesh.userData.id=seg.segment_id;
-  mesh.userData.segLen=len; mesh.userData.fixedSegWidth=true;
-  return mesh;
-}
-function makeNodeSphere(loc,color){
-  var mesh=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),new THREE.MeshLambertMaterial({color:color}));
-  mesh.position.set(loc[0],loc[1],loc[2]);
-  mesh.userData.fixedPxRadius=PX_PER_MM*0.75;
-  return mesh;
+// ── Render ────────────────────────────────────────────────────────────────────
+// ── Label overlay ─────────────────────────────────────────────────────────────
+function worldToScreen(pos, camera, canvas){
+  var ndc = pos.clone().project(camera);
+  var r = canvas.getBoundingClientRect();
+  return {
+    x: (ndc.x * 0.5 + 0.5) * canvas.width / window.devicePixelRatio,
+    y: (-ndc.y * 0.5 + 0.5) * canvas.height / window.devicePixelRatio
+  };
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
+function drawLabels(labelCanvas, camera, nodes, segments){
+  var dpr = window.devicePixelRatio || 1;
+  var w = labelCanvas.parentElement.clientWidth;
+  var h = labelCanvas.parentElement.clientHeight;
+  if(labelCanvas.width !== w * dpr || labelCanvas.height !== h * dpr){
+    labelCanvas.width = w * dpr;
+    labelCanvas.height = h * dpr;
+    labelCanvas.style.width = w + 'px';
+    labelCanvas.style.height = h + 'px';
+  }
+  var ctx = labelCanvas.getContext('2d');
+  ctx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+
+  var OFFSET_Y = 10; // px above element
+
+  // Node labels
+  (nodes || []).forEach(function(n){
+    if(!n.node_id) return;
+    var pos = new THREE.Vector3(n.location[0], n.location[1], n.location[2]);
+    var sc = worldToScreen(pos, camera, labelCanvas);
+    ctx.fillStyle = 'rgba(180,190,210,0.55)';
+    ctx.fillText(n.node_id, sc.x, sc.y - OFFSET_Y);
+  });
+
+  // Segment labels — midpoint
+  (segments || []).forEach(function(s){
+    if(!s.segment_id) return;
+    var mid = new THREE.Vector3(
+      (s.location_at_end_a[0] + s.location_at_end_b[0]) / 2,
+      (s.location_at_end_a[1] + s.location_at_end_b[1]) / 2,
+      (s.location_at_end_a[2] + s.location_at_end_b[2]) / 2
+    );
+    var sc = worldToScreen(mid, camera, labelCanvas);
+    ctx.fillStyle = 'rgba(130,150,180,0.4)';
+    ctx.fillText(s.segment_id, sc.x, sc.y - OFFSET_Y);
+  });
+
+  ctx.restore();
+}
+
 function avRender(){
   if(!avRenderer||!avCube) return;
   updateTriadVisibility(avCamera);
   scaleFixedPx(avScene,avCamera,avRenderer);
   avRenderer.render(avScene,avCamera);
   avCube.draw();
+  drawLabels(
+    document.getElementById('av-label-canvas'), avCamera,
+    avData.nodes || [], avData.segments || []
+  );
 }
 function chRender(){
   if(!chRenderer||!chCube) return;
   scaleFixedPx(chScene,chCamera,chRenderer);
   chRenderer.render(chScene,chCamera);
   chCube.draw();
+  drawLabels(
+    document.getElementById('ch-label-canvas'), chCamera,
+    (chosenNetData&&chosenNetData.nodes) ? chosenNetData.nodes : [],
+    avData.segments || []
+  );
+}
+
+// ── Raycast helpers — flatten groups for hit testing ─────────────────────────
+function collectRayMeshes(objMap){
+  var out=[];
+  Object.values(objMap).forEach(function(o){
+    if(o.isMesh) out.push(o);
+    else if(o.isGroup) o.traverse(function(c){if(c.isMesh&&!c.material.transparent)out.push(c);});
+  });
+  return out;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -864,8 +970,11 @@ function initAv(){
   avScene=new THREE.Scene();
   var sz=avViewSize();
   avCamera=makeOrthoCamera(sz.w,sz.h);
-  avScene.add(new THREE.AmbientLight(0xffffff,0.5));
-  var dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(5,8,10); avScene.add(dl);
+  // Upgraded lighting
+  avScene.add(new THREE.AmbientLight(0x1a2233,1.4));      // cool blue-tinted ambient
+  var key=new THREE.DirectionalLight(0xffffff,1.1); key.position.set(6,10,14); avScene.add(key);
+  var fill=new THREE.DirectionalLight(0x3355aa,0.35); fill.position.set(-8,-4,-6); avScene.add(fill);
+  var rim=new THREE.DirectionalLight(0x4488cc,0.2); rim.position.set(0,0,-20); avScene.add(rim);
   avScene.add(makeWorldAxes(1.5));
   avRay=new THREE.Raycaster(); avRay.params.Line.threshold=0.12;
   avCube=makeViewCube(document.getElementById('av-cube-canvas'),function(){return avCamera;},avSnapTo);
@@ -886,17 +995,24 @@ function avBuildScene(){
   Object.values(avSegLines).forEach(function(l){avScene.remove(l);});
   avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
   avNodeMeshes={}; avSegLines={};
+
   (avData.segments||[]).forEach(function(seg){
     var isSel=avSelected&&avSelected.type==='segment'&&avSelected.id===seg.segment_id;
-    var line=makeSegLine(seg,isSel?C_WHITE:C_YELLOW);
-    avSegLines[seg.segment_id]=line; avScene.add(line);
+    var col  = isSel ? C_SEL         : C_SEG_DEFAULT;
+    var glow = isSel ? 0xffffff      : C_SEG_DEFAULT;
+    var gopa = isSel ? 0.28          : 0.13;
+    var grp=makeSegLine(seg,col,{glowColor:glow,glowOpacity:gopa});
+    avSegLines[seg.segment_id]=grp; avScene.add(grp);
   });
+
   (avData.nodes||[]).forEach(function(n){
     var isSel=avSelected&&avSelected.type==='node'&&avSelected.id===n.node_id;
-    var mesh=makeNodeSphere(n.location,isSel?C_WHITE:C_RED);
-    mesh.userData.type='node'; mesh.userData.id=n.node_id;
-    avNodeMeshes[n.node_id]=mesh; avScene.add(mesh);
+    var ring = isSel ? C_NODE_SEL_RING : C_RED;
+    var grp=makeNodeDisc(n.location,ring);
+    grp.userData.type='node'; grp.userData.id=n.node_id;
+    avNodeMeshes[n.node_id]=grp; avScene.add(grp);
   });
+
   if(avSelected&&avSelected.type==='node'){
     var n=avData.nodes.find(function(n){return n.node_id===avSelected.id;});
     if(n){var triad=buildTriad(n);avScene.add(triad);avArrows=[triad];}
@@ -912,14 +1028,28 @@ document.getElementById('av-canvas').addEventListener('click',function(e){
   var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
   avRay.setFromCamera(m,avCamera);
   if(avTool==='add-node'){avAddNode();return;}
-  var nHits=avRay.intersectObjects(Object.values(avNodeMeshes));
-  var sHits=avRay.intersectObjects(Object.values(avSegLines));
-  var hit=nHits.length?nHits[0].object.userData:sHits.length?sHits[0].object.userData:null;
+
+  var nMeshes=collectRayMeshes(avNodeMeshes);
+  var sMeshes=collectRayMeshes(avSegLines);
+  var nHits=avRay.intersectObjects(nMeshes,true);
+  var sHits=avRay.intersectObjects(sMeshes,true);
+
+  // Resolve hit back to group userData
+  function resolveHit(hitObj){
+    var o=hitObj;
+    while(o&&!o.userData.type&&o.parent) o=o.parent;
+    return o&&o.userData.type?o.userData:null;
+  }
+  var nData=nHits.length?resolveHit(nHits[0].object):null;
+  var sData=sHits.length?resolveHit(sHits[0].object):null;
+  var hit=nData||sData;
+
   if(avTool==='delete'&&hit){hit.type==='node'?avDeleteNode(hit.id):avDeleteSegment(hit.id);return;}
   if(avTool==='add-seg'&&hit&&hit.type==='node'){
     if(!avConnectStart){
       avConnectStart=hit.id;
-      if(avNodeMeshes[hit.id]) avNodeMeshes[hit.id].material.color.set(0xffa500);
+      var grp=avNodeMeshes[hit.id];
+      if(grp) grp.traverse(function(c){if(c.material&&!c.material.transparent)c.material.color.set(0xffa030);});
       avRender();
     } else if(avConnectStart!==hit.id){
       avAddSegment(avConnectStart,hit.id); avConnectStart=null; avBuildScene();
@@ -929,7 +1059,7 @@ document.getElementById('av-canvas').addEventListener('click',function(e){
   avSelected=hit||null; avBuildScene(); avShowProps();
 });
 
-// ── Segment props with Follow Node pills ─────────────────────────────────────
+// ── Segment props ─────────────────────────────────────────────────────────────
 function avShowProps(){
   var panel=document.getElementById('props-av'),
       content=document.getElementById('props-av-content'),
@@ -948,7 +1078,7 @@ function avShowProps(){
     function iza(id,lbl){return '<label>'+lbl+'</label><div class="input-zero"><input id="'+id+'" type="number" step="0.1"><button class="zero-btn" data-zero="'+id+'">0</button></div>';}
     content.innerHTML='<label>ID</label><input id="pnid" value="'+n.node_id+'">'
       +iz('pnx','X')+iz('pny','Y')+iz('pnz','Z')
-      +'<hr class="sep"><label style="color:#aaa;font-size:10px">ZYX Intrinsic Euler (degrees)</label>'
+      +'<hr class="sep"><label style="color:#555;font-size:10px">ZYX Intrinsic Euler (degrees)</label>'
       +iza('pna','α (rot X)')+iza('pnb','β (rot Y)')+iza('png','γ (rot Z)');
     document.getElementById('pnx').value=n.location[0];
     document.getElementById('pny').value=n.location[1];
@@ -963,7 +1093,6 @@ function avShowProps(){
       n.alpha=parseFloat(document.getElementById('pna').value)||0;
       n.beta =parseFloat(document.getElementById('pnb').value)||0;
       n.gamma=parseFloat(document.getElementById('png').value)||0;
-      // If node ID changed, rekey follow links
       if(oldId!==n.node_id){
         Object.keys(followLinks).forEach(function(sid){
           var lk=followLinks[sid];
@@ -979,28 +1108,16 @@ function avShowProps(){
     content.querySelectorAll('.zero-btn').forEach(function(btn){
       btn.addEventListener('click',function(){var el=document.getElementById(btn.dataset.zero);el.value=0;el.dispatchEvent(new Event('input'));});
     });
-
   } else {
-    // ── Segment ──────────────────────────────────────────────────────────────
     var s=avData.segments.find(function(s){return s.segment_id===avSelected.id;}); if(!s) return;
     title.textContent='Segment';
     var lk=followGet(s.segment_id);
-
-    // Candidate node for each end: linked node, or any coincident node
     var candA=lk.a || nodeAtLoc(s.location_at_end_a);
     var candB=lk.b || nodeAtLoc(s.location_at_end_b);
-
     function pillHtml(end, linked, candId){
-      if(!candId){
-        return '<button class="follow-pill orphan" id="follow-pill-'+end+'" data-end="'+end+'">'
-          +'<span class="pill-dot"></span>'
-          +'Segment does not end in node. Click to add.'
-          +'</button>';
-      }
-      return '<button class="follow-pill'+(linked?' linked':'')+'" id="follow-pill-'+end+'" data-end="'+end+'" data-nodeid="'+candId+'">'
-        +'<span class="pill-dot"></span>'
-        +(linked?'Following '+candId:'Follow '+candId)
-        +'</button>';
+      if(!candId)
+        return '<button class="follow-pill orphan" id="follow-pill-'+end+'" data-end="'+end+'"><span class="pill-dot"></span>Segment does not end in node. Click to add.</button>';
+      return '<button class="follow-pill'+(linked?' linked':'')+'" id="follow-pill-'+end+'" data-end="'+end+'" data-nodeid="'+candId+'"><span class="pill-dot"></span>'+(linked?'Following '+candId:'Follow '+candId)+'</button>';
     }
     function xyzRow(pre,vals){
       return '<div class="row">'
@@ -1009,57 +1126,34 @@ function avShowProps(){
         +'<input id="'+pre+'z" type="number" step="0.001" value="'+vals[2]+'">'
         +'</div>';
     }
-
-    content.innerHTML=
-      '<label>ID</label><input id="psid" value="'+s.segment_id+'">'
-      +'<div class="end-block">'
-        +'<div class="end-label">End A</div>'
-        +xyzRow('psa',s.location_at_end_a)
-        +pillHtml('a',!!lk.a,candA)
-      +'</div>'
-      +'<div class="end-block" style="margin-top:8px">'
-        +'<div class="end-label">End B</div>'
-        +xyzRow('psb',s.location_at_end_b)
-        +pillHtml('b',!!lk.b,candB)
-      +'</div>';
-
+    content.innerHTML='<label>ID</label><input id="psid" value="'+s.segment_id+'">'
+      +'<div class="end-block"><div class="end-label">End A</div>'+xyzRow('psa',s.location_at_end_a)+pillHtml('a',!!lk.a,candA)+'</div>'
+      +'<div class="end-block" style="margin-top:8px"><div class="end-label">End B</div>'+xyzRow('psb',s.location_at_end_b)+pillHtml('b',!!lk.b,candB)+'</div>';
     function updSeg(){
       s.segment_id=document.getElementById('psid').value;
-      s.location_at_end_a=[
-        parseFloat(document.getElementById('psax').value)||0,
-        parseFloat(document.getElementById('psay').value)||0,
-        parseFloat(document.getElementById('psaz').value)||0
-      ];
-      s.location_at_end_b=[
-        parseFloat(document.getElementById('psbx').value)||0,
-        parseFloat(document.getElementById('psby').value)||0,
-        parseFloat(document.getElementById('psbz').value)||0
-      ];
-      syncNodeFromSeg(s,'a');
-      syncNodeFromSeg(s,'b');
+      s.location_at_end_a=[parseFloat(document.getElementById('psax').value)||0,parseFloat(document.getElementById('psay').value)||0,parseFloat(document.getElementById('psaz').value)||0];
+      s.location_at_end_b=[parseFloat(document.getElementById('psbx').value)||0,parseFloat(document.getElementById('psby').value)||0,parseFloat(document.getElementById('psbz').value)||0];
+      syncNodeFromSeg(s,'a'); syncNodeFromSeg(s,'b');
       avSelected.id=s.segment_id;
       avBuildScene(); avShowProps(); markDirty('available');
     }
     ['psid','psax','psay','psaz','psbx','psby','psbz'].forEach(function(id){
       var el=document.getElementById(id); if(el) el.addEventListener('input',updSeg);
     });
-
     content.querySelectorAll('.follow-pill').forEach(function(btn){
       btn.addEventListener('click',function(){
         var end=btn.dataset.end;
         if(btn.classList.contains('orphan')){
-          // Create a new node at this endpoint and link it
           var loc=(end==='a'?s.location_at_end_a:s.location_at_end_b).slice();
           var nid=avNextNodeId();
           avData.nodes.push({node_id:nid,location:loc,alpha:0,beta:0,gamma:0});
           followSet(s.segment_id,end,nid);
-          avBuildScene(); avShowProps(); markDirty('available');
-          return;
+          avBuildScene(); avShowProps(); markDirty('available'); return;
         }
         var nid=btn.dataset.nodeid;
         var cur=followGet(s.segment_id);
-        if(end==='a') followSet(s.segment_id,'a', cur.a ? null : nid);
-        else           followSet(s.segment_id,'b', cur.b ? null : nid);
+        if(end==='a') followSet(s.segment_id,'a', cur.a?null:nid);
+        else           followSet(s.segment_id,'b', cur.b?null:nid);
         var lkNow=followGet(s.segment_id);
         if(end==='a'&&lkNow.a) syncFollowers(lkNow.a);
         if(end==='b'&&lkNow.b) syncFollowers(lkNow.b);
@@ -1081,12 +1175,10 @@ function avAddSegment(idA,idB){
   if(!na||!nb) return;
   var sid=avNextSegId();
   avData.segments.push({segment_id:sid,type:'line',location_at_end_a:na.location.slice(),location_at_end_b:nb.location.slice(),spline_control_points:[]});
-  // Auto-link both ends since we know the source nodes
   followLinks[sid]={a:idA,b:idB};
   markDirty('available');
 }
 function avDeleteNode(id){
-  // Remove follow links referencing this node
   Object.keys(followLinks).forEach(function(sid){
     var lk=followLinks[sid];
     if(lk.a===id) lk.a=null;
@@ -1119,8 +1211,9 @@ function initCh(){
   chScene=new THREE.Scene();
   var sz=chViewSize();
   chCamera=makeOrthoCamera(sz.w,sz.h);
-  chScene.add(new THREE.AmbientLight(0xffffff,0.5));
-  var dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(5,8,10); chScene.add(dl);
+  chScene.add(new THREE.AmbientLight(0x1a2233,1.4));
+  var key=new THREE.DirectionalLight(0xffffff,1.1); key.position.set(6,10,14); chScene.add(key);
+  var fill=new THREE.DirectionalLight(0x3355aa,0.35); fill.position.set(-8,-4,-6); chScene.add(fill);
   chScene.add(makeWorldAxes(1.5));
   chRay=new THREE.Raycaster(); chRay.params.Line.threshold=0.12;
   chCube=makeViewCube(document.getElementById('ch-cube-canvas'),function(){return chCamera;},chSnapTo);
@@ -1140,37 +1233,45 @@ function chBuildScene(){
   Object.values(chSegLines).forEach(function(l){chScene.remove(l);});
   Object.values(chNodeMeshes).forEach(function(m){chScene.remove(m);});
   chSegLines={}; chNodeMeshes={};
+
   (avData.segments||[]).forEach(function(seg){
     var chosen=chosenList.indexOf(seg.segment_id)>=0;
-    var line=makeSegLine(seg,chosen?C_YELLOW:C_GRAY);
-    chSegLines[seg.segment_id]=line; chScene.add(line);
+    var col  = chosen ? C_SEG_CHOSEN    : C_SEG_NOTCHOSEN;
+    var gopa = chosen ? 0.22            : 0.04;
+    var grp=makeSegLine(seg,col,{glowColor:col,glowOpacity:gopa});
+    chSegLines[seg.segment_id]=grp; chScene.add(grp);
   });
+
   if(chosenNetData&&chosenNetData.nodes&&chosenNetData.nodes.length){
     chosenNetData.nodes.forEach(function(n){
-      var mesh=makeNodeSphere(n.location,C_RED);
-      mesh.userData.type='node'; mesh.userData.id=n.node_id;
-      chNodeMeshes[n.node_id]=mesh; chScene.add(mesh);
+      var grp=makeNodeDisc(n.location,C_NODE_CHOSEN);
+      grp.userData.type='node'; grp.userData.id=n.node_id;
+      chNodeMeshes[n.node_id]=grp; chScene.add(grp);
     });
   } else {
     var seen=new Set();
     (avData.segments||[]).forEach(function(seg){
       [seg.location_at_end_a,seg.location_at_end_b].forEach(function(loc){
         var k=loc.join(','); if(seen.has(k)) return; seen.add(k);
-        var mesh=makeNodeSphere(loc,C_GRAY);
-        chNodeMeshes[k]=mesh; chScene.add(mesh);
+        var grp=makeNodeDisc(loc,0x2a3040);
+        chNodeMeshes[k]=grp; chScene.add(grp);
       });
     });
   }
   chRender();
   updateViewCubeVisibility('chosen', chOrbit, chCamera, chViewSize);
 }
+
 document.getElementById('ch-canvas').addEventListener('click',function(e){
   var rect=document.getElementById('ch-canvas').getBoundingClientRect();
   var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
   chRay.setFromCamera(m,chCamera);
-  var hits=chRay.intersectObjects(Object.values(chSegLines));
+  var sMeshes=collectRayMeshes(chSegLines);
+  var hits=chRay.intersectObjects(sMeshes,true);
   if(!hits.length) return;
-  var id=hits[0].object.userData.id;
+  function resolveId(o){while(o&&!o.userData.id&&o.parent)o=o.parent;return o?o.userData.id:null;}
+  var id=resolveId(hits[0].object);
+  if(!id) return;
   if(chosenList.indexOf(id)>=0) chosenList=chosenList.filter(function(x){return x!==id;});
   else chosenList.push(id);
   chBuildScene(); chShowProps(id); markDirty('chosen');
@@ -1179,11 +1280,11 @@ function chShowProps(id){
   document.getElementById('props-ch').classList.add('props-visible');
   document.getElementById('props-ch-title').textContent='Segment: '+id;
   var chosen=chosenList.indexOf(id)>=0;
-  document.getElementById('props-ch-content').innerHTML='<p style="font-size:12px;color:'+(chosen?'#d4a017':'#888')+';margin-top:4px">'+(chosen?'✓ Chosen':'○ Not chosen')+'</p>';
+  document.getElementById('props-ch-content').innerHTML='<p style="font-size:12px;color:'+(chosen?'#d4a017':'#444')+';margin-top:4px">'+(chosen?'✓ Chosen':'○ Not chosen')+'</p>';
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  FLATTENED
+//  FLATTENED (unchanged logic, minor color tweaks)
 // ══════════════════════════════════════════════════════════════════════════════
 function flatNorm(deg){if(deg===''||deg==null)return null;var n=parseFloat(deg);return isFinite(n)?((n%360)+360)%360:null;}
 function flatAutoAngle(i,tot){return Math.round((i/tot)*360);}
@@ -1205,19 +1306,24 @@ function flatRender(){
     var pA=pts[row.node_at_end_a]||{x:0,y:0},pB=pts[row.node_at_end_b]||{x:50,y:0};
     var isSel=flatSelected===idx;
     function mk(tag,attrs){var el=document.createElementNS(NS,tag);Object.entries(attrs).forEach(function(kv){el.setAttribute(kv[0],kv[1]);});return el;}
-    g.appendChild(mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:isSel?'#fff':'#888','stroke-width':(isSel?3.5:2.5)/flatScale}));
+    // glow line
+    g.appendChild(mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:isSel?'#ffffff':'#3a6ea5',opacity:isSel?0.25:0.12,'stroke-width':(isSel?10:7)/flatScale,'stroke-linecap':'round'}));
+    // main line
+    g.appendChild(mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:isSel?'#fff':'#3a6ea5','stroke-width':(isSel?2.5:1.8)/flatScale,'stroke-linecap':'round'}));
     var hit=mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:'transparent','stroke-width':14/flatScale,cursor:'pointer'});
     hit.addEventListener('click',function(){flatSelected=idx;flatRender();flatShowProps(idx);});
     g.appendChild(hit);
     var mx=(pA.x+pB.x)/2,my=(pA.y+pB.y)/2;
-    var lbl=mk('text',{x:mx,y:my-9/flatScale,'text-anchor':'middle','font-size':11/flatScale,fill:'#aaa','pointer-events':'none'});
+    var lbl=mk('text',{x:mx,y:my-9/flatScale,'text-anchor':'middle','font-size':11/flatScale,fill:isSel?'#ccc':'#7a8fa8','pointer-events':'none'});
     lbl.textContent=row.segment_id||''; g.appendChild(lbl);
-    var ll=mk('text',{x:mx,y:my+14/flatScale,'text-anchor':'middle','font-size':9/flatScale,fill:'#666','pointer-events':'none'});
+    var ll=mk('text',{x:mx,y:my+14/flatScale,'text-anchor':'middle','font-size':9/flatScale,fill:'#445060','pointer-events':'none'});
     ll.textContent=row.length?'L:'+row.length:''; g.appendChild(ll);
     [pA,pB].forEach(function(p,ni){
       var nid=ni===0?row.node_at_end_a:row.node_at_end_b;
-      g.appendChild(mk('circle',{cx:p.x,cy:p.y,r:4.5/flatScale,fill:'#c73652','pointer-events':'none'}));
-      var t=mk('text',{x:p.x,y:p.y-9/flatScale,'text-anchor':'middle','font-size':10/flatScale,fill:'#eee','pointer-events':'none'});
+      // ring node
+      g.appendChild(mk('circle',{cx:p.x,cy:p.y,r:5.5/flatScale,fill:'none',stroke:'#c73652','stroke-width':1.5/flatScale,'pointer-events':'none'}));
+      g.appendChild(mk('circle',{cx:p.x,cy:p.y,r:2.2/flatScale,fill:'#c73652',opacity:'0.4','pointer-events':'none'}));
+      var t=mk('text',{x:p.x,y:p.y-11/flatScale,'text-anchor':'middle','font-size':10/flatScale,fill:'#ccc','pointer-events':'none'});
       t.textContent=nid||''; g.appendChild(t);
     });
   });
