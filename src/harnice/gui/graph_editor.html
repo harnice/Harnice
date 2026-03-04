@@ -242,6 +242,65 @@ function syncNodeFromSeg(seg,end){
   var n=(avData.nodes||[]).find(function(n){return n.node_id===nodeId;}); if(!n) return;
   n.location=(end==='a'?seg.location_at_end_a:seg.location_at_end_b).slice();
 }
+
+function floodTranslate(startSegId, startEnd, dx, dy, dz){
+  if(dx===0&&dy===0&&dz===0) return;
+
+  function ck(arr){ return round3(arr[0])+','+round3(arr[1])+','+round3(arr[2]); }
+
+  var anchorSeg = (avData.segments||[]).find(function(s){return s.segment_id===startSegId;});
+  if(!anchorSeg) return;
+  var anchorEnd = startEnd==='a' ? 'b' : 'a';
+  var anchorCoord = ck(anchorEnd==='a' ? anchorSeg.location_at_end_a : anchorSeg.location_at_end_b);
+  var startCoord  = ck(startEnd==='a'  ? anchorSeg.location_at_end_a : anchorSeg.location_at_end_b);
+
+  console.log('[flood] anchorCoord:',anchorCoord,'startCoord:',startCoord,'d:',dx,dy,dz);
+
+  // BFS over coordinate keys. A segment is an edge connecting its two end coords.
+  // Starting from startCoord, flood to the other end of every segment we touch,
+  // never crossing anchorCoord.
+  var visited = new Set();
+  visited.add(anchorCoord);
+  visited.add(startCoord);
+  var queue = [startCoord];
+
+  while(queue.length){
+    var coord = queue.shift();
+    (avData.segments||[]).forEach(function(seg){
+      var ca = ck(seg.location_at_end_a);
+      var cb = ck(seg.location_at_end_b);
+      if(ca===coord && !visited.has(cb)){ visited.add(cb); queue.push(cb); }
+      if(cb===coord && !visited.has(ca)){ visited.add(ca); queue.push(ca); }
+    });
+  }
+
+  console.log('[flood] visited coords:', Array.from(visited));
+
+  // Apply delta to every seg end and node whose coord is in visited,
+  // explicitly never touching anchorCoord.
+  (avData.segments||[]).forEach(function(seg){
+    var ca=ck(seg.location_at_end_a);
+    if(visited.has(ca)&&ca!==anchorCoord){
+      seg.location_at_end_a[0]=round3(seg.location_at_end_a[0]+dx);
+      seg.location_at_end_a[1]=round3(seg.location_at_end_a[1]+dy);
+      seg.location_at_end_a[2]=round3(seg.location_at_end_a[2]+dz);
+    }
+    var cb=ck(seg.location_at_end_b);
+    if(visited.has(cb)&&cb!==anchorCoord){
+      seg.location_at_end_b[0]=round3(seg.location_at_end_b[0]+dx);
+      seg.location_at_end_b[1]=round3(seg.location_at_end_b[1]+dy);
+      seg.location_at_end_b[2]=round3(seg.location_at_end_b[2]+dz);
+    }
+  });
+  (avData.nodes||[]).forEach(function(n){
+    var c=ck(n.location);
+    if(visited.has(c)&&c!==anchorCoord){
+      n.location[0]=round3(n.location[0]+dx);
+      n.location[1]=round3(n.location[1]+dy);
+      n.location[2]=round3(n.location[2]+dz);
+    }
+  });
+}
 function cleanSegForSave(seg){
   var s=Object.assign({},seg);
   delete s.node_at_end_a; delete s.node_at_end_b; return s;
@@ -269,7 +328,9 @@ var drag={mode:null,moved:false,wasTriad:false,lastX:0,lastY:0,
   rotAxis:null,startQ:null,nodeScrPx:null,prevAngle:0,orbit:null,v0x:0,v0y:0,
   segId:null,segEnd:null,
   // seg-rel fields
-  relPivot:null,relStartVec:null,relLen:0,relArcAxis:null};
+  relPivot:null,relStartVec:null,relLen:0,relArcAxis:null,
+  // incremental drag tracking (previous frame world position of dragged end)
+  prevEndLoc:null};
 
 // ── Autosave ──────────────────────────────────────────────────────────────────
 function markDirty(tab){
@@ -990,6 +1051,8 @@ function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects,getSegEndTria
             drag.relPivot=info.pivot.clone();
             drag.relStartVec=info.endPt.clone().sub(info.pivot); // vec from pivot to end at drag start
             drag.relLen=info.len;
+            var endArr = h.userData.segEnd==='a' ? seg.location_at_end_a : seg.location_at_end_b;
+            drag.prevEndLoc = endArr.slice();
             if(tt==='seg-rel-length'){
               drag.mode='seg-rel-length';
               drag.screenDir=computeScreenDir(info.segAxis,info.endPt,orbit,avViewSize);
@@ -1021,11 +1084,12 @@ function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects,getSegEndTria
           var axDir=new THREE.Vector3(h.userData.axis==='x'?1:0,h.userData.axis==='y'?1:0,h.userData.axis==='z'?1:0);
           var seg=avData.segments.find(function(s){return s.segment_id===h.userData.segId;});
           if(seg){
-            var endLoc=h.userData.segEnd==='a'?seg.location_at_end_a:seg.location_at_end_b;
-            var originPos=new THREE.Vector3(endLoc[0],endLoc[1],endLoc[2]);
+            var endLocArr = h.userData.segEnd==='a' ? seg.location_at_end_a : seg.location_at_end_b;
+            var originPos=new THREE.Vector3(endLocArr[0],endLocArr[1],endLocArr[2]);
             drag.mode='seg-end-translate'; drag.wasTriad=true; drag.moved=false; drag.orbit=orbit;
             drag.axis=h.userData.axis; drag.segId=h.userData.segId; drag.segEnd=h.userData.segEnd;
-            drag.startLoc=endLoc.slice(); drag.startX=e.clientX; drag.startY=e.clientY;
+            drag.startLoc=endLocArr.slice(); drag.prevEndLoc=endLocArr.slice();
+            drag.startX=e.clientX; drag.startY=e.clientY;
             drag.screenDir=computeScreenDir(axDir,originPos,orbit,avViewSize);
             return;
           }
@@ -1084,67 +1148,54 @@ window.addEventListener('mousemove',function(e){
   // ── Seg-relative length ──────────────────────────────────────────────────
   if(drag.mode==='seg-rel-length'){
     var seg=avData.segments.find(function(s){return s.segment_id===drag.segId;});
-    if(!seg) return;
+    if(!seg||!drag.prevEndLoc) return;
     var info=segRelAxes(seg,drag.segEnd);
-    // compute delta along seg axis in world units
     var sz=avViewSize(),worldPerPx=(2*avCamera.userData.halfSize)/(sz.h||600);
     var dm=new THREE.Vector2(e.clientX-drag.startX,e.clientY-drag.startY);
-    var delta=dm.dot(drag.screenDir)*worldPerPx;
-    // new end = pivot + segAxis*(originalLen + delta)
-    var newLen=Math.max(0.001,drag.relLen+delta);
-    var newEnd=drag.relPivot.clone().addScaledVector(drag.relStartVec.clone().normalize(),newLen);
-    if(drag.segEnd==='a') seg.location_at_end_a=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
-    else                  seg.location_at_end_b=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
-    syncNodeFromSeg(seg,drag.segEnd);
-    var lk=followLinks[drag.segId];
-    var linkedNodeId=lk&&(drag.segEnd==='a'?lk.a:lk.b);
-    if(linkedNodeId) syncFollowers(linkedNodeId);
+    var totalDelta=dm.dot(drag.screenDir)*worldPerPx;
+    var newLen=Math.max(0.001,drag.relLen+totalDelta);
+    var segDir=drag.relStartVec.clone().normalize();
+    var newEnd=drag.relPivot.clone().addScaledVector(segDir,newLen);
+    var dx=round3(newEnd.x)-drag.prevEndLoc[0];
+    var dy=round3(newEnd.y)-drag.prevEndLoc[1];
+    var dz=round3(newEnd.z)-drag.prevEndLoc[2];
+    drag.prevEndLoc=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
+    floodTranslate(drag.segId,drag.segEnd,dx,dy,dz);
     avBuildScene(); avShowProps(); markDirty('available'); return;
   }
 
   // ── Seg-relative arc ─────────────────────────────────────────────────────
   if(drag.mode==='seg-rel-arc'){
     var seg=avData.segments.find(function(s){return s.segment_id===drag.segId;});
-    if(!seg) return;
-    var sz=avViewSize(),worldPerPx=(2*avCamera.userData.halfSize)/(sz.h||600);
-    var dm=new THREE.Vector2(e.clientX-drag.startX,e.clientY-drag.startY);
-    // pixels moved along screen tangent → angle in radians
-    // 1 world unit on screen = 1/worldPerPx pixels; arc radius = ARC_R world units (in fixed-px space, ~0.9)
-    // but we want intuitive feel: map pixel movement to angle so the tip follows the mouse
-    // effective radius of arc on screen = ARC_R / worldPerPx * (fixedPxRadius/52) ... complex.
-    // Simpler: treat screen pixels / (arcRadius_in_px) as angle
-    // ARC_R in world = 0.9 * fixedPxRadius/1 (since fixedPxRadius=52 means at render time scale=52*wpp)
-    // arc tip screen radius ≈ 0.9 * 52 px = ~47 px
+    if(!seg||!drag.prevEndLoc) return;
     var arcScreenRadius=0.9*52;
+    var dm=new THREE.Vector2(e.clientX-drag.startX,e.clientY-drag.startY);
     var angle=dm.dot(drag.screenDir)/arcScreenRadius;
-    // rotate startVec around arcAxis by angle
     var q=new THREE.Quaternion().setFromAxisAngle(drag.relArcAxis,angle);
     var newVec=drag.relStartVec.clone().applyQuaternion(q);
     var newEnd=drag.relPivot.clone().add(newVec);
-    if(drag.segEnd==='a') seg.location_at_end_a=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
-    else                  seg.location_at_end_b=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
-    syncNodeFromSeg(seg,drag.segEnd);
-    var lk=followLinks[drag.segId];
-    var linkedNodeId=lk&&(drag.segEnd==='a'?lk.a:lk.b);
-    if(linkedNodeId) syncFollowers(linkedNodeId);
+    var dx=round3(newEnd.x)-drag.prevEndLoc[0];
+    var dy=round3(newEnd.y)-drag.prevEndLoc[1];
+    var dz=round3(newEnd.z)-drag.prevEndLoc[2];
+    drag.prevEndLoc=[round3(newEnd.x),round3(newEnd.y),round3(newEnd.z)];
+    floodTranslate(drag.segId,drag.segEnd,dx,dy,dz);
     avBuildScene(); avShowProps(); markDirty('available'); return;
   }
 
   // ── Seg-end world-axis translate ─────────────────────────────────────────
   if(drag.mode==='seg-end-translate'){
     var seg=avData.segments.find(function(s){return s.segment_id===drag.segId;});
-    if(!seg||!drag.startLoc) return;
+    if(!seg||!drag.startLoc||!drag.prevEndLoc) return;
     var axDir=new THREE.Vector3(drag.axis==='x'?1:0,drag.axis==='y'?1:0,drag.axis==='z'?1:0);
     var sz=avViewSize(),worldPerPx=(2*avCamera.userData.halfSize)/(sz.h||600);
     var dm=new THREE.Vector2(e.clientX-drag.startX,e.clientY-drag.startY);
     var delta=dm.dot(drag.screenDir)*worldPerPx;
-    var newLoc=[round3(drag.startLoc[0]+axDir.x*delta),round3(drag.startLoc[1]+axDir.y*delta),round3(drag.startLoc[2]+axDir.z*delta)];
-    if(drag.segEnd==='a') seg.location_at_end_a=newLoc;
-    else                  seg.location_at_end_b=newLoc;
-    syncNodeFromSeg(seg,drag.segEnd);
-    var lk=followLinks[drag.segId];
-    var linkedNodeId=lk&&(drag.segEnd==='a'?lk.a:lk.b);
-    if(linkedNodeId) syncFollowers(linkedNodeId);
+    var nx=round3(drag.startLoc[0]+axDir.x*delta);
+    var ny=round3(drag.startLoc[1]+axDir.y*delta);
+    var nz=round3(drag.startLoc[2]+axDir.z*delta);
+    var dx=nx-drag.prevEndLoc[0], dy=ny-drag.prevEndLoc[1], dz=nz-drag.prevEndLoc[2];
+    drag.prevEndLoc=[nx,ny,nz];
+    floodTranslate(drag.segId,drag.segEnd,dx,dy,dz);
     avBuildScene(); avShowProps(); markDirty('available'); return;
   }
 
@@ -1201,6 +1252,7 @@ window.addEventListener('mouseup',function(){
   drag.nodeScrPx=null; drag.prevAngle=0; drag.orbit=null;
   drag.segId=null; drag.segEnd=null;
   drag.relPivot=null; drag.relStartVec=null; drag.relLen=0; drag.relArcAxis=null;
+  drag.prevEndLoc=null;
 });
 
 function round3(v){return Math.round(v*1000)/1000;}
