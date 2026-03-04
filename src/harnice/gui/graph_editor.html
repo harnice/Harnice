@@ -971,9 +971,21 @@
       { name: 'Bottom', normal: new THREE.Vector3(0, 0, -1), up: new THREE.Vector3(0, 1, 0) }
     ];
     function animateCameraToFace(orbit, face) {
-      // Build target quaternion from face normal + up
-      // Camera looks from normal direction toward origin, so camera -Z = -normal
-      var m = new THREE.Matrix4().lookAt(face.normal, new THREE.Vector3(0, 0, 0), face.up);
+      // Orient to face direction but snap in-plane rotation to nearest 90° from current view
+      var faceRight = new THREE.Vector3().crossVectors(face.normal, face.up).normalize();
+      var currentUp = orbit.camera.up.clone();
+      var upProj = currentUp.clone().sub(face.normal.clone().multiplyScalar(currentUp.dot(face.normal)));
+      var upProjLen = upProj.length();
+      var newUp;
+      if (upProjLen < 1e-6) {
+        newUp = face.up.clone();
+      } else {
+        upProj.normalize();
+        var angle = Math.atan2(upProj.dot(faceRight), upProj.dot(face.up));
+        var snappedAngle = Math.round(angle / (Math.PI / 2)) * (Math.PI / 2);
+        newUp = face.up.clone().multiplyScalar(Math.cos(snappedAngle)).add(faceRight.clone().multiplyScalar(Math.sin(snappedAngle))).normalize();
+      }
+      var m = new THREE.Matrix4().lookAt(face.normal, new THREE.Vector3(0, 0, 0), newUp);
       var endQ = new THREE.Quaternion().setFromRotationMatrix(m);
       var startQ = orbit.quaternion.clone();
       var t0 = performance.now(), dur = 400;
