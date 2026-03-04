@@ -52,10 +52,7 @@ input:focus{outline:none;border-color:#666}
 .follow-pill.orphan{background:#1a1600;border-color:#5a4800;color:#d4a017}
 .follow-pill.orphan:hover{background:#221c00;border-color:#d4a017}
 .follow-pill .pill-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
-.pill-menu{background:#171819;border:1px solid #2e2f34;border-radius:5px;padding:4px;margin-top:3px}
-.pill-opt{background:#1e1f23;color:#aaa;border:1px solid #2e2f34;border-radius:4px;padding:4px 8px;font-size:11px;width:100%;margin-top:3px;text-align:left;cursor:pointer}
-.pill-opt:hover{background:#25262a;border-color:#555;color:#eee}
-.pill-opt:first-child{margin-top:0}
+.sep{border:none;border-top:1px solid #2a2b30;margin:8px 0}
 .end-block{margin-top:6px}
 .end-block .end-label{font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
 </style>
@@ -91,7 +88,6 @@ input:focus{outline:none;border-color:#666}
     <div class="viewport" id="av-viewport">
       <canvas id="av-canvas" tabindex="0" style="width:100%;height:100%;display:block;position:absolute;top:0;left:0"></canvas>
       <canvas id="av-label-canvas" style="width:100%;height:100%;display:block;position:absolute;top:0;left:0;pointer-events:none"></canvas>
-      <div id="av-status" style="display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:#1a1b1f;border:1px solid #3a3b40;border-radius:6px;padding:5px 14px;font-size:11px;color:#d4a017;pointer-events:none;white-space:nowrap;z-index:20"></div>
       <div class="viewcube-wrap">
         <canvas id="av-cube-canvas" width="84" height="84"></canvas>
         <button id="av-3d-btn" style="display:none" onclick="enable3D('available')">3D Editor</button>
@@ -143,9 +139,22 @@ input:focus{outline:none;border-color:#666}
 <script>
 'use strict';
 
-var C_AMBER=0xd4a017,C_RED=0xc73652;
-var C_SEG_DEFAULT=0x3a6ea5,C_SEG_CHOSEN=0xd4a017,C_SEG_NOTCHOSEN=0x1e2433;
-var C_NODE_SEL_RING=0xffffff;
+// ── Palette ───────────────────────────────────────────────────────────────────
+// Semantic colors (role-coded, unchanged)
+var C_AMBER  = 0xd4a017;   // chosen / segment default
+var C_RED    = 0xc73652;   // node default
+var C_SEL    = 0xffffff;   // selected
+
+// Visual upgrade palette
+var C_SEG_DEFAULT   = 0x3a6ea5;  // cool slate-blue ribbon
+var C_SEG_GLOW      = 0x1a3a5c;  // darker behind-glow ribbon
+var C_SEG_CHOSEN    = 0xd4a017;  // amber (semantic)
+var C_SEG_NOTCHOSEN = 0x1e2433;  // near-black blue-grey
+var C_NODE_DEFAULT  = 0x4a7ab5;  // matches seg hue, brighter ring
+var C_NODE_CHOSEN   = 0xc73652;  // red (semantic)
+var C_NODE_SEL_RING = 0xffffff;
+var C_NODE_SEL_FILL = 0xd4a017;
+
 var AUTOSAVE_MS=3000;
 var PX_PER_MM=(window.devicePixelRatio||1)*96/25.4;
 var DEG=Math.PI/180;
@@ -158,17 +167,19 @@ var currentTab='available';
 var avData={segments:[],nodes:[]};
 var chosenList=[],chosenNetData=null;
 var flatData={fieldnames:[],rows:[]};
-var avSelected=null,avTool='select',avConnectStart=null,avPendingLink=null;
+var avSelected=null,avTool='select',avConnectStart=null;
 var avArrows=[];
 var flatPan={x:400,y:300},flatScale=1,flatIsPanning=false,flatPanStart={x:0,y:0},flatSelected=null;
 var avRenderer,avScene,avCamera,avOrbit,avCube,avNodeMeshes={},avSegLines={},avRay;
 var chRenderer,chScene,chCamera,chOrbit,chCube,chSegLines={},chNodeMeshes={},chRay;
-var followLinks={};
-var force3D={available:false,chosen:false};
 
-// ── Data checks ───────────────────────────────────────────────────────────────
+var followLinks = {};
+var force3D = {available: false, chosen: false};
+
+// ── Data flat check ───────────────────────────────────────────────────────────
 function isDataFlat(){
-  var eps=1e-6,nodes=avData.nodes||[],segs=avData.segments||[];
+  var eps=1e-6;
+  var nodes=avData.nodes||[], segs=avData.segments||[];
   if(!nodes.length&&!segs.length) return false;
   for(var i=0;i<nodes.length;i++) if(Math.abs(nodes[i].location[2])>eps) return false;
   for(var i=0;i<segs.length;i++){
@@ -177,32 +188,38 @@ function isDataFlat(){
   }
   return true;
 }
-function is2D(tab){ return !force3D[tab]&&isDataFlat(); }
-function apply2DMode(tab,orbit,camera,viewSize){
+function is2D(tab){ return !force3D[tab] && isDataFlat(); }
+
+function apply2DMode(tab, orbit, camera, viewSize){
   var CAM_DIST=500;
-  camera.position.set(orbit.target.x,orbit.target.y,orbit.target.z+CAM_DIST);
-  camera.up.set(0,1,0); camera.lookAt(orbit.target);
+  camera.position.set(orbit.target.x, orbit.target.y, orbit.target.z+CAM_DIST);
+  camera.up.set(0,1,0);
+  camera.lookAt(orbit.target);
   orbit.phi=Math.PI/2; orbit.theta=Math.PI/2;
-  updateOrthoFrustum(camera,viewSize().w,viewSize().h);
-}
-function updateViewCubeVisibility(tab,orbit,camera,viewSize){
-  var cubeId=tab==='available'?'av-cube-canvas':'ch-cube-canvas';
-  var btnId =tab==='available'?'av-3d-btn':'ch-3d-btn';
-  var flat=is2D(tab);
-  document.getElementById(cubeId).style.display=flat?'none':'block';
-  document.getElementById(btnId).style.display =flat?'block':'none';
-  if(flat) apply2DMode(tab,orbit,camera,viewSize);
+  var sz=viewSize();
+  updateOrthoFrustum(camera,sz.w,sz.h);
 }
 
-// ── Follow links ──────────────────────────────────────────────────────────────
-function followGet(segId){ return followLinks[segId]||{a:null,b:null}; }
-function followSet(segId,end,nodeId){
+function updateViewCubeVisibility(tab, orbit, camera, viewSize){
+  var cubeId   = tab==='available'?'av-cube-canvas':'ch-cube-canvas';
+  var btnId    = tab==='available'?'av-3d-btn':'ch-3d-btn';
+  var flat     = is2D(tab);
+  document.getElementById(cubeId).style.display = flat?'none':'block';
+  document.getElementById(btnId).style.display  = flat?'block':'none';
+  if(flat) apply2DMode(tab, orbit, camera, viewSize);
+}
+
+function followGet(segId) { return followLinks[segId] || {a:null, b:null}; }
+function followSet(segId, end, nodeId) {
   if(!followLinks[segId]) followLinks[segId]={a:null,b:null};
   followLinks[segId][end]=nodeId;
 }
-function followClear(segId){ delete followLinks[segId]; }
+function followClear(segId) { delete followLinks[segId]; }
+
 function locEq(a,b){
-  return Math.abs(a[0]-b[0])<FOLLOW_EPS&&Math.abs(a[1]-b[1])<FOLLOW_EPS&&Math.abs(a[2]-b[2])<FOLLOW_EPS;
+  return Math.abs(a[0]-b[0])<FOLLOW_EPS &&
+         Math.abs(a[1]-b[1])<FOLLOW_EPS &&
+         Math.abs(a[2]-b[2])<FOLLOW_EPS;
 }
 function nodeAtLoc(loc){
   var n=(avData.nodes||[]).find(function(n){return locEq(n.location,loc);});
@@ -211,7 +228,8 @@ function nodeAtLoc(loc){
 function rebuildFollowLinks(){
   followLinks={};
   (avData.segments||[]).forEach(function(seg){
-    var a=nodeAtLoc(seg.location_at_end_a),b=nodeAtLoc(seg.location_at_end_b);
+    var a=nodeAtLoc(seg.location_at_end_a);
+    var b=nodeAtLoc(seg.location_at_end_b);
     if(a||b) followLinks[seg.segment_id]={a:a||null,b:b||null};
   });
 }
@@ -219,25 +237,31 @@ function syncFollowers(nodeId){
   var n=(avData.nodes||[]).find(function(n){return n.node_id===nodeId;});
   if(!n) return;
   (avData.segments||[]).forEach(function(seg){
-    var lk=followLinks[seg.segment_id]; if(!lk) return;
+    var lk=followLinks[seg.segment_id];
+    if(!lk) return;
     if(lk.a===nodeId) seg.location_at_end_a=n.location.slice();
     if(lk.b===nodeId) seg.location_at_end_b=n.location.slice();
   });
 }
-function syncNodeFromSeg(seg,end){
-  var lk=followLinks[seg.segment_id]; if(!lk) return;
-  var nodeId=end==='a'?lk.a:lk.b; if(!nodeId) return;
-  var n=(avData.nodes||[]).find(function(n){return n.node_id===nodeId;}); if(!n) return;
+function syncNodeFromSeg(seg, end){
+  var lk=followLinks[seg.segment_id];
+  if(!lk) return;
+  var nodeId=end==='a'?lk.a:lk.b;
+  if(!nodeId) return;
+  var n=(avData.nodes||[]).find(function(n){return n.node_id===nodeId;});
+  if(!n) return;
   n.location=(end==='a'?seg.location_at_end_a:seg.location_at_end_b).slice();
 }
 function cleanSegForSave(seg){
   var s=Object.assign({},seg);
-  delete s.node_at_end_a; delete s.node_at_end_b; return s;
+  delete s.node_at_end_a; delete s.node_at_end_b;
+  return s;
 }
 
 // ── Rotation helpers ──────────────────────────────────────────────────────────
 function nodeRotMatrix(alpha,beta,gamma){
-  return new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(alpha*DEG,beta*DEG,gamma*DEG,'ZYX'));
+  var e=new THREE.Euler(alpha*DEG,beta*DEG,gamma*DEG,'ZYX');
+  return new THREE.Matrix4().makeRotationFromEuler(e);
 }
 function localAxes(alpha,beta,gamma){
   var m=nodeRotMatrix(alpha,beta,gamma);
@@ -248,13 +272,19 @@ function localAxes(alpha,beta,gamma){
   };
 }
 function normaliseNode(n){
-  if(n.alpha==null)n.alpha=0; if(n.beta==null)n.beta=0; if(n.gamma==null)n.gamma=0;
+  if(n.alpha==null||n.alpha===undefined)n.alpha=0;
+  if(n.beta ==null||n.beta ===undefined)n.beta =0;
+  if(n.gamma==null||n.gamma===undefined)n.gamma=0;
 }
 
 // ── Drag state ────────────────────────────────────────────────────────────────
-var drag={mode:null,moved:false,wasTriad:false,lastX:0,lastY:0,axis:null,nodeId:null,
-  startLoc:null,startX:0,startY:0,screenDir:null,rotAxis:null,startQ:null,
-  nodeScrPx:null,prevAngle:0,orbit:null,v0x:0,v0y:0};
+var drag={
+  mode:null,moved:false,wasTriad:false,
+  lastX:0,lastY:0,
+  axis:null,nodeId:null,startLoc:null,startX:0,startY:0,screenDir:null,
+  rotAxis:null,startQ:null,nodeScrPx:null,prevAngle:0,
+  orbit:null,v0x:0,v0y:0
+};
 
 // ── Autosave ──────────────────────────────────────────────────────────────────
 function markDirty(tab){
@@ -269,11 +299,11 @@ async function saveTab(tab){
       var payload=Object.assign({},avData,{segments:(avData.segments||[]).map(cleanSegForSave)});
       await fetch('/api/available',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     }
-    if(tab==='chosen') await fetch('/api/chosen_list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(chosenList)});
+    if(tab==='chosen')    await fetch('/api/chosen_list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(chosenList)});
     if(tab==='flattened') await fetch('/api/flattened',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(flatData)});
     dirty[tab]=false;
     if(!Object.values(dirty).some(Boolean)) document.getElementById('autosave-indicator').style.color='#333';
-  }catch(e){ document.getElementById('autosave-indicator').style.color='#c73652'; }
+  }catch(e){document.getElementById('autosave-indicator').style.color='#c73652';}
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -285,7 +315,7 @@ function switchTab(t){
   setTimeout(function(){
     if(t==='available'){avOnResize();avRender();}
     if(t==='chosen'){chOnResize();chRender();}
-    if(t==='flattened') flatRender();
+    if(t==='flattened')flatRender();
   },30);
 }
 
@@ -301,29 +331,37 @@ async function loadAll(){
   var info=res[0];
   if(info.part_number||info.rev)
     document.getElementById('part-rev').textContent=((info.part_number||'')+' '+(info.rev||'')).trim();
-  avData=res[1]; (avData.nodes||[]).forEach(normaliseNode); rebuildFollowLinks();
+  avData=res[1];
+  (avData.nodes||[]).forEach(normaliseNode);
+  rebuildFollowLinks();
   chosenList=res[2]||[]; chosenNetData=res[3]; flatData=res[4];
   avBuildScene(); chBuildScene(); flatRender();
 }
 
 // ── Three.js helpers ──────────────────────────────────────────────────────────
 function makeRenderer(canvas){
-  var r=new THREE.WebGLRenderer({canvas:canvas,antialias:true});
-  r.setPixelRatio(window.devicePixelRatio); r.setClearColor(0x111214);
+  var r=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:false});
+  r.setPixelRatio(window.devicePixelRatio);
+  r.setClearColor(0x111214);
+  r.shadowMap.enabled=true;
+  r.shadowMap.type=THREE.PCFSoftShadowMap;
   return r;
 }
 function makeOrthoCamera(w,h){
   var hs=15,asp=w/(h||1);
   var c=new THREE.OrthographicCamera(-hs*asp,hs*asp,hs,-hs,-10000,10000);
-  c.position.set(0,0,500); c.up.set(0,1,0); c.lookAt(0,0,0); c.userData.halfSize=hs;
+  c.position.set(0,0,500); c.up.set(0,1,0); c.lookAt(0,0,0);
+  c.userData.halfSize=hs;
   return c;
 }
 function updateOrthoFrustum(cam,w,h){
   var hs=cam.userData.halfSize,asp=w/(h||1);
-  cam.left=-hs*asp; cam.right=hs*asp; cam.top=hs; cam.bottom=-hs; cam.updateProjectionMatrix();
+  cam.left=-hs*asp; cam.right=hs*asp; cam.top=hs; cam.bottom=-hs;
+  cam.updateProjectionMatrix();
 }
 function makeWorldAxes(size){
-  var g=new THREE.Group(); g.userData.fixedPxRadius=size*28;
+  var g=new THREE.Group();
+  g.userData.fixedPxRadius=size*28;
   function addAxis(dir,col){
     var geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().normalize().multiplyScalar(size)]);
     g.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:col,linewidth:2})));
@@ -337,16 +375,18 @@ function makeWorldAxes(size){
   addAxis(new THREE.Vector3(0,0,1),0x4499ff);
   return g;
 }
+
 function scaleFixedPx(scene,cam,renderer){
   var sz=renderer.getSize(new THREE.Vector2());
   var worldPerPx=(2*cam.userData.halfSize)/sz.height;
+  var segWorldWidth=worldPerPx*PX_PER_MM*0.5;
   scene.traverse(function(obj){
     if(obj.userData.fixedPxRadius) obj.scale.setScalar(obj.userData.fixedPxRadius*worldPerPx);
     if(obj.userData.fixedSegWidth){
       var ribbonR=worldPerPx*PX_PER_MM*0.28;
       var glowR  =worldPerPx*PX_PER_MM*0.72;
-      if(obj.userData.isGlow) obj.scale.set(glowR,obj.userData.segLen,glowR);
-      else                    obj.scale.set(ribbonR,obj.userData.segLen,ribbonR);
+      if(obj.userData.isGlow) obj.scale.set(glowR, obj.userData.segLen, glowR);
+      else                    obj.scale.set(ribbonR, obj.userData.segLen, ribbonR);
     }
   });
 }
@@ -359,63 +399,71 @@ function getNodeScreenPos(node,cam){
   return{x:(ndc.x*0.5+0.5)*rect.width+rect.left,y:(-ndc.y*0.5+0.5)*rect.height+rect.top};
 }
 
-// ── Label overlay ─────────────────────────────────────────────────────────────
-function worldToScreen(pos,camera,canvas){
-  var ndc=pos.clone().project(camera);
-  return{
-    x:(ndc.x*0.5+0.5)*canvas.width/window.devicePixelRatio,
-    y:(-ndc.y*0.5+0.5)*canvas.height/window.devicePixelRatio
-  };
-}
-function drawLabels(labelCanvas,camera,nodes,segments){
-  var dpr=window.devicePixelRatio||1;
-  var w=labelCanvas.parentElement.clientWidth,h=labelCanvas.parentElement.clientHeight;
-  if(labelCanvas.width!==w*dpr||labelCanvas.height!==h*dpr){
-    labelCanvas.width=w*dpr; labelCanvas.height=h*dpr;
-    labelCanvas.style.width=w+'px'; labelCanvas.style.height=h+'px';
-  }
-  var ctx=labelCanvas.getContext('2d');
-  ctx.clearRect(0,0,labelCanvas.width,labelCanvas.height);
-  ctx.save(); ctx.scale(dpr,dpr);
-  ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='bottom';
-  var OFF=10;
-  (nodes||[]).forEach(function(n){
-    if(!n.node_id) return;
-    var sc=worldToScreen(new THREE.Vector3(n.location[0],n.location[1],n.location[2]),camera,labelCanvas);
-    ctx.fillStyle='rgba(180,190,210,0.55)';
-    ctx.fillText(n.node_id,sc.x,sc.y-OFF);
-  });
-  (segments||[]).forEach(function(s){
-    if(!s.segment_id) return;
-    var mid=new THREE.Vector3(
-      (s.location_at_end_a[0]+s.location_at_end_b[0])/2,
-      (s.location_at_end_a[1]+s.location_at_end_b[1])/2,
-      (s.location_at_end_a[2]+s.location_at_end_b[2])/2
-    );
-    var sc=worldToScreen(mid,camera,labelCanvas);
-    ctx.fillStyle='rgba(130,150,180,0.4)';
-    ctx.fillText(s.segment_id,sc.x,sc.y-OFF);
-  });
-  ctx.restore();
-}
-
-// ── Status bar ────────────────────────────────────────────────────────────────
-function avSetStatusMsg(msg){
-  var el=document.getElementById('av-status');
-  if(msg){el.textContent=msg;el.style.display='block';}
-  else el.style.display='none';
-}
-
-// Esc cancels pending link
-document.addEventListener('keydown',function(e){
-  if(e.key==='Escape'&&avPendingLink){
-    avPendingLink=null; avSetStatusMsg(null); avBuildScene();
-  }
-});
-
 // ══════════════════════════════════════════════════════════════════════════════
-//  VIEW CUBE
+//  MESH FACTORIES — visual upgrade
 // ══════════════════════════════════════════════════════════════════════════════
+
+// Segment: flat ribbon + glow plane behind it
+function makeSegLine(seg, color, opts){
+  opts = opts||{};
+  var aVec=new THREE.Vector3(...seg.location_at_end_a);
+  var bVec=new THREE.Vector3(...seg.location_at_end_b);
+  var mid=aVec.clone().add(bVec).multiplyScalar(0.5);
+  var len=aVec.distanceTo(bVec)||0.001;
+  var dir=bVec.clone().sub(aVec).normalize();
+
+  var group=new THREE.Group();
+  group.position.copy(mid);
+  group.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  group.userData.type='segment';
+  group.userData.id=seg.segment_id;
+
+  var glowColor=opts.glowColor!==undefined?opts.glowColor:color;
+
+  // Glow cylinder — slightly fatter, semi-transparent
+  var glowMat=new THREE.MeshBasicMaterial({
+    color:glowColor,
+    transparent:true,
+    opacity:opts.glowOpacity!==undefined?opts.glowOpacity:0.13,
+    depthWrite:false
+  });
+  var glowMesh=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,12),glowMat);
+  glowMesh.rotation.z=Math.PI/2; // align with X axis (segment direction)
+  glowMesh.userData.fixedSegWidth=true;
+  glowMesh.userData.isGlow=true;
+  glowMesh.userData.segLen=len;
+  glowMesh.userData.type='segment';
+  glowMesh.userData.id=seg.segment_id;
+  group.add(glowMesh);
+
+  // Core cylinder
+  var ribbonMat=new THREE.MeshStandardMaterial({
+    color:color,
+    metalness:0.25,
+    roughness:0.55,
+    envMapIntensity:0.6
+  });
+  var ribbon=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,12),ribbonMat);
+  ribbon.rotation.z=Math.PI/2;
+  ribbon.userData.fixedSegWidth=true;
+  ribbon.userData.isGlow=false;
+  ribbon.userData.segLen=len;
+  ribbon.userData.type='segment';
+  ribbon.userData.id=seg.segment_id;
+  group.add(ribbon);
+
+  return group;
+}
+
+// Node: ring (torus) + small filled disc
+function makeNodeDisc(loc, ringColor){
+  var mesh=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),new THREE.MeshLambertMaterial({color:ringColor}));
+  mesh.position.set(loc[0],loc[1],loc[2]);
+  mesh.userData.fixedPxRadius=PX_PER_MM*0.75;
+  return mesh;
+}
+
+// ── View Cube (unchanged logic) ───────────────────────────────────────────────
 function cv3(x,y,z){return{x:x,y:y,z:z};}
 function cvscale(v,s){return cv3(v.x*s,v.y*s,v.z*s);}
 function cvdot(a,b){return a.x*b.x+a.y*b.y+a.z*b.z;}
@@ -428,7 +476,7 @@ var CV_AXES=[{dir:cv3(1,0,0),color:'#ff4444',label:'X'},{dir:cv3(0,1,0),color:'#
 var CV_FACE_DEFS=[
   {name:'Right',normal:cv3(1,0,0)},{name:'Left',normal:cv3(-1,0,0)},
   {name:'Back',normal:cv3(0,1,0)},{name:'Front',normal:cv3(0,-1,0)},
-  {name:'Top',normal:cv3(0,0,1)},{name:'Bottom',normal:cv3(0,0,-1)}
+  {name:'Top',normal:cv3(0,0,1)},{name:'Bottom',normal:cv3(0,0,-1)},
 ];
 function cvBuildSlab(fd){
   var n=fd.normal,ax=n.x!==0?0:n.y!==0?1:2;
@@ -443,7 +491,7 @@ function cvBuildSlab(fd){
   [{pts:[pt(outer,lo,lo),pt(inner,lo,lo),pt(inner,lo,hi2),pt(outer,lo,hi2)],ni:ta,ns:-1},
    {pts:[pt(outer,hi2,lo),pt(outer,hi2,hi2),pt(inner,hi2,hi2),pt(inner,hi2,lo)],ni:ta,ns:1},
    {pts:[pt(outer,lo,lo),pt(outer,hi2,lo),pt(inner,hi2,lo),pt(inner,lo,lo)],ni:tb,ns:-1},
-   {pts:[pt(outer,lo,hi2),pt(inner,lo,hi2),pt(inner,hi2,hi2),pt(outer,hi2,hi2)],ni:tb,ns:1}
+   {pts:[pt(outer,lo,hi2),pt(inner,lo,hi2),pt(inner,hi2,hi2),pt(outer,hi2,hi2)],ni:tb,ns:1},
   ].forEach(function(s){var nn=[0,0,0];nn[s.ni]=s.ns;quads.push({pts:s.pts,normal:cv3(nn[0],nn[1],nn[2]),shade:0.75});});
   return quads;
 }
@@ -495,7 +543,8 @@ function makeViewCube(canvasEl,getThreeCam,onSnapRequest){
       });
     ctx.globalAlpha=1.0;
     allQuads.forEach(function(q){
-      var pts=q.pts2d,v=Math.round(18+q.shade*32);
+      var pts=q.pts2d;
+      var v=Math.round(18+q.shade*32);
       ctx.fillStyle=q.labelName?'rgb('+v+','+(v+2)+','+(v+6)+')':'#0d1a33';
       ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
       for(var i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
@@ -532,7 +581,7 @@ var CUBE_FACES=[
   {name:'Right',normal:new THREE.Vector3(1,0,0), up:new THREE.Vector3(0,0,1)},
   {name:'Left', normal:new THREE.Vector3(-1,0,0),up:new THREE.Vector3(0,0,1)},
   {name:'Top',  normal:new THREE.Vector3(0,0,1), up:new THREE.Vector3(0,1,0)},
-  {name:'Bottom',normal:new THREE.Vector3(0,0,-1),up:new THREE.Vector3(0,1,0)}
+  {name:'Bottom',normal:new THREE.Vector3(0,0,-1),up:new THREE.Vector3(0,1,0)},
 ];
 function animateCameraToFace(orbit,face){
   var CAM_DIST=500,endPos=face.normal.clone().multiplyScalar(CAM_DIST).add(orbit.target);
@@ -577,21 +626,26 @@ function makeOrbit(camera,renderFn,getViewportSize){
     o.target.copy(center);
     var sz=getViewportSize(),asp=(sz.w||800)/(sz.h||600);
     camera.userData.halfSize=Math.max((size.y/2)*1.4,(size.x/2/asp)*1.4,0.5);
-    updateOrthoFrustum(camera,sz.w,sz.h); o.apply();
+    updateOrthoFrustum(camera,sz.w,sz.h);
+    o.apply();
   };
-  o.apply(); return o;
+  o.apply();
+  return o;
 }
+
 function avViewSize(){var vp=document.getElementById('av-viewport');return{w:vp.clientWidth,h:vp.clientHeight};}
 function chViewSize(){var vp=document.getElementById('ch-viewport');return{w:vp.clientWidth,h:vp.clientHeight};}
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  TRIAD
+//  TRIAD (unchanged)
 // ══════════════════════════════════════════════════════════════════════════════
 function makeBasis(axisDir,tangent){
-  var y=axisDir.clone().normalize(),x=tangent.clone().normalize();
+  var y=axisDir.clone().normalize();
+  var x=tangent.clone().normalize();
   var z=new THREE.Vector3().crossVectors(x,y).normalize();
   x.crossVectors(y,z).normalize();
-  var m=new THREE.Matrix4(); m.makeBasis(x,y,z); return m;
+  var m=new THREE.Matrix4(); m.makeBasis(x,y,z);
+  return m;
 }
 function makeArcPoints(startDeg,arcDeg,segs){
   var pts=[],step=arcDeg/segs;
@@ -603,12 +657,16 @@ function buildTriad(node){
   var axes=localAxes(alpha,beta,gamma);
   var pos=new THREE.Vector3(node.location[0],node.location[1],node.location[2]);
   var master=new THREE.Group();
-  master.position.copy(pos); master.userData.fixedPxRadius=52; master.userData.isTriadMaster=true;
-  var ARM=0.72,CONE_R=0.11,CONE_H=0.24,SHAFT_R=0.035,ARC_R=0.88,ARC_DEG=60;
+  master.position.copy(pos);
+  master.userData.fixedPxRadius=52;
+  master.userData.isTriadMaster=true;
+  var ARM=0.72,CONE_R=0.11,CONE_H=0.24,SHAFT_R=0.035;
+  var ARC_R=0.88,ARC_DEG=60;
   [{axis:'x',dir:axes.x,col:0xff3333},{axis:'y',dir:axes.y,col:0x44cc44},{axis:'z',dir:axes.z,col:0x4499ff}]
   .forEach(function(td){
     var g=new THREE.Group();
-    g.userData.triadType='translate'; g.userData.axis=td.axis; g.userData.transWorldAxis=td.dir.clone().normalize();
+    g.userData.triadType='translate'; g.userData.axis=td.axis;
+    g.userData.transWorldAxis=td.dir.clone().normalize();
     var shaft=new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,ARM,8),new THREE.MeshLambertMaterial({color:td.col}));
     shaft.position.copy(td.dir.clone().multiplyScalar(ARM*0.5));
     shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),td.dir.clone().normalize());
@@ -643,7 +701,8 @@ function buildTriad(node){
     var cone=new THREE.Mesh(new THREE.ConeGeometry(0.10,0.22,8),new THREE.MeshLambertMaterial({color:rd.col}));
     cone.position.copy(endPt);
     cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(-Math.sin(endAng),0,Math.cos(endAng)));
-    cone.userData={triadType:'rotate',axis:rd.axis}; g.add(cone);
+    cone.userData={triadType:'rotate',axis:rd.axis};
+    g.add(cone);
     var HIT_SEGS=24,HIT_R=0.16;
     for(var j=0;j<HIT_SEGS;j++){
       var a0=(START+(j/HIT_SEGS)*ARC_DEG)*DEG,a1=(START+((j+1)/HIT_SEGS)*ARC_DEG)*DEG;
@@ -652,13 +711,16 @@ function buildTriad(node){
       var hm=new THREE.Mesh(new THREE.CylinderGeometry(HIT_R,HIT_R,p0.distanceTo(p1)*1.1,5),new THREE.MeshBasicMaterial({visible:false,side:THREE.DoubleSide}));
       hm.position.copy(p0.clone().add(p1).multiplyScalar(0.5));
       hm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),p1.clone().sub(p0).normalize());
-      hm.userData={triadType:'rotate',axis:rd.axis}; g.add(hm);
+      hm.userData={triadType:'rotate',axis:rd.axis};
+      g.add(hm);
     }
     master.add(g);
   });
   return master;
 }
-var TRANS_HIDE_DOT=Math.cos(5*DEG),ROT_HIDE_DOT=Math.sin(5*DEG);
+
+var TRANS_HIDE_DOT=Math.cos(5*DEG);
+var ROT_HIDE_DOT  =Math.sin(5*DEG);
 function updateTriadVisibility(camera){
   var fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
   avArrows.forEach(function(master){
@@ -669,86 +731,16 @@ function updateTriadVisibility(camera){
       else if(g.userData.triadType==='rotate'&&g.userData.rotWorldAxis)
         show=Math.abs(g.userData.rotWorldAxis.dot(fwd))>=ROT_HIDE_DOT;
       g.visible=show;
-      g.traverse(function(c){if(c.isMesh) c.raycast=show?THREE.Mesh.prototype.raycast:function(){};});
+      g.traverse(function(c){
+        if(c.isMesh) c.raycast=show?THREE.Mesh.prototype.raycast:function(){};
+      });
     });
   });
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  MESH FACTORIES
-// ══════════════════════════════════════════════════════════════════════════════
-function makeSegLine(seg,color,opts){
-  opts=opts||{};
-  var aVec=new THREE.Vector3(seg.location_at_end_a[0],seg.location_at_end_a[1],seg.location_at_end_a[2]);
-  var bVec=new THREE.Vector3(seg.location_at_end_b[0],seg.location_at_end_b[1],seg.location_at_end_b[2]);
-  var mid=aVec.clone().add(bVec).multiplyScalar(0.5);
-  var len=aVec.distanceTo(bVec)||0.001;
-  var dir=bVec.clone().sub(aVec).normalize();
-  var group=new THREE.Group();
-  group.position.copy(mid);
-  group.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);
-  group.userData.type='segment'; group.userData.id=seg.segment_id;
-
-  var glowColor=opts.glowColor!==undefined?opts.glowColor:color;
-  var glowMat=new THREE.MeshBasicMaterial({color:glowColor,transparent:true,opacity:opts.glowOpacity!==undefined?opts.glowOpacity:0.13,depthWrite:false});
-  var glowMesh=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,12),glowMat);
-  glowMesh.userData.fixedSegWidth=true; glowMesh.userData.isGlow=true;
-  glowMesh.userData.segLen=len; glowMesh.userData.type='segment'; glowMesh.userData.id=seg.segment_id;
-  group.add(glowMesh);
-
-  var ribbonMat=new THREE.MeshStandardMaterial({color:color,metalness:0.25,roughness:0.55});
-  var ribbon=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,12),ribbonMat);
-  ribbon.userData.fixedSegWidth=true; ribbon.userData.isGlow=false;
-  ribbon.userData.segLen=len; ribbon.userData.type='segment'; ribbon.userData.id=seg.segment_id;
-  group.add(ribbon);
-  return group;
-}
-
-function makeNodeSphere(loc,color){
-  var mesh=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),new THREE.MeshLambertMaterial({color:color}));
-  mesh.position.set(loc[0],loc[1],loc[2]);
-  mesh.userData.fixedPxRadius=PX_PER_MM*0.75;
-  return mesh;
-}
-
-// ── Render ────────────────────────────────────────────────────────────────────
-function avRender(){
-  if(!avRenderer||!avCube) return;
-  updateTriadVisibility(avCamera);
-  scaleFixedPx(avScene,avCamera,avRenderer);
-  avRenderer.render(avScene,avCamera);
-  avCube.draw();
-  drawLabels(document.getElementById('av-label-canvas'),avCamera,avData.nodes||[],avData.segments||[]);
-}
-function chRender(){
-  if(!chRenderer||!chCube) return;
-  scaleFixedPx(chScene,chCamera,chRenderer);
-  chRenderer.render(chScene,chCamera);
-  chCube.draw();
-  drawLabels(document.getElementById('ch-label-canvas'),chCamera,
-    (chosenNetData&&chosenNetData.nodes)?chosenNetData.nodes:[],avData.segments||[]);
-}
-
-// ── Raycast helpers ───────────────────────────────────────────────────────────
-function collectRayMeshes(objMap){
-  var out=[];
-  Object.values(objMap).forEach(function(o){
-    if(o.isMesh) out.push(o);
-    else if(o.isGroup) o.traverse(function(c){if(c.isMesh&&!(c.material&&c.material.transparent))out.push(c);});
-  });
-  return out;
-}
-function resolveHit(hitObj){
-  var o=hitObj;
-  while(o&&!o.userData.type&&o.parent) o=o.parent;
-  return o&&o.userData.type?o.userData:null;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  MOUSE
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Mouse ─────────────────────────────────────────────────────────────────────
 function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects){
-  if(e.button!==0&&e.button!==2) return;
+  if(e.button!==0&&e.button!==2){return;}
   e.preventDefault();
   var rect=e.currentTarget.getBoundingClientRect();
   var ndcX=((e.clientX-rect.left)/rect.width)*2-1;
@@ -776,7 +768,8 @@ function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects){
               var sdx=(tipNDC.x-oriNDC.x)*sz.w/2,sdy=-(tipNDC.y-oriNDC.y)*sz.h/2;
               var slen=Math.sqrt(sdx*sdx+sdy*sdy)||1;
               drag.mode='triad-translate'; drag.wasTriad=true; drag.moved=false; drag.orbit=orbit;
-              drag.axis=taxis; drag.nodeId=avSelected.id; drag.startLoc=node.location.slice();
+              drag.axis=taxis; drag.nodeId=avSelected.id;
+              drag.startLoc=node.location.slice();
               drag.startX=e.clientX; drag.startY=e.clientY;
               drag.screenDir=new THREE.Vector2(sdx/slen,sdy/slen);
             } else {
@@ -797,7 +790,9 @@ function onCanvasMouseDown(e,orbit,ray,nodeObjects,getTriadObjects){
     }
   }
   drag.mode=e.button===0?'orbit-rotate':'orbit-pan';
-  drag.moved=false; drag.wasTriad=false; drag.lastX=e.clientX; drag.lastY=e.clientY; drag.orbit=orbit;
+  drag.moved=false; drag.wasTriad=false;
+  drag.lastX=e.clientX; drag.lastY=e.clientY;
+  drag.orbit=orbit;
 }
 
 window.addEventListener('mousemove',function(e){
@@ -816,7 +811,9 @@ window.addEventListener('mousemove',function(e){
       Math.round((drag.startLoc[1]+axDir.y*delta)*1000)/1000,
       Math.round((drag.startLoc[2]+axDir.z*delta)*1000)/1000
     ];
-    syncFollowers(node.node_id); avBuildScene(); avShowProps(); markDirty('available'); return;
+    syncFollowers(node.node_id);
+    avBuildScene(); avShowProps(); markDirty('available');
+    return;
   }
   if(drag.mode==='triad-rotate'){
     var node=avData.nodes.find(function(n){return n.node_id===drag.nodeId;});
@@ -830,7 +827,8 @@ window.addEventListener('mousemove',function(e){
     node.alpha=Math.round(eu.x/DEG*1000)/1000;
     node.beta =Math.round(eu.y/DEG*1000)/1000;
     node.gamma=Math.round(eu.z/DEG*1000)/1000;
-    avBuildScene(); avShowProps(); markDirty('available'); return;
+    avBuildScene(); avShowProps(); markDirty('available');
+    return;
   }
   var dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
   drag.lastX=e.clientX; drag.lastY=e.clientY;
@@ -850,6 +848,7 @@ window.addEventListener('mousemove',function(e){
     orbit.apply();
   }
 });
+
 window.addEventListener('mouseup',function(){
   drag.mode=null; drag.moved=false; drag.wasTriad=false;
   drag.axis=null; drag.nodeId=null; drag.startLoc=null; drag.screenDir=null;
@@ -876,14 +875,105 @@ function attachZoom(canvasEl,orbit,getViewportSize){
   canvasEl.addEventListener('contextmenu',function(e){e.preventDefault();});
 }
 
+// ── Render ────────────────────────────────────────────────────────────────────
+// ── Label overlay ─────────────────────────────────────────────────────────────
+function worldToScreen(pos, camera, canvas){
+  var ndc = pos.clone().project(camera);
+  var r = canvas.getBoundingClientRect();
+  return {
+    x: (ndc.x * 0.5 + 0.5) * canvas.width / window.devicePixelRatio,
+    y: (-ndc.y * 0.5 + 0.5) * canvas.height / window.devicePixelRatio
+  };
+}
+
+function drawLabels(labelCanvas, camera, nodes, segments){
+  var dpr = window.devicePixelRatio || 1;
+  var w = labelCanvas.parentElement.clientWidth;
+  var h = labelCanvas.parentElement.clientHeight;
+  if(labelCanvas.width !== w * dpr || labelCanvas.height !== h * dpr){
+    labelCanvas.width = w * dpr;
+    labelCanvas.height = h * dpr;
+    labelCanvas.style.width = w + 'px';
+    labelCanvas.style.height = h + 'px';
+  }
+  var ctx = labelCanvas.getContext('2d');
+  ctx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+
+  var OFFSET_Y = 10; // px above element
+
+  // Node labels
+  (nodes || []).forEach(function(n){
+    if(!n.node_id) return;
+    var pos = new THREE.Vector3(n.location[0], n.location[1], n.location[2]);
+    var sc = worldToScreen(pos, camera, labelCanvas);
+    ctx.fillStyle = 'rgba(180,190,210,0.55)';
+    ctx.fillText(n.node_id, sc.x, sc.y - OFFSET_Y);
+  });
+
+  // Segment labels — midpoint
+  (segments || []).forEach(function(s){
+    if(!s.segment_id) return;
+    var mid = new THREE.Vector3(
+      (s.location_at_end_a[0] + s.location_at_end_b[0]) / 2,
+      (s.location_at_end_a[1] + s.location_at_end_b[1]) / 2,
+      (s.location_at_end_a[2] + s.location_at_end_b[2]) / 2
+    );
+    var sc = worldToScreen(mid, camera, labelCanvas);
+    ctx.fillStyle = 'rgba(130,150,180,0.4)';
+    ctx.fillText(s.segment_id, sc.x, sc.y - OFFSET_Y);
+  });
+
+  ctx.restore();
+}
+
+function avRender(){
+  if(!avRenderer||!avCube) return;
+  updateTriadVisibility(avCamera);
+  scaleFixedPx(avScene,avCamera,avRenderer);
+  avRenderer.render(avScene,avCamera);
+  avCube.draw();
+  drawLabels(
+    document.getElementById('av-label-canvas'), avCamera,
+    avData.nodes || [], avData.segments || []
+  );
+}
+function chRender(){
+  if(!chRenderer||!chCube) return;
+  scaleFixedPx(chScene,chCamera,chRenderer);
+  chRenderer.render(chScene,chCamera);
+  chCube.draw();
+  drawLabels(
+    document.getElementById('ch-label-canvas'), chCamera,
+    (chosenNetData&&chosenNetData.nodes) ? chosenNetData.nodes : [],
+    avData.segments || []
+  );
+}
+
+// ── Raycast helpers — flatten groups for hit testing ─────────────────────────
+function collectRayMeshes(objMap){
+  var out=[];
+  Object.values(objMap).forEach(function(o){
+    if(o.isMesh) out.push(o);
+    else if(o.isGroup) o.traverse(function(c){if(c.isMesh&&!c.material.transparent)out.push(c);});
+  });
+  return out;
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 //  AVAILABLE
 // ══════════════════════════════════════════════════════════════════════════════
 function initAv(){
   avRenderer=makeRenderer(document.getElementById('av-canvas'));
   avScene=new THREE.Scene();
-  var sz=avViewSize(); avCamera=makeOrthoCamera(sz.w,sz.h);
-  avScene.add(new THREE.AmbientLight(0x1a2233,1.4));
+  var sz=avViewSize();
+  avCamera=makeOrthoCamera(sz.w,sz.h);
+  // Upgraded lighting
+  avScene.add(new THREE.AmbientLight(0x1a2233,1.4));      // cool blue-tinted ambient
   var key=new THREE.DirectionalLight(0xffffff,1.1); key.position.set(6,10,14); avScene.add(key);
   var fill=new THREE.DirectionalLight(0x3355aa,0.35); fill.position.set(-8,-4,-6); avScene.add(fill);
   var rim=new THREE.DirectionalLight(0x4488cc,0.2); rim.position.set(0,0,-20); avScene.add(rim);
@@ -907,27 +997,30 @@ function avBuildScene(){
   Object.values(avSegLines).forEach(function(l){avScene.remove(l);});
   avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
   avNodeMeshes={}; avSegLines={};
+
   (avData.segments||[]).forEach(function(seg){
     var isSel=avSelected&&avSelected.type==='segment'&&avSelected.id===seg.segment_id;
-    var col=isSel?0xffffff:C_SEG_DEFAULT;
-    var gopa=isSel?0.28:0.13;
-    var grp=makeSegLine(seg,col,{glowColor:col,glowOpacity:gopa});
+    var col  = isSel ? C_SEL         : C_SEG_DEFAULT;
+    var glow = isSel ? 0xffffff      : C_SEG_DEFAULT;
+    var gopa = isSel ? 0.28          : 0.13;
+    var grp=makeSegLine(seg,col,{glowColor:glow,glowOpacity:gopa});
     avSegLines[seg.segment_id]=grp; avScene.add(grp);
   });
+
   (avData.nodes||[]).forEach(function(n){
     var isSel=avSelected&&avSelected.type==='node'&&avSelected.id===n.node_id;
-    var isPending=!!avPendingLink;
-    var col=isSel?C_NODE_SEL_RING:isPending?0xffaa00:C_RED;
-    var mesh=makeNodeSphere(n.location,col);
-    mesh.userData.type='node'; mesh.userData.id=n.node_id;
-    avNodeMeshes[n.node_id]=mesh; avScene.add(mesh);
+    var ring = isSel ? C_NODE_SEL_RING : C_RED;
+    var grp=makeNodeDisc(n.location,ring);
+    grp.userData.type='node'; grp.userData.id=n.node_id;
+    avNodeMeshes[n.node_id]=grp; avScene.add(grp);
   });
+
   if(avSelected&&avSelected.type==='node'){
     var n=avData.nodes.find(function(n){return n.node_id===avSelected.id;});
     if(n){var triad=buildTriad(n);avScene.add(triad);avArrows=[triad];}
   }
   avRender();
-  updateViewCubeVisibility('available',avOrbit,avCamera,avViewSize);
+  updateViewCubeVisibility('available', avOrbit, avCamera, avViewSize);
 }
 
 document.getElementById('av-canvas').addEventListener('click',function(e){
@@ -942,29 +1035,23 @@ document.getElementById('av-canvas').addEventListener('click',function(e){
   var sMeshes=collectRayMeshes(avSegLines);
   var nHits=avRay.intersectObjects(nMeshes,true);
   var sHits=avRay.intersectObjects(sMeshes,true);
+
+  // Resolve hit back to group userData
+  function resolveHit(hitObj){
+    var o=hitObj;
+    while(o&&!o.userData.type&&o.parent) o=o.parent;
+    return o&&o.userData.type?o.userData:null;
+  }
   var nData=nHits.length?resolveHit(nHits[0].object):null;
   var sData=sHits.length?resolveHit(sHits[0].object):null;
   var hit=nData||sData;
 
-  // Pending-link mode: node click completes the link
-  if(avPendingLink){
-    if(nData&&nData.type==='node'){
-      followSet(avPendingLink.segId,avPendingLink.end,nData.id);
-      syncFollowers(nData.id);
-      avPendingLink=null; avSetStatusMsg(null);
-      avBuildScene(); avShowProps(); markDirty('available');
-    }
-    return;
-  }
-
-  if(avTool==='delete'&&hit){
-    hit.type==='node'?avDeleteNode(hit.id):avDeleteSegment(hit.id); return;
-  }
+  if(avTool==='delete'&&hit){hit.type==='node'?avDeleteNode(hit.id):avDeleteSegment(hit.id);return;}
   if(avTool==='add-seg'&&hit&&hit.type==='node'){
     if(!avConnectStart){
       avConnectStart=hit.id;
-      var mesh=avNodeMeshes[hit.id];
-      if(mesh) mesh.material.color.set(0xffa030);
+      var grp=avNodeMeshes[hit.id];
+      if(grp) grp.traverse(function(c){if(c.material&&!c.material.transparent)c.material.color.set(0xffa030);});
       avRender();
     } else if(avConnectStart!==hit.id){
       avAddSegment(avConnectStart,hit.id); avConnectStart=null; avBuildScene();
@@ -974,11 +1061,11 @@ document.getElementById('av-canvas').addEventListener('click',function(e){
   avSelected=hit||null; avBuildScene(); avShowProps();
 });
 
-// ── Properties panel ──────────────────────────────────────────────────────────
+// ── Segment props ─────────────────────────────────────────────────────────────
 function avShowProps(){
-  var panel=document.getElementById('props-av');
-  var content=document.getElementById('props-av-content');
-  var title=document.getElementById('props-av-title');
+  var panel=document.getElementById('props-av'),
+      content=document.getElementById('props-av-content'),
+      title=document.getElementById('props-av-title');
   if(!avSelected){
     panel.classList.remove('props-visible');
     avArrows.forEach(function(a){avScene.remove(a);}); avArrows=[];
@@ -1004,11 +1091,7 @@ function avShowProps(){
     function upd(){
       var oldId=n.node_id;
       n.node_id=document.getElementById('pnid').value;
-      n.location=[
-        parseFloat(document.getElementById('pnx').value)||0,
-        parseFloat(document.getElementById('pny').value)||0,
-        parseFloat(document.getElementById('pnz').value)||0
-      ];
+      n.location=[parseFloat(document.getElementById('pnx').value)||0,parseFloat(document.getElementById('pny').value)||0,parseFloat(document.getElementById('pnz').value)||0];
       n.alpha=parseFloat(document.getElementById('pna').value)||0;
       n.beta =parseFloat(document.getElementById('pnb').value)||0;
       n.gamma=parseFloat(document.getElementById('png').value)||0;
@@ -1020,36 +1103,23 @@ function avShowProps(){
         });
       }
       avSelected.id=n.node_id;
-      syncFollowers(n.node_id); avBuildScene(); markDirty('available');
+      syncFollowers(n.node_id);
+      avBuildScene(); markDirty('available');
     }
-    ['pnid','pnx','pny','pnz','pna','pnb','png'].forEach(function(id){
-      document.getElementById(id).addEventListener('input',upd);
-    });
+    ['pnid','pnx','pny','pnz','pna','pnb','png'].forEach(function(id){document.getElementById(id).addEventListener('input',upd);});
     content.querySelectorAll('.zero-btn').forEach(function(btn){
-      btn.addEventListener('click',function(){
-        var el=document.getElementById(btn.dataset.zero); el.value=0; el.dispatchEvent(new Event('input'));
-      });
+      btn.addEventListener('click',function(){var el=document.getElementById(btn.dataset.zero);el.value=0;el.dispatchEvent(new Event('input'));});
     });
-
   } else {
     var s=avData.segments.find(function(s){return s.segment_id===avSelected.id;}); if(!s) return;
     title.textContent='Segment';
     var lk=followGet(s.segment_id);
-    var candA=lk.a||nodeAtLoc(s.location_at_end_a);
-    var candB=lk.b||nodeAtLoc(s.location_at_end_b);
-
-    function pillHtml(end,linked,candId){
-      if(linked){
-        return '<button class="follow-pill linked" id="follow-pill-'+end+'" data-end="'+end+'" data-action="unlink">'
-          +'<span class="pill-dot"></span>Following '+candId+'</button>';
-      }
-      return '<button class="follow-pill orphan" id="follow-pill-'+end+'" data-end="'+end+'" data-action="expand">'
-          +'<span class="pill-dot"></span>'+(candId?'Assign node…':'No node at this end')+'</button>'
-        +'<div class="pill-menu" id="pill-menu-'+end+'" style="display:none">'
-          +(candId?'<button class="pill-opt" data-end="'+end+'" data-action="link" data-nodeid="'+candId+'">Link to existing: '+candId+'</button>':'')
-          +'<button class="pill-opt" data-end="'+end+'" data-action="pick">Click a node to attach…</button>'
-          +'<button class="pill-opt" data-end="'+end+'" data-action="create">＋ Create new node here</button>'
-        +'</div>';
+    var candA=lk.a || nodeAtLoc(s.location_at_end_a);
+    var candB=lk.b || nodeAtLoc(s.location_at_end_b);
+    function pillHtml(end, linked, candId){
+      if(!candId)
+        return '<button class="follow-pill orphan" id="follow-pill-'+end+'" data-end="'+end+'"><span class="pill-dot"></span>Segment does not end in node. Click to add.</button>';
+      return '<button class="follow-pill'+(linked?' linked':'')+'" id="follow-pill-'+end+'" data-end="'+end+'" data-nodeid="'+candId+'"><span class="pill-dot"></span>'+(linked?'Following '+candId:'Follow '+candId)+'</button>';
     }
     function xyzRow(pre,vals){
       return '<div class="row">'
@@ -1058,23 +1128,13 @@ function avShowProps(){
         +'<input id="'+pre+'z" type="number" step="0.001" value="'+vals[2]+'">'
         +'</div>';
     }
-    content.innerHTML=
-      '<label>ID</label><input id="psid" value="'+s.segment_id+'">'
+    content.innerHTML='<label>ID</label><input id="psid" value="'+s.segment_id+'">'
       +'<div class="end-block"><div class="end-label">End A</div>'+xyzRow('psa',s.location_at_end_a)+pillHtml('a',!!lk.a,candA)+'</div>'
       +'<div class="end-block" style="margin-top:8px"><div class="end-label">End B</div>'+xyzRow('psb',s.location_at_end_b)+pillHtml('b',!!lk.b,candB)+'</div>';
-
     function updSeg(){
       s.segment_id=document.getElementById('psid').value;
-      s.location_at_end_a=[
-        parseFloat(document.getElementById('psax').value)||0,
-        parseFloat(document.getElementById('psay').value)||0,
-        parseFloat(document.getElementById('psaz').value)||0
-      ];
-      s.location_at_end_b=[
-        parseFloat(document.getElementById('psbx').value)||0,
-        parseFloat(document.getElementById('psby').value)||0,
-        parseFloat(document.getElementById('psbz').value)||0
-      ];
+      s.location_at_end_a=[parseFloat(document.getElementById('psax').value)||0,parseFloat(document.getElementById('psay').value)||0,parseFloat(document.getElementById('psaz').value)||0];
+      s.location_at_end_b=[parseFloat(document.getElementById('psbx').value)||0,parseFloat(document.getElementById('psby').value)||0,parseFloat(document.getElementById('psbz').value)||0];
       syncNodeFromSeg(s,'a'); syncNodeFromSeg(s,'b');
       avSelected.id=s.segment_id;
       avBuildScene(); avShowProps(); markDirty('available');
@@ -1082,39 +1142,24 @@ function avShowProps(){
     ['psid','psax','psay','psaz','psbx','psby','psbz'].forEach(function(id){
       var el=document.getElementById(id); if(el) el.addEventListener('input',updSeg);
     });
-
     content.querySelectorAll('.follow-pill').forEach(function(btn){
       btn.addEventListener('click',function(){
-        var end=btn.dataset.end,action=btn.dataset.action;
-        if(action==='unlink'){
-          followSet(s.segment_id,end,null);
-          avBuildScene(); avShowProps(); markDirty('available');
-        } else if(action==='expand'){
-          var menu=document.getElementById('pill-menu-'+end);
-          if(menu) menu.style.display=menu.style.display==='none'?'block':'none';
-        }
-      });
-    });
-
-    content.querySelectorAll('.pill-opt').forEach(function(btn){
-      btn.addEventListener('click',function(){
-        var end=btn.dataset.end,action=btn.dataset.action;
-        if(action==='link'){
-          var nid=btn.dataset.nodeid;
-          followSet(s.segment_id,end,nid);
-          syncFollowers(nid);
-          avBuildScene(); avShowProps(); markDirty('available');
-        } else if(action==='pick'){
-          avPendingLink={segId:s.segment_id,end:end};
-          avSetStatusMsg('Click a node to attach End '+(end==='a'?'A':'B')+'  —  Esc to cancel');
-          avBuildScene();
-        } else if(action==='create'){
+        var end=btn.dataset.end;
+        if(btn.classList.contains('orphan')){
           var loc=(end==='a'?s.location_at_end_a:s.location_at_end_b).slice();
           var nid=avNextNodeId();
           avData.nodes.push({node_id:nid,location:loc,alpha:0,beta:0,gamma:0});
           followSet(s.segment_id,end,nid);
-          avBuildScene(); avShowProps(); markDirty('available');
+          avBuildScene(); avShowProps(); markDirty('available'); return;
         }
+        var nid=btn.dataset.nodeid;
+        var cur=followGet(s.segment_id);
+        if(end==='a') followSet(s.segment_id,'a', cur.a?null:nid);
+        else           followSet(s.segment_id,'b', cur.b?null:nid);
+        var lkNow=followGet(s.segment_id);
+        if(end==='a'&&lkNow.a) syncFollowers(lkNow.a);
+        if(end==='b'&&lkNow.b) syncFollowers(lkNow.b);
+        avBuildScene(); avShowProps(); markDirty('available');
       });
     });
   }
@@ -1132,7 +1177,8 @@ function avAddSegment(idA,idB){
   if(!na||!nb) return;
   var sid=avNextSegId();
   avData.segments.push({segment_id:sid,type:'line',location_at_end_a:na.location.slice(),location_at_end_b:nb.location.slice(),spline_control_points:[]});
-  followLinks[sid]={a:idA,b:idB}; markDirty('available');
+  followLinks[sid]={a:idA,b:idB};
+  markDirty('available');
 }
 function avDeleteNode(id){
   Object.keys(followLinks).forEach(function(sid){
@@ -1165,7 +1211,8 @@ function avSetTool(t){
 function initCh(){
   chRenderer=makeRenderer(document.getElementById('ch-canvas'));
   chScene=new THREE.Scene();
-  var sz=chViewSize(); chCamera=makeOrthoCamera(sz.w,sz.h);
+  var sz=chViewSize();
+  chCamera=makeOrthoCamera(sz.w,sz.h);
   chScene.add(new THREE.AmbientLight(0x1a2233,1.4));
   var key=new THREE.DirectionalLight(0xffffff,1.1); key.position.set(6,10,14); chScene.add(key);
   var fill=new THREE.DirectionalLight(0x3355aa,0.35); fill.position.set(-8,-4,-6); chScene.add(fill);
@@ -1188,32 +1235,35 @@ function chBuildScene(){
   Object.values(chSegLines).forEach(function(l){chScene.remove(l);});
   Object.values(chNodeMeshes).forEach(function(m){chScene.remove(m);});
   chSegLines={}; chNodeMeshes={};
+
   (avData.segments||[]).forEach(function(seg){
     var chosen=chosenList.indexOf(seg.segment_id)>=0;
-    var col=chosen?C_SEG_CHOSEN:C_SEG_NOTCHOSEN;
-    var gopa=chosen?0.22:0.04;
+    var col  = chosen ? C_SEG_CHOSEN    : C_SEG_NOTCHOSEN;
+    var gopa = chosen ? 0.22            : 0.04;
     var grp=makeSegLine(seg,col,{glowColor:col,glowOpacity:gopa});
     chSegLines[seg.segment_id]=grp; chScene.add(grp);
   });
+
   if(chosenNetData&&chosenNetData.nodes&&chosenNetData.nodes.length){
     chosenNetData.nodes.forEach(function(n){
-      var mesh=makeNodeSphere(n.location,C_RED);
-      mesh.userData.type='node'; mesh.userData.id=n.node_id;
-      chNodeMeshes[n.node_id]=mesh; chScene.add(mesh);
+      var grp=makeNodeDisc(n.location,C_NODE_CHOSEN);
+      grp.userData.type='node'; grp.userData.id=n.node_id;
+      chNodeMeshes[n.node_id]=grp; chScene.add(grp);
     });
   } else {
     var seen=new Set();
     (avData.segments||[]).forEach(function(seg){
       [seg.location_at_end_a,seg.location_at_end_b].forEach(function(loc){
         var k=loc.join(','); if(seen.has(k)) return; seen.add(k);
-        var mesh=makeNodeSphere(loc,0x2a3040);
-        chNodeMeshes[k]=mesh; chScene.add(mesh);
+        var grp=makeNodeDisc(loc,0x2a3040);
+        chNodeMeshes[k]=grp; chScene.add(grp);
       });
     });
   }
   chRender();
-  updateViewCubeVisibility('chosen',chOrbit,chCamera,chViewSize);
+  updateViewCubeVisibility('chosen', chOrbit, chCamera, chViewSize);
 }
+
 document.getElementById('ch-canvas').addEventListener('click',function(e){
   var rect=document.getElementById('ch-canvas').getBoundingClientRect();
   var m=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
@@ -1221,12 +1271,12 @@ document.getElementById('ch-canvas').addEventListener('click',function(e){
   var sMeshes=collectRayMeshes(chSegLines);
   var hits=chRay.intersectObjects(sMeshes,true);
   if(!hits.length) return;
-  var id=resolveHit(hits[0].object);
-  if(!id||!id.id) return;
-  var sid=id.id;
-  if(chosenList.indexOf(sid)>=0) chosenList=chosenList.filter(function(x){return x!==sid;});
-  else chosenList.push(sid);
-  chBuildScene(); chShowProps(sid); markDirty('chosen');
+  function resolveId(o){while(o&&!o.userData.id&&o.parent)o=o.parent;return o?o.userData.id:null;}
+  var id=resolveId(hits[0].object);
+  if(!id) return;
+  if(chosenList.indexOf(id)>=0) chosenList=chosenList.filter(function(x){return x!==id;});
+  else chosenList.push(id);
+  chBuildScene(); chShowProps(id); markDirty('chosen');
 });
 function chShowProps(id){
   document.getElementById('props-ch').classList.add('props-visible');
@@ -1236,7 +1286,7 @@ function chShowProps(id){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  FLATTENED
+//  FLATTENED (unchanged logic, minor color tweaks)
 // ══════════════════════════════════════════════════════════════════════════════
 function flatNorm(deg){if(deg===''||deg==null)return null;var n=parseFloat(deg);return isFinite(n)?((n%360)+360)%360:null;}
 function flatAutoAngle(i,tot){return Math.round((i/tot)*360);}
@@ -1258,7 +1308,9 @@ function flatRender(){
     var pA=pts[row.node_at_end_a]||{x:0,y:0},pB=pts[row.node_at_end_b]||{x:50,y:0};
     var isSel=flatSelected===idx;
     function mk(tag,attrs){var el=document.createElementNS(NS,tag);Object.entries(attrs).forEach(function(kv){el.setAttribute(kv[0],kv[1]);});return el;}
+    // glow line
     g.appendChild(mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:isSel?'#ffffff':'#3a6ea5',opacity:isSel?0.25:0.12,'stroke-width':(isSel?10:7)/flatScale,'stroke-linecap':'round'}));
+    // main line
     g.appendChild(mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:isSel?'#fff':'#3a6ea5','stroke-width':(isSel?2.5:1.8)/flatScale,'stroke-linecap':'round'}));
     var hit=mk('line',{x1:pA.x,y1:pA.y,x2:pB.x,y2:pB.y,stroke:'transparent','stroke-width':14/flatScale,cursor:'pointer'});
     hit.addEventListener('click',function(){flatSelected=idx;flatRender();flatShowProps(idx);});
@@ -1270,6 +1322,7 @@ function flatRender(){
     ll.textContent=row.length?'L:'+row.length:''; g.appendChild(ll);
     [pA,pB].forEach(function(p,ni){
       var nid=ni===0?row.node_at_end_a:row.node_at_end_b;
+      // ring node
       g.appendChild(mk('circle',{cx:p.x,cy:p.y,r:5.5/flatScale,fill:'none',stroke:'#c73652','stroke-width':1.5/flatScale,'pointer-events':'none'}));
       g.appendChild(mk('circle',{cx:p.x,cy:p.y,r:2.2/flatScale,fill:'#c73652',opacity:'0.4','pointer-events':'none'}));
       var t=mk('text',{x:p.x,y:p.y-11/flatScale,'text-anchor':'middle','font-size':10/flatScale,fill:'#ccc','pointer-events':'none'});
