@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import subprocess
+import threading
 from pathlib import Path
 
 from PySide6.QtWidgets import (
@@ -11,8 +12,9 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMenu,
     QLabel,
+    QMessageBox,
 )
-from PySide6.QtCore import Qt, QThread, Signal, QObject
+from PySide6.QtCore import Qt, QThread, Signal, QObject, QTimer
 from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPixmap, QIcon
 
 
@@ -338,6 +340,7 @@ class PartButton(QPushButton):
         if self.product_type == "harness":
             self._harness_action_btn = QPushButton(self)
             self._harness_action_btn.setFixedSize(20, 20)
+            self._harness_action_btn.setToolTip("Open network editor")
             self._harness_action_btn.setIcon(_wye_graph_icon(20))
             self._harness_action_btn.setIconSize(self._harness_action_btn.size())
             self._harness_action_btn.setStyleSheet(
@@ -351,12 +354,17 @@ class PartButton(QPushButton):
                 QPushButton:pressed { background-color: #bbb; }
                 """
             )
-            self._harness_action_btn.clicked.connect(
-                lambda: self.main_window.launch_graph_editor(self.path)
-                if self.main_window
-                else None
-            )
+
+            def _on_harness_click():
+                print(
+                    "pressed — starting network editor (URL will appear below when server is ready)"
+                )
+                if self.main_window:
+                    self.main_window.launch_graph_editor(self.path)
+
+            self._harness_action_btn.clicked.connect(_on_harness_click)
             self._harness_action_btn.show()
+            self._harness_action_btn.raise_()  # keep above label so clicks are received
             self._update_harness_action_geometry()
             self._update_text_label_geometry()
 
@@ -594,14 +602,75 @@ class HarniceGUI(QWidget):
         """
         Launch the formboard graph definition editor for the given harness revision.
         Runs in a subprocess so the launcher stays responsive.
+        If the subprocess exits with an error, show the error in a message box.
         """
-        subprocess.Popen(
-            [sys.executable, "-m", "harnice", "--graph-editor"],
-            cwd=revision_path,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        url_file = os.path.abspath(
+            os.path.join(revision_path, ".harnice_graph_editor_url")
         )
+        env = os.environ.copy()
+        env["HARNICE_GRAPH_EDITOR_URL_FILE"] = url_file
+        # Remove stale URL file from a previous run
+        if os.path.isfile(url_file):
+            try:
+                os.remove(url_file)
+            except OSError:
+                pass
+        try:
+            proc = subprocess.Popen(
+                [sys.executable, "-m", "harnice", "--graph-editor"],
+                cwd=revision_path,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                env=env,
+            )
+        except OSError as e:
+            QMessageBox.warning(
+                self,
+                "Network editor",
+                f"Could not start the network editor: {e}",
+            )
+            return
+
+        def wait_then_print_url():
+            for _ in range(50):  # 5 seconds
+                if os.path.isfile(url_file):
+                    try:
+                        url = Path(url_file).read_text(encoding="utf-8").strip()
+                        print(f"Network editor: {url}")
+                        return
+                    except Exception:
+                        pass
+                import time
+
+                time.sleep(0.1)
+            print(
+                "Network editor: server did not report URL (subprocess may have failed)"
+            )
+
+        def check_result():
+            try:
+                proc.wait()
+            except Exception:
+                return
+            if proc.returncode is None or proc.returncode == 0:
+                return
+            err = (proc.stderr.read() or b"").decode("utf-8", errors="replace").strip()
+            msg = err or f"Process exited with code {proc.returncode}."
+            print("Network editor subprocess failed:", msg, flush=True)
+            main_win = self
+
+            def show_err():
+                QMessageBox.warning(
+                    main_win,
+                    "Network editor",
+                    f"The network editor could not start:\n\n{msg}",
+                )
+
+            QTimer.singleShot(0, show_err)
+
+        threading.Thread(target=wait_then_print_url, daemon=True).start()
+        threading.Thread(target=check_result, daemon=True).start()
 
     def launch_system_viewer(self, revision_path):
         """
