@@ -502,6 +502,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     'use strict';
+    // When modifying this file: read the full file first; the mouse event system (onCanvasMouseDown / mousemove / mouseup and drag modes) is intricate.
 
     // ── Palette ───────────────────────────────────────────────────────────────────
     var C_RED = 0xc73652;
@@ -532,6 +533,7 @@
     var avArrows = [];
     var avSegEndTriads = [];
     var avSegRelTriads = [];   // NEW: relative triads (length + arc1 + arc2)
+    var avSplineCtrlTriads = [];
     var flatPan = { x: 400, y: 300 }, flatScale = 1, flatIsPanning = false, flatPanStart = { x: 0, y: 0 }, flatSelected = null;
     var avRenderer, avScene, avCamera, avOrbit, avCube, avNodeMeshes = {}, avSegLines = {}, avRay;
     var chRenderer, chScene, chCamera, chOrbit, chCube, chSegLines = {}, chNodeMeshes = {}, chRay;
@@ -791,16 +793,32 @@
       addAxis(new THREE.Vector3(0, 0, 1), 0x4499ff);
       return g;
     }
-    function scaleFixedPx(scene, cam, renderer) {
+    function scaleFixedPx(scene, cam, renderer, segmentData) {
       var sz = renderer.getSize(new THREE.Vector2());
       var worldPerPx = (2 * cam.userData.halfSize) / sz.height;
+      var ribbonR = worldPerPx * PX_PER_MM * 0.28;
+      var glowR = worldPerPx * PX_PER_MM * 0.72;
       scene.traverse(function (obj) {
         if (obj.userData.fixedPxRadius) obj.scale.setScalar(obj.userData.fixedPxRadius * worldPerPx);
         if (obj.userData.fixedSegWidth) {
-          var ribbonR = worldPerPx * PX_PER_MM * 0.28;
-          var glowR = worldPerPx * PX_PER_MM * 0.72;
-          if (obj.userData.isGlow) obj.scale.set(glowR, obj.userData.segLen, glowR);
-          else obj.scale.set(ribbonR, obj.userData.segLen, ribbonR);
+          if (obj.userData.splineTube && segmentData && obj.userData.id) {
+            var seg = segmentData.segments && segmentData.segments.find(function (s) { return s.segment_id === obj.userData.id; });
+            if (seg && seg.spline_control_points && seg.spline_control_points.length > 0) {
+              var curvePts = evaluateSegmentSpline(seg, 64);
+              if (curvePts.length >= 2) {
+                var curve = new THREE.CatmullRomCurve3(curvePts);
+                var r = obj.userData.isGlow ? glowR : ribbonR;
+                var oldGeo = obj.geometry;
+                obj.geometry = new THREE.TubeGeometry(curve, 48, r, 12);
+                if (oldGeo && oldGeo.dispose) oldGeo.dispose();
+                obj.scale.set(1, 1, 1);
+              }
+            }
+          } else {
+            var segLen = obj.userData.segLen || 0.001;
+            if (obj.userData.isGlow) obj.scale.set(glowR, segLen, glowR);
+            else obj.scale.set(ribbonR, segLen, ribbonR);
+          }
         }
       });
     }
@@ -1171,6 +1189,15 @@
           g.traverse(function (c) { if (c.isMesh) c.raycast = show ? THREE.Mesh.prototype.raycast : function () { }; });
         });
       });
+      // spline control triads (world-axis, same hide as seg-end)
+      avSplineCtrlTriads.forEach(function (entry) {
+        entry.group.children.forEach(function (g) {
+          if (!g.userData.transWorldAxis) return;
+          var show = Math.abs(g.userData.transWorldAxis.dot(fwd)) < TRANS_HIDE_DOT;
+          g.visible = show;
+          g.traverse(function (c) { if (c.isMesh) c.raycast = show ? THREE.Mesh.prototype.raycast : function () { }; });
+        });
+      });
     }
 
     // ── Segment-end world-axis triad ──────────────────────────────────────────────
@@ -1208,6 +1235,41 @@
       var dot = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), new THREE.MeshLambertMaterial({ color: dotCol }));
       dot.userData.fixedPxRadius = PX_PER_MM * 0.55;
       master.add(dot);
+      return master;
+    }
+
+    function buildSplineCtrlTriad(seg, ctrlIdx) {
+      var off = seg.spline_control_points[ctrlIdx];
+      var a = seg.location_at_end_a;
+      var loc = [a[0] + off[0], a[1] + off[1], a[2] + off[2]];
+      var master = new THREE.Group();
+      master.position.set(loc[0], loc[1], loc[2]);
+      master.userData.fixedPxRadius = 52;
+      master.userData.isSplineCtrlTriad = true;
+      master.userData.segId = seg.segment_id;
+      master.userData.ctrlIdx = ctrlIdx;
+      var ARM = 0.72, CONE_R = 0.11, CONE_H = 0.24, SHAFT_R = 0.035;
+      [{ axis: 'x', dir: new THREE.Vector3(1, 0, 0), col: 0xff3333 },
+      { axis: 'y', dir: new THREE.Vector3(0, 1, 0), col: 0x44cc44 },
+      { axis: 'z', dir: new THREE.Vector3(0, 0, 1), col: 0x4499ff }]
+        .forEach(function (td) {
+          var g = new THREE.Group();
+          g.userData.triadType = 'spline-ctrl-translate'; g.userData.axis = td.axis;
+          g.userData.transWorldAxis = td.dir.clone(); g.userData.segId = seg.segment_id; g.userData.ctrlIdx = ctrlIdx;
+          var shaft = new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R, SHAFT_R, ARM, 8), new THREE.MeshLambertMaterial({ color: td.col }));
+          shaft.position.copy(td.dir.clone().multiplyScalar(ARM * 0.5));
+          shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), td.dir.clone().normalize());
+          shaft.userData = { triadType: 'spline-ctrl-translate', axis: td.axis, segId: seg.segment_id, ctrlIdx: ctrlIdx };
+          var cone = new THREE.Mesh(new THREE.ConeGeometry(CONE_R, CONE_H, 10), new THREE.MeshLambertMaterial({ color: td.col }));
+          cone.position.copy(td.dir.clone().normalize().multiplyScalar(ARM));
+          cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), td.dir.clone().normalize());
+          cone.userData = { triadType: 'spline-ctrl-translate', axis: td.axis, segId: seg.segment_id, ctrlIdx: ctrlIdx };
+          var hit = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, ARM + CONE_H, 8), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
+          hit.position.copy(td.dir.clone().normalize().multiplyScalar((ARM + CONE_H) * 0.5));
+          hit.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), td.dir.clone().normalize());
+          hit.userData = { triadType: 'spline-ctrl-translate', axis: td.axis, segId: seg.segment_id, ctrlIdx: ctrlIdx };
+          g.add(shaft, cone, hit); master.add(g);
+        });
       return master;
     }
 
@@ -1333,29 +1395,127 @@
       return master;
     }
 
+    // ── B-spline (degree 5, clamped uniform) for segment curves ─────────────────────
+    function getSegmentSplineControlPoints(seg) {
+      var a = seg.location_at_end_a;
+      var b = seg.location_at_end_b;
+      var pts = [new THREE.Vector3(a[0], a[1], a[2])];
+      (seg.spline_control_points || []).forEach(function (off) {
+        pts.push(new THREE.Vector3(a[0] + off[0], a[1] + off[1], a[2] + off[2]));
+      });
+      pts.push(new THREE.Vector3(b[0], b[1], b[2]));
+      return pts;
+    }
+    function buildClampedKnotVector(N, degree) {
+      var knots = [];
+      var total = N + degree + 1, startZeros = degree + 1, numInterior = Math.max(0, N - degree - 1), endOnes = total - startZeros - numInterior;
+      for (var i = 0; i < startZeros; i++) knots.push(0);
+      for (var j = 1; j <= numInterior; j++) knots.push(j / (numInterior + 1));
+      for (var k = 0; k < endOnes; k++) knots.push(1);
+      return knots;
+    }
+    function coxDeBoor(N, degree, t, knots, controlPoints) {
+      function basis(i, p, u) {
+        if (p === 0) {
+          if (i === 0 && u <= 0.5 * (knots[0] + knots[1])) return 1;
+          if (i === N - 1 && u >= 0.5 * (knots[N - 1] + knots[N])) return 1;
+          if (u >= knots[i] && u < knots[i + 1]) return 1;
+          return 0;
+        }
+        var d1 = knots[i + p] - knots[i], d2 = knots[i + p + 1] - knots[i + 1];
+        var c1 = d1 <= 0 ? 0 : (u - knots[i]) / d1 * basis(i, p - 1, u);
+        var c2 = d2 <= 0 ? 0 : (knots[i + p + 1] - u) / d2 * basis(i + 1, p - 1, u);
+        return c1 + c2;
+      }
+      var out = new THREE.Vector3(0, 0, 0);
+      for (var i = 0; i < N; i++) {
+        var w = basis(i, degree, t);
+        out.x += controlPoints[i].x * w;
+        out.y += controlPoints[i].y * w;
+        out.z += controlPoints[i].z * w;
+      }
+      return out;
+    }
+    function evaluateSegmentSpline(seg, numPoints) {
+      var ctrl = getSegmentSplineControlPoints(seg);
+      var N = ctrl.length;
+      var degree = Math.min(5, N - 1);
+      if (N < 2 || degree < 0) return [];
+      var knots = buildClampedKnotVector(N, degree);
+      var pts = [];
+      for (var i = 0; i < numPoints; i++) {
+        var t = i / (numPoints - 1);
+        if (i === numPoints - 1) t = 1;
+        pts.push(coxDeBoor(N, degree, t, knots, ctrl));
+      }
+      return pts;
+    }
+
     // ── Mesh factories ────────────────────────────────────────────────────────────
     function makeSegLine(seg, color, opts) {
       opts = opts || {};
+      var useSpline = opts.useSpline && seg.spline_control_points && seg.spline_control_points.length > 0;
       var aVec = new THREE.Vector3(seg.location_at_end_a[0], seg.location_at_end_a[1], seg.location_at_end_a[2]);
       var bVec = new THREE.Vector3(seg.location_at_end_b[0], seg.location_at_end_b[1], seg.location_at_end_b[2]);
-      var mid = aVec.clone().add(bVec).multiplyScalar(0.5);
-      var len = aVec.distanceTo(bVec) || 0.001;
-      var dir = bVec.clone().sub(aVec).normalize();
       var group = new THREE.Group();
-      group.position.copy(mid);
-      group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
       group.userData.type = 'segment'; group.userData.id = seg.segment_id;
-      var glowColor = opts.glowColor !== undefined ? opts.glowColor : color;
-      var glowMat = new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: opts.glowOpacity !== undefined ? opts.glowOpacity : 0.13, depthWrite: false });
-      var glowMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12), glowMat);
-      glowMesh.userData.fixedSegWidth = true; glowMesh.userData.isGlow = true;
-      glowMesh.userData.segLen = len; glowMesh.userData.type = 'segment'; glowMesh.userData.id = seg.segment_id;
-      group.add(glowMesh);
-      var ribbonMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.25, roughness: 0.55 });
-      var ribbon = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12), ribbonMat);
-      ribbon.userData.fixedSegWidth = true; ribbon.userData.isGlow = false;
-      ribbon.userData.segLen = len; ribbon.userData.type = 'segment'; ribbon.userData.id = seg.segment_id;
-      group.add(ribbon);
+
+      if (useSpline) {
+        var curvePts = evaluateSegmentSpline(seg, 64);
+        if (curvePts.length < 2) {
+          useSpline = false;
+        } else {
+          var curve = new THREE.CatmullRomCurve3(curvePts);
+          var tubeRadius = 1;
+          var tubularSegments = 48;
+          var radialSegments = 12;
+          var glowColor = opts.glowColor !== undefined ? opts.glowColor : color;
+          var glowMat = new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: opts.glowOpacity !== undefined ? opts.glowOpacity : 0.13, depthWrite: false });
+          var glowTube = new THREE.Mesh(new THREE.TubeGeometry(curve, tubularSegments, tubeRadius, radialSegments), glowMat);
+          glowTube.userData.fixedSegWidth = true; glowTube.userData.isGlow = true;
+          glowTube.userData.splineTube = true;
+          glowTube.userData.type = 'segment'; glowTube.userData.id = seg.segment_id;
+          group.add(glowTube);
+          var ribbonMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.25, roughness: 0.55 });
+          var ribbonTube = new THREE.Mesh(new THREE.TubeGeometry(curve, tubularSegments, tubeRadius, radialSegments), ribbonMat);
+          ribbonTube.userData.fixedSegWidth = true; ribbonTube.userData.isGlow = false;
+          ribbonTube.userData.splineTube = true;
+          ribbonTube.userData.type = 'segment'; ribbonTube.userData.id = seg.segment_id;
+          group.add(ribbonTube);
+          if (opts.showControlPolyline) {
+            var ctrlPts = getSegmentSplineControlPoints(seg);
+            if (ctrlPts.length >= 2) {
+              var dashGeo = new THREE.BufferGeometry().setFromPoints(ctrlPts);
+              var dashMat = new THREE.LineDashedMaterial({ color: 0x888888, dashSize: 0.15, gapSize: 0.1 });
+              var dashLine = new THREE.Line(dashGeo, dashMat);
+              dashLine.computeLineDistances();
+              dashLine.userData.type = 'segment';
+              dashLine.userData.id = seg.segment_id;
+              group.add(dashLine);
+            }
+          }
+          return group;
+        }
+      }
+
+      if (!useSpline) {
+        var mid = aVec.clone().add(bVec).multiplyScalar(0.5);
+        var len = aVec.distanceTo(bVec) || 0.001;
+        var dir = bVec.clone().sub(aVec).normalize();
+        group.position.copy(mid);
+        group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+        var glowColor = opts.glowColor !== undefined ? opts.glowColor : color;
+        var glowMat = new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: opts.glowOpacity !== undefined ? opts.glowOpacity : 0.13, depthWrite: false });
+        var glowMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12), glowMat);
+        glowMesh.userData.fixedSegWidth = true; glowMesh.userData.isGlow = true;
+        glowMesh.userData.segLen = len; glowMesh.userData.type = 'segment'; glowMesh.userData.id = seg.segment_id;
+        group.add(glowMesh);
+        var ribbonMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.25, roughness: 0.55 });
+        var ribbon = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12), ribbonMat);
+        ribbon.userData.fixedSegWidth = true; ribbon.userData.isGlow = false;
+        ribbon.userData.segLen = len; ribbon.userData.type = 'segment'; ribbon.userData.id = seg.segment_id;
+        group.add(ribbon);
+      }
       return group;
     }
     function makeNodeSphere(loc, color) {
@@ -1387,14 +1547,14 @@
     function avRender() {
       if (!avRenderer || !avCube) return;
       updateTriadVisibility(avCamera);
-      scaleFixedPx(avScene, avCamera, avRenderer);
+      scaleFixedPx(avScene, avCamera, avRenderer, avData);
       avRenderer.render(avScene, avCamera);
       avCube.draw();
       drawLabels(document.getElementById('av-label-canvas'), avCamera, avData.nodes || [], avData.segments || []);
     }
     function chRender() {
       if (!chRenderer || !chCube) return;
-      scaleFixedPx(chScene, chCamera, chRenderer);
+      scaleFixedPx(chScene, chCamera, chRenderer, null);
       chRenderer.render(chScene, chCamera);
       chCube.draw();
       drawLabels(document.getElementById('ch-label-canvas'), chCamera,
@@ -1419,7 +1579,8 @@
     // ══════════════════════════════════════════════════════════════════════════════
     //  MOUSE
     // ══════════════════════════════════════════════════════════════════════════════
-    function onCanvasMouseDown(e, orbit, ray, nodeObjects, getTriadObjects, getSegEndTriads, getSegRelTriads) {
+    function onCanvasMouseDown(e, orbit, ray, nodeObjects, getTriadObjects, getSegEndTriads, getSegRelTriads, getSplineCtrlTriads) {
+      getSplineCtrlTriads = getSplineCtrlTriads || function () { return []; };
       if (e.button !== 0 && e.button !== 2) return;
       e.preventDefault();
       var rect = e.currentTarget.getBoundingClientRect();
@@ -1492,6 +1653,32 @@
                 drag.axis = h.userData.axis; drag.segId = h.userData.segId; drag.segEnd = h.userData.segEnd;
                 drag.startLoc = endLocArr.slice(); drag.prevEndLoc = endLocArr.slice();
                 drag.startX = e.clientX; drag.startY = e.clientY;
+                drag.screenDir = computeScreenDir(axDir, originPos, orbit, avViewSize);
+                return;
+              }
+            }
+          }
+
+          // ── Spline control triads (below seg-end, above orbit) ─────────────────
+          var splineGroups = getSplineCtrlTriads(), splineMeshes = [];
+          splineGroups.forEach(function (entry) {
+            entry.group.traverse(function (c) {
+              if (c.isMesh && c.userData.triadType === 'spline-ctrl-translate') splineMeshes.push(c);
+            });
+          });
+          if (splineMeshes.length) {
+            var hits = ray.intersectObjects(splineMeshes, false);
+            if (hits.length) {
+              var h = hits[0].object;
+              var axDir = new THREE.Vector3(h.userData.axis === 'x' ? 1 : 0, h.userData.axis === 'y' ? 1 : 0, h.userData.axis === 'z' ? 1 : 0);
+              var seg = avData.segments.find(function (s) { return s.segment_id === h.userData.segId; });
+              if (seg && seg.spline_control_points && seg.spline_control_points[h.userData.ctrlIdx]) {
+                var a = seg.location_at_end_a;
+                var curOff = seg.spline_control_points[h.userData.ctrlIdx];
+                var originPos = new THREE.Vector3(a[0] + curOff[0], a[1] + curOff[1], a[2] + curOff[2]);
+                drag.mode = 'spline-ctrl-translate'; drag.wasTriad = true; drag.moved = false; drag.orbit = orbit;
+                drag.axis = h.userData.axis; drag.segId = h.userData.segId; drag.ctrlIdx = h.userData.ctrlIdx;
+                drag.startOffset = curOff.slice(); drag.startX = e.clientX; drag.startY = e.clientY;
                 drag.screenDir = computeScreenDir(axDir, originPos, orbit, avViewSize);
                 return;
               }
@@ -1601,6 +1788,21 @@
         avBuildScene(); avShowProps(); markDirty('available'); return;
       }
 
+      // ── Spline control point translate ───────────────────────────────────────
+      if (drag.mode === 'spline-ctrl-translate') {
+        var seg = avData.segments.find(function (s) { return s.segment_id === drag.segId; });
+        if (!seg || !seg.spline_control_points || drag.ctrlIdx === undefined || !drag.startOffset) return;
+        var axDir = new THREE.Vector3(drag.axis === 'x' ? 1 : 0, drag.axis === 'y' ? 1 : 0, drag.axis === 'z' ? 1 : 0);
+        var sz = avViewSize(), worldPerPx = (2 * avCamera.userData.halfSize) / (sz.h || 600);
+        var dm = new THREE.Vector2(e.clientX - drag.startX, e.clientY - drag.startY);
+        var delta = dm.dot(drag.screenDir) * worldPerPx;
+        var newOx = round3(drag.startOffset[0] + axDir.x * delta);
+        var newOy = round3(drag.startOffset[1] + axDir.y * delta);
+        var newOz = round3(drag.startOffset[2] + axDir.z * delta);
+        seg.spline_control_points[drag.ctrlIdx] = [newOx, newOy, newOz];
+        avBuildScene(); avShowProps(); markDirty('available'); return;
+      }
+
       // ── Node triad translate ─────────────────────────────────────────────────
       if (drag.mode === 'triad-translate') {
         var node = avData.nodes.find(function (n) { return n.node_id === drag.nodeId; });
@@ -1657,7 +1859,7 @@
       drag.axis = null; drag.nodeId = null; drag.startLoc = null; drag.screenDir = null;
       drag.rotAxis = null; drag.startQ = null; drag.v0x = 0; drag.v0y = 0;
       drag.nodeScrPx = null; drag.prevAngle = 0; drag.orbit = null;
-      drag.segId = null; drag.segEnd = null;
+      drag.segId = null; drag.segEnd = null; drag.ctrlIdx = null; drag.startOffset = null;
       drag.relPivot = null; drag.relStartVec = null; drag.relLen = 0; drag.relArcAxis = null;
       drag.prevEndLoc = null;
     });
@@ -1756,7 +1958,8 @@
         onCanvasMouseDown(e, avOrbit, avRay, avNodeMeshes,
           function () { return avArrows; },
           function () { return avSegEndTriads; },
-          function () { return avSegRelTriads; });
+          function () { return avSegRelTriads; },
+          function () { return avSplineCtrlTriads; });
       });
       attachZoom(document.getElementById('av-canvas'), avOrbit, avViewSize);
     }
@@ -1772,12 +1975,13 @@
       avArrows.forEach(function (a) { avScene.remove(a); }); avArrows = [];
       avSegEndTriads.forEach(function (e) { avScene.remove(e.group); }); avSegEndTriads = [];
       avSegRelTriads.forEach(function (e) { avScene.remove(e.group); }); avSegRelTriads = [];
+      avSplineCtrlTriads.forEach(function (e) { avScene.remove(e.group); }); avSplineCtrlTriads = [];
       avNodeMeshes = {}; avSegLines = {};
 
       (avData.segments || []).forEach(function (seg) {
         var isSel = avSelected && avSelected.type === 'segment' && avSelected.id === seg.segment_id;
         var col = isSel ? 0xffffff : C_SEG_DEFAULT;
-        var grp = makeSegLine(seg, col, { glowColor: col, glowOpacity: isSel ? 0.28 : 0.13 });
+        var grp = makeSegLine(seg, col, { glowColor: col, glowOpacity: isSel ? 0.28 : 0.13, useSpline: true, showControlPolyline: isSel });
         avSegLines[seg.segment_id] = grp; avScene.add(grp);
       });
       (avData.nodes || []).forEach(function (n) {
@@ -1803,6 +2007,14 @@
           // Relative triads
           var rA = buildSegRelTriad(seg, 'a'); avScene.add(rA); avSegRelTriads.push({ group: rA, end: 'a', segId: seg.segment_id });
           var rB = buildSegRelTriad(seg, 'b'); avScene.add(rB); avSegRelTriads.push({ group: rB, end: 'b', segId: seg.segment_id });
+          // Spline control triads (when segment has interior control points)
+          if (seg.spline_control_points && seg.spline_control_points.length > 0) {
+            for (var c = 0; c < seg.spline_control_points.length; c++) {
+              var st = buildSplineCtrlTriad(seg, c);
+              avScene.add(st);
+              avSplineCtrlTriads.push({ group: st, segId: seg.segment_id, ctrlIdx: c });
+            }
+          }
         }
       }
 
@@ -1860,6 +2072,7 @@
         avArrows.forEach(function (a) { avScene.remove(a); }); avArrows = [];
         avSegEndTriads.forEach(function (e) { avScene.remove(e.group); }); avSegEndTriads = [];
         avSegRelTriads.forEach(function (e) { avScene.remove(e.group); }); avSegRelTriads = [];
+        avSplineCtrlTriads.forEach(function (e) { avScene.remove(e.group); }); avSplineCtrlTriads = [];
         avRender(); return;
       }
       panel.classList.add('props-visible');
@@ -1969,7 +2182,20 @@
           + '</div>'
           + '<hr class="sep">'
           + '<div class="end-block"><div class="end-label" style="color:#ff8c00">▲ End A</div>' + xyzRow('psa', s.location_at_end_a) + pillHtml('a', !!lk.a, candA) + '</div>'
-          + '<div class="end-block" style="margin-top:8px"><div class="end-label" style="color:#00c8a0">▲ End B</div>' + xyzRow('psb', s.location_at_end_b) + pillHtml('b', !!lk.b, candB) + '</div>';
+          + '<div class="end-block" style="margin-top:8px"><div class="end-label" style="color:#00c8a0">▲ End B</div>' + xyzRow('psb', s.location_at_end_b) + pillHtml('b', !!lk.b, candB) + '</div>'
+          + '<hr class="sep"><div class="end-block"><div class="end-label" style="color:#888">Spline Control Points</div>'
+          + '<button type="button" id="spline-insert-near-a" style="margin-top:4px">＋ Insert near A</button>'
+          + (function () {
+            var arr = s.spline_control_points || [];
+            var html = '';
+            for (var i = 0; i < arr.length; i++) {
+              html += '<div class="row" style="align-items:center;margin-top:4px"><span style="font-size:11px;color:#666;min-width:24px">' + i + '</span>'
+                + '<button type="button" class="spline-insert-after" data-idx="' + i + '" style="flex:1">＋ Insert after</button>'
+                + '<button type="button" class="spline-remove danger" data-idx="' + i + '">✕ Remove</button></div>';
+            }
+            return html;
+          })()
+          + '<button type="button" id="spline-insert-near-b" style="margin-top:4px">＋ Insert near B</button></div>';
 
         // Recompute B from A + length * normalise(i,j,k), flood from B.
         // When called from ijk inputs, skip normalisation so length follows magnitude.
@@ -2073,6 +2299,46 @@
               followSet(s.segment_id, end, nid);
               avBuildScene(); avShowProps(); markDirty('available');
             }
+          });
+        });
+
+        if (!s.spline_control_points) s.spline_control_points = [];
+        var a = s.location_at_end_a, b = s.location_at_end_b;
+        function worldToOffset(wx, wy, wz) {
+          return [round3(wx - a[0]), round3(wy - a[1]), round3(wz - a[2])];
+        }
+        var elInsertA = document.getElementById('spline-insert-near-a');
+        if (elInsertA) elInsertA.addEventListener('click', function () {
+          var ctrl = s.spline_control_points;
+          var nextWorld = ctrl.length ? [a[0] + ctrl[0][0], a[1] + ctrl[0][1], a[2] + ctrl[0][2]] : [b[0], b[1], b[2]];
+          var mid = [(a[0] + nextWorld[0]) / 2, (a[1] + nextWorld[1]) / 2, (a[2] + nextWorld[2]) / 2];
+          s.spline_control_points.unshift(worldToOffset(mid[0], mid[1], mid[2]));
+          avBuildScene(); avShowProps(); markDirty('available');
+        });
+        var elInsertB = document.getElementById('spline-insert-near-b');
+        if (elInsertB) elInsertB.addEventListener('click', function () {
+          var ctrl = s.spline_control_points;
+          var prevWorld = ctrl.length ? [a[0] + ctrl[ctrl.length - 1][0], a[1] + ctrl[ctrl.length - 1][1], a[2] + ctrl[ctrl.length - 1][2]] : [a[0], a[1], a[2]];
+          var mid = [(prevWorld[0] + b[0]) / 2, (prevWorld[1] + b[1]) / 2, (prevWorld[2] + b[2]) / 2];
+          s.spline_control_points.push(worldToOffset(mid[0], mid[1], mid[2]));
+          avBuildScene(); avShowProps(); markDirty('available');
+        });
+        content.querySelectorAll('.spline-insert-after').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var i = parseInt(btn.dataset.idx, 10);
+            var ctrl = s.spline_control_points;
+            var cur = [a[0] + ctrl[i][0], a[1] + ctrl[i][1], a[2] + ctrl[i][2]];
+            var nextWorld = i + 1 < ctrl.length ? [a[0] + ctrl[i + 1][0], a[1] + ctrl[i + 1][1], a[2] + ctrl[i + 1][2]] : [b[0], b[1], b[2]];
+            var mid = [(cur[0] + nextWorld[0]) / 2, (cur[1] + nextWorld[1]) / 2, (cur[2] + nextWorld[2]) / 2];
+            s.spline_control_points.splice(i + 1, 0, worldToOffset(mid[0], mid[1], mid[2]));
+            avBuildScene(); avShowProps(); markDirty('available');
+          });
+        });
+        content.querySelectorAll('.spline-remove').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var i = parseInt(btn.dataset.idx, 10);
+            s.spline_control_points.splice(i, 1);
+            avBuildScene(); avShowProps(); markDirty('available');
           });
         });
       }
