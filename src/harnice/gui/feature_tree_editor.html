@@ -1,514 +1,733 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Harnice Feature Tree Editor</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <title>Harnice Feature Tree Editor</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-  :root {
-    --bg:        #1e1e1e;
-    --bg2:       #252526;
-    --bg3:       #2d2d2d;
-    --bg4:       #333;
-    --border:    #3c3c3c;
-    --text:      #d4d4d4;
-    --text-dim:  #888;
-    --accent:    #4ec9b0;
-    --accent2:   #569cd6;
-    --green:     #4caf50;
-    --red:       #f44336;
-    --orange:    #ce9178;
-    --toolbar-h: 42px;
-    --panel-w:   220px;
-    --output-h:  200px;
-  }
+        :root {
+            --bg: #1e1e1e;
+            --bg2: #252526;
+            --bg3: #2d2d2d;
+            --bg4: #333;
+            --border: #3c3c3c;
+            --text: #d4d4d4;
+            --text-dim: #888;
+            --accent: #4ec9b0;
+            --accent2: #569cd6;
+            --green: #4caf50;
+            --red: #f44336;
+            --orange: #ce9178;
+            --toolbar-h: 42px;
+            --panel-w: 220px;
+            --output-h: 200px;
+        }
 
-  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; }
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 13px;
+        }
 
-  /* ── Layout ── */
-  #app { display: flex; flex-direction: column; height: 100%; }
+        /* ── Layout ── */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
 
-  #toolbar {
-    display: flex; align-items: center; gap: 6px;
-    height: var(--toolbar-h); min-height: var(--toolbar-h);
-    background: var(--bg2); border-bottom: 1px solid var(--border);
-    padding: 0 10px; flex-shrink: 0; overflow-x: auto;
-  }
+        #toolbar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            height: var(--toolbar-h);
+            min-height: var(--toolbar-h);
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 0 10px;
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
 
-  #main { display: flex; flex: 1; overflow: hidden; }
+        #main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
 
-  #left-panel {
-    width: var(--panel-w); min-width: var(--panel-w);
-    background: var(--bg2); border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden;
-    flex-shrink: 0;
-  }
+        #left-panel {
+            width: var(--panel-w);
+            min-width: var(--panel-w);
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
 
-  #editor-output { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        #editor-output {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
 
-  #editor-wrap { flex: 1; overflow: hidden; position: relative; }
+        #editor-wrap {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
 
-  #output-divider {
-    height: 5px; background: var(--border); cursor: row-resize;
-    flex-shrink: 0;
-  }
-  #output-divider:hover { background: var(--accent2); }
+        #output-divider {
+            height: 5px;
+            background: var(--border);
+            cursor: row-resize;
+            flex-shrink: 0;
+        }
 
-  #output-panel {
-    height: var(--output-h); min-height: 60px;
-    background: #111; border-top: 1px solid var(--border);
-    overflow-y: auto; padding: 6px 10px;
-    font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 12px;
-    flex-shrink: 0;
-  }
+        #output-divider:hover {
+            background: var(--accent2);
+        }
 
-  /* ── Toolbar elements ── */
-  .tb-sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
-  .tb-spacer { flex: 1; }
+        #output-panel {
+            height: var(--output-h);
+            min-height: 60px;
+            background: #111;
+            border-top: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 6px 10px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
 
-  #pn-label {
-    color: var(--text-dim); font-size: 12px; white-space: nowrap;
-    padding: 0 8px; flex-shrink: 0;
-  }
+        /* ── Toolbar elements ── */
+        .tb-sep {
+            width: 1px;
+            height: 22px;
+            background: var(--border);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
 
-  #save-indicator {
-    font-size: 11px; color: var(--text-dim); white-space: nowrap; flex-shrink: 0;
-  }
-  #save-indicator.unsaved { color: var(--orange); }
-  #save-indicator.saved   { color: var(--green); }
+        .tb-spacer {
+            flex: 1;
+        }
 
-  /* ── Buttons ── */
-  .btn {
-    background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text); border-radius: 4px; padding: 4px 10px;
-    cursor: pointer; font-size: 12px; white-space: nowrap; flex-shrink: 0;
-  }
-  .btn:hover { background: var(--bg4); }
-  .btn:active { background: #444; }
+        #pn-label {
+            color: var(--text-dim);
+            font-size: 12px;
+            white-space: nowrap;
+            padding: 0 8px;
+            flex-shrink: 0;
+        }
 
-  #run-btn { font-weight: 600; min-width: 90px; text-align: center; }
-  #run-btn.idle    { border-color: #555; }
-  #run-btn.running { border-color: var(--orange); color: var(--orange); }
-  #run-btn.success { border-color: var(--green);  color: var(--green); }
-  #run-btn.error   { border-color: var(--red);    color: var(--red); }
+        #save-indicator {
+            font-size: 11px;
+            color: var(--text-dim);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
 
-  /* ── Dropdown menus ── */
-  .dropdown { position: relative; flex-shrink: 0; }
+        #save-indicator.unsaved {
+            color: var(--orange);
+        }
 
-  .dropdown-menu {
-    display: none; position: fixed; z-index: 1000;
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 4px; min-width: 240px; max-height: 400px;
-    overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    font-size: 12px;
-  }
-  .dropdown-menu.open { display: block; }
+        #save-indicator.saved {
+            color: var(--green);
+        }
 
-  .dropdown-item {
-    padding: 5px 12px; cursor: pointer; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
-  }
-  .dropdown-item:hover { background: var(--bg4); }
+        /* ── Buttons ── */
+        .btn {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
 
-  .dropdown-item .fn-name  { color: var(--accent); }
-  .dropdown-item .fn-args  { color: var(--text-dim); }
-  .dropdown-item .fn-doc   { display: block; color: #666; font-size: 11px; margin-top: 1px; }
+        .btn:hover {
+            background: var(--bg4);
+        }
 
-  /* ── Left panel ── */
-  #panel-header {
-    padding: 8px 10px 6px; font-size: 11px; font-weight: 600;
-    color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--border);
-  }
+        .btn:active {
+            background: #444;
+        }
 
-  #open-project-btn { margin: 10px; }
+        #run-btn {
+            font-weight: 600;
+            min-width: 90px;
+            text-align: center;
+        }
 
-  #project-list { flex: 1; overflow-y: auto; }
+        #run-btn.idle {
+            border-color: #555;
+        }
 
-  .project-item {
-    padding: 6px 10px; cursor: pointer; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 6px;
-    font-size: 12px; line-height: 1.3;
-  }
-  .project-item:hover { background: var(--bg3); }
-  .project-item.active { background: var(--bg3); border-left: 2px solid var(--accent); padding-left: 8px; }
+        #run-btn.running {
+            border-color: var(--orange);
+            color: var(--orange);
+        }
 
-  .project-item-text { flex: 1; overflow: hidden; }
-  .project-pn  { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .project-rev { color: var(--text-dim); font-size: 11px; }
+        #run-btn.success {
+            border-color: var(--green);
+            color: var(--green);
+        }
 
-  .project-remove {
-    color: var(--text-dim); font-size: 14px; line-height: 1;
-    padding: 2px 4px; border-radius: 3px; flex-shrink: 0;
-    visibility: hidden;
-  }
-  .project-item:hover .project-remove { visibility: visible; }
-  .project-remove:hover { color: var(--red); background: rgba(244,67,54,0.15); }
+        #run-btn.error {
+            border-color: var(--red);
+            color: var(--red);
+        }
 
-  /* ── Output panel ── */
-  .out-line { display: block; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
-  .out-line.stderr { color: var(--orange); }
-  .out-banner { display: block; margin-top: 6px; padding: 3px 8px; border-radius: 3px; font-weight: 600; }
-  .out-banner.success { background: rgba(76,175,80,0.2); color: var(--green); }
-  .out-banner.error   { background: rgba(244,67,54,0.2); color: var(--red); }
+        /* ── Dropdown menus ── */
+        .dropdown {
+            position: relative;
+            flex-shrink: 0;
+        }
 
-  /* ── CodeMirror overrides ── */
-  .cm-editor { height: 100%; font-size: 13px; }
-  .cm-editor.cm-focused { outline: none; }
-  .cm-scroller { overflow: auto !important; }
-</style>
+        .dropdown-menu {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            min-width: 240px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            font-size: 12px;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 5px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg4);
+        }
+
+        .dropdown-item .fn-name {
+            color: var(--accent);
+        }
+
+        .dropdown-item .fn-args {
+            color: var(--text-dim);
+        }
+
+        .dropdown-item .fn-doc {
+            display: block;
+            color: #666;
+            font-size: 11px;
+            margin-top: 1px;
+        }
+
+        /* ── Left panel ── */
+        #panel-header {
+            padding: 8px 10px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #open-project-btn {
+            margin: 10px;
+        }
+
+        #project-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .project-item {
+            padding: 6px 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+
+        .project-item:hover {
+            background: var(--bg3);
+        }
+
+        .project-item.active {
+            background: var(--bg3);
+            border-left: 2px solid var(--accent);
+            padding-left: 8px;
+        }
+
+        .project-item-text {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .project-pn {
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .project-rev {
+            color: var(--text-dim);
+            font-size: 11px;
+        }
+
+        .project-remove {
+            color: var(--text-dim);
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 4px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            visibility: hidden;
+        }
+
+        .project-item:hover .project-remove {
+            visibility: visible;
+        }
+
+        .project-remove:hover {
+            color: var(--red);
+            background: rgba(244, 67, 54, 0.15);
+        }
+
+        /* ── Output panel ── */
+        .out-line {
+            display: block;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .out-line.stderr {
+            color: var(--orange);
+        }
+
+        .out-banner {
+            display: block;
+            margin-top: 6px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .out-banner.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--green);
+        }
+
+        .out-banner.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--red);
+        }
+
+        /* ── CodeMirror overrides ── */
+        .cm-editor {
+            height: 100%;
+            font-size: 13px;
+        }
+
+        .cm-editor.cm-focused {
+            outline: none;
+        }
+
+        .cm-scroller {
+            overflow: auto !important;
+        }
+    </style>
 </head>
+
 <body>
-<div id="app">
+    <div id="app">
 
-  <!-- Toolbar -->
-  <div id="toolbar">
-    <div id="dropdowns"></div>
-    <div class="tb-sep"></div>
-    <button id="run-btn" class="btn idle" onclick="runCode()">▶ Run</button>
-    <div class="tb-sep"></div>
-    <span id="save-indicator">—</span>
-    <div class="tb-spacer"></div>
-    <span id="pn-label">—</span>
-  </div>
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <div id="dropdowns"></div>
+            <div class="tb-sep"></div>
+            <button id="run-btn" class="btn idle" onclick="runCode()">▶ Run</button>
+            <div class="tb-sep"></div>
+            <span id="save-indicator">—</span>
+            <div class="tb-spacer"></div>
+            <span id="pn-label">—</span>
+        </div>
 
-  <!-- Main -->
-  <div id="main">
+        <!-- Main -->
+        <div id="main">
 
-    <!-- Left panel -->
-    <div id="left-panel">
-      <div id="panel-header">Projects</div>
-      <button id="open-project-btn" class="btn" onclick="browseProject()">Open project…</button>
-      <div id="project-list"></div>
+            <!-- Left panel -->
+            <div id="left-panel">
+                <div id="panel-header">Projects</div>
+                <button id="open-project-btn" class="btn" onclick="browseProject()">Open project…</button>
+                <div id="project-list"></div>
+            </div>
+
+            <!-- Editor + output -->
+            <div id="editor-output">
+                <div id="editor-wrap"></div>
+                <div id="output-divider"></div>
+                <div id="output-panel"></div>
+            </div>
+
+        </div>
     </div>
 
-    <!-- Editor + output -->
-    <div id="editor-output">
-      <div id="editor-wrap"></div>
-      <div id="output-divider"></div>
-      <div id="output-panel"></div>
-    </div>
+    <!-- CodeMirror 6 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.0.1/codemirror.min.js"></script>
+    <script type="module">
+        // ---------------------------------------------------------------------------
+        // CodeMirror 6 via ESM CDN
+        // ---------------------------------------------------------------------------
+        import { EditorState, EditorView, basicSetup } from "https://esm.sh/@codemirror/basic-setup@0.20.0";
+        import { python } from "https://esm.sh/@codemirror/lang-python@6.1.6";
+        import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.2";
+        import { indentWithTab } from "https://esm.sh/@codemirror/commands@6.7.1";
+        import { keymap } from "https://esm.sh/@codemirror/view@6.36.3";
 
-  </div>
-</div>
+        // ---------------------------------------------------------------------------
+        // State
+        // ---------------------------------------------------------------------------
+        let view = null;           // CodeMirror EditorView
+        let saveTimer = null;
+        let pollTimer = null;
+        let isRunning = false;
+        let activePath = null;     // active rev_folder on server
+        let functionIndex = [];    // from /api/function_index
+        let openDropdown = null;   // currently visible dropdown menu element
 
-<!-- CodeMirror 6 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.0.1/codemirror.min.js"></script>
-<script type="module">
-// ---------------------------------------------------------------------------
-// CodeMirror 6 via ESM CDN
-// ---------------------------------------------------------------------------
-import { EditorState, EditorView, basicSetup } from "https://esm.sh/@codemirror/basic-setup@0.20.0";
-import { python } from "https://esm.sh/@codemirror/lang-python@6.1.6";
-import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.2";
-import { indentWithTab } from "https://esm.sh/@codemirror/commands@6.7.1";
-import { keymap } from "https://esm.sh/@codemirror/view@6.36.3";
+        // ---------------------------------------------------------------------------
+        // Init
+        // ---------------------------------------------------------------------------
+        async function init() {
+            await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
+            await loadCode();
+            startOutputPoll();
+        }
 
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
-let view = null;           // CodeMirror EditorView
-let saveTimer = null;
-let pollTimer = null;
-let isRunning = false;
-let activePath = null;     // active rev_folder on server
-let functionIndex = [];    // from /api/function_index
-let openDropdown = null;   // currently visible dropdown menu element
+        // ---------------------------------------------------------------------------
+        // CodeMirror setup
+        // ---------------------------------------------------------------------------
+        function initEditor(code) {
+            if (view) view.destroy();
 
-// ---------------------------------------------------------------------------
-// Init
-// ---------------------------------------------------------------------------
-async function init() {
-  await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
-  await loadCode();
-  startOutputPoll();
-}
+            const state = EditorState.create({
+                doc: code,
+                extensions: [
+                    basicSetup,
+                    python(),
+                    oneDark,
+                    keymap.of([indentWithTab]),
+                    EditorView.updateListener.of(update => {
+                        if (update.docChanged) onCodeChanged();
+                    }),
+                ],
+            });
 
-// ---------------------------------------------------------------------------
-// CodeMirror setup
-// ---------------------------------------------------------------------------
-function initEditor(code) {
-  if (view) view.destroy();
+            view = new EditorView({
+                state,
+                parent: document.getElementById("editor-wrap"),
+            });
 
-  const state = EditorState.create({
-    doc: code,
-    extensions: [
-      basicSetup,
-      python(),
-      oneDark,
-      keymap.of([indentWithTab]),
-      EditorView.updateListener.of(update => {
-        if (update.docChanged) onCodeChanged();
-      }),
-    ],
-  });
+            // Make editor fill its container
+            view.dom.style.height = "100%";
+        }
 
-  view = new EditorView({
-    state,
-    parent: document.getElementById("editor-wrap"),
-  });
+        // ---------------------------------------------------------------------------
+        // API helpers
+        // ---------------------------------------------------------------------------
+        async function api(method, path, body) {
+            const opts = { method, headers: {} };
+            if (body !== undefined) {
+                opts.body = JSON.stringify(body);
+                opts.headers["Content-Type"] = "application/json";
+            }
+            const r = await fetch(path, opts);
+            return r.json();
+        }
 
-  // Make editor fill its container
-  view.dom.style.height = "100%";
-}
+        // ---------------------------------------------------------------------------
+        // Info / project
+        // ---------------------------------------------------------------------------
+        async function loadInfo() {
+            const d = await api("GET", "/api/info");
+            updatePnLabel(d.part_number, d.rev);
+            activePath = d.rev_folder;
+        }
 
-// ---------------------------------------------------------------------------
-// API helpers
-// ---------------------------------------------------------------------------
-async function api(method, path, body) {
-  const opts = { method, headers: {} };
-  if (body !== undefined) {
-    opts.body = JSON.stringify(body);
-    opts.headers["Content-Type"] = "application/json";
-  }
-  const r = await fetch(path, opts);
-  return r.json();
-}
+        function updatePnLabel(pn, rev) {
+            const el = document.getElementById("pn-label");
+            el.textContent = pn && rev ? `${pn} · ${rev}` : "No project";
+        }
 
-// ---------------------------------------------------------------------------
-// Info / project
-// ---------------------------------------------------------------------------
-async function loadInfo() {
-  const d = await api("GET", "/api/info");
-  updatePnLabel(d.part_number, d.rev);
-  activePath = d.rev_folder;
-}
+        // ---------------------------------------------------------------------------
+        // Code load / save
+        // ---------------------------------------------------------------------------
+        async function loadCode() {
+            const d = await api("GET", "/api/code");
+            initEditor(d.code || "");
+            setSaveIndicator("saved");
+        }
 
-function updatePnLabel(pn, rev) {
-  const el = document.getElementById("pn-label");
-  el.textContent = pn && rev ? `${pn} · ${rev}` : "No project";
-}
+        function onCodeChanged() {
+            setSaveIndicator("unsaved");
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveCode, 800);
+        }
 
-// ---------------------------------------------------------------------------
-// Code load / save
-// ---------------------------------------------------------------------------
-async function loadCode() {
-  const d = await api("GET", "/api/code");
-  initEditor(d.code || "");
-  setSaveIndicator("saved");
-}
+        async function saveCode() {
+            if (!view) return;
+            const code = view.state.doc.toString();
+            try {
+                const res = await api("POST", "/api/code", { code });
+                if (res && res.ok) {
+                    setSaveIndicator("saved");
+                } else {
+                    setSaveIndicator("unsaved");
+                }
+            } catch (e) {
+                setSaveIndicator("unsaved");
+            }
+        }
 
-function onCodeChanged() {
-  setSaveIndicator("unsaved");
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveCode, 800);
-}
+        function setSaveIndicator(state) {
+            const el = document.getElementById("save-indicator");
+            el.className = state;
+            el.textContent = state === "saved" ? "Saved" : "Unsaved";
+        }
 
-async function saveCode() {
-  if (!view) return;
-  const code = view.state.doc.toString();
-  await api("POST", "/api/code", { code });
-  setSaveIndicator("saved");
-}
+        // ---------------------------------------------------------------------------
+        // Function index + dropdowns
+        // ---------------------------------------------------------------------------
+        async function loadFunctionIndex() {
+            const d = await api("GET", "/api/function_index");
+            if (d.error) { console.warn("function_index:", d.error); return; }
+            functionIndex = Array.isArray(d) ? d : [];
+            buildDropdowns();
+        }
 
-function setSaveIndicator(state) {
-  const el = document.getElementById("save-indicator");
-  el.className = state;
-  el.textContent = state === "saved" ? "Saved" : "Unsaved";
-}
+        function buildDropdowns() {
+            // Group by module
+            const modules = {};
+            for (const fn of functionIndex) {
+                if (!modules[fn.module]) modules[fn.module] = [];
+                modules[fn.module].push(fn);
+            }
 
-// ---------------------------------------------------------------------------
-// Function index + dropdowns
-// ---------------------------------------------------------------------------
-async function loadFunctionIndex() {
-  const d = await api("GET", "/api/function_index");
-  if (d.error) { console.warn("function_index:", d.error); return; }
-  functionIndex = Array.isArray(d) ? d : [];
-  buildDropdowns();
-}
+            const container = document.getElementById("dropdowns");
+            container.innerHTML = "";
 
-function buildDropdowns() {
-  // Group by module
-  const modules = {};
-  for (const fn of functionIndex) {
-    if (!modules[fn.module]) modules[fn.module] = [];
-    modules[fn.module].push(fn);
-  }
+            for (const [mod, fns] of Object.entries(modules)) {
+                const wrap = document.createElement("div");
+                wrap.className = "dropdown";
 
-  const container = document.getElementById("dropdowns");
-  container.innerHTML = "";
+                const btn = document.createElement("button");
+                btn.className = "btn";
+                btn.textContent = mod;
+                btn.onclick = (e) => toggleDropdown(e, menu);
+                wrap.appendChild(btn);
 
-  for (const [mod, fns] of Object.entries(modules)) {
-    const wrap = document.createElement("div");
-    wrap.className = "dropdown";
+                const menu = document.createElement("div");
+                menu.className = "dropdown-menu";
+                for (const fn of fns) {
+                    const item = document.createElement("div");
+                    item.className = "dropdown-item";
+                    const sig = fn.args.map(a => a.name).join(", ");
+                    item.innerHTML = `<span class="fn-name">${fn.function}</span><span class="fn-args">(${sig})</span>${fn.docstring ? `<span class="fn-doc">${fn.docstring}</span>` : ""}`;
+                    item.onclick = () => { insertSnippet(fn); closeAllDropdowns(); };
+                    menu.appendChild(item);
+                }
+                wrap.appendChild(menu);
+                container.appendChild(wrap);
+            }
+        }
 
-    const btn = document.createElement("button");
-    btn.className = "btn";
-    btn.textContent = mod;
-    btn.onclick = (e) => toggleDropdown(e, menu);
-    wrap.appendChild(btn);
+        function toggleDropdown(e, menu) {
+            e.stopPropagation();
+            const isOpen = menu.classList.contains("open");
+            closeAllDropdowns();
+            if (!isOpen) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                menu.style.top = `${rect.bottom + 2}px`;
+                menu.style.left = `${rect.left}px`;
+                menu.classList.add("open");
+                openDropdown = menu;
+            }
+        }
 
-    const menu = document.createElement("div");
-    menu.className = "dropdown-menu";
-    for (const fn of fns) {
-      const item = document.createElement("div");
-      item.className = "dropdown-item";
-      const sig = fn.args.map(a => a.name).join(", ");
-      item.innerHTML = `<span class="fn-name">${fn.function}</span><span class="fn-args">(${sig})</span>${fn.docstring ? `<span class="fn-doc">${fn.docstring}</span>` : ""}`;
-      item.onclick = () => { insertSnippet(fn); closeAllDropdowns(); };
-      menu.appendChild(item);
-    }
-    wrap.appendChild(menu);
-    container.appendChild(wrap);
-  }
-}
+        function closeAllDropdowns() {
+            document.querySelectorAll(".dropdown-menu.open").forEach(m => m.classList.remove("open"));
+            openDropdown = null;
+        }
 
-function toggleDropdown(e, menu) {
-  e.stopPropagation();
-  const isOpen = menu.classList.contains("open");
-  closeAllDropdowns();
-  if (!isOpen) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    menu.style.top = `${rect.bottom + 2}px`;
-    menu.style.left = `${rect.left}px`;
-    menu.classList.add("open");
-    openDropdown = menu;
-  }
-}
+        document.addEventListener("click", closeAllDropdowns);
 
-function closeAllDropdowns() {
-  document.querySelectorAll(".dropdown-menu.open").forEach(m => m.classList.remove("open"));
-  openDropdown = null;
-}
+        // ---------------------------------------------------------------------------
+        // Snippet insertion
+        // ---------------------------------------------------------------------------
+        function insertSnippet(fn) {
+            if (!view) return;
 
-document.addEventListener("click", closeAllDropdowns);
+            const lines = [];
 
-// ---------------------------------------------------------------------------
-// Snippet insertion
-// ---------------------------------------------------------------------------
-function insertSnippet(fn) {
-  if (!view) return;
+            if (fn.docstring) {
+                lines.push(`# ${fn.docstring}`);
+            }
 
-  const lines = [];
+            if (fn.args.length === 0) {
+                lines.push(`${fn.module}.${fn.function}()`);
+            } else {
+                lines.push(`${fn.module}.${fn.function}(`);
+                for (const arg of fn.args) {
+                    const ann = arg.annotation ? `  # ${arg.annotation}` : "";
+                    if (arg.name.startsWith("**") || arg.name.startsWith("*")) {
+                        // variadic — skip named kwarg style, insert as comment hint
+                        lines.push(`    # ${arg.name}${ann}`);
+                    } else {
+                        lines.push(`    ${arg.name}=${arg.placeholder},${ann}`);
+                    }
+                }
+                lines.push(`)`);
+            }
 
-  if (fn.docstring) {
-    lines.push(`# ${fn.docstring}`);
-  }
+            const snippet = lines.join("\n");
+            const cursor = view.state.selection.main.head;
+            const line = view.state.doc.lineAt(cursor);
 
-  if (fn.args.length === 0) {
-    lines.push(`${fn.module}.${fn.function}()`);
-  } else {
-    lines.push(`${fn.module}.${fn.function}(`);
-    for (const arg of fn.args) {
-      const ann = arg.annotation ? `  # ${arg.annotation}` : "";
-      if (arg.name.startsWith("**") || arg.name.startsWith("*")) {
-        // variadic — skip named kwarg style, insert as comment hint
-        lines.push(`    # ${arg.name}${ann}`);
-      } else {
-        lines.push(`    ${arg.name}=${arg.placeholder},${ann}`);
-      }
-    }
-    lines.push(`)`);
-  }
+            // Insert at start of current line if cursor is at col 0, else insert after current line
+            const insertPos = line.from === cursor ? cursor : line.to;
+            const prefix = insertPos === cursor ? "" : "\n";
 
-  const snippet = lines.join("\n");
-  const cursor = view.state.selection.main.head;
-  const line = view.state.doc.lineAt(cursor);
+            view.dispatch({
+                changes: { from: insertPos, insert: prefix + snippet },
+                selection: { anchor: insertPos + prefix.length + snippet.length },
+            });
+            view.focus();
+        }
 
-  // Insert at start of current line if cursor is at col 0, else insert after current line
-  const insertPos = line.from === cursor ? cursor : line.to;
-  const prefix = insertPos === cursor ? "" : "\n";
+        // ---------------------------------------------------------------------------
+        // Run
+        // ---------------------------------------------------------------------------
+        window.runCode = async function () {
+            if (isRunning) return;
 
-  view.dispatch({
-    changes: { from: insertPos, insert: prefix + snippet },
-    selection: { anchor: insertPos + prefix.length + snippet.length },
-  });
-  view.focus();
-}
+            // Flush any pending save first
+            clearTimeout(saveTimer);
+            await saveCode();
 
-// ---------------------------------------------------------------------------
-// Run
-// ---------------------------------------------------------------------------
-window.runCode = async function() {
-  if (isRunning) return;
+            isRunning = true;
+            setRunBtn("running");
+            clearOutput();
+            appendOutput({ text: "── running harnice -r ──", stream: "stdout" });
 
-  // Flush any pending save first
-  clearTimeout(saveTimer);
-  await saveCode();
+            await api("POST", "/api/run");
+        };
 
-  isRunning = true;
-  setRunBtn("running");
-  clearOutput();
-  appendOutput({ text: "── running harnice -r ──", stream: "stdout" });
+        function setRunBtn(state) {
+            const btn = document.getElementById("run-btn");
+            btn.className = `btn ${state}`;
+            btn.textContent = state === "running" ? "■ Running…" : "▶ Run";
+        }
 
-  await api("POST", "/api/run");
-};
+        // ---------------------------------------------------------------------------
+        // Output polling
+        // ---------------------------------------------------------------------------
+        function startOutputPoll() {
+            pollTimer = setInterval(pollOutput, 250);
+        }
 
-function setRunBtn(state) {
-  const btn = document.getElementById("run-btn");
-  btn.className = `btn ${state}`;
-  btn.textContent = state === "running" ? "■ Running…" : "▶ Run";
-}
+        async function pollOutput() {
+            const d = await api("GET", "/api/run_output");
+            for (const line of d.lines) appendOutput(line);
+            if (d.done && isRunning) {
+                isRunning = false;
+                if (d.exit_code === 0) {
+                    appendBanner("success", "✓ Completed");
+                    setRunBtn("success");
+                } else {
+                    appendBanner("error", `✗ Exited with code ${d.exit_code}`);
+                    setRunBtn("error");
+                }
+                setTimeout(() => setRunBtn("idle"), 4000);
+            }
+        }
 
-// ---------------------------------------------------------------------------
-// Output polling
-// ---------------------------------------------------------------------------
-function startOutputPoll() {
-  pollTimer = setInterval(pollOutput, 250);
-}
+        function appendOutput(line) {
+            const panel = document.getElementById("output-panel");
+            const span = document.createElement("span");
+            span.className = `out-line ${line.stream === "stderr" ? "stderr" : ""}`;
+            span.textContent = line.text;
+            panel.appendChild(span);
+            panel.appendChild(document.createElement("br"));
+            panel.scrollTop = panel.scrollHeight;
+        }
 
-async function pollOutput() {
-  const d = await api("GET", "/api/run_output");
-  for (const line of d.lines) appendOutput(line);
-  if (d.done && isRunning) {
-    isRunning = false;
-    if (d.exit_code === 0) {
-      appendBanner("success", "✓ Completed");
-      setRunBtn("success");
-    } else {
-      appendBanner("error", `✗ Exited with code ${d.exit_code}`);
-      setRunBtn("error");
-    }
-    setTimeout(() => setRunBtn("idle"), 4000);
-  }
-}
+        function appendBanner(type, text) {
+            const panel = document.getElementById("output-panel");
+            const span = document.createElement("span");
+            span.className = `out-banner ${type}`;
+            span.textContent = text;
+            panel.appendChild(span);
+            panel.scrollTop = panel.scrollHeight;
+        }
 
-function appendOutput(line) {
-  const panel = document.getElementById("output-panel");
-  const span = document.createElement("span");
-  span.className = `out-line ${line.stream === "stderr" ? "stderr" : ""}`;
-  span.textContent = line.text;
-  panel.appendChild(span);
-  panel.appendChild(document.createElement("br"));
-  panel.scrollTop = panel.scrollHeight;
-}
+        function clearOutput() {
+            document.getElementById("output-panel").innerHTML = "";
+        }
 
-function appendBanner(type, text) {
-  const panel = document.getElementById("output-panel");
-  const span = document.createElement("span");
-  span.className = `out-banner ${type}`;
-  span.textContent = text;
-  panel.appendChild(span);
-  panel.scrollTop = panel.scrollHeight;
-}
+        // ---------------------------------------------------------------------------
+        // Project browser
+        // ---------------------------------------------------------------------------
+        async function loadRecentProjects() {
+            const d = await api("GET", "/api/recent_projects");
+            renderProjectList(d.projects || []);
+        }
 
-function clearOutput() {
-  document.getElementById("output-panel").innerHTML = "";
-}
+        function renderProjectList(projects) {
+            const list = document.getElementById("project-list");
+            list.innerHTML = "";
 
-// ---------------------------------------------------------------------------
-// Project browser
-// ---------------------------------------------------------------------------
-async function loadRecentProjects() {
-  const d = await api("GET", "/api/recent_projects");
-  renderProjectList(d.projects || []);
-}
+            for (const folder of projects) {
+                const parts = folder.replace(/\\/g, "/").split("/");
+                const revName = parts[parts.length - 1];       // e.g. 0000250810-S01-rev9
+                const pnName = parts[parts.length - 2] || ""; // e.g. 0000250810-S01
+                const revPart = revName.startsWith(pnName + "-") ? revName.slice(pnName.length + 1) : revName;
 
-function renderProjectList(projects) {
-  const list = document.getElementById("project-list");
-  list.innerHTML = "";
+                const item = document.createElement("div");
+                item.className = "project-item" + (folder === activePath ? " active" : "");
 
-  for (const folder of projects) {
-    const parts = folder.replace(/\\/g, "/").split("/");
-    const revName = parts[parts.length - 1];       // e.g. 0000250810-S01-rev9
-    const pnName  = parts[parts.length - 2] || ""; // e.g. 0000250810-S01
-    const revPart = revName.startsWith(pnName + "-") ? revName.slice(pnName.length + 1) : revName;
-
-    const item = document.createElement("div");
-    item.className = "project-item" + (folder === activePath ? " active" : "");
-
-    item.innerHTML = `
+                item.innerHTML = `
       <div class="project-item-text">
         <div class="project-pn">${pnName || revName}</div>
         <div class="project-rev">${revPart}</div>
@@ -516,59 +735,63 @@ function renderProjectList(projects) {
       <span class="project-remove" title="Remove">✕</span>
     `;
 
-    item.querySelector(".project-remove").onclick = async (e) => {
-      e.stopPropagation();
-      await api("POST", "/api/remove_project", { rev_folder: folder });
-      await loadRecentProjects();
-    };
+                item.querySelector(".project-remove").onclick = async (e) => {
+                    e.stopPropagation();
+                    await api("POST", "/api/remove_project", { rev_folder: folder });
+                    await loadRecentProjects();
+                };
 
-    item.onclick = () => switchProject(folder);
-    list.appendChild(item);
-  }
-}
+                item.onclick = () => switchProject(folder);
+                list.appendChild(item);
+            }
+        }
 
-window.browseProject = async function() {
-  const d = await api("GET", "/api/browse");
-  if (d.path) await switchProject(d.path);
-};
+        window.browseProject = async function () {
+            const d = await api("GET", "/api/browse");
+            if (d.path) await switchProject(d.path);
+        };
 
-async function switchProject(folder) {
-  const d = await api("POST", "/api/switch", { rev_folder: folder });
-  if (!d.ok) { alert("Could not switch project: " + (d.error || "unknown error")); return; }
-  activePath = folder;
-  updatePnLabel(d.part_number, d.rev);
-  await loadCode();
-  await loadRecentProjects();
-}
+        async function switchProject(folder) {
+            // Flush any pending save for the current project before switching
+            clearTimeout(saveTimer);
+            await saveCode();
+            const d = await api("POST", "/api/switch", { rev_folder: folder });
+            if (!d.ok) { alert("Could not switch project: " + (d.error || "unknown error")); return; }
+            activePath = folder;
+            updatePnLabel(d.part_number, d.rev);
+            await loadCode();
+            await loadRecentProjects();
+        }
 
-// ---------------------------------------------------------------------------
-// Output panel resize (drag divider)
-// ---------------------------------------------------------------------------
-const divider = document.getElementById("output-divider");
-const outputPanel = document.getElementById("output-panel");
-let dragging = false, startY = 0, startH = 0;
+        // ---------------------------------------------------------------------------
+        // Output panel resize (drag divider)
+        // ---------------------------------------------------------------------------
+        const divider = document.getElementById("output-divider");
+        const outputPanel = document.getElementById("output-panel");
+        let dragging = false, startY = 0, startH = 0;
 
-divider.addEventListener("mousedown", e => {
-  dragging = true;
-  startY = e.clientY;
-  startH = outputPanel.offsetHeight;
-  document.body.style.userSelect = "none";
-});
-document.addEventListener("mousemove", e => {
-  if (!dragging) return;
-  const delta = startY - e.clientY;
-  const newH = Math.max(60, Math.min(startH + delta, window.innerHeight - 120));
-  outputPanel.style.height = newH + "px";
-});
-document.addEventListener("mouseup", () => {
-  dragging = false;
-  document.body.style.userSelect = "";
-});
+        divider.addEventListener("mousedown", e => {
+            dragging = true;
+            startY = e.clientY;
+            startH = outputPanel.offsetHeight;
+            document.body.style.userSelect = "none";
+        });
+        document.addEventListener("mousemove", e => {
+            if (!dragging) return;
+            const delta = startY - e.clientY;
+            const newH = Math.max(60, Math.min(startH + delta, window.innerHeight - 120));
+            outputPanel.style.height = newH + "px";
+        });
+        document.addEventListener("mouseup", () => {
+            dragging = false;
+            document.body.style.userSelect = "";
+        });
 
-// ---------------------------------------------------------------------------
-// Start
-// ---------------------------------------------------------------------------
-init();
-</script>
+        // ---------------------------------------------------------------------------
+        // Start
+        // ---------------------------------------------------------------------------
+        init();
+    </script>
 </body>
+
 </html>

@@ -30,8 +30,14 @@ _EDITOR_HTML = _GUI_DIR / "feature_tree_editor.html"
 
 
 def _gui_state_path() -> Path:
-    """gui_state.json sits at the harnice project root (two levels above gui/)."""
-    return _GUI_DIR.parents[1] / "gui_state.json"
+    """
+    Path to feature_tree_editor_state.json.
+
+    Stored at the harnice project root alongside gui_layout.json (and separate
+    from any launcher_state.json), which is three levels above this gui/
+    directory.
+    """
+    return _GUI_DIR.parents[2] / "feature_tree_editor_state.json"
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +128,7 @@ _state: _State = None  # initialised in run_server()
 
 
 # ---------------------------------------------------------------------------
-# gui_state.json — remembered projects
+# feature_tree_editor_state.json — remembered projects
 # ---------------------------------------------------------------------------
 
 
