@@ -73,7 +73,13 @@ def main():
     group.add_argument(
         "--gui",
         action="store_true",
-        help="Launch the Harnice GUI launcher",
+        help="Launch the feature tree editor",
+    )
+
+    group.add_argument(
+        "--launcher",
+        action="store_true",
+        help="Launch the Harnice launcher window",
     )
 
     group.add_argument(
@@ -91,6 +97,10 @@ def main():
     args = parser.parse_args()
 
     if args.gui:
+        _run_feature_tree_editor()
+        return
+
+    if args.launcher:
         from harnice.gui.launcher import main as gui_main
 
         gui_main()
@@ -157,6 +167,18 @@ def main():
         product_module.render()
 
     return
+
+
+def _run_feature_tree_editor():
+    """Launch the feature tree editor (can be run from any directory)."""
+    # Ensure function_index.json is up to date for the editor dropdowns
+    from harnice.gui.build_feature_tree_gui import build as build_feature_index
+
+    build_feature_index()
+
+    from harnice.gui.feature_tree_server import run_server
+
+    run_server(port=0, open_browser=True)
 
 
 def _run_graph_editor():
