@@ -38,6 +38,7 @@ def _gui_state_path() -> Path:
 # State — shared, protected by a lock
 # ---------------------------------------------------------------------------
 
+
 class _State:
     def __init__(self, rev_folder: str):
         self.lock = threading.Lock()
@@ -47,7 +48,9 @@ class _State:
 
         # Run subprocess state
         self.run_proc = None
-        self.run_output = queue.Queue()   # lines as {"text": ..., "stream": "stdout"|"stderr"}
+        self.run_output = (
+            queue.Queue()
+        )  # lines as {"text": ..., "stream": "stdout"|"stderr"}
         self.run_done = False
         self.run_exit_code = None
 
@@ -62,6 +65,7 @@ class _State:
     def _resolve_feature_tree(self, folder: str):
         try:
             from harnice import fileio
+
             old = os.getcwd()
             os.chdir(folder)
             try:
@@ -121,6 +125,7 @@ _state: _State = None  # initialised in run_server()
 # gui_state.json — remembered projects
 # ---------------------------------------------------------------------------
 
+
 def _load_gui_state() -> dict:
     p = _gui_state_path()
     if p.exists():
@@ -152,8 +157,7 @@ def _remove_recent_project(rev_folder: str):
     data = _load_gui_state()
     norm = os.path.normpath(os.path.abspath(rev_folder))
     data["recent_projects"] = [
-        p for p in data.get("recent_projects", [])
-        if os.path.normpath(p) != norm
+        p for p in data.get("recent_projects", []) if os.path.normpath(p) != norm
     ]
     _save_gui_state(data)
 
@@ -162,8 +166,10 @@ def _remove_recent_project(rev_folder: str):
 # Run subprocess
 # ---------------------------------------------------------------------------
 
+
 def _stream_output(proc, state: _State):
     """Read stdout and stderr from proc into state.run_output queue."""
+
     def _read(stream, label):
         for line in iter(stream.readline, ""):
             state.run_output.put({"text": line.rstrip("\n"), "stream": label})
@@ -201,7 +207,9 @@ def _start_run(state: _State):
             bufsize=1,
         )
     except OSError as e:
-        state.run_output.put({"text": f"[error] could not start harnice: {e}", "stream": "stderr"})
+        state.run_output.put(
+            {"text": f"[error] could not start harnice: {e}", "stream": "stderr"}
+        )
         with state.lock:
             state.run_done = True
             state.run_exit_code = -1
@@ -217,8 +225,8 @@ def _start_run(state: _State):
 # HTTP handler
 # ---------------------------------------------------------------------------
 
-class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
+class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass  # suppress access log
 
@@ -226,14 +234,14 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         routes = {
-            "/":                    self._serve_html,
-            "/index.html":          self._serve_html,
-            "/api/info":            self._api_info,
-            "/api/code":            self._api_get_code,
-            "/api/function_index":  self._api_function_index,
-            "/api/run_output":      self._api_run_output,
+            "/": self._serve_html,
+            "/index.html": self._serve_html,
+            "/api/info": self._api_info,
+            "/api/code": self._api_get_code,
+            "/api/function_index": self._api_function_index,
+            "/api/run_output": self._api_run_output,
             "/api/recent_projects": self._api_recent_projects,
-            "/api/browse":          self._api_browse,
+            "/api/browse": self._api_browse,
         }
         handler = routes.get(self.path)
         if handler:
@@ -243,11 +251,11 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         routes = {
-            "/api/code":              self._api_post_code,
-            "/api/run":               self._api_run,
-            "/api/switch":            self._api_switch,
-            "/api/remove_project":    self._api_remove_project,
-            "/api/close":             self._api_close,
+            "/api/code": self._api_post_code,
+            "/api/run": self._api_run,
+            "/api/switch": self._api_switch,
+            "/api/remove_project": self._api_remove_project,
+            "/api/close": self._api_close,
         }
         handler = routes.get(self.path)
         if handler:
@@ -266,12 +274,14 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     def _api_info(self):
         pn, rev = _state.pn_and_rev()
         p = _state.feature_tree_path
-        self._send_json({
-            "part_number": pn,
-            "rev": rev,
-            "feature_tree_path": str(p) if p else None,
-            "rev_folder": _state.rev_folder,
-        })
+        self._send_json(
+            {
+                "part_number": pn,
+                "rev": rev,
+                "feature_tree_path": str(p) if p else None,
+                "rev_folder": _state.rev_folder,
+            }
+        )
 
     def _api_get_code(self):
         try:
@@ -282,9 +292,19 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
     def _api_function_index(self):
         if not _FUNCTION_INDEX.exists():
-            self._send_json({"error": "function_index.json not found — run build_gui.py"}, status=500)
+            self._send_json(
+                {
+                    "error": (
+                        "function_index.json not found — run "
+                        "build_feature_tree_gui.py to generate it"
+                    )
+                },
+                status=500,
+            )
             return
-        self._send_bytes(_FUNCTION_INDEX.read_bytes(), "application/json; charset=utf-8")
+        self._send_bytes(
+            _FUNCTION_INDEX.read_bytes(), "application/json; charset=utf-8"
+        )
 
     def _api_run_output(self):
         """Return all queued output lines since last poll, plus done/exit_code."""
@@ -309,6 +329,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         try:
             import tkinter as tk
             from tkinter import filedialog
+
             root = tk.Tk()
             root.withdraw()
             root.attributes("-topmost", True)
@@ -344,12 +365,14 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         _add_recent_project(folder)
         pn, rev = _state.pn_and_rev()
         p = _state.feature_tree_path
-        self._send_json({
-            "ok": True,
-            "part_number": pn,
-            "rev": rev,
-            "feature_tree_path": str(p) if p else None,
-        })
+        self._send_json(
+            {
+                "ok": True,
+                "part_number": pn,
+                "rev": rev,
+                "feature_tree_path": str(p) if p else None,
+            }
+        )
 
     def _api_remove_project(self):
         body = self._read_json_body()
@@ -387,6 +410,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True):
     global _state

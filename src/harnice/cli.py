@@ -79,7 +79,7 @@ def main():
     group.add_argument(
         "--launcher",
         action="store_true",
-        help="Launch the Harnice GUI launcher",
+        help="Launch the Harnice launcher window",
     )
 
     group.add_argument(
