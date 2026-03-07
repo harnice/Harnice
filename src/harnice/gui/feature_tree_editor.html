@@ -103,14 +103,27 @@
             flex-shrink: 0;
         }
 
-        /* Left sidebar: file navigator (top) + project list (bottom) */
+        /* Left sidebar: file navigator (top) + draggable divider + project list (bottom) */
         #file-navigator {
             flex: 0 0 auto;
-            border-bottom: 1px solid var(--border);
-            min-height: 120px;
+            height: 180px;
+            min-height: 80px;
+            max-height: 70vh;
+            border-bottom: none;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+        }
+
+        #sidebar-divider {
+            height: 5px;
+            background: var(--border);
+            cursor: row-resize;
+            flex-shrink: 0;
+        }
+
+        #sidebar-divider:hover {
+            background: var(--accent2);
         }
 
         #file-navigator-label {
@@ -492,6 +505,7 @@
                     <div id="file-navigator-placeholder">Placeholder file viewer (options depend on product type of
                         selected project)</div>
                 </div>
+                <div id="sidebar-divider" title="Drag to resize"></div>
                 <!-- Project list -->
                 <div id="projects-section">
                     <div class="panel-header">Project</div>
@@ -921,6 +935,28 @@
         }
 
         // ---------------------------------------------------------------------------
+        // Sidebar divider (file navigator vs project list)
+        // ---------------------------------------------------------------------------
+        const sidebarDivider = document.getElementById("sidebar-divider");
+        const fileNavigator = document.getElementById("file-navigator");
+        const leftPanel = document.getElementById("left-panel");
+        let sidebarDrag = false, sidebarStartY = 0, sidebarStartH = 0;
+
+        sidebarDivider.addEventListener("mousedown", e => {
+            e.preventDefault();
+            sidebarDrag = true;
+            sidebarStartY = e.clientY;
+            sidebarStartH = fileNavigator.offsetHeight;
+            document.body.style.userSelect = "none";
+        });
+        document.addEventListener("mousemove", e => {
+            if (!sidebarDrag) return;
+            const delta = e.clientY - sidebarStartY;
+            const maxH = leftPanel ? Math.min(leftPanel.offsetHeight - 120, window.innerHeight * 0.7) : 400;
+            const newH = Math.max(80, Math.min(sidebarStartH + delta, maxH));
+            fileNavigator.style.height = newH + "px";
+        });
+        // ---------------------------------------------------------------------------
         // Output panel resize (drag divider)
         // ---------------------------------------------------------------------------
         const divider = document.getElementById("output-divider");
@@ -939,8 +975,10 @@
             const newH = Math.max(60, Math.min(startH + delta, window.innerHeight - 120));
             outputPanel.style.height = newH + "px";
         });
+
         document.addEventListener("mouseup", () => {
-            dragging = false;
+            if (sidebarDrag) sidebarDrag = false;
+            if (dragging) dragging = false;
             document.body.style.userSelect = "";
         });
 
