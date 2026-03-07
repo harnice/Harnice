@@ -3,7 +3,6 @@ from harnice.lists import (
     channel_map,
     circuits_list,
     disconnect_map,
-    formboard_graph,
     instances_list,
     library_history,
     post_harness_instances_list,
@@ -131,30 +130,6 @@ def main():
         / "docs"
         / "interacting_with_data"
         / "_disconnect_maps.md"
-    )
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(md), encoding="utf-8")
-
-    # ========================================================
-    # FORMBOARD GRAPHS
-    # ========================================================
-    module_prefix = "formboard_graph"
-
-    md = ["""# Interacting with Formboard Graphs"""]
-    md.append(
-        """\nA table that describes the geometry of the formboard, and the nodes and segments that make up the formboard.\n"""
-    )
-    md.append(docs_functions.columns_header(module_prefix))
-    md.append(docs_functions.columns_to_markdown(formboard_graph, "COLUMNS"))
-    md.append(docs_functions.commands_header(module_prefix))
-    md.append(docs_functions.print_function_docs(formboard_graph.new, module_prefix))
-    md.append(docs_functions.print_function_docs(formboard_graph.append, module_prefix))
-
-    path = (
-        docs_functions.harnice_dir()
-        / "docs"
-        / "interacting_with_data"
-        / "_formboard_graphs.md"
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(md), encoding="utf-8")
