@@ -15,6 +15,7 @@ import http.server
 import json
 import os
 import queue
+import socketserver
 import subprocess
 import sys
 import threading
@@ -473,18 +474,30 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         self._send_json({"projects": projects})
 
     def _api_browse(self):
+        """Show OS folder picker in a subprocess so tkinter runs on a proper main thread (avoids crash when server uses threads)."""
         path = None
         error = None
         try:
-            import tkinter as tk
-            from tkinter import filedialog
-
-            root = tk.Tk()
-            root.withdraw()
-            root.attributes("-topmost", True)
-            selected = filedialog.askdirectory(title="Select revision folder")
-            root.destroy()
-            path = selected if selected else None
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "import tkinter as tk; from tkinter import filedialog; "
+                    "root = tk.Tk(); root.withdraw(); "
+                    "s = filedialog.askdirectory(title='Select revision folder'); "
+                    "root.destroy(); print(s or '')",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=300,
+                env={**os.environ},
+            )
+            raw = (result.stdout or "").strip()
+            path = raw if raw else None
+            if result.stderr and not path:
+                error = result.stderr.strip() or None
+        except subprocess.TimeoutExpired:
+            error = "Folder picker timed out"
         except Exception as e:
             error = str(e)
         self._send_json({"path": path, "error": error})
@@ -625,7 +638,10 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
     _state = _State(rev_folder)
     _add_recent_project(rev_folder)
 
-    server = http.server.HTTPServer(("127.0.0.1", port), FeatureTreeHandler)
+    class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+        daemon_threads = True
+
+    server = ThreadedHTTPServer(("127.0.0.1", port), FeatureTreeHandler)
     actual_port = server.server_address[1]
     url = f"http://127.0.0.1:{actual_port}/"
 
