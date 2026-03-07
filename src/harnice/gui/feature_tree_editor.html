@@ -135,6 +135,31 @@
             letter-spacing: 0.5px;
         }
 
+        #file-navigator-pn-rev {
+            padding: 4px 10px 6px;
+            font-size: 12px;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #file-navigator-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px 8px;
+            flex-shrink: 0;
+        }
+
+        #file-navigator-toolbar #run-btn {
+            flex-shrink: 0;
+        }
+
+        #file-navigator-toolbar #save-indicator {
+            font-size: 11px;
+        }
+
         #file-navigator-placeholder {
             flex: 1;
             padding: 10px;
@@ -403,6 +428,10 @@
             padding-left: 8px;
         }
 
+        .project-item.dragging {
+            opacity: 0.5;
+        }
+
         .project-item-text {
             flex: 1;
             overflow: hidden;
@@ -420,10 +449,21 @@
             font-size: 11px;
         }
 
+        .project-desc {
+            color: var(--text-dim);
+            font-size: 11px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .project-product {
             color: var(--accent2);
             font-size: 10px;
             text-transform: lowercase;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .project-remove {
@@ -502,6 +542,11 @@
                 <!-- File navigator (options depend on product type of selected project) -->
                 <div id="file-navigator">
                     <div id="file-navigator-label">File navigator</div>
+                    <div id="file-navigator-pn-rev">No project</div>
+                    <div id="file-navigator-toolbar">
+                        <button id="run-btn" class="btn idle" onclick="runCode()">▶ Render</button>
+                        <span id="save-indicator">—</span>
+                    </div>
                     <div id="file-navigator-placeholder">Placeholder file viewer (options depend on product type of
                         selected project)</div>
                 </div>
@@ -522,10 +567,6 @@
                     <span id="tools-menu-placeholder">Placeholder toolbar for instances list</span>
                     <div class="tb-sep"></div>
                     <div id="dropdowns"></div>
-                    <div class="tb-sep"></div>
-                    <button id="run-btn" class="btn idle" onclick="runCode()">▶ Run</button>
-                    <div class="tb-sep"></div>
-                    <span id="save-indicator">—</span>
                     <div class="tb-spacer"></div>
                     <span id="pn-label">—</span>
                 </div>
@@ -566,6 +607,7 @@
                 ta.dataset.bound = "1";
                 ta.addEventListener("input", onCodeChanged);
             }
+            setupProjectListDragDrop(document.getElementById("project-list"));
             await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
             await loadCode();
             startOutputPoll();
@@ -614,8 +656,11 @@
         }
 
         function updatePnLabel(pn, rev) {
-            const el = document.getElementById("pn-label");
-            el.textContent = pn && rev ? `${pn} · ${rev}` : "No project";
+            const text = pn && rev ? `${pn} · ${rev}` : "No project";
+            const pnRevEl = document.getElementById("file-navigator-pn-rev");
+            if (pnRevEl) pnRevEl.textContent = text;
+            const labelEl = document.getElementById("pn-label");
+            if (labelEl) labelEl.textContent = text;
         }
 
         // ---------------------------------------------------------------------------
@@ -798,8 +843,9 @@
 
         function setRunBtn(state) {
             const btn = document.getElementById("run-btn");
+            if (!btn) return;
             btn.className = `btn ${state}`;
-            btn.textContent = state === "running" ? "■ Running…" : "▶ Run";
+            btn.textContent = state === "running" ? "■ Rendering…" : state === "success" ? "✓ Rendered" : state === "error" ? "✗ Error" : "▶ Render";
         }
 
         // ---------------------------------------------------------------------------
@@ -864,6 +910,8 @@
                 const folder = typeof proj === "string" ? proj : (proj.rev_folder || "");
                 if (!folder) continue;
                 const productType = typeof proj === "object" && proj ? (proj.product_type || "") : "";
+                const description = typeof proj === "object" && proj ? (proj.description || "") : "";
+                const buttonColor = typeof proj === "object" && proj ? (proj.button_color || "") : "";
                 const parts = String(folder).replace(/\\/g, "/").split("/");
                 const revName = parts[parts.length - 1];       // e.g. 0000250810-S01-rev9
                 const pnName = parts[parts.length - 2] || ""; // e.g. 0000250810-S01
@@ -871,16 +919,22 @@
 
                 const item = document.createElement("div");
                 item.className = "project-item" + (folder === activePath ? " active" : "");
+                item.setAttribute("data-rev-folder", folder);
 
-                const productHtml = productType ? `<div class="project-product">${escapeHtml(productType)}</div>` : "";
+                const productColor = (buttonColor && /^#[0-9a-fA-F]{3,8}$/.test(buttonColor)) ? buttonColor : "";
+                const productStyle = productColor ? ` style="color: ${escapeHtml(productColor)}"` : "";
+                const descText = description ? escapeHtml(description) : "";
+                const productText = productType ? escapeHtml(productType) : "";
                 item.innerHTML = `
       <div class="project-item-text">
         <div class="project-pn">${escapeHtml(pnName || revName)}</div>
         <div class="project-rev">${escapeHtml(revPart)}</div>
-        ${productHtml}
+        ${descText ? `<div class="project-desc">${descText}</div>` : ""}
+        ${productText ? `<div class="project-product"${productStyle}>${productText}</div>` : ""}
       </div>
       <span class="project-remove" title="Remove">✕</span>
     `;
+                item.draggable = true;
 
                 item.querySelector(".project-remove").onclick = async (e) => {
                     e.stopPropagation();
@@ -888,9 +942,57 @@
                     await loadRecentProjects();
                 };
 
-                item.onclick = () => switchProject(folder);
+                item.onclick = (e) => {
+                    if (!e.target.closest(".project-remove")) switchProject(folder);
+                };
                 list.appendChild(item);
             }
+        }
+
+        let draggedProjectItem = null;
+
+        function setupProjectListDragDrop(list) {
+            if (!list) return;
+            list.addEventListener("dragstart", e => {
+                if (e.target.closest(".project-remove")) {
+                    e.preventDefault();
+                    return;
+                }
+                const item = e.target.closest(".project-item");
+                if (!item) return;
+                e.dataTransfer.setData("text/plain", item.getAttribute("data-rev-folder") || "");
+                e.dataTransfer.effectAllowed = "move";
+                draggedProjectItem = item;
+                item.classList.add("dragging");
+            });
+            list.addEventListener("dragend", e => {
+                if (draggedProjectItem) {
+                    draggedProjectItem.classList.remove("dragging");
+                    draggedProjectItem = null;
+                }
+            });
+            list.addEventListener("dragover", e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+            });
+            list.addEventListener("drop", async e => {
+                e.preventDefault();
+                if (!draggedProjectItem) return;
+                const targetItem = e.target.closest(".project-item");
+                if (!targetItem || targetItem === draggedProjectItem) return;
+                const all = Array.from(list.querySelectorAll(".project-item"));
+                const dragIndex = all.indexOf(draggedProjectItem);
+                const dropIndex = all.indexOf(targetItem);
+                if (dragIndex === -1 || dropIndex === -1) return;
+                if (dragIndex < dropIndex) {
+                    targetItem.parentNode.insertBefore(draggedProjectItem, targetItem.nextSibling);
+                } else {
+                    targetItem.parentNode.insertBefore(draggedProjectItem, targetItem);
+                }
+                const newOrder = Array.from(list.querySelectorAll(".project-item")).map(el => el.getAttribute("data-rev-folder"));
+                const res = await api("POST", "/api/reorder_projects", { rev_folders: newOrder });
+                if (res && res.ok) await loadRecentProjects();
+            });
         }
 
         function escapeHtml(s) {

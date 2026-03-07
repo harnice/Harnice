@@ -67,6 +67,29 @@ def _product_type_for_revision_folder(rev_folder: str):
     folder path, or None if it cannot be determined. Supports numeric and
     string rev suffixes (e.g. rev9, revA).
     """
+    info = _project_info_for_revision_folder(rev_folder)
+    return info.get("product_type") if info else None
+
+
+def _button_color_for_product(product_type: str):
+    """Return button_color from the product module, like launcher does."""
+    if not product_type:
+        return None
+    try:
+        product_module = __import__(
+            f"harnice.products.{product_type}", fromlist=[product_type]
+        )
+        return getattr(product_module, "button_color", None)
+    except Exception:
+        return None
+
+
+def _project_info_for_revision_folder(rev_folder: str) -> dict:
+    """
+    Return dict with product_type, description, button_color for a revision folder,
+    or None if not determinable. Uses revision_history.tsv row (product, desc) and
+    product module button_color.
+    """
     rev_folder = os.path.normpath(os.path.abspath(rev_folder))
     part_dir = os.path.dirname(rev_folder)
     rev_name = os.path.basename(rev_folder)
@@ -82,7 +105,17 @@ def _product_type_for_revision_folder(rev_folder: str):
     try:
         from harnice.lists import rev_history
 
-        return rev_history.info(rev=suffix, path=rev_hist_path, field="product")
+        row = rev_history.info(rev=suffix, path=rev_hist_path)
+        if not row or not isinstance(row, dict):
+            return None
+        product_type = (row.get("product") or "").strip() or None
+        description = (row.get("desc") or "").strip() or None
+        button_color = _button_color_for_product(product_type) if product_type else None
+        return {
+            "product_type": product_type,
+            "description": description,
+            "button_color": button_color,
+        }
     except Exception:
         return None
 
@@ -274,6 +307,20 @@ def _remove_recent_project(rev_folder: str):
     _save_gui_state(data)
 
 
+def _set_recent_projects_order(rev_folders: list):
+    """Set the order of recent projects (e.g. after user drag). Only reorders existing entries."""
+    data = _load_gui_state()
+    current = [
+        os.path.normpath(os.path.abspath(p)) for p in data.get("recent_projects", [])
+    ]
+    requested = [os.path.normpath(os.path.abspath(p)) for p in rev_folders if p]
+    if set(requested) != set(current) or len(requested) != len(current):
+        return False
+    data["recent_projects"] = requested[:50]
+    _save_gui_state(data)
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Run subprocess
 # ---------------------------------------------------------------------------
@@ -385,6 +432,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/api/add_project": self._api_add_project,
             "/api/select_project": self._api_select_project,
             "/api/remove_project": self._api_remove_project,
+            "/api/reorder_projects": self._api_reorder_projects,
             "/api/close": self._api_close,
         }
         handler = routes.get(path)
@@ -464,11 +512,13 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         folders = data.get("recent_projects", [])
         projects = []
         for rev_folder in folders:
-            pt = _product_type_for_revision_folder(rev_folder)
+            info = _project_info_for_revision_folder(rev_folder) or {}
             projects.append(
                 {
                     "rev_folder": rev_folder,
-                    "product_type": (pt or "").strip() or None,
+                    "product_type": (info.get("product_type") or "").strip() or None,
+                    "description": (info.get("description") or "").strip() or None,
+                    "button_color": info.get("button_color"),
                 }
             )
         self._send_json({"projects": projects})
@@ -524,7 +574,6 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             self._send_json({"ok": False, "error": "invalid folder"}, status=400)
             return
         _state.set_rev_folder(folder)
-        _add_recent_project(folder)
         pn, rev = _state.pn_and_rev()
         p = _state.feature_tree_path
         self._send_json(
@@ -596,6 +645,22 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         if folder:
             _remove_recent_project(folder)
         self._send_json({"ok": True})
+
+    def _api_reorder_projects(self):
+        body = self._read_json_body()
+        rev_folders = body.get("rev_folders", [])
+        if not isinstance(rev_folders, list):
+            self._send_json(
+                {"ok": False, "error": "rev_folders must be a list"}, status=400
+            )
+            return
+        if _set_recent_projects_order(rev_folders):
+            self._send_json({"ok": True})
+        else:
+            self._send_json(
+                {"ok": False, "error": "invalid order (must match existing projects)"},
+                status=400,
+            )
 
     def _api_close(self):
         self._send_json({"ok": True})
