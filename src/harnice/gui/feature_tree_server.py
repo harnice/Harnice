@@ -30,11 +30,6 @@ _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
 _EDITOR_HTML = _GUI_DIR / "feature_tree_editor.html"
 
 
-def _debug(msg: str):
-    """Print to stderr so you see exactly what the server is doing when you click."""
-    print(f"[ft-server] {msg}", file=sys.stderr, flush=True)
-
-
 def _find_feature_tree_path_in_structure(structure, path=None):
     """Return list of path segments (keys) to the 'feature tree' value in the structure dict, or [] if not found. No chdir or fileio."""
     if path is None:
@@ -90,15 +85,11 @@ class _State:
 
     def set_rev_folder(self, rev_folder: str):
         folder = os.path.normpath(os.path.abspath(rev_folder))
-        _debug(f"set_rev_folder called with: {folder!r}")
         with self.lock:
             self._rev_folder = folder
             self._feature_tree_path, self._feature_tree_error = (
                 self._resolve_feature_tree(folder)
             )
-        _debug(
-            f"after resolve: feature_tree_path={self._feature_tree_path!r} error={self._feature_tree_error!r}"
-        )
 
     def _resolve_feature_tree(self, folder: str):
         """
@@ -115,10 +106,6 @@ class _State:
             rev_name = os.path.basename(rev_folder)
             part_name = os.path.basename(part_dir)
 
-            _debug(
-                f"_resolve_feature_tree: rev_folder={rev_folder!r} part_dir={part_dir!r} part_name={part_name!r} rev_name={rev_name!r}"
-            )
-
             if not rev_name.startswith(f"{part_name}-rev"):
                 raise RuntimeError(f"Not a revision folder: {rev_folder}")
             suffix = rev_name.split("-rev", 1)[-1]
@@ -127,19 +114,14 @@ class _State:
 
             state.set_pn(part_name)
             state.set_rev(int(suffix) if suffix.isdigit() else suffix)
-            _debug(f"  state.pn={state.pn!r} state.rev={state.rev!r}")
 
             rev_hist_path = os.path.join(part_dir, f"{part_name}-revision_history.tsv")
-            _debug(
-                f"  rev_hist_path={rev_hist_path!r} exists={os.path.exists(rev_hist_path)}"
-            )
             if not os.path.exists(rev_hist_path):
                 raise RuntimeError(f"Revision history not found: {rev_hist_path}")
 
             with open(rev_hist_path, newline="", encoding="utf-8") as f:
                 reader = csv.DictReader(f, delimiter="\t")
                 rows = list(reader)
-            _debug(f"  revision_history rows: {len(rows)}")
 
             product_type = None
             rev_str = str(state.rev)
@@ -155,7 +137,6 @@ class _State:
                     product_type = (row.get("product") or "").strip()
                     break
 
-            _debug(f"  product_type={product_type!r}")
             if not product_type:
                 raise RuntimeError(f"No product type for revision folder: {rev_folder}")
 
@@ -167,19 +148,15 @@ class _State:
 
             structure = product_module.file_structure()
             path_parts = _find_feature_tree_path_in_structure(structure)
-            _debug(f"  path_parts (feature tree key)={path_parts!r}")
             if not path_parts:
                 raise RuntimeError(
                     f"Product '{product_type}' file_structure has no 'feature tree' entry"
                 )
 
             full_path = os.path.join(rev_folder, *path_parts)
-            _debug(f"  full_path={full_path!r} exists={os.path.exists(full_path)}")
             return Path(full_path), None
         except Exception as e:
-            err = str(e)
-            _debug(f"_resolve_feature_tree FAILED: {err}")
-            return None, err
+            return None, str(e)
 
     @property
     def rev_folder(self) -> str:
@@ -410,12 +387,8 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         )
 
     def _api_get_code(self):
-        _debug("GET /api/code")
         try:
             if _state.feature_tree_path is None:
-                _debug(
-                    "  -> feature_tree_path is None, returning feature_tree_resolved=False"
-                )
                 self._send_json(
                     {
                         "code": "",
@@ -426,10 +399,8 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
                 )
                 return
             code = _state.read_code()
-            _debug(f"  -> path={_state.feature_tree_path!r} code_len={len(code)}")
             self._send_json({"code": code, "feature_tree_resolved": True})
         except Exception as e:
-            _debug(f"  -> ERROR: {e}")
             self._send_json({"error": str(e)}, status=500)
 
     def _api_function_index(self):
@@ -500,18 +471,13 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     def _api_switch(self):
         body = self._read_json_body()
         folder = body.get("rev_folder", "").strip()
-        _debug(
-            f"POST /api/switch rev_folder={folder!r} isdir={os.path.isdir(folder) if folder else False}"
-        )
         if not folder or not os.path.isdir(folder):
-            _debug("  -> 400 invalid folder")
             self._send_json({"ok": False, "error": "invalid folder"}, status=400)
             return
         _state.set_rev_folder(folder)
         _add_recent_project(folder)
         pn, rev = _state.pn_and_rev()
         p = _state.feature_tree_path
-        _debug(f"  -> ok part_number={pn!r} rev={rev!r} feature_tree_path={p!r}")
         self._send_json(
             {
                 "ok": True,
@@ -525,7 +491,6 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         """Add a rev folder to the recent-projects list only; do not switch or load."""
         body = self._read_json_body()
         folder = body.get("rev_folder", "").strip()
-        _debug(f"POST /api/add_project rev_folder={folder!r}")
         if not folder or not os.path.isdir(folder):
             self._send_json({"ok": False, "error": "invalid folder"}, status=400)
             return
@@ -536,14 +501,12 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         """Run fileio.verify_revision_structure() in a subprocess with cwd=rev_folder; kill any running harnice -r; return exit_code and output for the console. Client should then switch + load code if exit_code is 0."""
         body = self._read_json_body()
         folder = body.get("rev_folder", "").strip()
-        _debug(f"POST /api/select_project rev_folder={folder!r}")
         if not folder or not os.path.isdir(folder):
             self._send_json({"ok": False, "error": "invalid folder"}, status=400)
             return
         folder = os.path.normpath(os.path.abspath(folder))
 
         _stop_run(_state)
-        _debug("  running verify_revision_structure subprocess...")
 
         try:
             result = subprocess.run(
@@ -564,14 +527,10 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             exit_code = -1
             stdout = ""
             stderr = "verify_revision_structure timed out"
-            _debug("  subprocess TIMEOUT")
         except Exception as e:
             exit_code = -1
             stdout = ""
             stderr = str(e)
-            _debug(f"  subprocess EXCEPTION: {e}")
-
-        _debug(f"  select_project done exit_code={exit_code}")
 
         self._send_json(
             {
@@ -627,12 +586,8 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
         rev_folder = os.getcwd()
 
     rev_folder = os.path.normpath(os.path.abspath(rev_folder))
-    _debug(f"run_server starting rev_folder={rev_folder!r}")
     _state = _State(rev_folder)
     _add_recent_project(rev_folder)
-    _debug(
-        f"initial feature_tree_path={_state.feature_tree_path!r} error={_state._feature_tree_error!r}"
-    )
 
     server = http.server.HTTPServer(("127.0.0.1", port), FeatureTreeHandler)
     actual_port = server.server_address[1]
