@@ -363,7 +363,23 @@ def _save_gui_state(data: dict):
     p.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+def _is_inside_harnice_repo(path: str) -> bool:
+    """True if path is the Harnice repo root or any path inside it (don't add as user project)."""
+    try:
+        from harnice import fileio
+
+        root = fileio.harnice_root()
+        path_norm = os.path.normpath(os.path.abspath(path))
+        root_norm = os.path.normpath(os.path.abspath(root))
+        return path_norm == root_norm or path_norm.startswith(root_norm + os.sep)
+    except Exception:
+        return False
+
+
 def _add_recent_project(rev_folder: str):
+    """Add rev_folder to recent projects unless it is inside the Harnice repo (e.g. development)."""
+    if _is_inside_harnice_repo(rev_folder):
+        return
     data = _load_gui_state()
     projects = data.get("recent_projects", [])
     # Normalise and deduplicate, most recent first
@@ -602,7 +618,9 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
     def _api_recent_projects(self):
         data = _load_gui_state()
-        folders = data.get("recent_projects", [])
+        folders = [
+            p for p in data.get("recent_projects", []) if not _is_inside_harnice_repo(p)
+        ]
         projects = []
         for rev_folder in folders:
             info = _project_info_for_revision_folder(rev_folder) or {}
@@ -865,6 +883,14 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
     rev_folder = os.path.normpath(os.path.abspath(rev_folder))
     _state = _State(rev_folder)
     _add_recent_project(rev_folder)
+    # Purge any Harnice-repo paths from saved recent projects so they don't reappear
+    data = _load_gui_state()
+    cleaned = [
+        p for p in data.get("recent_projects", []) if not _is_inside_harnice_repo(p)
+    ]
+    if len(cleaned) != len(data.get("recent_projects", [])):
+        data["recent_projects"] = cleaned
+        _save_gui_state(data)
 
     class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         daemon_threads = True

@@ -48,11 +48,34 @@
             height: 100%;
         }
 
-        /* Tools menu: top bar of right area */
-        #tools-menu {
+        /* Left panel header: Render + part number (always visible) */
+        #left-panel-header {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            padding: 8px 10px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        #left-panel-header #run-btn {
+            flex-shrink: 0;
+        }
+
+        #left-panel-header #pn-label {
+            font-size: 12px;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Single toolbar: always visible; contents populated from one list in applyView() */
+        #top-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             height: var(--toolbar-h);
             min-height: var(--toolbar-h);
             background: var(--bg2);
@@ -62,19 +85,38 @@
             overflow-x: auto;
         }
 
-        #tools-menu-label {
-            font-size: 10px;
-            font-weight: 600;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-right: 8px;
+        #top-toolbar-slot {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        #tools-menu-placeholder {
+        #top-toolbar-slot .btn {
+            flex-shrink: 0;
+        }
+
+        #top-toolbar #save-indicator {
             font-size: 11px;
-            color: var(--text-dim);
-            font-style: italic;
+        }
+
+        #top-toolbar .tb-sep {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        #top-toolbar #dropdowns {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        #top-toolbar .tb-spacer {
+            flex: 1;
+            min-width: 8px;
         }
 
         #main {
@@ -92,6 +134,14 @@
             overflow: hidden;
         }
 
+        #content-section {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
         #left-panel {
             width: var(--panel-w);
             min-width: var(--panel-w);
@@ -103,7 +153,7 @@
             flex-shrink: 0;
         }
 
-        /* Left sidebar: file navigator (top) + draggable divider + project list (bottom) */
+        /* Left sidebar: project files (top) + draggable divider + project list (bottom) */
         #file-navigator {
             flex: 0 0 auto;
             height: 180px;
@@ -133,31 +183,6 @@
             color: var(--text-dim);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-        }
-
-        #file-navigator-pn-rev {
-            padding: 4px 10px 6px;
-            font-size: 12px;
-            color: var(--text);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        #file-navigator-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 10px 8px;
-            flex-shrink: 0;
-        }
-
-        #file-navigator-toolbar #run-btn {
-            flex-shrink: 0;
-        }
-
-        #file-navigator-toolbar #save-indicator {
-            font-size: 11px;
         }
 
         #file-navigator-placeholder {
@@ -234,25 +259,6 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
-        }
-
-        /* Content: main editor + output area */
-        #content-section {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        #content-label {
-            padding: 6px 10px 4px;
-            font-size: 10px;
-            font-weight: 600;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
         }
 
         #editor-output {
@@ -583,19 +589,19 @@
 <body>
     <div id="app">
 
-        <!-- Main: left sidebar + right area -->
+        <!-- Main: left panel (Render + project files) + right content -->
         <div id="main">
 
-            <!-- Left sidebar -->
+            <!-- Left panel -->
             <div id="left-panel">
-                <!-- File navigator (options depend on product type of selected project) -->
+                <!-- Render + part number (always visible) -->
+                <div id="left-panel-header">
+                    <button id="run-btn" class="btn idle" onclick="runCode()">▶ Render</button>
+                    <span id="pn-label">—</span>
+                </div>
+                <!-- Project files (options depend on product type of selected project) -->
                 <div id="file-navigator">
-                    <div id="file-navigator-label">File navigator</div>
-                    <div id="file-navigator-pn-rev">No project</div>
-                    <div id="file-navigator-toolbar">
-                        <button id="run-btn" class="btn idle" onclick="runCode()">▶ Render</button>
-                        <span id="save-indicator">—</span>
-                    </div>
+                    <div id="file-navigator-label">Project files</div>
                     <div id="file-navigator-list" style="display: none;"></div>
                     <div id="file-navigator-placeholder">Load a project to see editable files (feature tree; harness
                         projects also include available/chosen/flattened network).</div>
@@ -603,26 +609,19 @@
                 <div id="sidebar-divider" title="Drag to resize"></div>
                 <!-- Project list -->
                 <div id="projects-section">
-                    <div class="panel-header">Project</div>
+                    <div class="panel-header">Projects</div>
                     <button id="open-project-btn" class="btn" onclick="browseProject()">Open project…</button>
                     <div id="project-list"></div>
                 </div>
             </div>
 
-            <!-- Right: tools menu + content -->
+            <!-- Right: one toolbar + one content area. Toolbar slot populated from one list in applyView(). -->
             <div id="right-area">
-                <!-- Tools menu -->
-                <div id="tools-menu">
-                    <span id="tools-menu-label">Tools menu</span>
-                    <span id="tools-menu-placeholder">Placeholder toolbar for instances list</span>
-                    <div class="tb-sep"></div>
-                    <div id="dropdowns"></div>
+                <div id="top-toolbar">
+                    <div id="top-toolbar-slot"></div>
                     <div class="tb-spacer"></div>
-                    <span id="pn-label">—</span>
                 </div>
-                <!-- Content -->
                 <div id="content-section">
-                    <div id="content-label">Content</div>
                     <div id="editor-output">
                         <div id="editor-wrap">
                             <textarea id="editor-ta" spellcheck="false"
@@ -642,17 +641,200 @@
 
     <script>
         // ---------------------------------------------------------------------------
-        // Plain text editor (textarea)
+        // Editor shell: one view state drives toolbar + content. See docs/gui_layout.md
         // ---------------------------------------------------------------------------
+        const MODE_FEATURE_TREE = "feature tree";
+        const TOOLBAR_SPEC = {
+            [MODE_FEATURE_TREE]: null,  // native: save + dropdowns
+            "available network": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "add-node" }, label: "＋ Add Node" },
+                { action: "setTool", payload: { tool: "add-seg" }, label: "⟶ Add Segment" },
+                { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
+                { action: "fitView", payload: {}, label: "Fit View" }
+            ],
+            "chosen network": [{ action: "fitView", payload: {}, label: "Fit View" }],
+            "flattened network": [{ action: "fitView", payload: {}, label: "Fit View" }]
+        };
+
         let saveTimer = null;
         let pollTimer = null;
         let isRunning = false;
-        let activePath = null;     // active rev_folder on server
-        let functionIndex = [];    // from /api/function_index
-        let openDropdown = null;   // currently visible dropdown menu element
-        let editorFiles = [];      // labels from /api/info (e.g. ["feature tree", "available network", ...])
+        let activePath = null;
+        let functionIndex = [];
+        let openDropdown = null;
+        let editorFiles = [];
         let productType = null;
-        let selectedFile = "feature tree";  // which file is selected in the navigator
+        let selectedFile = MODE_FEATURE_TREE;
+        let lastSaveIndicatorState = "saved";
+
+        function isFeatureTreeMode() {
+            return selectedFile === MODE_FEATURE_TREE;
+        }
+
+        function populateToolbarSlot() {
+            const slot = document.getElementById("top-toolbar-slot");
+            if (!slot) return;
+            slot.innerHTML = "";
+
+            if (isFeatureTreeMode()) {
+                const saveEl = document.createElement("span");
+                saveEl.id = "save-indicator";
+                saveEl.className = lastSaveIndicatorState;
+                saveEl.textContent = lastSaveIndicatorState === "saved" ? "Saved" : "Unsaved";
+                slot.appendChild(saveEl);
+                const sep = document.createElement("div");
+                sep.className = "tb-sep";
+                slot.appendChild(sep);
+                const dropdowns = document.createElement("div");
+                dropdowns.id = "dropdowns";
+                slot.appendChild(dropdowns);
+                buildDropdowns();
+            } else {
+                const spec = TOOLBAR_SPEC[selectedFile];
+                const graphIframe = document.getElementById("graph-editor-iframe");
+                if (spec && Array.isArray(spec)) {
+                    spec.forEach(function (item) {
+                        const btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "btn";
+                        btn.textContent = item.label;
+                        btn.onclick = function () {
+                            if (graphIframe && graphIframe.contentWindow) {
+                                try {
+                                    graphIframe.contentWindow.postMessage(
+                                        { type: "harnice-graph-action", action: item.action, ...item.payload }, "*");
+                                } catch (_) { }
+                            }
+                        };
+                        slot.appendChild(btn);
+                    });
+                }
+                if (selectedFile === "available network") {
+                    const sep = document.createElement("div");
+                    sep.className = "tb-sep";
+                    slot.appendChild(sep);
+                    const stepWrap = document.createElement("div");
+                    stepWrap.className = "tb-step-wrap";
+                    stepWrap.style.display = "flex";
+                    stepWrap.style.alignItems = "center";
+                    stepWrap.style.gap = "6px";
+                    const stepLabel = document.createElement("span");
+                    stepLabel.className = "tb-label";
+                    stepLabel.textContent = "Step";
+                    stepLabel.style.fontSize = "11px";
+                    stepLabel.style.color = "var(--text-dim)";
+                    const stepSlider = document.createElement("input");
+                    stepSlider.type = "range";
+                    stepSlider.min = "0";
+                    stepSlider.max = "1";
+                    stepSlider.step = "0.0001";
+                    stepSlider.value = "0.426";
+                    stepSlider.style.width = "100px";
+                    stepSlider.style.accentColor = "var(--accent)";
+                    const stepVal = document.createElement("span");
+                    stepVal.className = "tb-step-val";
+                    stepVal.style.fontSize = "12px";
+                    stepVal.style.fontWeight = "bold";
+                    stepVal.style.minWidth = "28px";
+                    stepVal.textContent = "1";
+                    stepSlider.addEventListener("input", function () {
+                        const v = parseFloat(stepSlider.value);
+                        stepVal.textContent = stepToDisplay(v);
+                        if (graphIframe && graphIframe.contentWindow) {
+                            try {
+                                graphIframe.contentWindow.postMessage(
+                                    { type: "harnice-graph-action", action: "setStep", sliderVal: v }, "*");
+                            } catch (_) { }
+                        }
+                    });
+                    stepWrap.appendChild(stepLabel);
+                    stepWrap.appendChild(stepSlider);
+                    stepWrap.appendChild(stepVal);
+                    slot.appendChild(stepWrap);
+                }
+                if (selectedFile === "flattened network") {
+                    const sep = document.createElement("div");
+                    sep.className = "tb-sep";
+                    slot.appendChild(sep);
+                    const angleWrap = document.createElement("div");
+                    angleWrap.className = "tb-angle-wrap";
+                    angleWrap.style.display = "flex";
+                    angleWrap.style.alignItems = "center";
+                    angleWrap.style.gap = "6px";
+                    const angleLabel = document.createElement("label");
+                    angleLabel.className = "tb-label";
+                    angleLabel.textContent = "Angle (°)";
+                    angleLabel.style.fontSize = "11px";
+                    angleLabel.style.color = "var(--text-dim)";
+                    const angleInput = document.createElement("input");
+                    angleInput.type = "number";
+                    angleInput.min = "0";
+                    angleInput.max = "360";
+                    angleInput.step = "1";
+                    angleInput.placeholder = "—";
+                    angleInput.style.width = "64px";
+                    angleInput.style.padding = "4px 6px";
+                    angleInput.addEventListener("input", function () {
+                        if (graphIframe && graphIframe.contentWindow) {
+                            try {
+                                graphIframe.contentWindow.postMessage(
+                                    { type: "harnice-graph-action", action: "setAngle", value: angleInput.value }, "*");
+                            } catch (_) { }
+                        }
+                    });
+                    angleWrap.appendChild(angleLabel);
+                    angleWrap.appendChild(angleInput);
+                    slot.appendChild(angleWrap);
+                }
+            }
+        }
+
+        function stepToDisplay(sliderVal) {
+            var LOG_MIN = Math.log10(0.01);
+            var LOG_MAX = Math.log10(500);
+            var logVal = LOG_MIN + sliderVal * (LOG_MAX - LOG_MIN);
+            var raw = Math.pow(10, logVal);
+            var snaps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+            var best = snaps[0], bestDist = Infinity;
+            snaps.forEach(function (s) {
+                var d = Math.abs(Math.log10(raw) - Math.log10(s));
+                if (d < bestDist) { bestDist = d; best = s; }
+            });
+            return best < 1 ? String(best) : (best % 1 === 0 ? best.toFixed(0) : String(best));
+        }
+
+        function applyView() {
+            const editorOutput = document.getElementById("editor-output");
+            const graphPanel = document.getElementById("graph-editor-panel");
+            const graphIframe = document.getElementById("graph-editor-iframe");
+
+            const featureTree = isFeatureTreeMode();
+            if (editorOutput) editorOutput.style.display = featureTree ? "flex" : "none";
+            if (graphPanel) graphPanel.classList.toggle("visible", !featureTree);
+
+            populateToolbarSlot();
+
+            if (graphIframe && !featureTree) {
+                const tab = selectedFile === "available network" ? "available" :
+                    selectedFile === "chosen network" ? "chosen" : "flattened";
+                const base = "/graph-editor#" + tab;
+                const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
+                if (!iframeLoaded || !graphIframe.src.includes("/graph-editor")) {
+                    graphIframe.src = base;
+                }
+            } else if (graphIframe && featureTree) {
+                graphIframe.src = "about:blank";
+            }
+        }
+
+        function sendGraphTab(tab) {
+            const graphIframe = document.getElementById("graph-editor-iframe");
+            if (!graphIframe || !graphIframe.contentWindow) return;
+            try {
+                graphIframe.contentWindow.postMessage({ type: "harnice-graph-tab", tab: tab }, "*");
+            } catch (_) { }
+        }
 
         // ---------------------------------------------------------------------------
         // Init
@@ -664,7 +846,7 @@
                 ta.addEventListener("input", onCodeChanged);
             }
             setupProjectListDragDrop(document.getElementById("project-list"));
-            updateContentVisibility();
+            applyView();
             await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
             await loadCode();
             startOutputPoll();
@@ -713,16 +895,14 @@
             editorFiles = Array.isArray(d.editor_files) ? d.editor_files : [];
             productType = d.product_type || null;
             if (!editorFiles.includes(selectedFile)) {
-                selectedFile = editorFiles.length ? editorFiles[0] : "feature tree";
+                selectedFile = editorFiles.length ? editorFiles[0] : MODE_FEATURE_TREE;
             }
             renderFileList();
-            updateContentVisibility();
+            applyView();
         }
 
         function updatePnLabel(pn, rev) {
             const text = pn && rev ? `${pn} · ${rev}` : "No project";
-            const pnRevEl = document.getElementById("file-navigator-pn-rev");
-            if (pnRevEl) pnRevEl.textContent = text;
             const labelEl = document.getElementById("pn-label");
             if (labelEl) labelEl.textContent = text;
         }
@@ -751,35 +931,23 @@
             }
         }
 
-        function selectFile(label) {
-            selectedFile = label;
-            renderFileList();
-            updateContentVisibility();
-            if (label === "feature tree") {
-                loadCode();
-            }
+        function fileLabelToTab(label) {
+            if (label === "available network") return "available";
+            if (label === "chosen network") return "chosen";
+            if (label === "flattened network") return "flattened";
+            return "available";
         }
 
-        function updateContentVisibility() {
-            const editorOutput = document.getElementById("editor-output");
-            const graphPanel = document.getElementById("graph-editor-panel");
-            const graphIframe = document.getElementById("graph-editor-iframe");
-            const runBtn = document.getElementById("run-btn");
-            const isFeatureTree = selectedFile === "feature tree";
-            if (editorOutput) editorOutput.style.display = isFeatureTree ? "flex" : "none";
-            if (graphPanel) {
-                graphPanel.classList.toggle("visible", !isFeatureTree);
+        function selectFile(label) {
+            const wasNetwork = selectedFile !== MODE_FEATURE_TREE && editorFiles.includes(selectedFile);
+            selectedFile = label;
+            renderFileList();
+            applyView();
+            if (label === MODE_FEATURE_TREE) {
+                loadCode();
+            } else if (wasNetwork) {
+                sendGraphTab(fileLabelToTab(label));
             }
-            if (graphIframe) {
-                if (!isFeatureTree) {
-                    if (graphIframe.src === "about:blank" || graphIframe.src.endsWith("/graph-editor") === false) {
-                        graphIframe.src = "/graph-editor";
-                    }
-                } else {
-                    graphIframe.src = "about:blank";
-                }
-            }
-            if (runBtn) runBtn.style.visibility = isFeatureTree ? "visible" : "hidden";
         }
 
         // ---------------------------------------------------------------------------
@@ -827,9 +995,12 @@
         }
 
         function setSaveIndicator(state) {
+            lastSaveIndicatorState = state;
             const el = document.getElementById("save-indicator");
-            el.className = state;
-            el.textContent = state === "saved" ? "Saved" : "Unsaved";
+            if (el) {
+                el.className = state;
+                el.textContent = state === "saved" ? "Saved" : "Unsaved";
+            }
         }
 
         // ---------------------------------------------------------------------------
@@ -1146,7 +1317,7 @@
             const d = await api("POST", "/api/switch", { rev_folder: folder });
             if (!d.ok) { alert("Could not switch project: " + (d.error || "unknown error")); await loadRecentProjects(); return; }
             activePath = folder;
-            selectedFile = "feature tree";
+            selectedFile = MODE_FEATURE_TREE;
             await loadInfo();
             await loadCode();
             await loadRecentProjects();
@@ -1157,7 +1328,7 @@
         }
 
         // ---------------------------------------------------------------------------
-        // Sidebar divider (file navigator vs project list)
+        // Sidebar divider (project files vs project list)
         // ---------------------------------------------------------------------------
         const sidebarDivider = document.getElementById("sidebar-divider");
         const fileNavigator = document.getElementById("file-navigator");

@@ -39,15 +39,22 @@
       letter-spacing: .04em
     }
 
-    #part-rev {
-      font-size: 11px;
-      color: #555
-    }
-
     .tabs {
       display: flex;
       gap: 4px;
       margin-left: auto
+    }
+
+    body.embedded #topbar {
+      display: none
+    }
+
+    body.embedded .tabs {
+      display: none
+    }
+
+    body.embedded .toolbar-row {
+      display: none
     }
 
     .tab {
@@ -83,6 +90,7 @@
     .panel {
       display: none;
       flex: 1;
+      flex-direction: column;
       overflow: hidden
     }
 
@@ -90,16 +98,46 @@
       display: flex
     }
 
-    .sidebar {
-      width: 260px;
-      min-width: 260px;
-      background: #18191c;
-      border-right: 1px solid #2a2b30;
+    .toolbar-row {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
+      align-items: flex-start;
       gap: 8px;
-      padding: 10px;
+      padding: 8px 10px;
+      background: #18191c;
+      border-bottom: 1px solid #2a2b30;
+      flex-shrink: 0;
+      overflow-x: auto;
       overflow-y: auto
+    }
+
+    .toolbar-row .section {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      background: #1e1f23;
+      border-radius: 6px;
+      padding: 8px 10px;
+      border: 1px solid #2a2b30;
+      min-width: 0
+    }
+
+    .toolbar-row .section h2 {
+      font-size: 10px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px
+    }
+
+    .toolbar-row .section button {
+      width: auto;
+      min-width: 90px;
+      margin-top: 4px
+    }
+
+    .toolbar-row .section button:first-of-type {
+      margin-top: 0
     }
 
     .section {
@@ -231,6 +269,7 @@
 
     .viewport {
       flex: 1;
+      min-height: 0;
       position: relative;
       overflow: hidden;
       display: flex
@@ -272,6 +311,7 @@
 
     #flat-wrap {
       flex: 1;
+      min-height: 0;
       position: relative;
       overflow: hidden
     }
@@ -398,7 +438,6 @@
 <body>
   <div id="topbar">
     <h1>Harnice Network Editor</h1>
-    <span id="part-rev"></span>
     <div class="tabs">
       <div class="tab active" onclick="switchTab('available')">Available</div>
       <div class="tab" onclick="switchTab('chosen')">Chosen</div>
@@ -408,7 +447,7 @@
   </div>
   <div id="main">
     <div class="panel active" id="panel-available">
-      <div class="sidebar">
+      <div class="toolbar-row">
         <div class="section">
           <h2>Tools</h2>
           <button id="btn-av-select" onclick="avSetTool('select')" class="active-tool">▶ Select</button>
@@ -429,7 +468,7 @@
             <span style="font-size:10px;color:#555">100</span>
           </div>
           <input id="step-slider" type="range" min="0" max="1" step="0.0001"
-            style="width:100%;accent-color:#d4a017;cursor:pointer;margin:0">
+            style="width:120px;accent-color:#d4a017;cursor:pointer;margin:0">
         </div>
         <div class="section">
           <h2>View</h2><button onclick="avFitView()">Fit View</button> <button id="av-home-btn" style="display:none"
@@ -451,11 +490,11 @@
       </div>
     </div>
     <div class="panel" id="panel-chosen">
-      <div class="sidebar">
+      <div class="toolbar-row">
         <div class="section">
           <h2>Instructions</h2>
-          <p style="font-size:11px;color:#555;line-height:1.7">Click a segment to toggle.<br>
-            <span style="color:#d4a017">■</span> Chosen &nbsp;<span style="color:#2a2b30">■</span> Not chosen<br>
+          <p style="font-size:11px;color:#555;line-height:1.7;margin:0;white-space:nowrap">Click a segment to toggle.
+            <span style="color:#d4a017">■</span> Chosen <span style="color:#2a2b30">■</span> Not chosen
             <span style="color:#c73652">●</span> Resolved nodes
           </p>
         </div>
@@ -480,7 +519,7 @@
       </div>
     </div>
     <div class="panel" id="panel-flattened">
-      <div class="sidebar">
+      <div class="toolbar-row">
         <div class="section">
           <h2>Segment</h2>
           <label>ID</label><span class="read-only-val" id="flat-prop-id">—</span>
@@ -488,7 +527,8 @@
           <label>Node B</label><span class="read-only-val" id="flat-prop-nb">—</span>
           <label>Length</label><span class="read-only-val" id="flat-prop-len">—</span>
           <label>Angle (°)</label>
-          <input id="flat-prop-angle" type="number" min="0" max="360" step="1" oninput="flatAngleChanged(this.value)">
+          <input id="flat-prop-angle" type="number" min="0" max="360" step="1" oninput="flatAngleChanged(this.value)"
+            style="width:70px">
           <p id="flat-no-sel" style="font-size:11px;color:#444;margin-top:6px">Click a segment to edit its angle.</p>
         </div>
         <div class="section">
@@ -502,6 +542,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     'use strict';
+    var embedded = window !== window.top;
+    if (embedded) document.body.classList.add('embedded');
     // When modifying this file: read the full file first; the mouse event system (onCanvasMouseDown / mousemove / mouseup and drag modes) is intricate.
 
     // ── Palette ───────────────────────────────────────────────────────────────────
@@ -736,17 +778,13 @@
     // ── Data load ─────────────────────────────────────────────────────────────────
     async function loadAll() {
       var res = await Promise.all([
-        fetch('/api/info').then(function (r) { return r.json(); }).catch(function () { return {}; }),
         fetch('/api/available').then(function (r) { return r.json(); }).catch(function () { return { segments: [], nodes: [] }; }),
         fetch('/api/chosen_list').then(function (r) { return r.json(); }).catch(function () { return []; }),
         fetch('/api/chosen_net').then(function (r) { return r.json(); }).catch(function () { return null; }),
         fetch('/api/flattened').then(function (r) { return r.json(); }).catch(function () { return { fieldnames: [], rows: [] }; })
       ]);
-      var info = res[0];
-      if (info.part_number || info.rev)
-        document.getElementById('part-rev').textContent = ((info.part_number || '') + ' ' + (info.rev || '')).trim();
-      avData = res[1]; (avData.nodes || []).forEach(normaliseNode); rebuildFollowLinks();
-      chosenList = res[2] || []; chosenNetData = res[3]; flatData = res[4];
+      avData = res[0]; (avData.nodes || []).forEach(normaliseNode); rebuildFollowLinks();
+      chosenList = res[1] || []; chosenNetData = res[2]; flatData = res[3];
       avBuildScene(); chBuildScene(); flatRender();
     }
 
@@ -2532,9 +2570,42 @@
       avOnResize(); chOnResize();
       flatPan = { x: (document.getElementById('flat-wrap').clientWidth || 800) / 2, y: 300 };
       loadAll().then(function () {
+        var hash = (window.location.hash || '').replace(/^#/, '');
+        if (hash === 'available' || hash === 'chosen' || hash === 'flattened') switchTab(hash);
         requestAnimationFrame(function () { avFitView(); chFitView(); flatFitView(); });
       });
     });
+
+    // Embedded: single toolbar is this page's toolbar-row (parent hides its bar). We handle
+    // postMessage: harnice-graph-tab (switch panel), harnice-graph-action (optional)
+    // (setTool | fitView). Toolbar spec lives in feature_tree_editor.html GRAPH_TOOLBAR_SPEC.
+    if (embedded) {
+      window.addEventListener('message', function (e) {
+        if (!e.data) return;
+        if (e.data.type === 'harnice-graph-tab' && (e.data.tab === 'available' || e.data.tab === 'chosen' || e.data.tab === 'flattened'))
+          switchTab(e.data.tab);
+        if (e.data.type === 'harnice-graph-action') {
+          var a = e.data.action;
+          if (a === 'setTool' && (e.data.tool === 'select' || e.data.tool === 'add-node' || e.data.tool === 'add-seg' || e.data.tool === 'delete'))
+            avSetTool(e.data.tool);
+          if (a === 'fitView') {
+            if (currentTab === 'available') avFitView();
+            if (currentTab === 'chosen') chFitView();
+            if (currentTab === 'flattened') flatFitView();
+          }
+          if (a === 'setStep' && typeof e.data.sliderVal === 'number') {
+            var step = sliderValToStep(e.data.sliderVal);
+            currentStep = step;
+            applyStepToInputs(step);
+            var sl = document.getElementById('step-slider');
+            var lb = document.getElementById('step-label');
+            if (sl) sl.value = stepToSliderVal(step);
+            if (lb) lb.textContent = step < 1 ? step.toString() : step % 1 === 0 ? step.toFixed(0) : step.toString();
+          }
+          if (a === 'setAngle' && e.data.value != null) flatAngleChanged(String(e.data.value));
+        }
+      });
+    }
   </script>
 </body>
 
