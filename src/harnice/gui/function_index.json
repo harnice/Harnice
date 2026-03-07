@@ -1493,7 +1493,7 @@
   {
     "module": "state",
     "function": "set_rev",
-    "docstring": "Set the current revision number (integer). Called by `fileio.verify_revision_structure()`.",
+    "docstring": "Set the current revision (number or string, e.g. 1 or \"A\"). Called by `fileio.verify_revision_structure()`.",
     "args": [
       {
         "name": "x",

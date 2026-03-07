@@ -89,6 +89,28 @@
             flex: 1;
             overflow: hidden;
             position: relative;
+            display: flex;
+        }
+
+        #editor-ta {
+            display: block;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            margin: 0;
+            padding: 10px 12px;
+            background: var(--bg);
+            color: var(--text);
+            border: none;
+            resize: none;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+
+        #editor-ta:focus {
+            outline: none;
         }
 
         #output-divider {
@@ -396,7 +418,10 @@
 
             <!-- Editor + output -->
             <div id="editor-output">
-                <div id="editor-wrap"></div>
+                <div id="editor-wrap">
+                    <textarea id="editor-ta" spellcheck="false"
+                        placeholder="Load a project to edit the feature tree…"></textarea>
+                </div>
                 <div id="output-divider"></div>
                 <div id="output-panel"></div>
             </div>
@@ -404,22 +429,10 @@
         </div>
     </div>
 
-    <!-- CodeMirror 6 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.0.1/codemirror.min.js"></script>
-    <script type="module">
+    <script>
         // ---------------------------------------------------------------------------
-        // CodeMirror 6 via ESM CDN
+        // Plain text editor (textarea)
         // ---------------------------------------------------------------------------
-        import { EditorState, EditorView, basicSetup } from "https://esm.sh/@codemirror/basic-setup@0.20.0";
-        import { python } from "https://esm.sh/@codemirror/lang-python@6.1.6";
-        import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.2";
-        import { indentWithTab } from "https://esm.sh/@codemirror/commands@6.7.1";
-        import { keymap } from "https://esm.sh/@codemirror/view@6.36.3";
-
-        // ---------------------------------------------------------------------------
-        // State
-        // ---------------------------------------------------------------------------
-        let view = null;           // CodeMirror EditorView
         let saveTimer = null;
         let pollTimer = null;
         let isRunning = false;
@@ -431,37 +444,34 @@
         // Init
         // ---------------------------------------------------------------------------
         async function init() {
+            const ta = getEditorEl();
+            if (ta && !ta.dataset.bound) {
+                ta.dataset.bound = "1";
+                ta.addEventListener("input", onCodeChanged);
+            }
             await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
             await loadCode();
             startOutputPoll();
         }
 
         // ---------------------------------------------------------------------------
-        // CodeMirror setup
+        // Editor (plain textarea)
         // ---------------------------------------------------------------------------
+        function getEditorEl() {
+            return document.getElementById("editor-ta");
+        }
+
         function initEditor(code) {
-            if (view) view.destroy();
+            const ta = getEditorEl();
+            if (!ta) return;
+            ta.value = code;
+            ta.disabled = false;
+            ta.focus();
+        }
 
-            const state = EditorState.create({
-                doc: code,
-                extensions: [
-                    basicSetup,
-                    python(),
-                    oneDark,
-                    keymap.of([indentWithTab]),
-                    EditorView.updateListener.of(update => {
-                        if (update.docChanged) onCodeChanged();
-                    }),
-                ],
-            });
-
-            view = new EditorView({
-                state,
-                parent: document.getElementById("editor-wrap"),
-            });
-
-            // Make editor fill its container
-            view.dom.style.height = "100%";
+        function getCode() {
+            const ta = getEditorEl();
+            return ta ? ta.value : "";
         }
 
         // ---------------------------------------------------------------------------
@@ -495,8 +505,22 @@
         // Code load / save
         // ---------------------------------------------------------------------------
         async function loadCode() {
-            const d = await api("GET", "/api/code");
-            initEditor(d.code || "");
+            const r = await fetch("/api/code?t=" + Date.now(), { cache: "no-store" });
+            const d = await r.json();
+            if (!r.ok) {
+                initEditor("# Error loading code: " + (d.error || r.status));
+                setSaveIndicator("unsaved");
+                return;
+            }
+            if (d && d.feature_tree_resolved === false) {
+                const msg = d.feature_tree_error
+                    ? "feature tree not found\n\n(" + d.feature_tree_error + ")"
+                    : "feature tree not found";
+                initEditor(msg);
+            } else {
+                const code = typeof d.code === "string" ? d.code : "";
+                initEditor(code);
+            }
             setSaveIndicator("saved");
         }
 
@@ -507,8 +531,8 @@
         }
 
         async function saveCode() {
-            if (!view) return;
-            const code = view.state.doc.toString();
+            const code = getCode();
+            if (!getEditorEl()) return;
             try {
                 const res = await api("POST", "/api/code", { code });
                 if (res && res.ok) {
@@ -597,14 +621,11 @@
         // Snippet insertion
         // ---------------------------------------------------------------------------
         function insertSnippet(fn) {
-            if (!view) return;
+            const ta = getEditorEl();
+            if (!ta) return;
 
             const lines = [];
-
-            if (fn.docstring) {
-                lines.push(`# ${fn.docstring}`);
-            }
-
+            if (fn.docstring) lines.push(`# ${fn.docstring}`);
             if (fn.args.length === 0) {
                 lines.push(`${fn.module}.${fn.function}()`);
             } else {
@@ -612,7 +633,6 @@
                 for (const arg of fn.args) {
                     const ann = arg.annotation ? `  # ${arg.annotation}` : "";
                     if (arg.name.startsWith("**") || arg.name.startsWith("*")) {
-                        // variadic — skip named kwarg style, insert as comment hint
                         lines.push(`    # ${arg.name}${ann}`);
                     } else {
                         lines.push(`    ${arg.name}=${arg.placeholder},${ann}`);
@@ -620,20 +640,25 @@
                 }
                 lines.push(`)`);
             }
-
             const snippet = lines.join("\n");
-            const cursor = view.state.selection.main.head;
-            const line = view.state.doc.lineAt(cursor);
 
-            // Insert at start of current line if cursor is at col 0, else insert after current line
-            const insertPos = line.from === cursor ? cursor : line.to;
-            const prefix = insertPos === cursor ? "" : "\n";
+            const pos = ta.selectionStart;
+            const text = ta.value;
+            const lineStart = text.lastIndexOf("\n", pos - 1) + 1;
+            const lineEnd = text.indexOf("\n", pos);
+            const lineEndPos = lineEnd === -1 ? text.length : lineEnd;
+            const atLineStart = pos === lineStart;
 
-            view.dispatch({
-                changes: { from: insertPos, insert: prefix + snippet },
-                selection: { anchor: insertPos + prefix.length + snippet.length },
-            });
-            view.focus();
+            const insertPos = atLineStart ? pos : lineEndPos;
+            const prefix = atLineStart ? "" : "\n";
+            const inserted = prefix + snippet;
+            const newVal = text.slice(0, insertPos) + inserted + text.slice(insertPos);
+            const newPos = insertPos + inserted.length;
+
+            ta.value = newVal;
+            ta.selectionStart = ta.selectionEnd = newPos;
+            ta.focus();
+            onCodeChanged();
         }
 
         // ---------------------------------------------------------------------------
@@ -748,19 +773,37 @@
 
         window.browseProject = async function () {
             const d = await api("GET", "/api/browse");
-            if (d.path) await switchProject(d.path);
+            if (d.path) {
+                await api("POST", "/api/add_project", { rev_folder: d.path });
+                await loadRecentProjects();
+            }
         };
 
-        async function switchProject(folder) {
-            // Flush any pending save for the current project before switching
+        async function selectProject(folder) {
             clearTimeout(saveTimer);
-            await saveCode();
+            const currentCode = getCode();
+            if (!currentCode.startsWith("feature tree not found")) {
+                await saveCode();
+            }
+            clearOutput();
+            appendOutput({ text: "── verifying revision structure ──", stream: "stdout" });
+            const sel = await api("POST", "/api/select_project", { rev_folder: folder });
+            if (sel.stdout) {
+                for (const line of sel.stdout.split("\n")) appendOutput({ text: line, stream: "stdout" });
+            }
+            if (sel.stderr) {
+                for (const line of sel.stderr.split("\n")) appendOutput({ text: line, stream: "stderr" });
+            }
             const d = await api("POST", "/api/switch", { rev_folder: folder });
-            if (!d.ok) { alert("Could not switch project: " + (d.error || "unknown error")); return; }
+            if (!d.ok) { alert("Could not switch project: " + (d.error || "unknown error")); await loadRecentProjects(); return; }
             activePath = folder;
             updatePnLabel(d.part_number, d.rev);
             await loadCode();
             await loadRecentProjects();
+        }
+
+        async function switchProject(folder) {
+            await selectProject(folder);
         }
 
         // ---------------------------------------------------------------------------

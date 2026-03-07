@@ -16,7 +16,7 @@ def set_pn(x):
 
 
 def set_rev(x):
-    """Set the current revision number (integer). Called by `fileio.verify_revision_structure()`."""
+    """Set the current revision (number or string, e.g. 1 or \"A\"). Called by `fileio.verify_revision_structure()`."""
     global rev
     rev = x
 
@@ -36,7 +36,7 @@ def set_net(x):
 def set_file_structure(x):
     """Set the default file structure dict used by `fileio.path()` and `fileio.dirpath()`.
 
-The CLI calls this with the current product's `file_structure()` result.
+    The CLI calls this with the current product's `file_structure()` result.
     """
     global file_structure
     file_structure = x
@@ -45,20 +45,20 @@ The CLI calls this with the current product's `file_structure()` result.
 def partnumber(format):
     """Return the current part number and/or revision in the requested format.
 
-Assumes `state.pn` and `state.rev` are set (e.g. by `fileio.verify_revision_structure()`).
-For a part `"mypart"` and rev `1`:
+    Assumes `state.pn` and `state.rev` are set (e.g. by `fileio.verify_revision_structure()`).
+    For a part `"mypart"` and rev `1`:
 
-**Args:**
+    **Args:**
 
-- **format** — One of:
-    - `"pn-rev"`: full part-rev string, e.g. `"mypart-rev1"`
-    - `"pn"`: part number only, e.g. `"mypart"`
-    - `"rev"`: revision label, e.g. `"rev1"`
-    - `"R"`: revision number only, e.g. `"1"`
+    - **format** — One of:
+        - `"pn-rev"`: full part-rev string, e.g. `"mypart-rev1"`
+        - `"pn"`: part number only, e.g. `"mypart"`
+        - `"rev"`: revision label, e.g. `"rev1"`
+        - `"R"`: revision number only, e.g. `"1"`
 
-**Returns:** The requested substring of `"pn-revRev"` (e.g. `"mypart-rev1"`) (`str`).
+    **Returns:** The requested substring of `"pn-revRev"` (e.g. `"mypart-rev1"`) (`str`).
 
-**Raises:** `ValueError` if **format** is not one of the options above.
+    **Raises:** `ValueError` if **format** is not one of the options above.
     """
     pn_rev = f"{pn}-rev{rev}"
 

@@ -2,7 +2,6 @@ import os
 import os.path
 import datetime
 import shutil
-import re
 import csv
 import json
 import subprocess
@@ -14,15 +13,18 @@ from harnice import state
 #  -  if multiple instances are found at the same hierarchy level with the same name,
 # this separates name from unique instance identifier
 
+
 def harnice_root():
     import harnice
+
     return os.path.dirname(os.path.dirname(os.path.dirname(harnice.__file__)))
+
 
 def part_directory():
     """Return the part directory: the parent of the current working directory.
 
-When running in a revision folder (e.g. `mypart-rev1`), this is the part folder
-(e.g. `mypart`). Equivalent to `os.path.dirname(os.getcwd())`.
+    When running in a revision folder (e.g. `mypart-rev1`), this is the part folder
+    (e.g. `mypart`). Equivalent to `os.path.dirname(os.getcwd())`.
     """
     return os.path.dirname(os.getcwd())
 
@@ -30,8 +32,8 @@ When running in a revision folder (e.g. `mypart-rev1`), this is the part folder
 def rev_directory():
     """Return the current revision directory (the current working directory).
 
-All product file-structure paths are resolved relative to this directory.
-Same as `os.getcwd()`.
+    All product file-structure paths are resolved relative to this directory.
+    Same as `os.getcwd()`.
     """
     return os.getcwd()
 
@@ -39,11 +41,11 @@ Same as `os.getcwd()`.
 def silentremove(filepath):
     """Remove a file or directory and its contents if it exists.
 
-No-op if the path does not exist. Removes symlinks as files (does not follow).
+    No-op if the path does not exist. Removes symlinks as files (does not follow).
 
-**Args:**
+    **Args:**
 
-- **filepath** — Path to the file or directory to remove.
+    - **filepath** — Path to the file or directory to remove.
     """
     if os.path.exists(filepath):
         if os.path.isfile(filepath) or os.path.islink(filepath):
@@ -55,31 +57,31 @@ No-op if the path does not exist. Removes symlinks as files (does not follow).
 def path(target_value, structure_dict=None, base_directory=None):
     """Return the full path to a file identified by its file key.
 
-* file structure dict (`state.file_structure`, or **structure_dict** if provided) is searched for a *value* equal to **target_value**. The path is built from the rev directory + **base_directory** (if any) + the key path to that value.
+    * file structure dict (`state.file_structure`, or **structure_dict** if provided) is searched for a *value* equal to **target_value**. The path is built from the rev directory + **base_directory** (if any) + the key path to that value.
 
-**Special Target Values:**
+    **Special Target Values:**
 
-- **`revision history`:** the revision history file of the product you're currently working on
-- **`library locations`:** the library locations file on your computer
-- **`project locations`:** the project locations file on your computer
-- **`drawnby`:** the text file on your computer that stores your name
-- **`rev directory`:** the revsion directory of the product you're currently working on
-- **`part directory`:** the part directory of the product you're currently working on
+    - **`revision history`:** the revision history file of the product you're currently working on
+    - **`library locations`:** the library locations file on your computer
+    - **`project locations`:** the project locations file on your computer
+    - **`drawnby`:** the text file on your computer that stores your name
+    - **`rev directory`:** the revsion directory of the product you're currently working on
+    - **`part directory`:** the part directory of the product you're currently working on
 
-**Args:**
+    **Args:**
 
-- **target_value** — File key to look up (e.g. `"signals list"`, `"feature tree"`).
-- **structure_dict** — Optional. Override the default structure (e.g. for a macro).
-    If `None`, uses `state.file_structure`.
-- **base_directory** — Optional. Subdirectory under the rev directory to use as
-    the root for structure paths. If `None` or `""`, paths are under the rev directory only.
+    - **target_value** — File key to look up (e.g. `"signals list"`, `"feature tree"`).
+    - **structure_dict** — Optional. Override the default structure (e.g. for a macro).
+        If `None`, uses `state.file_structure`.
+    - **base_directory** — Optional. Subdirectory under the rev directory to use as
+        the root for structure paths. If `None` or `""`, paths are under the rev directory only.
 
-**Returns:** Absolute path to the file (`str`).
+    **Returns:** Absolute path to the file (`str`).
 
-**Raises:** `TypeError` if **target_value** is not found in the structure (for non-special keys).
+    **Raises:** `TypeError` if **target_value** is not found in the structure (for non-special keys).
 
-**CLI interactions**
-- If `library locations`, `project locations`, or `drawnby` files do not exist on your computer (maybe this is a newly run install?) the CLI will prompt you to create the default csv's in the correct location.
+    **CLI interactions**
+    - If `library locations`, `project locations`, or `drawnby` files do not exist on your computer (maybe this is a newly run install?) the CLI will prompt you to create the default csv's in the correct location.
 
     """
     # FILES NOT DEPENDENT ON PRODUCT TYPE
@@ -92,7 +94,6 @@ def path(target_value, structure_dict=None, base_directory=None):
     # FILES DEPENDENT ON HARNICE ROOT
 
     if target_value == "library locations":
-
         library_locations_path = os.path.join(harnice_root(), "library_locations.csv")
 
         if not os.path.exists(library_locations_path):
@@ -114,7 +115,6 @@ def path(target_value, structure_dict=None, base_directory=None):
         return library_locations_path
 
     if target_value == "project locations":
-
         project_locations_path = os.path.join(harnice_root(), "project_locations.csv")
         if not os.path.exists(project_locations_path):
             from harnice import cli
@@ -133,7 +133,6 @@ def path(target_value, structure_dict=None, base_directory=None):
         return os.path.join(harnice_root(), "project_locations.csv")
 
     if target_value == "drawnby":
-
         drawnby_path = os.path.join(harnice_root(), "drawnby.json")
         if not os.path.exists(drawnby_path):
             from harnice import cli
@@ -192,26 +191,26 @@ def path(target_value, structure_dict=None, base_directory=None):
 def dirpath(target_key, structure_dict=None, base_directory=None):
     """Return the full path to a directory identified by its key in the file structure.
 
-Searches the file structure (`state.file_structure` or **structure_dict**) for a
-*key* equal to **target_key** (directory names are keys; file keys are values).
-The path is built from the rev directory + **base_directory** (if any) + the path to that key.
+    Searches the file structure (`state.file_structure` or **structure_dict**) for a
+    *key* equal to **target_key** (directory names are keys; file keys are values).
+    The path is built from the rev directory + **base_directory** (if any) + the path to that key.
 
-**Special Target Keys:**
+    **Special Target Keys:**
 
-- **`part directory`:** part directory of the product you're currently working on
-- **`rev directory`:** rev directory of the product you're currently working on
+    - **`part directory`:** part directory of the product you're currently working on
+    - **`rev directory`:** rev directory of the product you're currently working on
 
-**Args:**
+    **Args:**
 
-- **target_key** — Directory name in the structure (e.g. `"lists"`, `"maps"`).
-    Pass `None` to get the rev directory (or rev + **base_directory**).
-- **structure_dict** — Optional. Override the default structure. If `None`, uses `state.file_structure`.
-- **base_directory** — Optional. Subdirectory under the rev directory. If `None` or `""`,
-    paths are under the rev directory only.
+    - **target_key** — Directory name in the structure (e.g. `"lists"`, `"maps"`).
+        Pass `None` to get the rev directory (or rev + **base_directory**).
+    - **structure_dict** — Optional. Override the default structure. If `None`, uses `state.file_structure`.
+    - **base_directory** — Optional. Subdirectory under the rev directory. If `None` or `""`,
+        paths are under the rev directory only.
 
-**Returns:** Absolute path to the directory (`str`).
+    **Returns:** Absolute path to the directory (`str`).
 
-**Raises:** `TypeError` if **target_key** is not `None` and not found in the structure.
+    **Raises:** `TypeError` if **target_key** is not `None` and not found in the structure.
     """
     if target_key == "rev directory":
         return rev_directory()
@@ -257,16 +256,16 @@ The path is built from the rev directory + **base_directory** (if any) + the pat
 def verify_revision_structure():
     """Ensure the current directory is a valid revision folder and set `state.pn` and `state.rev`.
 
-Called by the CLI before rendering.
+    Called by the CLI before rendering.
 
-**Behavior:**
+    **Behavior:**
 
-- If cwd is a `<part>-rev<N>` folder: sets `state.pn` and `state.rev` from the path.
-- If cwd is a part folder that contains rev folders: prints a message and exits.
-- Otherwise: prompts to create a new PN here, creates the first rev folder, and `chdir` into it.
+    - If cwd is a `<part>-rev<N>` folder: sets `state.pn` and `state.rev` from the path.
+    - If cwd is a part folder that contains rev folders: prints a message and exits.
+    - Otherwise: prompts to create a new PN here, creates the first rev folder, and `chdir` into it.
 
-Ensures revision_history exists and that the revision status is blank (Harnice only
-renders revisions with blank status). Updates revision_history datemodified.
+    Ensures revision_history exists and that the revision status is blank (Harnice only
+    renders revisions with blank status). Updates revision_history datemodified.
     """
     from harnice import cli
     from harnice.lists import rev_history
@@ -275,14 +274,18 @@ renders revisions with blank status). Updates revision_history datemodified.
     cwd_name = os.path.basename(cwd)
     parent = os.path.basename(os.path.dirname(cwd))
 
-    # --- 1) Already in a <PN>-revN folder? ---
-    if cwd_name.startswith(f"{parent}-rev") and cwd_name.split("-rev")[-1].isdigit():
+    # --- 1) Already in a <PN>-rev<rev> folder? (rev can be number or string, e.g. rev1 or revA) ---
+    suffix = (
+        cwd_name.split("-rev", 1)[-1] if cwd_name.startswith(f"{parent}-rev") else ""
+    )
+    if cwd_name.startswith(f"{parent}-rev") and len(suffix) > 0:
         state.set_pn(parent)
-        state.set_rev(int(cwd_name.split("-rev")[-1]))
+        state.set_rev(int(suffix) if suffix.isdigit() else suffix)
 
     # --- 2) In a part folder that contains revision folders? ---
     elif any(
-        re.fullmatch(rf"{re.escape(cwd_name)}-rev\d+", d) for d in os.listdir(cwd)
+        d.startswith(f"{cwd_name}-rev") and len(d) > len(cwd_name) + 4
+        for d in os.listdir(cwd)
     ):
         print(f"This is a part folder ({cwd_name}).")
         print(f"Please `cd` into a revision folder (e.g. `{cwd_name}-rev1`) and rerun.")
@@ -321,8 +324,10 @@ renders revisions with blank status). Updates revision_history datemodified.
             f"Harnice only renders revisions with a blank status."
         )
 
-    print(f"Rendering PN: {state.pn}, Rev: {state.rev}")
+    print(f"Loaded PN: {state.pn}, Rev: {state.rev}")
     rev_history.update_datemodified()
+
+    return 0
 
 
 def today():
@@ -334,8 +339,8 @@ def today():
 def get_git_hash_of_harnice_src():
     """Return the git commit hash of the Harnice source repo (HEAD).
 
-Used for version/attribution in outputs. Returns `"UNKNOWN"` if git is
-unavailable or the repo cannot be read.
+    Used for version/attribution in outputs. Returns `"UNKNOWN"` if git is
+    unavailable or the repo cannot be read.
     """
     try:
         # ask git for commit hash
@@ -351,21 +356,21 @@ unavailable or the repo cannot be read.
 def get_path_to_project(traceable_key):
     """Return the local filesystem path for a project identified by a traceable key.
 
-Reads `project_locations.csv` (at `fileio.path("project locations")`) and returns
-the expanded local path for the row whose **traceable_key** matches. Used to
-resolve paths to systems, libraries, or other projects by part number or URL.
+    Reads `project_locations.csv` (at `fileio.path("project locations")`) and returns
+    the expanded local path for the row whose **traceable_key** matches. Used to
+    resolve paths to systems, libraries, or other projects by part number or URL.
 
-**Args:**
+    **Args:**
 
-- **traceable_key** — Key to look up (e.g. part number or project identifier).
-    Leading/trailing whitespace is stripped.
+    - **traceable_key** — Key to look up (e.g. part number or project identifier).
+        Leading/trailing whitespace is stripped.
 
-**Returns:** `os.path.expanduser(local_path)` for the matching row (`str`).
+    **Returns:** `os.path.expanduser(local_path)` for the matching row (`str`).
 
-**Raises:**
+    **Raises:**
 
-- `FileNotFoundError` — If `project_locations.csv` does not exist.
-- `ValueError` — If **traceable_key** is not found or has no local path.
+    - `FileNotFoundError` — If `project_locations.csv` does not exist.
+    - `ValueError` — If **traceable_key** is not found or has no local path.
     """
     from harnice import fileio
 
@@ -396,24 +401,26 @@ resolve paths to systems, libraries, or other projects by part number or URL.
                     )
                 return os.path.expanduser(local)
 
-    raise ValueError(f"Could not find project traceable key '{traceable_key}' in the project_locations.csv file. Add it here: {fileio.path("project locations")}")
+    raise ValueError(
+        f"Could not find project traceable key '{traceable_key}' in the project_locations.csv file. Add it here: {fileio.path('project locations')}"
+    )
 
 
 def read_tsv(filepath, delimiter="\t"):
     """Read a TSV file and return a list of row dicts (one dict per row, keys from header).
 
-If **filepath** is an existing file path, that file is read. If not, **filepath** is
-treated as a file key and `fileio.path(filepath)` is used to resolve the path
-(e.g. `"instances list"` or `"signals list"`).
+    If **filepath** is an existing file path, that file is read. If not, **filepath** is
+    treated as a file key and `fileio.path(filepath)` is used to resolve the path
+    (e.g. `"instances list"` or `"signals list"`).
 
-**Args:**
+    **Args:**
 
-- **filepath** — Path to a TSV file, or a file key (e.g. `"instances list"`).
-- **delimiter** — Column delimiter; default `"\\t"`.
+    - **filepath** — Path to a TSV file, or a file key (e.g. `"instances list"`).
+    - **delimiter** — Column delimiter; default `"\\t"`.
 
-**Returns:** List of dicts, one per data row, with keys from the header row (`list`).
+    **Returns:** List of dicts, one per data row, with keys from the header row (`list`).
 
-**Raises:** `FileNotFoundError` if the path does not exist or the resolved path does not exist.
+    **Raises:** `FileNotFoundError` if the path does not exist or the resolved path does not exist.
     """
     try:
         with open(filepath, newline="", encoding="utf-8") as f:
@@ -432,17 +439,17 @@ treated as a file key and `fileio.path(filepath)` is used to resolve the path
 def drawnby():
     """Load and return the contents of the drawnby file (path from `fileio.path("drawnby")`).
 
-The drawnby file lives at the Harnice repo root and stores author/credits info.
+    The drawnby file lives at the Harnice repo root and stores author/credits info.
 
-That file should be structured like this, and this function will return exactly the same as a json object:
-```json
-{
-    "name": "K SHUTT"
-}
-```
-Use case:
-```python
-name = fileio.drawnby().get("name")
-```
+    That file should be structured like this, and this function will return exactly the same as a json object:
+    ```json
+    {
+        "name": "K SHUTT"
+    }
+    ```
+    Use case:
+    ```python
+    name = fileio.drawnby().get("name")
+    ```
     """
     return json.load(open(path("drawnby")))
