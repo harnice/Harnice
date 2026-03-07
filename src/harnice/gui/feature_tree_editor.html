@@ -169,6 +169,55 @@
             line-height: 1.4;
         }
 
+        #file-navigator-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .file-nav-item {
+            display: block;
+            width: 100%;
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 12px;
+            color: var(--text);
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+        }
+
+        .file-nav-item:hover {
+            background: var(--bg3);
+        }
+
+        .file-nav-item.active {
+            background: var(--bg4);
+            color: var(--accent);
+        }
+
+        #graph-editor-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            background: var(--bg2);
+        }
+
+        #graph-editor-panel.visible {
+            display: flex;
+        }
+
+        #graph-editor-iframe {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            border: none;
+            background: var(--bg2);
+        }
+
         #projects-section {
             flex: 1;
             min-height: 0;
@@ -547,8 +596,9 @@
                         <button id="run-btn" class="btn idle" onclick="runCode()">▶ Render</button>
                         <span id="save-indicator">—</span>
                     </div>
-                    <div id="file-navigator-placeholder">Placeholder file viewer (options depend on product type of
-                        selected project)</div>
+                    <div id="file-navigator-list" style="display: none;"></div>
+                    <div id="file-navigator-placeholder">Load a project to see editable files (feature tree; harness
+                        projects also include available/chosen/flattened network).</div>
                 </div>
                 <div id="sidebar-divider" title="Drag to resize"></div>
                 <!-- Project list -->
@@ -581,6 +631,9 @@
                         <div id="output-divider"></div>
                         <div id="output-panel"></div>
                     </div>
+                    <div id="graph-editor-panel">
+                        <iframe id="graph-editor-iframe" src="about:blank" title="Graph editor"></iframe>
+                    </div>
                 </div>
             </div>
 
@@ -597,6 +650,9 @@
         let activePath = null;     // active rev_folder on server
         let functionIndex = [];    // from /api/function_index
         let openDropdown = null;   // currently visible dropdown menu element
+        let editorFiles = [];      // labels from /api/info (e.g. ["feature tree", "available network", ...])
+        let productType = null;
+        let selectedFile = "feature tree";  // which file is selected in the navigator
 
         // ---------------------------------------------------------------------------
         // Init
@@ -608,6 +664,7 @@
                 ta.addEventListener("input", onCodeChanged);
             }
             setupProjectListDragDrop(document.getElementById("project-list"));
+            updateContentVisibility();
             await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
             await loadCode();
             startOutputPoll();
@@ -653,6 +710,13 @@
             const d = await api("GET", "/api/info");
             updatePnLabel(d.part_number, d.rev);
             activePath = d.rev_folder;
+            editorFiles = Array.isArray(d.editor_files) ? d.editor_files : [];
+            productType = d.product_type || null;
+            if (!editorFiles.includes(selectedFile)) {
+                selectedFile = editorFiles.length ? editorFiles[0] : "feature tree";
+            }
+            renderFileList();
+            updateContentVisibility();
         }
 
         function updatePnLabel(pn, rev) {
@@ -661,6 +725,61 @@
             if (pnRevEl) pnRevEl.textContent = text;
             const labelEl = document.getElementById("pn-label");
             if (labelEl) labelEl.textContent = text;
+        }
+
+        function renderFileList() {
+            const listEl = document.getElementById("file-navigator-list");
+            const placeholderEl = document.getElementById("file-navigator-placeholder");
+            if (!listEl || !placeholderEl) return;
+            if (editorFiles.length === 0) {
+                listEl.style.display = "none";
+                placeholderEl.style.display = "block";
+                listEl.innerHTML = "";
+                return;
+            }
+            placeholderEl.style.display = "none";
+            listEl.style.display = "block";
+            listEl.innerHTML = "";
+            for (const label of editorFiles) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "file-nav-item" + (label === selectedFile ? " active" : "");
+                btn.textContent = label;
+                btn.dataset.file = label;
+                btn.onclick = () => selectFile(label);
+                listEl.appendChild(btn);
+            }
+        }
+
+        function selectFile(label) {
+            selectedFile = label;
+            renderFileList();
+            updateContentVisibility();
+            if (label === "feature tree") {
+                loadCode();
+            }
+        }
+
+        function updateContentVisibility() {
+            const editorOutput = document.getElementById("editor-output");
+            const graphPanel = document.getElementById("graph-editor-panel");
+            const graphIframe = document.getElementById("graph-editor-iframe");
+            const runBtn = document.getElementById("run-btn");
+            const isFeatureTree = selectedFile === "feature tree";
+            if (editorOutput) editorOutput.style.display = isFeatureTree ? "flex" : "none";
+            if (graphPanel) {
+                graphPanel.classList.toggle("visible", !isFeatureTree);
+            }
+            if (graphIframe) {
+                if (!isFeatureTree) {
+                    if (graphIframe.src === "about:blank" || graphIframe.src.endsWith("/graph-editor") === false) {
+                        graphIframe.src = "/graph-editor";
+                    }
+                } else {
+                    graphIframe.src = "about:blank";
+                }
+            }
+            if (runBtn) runBtn.style.visibility = isFeatureTree ? "visible" : "hidden";
         }
 
         // ---------------------------------------------------------------------------
@@ -1027,7 +1146,8 @@
             const d = await api("POST", "/api/switch", { rev_folder: folder });
             if (!d.ok) { alert("Could not switch project: " + (d.error || "unknown error")); await loadRecentProjects(); return; }
             activePath = folder;
-            updatePnLabel(d.part_number, d.rev);
+            selectedFile = "feature tree";
+            await loadInfo();
             await loadCode();
             await loadRecentProjects();
         }

@@ -29,6 +29,66 @@ from pathlib import Path
 _GUI_DIR = Path(__file__).resolve().parent
 _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
 _EDITOR_HTML = _GUI_DIR / "feature_tree_editor.html"
+_GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
+
+
+def _graph_file_path(rev_folder: str, product_type: str, label: str) -> Path:
+    """Return the absolute path for a graph-editor file label. No global state. Harness only."""
+    if product_type != "harness":
+        raise ValueError("Graph files only exist for harness product")
+    rev_name = os.path.basename(os.path.normpath(rev_folder))
+    # Harness file_structure keys: {pn-rev}-available_network.json, etc.
+    key_by_label = {
+        "available network": f"{rev_name}-available_network.json",
+        "chosen network": f"{rev_name}-chosen_network.json",
+        "flattened network": f"{rev_name}-flattened_network.tsv",
+        "chosen entity list": f"{rev_name}-chosen_entity_list.json",
+    }
+    key = key_by_label.get(label)
+    if not key:
+        raise ValueError(f"Unknown graph file label: {label}")
+    return Path(rev_folder) / key
+
+
+def _graph_read_json(path: Path, default):
+    if path.exists():
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return default
+
+
+def _graph_write_json(path: Path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+
+def _graph_read_csv(path: Path):
+    if not path.exists():
+        return [], []
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        return reader.fieldnames or [], list(reader)
+
+
+def _graph_write_csv(path: Path, fieldnames, rows):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _editor_files_for_product(product_type: str) -> list:
+    """Return list of file labels to show in the file navigator for this product. Only harness has network files."""
+    if product_type == "harness":
+        return [
+            "feature tree",
+            "available network",
+            "chosen network",
+            "flattened network",
+        ]
+    return ["feature tree"]
 
 
 def _find_feature_tree_path_in_structure(structure, path=None):
@@ -131,6 +191,8 @@ class _State:
         self._rev_folder = ""
         self._feature_tree_path = None
         self._feature_tree_error = None  # reason when path could not be resolved
+        self._product_type = None
+        self._editor_files = ["feature tree"]  # file labels for file navigator
         self.set_rev_folder(rev_folder)
 
         # Run subprocess state
@@ -147,8 +209,12 @@ class _State:
         folder = os.path.normpath(os.path.abspath(rev_folder))
         with self.lock:
             self._rev_folder = folder
-            self._feature_tree_path, self._feature_tree_error = (
-                self._resolve_feature_tree(folder)
+            path, err, ptype = self._resolve_feature_tree(folder)
+            self._feature_tree_path = path
+            self._feature_tree_error = err
+            self._product_type = ptype
+            self._editor_files = (
+                _editor_files_for_product(ptype) if ptype else ["feature tree"]
             )
 
     def _resolve_feature_tree(self, folder: str):
@@ -156,7 +222,7 @@ class _State:
         Resolve the feature tree file path from the rev folder path only.
         No chdir: we read revision history and product file_structure using
         the given path, then build the feature tree path as rev_folder + structure key.
-        Returns (Path or None, error_message or None).
+        Returns (Path or None, error_message or None, product_type or None).
         """
         try:
             from harnice import state
@@ -214,14 +280,24 @@ class _State:
                 )
 
             full_path = os.path.join(rev_folder, *path_parts)
-            return Path(full_path), None
+            return Path(full_path), None, product_type
         except Exception as e:
-            return None, str(e)
+            return None, str(e), None
 
     @property
     def rev_folder(self) -> str:
         with self.lock:
             return self._rev_folder
+
+    @property
+    def product_type(self):
+        with self.lock:
+            return self._product_type
+
+    @property
+    def editor_files(self):
+        with self.lock:
+            return list(self._editor_files)
 
     @property
     def feature_tree_path(self):
@@ -410,12 +486,17 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         routes = {
             "/": self._serve_html,
             "/index.html": self._serve_html,
+            "/graph-editor": self._serve_graph_editor_html,
             "/api/info": self._api_info,
             "/api/code": self._api_get_code,
             "/api/function_index": self._api_function_index,
             "/api/run_output": self._api_run_output,
             "/api/recent_projects": self._api_recent_projects,
             "/api/browse": self._api_browse,
+            "/api/available": self._api_graph_available,
+            "/api/chosen_list": self._api_graph_chosen_list,
+            "/api/chosen_net": self._api_graph_chosen_net,
+            "/api/flattened": self._api_graph_flattened,
         }
         handler = routes.get(path)
         if handler:
@@ -434,6 +515,9 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/api/remove_project": self._api_remove_project,
             "/api/reorder_projects": self._api_reorder_projects,
             "/api/close": self._api_close,
+            "/api/available": self._api_graph_save_available,
+            "/api/chosen_list": self._api_graph_save_chosen_list,
+            "/api/flattened": self._api_graph_save_flattened,
         }
         handler = routes.get(path)
         if handler:
@@ -449,6 +533,13 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             return
         self._send_bytes(_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8")
 
+    def _serve_graph_editor_html(self):
+        """Serve graph editor HTML for embedding in iframe. Same origin so /api/* go to this server."""
+        if not _GRAPH_EDITOR_HTML.exists():
+            self.send_error(500, "graph_editor.html not found")
+            return
+        self._send_bytes(_GRAPH_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8")
+
     def _api_info(self):
         pn, rev = _state.pn_and_rev()
         p = _state.feature_tree_path
@@ -458,6 +549,8 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
                 "rev": rev,
                 "feature_tree_path": str(p) if p else None,
                 "rev_folder": _state.rev_folder,
+                "product_type": _state.product_type,
+                "editor_files": _state.editor_files,
             }
         )
 
@@ -522,6 +615,76 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
                 }
             )
         self._send_json({"projects": projects})
+
+    def _graph_api_guard(self):
+        """Return None if graph API is allowed (harness project), else send error and return True."""
+        if _state.product_type != "harness":
+            self._send_json(
+                {"error": "Graph editor is only available for harness projects"},
+                status=400,
+            )
+            return True
+        return None
+
+    def _api_graph_available(self):
+        if self._graph_api_guard():
+            return
+        p = _graph_file_path(_state.rev_folder, "harness", "available network")
+        data = _graph_read_json(p, {"segments": [], "nodes": []})
+        self._send_json(data)
+
+    def _api_graph_save_available(self):
+        if self._graph_api_guard():
+            return
+        body = self._read_json_body()
+        p = _graph_file_path(_state.rev_folder, "harness", "available network")
+        _graph_write_json(p, body)
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _api_graph_chosen_list(self):
+        if self._graph_api_guard():
+            return
+        p = _graph_file_path(_state.rev_folder, "harness", "chosen entity list")
+        data = _graph_read_json(p, [])
+        self._send_json(data)
+
+    def _api_graph_save_chosen_list(self):
+        if self._graph_api_guard():
+            return
+        body = self._read_json_body()
+        p = _graph_file_path(_state.rev_folder, "harness", "chosen entity list")
+        _graph_write_json(p, body)
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _api_graph_chosen_net(self):
+        if self._graph_api_guard():
+            return
+        p = _graph_file_path(_state.rev_folder, "harness", "chosen network")
+        data = _graph_read_json(p, None)
+        self._send_json(data)
+
+    def _api_graph_flattened(self):
+        if self._graph_api_guard():
+            return
+        p = _graph_file_path(_state.rev_folder, "harness", "flattened network")
+        fieldnames, rows = _graph_read_csv(p)
+        self._send_json({"fieldnames": fieldnames, "rows": rows})
+
+    def _api_graph_save_flattened(self):
+        if self._graph_api_guard():
+            return
+        body = self._read_json_body()
+        fieldnames = body.get("fieldnames", [])
+        rows = body.get("rows", [])
+        p = _graph_file_path(_state.rev_folder, "harness", "flattened network")
+        _graph_write_csv(p, fieldnames, rows)
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def _api_browse(self):
         """Show OS folder picker in a subprocess so tkinter runs on a proper main thread (avoids crash when server uses threads)."""

@@ -1,5 +1,43 @@
 [
   {
+    "module": "available_network",
+    "function": "read",
+    "docstring": null,
+    "args": [
+      {
+        "name": "path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      }
+    ]
+  },
+  {
+    "module": "available_network",
+    "function": "verify",
+    "docstring": "Cross-references available network segment endpoints against the instances list.",
+    "args": []
+  },
+  {
+    "module": "available_network",
+    "function": "write",
+    "docstring": null,
+    "args": [
+      {
+        "name": "network",
+        "annotation": "AvailableNetwork",
+        "default": null,
+        "placeholder": "None"
+      },
+      {
+        "name": "path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      }
+    ]
+  },
+  {
     "module": "channel_map",
     "function": "already_mapped",
     "docstring": null,
@@ -61,6 +99,100 @@
     "function": "new",
     "docstring": "Makes a new blank channel map. Overwrites existing channel map.",
     "args": []
+  },
+  {
+    "module": "chosen_network",
+    "function": "build_chosen_network",
+    "docstring": "Read available_network.json, resolve chosen network, write chosen_network.json.",
+    "args": [
+      {
+        "name": "available_path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      },
+      {
+        "name": "chosen_segment_ids",
+        "annotation": "list[str]",
+        "default": null,
+        "placeholder": "[]"
+      },
+      {
+        "name": "chosen_path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      },
+      {
+        "name": "proximity_threshold",
+        "annotation": "float",
+        "default": "1e-06",
+        "placeholder": "1e-06"
+      }
+    ]
+  },
+  {
+    "module": "chosen_network",
+    "function": "read_available_network",
+    "docstring": null,
+    "args": [
+      {
+        "name": "path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      }
+    ]
+  },
+  {
+    "module": "chosen_network",
+    "function": "resolve_chosen_network",
+    "docstring": null,
+    "args": [
+      {
+        "name": "segments",
+        "annotation": "list[AvailableSegment]",
+        "default": null,
+        "placeholder": "[]"
+      },
+      {
+        "name": "nodes",
+        "annotation": "list[AvailableNode]",
+        "default": null,
+        "placeholder": "[]"
+      },
+      {
+        "name": "chosen_segment_ids",
+        "annotation": "list[str]",
+        "default": null,
+        "placeholder": "[]"
+      },
+      {
+        "name": "proximity_threshold",
+        "annotation": "float",
+        "default": "1e-06",
+        "placeholder": "1e-06"
+      }
+    ]
+  },
+  {
+    "module": "chosen_network",
+    "function": "write_chosen_network",
+    "docstring": null,
+    "args": [
+      {
+        "name": "network",
+        "annotation": "ChosenNetwork",
+        "default": null,
+        "placeholder": "None"
+      },
+      {
+        "name": "path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      }
+    ]
   },
   {
     "module": "circuits_list",
@@ -174,6 +306,70 @@
     "function": "new",
     "docstring": null,
     "args": []
+  },
+  {
+    "module": "flattened_network",
+    "function": "build_flattened_network",
+    "docstring": "Read chosen_network.json and write a skeleton flattened_network.csv.",
+    "args": [
+      {
+        "name": "chosen_path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      },
+      {
+        "name": "flattened_path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      }
+    ]
+  },
+  {
+    "module": "flattened_network",
+    "function": "read_chosen_network",
+    "docstring": "Read chosen_network.json and return a skeleton FlattenedNetwork.",
+    "args": [
+      {
+        "name": "path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      }
+    ]
+  },
+  {
+    "module": "flattened_network",
+    "function": "read_flattened_network",
+    "docstring": "Read a previously saved flattened_network.csv, including any user-entered layout data.",
+    "args": [
+      {
+        "name": "path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      }
+    ]
+  },
+  {
+    "module": "flattened_network",
+    "function": "write_flattened_network",
+    "docstring": null,
+    "args": [
+      {
+        "name": "network",
+        "annotation": "FlattenedNetwork",
+        "default": null,
+        "placeholder": "None"
+      },
+      {
+        "name": "path",
+        "annotation": "Path",
+        "default": null,
+        "placeholder": "None"
+      }
+    ]
   },
   {
     "module": "instances_list",
