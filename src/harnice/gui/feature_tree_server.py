@@ -60,6 +60,32 @@ def _gui_state_path() -> Path:
     return _GUI_DIR.parents[2] / "feature_tree_editor_state.json"
 
 
+def _product_type_for_revision_folder(rev_folder: str):
+    """
+    Return the Harnice product type (e.g. "harness", "system") for a revision
+    folder path, or None if it cannot be determined. Supports numeric and
+    string rev suffixes (e.g. rev9, revA).
+    """
+    rev_folder = os.path.normpath(os.path.abspath(rev_folder))
+    part_dir = os.path.dirname(rev_folder)
+    rev_name = os.path.basename(rev_folder)
+    part_name = os.path.basename(part_dir)
+    if not rev_name.startswith(f"{part_name}-rev"):
+        return None
+    suffix = rev_name.split("-rev", 1)[-1]
+    if not suffix:
+        return None
+    rev_hist_path = os.path.join(part_dir, f"{part_name}-revision_history.tsv")
+    if not os.path.exists(rev_hist_path):
+        return None
+    try:
+        from harnice.lists import rev_history
+
+        return rev_history.info(rev=suffix, path=rev_hist_path, field="product")
+    except Exception:
+        return None
+
+
 # ---------------------------------------------------------------------------
 # State — shared, protected by a lock
 # ---------------------------------------------------------------------------
@@ -434,7 +460,17 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
     def _api_recent_projects(self):
         data = _load_gui_state()
-        self._send_json({"projects": data.get("recent_projects", [])})
+        folders = data.get("recent_projects", [])
+        projects = []
+        for rev_folder in folders:
+            pt = _product_type_for_revision_folder(rev_folder)
+            projects.append(
+                {
+                    "rev_folder": rev_folder,
+                    "product_type": (pt or "").strip() or None,
+                }
+            )
+        self._send_json({"projects": projects})
 
     def _api_browse(self):
         path = None

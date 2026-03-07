@@ -48,7 +48,8 @@
             height: 100%;
         }
 
-        #toolbar {
+        /* Tools menu: top bar of right area */
+        #tools-menu {
             display: flex;
             align-items: center;
             gap: 6px;
@@ -61,9 +62,33 @@
             overflow-x: auto;
         }
 
+        #tools-menu-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 8px;
+        }
+
+        #tools-menu-placeholder {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
         #main {
             display: flex;
             flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        #right-area {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
 
@@ -78,11 +103,77 @@
             flex-shrink: 0;
         }
 
+        /* Left sidebar: file navigator (top) + project list (bottom) */
+        #file-navigator {
+            flex: 0 0 auto;
+            border-bottom: 1px solid var(--border);
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #file-navigator-label {
+            padding: 8px 10px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #file-navigator-placeholder {
+            flex: 1;
+            padding: 10px;
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        #projects-section {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #projects-section .panel-header {
+            padding: 8px 10px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Content: main editor + output area */
+        #content-section {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #content-label {
+            padding: 6px 10px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
         #editor-output {
             display: flex;
             flex-direction: column;
             flex: 1;
             overflow: hidden;
+            min-height: 0;
         }
 
         #editor-wrap {
@@ -269,17 +360,6 @@
             margin-top: 1px;
         }
 
-        /* ── Left panel ── */
-        #panel-header {
-            padding: 8px 10px 6px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border);
-        }
-
         #open-project-btn {
             margin: 10px;
         }
@@ -325,6 +405,12 @@
         .project-rev {
             color: var(--text-dim);
             font-size: 11px;
+        }
+
+        .project-product {
+            color: var(--accent2);
+            font-size: 10px;
+            text-transform: lowercase;
         }
 
         .project-remove {
@@ -395,35 +481,52 @@
 <body>
     <div id="app">
 
-        <!-- Toolbar -->
-        <div id="toolbar">
-            <div id="dropdowns"></div>
-            <div class="tb-sep"></div>
-            <button id="run-btn" class="btn idle" onclick="runCode()">▶ Run</button>
-            <div class="tb-sep"></div>
-            <span id="save-indicator">—</span>
-            <div class="tb-spacer"></div>
-            <span id="pn-label">—</span>
-        </div>
-
-        <!-- Main -->
+        <!-- Main: left sidebar + right area -->
         <div id="main">
 
-            <!-- Left panel -->
+            <!-- Left sidebar -->
             <div id="left-panel">
-                <div id="panel-header">Projects</div>
-                <button id="open-project-btn" class="btn" onclick="browseProject()">Open project…</button>
-                <div id="project-list"></div>
+                <!-- File navigator (options depend on product type of selected project) -->
+                <div id="file-navigator">
+                    <div id="file-navigator-label">File navigator</div>
+                    <div id="file-navigator-placeholder">Placeholder file viewer (options depend on product type of
+                        selected project)</div>
+                </div>
+                <!-- Project list -->
+                <div id="projects-section">
+                    <div class="panel-header">Project</div>
+                    <button id="open-project-btn" class="btn" onclick="browseProject()">Open project…</button>
+                    <div id="project-list"></div>
+                </div>
             </div>
 
-            <!-- Editor + output -->
-            <div id="editor-output">
-                <div id="editor-wrap">
-                    <textarea id="editor-ta" spellcheck="false"
-                        placeholder="Load a project to edit the feature tree…"></textarea>
+            <!-- Right: tools menu + content -->
+            <div id="right-area">
+                <!-- Tools menu -->
+                <div id="tools-menu">
+                    <span id="tools-menu-label">Tools menu</span>
+                    <span id="tools-menu-placeholder">Placeholder toolbar for instances list</span>
+                    <div class="tb-sep"></div>
+                    <div id="dropdowns"></div>
+                    <div class="tb-sep"></div>
+                    <button id="run-btn" class="btn idle" onclick="runCode()">▶ Run</button>
+                    <div class="tb-sep"></div>
+                    <span id="save-indicator">—</span>
+                    <div class="tb-spacer"></div>
+                    <span id="pn-label">—</span>
                 </div>
-                <div id="output-divider"></div>
-                <div id="output-panel"></div>
+                <!-- Content -->
+                <div id="content-section">
+                    <div id="content-label">Content</div>
+                    <div id="editor-output">
+                        <div id="editor-wrap">
+                            <textarea id="editor-ta" spellcheck="false"
+                                placeholder="Load a project to edit the feature tree…"></textarea>
+                        </div>
+                        <div id="output-divider"></div>
+                        <div id="output-panel"></div>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -743,8 +846,11 @@
             const list = document.getElementById("project-list");
             list.innerHTML = "";
 
-            for (const folder of projects) {
-                const parts = folder.replace(/\\/g, "/").split("/");
+            for (const proj of projects) {
+                const folder = typeof proj === "string" ? proj : (proj.rev_folder || "");
+                if (!folder) continue;
+                const productType = typeof proj === "object" && proj ? (proj.product_type || "") : "";
+                const parts = String(folder).replace(/\\/g, "/").split("/");
                 const revName = parts[parts.length - 1];       // e.g. 0000250810-S01-rev9
                 const pnName = parts[parts.length - 2] || ""; // e.g. 0000250810-S01
                 const revPart = revName.startsWith(pnName + "-") ? revName.slice(pnName.length + 1) : revName;
@@ -752,10 +858,12 @@
                 const item = document.createElement("div");
                 item.className = "project-item" + (folder === activePath ? " active" : "");
 
+                const productHtml = productType ? `<div class="project-product">${escapeHtml(productType)}</div>` : "";
                 item.innerHTML = `
       <div class="project-item-text">
-        <div class="project-pn">${pnName || revName}</div>
-        <div class="project-rev">${revPart}</div>
+        <div class="project-pn">${escapeHtml(pnName || revName)}</div>
+        <div class="project-rev">${escapeHtml(revPart)}</div>
+        ${productHtml}
       </div>
       <span class="project-remove" title="Remove">✕</span>
     `;
@@ -769,6 +877,12 @@
                 item.onclick = () => switchProject(folder);
                 list.appendChild(item);
             }
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement("div");
+            div.textContent = s;
+            return div.innerHTML;
         }
 
         window.browseProject = async function () {
