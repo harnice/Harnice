@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Harnice Feature Tree Editor</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #1e1e1e;
+            --bg2: #252526;
+            --bg3: #2d2d2d;
+            --bg4: #333;
+            --border: #3c3c3c;
+            --text: #d4d4d4;
+            --text-dim: #888;
+            --accent: #4ec9b0;
+            --accent2: #569cd6;
+            --green: #4caf50;
+            --red: #f44336;
+            --orange: #ce9178;
+            --toolbar-h: 42px;
+            --panel-w: 220px;
+            --output-h: 200px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 13px;
+        }
+
+        /* ── Layout ── */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Tools menu: top bar of right area */
+        #tools-menu {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            height: var(--toolbar-h);
+            min-height: var(--toolbar-h);
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 0 10px;
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+
+        #tools-menu-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 8px;
+        }
+
+        #tools-menu-placeholder {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        #main {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        #right-area {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #left-panel {
+            width: var(--panel-w);
+            min-width: var(--panel-w);
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        /* Left sidebar: file navigator (top) + draggable divider + project list (bottom) */
+        #file-navigator {
+            flex: 0 0 auto;
+            height: 180px;
+            min-height: 80px;
+            max-height: 70vh;
+            border-bottom: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #sidebar-divider {
+            height: 5px;
+            background: var(--border);
+            cursor: row-resize;
+            flex-shrink: 0;
+        }
+
+        #sidebar-divider:hover {
+            background: var(--accent2);
+        }
+
+        #file-navigator-label {
+            padding: 8px 10px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #file-navigator-pn-rev {
+            padding: 4px 10px 6px;
+            font-size: 12px;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #file-navigator-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px 8px;
+            flex-shrink: 0;
+        }
+
+        #file-navigator-toolbar #run-btn {
+            flex-shrink: 0;
+        }
+
+        #file-navigator-toolbar #save-indicator {
+            font-size: 11px;
+        }
+
+        #file-navigator-placeholder {
+            flex: 1;
+            padding: 10px;
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        #projects-section {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #projects-section .panel-header {
+            padding: 8px 10px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Content: main editor + output area */
+        #content-section {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #content-label {
+            padding: 6px 10px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        #editor-output {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        #editor-wrap {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+        }
+
+        #editor-ta {
+            display: block;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            margin: 0;
+            padding: 10px 12px;
+            background: var(--bg);
+            color: var(--text);
+            border: none;
+            resize: none;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+
+        #editor-ta:focus {
+            outline: none;
+        }
+
+        #output-divider {
+            height: 5px;
+            background: var(--border);
+            cursor: row-resize;
+            flex-shrink: 0;
+        }
+
+        #output-divider:hover {
+            background: var(--accent2);
+        }
+
+        #output-panel {
+            height: var(--output-h);
+            min-height: 60px;
+            background: #111;
+            border-top: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 6px 10px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        /* ── Toolbar elements ── */
+        .tb-sep {
+            width: 1px;
+            height: 22px;
+            background: var(--border);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .tb-spacer {
+            flex: 1;
+        }
+
+        #pn-label {
+            color: var(--text-dim);
+            font-size: 12px;
+            white-space: nowrap;
+            padding: 0 8px;
+            flex-shrink: 0;
+        }
+
+        #save-indicator {
+            font-size: 11px;
+            color: var(--text-dim);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        #save-indicator.unsaved {
+            color: var(--orange);
+        }
+
+        #save-indicator.saved {
+            color: var(--green);
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn:hover {
+            background: var(--bg4);
+        }
+
+        .btn:active {
+            background: #444;
+        }
+
+        #run-btn {
+            font-weight: 600;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        #run-btn.idle {
+            border-color: #555;
+        }
+
+        #run-btn.running {
+            border-color: var(--orange);
+            color: var(--orange);
+        }
+
+        #run-btn.success {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        #run-btn.error {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* ── Dropdown menus ── */
+        .dropdown {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            min-width: 240px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            font-size: 12px;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 5px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg4);
+        }
+
+        .dropdown-item .fn-name {
+            color: var(--accent);
+        }
+
+        .dropdown-item .fn-args {
+            color: var(--text-dim);
+        }
+
+        .dropdown-item .fn-doc {
+            display: block;
+            color: #666;
+            font-size: 11px;
+            margin-top: 1px;
+        }
+
+        #open-project-btn {
+            margin: 10px;
+        }
+
+        #project-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .project-item {
+            padding: 6px 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+
+        .project-item:hover {
+            background: var(--bg3);
+        }
+
+        .project-item.active {
+            background: var(--bg3);
+            border-left: 2px solid var(--accent);
+            padding-left: 8px;
+        }
+
+        .project-item.dragging {
+            opacity: 0.5;
+        }
+
+        .project-item-text {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .project-pn {
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .project-rev {
+            color: var(--text-dim);
+            font-size: 11px;
+        }
+
+        .project-desc {
+            color: var(--text-dim);
+            font-size: 11px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .project-product {
+            color: var(--accent2);
+            font-size: 10px;
+            text-transform: lowercase;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .project-remove {
+            color: var(--text-dim);
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 4px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            visibility: hidden;
+        }
+
+        .project-item:hover .project-remove {
+            visibility: visible;
+        }
+
+        .project-remove:hover {
+            color: var(--red);
+            background: rgba(244, 67, 54, 0.15);
+        }
+
+        /* ── Output panel ── */
+        .out-line {
+            display: block;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .out-line.stderr {
+            color: var(--orange);
+        }
+
+        .out-banner {
+            display: block;
+            margin-top: 6px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .out-banner.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--green);
+        }
+
+        .out-banner.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--red);
+        }
+
+        /* ── CodeMirror overrides ── */
+        .cm-editor {
+            height: 100%;
+            font-size: 13px;
+        }
+
+        .cm-editor.cm-focused {
+            outline: none;
+        }
+
+        .cm-scroller {
+            overflow: auto !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+
+        <!-- Main: left sidebar + right area -->
+        <div id="main">
+
+            <!-- Left sidebar -->
+            <div id="left-panel">
+                <!-- File navigator (options depend on product type of selected project) -->
+                <div id="file-navigator">
+                    <div id="file-navigator-label">File navigator</div>
+                    <div id="file-navigator-pn-rev">No project</div>
+                    <div id="file-navigator-toolbar">
+                        <button id="run-btn" class="btn idle" onclick="runCode()">▶ Render</button>
+                        <span id="save-indicator">—</span>
+                    </div>
+                    <div id="file-navigator-placeholder">Placeholder file viewer (options depend on product type of
+                        selected project)</div>
+                </div>
+                <div id="sidebar-divider" title="Drag to resize"></div>
+                <!-- Project list -->
+                <div id="projects-section">
+                    <div class="panel-header">Project</div>
+                    <button id="open-project-btn" class="btn" onclick="browseProject()">Open project…</button>
+                    <div id="project-list"></div>
+                </div>
+            </div>
+
+            <!-- Right: tools menu + content -->
+            <div id="right-area">
+                <!-- Tools menu -->
+                <div id="tools-menu">
+                    <span id="tools-menu-label">Tools menu</span>
+                    <span id="tools-menu-placeholder">Placeholder toolbar for instances list</span>
+                    <div class="tb-sep"></div>
+                    <div id="dropdowns"></div>
+                    <div class="tb-spacer"></div>
+                    <span id="pn-label">—</span>
+                </div>
+                <!-- Content -->
+                <div id="content-section">
+                    <div id="content-label">Content</div>
+                    <div id="editor-output">
+                        <div id="editor-wrap">
+                            <textarea id="editor-ta" spellcheck="false"
+                                placeholder="Load a project to edit the feature tree…"></textarea>
+                        </div>
+                        <div id="output-divider"></div>
+                        <div id="output-panel"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ---------------------------------------------------------------------------
+        // Plain text editor (textarea)
+        // ---------------------------------------------------------------------------
+        let saveTimer = null;
+        let pollTimer = null;
+        let isRunning = false;
+        let activePath = null;     // active rev_folder on server
+        let functionIndex = [];    // from /api/function_index
+        let openDropdown = null;   // currently visible dropdown menu element
+
+        // ---------------------------------------------------------------------------
+        // Init
+        // ---------------------------------------------------------------------------
+        async function init() {
+            const ta = getEditorEl();
+            if (ta && !ta.dataset.bound) {
+                ta.dataset.bound = "1";
+                ta.addEventListener("input", onCodeChanged);
+            }
+            setupProjectListDragDrop(document.getElementById("project-list"));
+            await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
+            await loadCode();
+            startOutputPoll();
+        }
+
+        // ---------------------------------------------------------------------------
+        // Editor (plain textarea)
+        // ---------------------------------------------------------------------------
+        function getEditorEl() {
+            return document.getElementById("editor-ta");
+        }
+
+        function initEditor(code) {
+            const ta = getEditorEl();
+            if (!ta) return;
+            ta.value = code;
+            ta.disabled = false;
+            ta.focus();
+        }
+
+        function getCode() {
+            const ta = getEditorEl();
+            return ta ? ta.value : "";
+        }
+
+        // ---------------------------------------------------------------------------
+        // API helpers
+        // ---------------------------------------------------------------------------
+        async function api(method, path, body) {
+            const opts = { method, headers: {} };
+            if (body !== undefined) {
+                opts.body = JSON.stringify(body);
+                opts.headers["Content-Type"] = "application/json";
+            }
+            const r = await fetch(path, opts);
+            return r.json();
+        }
+
+        // ---------------------------------------------------------------------------
+        // Info / project
+        // ---------------------------------------------------------------------------
+        async function loadInfo() {
+            const d = await api("GET", "/api/info");
+            updatePnLabel(d.part_number, d.rev);
+            activePath = d.rev_folder;
+        }
+
+        function updatePnLabel(pn, rev) {
+            const text = pn && rev ? `${pn} · ${rev}` : "No project";
+            const pnRevEl = document.getElementById("file-navigator-pn-rev");
+            if (pnRevEl) pnRevEl.textContent = text;
+            const labelEl = document.getElementById("pn-label");
+            if (labelEl) labelEl.textContent = text;
+        }
+
+        // ---------------------------------------------------------------------------
+        // Code load / save
+        // ---------------------------------------------------------------------------
+        async function loadCode() {
+            const r = await fetch("/api/code?t=" + Date.now(), { cache: "no-store" });
+            const d = await r.json();
+            if (!r.ok) {
+                initEditor("# Error loading code: " + (d.error || r.status));
+                setSaveIndicator("unsaved");
+                return;
+            }
+            if (d && d.feature_tree_resolved === false) {
+                const msg = d.feature_tree_error
+                    ? "feature tree not found\n\n(" + d.feature_tree_error + ")"
+                    : "feature tree not found";
+                initEditor(msg);
+            } else {
+                const code = typeof d.code === "string" ? d.code : "";
+                initEditor(code);
+            }
+            setSaveIndicator("saved");
+        }
+
+        function onCodeChanged() {
+            setSaveIndicator("unsaved");
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveCode, 800);
+        }
+
+        async function saveCode() {
+            const code = getCode();
+            if (!getEditorEl()) return;
+            try {
+                const res = await api("POST", "/api/code", { code });
+                if (res && res.ok) {
+                    setSaveIndicator("saved");
+                } else {
+                    setSaveIndicator("unsaved");
+                }
+            } catch (e) {
+                setSaveIndicator("unsaved");
+            }
+        }
+
+        function setSaveIndicator(state) {
+            const el = document.getElementById("save-indicator");
+            el.className = state;
+            el.textContent = state === "saved" ? "Saved" : "Unsaved";
+        }
+
+        // ---------------------------------------------------------------------------
+        // Function index + dropdowns
+        // ---------------------------------------------------------------------------
+        async function loadFunctionIndex() {
+            const d = await api("GET", "/api/function_index");
+            if (d.error) { console.warn("function_index:", d.error); return; }
+            functionIndex = Array.isArray(d) ? d : [];
+            buildDropdowns();
+        }
+
+        function buildDropdowns() {
+            // Group by module
+            const modules = {};
+            for (const fn of functionIndex) {
+                if (!modules[fn.module]) modules[fn.module] = [];
+                modules[fn.module].push(fn);
+            }
+
+            const container = document.getElementById("dropdowns");
+            container.innerHTML = "";
+
+            for (const [mod, fns] of Object.entries(modules)) {
+                const wrap = document.createElement("div");
+                wrap.className = "dropdown";
+
+                const btn = document.createElement("button");
+                btn.className = "btn";
+                btn.textContent = mod;
+                btn.onclick = (e) => toggleDropdown(e, menu);
+                wrap.appendChild(btn);
+
+                const menu = document.createElement("div");
+                menu.className = "dropdown-menu";
+                for (const fn of fns) {
+                    const item = document.createElement("div");
+                    item.className = "dropdown-item";
+                    const sig = fn.args.map(a => a.name).join(", ");
+                    item.innerHTML = `<span class="fn-name">${fn.function}</span><span class="fn-args">(${sig})</span>${fn.docstring ? `<span class="fn-doc">${fn.docstring}</span>` : ""}`;
+                    item.onclick = () => { insertSnippet(fn); closeAllDropdowns(); };
+                    menu.appendChild(item);
+                }
+                wrap.appendChild(menu);
+                container.appendChild(wrap);
+            }
+        }
+
+        function toggleDropdown(e, menu) {
+            e.stopPropagation();
+            const isOpen = menu.classList.contains("open");
+            closeAllDropdowns();
+            if (!isOpen) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                menu.style.top = `${rect.bottom + 2}px`;
+                menu.style.left = `${rect.left}px`;
+                menu.classList.add("open");
+                openDropdown = menu;
+            }
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll(".dropdown-menu.open").forEach(m => m.classList.remove("open"));
+            openDropdown = null;
+        }
+
+        document.addEventListener("click", closeAllDropdowns);
+
+        // ---------------------------------------------------------------------------
+        // Snippet insertion
+        // ---------------------------------------------------------------------------
+        function insertSnippet(fn) {
+            const ta = getEditorEl();
+            if (!ta) return;
+
+            const lines = [];
+            if (fn.docstring) lines.push(`# ${fn.docstring}`);
+            if (fn.args.length === 0) {
+                lines.push(`${fn.module}.${fn.function}()`);
+            } else {
+                lines.push(`${fn.module}.${fn.function}(`);
+                for (const arg of fn.args) {
+                    const ann = arg.annotation ? `  # ${arg.annotation}` : "";
+                    if (arg.name.startsWith("**") || arg.name.startsWith("*")) {
+                        lines.push(`    # ${arg.name}${ann}`);
+                    } else {
+                        lines.push(`    ${arg.name}=${arg.placeholder},${ann}`);
+                    }
+                }
+                lines.push(`)`);
+            }
+            const snippet = lines.join("\n");
+
+            const pos = ta.selectionStart;
+            const text = ta.value;
+            const lineStart = text.lastIndexOf("\n", pos - 1) + 1;
+            const lineEnd = text.indexOf("\n", pos);
+            const lineEndPos = lineEnd === -1 ? text.length : lineEnd;
+            const atLineStart = pos === lineStart;
+
+            const insertPos = atLineStart ? pos : lineEndPos;
+            const prefix = atLineStart ? "" : "\n";
+            const inserted = prefix + snippet;
+            const newVal = text.slice(0, insertPos) + inserted + text.slice(insertPos);
+            const newPos = insertPos + inserted.length;
+
+            ta.value = newVal;
+            ta.selectionStart = ta.selectionEnd = newPos;
+            ta.focus();
+            onCodeChanged();
+        }
+
+        // ---------------------------------------------------------------------------
+        // Run
+        // ---------------------------------------------------------------------------
+        window.runCode = async function () {
+            if (isRunning) return;
+
+            // Flush any pending save first
+            clearTimeout(saveTimer);
+            await saveCode();
+
+            isRunning = true;
+            setRunBtn("running");
+            clearOutput();
+            appendOutput({ text: "── running harnice -r ──", stream: "stdout" });
+
+            await api("POST", "/api/run");
+        };
+
+        function setRunBtn(state) {
+            const btn = document.getElementById("run-btn");
+            if (!btn) return;
+            btn.className = `btn ${state}`;
+            btn.textContent = state === "running" ? "■ Rendering…" : state === "success" ? "✓ Rendered" : state === "error" ? "✗ Error" : "▶ Render";
+        }
+
+        // ---------------------------------------------------------------------------
+        // Output polling
+        // ---------------------------------------------------------------------------
+        function startOutputPoll() {
+            pollTimer = setInterval(pollOutput, 250);
+        }
+
+        async function pollOutput() {
+            const d = await api("GET", "/api/run_output");
+            for (const line of d.lines) appendOutput(line);
+            if (d.done && isRunning) {
+                isRunning = false;
+                if (d.exit_code === 0) {
+                    appendBanner("success", "✓ Completed");
+                    setRunBtn("success");
+                } else {
+                    appendBanner("error", `✗ Exited with code ${d.exit_code}`);
+                    setRunBtn("error");
+                }
+                setTimeout(() => setRunBtn("idle"), 4000);
+            }
+        }
+
+        function appendOutput(line) {
+            const panel = document.getElementById("output-panel");
+            const span = document.createElement("span");
+            span.className = `out-line ${line.stream === "stderr" ? "stderr" : ""}`;
+            span.textContent = line.text;
+            panel.appendChild(span);
+            panel.appendChild(document.createElement("br"));
+            panel.scrollTop = panel.scrollHeight;
+        }
+
+        function appendBanner(type, text) {
+            const panel = document.getElementById("output-panel");
+            const span = document.createElement("span");
+            span.className = `out-banner ${type}`;
+            span.textContent = text;
+            panel.appendChild(span);
+            panel.scrollTop = panel.scrollHeight;
+        }
+
+        function clearOutput() {
+            document.getElementById("output-panel").innerHTML = "";
+        }
+
+        // ---------------------------------------------------------------------------
+        // Project browser
+        // ---------------------------------------------------------------------------
+        async function loadRecentProjects() {
+            const d = await api("GET", "/api/recent_projects");
+            renderProjectList(d.projects || []);
+        }
+
+        function renderProjectList(projects) {
+            const list = document.getElementById("project-list");
+            list.innerHTML = "";
+
+            for (const proj of projects) {
+                const folder = typeof proj === "string" ? proj : (proj.rev_folder || "");
+                if (!folder) continue;
+                const productType = typeof proj === "object" && proj ? (proj.product_type || "") : "";
+                const description = typeof proj === "object" && proj ? (proj.description || "") : "";
+                const buttonColor = typeof proj === "object" && proj ? (proj.button_color || "") : "";
+                const parts = String(folder).replace(/\\/g, "/").split("/");
+                const revName = parts[parts.length - 1];       // e.g. 0000250810-S01-rev9
+                const pnName = parts[parts.length - 2] || ""; // e.g. 0000250810-S01
+                const revPart = revName.startsWith(pnName + "-") ? revName.slice(pnName.length + 1) : revName;
+
+                const item = document.createElement("div");
+                item.className = "project-item" + (folder === activePath ? " active" : "");
+                item.setAttribute("data-rev-folder", folder);
+
+                const productColor = (buttonColor && /^#[0-9a-fA-F]{3,8}$/.test(buttonColor)) ? buttonColor : "";
+                const productStyle = productColor ? ` style="color: ${escapeHtml(productColor)}"` : "";
+                const descText = description ? escapeHtml(description) : "";
+                const productText = productType ? escapeHtml(productType) : "";
+                item.innerHTML = `
+      <div class="project-item-text">
+        <div class="project-pn">${escapeHtml(pnName || revName)}</div>
+        <div class="project-rev">${escapeHtml(revPart)}</div>
+        ${descText ? `<div class="project-desc">${descText}</div>` : ""}
+        ${productText ? `<div class="project-product"${productStyle}>${productText}</div>` : ""}
+      </div>
+      <span class="project-remove" title="Remove">✕</span>
+    `;
+                item.draggable = true;
+
+                item.querySelector(".project-remove").onclick = async (e) => {
+                    e.stopPropagation();
+                    await api("POST", "/api/remove_project", { rev_folder: folder });
+                    await loadRecentProjects();
+                };
+
+                item.onclick = (e) => {
+                    if (!e.target.closest(".project-remove")) switchProject(folder);
+                };
+                list.appendChild(item);
+            }
+        }
+
+        let draggedProjectItem = null;
+
+        function setupProjectListDragDrop(list) {
+            if (!list) return;
+            list.addEventListener("dragstart", e => {
+                if (e.target.closest(".project-remove")) {
+                    e.preventDefault();
+                    return;
+                }
+                const item = e.target.closest(".project-item");
+                if (!item) return;
+                e.dataTransfer.setData("text/plain", item.getAttribute("data-rev-folder") || "");
+                e.dataTransfer.effectAllowed = "move";
+                draggedProjectItem = item;
+                item.classList.add("dragging");
+            });
+            list.addEventListener("dragend", e => {
+                if (draggedProjectItem) {
+                    draggedProjectItem.classList.remove("dragging");
+                    draggedProjectItem = null;
+                }
+            });
+            list.addEventListener("dragover", e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+            });
+            list.addEventListener("drop", async e => {
+                e.preventDefault();
+                if (!draggedProjectItem) return;
+                const targetItem = e.target.closest(".project-item");
+                if (!targetItem || targetItem === draggedProjectItem) return;
+                const all = Array.from(list.querySelectorAll(".project-item"));
+                const dragIndex = all.indexOf(draggedProjectItem);
+                const dropIndex = all.indexOf(targetItem);
+                if (dragIndex === -1 || dropIndex === -1) return;
+                if (dragIndex < dropIndex) {
+                    targetItem.parentNode.insertBefore(draggedProjectItem, targetItem.nextSibling);
+                } else {
+                    targetItem.parentNode.insertBefore(draggedProjectItem, targetItem);
+                }
+                const newOrder = Array.from(list.querySelectorAll(".project-item")).map(el => el.getAttribute("data-rev-folder"));
+                const res = await api("POST", "/api/reorder_projects", { rev_folders: newOrder });
+                if (res && res.ok) await loadRecentProjects();
+            });
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement("div");
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        window.browseProject = async function () {
+            const d = await api("GET", "/api/browse");
+            if (d.path) {
+                await api("POST", "/api/add_project", { rev_folder: d.path });
+                await loadRecentProjects();
+            }
+        };
+
+        async function selectProject(folder) {
+            clearTimeout(saveTimer);
+            const currentCode = getCode();
+            if (!currentCode.startsWith("feature tree not found")) {
+                await saveCode();
+            }
+            clearOutput();
+            appendOutput({ text: "── verifying revision structure ──", stream: "stdout" });
+            const sel = await api("POST", "/api/select_project", { rev_folder: folder });
+            if (sel.stdout) {
+                for (const line of sel.stdout.split("\n")) appendOutput({ text: line, stream: "stdout" });
+            }
+            if (sel.stderr) {
+                for (const line of sel.stderr.split("\n")) appendOutput({ text: line, stream: "stderr" });
+            }
+            const d = await api("POST", "/api/switch", { rev_folder: folder });
+            if (!d.ok) { alert("Could not switch project: " + (d.error || "unknown error")); await loadRecentProjects(); return; }
+            activePath = folder;
+            updatePnLabel(d.part_number, d.rev);
+            await loadCode();
+            await loadRecentProjects();
+        }
+
+        async function switchProject(folder) {
+            await selectProject(folder);
+        }
+
+        // ---------------------------------------------------------------------------
+        // Sidebar divider (file navigator vs project list)
+        // ---------------------------------------------------------------------------
+        const sidebarDivider = document.getElementById("sidebar-divider");
+        const fileNavigator = document.getElementById("file-navigator");
+        const leftPanel = document.getElementById("left-panel");
+        let sidebarDrag = false, sidebarStartY = 0, sidebarStartH = 0;
+
+        sidebarDivider.addEventListener("mousedown", e => {
+            e.preventDefault();
+            sidebarDrag = true;
+            sidebarStartY = e.clientY;
+            sidebarStartH = fileNavigator.offsetHeight;
+            document.body.style.userSelect = "none";
+        });
+        document.addEventListener("mousemove", e => {
+            if (!sidebarDrag) return;
+            const delta = e.clientY - sidebarStartY;
+            const maxH = leftPanel ? Math.min(leftPanel.offsetHeight - 120, window.innerHeight * 0.7) : 400;
+            const newH = Math.max(80, Math.min(sidebarStartH + delta, maxH));
+            fileNavigator.style.height = newH + "px";
+        });
+        // ---------------------------------------------------------------------------
+        // Output panel resize (drag divider)
+        // ---------------------------------------------------------------------------
+        const divider = document.getElementById("output-divider");
+        const outputPanel = document.getElementById("output-panel");
+        let dragging = false, startY = 0, startH = 0;
+
+        divider.addEventListener("mousedown", e => {
+            dragging = true;
+            startY = e.clientY;
+            startH = outputPanel.offsetHeight;
+            document.body.style.userSelect = "none";
+        });
+        document.addEventListener("mousemove", e => {
+            if (!dragging) return;
+            const delta = startY - e.clientY;
+            const newH = Math.max(60, Math.min(startH + delta, window.innerHeight - 120));
+            outputPanel.style.height = newH + "px";
+        });
+
+        document.addEventListener("mouseup", () => {
+            if (sidebarDrag) sidebarDrag = false;
+            if (dragging) dragging = false;
+            document.body.style.userSelect = "";
+        });
+
+        // ---------------------------------------------------------------------------
+        // Start
+        // ---------------------------------------------------------------------------
+        init();
+    </script>
+</body>
+
+</html>

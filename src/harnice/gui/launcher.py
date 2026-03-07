@@ -180,7 +180,7 @@ def product_type_for_revision_folder(rev_folder):
 
 def run_harnice_render(cwd, lightweight=False):
     """
-    Safely run harnice.cli.main() without sys.exit closing the GUI.
+    Safely run harnice.cli.main() without sys.exit closing the launcher window.
     """
     import harnice.cli
 
@@ -354,15 +354,13 @@ class PartButton(QPushButton):
                 QPushButton:pressed { background-color: #bbb; }
                 """
             )
-
-            def _on_harness_click():
-                print(
-                    "pressed — starting network editor (URL will appear below when server is ready)"
-                )
-                if self.main_window:
+            self._harness_action_btn.clicked.connect(
+                lambda: (
                     self.main_window.launch_graph_editor(self.path)
-
-            self._harness_action_btn.clicked.connect(_on_harness_click)
+                    if self.main_window
+                    else None
+                )
+            )
             self._harness_action_btn.show()
             self._harness_action_btn.raise_()  # keep above label so clicks are received
             self._update_harness_action_geometry()
@@ -386,9 +384,11 @@ class PartButton(QPushButton):
             )
             self._system_viewer_btn.setToolTip("View system lists")
             self._system_viewer_btn.clicked.connect(
-                lambda: self.main_window.launch_system_viewer(self.path)
-                if self.main_window
-                else None
+                lambda: (
+                    self.main_window.launch_system_viewer(self.path)
+                    if self.main_window
+                    else None
+                )
             )
             self._system_viewer_btn.show()
             self._update_harness_action_geometry()
@@ -481,7 +481,7 @@ class PartButton(QPushButton):
         menu.exec(event.globalPos())
 
 
-class HarniceGUI(QWidget):
+class LauncherWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Harnice")
@@ -774,8 +774,8 @@ class HarniceGUI(QWidget):
 
 def main():
     app = QApplication([])
-    gui = HarniceGUI()
-    gui.show()
+    window = LauncherWindow()
+    window.show()
     app.exec()
 
 
