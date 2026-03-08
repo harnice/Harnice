@@ -481,14 +481,32 @@ def _start_run(state: _State):
         state.run_done = False
         state.run_exit_code = None
 
+    rev_folder = state.rev_folder
+    if not rev_folder or not os.path.isdir(rev_folder):
+        state.run_output.put(
+            {
+                "text": f"[error] invalid rev_folder: {rev_folder!r} (not a directory)",
+                "stream": "stderr",
+            }
+        )
+        with state.lock:
+            state.run_done = True
+            state.run_exit_code = -1
+        return
+
+    # Unbuffered so subprocess stdout/stderr appear as they're written
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+
     try:
         proc = subprocess.Popen(
             [sys.executable, "-m", "harnice", "-r"],
-            cwd=state.rev_folder,
+            cwd=rev_folder,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
+            env=env,
         )
     except OSError as e:
         state.run_output.put(
@@ -501,6 +519,9 @@ def _start_run(state: _State):
 
     with state.lock:
         state.run_proc = proc
+
+    # Immediate feedback so the UI shows something before the subprocess prints
+    state.run_output.put({"text": f"Running in: {rev_folder}", "stream": "stdout"})
 
     threading.Thread(target=_stream_output, args=(proc, state), daemon=True).start()
 
