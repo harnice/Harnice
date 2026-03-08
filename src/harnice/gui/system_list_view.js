@@ -298,15 +298,103 @@
     p.style.minHeight = "0";
     p.style.overflow = "hidden";
 
-    const headersWrap = document.createElement("div");
-    headersWrap.id = "sl-headers-wrap";
-    headersWrap.className = "sl-headers";
+    const ribbon = document.createElement("div");
+    ribbon.id = "sl-ribbon";
+    ribbon.className = "sl-ribbon";
+
+    const left = document.createElement("div");
+    left.className = "sl-ribbon-left";
+    const stack = document.createElement("div");
+    stack.className = "sl-ribbon-stack";
+
+    const row1 = document.createElement("div");
+    row1.className = "sl-ribbon-stack-row";
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.id = "sl-search";
+    searchInput.placeholder = "Search…";
+    searchInput.className = "sl-ribbon-search";
+    searchInput.addEventListener("input", () => setSearch(searchInput.value));
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.id = "sl-clear";
+    clearBtn.className = "sl-ribbon-btn";
+    clearBtn.textContent = "Clear filters";
+    clearBtn.addEventListener("click", () => { clearFilters(); searchInput.value = ""; });
+    const badge = document.createElement("span");
+    badge.id = "sl-badge";
+    badge.className = "sl-ribbon-badge";
+    badge.textContent = "—";
+    row1.appendChild(searchInput);
+    row1.appendChild(clearBtn);
+    row1.appendChild(badge);
+
+    const row2 = document.createElement("div");
+    row2.className = "sl-ribbon-stack-row";
+    const sortLabel = document.createElement("span");
+    sortLabel.className = "sl-ribbon-label";
+    sortLabel.textContent = "Sort:";
+    const sortSelect = document.createElement("select");
+    sortSelect.id = "sl-sort";
+    sortSelect.className = "sl-ribbon-sort";
+    sortSelect.innerHTML = "<option value=\"-1\">None</option>";
+    sortSelect.addEventListener("change", () => {
+      const v = sortSelect.value;
+      if (v === "-1") { setSort(-1, 1); return; }
+      const parts = v.split(":");
+      setSort(parseInt(parts[0], 10), parts[1] === "desc" ? -1 : 1);
+    });
+    row2.appendChild(sortLabel);
+    row2.appendChild(sortSelect);
+
+    const row3 = document.createElement("div");
+    row3.className = "sl-ribbon-stack-row sl-pane-checkbox-row";
+    row3.id = "sl-pane-checkbox-row";
+    const chUnmapped = document.createElement("span");
+    chUnmapped.className = "sl-channel-toggle";
+    chUnmapped.id = "sl-stack-ch-unmapped";
+    chUnmapped.innerHTML = "<input type=\"checkbox\" id=\"sl-ch-unmapped\" checked><label for=\"sl-ch-unmapped\">Show unmapped channels</label>";
+    chUnmapped.style.display = "none";
+    const dcAvailable = document.createElement("span");
+    dcAvailable.className = "sl-channel-toggle";
+    dcAvailable.id = "sl-stack-dc-available";
+    dcAvailable.innerHTML = "<input type=\"checkbox\" id=\"sl-dc-available\" checked><label for=\"sl-dc-available\">Show available disconnect channels</label>";
+    dcAvailable.style.display = "none";
+    row3.appendChild(chUnmapped);
+    row3.appendChild(dcAvailable);
+
+    const row4 = document.createElement("div");
+    row4.className = "sl-ribbon-stack-row";
+    const channelTypeWrap = document.createElement("div");
+    channelTypeWrap.className = "sl-channel-type-wrap sl-ribbon-block";
+    channelTypeWrap.innerHTML = `
+      <label><input type="checkbox" id="sl-channel-type-human"> <span>Human-readable channel types</span></label>`;
+    row4.appendChild(channelTypeWrap);
+
+    stack.appendChild(row1);
+    stack.appendChild(row2);
+    stack.appendChild(row3);
+    stack.appendChild(row4);
+    left.appendChild(stack);
+    ribbon.appendChild(left);
+
+    function sep() {
+      const s = document.createElement("span");
+      s.className = "sl-ribbon-sep";
+      s.setAttribute("aria-hidden", "true");
+      return s;
+    }
+    ribbon.appendChild(sep());
+
+    const paneControls = document.createElement("div");
+    paneControls.id = "sl-pane-controls";
+    paneControls.className = "sl-pane-controls";
 
     const instHeader = document.createElement("div");
     instHeader.id = "sl-instances-header";
-    instHeader.className = "sl-viewer-header";
+    instHeader.className = "sl-viewer-header sl-ribbon-block";
     instHeader.innerHTML = `
-      <p class="sl-channel-sentence">Show:</p>
+      <span class="sl-ribbon-label">Show:</span>
       <div class="sl-instances-options">
         <label class="sl-instances-option selected" data-value="instances list">
           <input type="radio" name="sl-instances-source" value="instances list" checked>
@@ -314,44 +402,38 @@
         </label>
         <label class="sl-instances-option" data-value="post harness instances list">
           <input type="radio" name="sl-instances-source" value="post harness instances list">
-          <span>Post harness instances list</span>
+          <span>Post harness</span>
         </label>
       </div>`;
-    headersWrap.appendChild(instHeader);
+    paneControls.appendChild(instHeader);
 
     const chHeader = document.createElement("div");
     chHeader.id = "sl-channel-header";
-    chHeader.className = "sl-viewer-header";
+    chHeader.className = "sl-viewer-header sl-ribbon-block";
     chHeader.innerHTML = `
-      <div class="sl-channel-toggle"><input type="checkbox" id="sl-ch-unmapped" checked><label for="sl-ch-unmapped">Show unmapped channels</label></div>
-      <p class="sl-channel-sentence">Show me channels in <select id="sl-ch-net"><option value="">any merged net</option></select> that connect <select id="sl-ch-chan-a"><option value="">any channel</option></select> of <select id="sl-ch-dev-a"><option value="">any device</option></select> to <select id="sl-ch-chan-b"><option value="">any channel</option></select> of <select id="sl-ch-dev-b"><option value="">any device</option></select>.</p>
-      <p class="sl-channel-type-row">Channel type <select id="sl-ch-type-rel"><option value="any">is any</option><option value="is_or_compatible">is or is compatible with</option></select> <select id="sl-ch-type-val" style="display:none;"><option value="">—</option></select> <button type="button" class="sl-channel-clear" id="sl-ch-clear">Clear</button></p>`;
-    headersWrap.appendChild(chHeader);
+      <span class="sl-ribbon-sentence">Show me channels in <select id="sl-ch-net"><option value="">any merged net</option></select> that connect <select id="sl-ch-chan-a"><option value="">any channel</option></select> of <select id="sl-ch-dev-a"><option value="">any device</option></select> to <select id="sl-ch-chan-b"><option value="">any channel</option></select> of <select id="sl-ch-dev-b"><option value="">any device</option></select>.</span>
+      <span class="sl-ribbon-sentence">Channel type <select id="sl-ch-type-rel"><option value="any">is any</option><option value="is_or_compatible">is or is compatible with</option></select> <select id="sl-ch-type-val" style="display:none;"><option value="">—</option></select> <button type="button" class="sl-ribbon-btn sl-channel-clear" id="sl-ch-clear">Clear</button></span>`;
+    paneControls.appendChild(chHeader);
 
     const dcHeader = document.createElement("div");
     dcHeader.id = "sl-disconnect-header";
-    dcHeader.className = "sl-viewer-header";
+    dcHeader.className = "sl-viewer-header sl-ribbon-block";
     dcHeader.innerHTML = `
-      <div class="sl-channel-toggle"><input type="checkbox" id="sl-dc-available" checked><label for="sl-dc-available">Show available disconnect channels</label></div>
-      <p class="sl-channel-sentence">Show me channels that pass through <select id="sl-dc-disc-chan"><option value="">any channel</option></select> of <select id="sl-dc-disc"><option value="">any disconnect</option></select> that connect <select id="sl-dc-chan-a"><option value="">any channel</option></select> of <select id="sl-dc-dev-a"><option value="">any device</option></select> to <select id="sl-dc-chan-b"><option value="">any channel</option></select> of <select id="sl-dc-dev-b"><option value="">any device</option></select>.</p>
-      <p class="sl-channel-type-row">Channel type <select id="sl-dc-type-rel"><option value="any">is any</option><option value="is_or_compatible">is or is compatible with</option></select> <select id="sl-dc-type-val" style="display:none;"><option value="">—</option></select> <button type="button" class="sl-channel-clear" id="sl-dc-clear">Clear</button></p>`;
-    headersWrap.appendChild(dcHeader);
+      <span class="sl-ribbon-sentence">Show me channels that pass through <select id="sl-dc-disc-chan"><option value="">any channel</option></select> of <select id="sl-dc-disc"><option value="">any disconnect</option></select> that connect <select id="sl-dc-chan-a"><option value="">any channel</option></select> of <select id="sl-dc-dev-a"><option value="">any device</option></select> to <select id="sl-dc-chan-b"><option value="">any channel</option></select> of <select id="sl-dc-dev-b"><option value="">any device</option></select>.</span>
+      <span class="sl-ribbon-sentence">Channel type <select id="sl-dc-type-rel"><option value="any">is any</option><option value="is_or_compatible">is or is compatible with</option></select> <select id="sl-dc-type-val" style="display:none;"><option value="">—</option></select> <button type="button" class="sl-ribbon-btn sl-channel-clear" id="sl-dc-clear">Clear</button></span>`;
+    paneControls.appendChild(dcHeader);
 
     const ciHeader = document.createElement("div");
     ciHeader.id = "sl-circuits-header";
-    ciHeader.className = "sl-viewer-header";
+    ciHeader.className = "sl-viewer-header sl-ribbon-block";
     ciHeader.innerHTML = `
-      <p class="sl-channel-sentence">Show me circuits that connect <select id="sl-ci-chan-a"><option value="">any channel</option></select> on <select id="sl-ci-conn-a"><option value="">any connector</option></select> of <select id="sl-ci-dev-a"><option value="">any device</option></select> to <select id="sl-ci-chan-b"><option value="">any channel</option></select> on <select id="sl-ci-conn-b"><option value="">any connector</option></select> of <select id="sl-ci-dev-b"><option value="">any device</option></select>.</p>
-      <p class="sl-channel-type-row">Channel type <select id="sl-ci-type-rel"><option value="any">is any</option><option value="is_or_compatible">is or is compatible with</option></select> <select id="sl-ci-type-val" style="display:none;"><option value="">—</option></select> and signal is <select id="sl-ci-signal"><option value="">any</option></select> <button type="button" class="sl-channel-clear" id="sl-ci-clear">Clear</button></p>`;
-    headersWrap.appendChild(ciHeader);
+      <span class="sl-ribbon-sentence">Show me circuits that connect <select id="sl-ci-chan-a"><option value="">any channel</option></select> on <select id="sl-ci-conn-a"><option value="">any connector</option></select> of <select id="sl-ci-dev-a"><option value="">any device</option></select> to <select id="sl-ci-chan-b"><option value="">any channel</option></select> on <select id="sl-ci-conn-b"><option value="">any connector</option></select> of <select id="sl-ci-dev-b"><option value="">any device</option></select>.</span>
+      <span class="sl-ribbon-sentence">Channel type <select id="sl-ci-type-rel"><option value="any">is any</option><option value="is_or_compatible">is or is compatible with</option></select> <select id="sl-ci-type-val" style="display:none;"><option value="">—</option></select> and signal is <select id="sl-ci-signal"><option value="">any</option></select> <button type="button" class="sl-ribbon-btn sl-channel-clear" id="sl-ci-clear">Clear</button></span>`;
+    paneControls.appendChild(ciHeader);
 
-    const channelTypeWrap = document.createElement("div");
-    channelTypeWrap.className = "sl-channel-type-wrap";
-    channelTypeWrap.innerHTML = `
-      <label><input type="checkbox" id="sl-channel-type-human"> <span>Channel types: human-readable</span></label>`;
-    headersWrap.appendChild(channelTypeWrap);
+    ribbon.appendChild(paneControls);
 
-    p.appendChild(headersWrap);
+    p.appendChild(ribbon);
 
     const tableWrap = document.createElement("div");
     tableWrap.id = "sl-table-wrap";
@@ -676,24 +758,28 @@
       const el = p.querySelector("#" + id);
       if (el) el.classList.remove("visible");
     });
+    const chUnmapped = p.querySelector("#sl-stack-ch-unmapped");
+    const dcAvailable = p.querySelector("#sl-stack-dc-available");
+    if (chUnmapped) chUnmapped.style.display = "none";
+    if (dcAvailable) dcAvailable.style.display = "none";
     if (currentTabKey === INSTANCES_LIST_KEY) {
       const el = p.querySelector("#sl-instances-header");
       if (el) el.classList.add("visible");
     } else if (currentTabKey === CHANNEL_MAP_KEY) {
       const el = p.querySelector("#sl-channel-header");
       if (el) el.classList.add("visible");
+      if (chUnmapped) chUnmapped.style.display = "inline-flex";
       buildChannelDropdowns();
     } else if (currentTabKey === DISCONNECT_MAP_KEY) {
       const el = p.querySelector("#sl-disconnect-header");
       if (el) el.classList.add("visible");
+      if (dcAvailable) dcAvailable.style.display = "inline-flex";
       buildDisconnectDropdowns();
     } else if (currentTabKey === CIRCUITS_LIST_KEY) {
       const el = p.querySelector("#sl-circuits-header");
       if (el) el.classList.add("visible");
       buildCircuitsDropdowns();
     }
-    const typeWrap = p.querySelector(".sl-channel-type-wrap");
-    if (typeWrap) typeWrap.style.display = "block";
   }
 
   function fetchChannelTypeCompatible(typeVal) {
@@ -1033,6 +1119,45 @@
   }
 
 
+  function updateRibbonUI(payload) {
+    const p = getPanel();
+    if (!p) return;
+    const badge = p.querySelector("#sl-badge");
+    const sortSelect = p.querySelector("#sl-sort");
+    const searchInput = p.querySelector("#sl-search");
+    if (badge && payload.rows !== undefined && payload.total !== undefined) {
+      badge.textContent = payload.rows + " / " + payload.total;
+    }
+    if (searchInput && payload.search !== undefined && searchInput.value !== payload.search) {
+      searchInput.value = payload.search || "";
+    }
+    if (sortSelect && Array.isArray(payload.headers)) {
+      const headers = payload.headers;
+      const sortCol = payload.sortCol != null ? payload.sortCol : -1;
+      const sortDir = payload.sortDir !== undefined ? payload.sortDir : 1;
+      const needRebuild = sortSelect.options.length <= 1 || (sortSelect.options.length - 1) / 2 !== headers.length;
+      if (needRebuild) {
+        sortSelect.innerHTML = "<option value=\"-1\">None</option>";
+        headers.forEach((h, i) => {
+          const oa = document.createElement("option");
+          oa.value = i + ":asc";
+          oa.textContent = h + " ↑";
+          sortSelect.appendChild(oa);
+          const od = document.createElement("option");
+          od.value = i + ":desc";
+          od.textContent = h + " ↓";
+          sortSelect.appendChild(od);
+        });
+      }
+      if (sortCol >= 0 && sortCol < headers.length) {
+        const want = sortCol + ":" + (sortDir === 1 ? "asc" : "desc");
+        if (sortSelect.querySelector("option[value=\"" + want + "\"]")) sortSelect.value = want;
+      } else {
+        sortSelect.value = "-1";
+      }
+    }
+  }
+
   function notifyState(override) {
     const dataKey = getDataKey();
     const st = getState(dataKey);
@@ -1044,6 +1169,7 @@
       sortDir: st.sortDir,
       search: st.search || "",
     };
+    updateRibbonUI(payload);
     if (typeof onStateChange === "function") onStateChange(payload);
   }
 
