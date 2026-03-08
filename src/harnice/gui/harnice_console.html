@@ -2022,8 +2022,11 @@
             if (!getEditorEl()) return;
             // Don't send empty or placeholder — server would reject; avoids overwriting real feature tree
             if (isPlaceholderOrEmpty(code)) return;
+            // Send rev_folder so server can reject if we're a stale tab (wrong project)
+            const payload = { code };
+            if (activePath) payload.rev_folder = activePath;
             try {
-                const res = await api("POST", "/api/code", { code });
+                const res = await api("POST", "/api/code", payload);
                 if (res && res.ok) {
                     setSaveIndicator("saved");
                 } else {
