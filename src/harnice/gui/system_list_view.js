@@ -368,7 +368,7 @@
     const channelTypeWrap = document.createElement("div");
     channelTypeWrap.className = "sl-channel-type-wrap sl-ribbon-block";
     channelTypeWrap.innerHTML = `
-      <label><input type="checkbox" id="sl-channel-type-human"> <span>Human-readable channel types</span></label>`;
+      <label><input type="checkbox" id="sl-channel-type-human"> <span>Show channel type descriptions not IDs</span></label>`;
     row4.appendChild(channelTypeWrap);
 
     stack.appendChild(row1);

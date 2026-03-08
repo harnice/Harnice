@@ -345,11 +345,30 @@
         .sl-ribbon-stack-row {
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             gap: 6px;
         }
 
         .sl-pane-checkbox-row .sl-channel-toggle {
             margin: 0;
+        }
+
+        /* Align checkboxes in stack: same left edge and gap for channel/disconnect and human-readable rows */
+        .sl-ribbon-stack .sl-channel-toggle,
+        .sl-ribbon-stack .sl-channel-type-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sl-ribbon-stack .sl-channel-type-wrap.sl-ribbon-block {
+            margin-left: 0;
+        }
+
+        .sl-ribbon-stack .sl-channel-type-wrap label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .sl-ribbon-search {
@@ -1861,7 +1880,7 @@
             }
             setupProjectListDragDrop(document.getElementById("project-list"));
             applyView();
-            await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
+            await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects(), loadGuiSetup()]);
             await loadCode();
             startOutputPoll();
         }
@@ -2216,6 +2235,21 @@
             renderProjectList(d.projects || []);
         }
 
+        async function loadGuiSetup() {
+            try {
+                const d = await api("GET", "/api/gui_setup");
+                const h = d.sidebar_file_navigator_height;
+                if (typeof h === "number" && h >= 80) {
+                    const el = document.getElementById("file-navigator");
+                    if (el) el.style.height = h + "px";
+                }
+            } catch (_) { }
+        }
+
+        function saveGuiSetupSidebarHeight(heightPx) {
+            api("POST", "/api/gui_setup", { sidebar_file_navigator_height: heightPx }).catch(() => { });
+        }
+
         function renderProjectList(projects) {
             const list = document.getElementById("project-list");
             list.innerHTML = "";
@@ -2394,7 +2428,10 @@
         });
 
         document.addEventListener("mouseup", () => {
-            if (sidebarDrag) sidebarDrag = false;
+            if (sidebarDrag) {
+                saveGuiSetupSidebarHeight(fileNavigator.offsetHeight);
+                sidebarDrag = false;
+            }
             if (dragging) dragging = false;
             document.body.style.userSelect = "";
         });

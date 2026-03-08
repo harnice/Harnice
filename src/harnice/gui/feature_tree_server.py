@@ -529,6 +529,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/api/function_index": self._api_function_index,
             "/api/run_output": self._api_run_output,
             "/api/recent_projects": self._api_recent_projects,
+            "/api/gui_setup": self._api_gui_setup_get,
             "/api/browse": self._api_browse,
             "/api/available": self._api_graph_available,
             "/api/chosen_list": self._api_graph_chosen_list,
@@ -568,6 +569,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/api/select_project": self._api_select_project,
             "/api/remove_project": self._api_remove_project,
             "/api/reorder_projects": self._api_reorder_projects,
+            "/api/gui_setup": self._api_gui_setup_post,
             "/api/close": self._api_close,
             "/api/available": self._api_graph_save_available,
             "/api/chosen_list": self._api_graph_save_chosen_list,
@@ -694,6 +696,31 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
                 }
             )
         self._send_json({"projects": projects})
+
+    def _api_gui_setup_get(self):
+        """Return persisted GUI setup (e.g. sidebar slider position) from feature_tree_editor_state.json."""
+        data = _load_gui_state()
+        height = data.get("sidebar_file_navigator_height")
+        if height is not None and not isinstance(height, (int, float)):
+            height = None
+        self._send_json({"sidebar_file_navigator_height": height})
+
+    def _api_gui_setup_post(self):
+        """Persist GUI setup (e.g. sidebar slider position) into feature_tree_editor_state.json."""
+        try:
+            body = self._read_json_body()
+        except Exception:
+            self._send_json({"error": "Invalid JSON"}, status=400)
+            return
+        data = _load_gui_state()
+        if "sidebar_file_navigator_height" in body:
+            v = body["sidebar_file_navigator_height"]
+            if v is None:
+                data.pop("sidebar_file_navigator_height", None)
+            elif isinstance(v, (int, float)) and 0 < v < 10000:
+                data["sidebar_file_navigator_height"] = int(round(v))
+        _save_gui_state(data)
+        self._send_json({"ok": True})
 
     def _graph_api_guard(self):
         """Return None if graph API is allowed (harness project), else send error and return True."""
