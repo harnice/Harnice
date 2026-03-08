@@ -324,22 +324,22 @@
             outline: none;
         }
 
-        #editor-cm {
+        #editor {
             flex: 1;
             min-height: 0;
             display: none;
         }
 
-        #editor-cm.ready {
+        #editor.ready {
             display: flex;
         }
 
-        #editor-cm .cm-editor {
+        #editor .cm-editor {
             height: 100%;
             font-size: 13px;
         }
 
-        #editor-cm .cm-scroller {
+        #editor .cm-scroller {
             font-family: 'Cascadia Code', 'Consolas', monospace;
         }
 
@@ -663,7 +663,7 @@
                                 <textarea id="editor-ta" spellcheck="false"
                                     placeholder="Load a project to edit the feature tree…"></textarea>
                             </div>
-                            <div id="editor-cm" aria-label="Code editor"></div>
+                            <div id="editor" aria-label="Code editor"></div>
                         </div>
                         <div id="output-divider"></div>
                         <div id="output-panel"></div>
@@ -681,8 +681,9 @@
         import { EditorView, basicSetup } from "https://esm.sh/codemirror";
         import { python } from "https://esm.sh/@codemirror/lang-python";
         import { EditorSelection } from "https://esm.sh/@codemirror/state";
+        import { vscodeDark } from "https://esm.sh/@uiw/codemirror-theme-vscode";
 
-        const container = document.getElementById("editor-cm");
+        const container = document.getElementById("editor");
         const fallback = document.getElementById("editor-fallback");
         if (container) {
             try {
@@ -691,6 +692,7 @@
                     extensions: [
                         basicSetup,
                         python(),
+                        vscodeDark,
                         EditorView.updateListener.of((v) => {
                             if (v.docChanged && typeof window.onCodeChanged === "function") window.onCodeChanged();
                         })
