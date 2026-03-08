@@ -324,6 +324,25 @@
             outline: none;
         }
 
+        #editor-cm {
+            flex: 1;
+            min-height: 0;
+            display: none;
+        }
+
+        #editor-cm.ready {
+            display: flex;
+        }
+
+        #editor-cm .cm-editor {
+            height: 100%;
+            font-size: 13px;
+        }
+
+        #editor-cm .cm-scroller {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+        }
+
         #output-divider {
             height: 5px;
             background: var(--border);
@@ -636,12 +655,15 @@
                 </div>
                 <div id="content-section">
                     <div id="editor-output">
-                        <div id="editor-wrap" class="editor-row">
-                            <div id="editor-lines" class="editor-line-gutter" aria-hidden="true">
-                                <div class="editor-line-gutter-inner">1</div>
+                        <div id="editor-wrap">
+                            <div id="editor-fallback" class="editor-row">
+                                <div id="editor-lines" class="editor-line-gutter" aria-hidden="true">
+                                    <div class="editor-line-gutter-inner">1</div>
+                                </div>
+                                <textarea id="editor-ta" spellcheck="false"
+                                    placeholder="Load a project to edit the feature tree…"></textarea>
                             </div>
-                            <textarea id="editor-ta" spellcheck="false"
-                                placeholder="Load a project to edit the feature tree…"></textarea>
+                            <div id="editor-cm" aria-label="Code editor"></div>
                         </div>
                         <div id="output-divider"></div>
                         <div id="output-panel"></div>
@@ -655,15 +677,53 @@
         </div>
     </div>
 
+    <script type="module">
+        import { EditorView, basicSetup } from "https://esm.sh/codemirror";
+        import { python } from "https://esm.sh/@codemirror/lang-python";
+        import { EditorSelection } from "https://esm.sh/@codemirror/state";
+
+        const container = document.getElementById("editor-cm");
+        const fallback = document.getElementById("editor-fallback");
+        if (container) {
+            try {
+                const view = new EditorView({
+                    doc: "",
+                    extensions: [
+                        basicSetup,
+                        python(),
+                        EditorView.updateListener.of((v) => {
+                            if (v.docChanged && typeof window.onCodeChanged === "function") window.onCodeChanged();
+                        })
+                    ],
+                    parent: container
+                });
+                window.cmView = view;
+                window.cmEditorSelection = EditorSelection;
+                window.getCode = () => view.state.doc.toString();
+                window.initEditor = (code) => {
+                    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: code || "" } });
+                    view.focus();
+                };
+                window.getEditorEl = () => container;
+                if (fallback) fallback.style.display = "none";
+                container.classList.add("ready");
+            } catch (_) {
+                // CDN/API failed; textarea fallback used
+            }
+        }
+        window.cmReady = Promise.resolve();
+    </script>
     <script>
         // ---------------------------------------------------------------------------
         // Editor shell: one view state drives toolbar + content. See docs/gui_layout.md
         // ---------------------------------------------------------------------------
         function getCode() {
+            if (typeof window.getCode === "function") return window.getCode();
             const ta = document.getElementById("editor-ta");
             return ta ? ta.value : "";
         }
         function initEditor(code) {
+            if (typeof window.initEditor === "function") { window.initEditor(code); return; }
             const ta = document.getElementById("editor-ta");
             if (ta) {
                 ta.value = code || "";
@@ -673,6 +733,7 @@
             }
         }
         function getEditorEl() {
+            if (typeof window.getEditorEl === "function") return window.getEditorEl();
             return document.getElementById("editor-ta");
         }
         function updateLineGutter() {
@@ -900,6 +961,7 @@
         // Init
         // ---------------------------------------------------------------------------
         async function init() {
+            await (window.cmReady || Promise.resolve());
             const ta = document.getElementById("editor-ta");
             if (ta) {
                 ta.addEventListener("input", function () {
@@ -1138,23 +1200,36 @@
                 lines.push(`)`);
             }
             const snippet = lines.join("\n");
-            const ta = getEditorEl();
-            if (!ta) return;
-            const pos = ta.selectionStart;
-            const text = ta.value;
-            const lineStart = text.lastIndexOf("\n", pos - 1) + 1;
-            const lineEnd = text.indexOf("\n", pos);
-            const lineEndPos = lineEnd === -1 ? text.length : lineEnd;
-            const atLineStart = pos === lineStart;
-            const insertPos = atLineStart ? pos : lineEndPos;
-            const prefix = atLineStart ? "" : "\n";
-            const inserted = prefix + snippet;
-            const newVal = text.slice(0, insertPos) + inserted + text.slice(insertPos);
-            const newPos = insertPos + inserted.length;
-            ta.value = newVal;
-            ta.selectionStart = ta.selectionEnd = newPos;
-            ta.focus();
-            updateLineGutter();
+            const prefix = (pos, text) => (pos === text.lastIndexOf("\n", pos - 1) + 1) ? "" : "\n";
+            const insertPos = (pos, text) => {
+                const lineStart = text.lastIndexOf("\n", pos - 1) + 1;
+                const lineEnd = text.indexOf("\n", pos);
+                const lineEndPos = lineEnd === -1 ? text.length : lineEnd;
+                return pos === lineStart ? pos : lineEndPos;
+            };
+            if (window.cmView && window.cmEditorSelection) {
+                const view = window.cmView;
+                const pos = view.state.selection.main.head;
+                const text = view.state.doc.toString();
+                const pos_ins = insertPos(pos, text);
+                const inserted = prefix(pos, text) + snippet;
+                view.dispatch({
+                    changes: { from: pos_ins, to: pos_ins, insert: inserted },
+                    selection: window.cmEditorSelection.cursor(pos_ins + inserted.length)
+                });
+                view.focus();
+            } else {
+                const ta = getEditorEl();
+                if (!ta) return;
+                const pos = ta.selectionStart;
+                const text = ta.value;
+                const pos_ins = insertPos(pos, text);
+                const inserted = prefix(pos, text) + snippet;
+                ta.value = text.slice(0, pos_ins) + inserted + text.slice(pos_ins);
+                ta.selectionStart = ta.selectionEnd = pos_ins + inserted.length;
+                ta.focus();
+                updateLineGutter();
+            }
             onCodeChanged();
         }
 
