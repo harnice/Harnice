@@ -33,6 +33,7 @@ _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
 _EDITOR_HTML = _GUI_DIR / "feature_tree_editor.html"
 _GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
 _SYSTEM_VIEWER_HTML = _GUI_DIR / "system_viewer.html"
+_SYSTEM_LIST_VIEW_JS = _GUI_DIR / "system_list_view.js"
 
 
 def _graph_file_path(rev_folder: str, product_type: str, label: str) -> Path:
@@ -516,6 +517,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/index.html": self._serve_html,
             "/graph-editor": self._serve_graph_editor_html,
             "/system-viewer": self._serve_system_viewer_html,
+            "/system-list-view.js": self._serve_system_list_view_js,
             "/api/info": self._api_info,
             "/api/code": self._api_get_code,
             "/api/function_index": self._api_function_index,
@@ -592,6 +594,15 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(500, "system_viewer.html not found")
             return
         self._send_bytes(_SYSTEM_VIEWER_HTML.read_bytes(), "text/html; charset=utf-8")
+
+    def _serve_system_list_view_js(self):
+        """Serve in-DOM system list view script for feature tree editor."""
+        if not _SYSTEM_LIST_VIEW_JS.exists():
+            self.send_error(500, "system_list_view.js not found")
+            return
+        self._send_bytes(
+            _SYSTEM_LIST_VIEW_JS.read_bytes(), "application/javascript; charset=utf-8"
+        )
 
     def _api_info(self):
         pn, rev = _state.pn_and_rev()

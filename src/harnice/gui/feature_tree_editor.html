@@ -304,12 +304,299 @@
             display: flex;
         }
 
-        #system-viewer-iframe {
+        #system-list-panel {
             flex: 1;
-            width: 100%;
             min-height: 0;
-            border: none;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* System list in-DOM view (sl-*) */
+        .sl-headers {
+            flex-shrink: 0;
+        }
+
+        .sl-viewer-header {
+            display: none;
             background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 14px;
+        }
+
+        .sl-viewer-header.visible {
+            display: block;
+        }
+
+        .sl-channel-sentence {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 6px;
+        }
+
+        .sl-channel-sentence select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            padding: 4px 8px;
+            font-size: 12px;
+            min-width: 80px;
+        }
+
+        .sl-instances-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .sl-instances-option {
+            flex: 1;
+            min-width: 140px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg2);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .sl-instances-option.selected {
+            border-color: var(--accent);
+            background: rgba(184, 134, 11, 0.1);
+        }
+
+        .sl-channel-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .sl-channel-type-wrap {
+            padding: 8px 0;
+        }
+
+        .sl-channel-clear {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+
+        .sl-table-wrap {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .sl-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: var(--text-dim);
+        }
+
+        #system-list-panel table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        #system-list-panel thead {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        #system-list-panel th {
+            background: var(--bg2);
+            padding: 0;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .sl-th-inner {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 10px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .sl-th-inner:hover {
+            color: var(--accent);
+        }
+
+        .sl-sort-btn {
+            opacity: .35;
+            font-size: 10px;
+        }
+
+        #system-list-panel th.asc .sl-sort-btn,
+        #system-list-panel th.desc .sl-sort-btn {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        .sl-filter-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: none;
+        }
+
+        .sl-th-inner.filtered .sl-filter-dot {
+            display: block;
+        }
+
+        #system-list-panel td {
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        #system-list-panel tbody tr:hover td {
+            background: var(--bg2);
+        }
+
+        .sl-device-row {
+            cursor: pointer;
+        }
+
+        .sl-device-row.signals-expanded td {
+            background: rgba(184, 134, 11, 0.15) !important;
+        }
+
+        .sl-signals-detail-row {
+            display: none;
+        }
+
+        .sl-signals-detail-row.expanded {
+            display: table-row;
+        }
+
+        .sl-signals-detail-row td {
+            padding: 0;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .sl-signals-viewer-wrap {
+            padding: 0;
+            max-height: 280px;
+            overflow: auto;
+            font-size: 12px;
+            border: 3px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            margin: 6px 10px 10px;
+        }
+
+        .sl-signals-viewer-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .sl-signals-viewer-wrap .loading,
+        .sl-signals-viewer-wrap .error {
+            padding: 8px;
+            color: var(--text-dim);
+            font-size: 12px;
+        }
+
+        .sl-signals-toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg2);
+        }
+
+        .sl-col-dropdown {
+            position: fixed;
+            z-index: 100;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+            min-width: 200px;
+            max-width: 280px;
+            max-height: 320px;
+            display: none;
+            flex-direction: column;
+        }
+
+        .sl-col-dropdown.open {
+            display: flex;
+        }
+
+        .sl-dd-search input {
+            width: 100%;
+            padding: 6px 8px;
+            margin: 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .sl-dd-list {
+            overflow: auto;
+            max-height: 200px;
+            padding: 4px;
+        }
+
+        .sl-dd-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .sl-dd-item:hover {
+            background: var(--bg2);
+        }
+
+        .sl-dd-footer {
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sl-dd-footer button {
+            flex: 1;
+            padding: 5px;
+            font-size: 11px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .sl-no-rows td {
+            color: var(--text-dim);
+            font-style: italic;
         }
 
         #projects-section {
@@ -747,7 +1034,7 @@
                         <iframe id="graph-editor-iframe" src="about:blank" title="Graph editor"></iframe>
                     </div>
                     <div id="system-viewer-panel">
-                        <iframe id="system-viewer-iframe" src="about:blank" title="System lists"></iframe>
+                        <div id="system-list-panel"></div>
                     </div>
                 </div>
             </div>
@@ -793,6 +1080,7 @@
         }
         window.cmReady = Promise.resolve();
     </script>
+    <script src="/system-list-view.js"></script>
     <script>
         // ---------------------------------------------------------------------------
         // Editor shell: one view state drives toolbar + content. See docs/gui_layout.md
@@ -888,8 +1176,7 @@
                 dropdowns.id = "dropdowns";
                 slot.appendChild(dropdowns);
                 buildDropdowns();
-            } else if (isSystemListsMode()) {
-                const systemViewerIframe = document.getElementById("system-viewer-iframe");
+            } else if (isSystemListsMode() && window.SystemListView) {
                 const wrap = document.createElement("div");
                 wrap.id = "system-list-toolbar";
                 wrap.style.display = "flex";
@@ -904,27 +1191,17 @@
                 searchInput.style.padding = "4px 8px";
                 searchInput.id = "system-list-search";
                 searchInput.addEventListener("input", function () {
-                    if (systemViewerIframe && systemViewerIframe.contentWindow) {
-                        try {
-                            systemViewerIframe.contentWindow.postMessage(
-                                { type: "harnice-system-viewer", action: "setSearch", value: searchInput.value }, "*");
-                        } catch (_) { }
-                    }
+                    SystemListView.setSearch(searchInput.value);
                 });
                 searchInput.addEventListener("keydown", function (e) {
-                    if (e.key === "Escape") searchInput.value = ""; searchInput.dispatchEvent(new Event("input"));
+                    if (e.key === "Escape") { searchInput.value = ""; SystemListView.setSearch(""); }
                 });
                 const clearBtn = document.createElement("button");
                 clearBtn.type = "button";
                 clearBtn.className = "btn";
                 clearBtn.textContent = "✕ Clear filters";
                 clearBtn.onclick = function () {
-                    if (systemViewerIframe && systemViewerIframe.contentWindow) {
-                        try {
-                            systemViewerIframe.contentWindow.postMessage(
-                                { type: "harnice-system-viewer", action: "clearFilters" }, "*");
-                        } catch (_) { }
-                    }
+                    SystemListView.clearFilters();
                     if (document.getElementById("system-list-search")) document.getElementById("system-list-search").value = "";
                 };
                 const badge = document.createElement("span");
@@ -959,23 +1236,13 @@
                 sortSelect.addEventListener("change", function () {
                     const v = sortSelect.value;
                     if (v === "-1") {
-                        if (systemViewerIframe && systemViewerIframe.contentWindow) {
-                            try {
-                                systemViewerIframe.contentWindow.postMessage(
-                                    { type: "harnice-system-viewer", action: "setSort", sortCol: -1, sortDir: 0 }, "*");
-                            } catch (_) { }
-                        }
+                        SystemListView.setSort(-1, 1);
                         return;
                     }
                     const parts = v.split(":");
                     const col = parseInt(parts[0], 10);
                     const dir = parts[1] === "desc" ? -1 : 1;
-                    if (systemViewerIframe && systemViewerIframe.contentWindow) {
-                        try {
-                            systemViewerIframe.contentWindow.postMessage(
-                                { type: "harnice-system-viewer", action: "setSort", sortCol: col, sortDir: dir }, "*");
-                        } catch (_) { }
-                    }
+                    SystemListView.setSort(col, dir);
                 });
                 wrap.appendChild(searchInput);
                 wrap.appendChild(clearBtn);
@@ -983,6 +1250,63 @@
                 wrap.appendChild(sortLabel);
                 wrap.appendChild(sortSelect);
                 slot.appendChild(wrap);
+                SystemListView.setOnStateChange(function (payload) {
+                    if (payload.rows !== undefined && payload.total !== undefined) {
+                        badge.textContent = payload.rows + " / " + payload.total + " rows";
+                    }
+                    if (payload.search !== undefined && searchInput.value !== payload.search) searchInput.value = payload.search || "";
+                    if (Array.isArray(payload.headers)) {
+                        const needRebuild = sortSelect.options.length <= 1 || (sortSelect.options.length - 1) / 2 !== payload.headers.length;
+                        if (needRebuild) {
+                            sortSelect.innerHTML = "";
+                            const o0 = document.createElement("option");
+                            o0.value = "-1";
+                            o0.textContent = "None";
+                            sortSelect.appendChild(o0);
+                            payload.headers.forEach(function (h, i) {
+                                const oa = document.createElement("option");
+                                oa.value = i + ":asc";
+                                oa.textContent = h + " ↑";
+                                sortSelect.appendChild(oa);
+                                const od = document.createElement("option");
+                                od.value = i + ":desc";
+                                od.textContent = h + " ↓";
+                                sortSelect.appendChild(od);
+                            });
+                        }
+                        const sortCol = payload.sortCol != null ? payload.sortCol : -1;
+                        const sortDir = payload.sortDir !== undefined ? payload.sortDir : 1;
+                        if (sortCol >= 0 && sortCol < payload.headers.length) {
+                            const want = sortCol + ":" + (sortDir === 1 ? "asc" : "desc");
+                            if (sortSelect.querySelector('option[value="' + want + '"]')) sortSelect.value = want;
+                        } else {
+                            sortSelect.value = "-1";
+                        }
+                    }
+                });
+                var s = SystemListView.getState();
+                if (s && s.headers && s.headers.length) {
+                    badge.textContent = (s.rows != null ? s.rows : 0) + " / " + (s.total != null ? s.total : 0) + " rows";
+                    sortSelect.innerHTML = "";
+                    var o0 = document.createElement("option");
+                    o0.value = "-1";
+                    o0.textContent = "None";
+                    sortSelect.appendChild(o0);
+                    s.headers.forEach(function (h, i) {
+                        var oa = document.createElement("option");
+                        oa.value = i + ":asc";
+                        oa.textContent = h + " ↑";
+                        sortSelect.appendChild(oa);
+                        var od = document.createElement("option");
+                        od.value = i + ":desc";
+                        od.textContent = h + " ↓";
+                        sortSelect.appendChild(od);
+                    });
+                    if (s.sortCol >= 0 && s.sortCol < s.headers.length)
+                        sortSelect.value = s.sortCol + ":" + (s.sortDir === 1 ? "asc" : "desc");
+                    else
+                        sortSelect.value = "-1";
+                }
             } else {
                 const spec = TOOLBAR_SPEC[selectedFile];
                 const graphIframe = document.getElementById("graph-editor-iframe");
@@ -1102,7 +1426,6 @@
             const graphPanel = document.getElementById("graph-editor-panel");
             const graphIframe = document.getElementById("graph-editor-iframe");
             const systemViewerPanel = document.getElementById("system-viewer-panel");
-            const systemViewerIframe = document.getElementById("system-viewer-iframe");
 
             const featureTree = isFeatureTreeMode();
             const systemLists = isSystemListsMode();
@@ -1127,14 +1450,9 @@
                     graphIframe.src = "about:blank";
                 }
             }
-            if (systemViewerIframe) {
-                if (systemLists) {
-                    const tabKey = systemListLabelToKey[selectedFile] || selectedFile.replace(/\s+/g, " ").toLowerCase();
-                    const hash = tabKey ? "#" + encodeURIComponent(tabKey) : "";
-                    systemViewerIframe.src = "/system-viewer?embedded=1" + hash;
-                } else {
-                    systemViewerIframe.src = "about:blank";
-                }
+            if (systemLists && window.SystemListView) {
+                const tabKey = systemListLabelToKey[selectedFile] || selectedFile.replace(/\s+/g, " ").toLowerCase();
+                SystemListView.loadPane(tabKey);
             }
         }
 
@@ -1161,46 +1479,6 @@
                 updateLineGutter();
             }
             setupProjectListDragDrop(document.getElementById("project-list"));
-            window.addEventListener("message", function (e) {
-                if (!e.data || e.data.type !== "harnice-system-viewer-state") return;
-                const badgeEl = document.getElementById("system-list-badge");
-                const sortEl = document.getElementById("system-list-sort");
-                if (badgeEl && e.data.rows !== undefined && e.data.total !== undefined) {
-                    badgeEl.textContent = e.data.rows + " / " + e.data.total + " rows";
-                }
-                if (sortEl && Array.isArray(e.data.headers)) {
-                    const headers = e.data.headers;
-                    const sortCol = e.data.sortCol != null ? e.data.sortCol : -1;
-                    const sortDir = e.data.sortDir !== undefined ? e.data.sortDir : 1;
-                    const needRebuild = sortEl.options.length <= 1 || (sortEl.options.length - 1) / 2 !== headers.length;
-                    if (needRebuild) {
-                        sortEl.innerHTML = "";
-                        const optNone = document.createElement("option");
-                        optNone.value = "-1";
-                        optNone.textContent = "None";
-                        sortEl.appendChild(optNone);
-                        headers.forEach(function (h, i) {
-                            const optAsc = document.createElement("option");
-                            optAsc.value = i + ":asc";
-                            optAsc.textContent = h + " ↑";
-                            sortEl.appendChild(optAsc);
-                            const optDesc = document.createElement("option");
-                            optDesc.value = i + ":desc";
-                            optDesc.textContent = h + " ↓";
-                            sortEl.appendChild(optDesc);
-                        });
-                    }
-                    if (sortCol >= 0 && sortCol < headers.length) {
-                        const want = sortCol + ":" + (sortDir === 1 ? "asc" : "desc");
-                        if (sortEl.querySelector('option[value="' + want + '"]')) sortEl.value = want;
-                    } else {
-                        sortEl.value = "-1";
-                    }
-                }
-                if (document.getElementById("system-list-search") && e.data.search !== undefined) {
-                    document.getElementById("system-list-search").value = e.data.search || "";
-                }
-            });
             applyView();
             await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
             await loadCode();
