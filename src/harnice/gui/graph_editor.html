@@ -53,8 +53,12 @@
       display: none
     }
 
+    body.embedded .embed-hide {
+      display: none !important
+    }
+
     body.embedded .toolbar-row {
-      display: none
+      display: none !important
     }
 
     .tab {
@@ -91,11 +95,83 @@
       display: none;
       flex: 1;
       flex-direction: column;
-      overflow: hidden
+      overflow: hidden;
+      position: relative
     }
 
     .panel.active {
       display: flex
+    }
+
+    .content-popup {
+      display: none;
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 100;
+      min-width: 200px;
+      max-width: 320px;
+      background: #1e1f23;
+      border: 1px solid #2a2b30;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .35), 0 0 1px rgba(0, 0, 0, .2);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: #d4d4d4;
+      overflow-y: auto;
+      max-height: calc(100% - 24px)
+    }
+
+    body.embedded .content-popup {
+      display: none
+    }
+
+    body.embedded .content-popup.popup-visible {
+      display: block
+    }
+
+    body.embedded .content-popup .section {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-bottom: 8px
+    }
+
+    body.embedded .content-popup .section:last-child {
+      margin-bottom: 0
+    }
+
+    body.embedded .content-popup h2 {
+      font-size: 11px;
+      color: #9a9ba0;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .5px
+    }
+
+    body.embedded .content-popup label {
+      color: #888;
+      display: block;
+      margin-top: 6px
+    }
+
+    body.embedded .content-popup .danger {
+      margin-top: 10px
+    }
+
+    body.embedded .content-popup .read-only-val,
+    body.embedded .content-popup p {
+      color: #888;
+      margin: 2px 0 0
+    }
+
+    body.embedded .content-popup input[type="number"],
+    body.embedded .content-popup input[type="text"] {
+      background: #25262a;
+      border: 1px solid #2a2b30;
+      border-radius: 4px;
+      color: #d4d4d4;
+      padding: 4px 6px
     }
 
     .toolbar-row {
@@ -103,7 +179,8 @@
       flex-wrap: wrap;
       align-items: flex-start;
       gap: 8px;
-      padding: 8px 10px;
+      padding: 10px 12px;
+      min-height: 52px;
       background: #18191c;
       border-bottom: 1px solid #2a2b30;
       flex-shrink: 0;
@@ -448,7 +525,7 @@
   <div id="main">
     <div class="panel active" id="panel-available">
       <div class="toolbar-row">
-        <div class="section">
+        <div class="section embed-hide">
           <h2>Tools</h2>
           <button id="btn-av-select" onclick="avSetTool('select')" class="active-tool">▶ Select</button>
           <button id="btn-av-addnode" onclick="avSetTool('add-node')">＋ Add Node</button>
@@ -460,7 +537,7 @@
           <div id="props-av-content"></div>
           <button class="danger" style="margin-top:8px" onclick="avDeleteSelected()">Delete</button>
         </div>
-        <div class="section">
+        <div class="section embed-hide">
           <h2>Step Size</h2>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <span style="font-size:10px;color:#555">0.01</span>
@@ -470,11 +547,12 @@
           <input id="step-slider" type="range" min="0" max="1" step="0.0001"
             style="width:120px;accent-color:#d4a017;cursor:pointer;margin:0">
         </div>
-        <div class="section">
+        <div class="section embed-hide">
           <h2>View</h2><button onclick="avFitView()">Fit View</button> <button id="av-home-btn" style="display:none"
             onclick="avGoHome()">Home</button>
         </div>
       </div>
+      <div class="content-popup" id="popup-available"></div>
       <div class="viewport" id="av-viewport">
         <canvas id="av-canvas" tabindex="0"
           style="width:100%;height:100%;display:block;position:absolute;top:0;left:0"></canvas>
@@ -502,11 +580,12 @@
           <h2 id="props-ch-title">Selection</h2>
           <div id="props-ch-content"></div>
         </div>
-        <div class="section">
+        <div class="section embed-hide">
           <h2>View</h2><button onclick="chFitView()">Fit View</button> <button id="ch-home-btn" style="display:none"
             onclick="chGoHome()">Home</button>
         </div>
       </div>
+      <div class="content-popup" id="popup-chosen"></div>
       <div class="viewport" id="ch-viewport">
         <canvas id="ch-canvas" tabindex="0"
           style="width:100%;height:100%;display:block;position:absolute;top:0;left:0"></canvas>
@@ -531,10 +610,11 @@
             style="width:70px">
           <p id="flat-no-sel" style="font-size:11px;color:#444;margin-top:6px">Click a segment to edit its angle.</p>
         </div>
-        <div class="section">
+        <div class="section embed-hide">
           <h2>View</h2><button onclick="flatFitView()">Fit View</button>
         </div>
       </div>
+      <div class="content-popup" id="popup-flattened"></div>
       <div id="flat-wrap"><svg id="flat-svg"></svg></div>
     </div>
   </div>
@@ -543,7 +623,24 @@
   <script>
     'use strict';
     var embedded = window !== window.top;
-    if (embedded) document.body.classList.add('embedded');
+    if (embedded) {
+      document.body.classList.add('embedded');
+      (function movePropsToPopups() {
+        var avProps = document.getElementById('props-av');
+        if (avProps) document.getElementById('popup-available').appendChild(avProps);
+        var chosenRow = document.querySelector('#panel-chosen .toolbar-row');
+        if (chosenRow) {
+          var chosenSections = chosenRow.querySelectorAll('.section:not(.embed-hide)');
+          var popupCh = document.getElementById('popup-chosen');
+          for (var i = 0; i < chosenSections.length; i++) popupCh.appendChild(chosenSections[i]);
+        }
+        var flatRow = document.querySelector('#panel-flattened .toolbar-row');
+        if (flatRow) {
+          var flatSection = flatRow.querySelector('.section:not(.embed-hide)');
+          if (flatSection) document.getElementById('popup-flattened').appendChild(flatSection);
+        }
+      })();
+    }
     // When modifying this file: read the full file first; the mouse event system (onCanvasMouseDown / mousemove / mouseup and drag modes) is intricate.
 
     // ── Palette ───────────────────────────────────────────────────────────────────
@@ -2107,6 +2204,8 @@
       var title = document.getElementById('props-av-title');
       if (!avSelected) {
         panel.classList.remove('props-visible');
+        var popupAv = document.getElementById('popup-available');
+        if (popupAv) popupAv.classList.remove('popup-visible');
         avArrows.forEach(function (a) { avScene.remove(a); }); avArrows = [];
         avSegEndTriads.forEach(function (e) { avScene.remove(e.group); }); avSegEndTriads = [];
         avSegRelTriads.forEach(function (e) { avScene.remove(e.group); }); avSegRelTriads = [];
@@ -2114,6 +2213,8 @@
         avRender(); return;
       }
       panel.classList.add('props-visible');
+      var popupAv = document.getElementById('popup-available');
+      if (popupAv) popupAv.classList.add('popup-visible');
       // Apply current step to any inputs about to be created
       requestAnimationFrame(function () { applyStepToInputs(currentStep); });
 
@@ -2489,6 +2590,8 @@
     });
     function chShowProps(id) {
       document.getElementById('props-ch').classList.add('props-visible');
+      var popupCh = document.getElementById('popup-chosen');
+      if (popupCh) popupCh.classList.add('popup-visible');
       document.getElementById('props-ch-title').textContent = 'Segment: ' + id;
       var chosen = chosenList.indexOf(id) >= 0;
       document.getElementById('props-ch-content').innerHTML = '<p style="font-size:12px;color:' + (chosen ? '#d4a017' : '#444') + ';margin-top:4px">' + (chosen ? '✓ Chosen' : '○ Not chosen') + '</p>';
@@ -2500,6 +2603,8 @@
     function flatNorm(deg) { if (deg === '' || deg == null) return null; var n = parseFloat(deg); return isFinite(n) ? ((n % 360) + 360) % 360 : null; }
     function flatAutoAngle(i, tot) { return Math.round((i / tot) * 360); }
     function flatRender() {
+      var popupFlat = document.getElementById('popup-flattened');
+      if (popupFlat) popupFlat.classList.toggle('popup-visible', flatSelected != null);
       var rows = flatData.rows || [];
       rows.forEach(function (row, i) { if (row.angle === '' || row.angle == null) row.angle = String(flatAutoAngle(i, rows.length)); });
       var NS = 'http://www.w3.org/2000/svg'; flatSvg.innerHTML = '';
@@ -2539,6 +2644,8 @@
     var flatSvg = document.getElementById('flat-svg');
     function flatShowProps(idx) {
       var row = (flatData.rows || [])[idx]; if (!row) return;
+      var popupFlat = document.getElementById('popup-flattened');
+      if (popupFlat) popupFlat.classList.add('popup-visible');
       document.getElementById('flat-no-sel').style.display = 'none';
       document.getElementById('flat-prop-id').textContent = row.segment_id || '—';
       document.getElementById('flat-prop-na').textContent = row.node_at_end_a || '—';

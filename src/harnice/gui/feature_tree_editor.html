@@ -71,18 +71,18 @@
             white-space: nowrap;
         }
 
-        /* Single toolbar: always visible; contents populated from one list in applyView() */
+        /* Single toolbar: always visible; grows to fit contents, can wrap */
         #top-toolbar {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
-            height: var(--toolbar-h);
             min-height: var(--toolbar-h);
             background: var(--bg2);
             border-bottom: 1px solid var(--border);
-            padding: 0 10px;
+            padding: 10px;
             flex-shrink: 0;
             overflow-x: auto;
+            overflow-y: auto;
         }
 
         #top-toolbar-slot {
@@ -90,6 +90,7 @@
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
+            min-height: 28px;
         }
 
         #top-toolbar-slot .btn {
@@ -653,8 +654,19 @@
                 { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
                 { action: "fitView", payload: {}, label: "Fit View" }
             ],
-            "chosen network": [{ action: "fitView", payload: {}, label: "Fit View" }],
-            "flattened network": [{ action: "fitView", payload: {}, label: "Fit View" }]
+            "chosen network": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "add-node" }, label: "＋ Add Node" },
+                { action: "setTool", payload: { tool: "add-seg" }, label: "⟶ Add Segment" },
+                { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
+                { action: "fitView", payload: {}, label: "Fit View" }
+            ],
+            "flattened network": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "add-seg" }, label: "⟶ Add Segment" },
+                { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
+                { action: "fitView", payload: {}, label: "Fit View" }
+            ]
         };
 
         let saveTimer = null;
