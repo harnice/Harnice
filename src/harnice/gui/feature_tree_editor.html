@@ -327,7 +327,9 @@
         #editor {
             flex: 1;
             min-height: 0;
+            min-width: 0;
             display: none;
+            width: 100%;
         }
 
         #editor.ready {
@@ -336,11 +338,16 @@
 
         #editor .cm-editor {
             height: 100%;
+            width: 100%;
             font-size: 13px;
         }
 
         #editor .cm-scroller {
             font-family: 'Cascadia Code', 'Consolas', monospace;
+            height: 100%;
+            width: 100%;
+            overflow: auto;
+            box-sizing: border-box;
         }
 
         #output-divider {
