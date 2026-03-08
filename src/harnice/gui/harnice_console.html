@@ -1929,6 +1929,7 @@
             }
             renderFileList();
             applyView();
+            applySavedProjectsTop();
         }
 
         function updateProjectMeta(pn, rev, description, releaseStatus) {
@@ -2262,19 +2263,36 @@
             renderProjectList(d.projects || []);
         }
 
+        let savedProjectsTopPx = null;
+
+        function applySavedProjectsTop() {
+            if (savedProjectsTopPx == null || typeof savedProjectsTopPx !== "number" || savedProjectsTopPx < 80) return;
+            const header = document.getElementById("left-panel-header");
+            const fileNav = document.getElementById("file-navigator");
+            const leftPanel = document.getElementById("left-panel");
+            if (!header || !fileNav || !leftPanel) return;
+            const headerH = header.offsetHeight;
+            const fileNavH = Math.max(80, Math.min(savedProjectsTopPx - headerH, leftPanel.offsetHeight - 120));
+            fileNav.style.height = fileNavH + "px";
+        }
+
         async function loadGuiSetup() {
             try {
                 const d = await api("GET", "/api/gui_setup");
                 const h = d.sidebar_file_navigator_height;
                 if (typeof h === "number" && h >= 80) {
-                    const el = document.getElementById("file-navigator");
-                    if (el) el.style.height = h + "px";
+                    savedProjectsTopPx = h;
+                    applySavedProjectsTop();
                 }
             } catch (_) { }
         }
 
-        function saveGuiSetupSidebarHeight(heightPx) {
-            api("POST", "/api/gui_setup", { sidebar_file_navigator_height: heightPx }).catch(() => { });
+        function saveGuiSetupSidebarHeight() {
+            const header = document.getElementById("left-panel-header");
+            const fileNav = document.getElementById("file-navigator");
+            if (!header || !fileNav) return;
+            savedProjectsTopPx = header.offsetHeight + fileNav.offsetHeight;
+            api("POST", "/api/gui_setup", { sidebar_file_navigator_height: savedProjectsTopPx }).catch(() => { });
         }
 
         function renderProjectList(projects) {
@@ -2456,7 +2474,7 @@
 
         document.addEventListener("mouseup", () => {
             if (sidebarDrag) {
-                saveGuiSetupSidebarHeight(fileNavigator.offsetHeight);
+                saveGuiSetupSidebarHeight();
                 sidebarDrag = false;
             }
             if (dragging) dragging = false;
