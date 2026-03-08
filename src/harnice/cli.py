@@ -71,47 +71,15 @@ def main():
     )
 
     group.add_argument(
-        "--gui",
+        "--console",
         action="store_true",
-        help="Launch the feature tree editor",
-    )
-
-    group.add_argument(
-        "--launcher",
-        action="store_true",
-        help="Launch the Harnice launcher window",
-    )
-
-    group.add_argument(
-        "--graph-editor",
-        action="store_true",
-        help="Launch the feature tree editor with this revision (graph files in project files)",
-    )
-
-    group.add_argument(
-        "--system-viewer",
-        action="store_true",
-        help="Launch the feature tree editor with this revision (system lists in project files)",
+        help="Launch the Harnice console",
     )
 
     args = parser.parse_args()
 
-    if args.gui:
-        _run_feature_tree_editor()
-        return
-
-    if args.launcher:
-        from harnice.gui.launcher import main as gui_main
-
-        gui_main()
-        return
-
-    if args.graph_editor:
-        _run_graph_editor()
-        return
-
-    if args.system_viewer:
-        _run_system_viewer()
+    if args.console:
+        _run_console()
         return
 
     # -----------------------------
@@ -169,8 +137,8 @@ def main():
     return
 
 
-def _run_feature_tree_editor():
-    """Launch the feature tree editor (can be run from any directory)."""
+def _run_console():
+    """Launch the Harnice console (can be run from any directory)."""
     # Ensure function_index.json is up to date for the editor dropdowns
     from harnice.gui.build_feature_tree_gui import build as build_feature_index
 
@@ -179,22 +147,6 @@ def _run_feature_tree_editor():
     from harnice.gui.feature_tree_server import run_server
 
     run_server(port=0, open_browser=True)
-
-
-def _run_graph_editor():
-    """Launch the feature tree editor with this revision (graph files are in the project files)."""
-    fileio.verify_revision_structure()
-    from harnice.gui.feature_tree_server import run_server
-
-    run_server(rev_folder=os.getcwd(), port=0, open_browser=True)
-
-
-def _run_system_viewer():
-    """Launch the feature tree editor with this revision (system lists are in the project files)."""
-    fileio.verify_revision_structure()
-    from harnice.gui.feature_tree_server import run_server
-
-    run_server(rev_folder=os.getcwd(), port=0, open_browser=True)
 
 
 def prompt(text, default=None):

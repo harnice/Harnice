@@ -102,7 +102,7 @@ def get_all_files():
 def get_tab_list():
     """
     Return list of (file_key, display_label) for tabs that exist in the current project.
-    Used by the feature tree editor to build the project files selector for system products.
+    Used by the Harnice console to build the project files selector for system products.
     """
     files = get_all_files()
     ordered = [k for k in TAB_ORDER if k in files]
