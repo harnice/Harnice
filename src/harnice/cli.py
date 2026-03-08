@@ -144,7 +144,7 @@ def _run_console():
 
     build_feature_index()
 
-    from harnice.gui.feature_tree_server import run_server
+    from harnice.gui.console_server import run_server
 
     run_server(port=0, open_browser=True)
 

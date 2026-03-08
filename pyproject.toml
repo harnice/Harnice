@@ -31,7 +31,7 @@ Issues = "https://github.com/harnice/Harnice/issues"
 [project.scripts]
 harnice = "harnice.cli:main"
 
-harnice-gui = "harnice.gui.feature_tree_server:main"
+harnice-gui = "harnice.gui.console_server:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

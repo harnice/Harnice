@@ -1,5 +1,5 @@
 """
-feature_tree_server.py
+console_server.py
 HTTP server for the Harnice console.
 Serves the editor HTML and provides REST API for file I/O, project switching,
 subprocess run, and native folder browsing.
@@ -8,7 +8,7 @@ Usage:
     python -m harnice --console
     harnice-gui
 or with a revision folder:
-    python feature_tree_server.py /path/to/rev/folder
+    python -m harnice.gui.console_server /path/to/rev/folder
 """
 
 import csv
@@ -814,8 +814,53 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     # ---- POST handlers ----
 
     def _api_post_code(self):
+        """Save feature tree code. Rejects request when content is empty/placeholder or
+        rev_folder does not match current project (see guards below).
+        """
         body = self._read_json_body()
         code = body.get("code", "")
+        # Guard 1: Refuse empty or placeholder content (avoids accidental overwrite when
+        # editor shows "feature tree not found" or when content was never loaded).
+        if not code or not code.strip():
+            self._send_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to save empty content to feature tree",
+                },
+                status=400,
+            )
+            return
+        if code.strip().startswith("feature tree not found"):
+            self._send_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to save placeholder text; load a project with a feature tree first",
+                },
+                status=400,
+            )
+            return
+        # Guard 2: Require rev_folder to match current project (prevents multi-tab / stale tab
+        # from writing one project's buffer into another project's file).
+        rev_folder = (body.get("rev_folder") or "").strip()
+        current = (getattr(_state, "rev_folder", None) or "").strip()
+        if not current:
+            self._send_json(
+                {"ok": False, "error": "No project selected on server"},
+                status=400,
+            )
+            return
+        norm = os.path.normpath
+        if not rev_folder or norm(os.path.abspath(rev_folder)) != norm(
+            os.path.abspath(current)
+        ):
+            self._send_json(
+                {
+                    "ok": False,
+                    "error": "Project mismatch; switch to this project again and save",
+                },
+                status=400,
+            )
+            return
         try:
             _state.write_code(code)
             self._send_json({"ok": True})

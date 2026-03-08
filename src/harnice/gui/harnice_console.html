@@ -2012,11 +2012,21 @@
             saveTimer = setTimeout(saveCode, 800);
         }
 
+        function isPlaceholderOrEmpty(code) {
+            const s = (code || "").trim();
+            return !s || s.startsWith("feature tree not found");
+        }
+
         async function saveCode() {
             const code = getCode();
             if (!getEditorEl()) return;
+            // Don't send empty or placeholder — server would reject; avoids overwriting real feature tree
+            if (isPlaceholderOrEmpty(code)) return;
+            // Send rev_folder so server can reject if we're a stale tab (wrong project)
+            const payload = { code };
+            if (activePath) payload.rev_folder = activePath;
             try {
-                const res = await api("POST", "/api/code", { code });
+                const res = await api("POST", "/api/code", payload);
                 if (res && res.ok) {
                     setSaveIndicator("saved");
                 } else {
@@ -2162,9 +2172,9 @@
         window.runCode = async function () {
             if (isRunning) return;
 
-            // Flush any pending save first
+            // Flush any pending save first (only if we have real content to save)
             clearTimeout(saveTimer);
-            await saveCode();
+            if (!isPlaceholderOrEmpty(getCode())) await saveCode();
 
             isRunning = true;
             setRunBtn("running");

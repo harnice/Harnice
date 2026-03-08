@@ -1,7 +1,7 @@
 """
 Thin HTTP layer for system list API (system product).
 Uses system_viewer_core for data, tab list, and SSE watcher.
-feature_tree_server imports serve_files, serve_sse, serve_channel_type_*,
+console_server imports serve_files, serve_sse, serve_channel_type_*,
 serve_signals_list and uses them for /api/files, /api/sse, etc. when product_type is system.
 """
 
