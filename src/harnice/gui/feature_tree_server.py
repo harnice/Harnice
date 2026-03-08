@@ -816,6 +816,26 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     def _api_post_code(self):
         body = self._read_json_body()
         code = body.get("code", "")
+        # Refuse to overwrite the feature tree with empty or placeholder content
+        # (avoids accidental deletion when editor shows "feature tree not found" or multi-tab races)
+        if not code or not code.strip():
+            self._send_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to save empty content to feature tree",
+                },
+                status=400,
+            )
+            return
+        if code.strip().startswith("feature tree not found"):
+            self._send_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to save placeholder text; load a project with a feature tree first",
+                },
+                status=400,
+            )
+            return
         try:
             _state.write_code(code)
             self._send_json({"ok": True})
