@@ -228,6 +228,12 @@ class _State:
             self._editor_files = (
                 _editor_files_for_product(ptype, folder) if ptype else ["feature tree"]
             )
+        # Switch process cwd to rev folder so fileio.rev_directory() (getcwd()) is correct;
+        # system list panes and other fileio.path() lookups then resolve to this project.
+        try:
+            os.chdir(folder)
+        except OSError:
+            pass
 
     def _resolve_feature_tree(self, folder: str):
         """
