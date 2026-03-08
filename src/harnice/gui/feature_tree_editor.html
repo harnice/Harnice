@@ -888,6 +888,101 @@
                 dropdowns.id = "dropdowns";
                 slot.appendChild(dropdowns);
                 buildDropdowns();
+            } else if (isSystemListsMode()) {
+                const systemViewerIframe = document.getElementById("system-viewer-iframe");
+                const wrap = document.createElement("div");
+                wrap.id = "system-list-toolbar";
+                wrap.style.display = "flex";
+                wrap.style.alignItems = "center";
+                wrap.style.gap = "8px";
+                wrap.style.flexWrap = "wrap";
+                const searchInput = document.createElement("input");
+                searchInput.type = "text";
+                searchInput.placeholder = "Search all columns…";
+                searchInput.className = "btn";
+                searchInput.style.minWidth = "140px";
+                searchInput.style.padding = "4px 8px";
+                searchInput.id = "system-list-search";
+                searchInput.addEventListener("input", function () {
+                    if (systemViewerIframe && systemViewerIframe.contentWindow) {
+                        try {
+                            systemViewerIframe.contentWindow.postMessage(
+                                { type: "harnice-system-viewer", action: "setSearch", value: searchInput.value }, "*");
+                        } catch (_) { }
+                    }
+                });
+                searchInput.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape") searchInput.value = ""; searchInput.dispatchEvent(new Event("input"));
+                });
+                const clearBtn = document.createElement("button");
+                clearBtn.type = "button";
+                clearBtn.className = "btn";
+                clearBtn.textContent = "✕ Clear filters";
+                clearBtn.onclick = function () {
+                    if (systemViewerIframe && systemViewerIframe.contentWindow) {
+                        try {
+                            systemViewerIframe.contentWindow.postMessage(
+                                { type: "harnice-system-viewer", action: "clearFilters" }, "*");
+                        } catch (_) { }
+                    }
+                    if (document.getElementById("system-list-search")) document.getElementById("system-list-search").value = "";
+                };
+                const badge = document.createElement("span");
+                badge.id = "system-list-badge";
+                badge.style.fontSize = "11px";
+                badge.style.color = "var(--text-dim)";
+                badge.style.padding = "2px 8px";
+                badge.style.borderRadius = "4px";
+                badge.style.background = "var(--bg3)";
+                badge.textContent = "—";
+                const sortWrap = document.createElement("div");
+                sortWrap.style.display = "flex";
+                sortWrap.style.alignItems = "center";
+                sortWrap.style.gap = "6px";
+                const sortLabel = document.createElement("span");
+                sortLabel.style.fontSize = "11px";
+                sortLabel.style.color = "var(--text-dim)";
+                sortLabel.textContent = "Sort by";
+                const sortSelect = document.createElement("select");
+                sortSelect.id = "system-list-sort";
+                sortSelect.style.padding = "4px 8px";
+                sortSelect.style.background = "var(--bg3)";
+                sortSelect.style.color = "var(--text)";
+                sortSelect.style.border = "1px solid var(--border)";
+                sortSelect.style.borderRadius = "4px";
+                sortSelect.style.fontSize = "12px";
+                sortSelect.style.minWidth = "120px";
+                const optNone = document.createElement("option");
+                optNone.value = "-1";
+                optNone.textContent = "None";
+                sortSelect.appendChild(optNone);
+                sortSelect.addEventListener("change", function () {
+                    const v = sortSelect.value;
+                    if (v === "-1") {
+                        if (systemViewerIframe && systemViewerIframe.contentWindow) {
+                            try {
+                                systemViewerIframe.contentWindow.postMessage(
+                                    { type: "harnice-system-viewer", action: "setSort", sortCol: -1, sortDir: 0 }, "*");
+                            } catch (_) { }
+                        }
+                        return;
+                    }
+                    const parts = v.split(":");
+                    const col = parseInt(parts[0], 10);
+                    const dir = parts[1] === "desc" ? -1 : 1;
+                    if (systemViewerIframe && systemViewerIframe.contentWindow) {
+                        try {
+                            systemViewerIframe.contentWindow.postMessage(
+                                { type: "harnice-system-viewer", action: "setSort", sortCol: col, sortDir: dir }, "*");
+                        } catch (_) { }
+                    }
+                });
+                wrap.appendChild(searchInput);
+                wrap.appendChild(clearBtn);
+                wrap.appendChild(badge);
+                wrap.appendChild(sortLabel);
+                wrap.appendChild(sortSelect);
+                slot.appendChild(wrap);
             } else {
                 const spec = TOOLBAR_SPEC[selectedFile];
                 const graphIframe = document.getElementById("graph-editor-iframe");
@@ -1066,6 +1161,46 @@
                 updateLineGutter();
             }
             setupProjectListDragDrop(document.getElementById("project-list"));
+            window.addEventListener("message", function (e) {
+                if (!e.data || e.data.type !== "harnice-system-viewer-state") return;
+                const badgeEl = document.getElementById("system-list-badge");
+                const sortEl = document.getElementById("system-list-sort");
+                if (badgeEl && e.data.rows !== undefined && e.data.total !== undefined) {
+                    badgeEl.textContent = e.data.rows + " / " + e.data.total + " rows";
+                }
+                if (sortEl && Array.isArray(e.data.headers)) {
+                    const headers = e.data.headers;
+                    const sortCol = e.data.sortCol != null ? e.data.sortCol : -1;
+                    const sortDir = e.data.sortDir !== undefined ? e.data.sortDir : 1;
+                    const needRebuild = sortEl.options.length <= 1 || (sortEl.options.length - 1) / 2 !== headers.length;
+                    if (needRebuild) {
+                        sortEl.innerHTML = "";
+                        const optNone = document.createElement("option");
+                        optNone.value = "-1";
+                        optNone.textContent = "None";
+                        sortEl.appendChild(optNone);
+                        headers.forEach(function (h, i) {
+                            const optAsc = document.createElement("option");
+                            optAsc.value = i + ":asc";
+                            optAsc.textContent = h + " ↑";
+                            sortEl.appendChild(optAsc);
+                            const optDesc = document.createElement("option");
+                            optDesc.value = i + ":desc";
+                            optDesc.textContent = h + " ↓";
+                            sortEl.appendChild(optDesc);
+                        });
+                    }
+                    if (sortCol >= 0 && sortCol < headers.length) {
+                        const want = sortCol + ":" + (sortDir === 1 ? "asc" : "desc");
+                        if (sortEl.querySelector('option[value="' + want + '"]')) sortEl.value = want;
+                    } else {
+                        sortEl.value = "-1";
+                    }
+                }
+                if (document.getElementById("system-list-search") && e.data.search !== undefined) {
+                    document.getElementById("system-list-search").value = e.data.search || "";
+                }
+            });
             applyView();
             await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects()]);
             await loadCode();

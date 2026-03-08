@@ -20,8 +20,12 @@
       color: #eee;
     }
 
-    /* Embedded in feature tree: no tab bar, main pane only */
+    /* Embedded in feature tree: no tab bar, no top bar (toolbar is in shell) */
     body.embedded #tab-bar {
+      display: none !important;
+    }
+
+    body.embedded #top-bar {
       display: none !important;
     }
 
@@ -1603,6 +1607,19 @@
       }
 
       document.getElementById('row-badge').textContent = rows.length + ' / ' + st.rows.length + ' rows';
+      if (document.body.classList.contains('embedded') && window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({
+            type: 'harnice-system-viewer-state',
+            rows: rows.length,
+            total: st.rows.length,
+            headers: st.headers,
+            sortCol: st.sortCol,
+            sortDir: st.sortDir,
+            search: st.search || ''
+          }, '*');
+        } catch (e) { }
+      }
 
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
@@ -2054,6 +2071,27 @@
       updateHeaderUI(dataKey);
       renderTable(activeLabel);
     }
+
+    // ---- Embedded: accept toolbar actions from parent ----
+    window.addEventListener('message', function (e) {
+      if (!e.data || e.data.type !== 'harnice-system-viewer') return;
+      const dataKey = getDataKey();
+      const st = getState(dataKey);
+      if (e.data.action === 'setSearch') {
+        const val = (e.data.value != null) ? String(e.data.value) : '';
+        st.search = val;
+        const searchEl = document.getElementById('search-input');
+        if (searchEl) searchEl.value = val;
+        renderTable(activeLabel);
+      } else if (e.data.action === 'clearFilters') {
+        clearAllFilters();
+      } else if (e.data.action === 'setSort') {
+        st.sortCol = e.data.sortCol >= 0 ? e.data.sortCol : -1;
+        st.sortDir = (e.data.sortDir === -1 || e.data.sortDir === 1) ? e.data.sortDir : 1;
+        updateHeaderUI(dataKey);
+        renderTable(activeLabel);
+      }
+    });
 
     // ============================================================
     // Column dropdown
