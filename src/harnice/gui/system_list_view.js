@@ -1,6 +1,6 @@
 /**
  * System list view — in-DOM table, filters, column dropdown, SSE, signals expand.
- * Used by feature tree editor when a system list pane is selected. No iframe.
+ * Used by Harnice console when a system list pane is selected. No iframe.
  * Expects #system-list-panel in the document. Call SystemListView.loadPane(tabKey) to show a pane.
  */
 (function () {

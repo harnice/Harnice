@@ -67,7 +67,7 @@ def start_file_watcher():
 
 
 def get_system_viewer_tab_list():
-    """Return list of (file_key, display_label) for feature tree editor. Re-export from core."""
+    """Return list of (file_key, display_label) for Harnice console. Re-export from core."""
     return system_viewer_core.get_tab_list()
 
 

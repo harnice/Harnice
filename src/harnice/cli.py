@@ -71,15 +71,15 @@ def main():
     )
 
     group.add_argument(
-        "--gui",
+        "--console",
         action="store_true",
-        help="Launch the feature tree editor",
+        help="Launch the Harnice console",
     )
 
     args = parser.parse_args()
 
-    if args.gui:
-        _run_feature_tree_editor()
+    if args.console:
+        _run_console()
         return
 
     # -----------------------------
@@ -137,8 +137,8 @@ def main():
     return
 
 
-def _run_feature_tree_editor():
-    """Launch the feature tree editor (can be run from any directory)."""
+def _run_console():
+    """Launch the Harnice console (can be run from any directory)."""
     # Ensure function_index.json is up to date for the editor dropdowns
     from harnice.gui.build_feature_tree_gui import build as build_feature_index
 

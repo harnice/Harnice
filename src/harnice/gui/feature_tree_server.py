@@ -1,11 +1,11 @@
 """
 feature_tree_server.py
-HTTP server for the harnice feature tree editor.
+HTTP server for the Harnice console.
 Serves the editor HTML and provides REST API for file I/O, project switching,
 subprocess run, and native folder browsing.
 
 Usage:
-    python -m harnice --gui
+    python -m harnice --console
     harnice-gui
 or with a revision folder:
     python feature_tree_server.py /path/to/rev/folder
@@ -31,7 +31,7 @@ from harnice.gui import system_viewer_core, system_viewer_server
 
 _GUI_DIR = Path(__file__).resolve().parent
 _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
-_EDITOR_HTML = _GUI_DIR / "feature_tree_editor.html"
+_EDITOR_HTML = _GUI_DIR / "harnice_console.html"
 _GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
 _SYSTEM_LIST_VIEW_JS = _GUI_DIR / "system_list_view.js"
 
@@ -124,11 +124,11 @@ def _find_feature_tree_path_in_structure(structure, path=None):
 
 def _gui_state_path() -> Path:
     """
-    Path to feature_tree_editor_state.json.
+    Path to console state file (harnice_console_state.json).
 
     Stored at the harnice project root (three levels above this gui/ directory).
     """
-    return _GUI_DIR.parents[2] / "feature_tree_editor_state.json"
+    return _GUI_DIR.parents[2] / "harnice_console_state.json"
 
 
 def _product_type_for_revision_folder(rev_folder: str):
@@ -360,7 +360,7 @@ _state: _State = None  # initialised in run_server()
 
 
 # ---------------------------------------------------------------------------
-# feature_tree_editor_state.json — remembered projects
+# console state file — remembered projects
 # ---------------------------------------------------------------------------
 
 
@@ -582,7 +582,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
     def _serve_html(self):
         if not _EDITOR_HTML.exists():
-            self.send_error(500, "feature_tree_editor.html not found")
+            self.send_error(500, "harnice_console.html not found")
             return
         self._send_bytes(_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8")
 
@@ -594,7 +594,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         self._send_bytes(_GRAPH_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8")
 
     def _serve_system_list_view_js(self):
-        """Serve in-DOM system list view script for feature tree editor."""
+        """Serve in-DOM system list view script for Harnice console."""
         if not _SYSTEM_LIST_VIEW_JS.exists():
             self.send_error(500, "system_list_view.js not found")
             return
@@ -688,7 +688,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         self._send_json({"projects": projects})
 
     def _api_gui_setup_get(self):
-        """Return persisted GUI setup (e.g. sidebar slider position) from feature_tree_editor_state.json."""
+        """Return persisted GUI setup (e.g. sidebar slider position) from console state file."""
         data = _load_gui_state()
         height = data.get("sidebar_file_navigator_height")
         if height is not None and not isinstance(height, (int, float)):
@@ -696,7 +696,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         self._send_json({"sidebar_file_navigator_height": height})
 
     def _api_gui_setup_post(self):
-        """Persist GUI setup (e.g. sidebar slider position) into feature_tree_editor_state.json."""
+        """Persist GUI setup (e.g. sidebar slider position) into console state file."""
         try:
             body = self._read_json_body()
         except Exception:
@@ -979,15 +979,15 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
     actual_port = server.server_address[1]
     url = f"http://127.0.0.1:{actual_port}/"
 
-    # Write URL to env-var file when HARNICE_FEATURE_TREE_EDITOR_URL_FILE is set
-    url_file = os.environ.get("HARNICE_FEATURE_TREE_EDITOR_URL_FILE")
+    # Write URL to env-var file when HARNICE_CONSOLE_URL_FILE is set
+    url_file = os.environ.get("HARNICE_CONSOLE_URL_FILE")
     if url_file:
         try:
             Path(url_file).write_text(url, encoding="utf-8")
         except Exception:
             pass
 
-    print(f"Feature tree editor: {url}  (Ctrl+C to stop)")
+    print(f"Harnice console: {url}  (Ctrl+C to stop)")
 
     if open_browser:
         webbrowser.open(url)
@@ -999,7 +999,7 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
 
 
 def main():
-    """Entry point for harnice-gui: build function index and launch feature tree editor."""
+    """Entry point for harnice-gui: build function index and launch Harnice console."""
     from harnice.gui.build_feature_tree_gui import build as build_feature_index
 
     build_feature_index()
