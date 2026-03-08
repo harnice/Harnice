@@ -1,9 +1,8 @@
 """
-Thin HTTP layer for the system viewer (system product lists).
+Thin HTTP layer for system list API (system product).
 Uses system_viewer_core for data, tab list, and SSE watcher.
-Serves the viewer HTML and API. Used by:
-- Standalone: run_server() for CLI/launcher (separate process).
-- Feature tree: feature_tree_server serves /system-viewer and system API routes, using core + these handlers.
+feature_tree_server imports serve_files, serve_sse, serve_channel_type_*,
+serve_signals_list and uses them for /api/files, /api/sse, etc. when product_type is system.
 """
 
 import http.server
@@ -18,11 +17,9 @@ from urllib.parse import parse_qs, urlparse
 from harnice.gui import system_viewer_core
 from harnice.products import chtype
 
-_HTML_PATH = Path(__file__).resolve().parent / "system_viewer.html"
-
 
 def _viewer_html_path():
-    return _HTML_PATH
+    return Path(__file__).resolve().parent / "system_viewer.html"
 
 
 class SystemViewerHandler(http.server.BaseHTTPRequestHandler):
@@ -233,8 +230,8 @@ def serve_signals_list(handler):
 
 def run_server(port=0, open_browser=True):
     """
-    Run the standalone system viewer server (e.g. from CLI or launcher).
-    Uses port 0 to pick an ephemeral port; returns the actual port.
+    Legacy standalone system viewer server (no longer used; GUI is feature tree only).
+    Uses port 0 to pick an ephemeral port.
     """
     start_file_watcher()
 

@@ -4,9 +4,10 @@ HTTP server for the harnice feature tree editor.
 Serves the editor HTML and provides REST API for file I/O, project switching,
 subprocess run, and native folder browsing.
 
-Usage (from a rev folder):
-    python -m harnice --feature-tree-editor
-or directly:
+Usage:
+    python -m harnice --gui
+    harnice-gui
+or with a revision folder:
     python feature_tree_server.py /path/to/rev/folder
 """
 
@@ -32,7 +33,6 @@ _GUI_DIR = Path(__file__).resolve().parent
 _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
 _EDITOR_HTML = _GUI_DIR / "feature_tree_editor.html"
 _GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
-_SYSTEM_VIEWER_HTML = _GUI_DIR / "system_viewer.html"
 _SYSTEM_LIST_VIEW_JS = _GUI_DIR / "system_list_view.js"
 
 
@@ -126,9 +126,7 @@ def _gui_state_path() -> Path:
     """
     Path to feature_tree_editor_state.json.
 
-    Stored at the harnice project root alongside gui_layout.json (and separate
-    from any launcher_state.json), which is three levels above this gui/
-    directory.
+    Stored at the harnice project root (three levels above this gui/ directory).
     """
     return _GUI_DIR.parents[2] / "feature_tree_editor_state.json"
 
@@ -144,7 +142,7 @@ def _product_type_for_revision_folder(rev_folder: str):
 
 
 def _button_color_for_product(product_type: str):
-    """Return button_color from the product module, like launcher does."""
+    """Return button_color from the product module for UI theming."""
     if not product_type:
         return None
     try:
@@ -522,7 +520,6 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/": self._serve_html,
             "/index.html": self._serve_html,
             "/graph-editor": self._serve_graph_editor_html,
-            "/system-viewer": self._serve_system_viewer_html,
             "/system-list-view.js": self._serve_system_list_view_js,
             "/api/info": self._api_info,
             "/api/code": self._api_get_code,
@@ -595,13 +592,6 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(500, "graph_editor.html not found")
             return
         self._send_bytes(_GRAPH_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8")
-
-    def _serve_system_viewer_html(self):
-        """Serve system viewer HTML for embedding in iframe (system products only). Same origin so /api/* go to this server."""
-        if not _SYSTEM_VIEWER_HTML.exists():
-            self.send_error(500, "system_viewer.html not found")
-            return
-        self._send_bytes(_SYSTEM_VIEWER_HTML.read_bytes(), "text/html; charset=utf-8")
 
     def _serve_system_list_view_js(self):
         """Serve in-DOM system list view script for feature tree editor."""
@@ -989,7 +979,7 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
     actual_port = server.server_address[1]
     url = f"http://127.0.0.1:{actual_port}/"
 
-    # Write URL to env-var file (same pattern as graph_server.py)
+    # Write URL to env-var file when HARNICE_FEATURE_TREE_EDITOR_URL_FILE is set
     url_file = os.environ.get("HARNICE_FEATURE_TREE_EDITOR_URL_FILE")
     if url_file:
         try:
@@ -1006,6 +996,14 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n[server] stopped.")
+
+
+def main():
+    """Entry point for harnice-gui: build function index and launch feature tree editor."""
+    from harnice.gui.build_feature_tree_gui import build as build_feature_index
+
+    build_feature_index()
+    run_server(port=0, open_browser=True)
 
 
 if __name__ == "__main__":
