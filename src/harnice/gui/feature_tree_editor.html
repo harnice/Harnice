@@ -97,10 +97,6 @@
             flex-shrink: 0;
         }
 
-        #top-toolbar #save-indicator {
-            font-size: 11px;
-        }
-
         #top-toolbar .tb-sep {
             width: 1px;
             height: 20px;
@@ -219,8 +215,59 @@
         }
 
         .file-nav-item.active {
-            background: var(--bg4);
+            background: transparent;
             color: var(--accent);
+        }
+
+        .file-nav-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .file-nav-row.active {
+            background: var(--bg4);
+        }
+
+        .file-nav-row.active .file-nav-item:hover {
+            background: transparent;
+        }
+
+        .file-nav-row .file-nav-item {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+        }
+
+        .file-nav-row #save-indicator,
+        .file-nav-row .status-pill {
+            flex-shrink: 0;
+            margin-left: 6px;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .file-nav-row #save-indicator {
+            background: var(--bg3);
+        }
+
+        .file-nav-row #save-indicator.saved {
+            background: rgba(76, 175, 80, 0.35);
+            color: var(--green);
+        }
+
+        .file-nav-row #save-indicator.unsaved {
+            background: rgba(206, 145, 120, 0.35);
+            color: var(--orange);
+        }
+
+        .file-nav-row .status-pill {
+            background: var(--bg3);
+            color: var(--text-dim);
         }
 
         #graph-editor-panel {
@@ -808,14 +855,6 @@
             slot.innerHTML = "";
 
             if (isFeatureTreeMode()) {
-                const saveEl = document.createElement("span");
-                saveEl.id = "save-indicator";
-                saveEl.className = lastSaveIndicatorState;
-                saveEl.textContent = lastSaveIndicatorState === "saved" ? "Saved" : "Unsaved";
-                slot.appendChild(saveEl);
-                const sep = document.createElement("div");
-                sep.className = "tb-sep";
-                slot.appendChild(sep);
                 const dropdowns = document.createElement("div");
                 dropdowns.id = "dropdowns";
                 slot.appendChild(dropdowns);
@@ -1040,13 +1079,28 @@
             listEl.style.display = "block";
             listEl.innerHTML = "";
             for (const label of editorFiles) {
+                const row = document.createElement("div");
+                row.className = "file-nav-row" + (label === selectedFile ? " active" : "");
                 const btn = document.createElement("button");
                 btn.type = "button";
                 btn.className = "file-nav-item" + (label === selectedFile ? " active" : "");
                 btn.textContent = label;
                 btn.dataset.file = label;
                 btn.onclick = () => selectFile(label);
-                listEl.appendChild(btn);
+                row.appendChild(btn);
+                if (label === selectedFile) {
+                    const pill = document.createElement("span");
+                    if (label === MODE_FEATURE_TREE) {
+                        pill.id = "save-indicator";
+                        pill.className = lastSaveIndicatorState;
+                        pill.textContent = lastSaveIndicatorState === "saved" ? "Saved" : "Unsaved";
+                    } else {
+                        pill.className = "status-pill";
+                        pill.textContent = "Read Only";
+                    }
+                    row.appendChild(pill);
+                }
+                listEl.appendChild(row);
             }
         }
 
