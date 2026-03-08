@@ -85,13 +85,13 @@ def main():
     group.add_argument(
         "--graph-editor",
         action="store_true",
-        help="Launch the formboard graph editor (harness product)",
+        help="Launch the feature tree editor with this revision (graph files in project files)",
     )
 
     group.add_argument(
         "--system-viewer",
         action="store_true",
-        help="Launch the system viewer for this revision's lists (e.g. system product)",
+        help="Launch the feature tree editor with this revision (system lists in project files)",
     )
 
     args = parser.parse_args()
@@ -182,52 +182,19 @@ def _run_feature_tree_editor():
 
 
 def _run_graph_editor():
-    """Launch the formboard graph editor (must be run from a revision that has a formboard graph)."""
+    """Launch the feature tree editor with this revision (graph files are in the project files)."""
     fileio.verify_revision_structure()
-    product_type = rev_history.info(field="product")
+    from harnice.gui.feature_tree_server import run_server
 
-    try:
-        product_module = __import__(
-            f"harnice.products.{product_type}", fromlist=[product_type]
-        )
-    except ModuleNotFoundError:
-        sys.exit(f"Unknown product: '{product_type}'")
-
-    if hasattr(product_module, "file_structure"):
-        structure = product_module.file_structure()
-        state.set_file_structure(structure)
-    else:
-        sys.exit(f"Product '{product_type}' must define file_structure()")
-
-    from harnice.gui.graph_editor_server import run_server
-
-    run_server(port=0, open_browser=True)
+    run_server(rev_folder=os.getcwd(), port=0, open_browser=True)
 
 
 def _run_system_viewer():
-    """Launch the system viewer (must be run from a revision directory)."""
+    """Launch the feature tree editor with this revision (system lists are in the project files)."""
     fileio.verify_revision_structure()
-    item_type = rev_history.info(field="product")
+    from harnice.gui.feature_tree_server import run_server
 
-    try:
-        product_module = __import__(
-            f"harnice.products.{item_type}", fromlist=[item_type]
-        )
-    except ModuleNotFoundError:
-        sys.exit(f"Unknown product: '{item_type}'")
-
-    if hasattr(product_module, "file_structure"):
-        structure = product_module.file_structure()
-        state.set_file_structure(structure)
-    else:
-        sys.exit(f"Product '{item_type}' must define file_structure()")
-
-    if hasattr(product_module, "generate_structure"):
-        product_module.generate_structure()
-
-    from harnice.gui.system_viewer_server import run_server
-
-    run_server(port=0, open_browser=True)
+    run_server(rev_folder=os.getcwd(), port=0, open_browser=True)
 
 
 def prompt(text, default=None):

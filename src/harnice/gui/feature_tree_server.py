@@ -22,6 +22,8 @@ import threading
 import webbrowser
 from pathlib import Path
 
+from harnice.gui import system_viewer_core, system_viewer_server
+
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
@@ -30,6 +32,7 @@ _GUI_DIR = Path(__file__).resolve().parent
 _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
 _EDITOR_HTML = _GUI_DIR / "feature_tree_editor.html"
 _GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
+_SYSTEM_VIEWER_HTML = _GUI_DIR / "system_viewer.html"
 
 
 def _graph_file_path(rev_folder: str, product_type: str, label: str) -> Path:
@@ -79,8 +82,8 @@ def _graph_write_csv(path: Path, fieldnames, rows):
         writer.writerows(rows)
 
 
-def _editor_files_for_product(product_type: str) -> list:
-    """Return list of file labels to show in the file navigator for this product. Only harness has network files."""
+def _editor_files_for_product(product_type: str, rev_folder: str = None) -> list:
+    """Return list of file labels to show in the file navigator for this product. Harness has network files; system has system list panes (dynamic from project)."""
     if product_type == "harness":
         return [
             "feature tree",
@@ -88,6 +91,14 @@ def _editor_files_for_product(product_type: str) -> list:
             "chosen network",
             "flattened network",
         ]
+    if product_type == "system" and rev_folder:
+        try:
+            tabs = system_viewer_core.get_tab_list()
+            return ["feature tree"] + [label for (_k, label) in tabs]
+        except Exception:
+            pass
+    if product_type == "system":
+        return ["feature tree", "system lists"]
     return ["feature tree"]
 
 
@@ -214,7 +225,7 @@ class _State:
             self._feature_tree_error = err
             self._product_type = ptype
             self._editor_files = (
-                _editor_files_for_product(ptype) if ptype else ["feature tree"]
+                _editor_files_for_product(ptype, folder) if ptype else ["feature tree"]
             )
 
     def _resolve_feature_tree(self, folder: str):
@@ -273,6 +284,7 @@ class _State:
                 raise RuntimeError(f"Product '{product_type}' has no file_structure()")
 
             structure = product_module.file_structure()
+            state.set_file_structure(structure)
             path_parts = _find_feature_tree_path_in_structure(structure)
             if not path_parts:
                 raise RuntimeError(
@@ -503,6 +515,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/": self._serve_html,
             "/index.html": self._serve_html,
             "/graph-editor": self._serve_graph_editor_html,
+            "/system-viewer": self._serve_system_viewer_html,
             "/api/info": self._api_info,
             "/api/code": self._api_get_code,
             "/api/function_index": self._api_function_index,
@@ -517,8 +530,25 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         handler = routes.get(path)
         if handler:
             handler()
-        else:
-            self.send_error(404)
+            return
+        # System viewer API (system product only)
+        if _state.product_type == "system":
+            if path == "/api/files":
+                system_viewer_server.serve_files(self)
+                return
+            if path == "/api/sse":
+                system_viewer_server.serve_sse(self)
+                return
+            if path.startswith("/api/channel-type-compatible"):
+                system_viewer_server.serve_channel_type_compatible(self)
+                return
+            if path.startswith("/api/channel-type-display"):
+                system_viewer_server.serve_channel_type_display(self)
+                return
+            if path.startswith("/api/signals-list"):
+                system_viewer_server.serve_signals_list(self)
+                return
+        self.send_error(404)
 
     def do_POST(self):
         path = self.path.split("?")[0]
@@ -556,19 +586,33 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             return
         self._send_bytes(_GRAPH_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8")
 
+    def _serve_system_viewer_html(self):
+        """Serve system viewer HTML for embedding in iframe (system products only). Same origin so /api/* go to this server."""
+        if not _SYSTEM_VIEWER_HTML.exists():
+            self.send_error(500, "system_viewer.html not found")
+            return
+        self._send_bytes(_SYSTEM_VIEWER_HTML.read_bytes(), "text/html; charset=utf-8")
+
     def _api_info(self):
         pn, rev = _state.pn_and_rev()
         p = _state.feature_tree_path
-        self._send_json(
-            {
-                "part_number": pn,
-                "rev": rev,
-                "feature_tree_path": str(p) if p else None,
-                "rev_folder": _state.rev_folder,
-                "product_type": _state.product_type,
-                "editor_files": _state.editor_files,
-            }
-        )
+        payload = {
+            "part_number": pn,
+            "rev": rev,
+            "feature_tree_path": str(p) if p else None,
+            "rev_folder": _state.rev_folder,
+            "product_type": _state.product_type,
+            "editor_files": _state.editor_files,
+        }
+        if _state.product_type == "system":
+            try:
+                tabs = system_viewer_core.get_tab_list()
+                payload["system_list_label_to_key"] = {
+                    label: key for (key, label) in tabs
+                }
+            except Exception:
+                payload["system_list_label_to_key"] = {}
+        self._send_json(payload)
 
     def _api_get_code(self):
         try:
@@ -883,6 +927,8 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
     rev_folder = os.path.normpath(os.path.abspath(rev_folder))
     _state = _State(rev_folder)
     _add_recent_project(rev_folder)
+    # Start system viewer file watcher so embedded system list panes get SSE updates
+    system_viewer_core.start_file_watcher()
     # Purge any Harnice-repo paths from saved recent projects so they don't reappear
     data = _load_gui_state()
     cleaned = [

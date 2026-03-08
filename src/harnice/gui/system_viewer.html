@@ -20,6 +20,17 @@
       color: #eee;
     }
 
+    /* Embedded in feature tree: no tab bar, main pane only */
+    body.embedded #tab-bar {
+      display: none !important;
+    }
+
+    body.embedded #main {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+    }
+
     /* ---- Left tab bar ---- */
     #tab-bar {
       width: 200px;
@@ -780,6 +791,16 @@
 </head>
 
 <body>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search || '');
+      var inIframe = false;
+      try { inIframe = window.self !== window.top; } catch (e) { }
+      if (params.get('embedded') === '1' || inIframe) {
+        document.body.classList.add('embedded');
+      }
+    })();
+  </script>
 
   <!-- Left tab bar -->
   <div id="tab-bar">
@@ -2209,15 +2230,33 @@
     }
 
     // ============================================================
-    // Boot — fetch all files, build tabs, activate first
+    // Boot — fetch all files; embedded = single pane from hash, else full tab bar
     // ============================================================
     (async function init() {
+      const embedded = document.body.classList.contains('embedded');
       try {
         const r = await fetch('/api/files');
         const files = await r.json(); // { fileKey: { content, label }, ... }
         const keys = Object.keys(files);
         if (!keys.length) {
           document.getElementById('empty-msg').textContent = 'No files loaded.';
+          return;
+        }
+        if (embedded) {
+          const hashKey = window.location.hash ? decodeURIComponent(window.location.hash.replace(/^#/, '').trim()) : '';
+          if (!hashKey || !keys.includes(hashKey)) {
+            document.getElementById('empty-msg').textContent = hashKey ? 'Unknown pane.' : 'No pane selected.';
+            return;
+          }
+          const key = hashKey;
+          const item = files[key];
+          const content = typeof item === 'string' ? item : (item && item.content);
+          const label = (item && item.label) || key;
+          keyToLabel[key] = label;
+          applyFileContent(key, content);
+          activeLabel = key;
+          switchTab(key);
+          connectSSE();
           return;
         }
         keys.forEach(key => {
@@ -2229,7 +2268,12 @@
         });
         const tabKeys = keys.filter(k => k !== POST_HARNESS_INSTANCES_LIST_KEY);
         buildTabs(tabKeys, keyToLabel);
-        switchTab(tabKeys[0] || keys[0]);
+        const hashKey = window.location.hash ? decodeURIComponent(window.location.hash.replace(/^#/, '').trim()) : '';
+        if (hashKey && tabKeys.includes(hashKey)) {
+          switchTab(hashKey);
+        } else {
+          switchTab(tabKeys[0] || keys[0]);
+        }
         connectSSE();
       } catch (e) {
         document.getElementById('empty-msg').textContent = 'Could not connect to server.';

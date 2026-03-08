@@ -291,6 +291,27 @@
             background: var(--bg2);
         }
 
+        #system-viewer-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            background: var(--bg2);
+        }
+
+        #system-viewer-panel.visible {
+            display: flex;
+        }
+
+        #system-viewer-iframe {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            border: none;
+            background: var(--bg2);
+        }
+
         #projects-section {
             flex: 1;
             min-height: 0;
@@ -725,6 +746,9 @@
                     <div id="graph-editor-panel">
                         <iframe id="graph-editor-iframe" src="about:blank" title="Graph editor"></iframe>
                     </div>
+                    <div id="system-viewer-panel">
+                        <iframe id="system-viewer-iframe" src="about:blank" title="System lists"></iframe>
+                    </div>
                 </div>
             </div>
 
@@ -842,11 +866,16 @@
         let openDropdown = null;
         let editorFiles = [];
         let productType = null;
+        let systemListLabelToKey = {};  // display label -> tab key for system viewer (from /api/info)
         let selectedFile = MODE_FEATURE_TREE;
         let lastSaveIndicatorState = "saved";
 
         function isFeatureTreeMode() {
             return selectedFile === MODE_FEATURE_TREE;
+        }
+
+        function isSystemListsMode() {
+            return productType === "system" && selectedFile !== MODE_FEATURE_TREE;
         }
 
         function populateToolbarSlot() {
@@ -977,23 +1006,40 @@
             const editorOutput = document.getElementById("editor-output");
             const graphPanel = document.getElementById("graph-editor-panel");
             const graphIframe = document.getElementById("graph-editor-iframe");
+            const systemViewerPanel = document.getElementById("system-viewer-panel");
+            const systemViewerIframe = document.getElementById("system-viewer-iframe");
 
             const featureTree = isFeatureTreeMode();
+            const systemLists = isSystemListsMode();
+            const graphMode = !featureTree && !systemLists;
+
             if (editorOutput) editorOutput.style.display = featureTree ? "flex" : "none";
-            if (graphPanel) graphPanel.classList.toggle("visible", !featureTree);
+            if (graphPanel) graphPanel.classList.toggle("visible", graphMode);
+            if (systemViewerPanel) systemViewerPanel.classList.toggle("visible", systemLists);
 
             populateToolbarSlot();
 
-            if (graphIframe && !featureTree) {
-                const tab = selectedFile === "available network" ? "available" :
-                    selectedFile === "chosen network" ? "chosen" : "flattened";
-                const base = "/graph-editor#" + tab;
-                const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
-                if (!iframeLoaded || !graphIframe.src.includes("/graph-editor")) {
-                    graphIframe.src = base;
+            if (graphIframe) {
+                if (graphMode) {
+                    const tab = selectedFile === "available network" ? "available" :
+                        selectedFile === "chosen network" ? "chosen" : "flattened";
+                    const base = "/graph-editor#" + tab;
+                    const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
+                    if (!iframeLoaded || !graphIframe.src.includes("/graph-editor")) {
+                        graphIframe.src = base;
+                    }
+                } else {
+                    graphIframe.src = "about:blank";
                 }
-            } else if (graphIframe && featureTree) {
-                graphIframe.src = "about:blank";
+            }
+            if (systemViewerIframe) {
+                if (systemLists) {
+                    const tabKey = systemListLabelToKey[selectedFile] || selectedFile.replace(/\s+/g, " ").toLowerCase();
+                    const hash = tabKey ? "#" + encodeURIComponent(tabKey) : "";
+                    systemViewerIframe.src = "/system-viewer?embedded=1" + hash;
+                } else {
+                    systemViewerIframe.src = "about:blank";
+                }
             }
         }
 
@@ -1052,6 +1098,7 @@
             activePath = d.rev_folder;
             editorFiles = Array.isArray(d.editor_files) ? d.editor_files : [];
             productType = d.product_type || null;
+            systemListLabelToKey = (d.system_list_label_to_key && typeof d.system_list_label_to_key === "object") ? d.system_list_label_to_key : {};
             if (!editorFiles.includes(selectedFile)) {
                 selectedFile = editorFiles.length ? editorFiles[0] : MODE_FEATURE_TREE;
             }

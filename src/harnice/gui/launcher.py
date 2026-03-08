@@ -600,15 +600,13 @@ class LauncherWindow(QWidget):
 
     def launch_graph_editor(self, revision_path):
         """
-        Launch the formboard graph definition editor for the given harness revision.
+        Launch the feature tree editor for the given revision (graph files in project files).
         Runs in a subprocess so the launcher stays responsive.
         If the subprocess exits with an error, show the error in a message box.
         """
-        url_file = os.path.abspath(
-            os.path.join(revision_path, ".harnice_graph_editor_url")
-        )
+        url_file = os.path.abspath(os.path.join(revision_path, ".harnice_editor_url"))
         env = os.environ.copy()
-        env["HARNICE_GRAPH_EDITOR_URL_FILE"] = url_file
+        env["HARNICE_FEATURE_TREE_EDITOR_URL_FILE"] = url_file
         # Remove stale URL file from a previous run
         if os.path.isfile(url_file):
             try:
@@ -617,7 +615,7 @@ class LauncherWindow(QWidget):
                 pass
         try:
             proc = subprocess.Popen(
-                [sys.executable, "-m", "harnice", "--graph-editor"],
+                [sys.executable, "-m", "harnice", "--gui"],
                 cwd=revision_path,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
@@ -627,8 +625,8 @@ class LauncherWindow(QWidget):
         except OSError as e:
             QMessageBox.warning(
                 self,
-                "Network editor",
-                f"Could not start the network editor: {e}",
+                "Editor",
+                f"Could not start the editor: {e}",
             )
             return
 
@@ -637,16 +635,14 @@ class LauncherWindow(QWidget):
                 if os.path.isfile(url_file):
                     try:
                         url = Path(url_file).read_text(encoding="utf-8").strip()
-                        print(f"Network editor: {url}")
+                        print(f"Editor: {url}")
                         return
                     except Exception:
                         pass
                 import time
 
                 time.sleep(0.1)
-            print(
-                "Network editor: server did not report URL (subprocess may have failed)"
-            )
+            print("Editor: server did not report URL (subprocess may have failed)")
 
         def check_result():
             try:
@@ -657,14 +653,14 @@ class LauncherWindow(QWidget):
                 return
             err = (proc.stderr.read() or b"").decode("utf-8", errors="replace").strip()
             msg = err or f"Process exited with code {proc.returncode}."
-            print("Network editor subprocess failed:", msg, flush=True)
+            print("Editor subprocess failed:", msg, flush=True)
             main_win = self
 
             def show_err():
                 QMessageBox.warning(
                     main_win,
-                    "Network editor",
-                    f"The network editor could not start:\n\n{msg}",
+                    "Editor",
+                    f"The editor could not start:\n\n{msg}",
                 )
 
             QTimer.singleShot(0, show_err)
@@ -674,11 +670,11 @@ class LauncherWindow(QWidget):
 
     def launch_system_viewer(self, revision_path):
         """
-        Launch the system viewer for the given revision (e.g. system product lists).
+        Launch the feature tree editor for the given revision (system lists in project files).
         Runs in a subprocess so the launcher stays responsive.
         """
         subprocess.Popen(
-            [sys.executable, "-m", "harnice", "--system-viewer"],
+            [sys.executable, "-m", "harnice", "--gui"],
             cwd=revision_path,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
