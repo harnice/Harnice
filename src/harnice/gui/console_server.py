@@ -156,9 +156,9 @@ def _button_color_for_product(product_type: str):
 
 def _project_info_for_revision_folder(rev_folder: str) -> dict:
     """
-    Return dict with product_type, description, button_color for a revision folder,
-    or None if not determinable. Uses revision_history.tsv row (product, desc) and
-    product module button_color.
+    Return dict with product_type, description, release_status, button_color for a
+    revision folder, or None if not determinable. Uses revision_history.tsv (via
+    rev_history.info with path) and product module button_color.
     """
     rev_folder = os.path.normpath(os.path.abspath(rev_folder))
     part_dir = os.path.dirname(rev_folder)
@@ -180,10 +180,12 @@ def _project_info_for_revision_folder(rev_folder: str) -> dict:
             return None
         product_type = (row.get("product") or "").strip() or None
         description = (row.get("desc") or "").strip() or None
+        release_status = (row.get("status") or "").strip() or None
         button_color = _button_color_for_product(product_type) if product_type else None
         return {
             "product_type": product_type,
             "description": description,
+            "release_status": release_status,
             "button_color": button_color,
         }
     except Exception:
@@ -603,7 +605,38 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         )
 
     def _api_info(self):
-        pn, rev = _state.pn_and_rev()
+        # Step-by-step when a project is selected and info is queried:
+        # 1. Client: selectProject(folder) runs.
+        # 2. Client: POST /api/select_project { rev_folder } → server runs fileio.verify_revision_structure()
+        #    in a subprocess with cwd=folder. State is set only inside that subprocess; subprocess then exits.
+        # 3. Client: POST /api/switch { rev_folder } → server calls _state.set_rev_folder(folder).
+        # 4. set_rev_folder: with lock, sets _rev_folder and calls _resolve_feature_tree(folder).
+        #    _resolve_feature_tree sets state.set_pn(part_name), state.set_rev(suffix) and returns path/ptype.
+        # 5. set_rev_folder: then os.chdir(folder). So in the server process, state and cwd now match the project.
+        # 6. Client: GET /api/info (loadInfo) → this handler. rev_history.info() uses fileio.path("revision history")
+        #    which uses part_directory() (dirname(getcwd())) and state.partnumber("pn"), so it must run after
+        #    switch has set cwd and state. If it fails (e.g. server started in non-rev cwd), fall back to
+        #    _project_info_for_revision_folder which reads the TSV by path.
+        pn = rev = description = release_status = None
+        try:
+            from harnice.lists import rev_history
+
+            row = rev_history.info()
+            pn = (row.get("pn") or "").strip() or None
+            rev = (row.get("rev") or "").strip() or None
+            description = (row.get("desc") or "").strip() or None
+            release_status = (row.get("status") or "").strip() or None
+        except Exception:
+            pass
+        if pn is None or rev is None:
+            pn, rev = _state.pn_and_rev()
+        if description is None or release_status is None:
+            info = _project_info_for_revision_folder(_state.rev_folder)
+            if info:
+                if description is None:
+                    description = info.get("description")
+                if release_status is None:
+                    release_status = info.get("release_status")
         p = _state.feature_tree_path
         payload = {
             "part_number": pn,
@@ -612,6 +645,8 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "rev_folder": _state.rev_folder,
             "product_type": _state.product_type,
             "editor_files": _state.editor_files,
+            "description": description,
+            "release_status": release_status,
         }
         if _state.product_type == "system":
             try:

@@ -48,10 +48,10 @@
             height: 100%;
         }
 
-        /* Left panel header: Render + part number (always visible) */
+        /* Left panel header: part number, revision, description, release status above Render */
         #left-panel-header {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 8px;
             padding: 8px 10px;
             background: var(--bg2);
@@ -59,16 +59,30 @@
             flex-shrink: 0;
         }
 
-        #left-panel-header #run-btn {
-            flex-shrink: 0;
-        }
-
-        #left-panel-header #pn-label {
+        #left-panel-header .project-meta {
             font-size: 12px;
             color: var(--text);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            line-height: 1.5;
+        }
+
+        #left-panel-header .project-meta .meta-line {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            margin-bottom: 4px;
+        }
+
+        #left-panel-header .project-meta .meta-line:last-child {
+            margin-bottom: 0;
+        }
+
+        #left-panel-header .project-meta .meta-label {
+            color: var(--text-dim);
+            margin-right: 4px;
+        }
+
+        #left-panel-header #run-btn {
+            flex-shrink: 0;
+            align-self: flex-start;
         }
 
         /* Single toolbar: always visible; grows to fit contents, can wrap */
@@ -1268,14 +1282,6 @@
             flex: 1;
         }
 
-        #pn-label {
-            color: var(--text-dim);
-            font-size: 12px;
-            white-space: nowrap;
-            padding: 0 8px;
-            flex-shrink: 0;
-        }
-
         #save-indicator {
             font-size: 11px;
             color: var(--text-dim);
@@ -1515,10 +1521,16 @@
 
             <!-- Left panel -->
             <div id="left-panel">
-                <!-- Render + part number (always visible) -->
+                <!-- Part number, revision, description, release status above Render -->
                 <div id="left-panel-header">
+                    <div id="project-meta" class="project-meta">
+                        <div class="meta-line"><span class="meta-label">Part</span><span id="pn-label">—</span></div>
+                        <div class="meta-line"><span class="meta-label">Rev</span><span id="rev-label">—</span></div>
+                        <div class="meta-line"><span class="meta-label">Desc</span><span id="desc-label">—</span></div>
+                        <div class="meta-line"><span class="meta-label">Status</span><span id="status-label">—</span>
+                        </div>
+                    </div>
                     <button id="run-btn" class="btn idle" onclick="runCode()">▶ Render</button>
-                    <span id="pn-label">—</span>
                 </div>
                 <!-- Project files (options depend on product type of selected project) -->
                 <div id="file-navigator">
@@ -1907,7 +1919,7 @@
         // ---------------------------------------------------------------------------
         async function loadInfo() {
             const d = await api("GET", "/api/info");
-            updatePnLabel(d.part_number, d.rev);
+            updateProjectMeta(d.part_number, d.rev, d.description, d.release_status);
             activePath = d.rev_folder;
             editorFiles = Array.isArray(d.editor_files) ? d.editor_files : [];
             productType = d.product_type || null;
@@ -1919,10 +1931,15 @@
             applyView();
         }
 
-        function updatePnLabel(pn, rev) {
-            const text = pn && rev ? `${pn} · ${rev}` : "No project";
-            const labelEl = document.getElementById("pn-label");
-            if (labelEl) labelEl.textContent = text;
+        function updateProjectMeta(pn, rev, description, releaseStatus) {
+            const set = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text != null && String(text).trim() !== "" ? String(text).trim() : "—";
+            };
+            set("pn-label", pn);
+            set("rev-label", rev);
+            set("desc-label", description);
+            set("status-label", releaseStatus);
         }
 
         function renderFileList() {
