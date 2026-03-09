@@ -71,37 +71,15 @@ def main():
     )
 
     group.add_argument(
-        "--gui",
+        "--console",
         action="store_true",
-        help="Launch the Harnice GUI launcher",
-    )
-
-    group.add_argument(
-        "--graph-editor",
-        action="store_true",
-        help="Launch the formboard graph editor (harness product)",
-    )
-
-    group.add_argument(
-        "--system-viewer",
-        action="store_true",
-        help="Launch the system viewer for this revision's lists (e.g. system product)",
+        help="Launch the Harnice console",
     )
 
     args = parser.parse_args()
 
-    if args.gui:
-        from harnice.gui.launcher import main as gui_main
-
-        gui_main()
-        return
-
-    if args.graph_editor:
-        _run_graph_editor()
-        return
-
-    if args.system_viewer:
-        _run_system_viewer()
+    if args.console:
+        _run_console()
         return
 
     # -----------------------------
@@ -159,62 +137,14 @@ def main():
     return
 
 
-def _run_graph_editor():
-    """Launch the formboard graph editor (must be run from a revision that has a formboard graph)."""
-    fileio.verify_revision_structure()
-    item_type = rev_history.info(field="product")
+def _run_console():
+    """Launch the Harnice console (can be run from any directory)."""
+    # Ensure function_index.json is up to date for the editor dropdowns
+    from harnice.gui.build_feature_tree_gui import build as build_feature_index
 
-    try:
-        product_module = __import__(
-            f"harnice.products.{item_type}", fromlist=[item_type]
-        )
-    except ModuleNotFoundError:
-        sys.exit(f"Unknown product: '{item_type}'")
+    build_feature_index()
 
-    if hasattr(product_module, "file_structure"):
-        structure = product_module.file_structure()
-        state.set_file_structure(structure)
-    else:
-        sys.exit(f"Product '{item_type}' must define file_structure()")
-
-    try:
-        fileio.path("formboard graph definition")
-    except TypeError:
-        sys.exit(
-            f"Product '{item_type}' does not have a formboard graph definition. "
-            "The graph editor is only available for products that define one (e.g. harness)."
-        )
-
-    if hasattr(product_module, "generate_structure"):
-        product_module.generate_structure()
-
-    from harnice.gui.graph_editor_server import run_server
-
-    run_server(port=0, open_browser=True)
-
-
-def _run_system_viewer():
-    """Launch the system viewer (must be run from a revision directory)."""
-    fileio.verify_revision_structure()
-    item_type = rev_history.info(field="product")
-
-    try:
-        product_module = __import__(
-            f"harnice.products.{item_type}", fromlist=[item_type]
-        )
-    except ModuleNotFoundError:
-        sys.exit(f"Unknown product: '{item_type}'")
-
-    if hasattr(product_module, "file_structure"):
-        structure = product_module.file_structure()
-        state.set_file_structure(structure)
-    else:
-        sys.exit(f"Product '{item_type}' must define file_structure()")
-
-    if hasattr(product_module, "generate_structure"):
-        product_module.generate_structure()
-
-    from harnice.gui.system_viewer_server import run_server
+    from harnice.gui.console_server import run_server
 
     run_server(port=0, open_browser=True)
 

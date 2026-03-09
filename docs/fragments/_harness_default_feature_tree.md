@@ -1,16 +1,23 @@
 ??? note "Default harness feature tree"
     ```python
 
+    from doctest import run_docstring_examples
     import os
     from harnice import fileio, state
     from harnice.utils import (
         circuit_utils,
-        formboard_utils,
         note_utils,
         library_utils,
         feature_tree_utils,
     )
-    from harnice.lists import instances_list, post_harness_instances_list, rev_history
+    from harnice.lists import (
+        instances_list, 
+        post_harness_instances_list, 
+        rev_history, 
+        flattened_network, 
+        chosen_network,
+        available_network
+    )
     
     {build_macro_block}
     
@@ -90,7 +97,40 @@
     # ===========================================================================
     #                  PROCESS HARNESS LAYOUT GRAPH
     # ===========================================================================
-    formboard_utils.validate_nodes()
+    
+    available_network.validate()
+    
+    # --- build the chosen network
+    chosen = chosen_network.build_chosen_network(
+        available_path=fileio.path("available network"),
+        chosen_segment_ids=["S1", "S2", "S3"],
+        chosen_path=fileio.path("chosen network"),
+    )
+    
+    # --- modify the chosen network with build rules
+    # example: rename an auto-generated node to match a connector
+    for node in chosen.nodes:
+        if node.location == (0.0, 0.0, 0.0):
+            node.node_id = "X1.connector_node"
+    
+    # example: add 5% service loop to a segment
+    for segment in chosen.segments:
+        if segment.segment_id == "S2":
+            segment.length *= 1.05
+    
+    # write modifications back to disk
+    chosen_network.write_chosen_network(chosen, fileio.path("chosen network"))
+    
+    # --- build the flattened network
+    flattened_network.build_flattened_network(
+        chosen_path=fileio.path("chosen network"),
+        flattened_path=fileio.path("flattened network"),
+    )
+    
+    
+    # ===========================================================================
+    #                  ASSING CABLES AND CONDUCTORS
+    # ===========================================================================
     
     instances = fileio.read_tsv("instances list")
     for instance in instances:
@@ -116,10 +156,6 @@
                             },
                         )
                         break
-    
-    for instance in fileio.read_tsv("instances list"):
-        if instance.get("item_type") in ["conductor", "cable", "net-channel"]:
-            formboard_utils.map_instance_to_segments(instance)
     
     for instance in fileio.read_tsv("instances list"):
         if instance.get("item_type") in ["conductor", "cable"]:

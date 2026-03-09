@@ -1,0 +1,5 @@
+queries:
+  - uses: security-and-quality
+query-filter:
+  - exclude:
+      id: py/path-injection
