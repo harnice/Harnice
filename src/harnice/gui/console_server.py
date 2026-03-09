@@ -27,6 +27,27 @@ from harnice.gui import system_viewer_core, system_viewer_server
 
 # ---------------------------------------------------------------------------
 # Paths
+
+# Define a safe root directory for revision folders as the process's initial
+# working directory. All user-supplied revision folders must stay within this
+# directory tree.
+_SAFE_REV_ROOT = os.path.normpath(os.path.abspath(os.getcwd()))
+
+
+def _is_safe_rev_folder(folder: str) -> bool:
+    """
+    Return True if the given folder is inside the configured safe revision root.
+    """
+    try:
+        candidate = os.path.normpath(os.path.abspath(folder))
+    except (TypeError, ValueError):
+        return False
+    # commonpath raises if paths are on different drives on Windows, treat as unsafe.
+    try:
+        common = os.path.commonpath([_SAFE_REV_ROOT, candidate])
+    except ValueError:
+        return False
+    return common == _SAFE_REV_ROOT
 # ---------------------------------------------------------------------------
 
 _GUI_DIR = Path(__file__).resolve().parent
@@ -230,10 +251,12 @@ class _State:
             )
         # Switch process cwd to rev folder so fileio.rev_directory() (getcwd()) is correct;
         # system list panes and other fileio.path() lookups then resolve to this project.
-        try:
-            os.chdir(folder)
-        except OSError:
-            pass
+        if _is_safe_rev_folder(folder):
+            try:
+                os.chdir(folder)
+            except OSError:
+                # Ignore failures to change directory; state has still been updated.
+                pass
 
     def _resolve_feature_tree(self, folder: str):
         """
@@ -930,7 +953,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     def _api_switch(self):
         body = self._read_json_body()
         folder = body.get("rev_folder", "").strip()
-        if not folder or not os.path.isdir(folder):
+        if not folder or not os.path.isdir(folder) or not _is_safe_rev_folder(folder):
             self._send_json({"ok": False, "error": "invalid folder"}, status=400)
             return
         _state.set_rev_folder(folder)
