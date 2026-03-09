@@ -940,10 +940,18 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     def _api_switch(self):
         body = self._read_json_body()
         folder = body.get("rev_folder", "").strip()
-        if not folder or not os.path.isdir(folder):
+        base = os.path.abspath(os.getcwd())
+        # Treat the requested folder as relative to the server's base directory
+        candidate = os.path.abspath(os.path.join(base, folder))
+        # Ensure the candidate exists, is a directory, and remains within the base directory
+        if (
+            not folder
+            or not os.path.isdir(candidate)
+            or os.path.commonpath([base, candidate]) != base
+        ):
             self._send_json({"ok": False, "error": "invalid folder"}, status=400)
             return
-        _state.set_rev_folder(folder)
+        _state.set_rev_folder(candidate)
         pn, rev = _state.pn_and_rev()
         p = _state.feature_tree_path
         self._send_json(
