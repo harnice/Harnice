@@ -251,7 +251,7 @@ class _State:
             )
         # Switch process cwd to rev folder so fileio.rev_directory() (getcwd()) is correct;
         # system list panes and other fileio.path() lookups then resolve to this project.
-        if _is_safe_rev_folder(folder):
+        if os.path.isdir(folder) and _is_safe_rev_folder(folder):
             try:
                 os.chdir(folder)
             except OSError:
@@ -953,10 +953,15 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     def _api_switch(self):
         body = self._read_json_body()
         folder = body.get("rev_folder", "").strip()
-        if not folder or not os.path.isdir(folder) or not _is_safe_rev_folder(folder):
+        normalized_folder = os.path.normpath(os.path.abspath(folder)) if folder else ""
+        if (
+            not normalized_folder
+            or not os.path.isdir(normalized_folder)
+            or not _is_safe_rev_folder(normalized_folder)
+        ):
             self._send_json({"ok": False, "error": "invalid folder"}, status=400)
             return
-        _state.set_rev_folder(folder)
+        _state.set_rev_folder(normalized_folder)
         pn, rev = _state.pn_and_rev()
         p = _state.feature_tree_path
         self._send_json(
