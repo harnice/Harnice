@@ -27,6 +27,9 @@ from harnice.gui import system_viewer_core, system_viewer_server
 
 # ---------------------------------------------------------------------------
 # Paths
+# Root directory under which revision folders are allowed. This is resolved
+# once at startup to avoid relying on a mutable working directory.
+SAFE_REV_ROOT = os.path.realpath(os.getcwd())
 
 # Define a safe root directory for revision folders as the process's initial
 # working directory. All user-supplied revision folders must stay within this
@@ -1060,11 +1063,14 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
     def _is_under_safe_root(self, path: str) -> bool:
         """
         Ensure that the given absolute path is contained within a safe root
-        directory. The safe root is the current working directory of the
-        server process.
+        directory. The safe root is a dedicated revision root directory
+        (SAFE_REV_ROOT), not just the current working directory.
         """
-        base = os.path.abspath(os.getcwd())
-        candidate = os.path.abspath(path)
+        base = SAFE_REV_ROOT
+        # Resolve the candidate path to an absolute, normalized real path
+        # before comparing it to the safe root, to prevent directory
+        # traversal via ".." segments or symlinks.
+        candidate = os.path.realpath(os.path.abspath(path))
         try:
             return os.path.commonpath([base, candidate]) == base
         except ValueError:
