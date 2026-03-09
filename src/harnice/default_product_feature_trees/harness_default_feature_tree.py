@@ -1,4 +1,3 @@
-from doctest import run_docstring_examples
 import os
 from harnice import fileio, state
 from harnice.utils import (
@@ -8,12 +7,12 @@ from harnice.utils import (
     feature_tree_utils,
 )
 from harnice.lists import (
-    instances_list, 
-    post_harness_instances_list, 
-    rev_history, 
-    flattened_network, 
+    instances_list,
+    post_harness_instances_list,
+    rev_history,
+    flattened_network,
     chosen_network,
-    available_network
+    available_network,
 )
 
 {build_macro_block}

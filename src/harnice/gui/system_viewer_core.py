@@ -5,7 +5,6 @@ Requires fileio/state to be set (e.g. from feature tree server on project switch
 """
 
 import os
-import queue
 import re
 import threading
 import time
@@ -118,7 +117,7 @@ def get_tab_list():
 _sse_queues = []
 _sse_lock = threading.Lock()
 _watcher_stop = threading.Event()
-_watcher_started = False
+_watcher_started = False  # Used in start_file_watcher() for idempotency
 
 
 def _file_watcher_loop():
@@ -163,6 +162,7 @@ def _file_watcher_loop():
                         try:
                             q.put((file_key, label, content))
                         except Exception:
+                            # Isolate per-queue failures so one bad client doesn't break the watcher.
                             pass
             last_mtimes[path] = mtime
         time.sleep(1.5)

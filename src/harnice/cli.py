@@ -144,9 +144,11 @@ def _run_console():
 
     build_feature_index()
 
-    from harnice.gui.console_server import run_server
+    # Defer import to avoid static import cycle (cli -> console_server -> ...)
+    import importlib
 
-    run_server(port=0, open_browser=True)
+    console_server = importlib.import_module("harnice.gui.console_server")
+    console_server.run_server(port=0, open_browser=True)
 
 
 def prompt(text, default=None):

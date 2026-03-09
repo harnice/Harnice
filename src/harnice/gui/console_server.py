@@ -14,6 +14,7 @@ or with a revision folder:
 import csv
 import http.server
 import json
+import logging
 import os
 import queue
 import socketserver
@@ -232,8 +233,11 @@ class _State:
         # system list panes and other fileio.path() lookups then resolve to this project.
         try:
             os.chdir(folder)
-        except OSError:
-            pass
+        except OSError as exc:
+            print(
+                f"Warning: could not change working directory to '{folder}': {exc}",
+                file=sys.stderr,
+            )
 
     def _resolve_feature_tree(self, folder: str):
         """
@@ -276,6 +280,7 @@ class _State:
                     try:
                         match = int(raw) == int(state.rev)
                     except (ValueError, TypeError):
+                        # If conversion fails, treat this row as non-matching and continue.
                         pass
                 if match:
                     product_type = (row.get("product") or "").strip()
@@ -385,9 +390,10 @@ def _save_gui_state(data: dict):
 def _is_inside_harnice_repo(path: str) -> bool:
     """True if path is the Harnice repo root or any path inside it (don't add as user project)."""
     try:
-        from harnice import fileio
-
-        root = fileio.harnice_root()
+        # Derive repo root from this file's location to avoid import cycle with fileio.
+        # Expected layout: <repo_root>/harnice/gui/console_server.py
+        repo_root = Path(__file__).resolve().parents[2]
+        root = str(repo_root)
         path_norm = os.path.normpath(os.path.abspath(path))
         root_norm = os.path.normpath(os.path.abspath(root))
         return path_norm == root_norm or path_norm.startswith(root_norm + os.sep)
@@ -647,8 +653,12 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             rev = (row.get("rev") or "").strip() or None
             description = (row.get("desc") or "").strip() or None
             release_status = (row.get("status") or "").strip() or None
-        except Exception:
-            pass
+        except Exception as exc:
+            # Best-effort: if rev_history.info() fails, fall back to state and TSV.
+            logging.getLogger(__name__).debug(
+                "Failed to load revision info via rev_history; falling back: %s",
+                exc,
+            )
         if pn is None or rev is None:
             pn, rev = _state.pn_and_rev()
         if description is None or release_status is None:
@@ -848,9 +858,9 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
                     sys.executable,
                     "-c",
                     "import tkinter as tk; from tkinter import filedialog; "
-                    "root = tk.Tk(); root.withdraw(); "
-                    "s = filedialog.askdirectory(title='Select revision folder'); "
-                    "root.destroy(); print(s or '')",
+                    + "root = tk.Tk(); root.withdraw(); "
+                    + "s = filedialog.askdirectory(title='Select revision folder'); "
+                    + "root.destroy(); print(s or '')",
                 ],
                 capture_output=True,
                 text=True,
@@ -1085,8 +1095,11 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
     if url_file:
         try:
             Path(url_file).write_text(url, encoding="utf-8")
-        except Exception:
-            pass
+        except Exception as exc:
+            print(
+                f"Warning: failed to write HARNICE_CONSOLE_URL_FILE ({url_file!r}): {exc}",
+                file=sys.stderr,
+            )
 
     print(f"Harnice console: {url}  (Ctrl+C to stop)")
 
