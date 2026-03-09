@@ -958,6 +958,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             not normalized_folder
             or not os.path.isdir(normalized_folder)
             or not _is_safe_rev_folder(normalized_folder)
+            or not self._is_under_safe_root(normalized_folder)
         ):
             self._send_json({"ok": False, "error": "invalid folder"}, status=400)
             return
@@ -1055,6 +1056,21 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         threading.Thread(target=self.server.shutdown, daemon=True).start()
 
     # ---- helpers ----
+
+    def _is_under_safe_root(self, path: str) -> bool:
+        """
+        Ensure that the given absolute path is contained within a safe root
+        directory. The safe root is the current working directory of the
+        server process.
+        """
+        base = os.path.abspath(os.getcwd())
+        candidate = os.path.abspath(path)
+        try:
+            return os.path.commonpath([base, candidate]) == base
+        except ValueError:
+            # os.path.commonpath may raise ValueError if paths are on
+            # different drives (on Windows); in that case, treat as unsafe.
+            return False
 
     def _read_json_body(self) -> dict:
         length = int(self.headers.get("Content-Length", 0))
