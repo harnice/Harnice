@@ -3,7 +3,6 @@ from harnice.utils import (
     feature_tree_utils,
     library_utils,
     circuit_utils,
-    formboard_utils,
     note_utils,
     svg_utils,
     system_utils,
@@ -102,35 +101,6 @@ def main():
     )
 
     path = docs_functions.harnice_dir() / "docs" / "commands" / "_feature_tree_utils.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(md), encoding="utf-8")
-
-    # ========================================================
-    # FORMBOARD UTILS
-    # ========================================================
-    module_prefix = "formboard_utils"
-    md = ["# Formboard Utilities"]
-    md.append(docs_functions.commands_header(module_prefix))
-    md.append(
-        docs_functions.print_function_docs(
-            formboard_utils.validate_nodes, module_prefix
-        )
-    )
-    md.append(
-        docs_functions.print_function_docs(
-            formboard_utils.map_instance_to_segments, module_prefix
-        )
-    )
-    md.append(
-        docs_functions.print_function_docs(
-            formboard_utils.calculate_location, module_prefix
-        )
-    )
-    md.append(
-        docs_functions.print_function_docs(formboard_utils.draw_line, module_prefix)
-    )
-
-    path = docs_functions.harnice_dir() / "docs" / "commands" / "_formboard_utils.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(md), encoding="utf-8")
 
