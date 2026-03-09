@@ -4,7 +4,6 @@
 
 It designs harnesses for you... and does so much more... *nicely*!
 
-## THIS PROJECT IS A WORK-IN PROGRESS! ONLINE DOCS HAVE A LONG WAY TO GO, AND THE CODE IS UNDER CONTINUOUS DEVELOPMENT.
  --- 
 ## :octicons-rocket-16: Links
 Download on pip: `pip install harnice`
@@ -82,7 +81,3 @@ Probably! But if not, Harnice supports **Macros**, which are Python files that c
 
 ## :fontawesome-solid-sack-dollar: How much does it cost?
 Free, fully free, forever and always. I made this tool because I never wanted to design harnesses manually ever again, and this is as much **FOR YOU** as much as it is for me. Go build cool stuff, don't waste your time doing automatable things, and as always, feel free to contribute if you can. 
-
----
-## :octicons-question-16: Who am I?
-My name is Kenyon, I'm an electrical engineer by training and by day job. I have **no** background in programming. This is my first python projec ever, so please forgive any beginner mistakes you might find. I'm always open to feedback, I love to learn, and I love to be outside!

@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Harnice Console</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #1e1e1e;
+            --bg2: #252526;
+            --bg3: #2d2d2d;
+            --bg4: #333;
+            --border: #3c3c3c;
+            --text: #d4d4d4;
+            --text-dim: #888;
+            --accent: #4ec9b0;
+            --accent2: #569cd6;
+            --green: #4caf50;
+            --red: #f44336;
+            --orange: #ce9178;
+            --toolbar-h: 42px;
+            --panel-w: 220px;
+            --output-h: 200px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 13px;
+        }
+
+        /* ── Layout ── */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Left panel header: part number, revision, description, release status above Render */
+        #left-panel-header {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 8px 10px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        #left-panel-header .project-meta {
+            font-size: 12px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        #left-panel-header .project-meta .meta-line {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            margin-bottom: 4px;
+        }
+
+        #left-panel-header .project-meta .meta-line:last-child {
+            margin-bottom: 0;
+        }
+
+        #left-panel-header .project-meta .meta-label {
+            color: var(--text-dim);
+            margin-right: 4px;
+        }
+
+        #left-panel-header #run-btn {
+            flex-shrink: 0;
+            align-self: flex-start;
+        }
+
+        /* Single toolbar: always visible; grows to fit contents, can wrap */
+        #top-toolbar {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            min-height: var(--toolbar-h);
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 10px;
+            flex-shrink: 0;
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+
+        #top-toolbar-slot {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            min-height: 28px;
+        }
+
+        #top-toolbar-slot .btn {
+            flex-shrink: 0;
+        }
+
+        #top-toolbar .tb-sep {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        #top-toolbar #dropdowns {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        #top-toolbar .tb-spacer {
+            flex: 1;
+            min-width: 8px;
+        }
+
+        #main {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        #right-area {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #content-section {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #left-panel {
+            width: var(--panel-w);
+            min-width: var(--panel-w);
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        /* Left sidebar: project files (top) + draggable divider + project list (bottom) */
+        #file-navigator {
+            flex: 0 0 auto;
+            height: 180px;
+            min-height: 80px;
+            max-height: 70vh;
+            border-bottom: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #sidebar-divider {
+            height: 5px;
+            background: var(--border);
+            cursor: row-resize;
+            flex-shrink: 0;
+        }
+
+        #sidebar-divider:hover {
+            background: var(--accent2);
+        }
+
+        #file-navigator-label {
+            padding: 8px 10px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #file-navigator-placeholder {
+            flex: 1;
+            padding: 10px;
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        #file-navigator-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .file-nav-item {
+            display: block;
+            width: 100%;
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 12px;
+            color: var(--text);
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+        }
+
+        .file-nav-item:hover {
+            background: var(--bg3);
+        }
+
+        .file-nav-item.active {
+            background: transparent;
+            color: var(--accent);
+        }
+
+        .file-nav-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .file-nav-row.active {
+            background: var(--bg4);
+        }
+
+        .file-nav-row.active .file-nav-item:hover {
+            background: transparent;
+        }
+
+        .file-nav-row .file-nav-item {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+        }
+
+        .file-nav-row #save-indicator,
+        .file-nav-row .status-pill {
+            flex-shrink: 0;
+            margin-left: 6px;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .file-nav-row #save-indicator {
+            background: var(--bg3);
+        }
+
+        .file-nav-row #save-indicator.saved {
+            background: rgba(76, 175, 80, 0.35);
+            color: var(--green);
+        }
+
+        .file-nav-row #save-indicator.unsaved {
+            background: rgba(206, 145, 120, 0.35);
+            color: var(--orange);
+        }
+
+        .file-nav-row .status-pill {
+            background: var(--bg3);
+            color: var(--text-dim);
+        }
+
+        #graph-editor-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            background: var(--bg2);
+        }
+
+        #graph-editor-panel.visible {
+            display: flex;
+        }
+
+        #graph-editor-iframe {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            border: none;
+            background: var(--bg2);
+        }
+
+        #system-viewer-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            background: var(--bg2);
+        }
+
+        #system-viewer-panel.visible {
+            display: flex;
+        }
+
+        #system-list-panel {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            font-family: inherit;
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        /* System list: single ribbon toolbar (search, clear, badge, sort | pane filters | human-readable) */
+        .sl-ribbon {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px 12px;
+            padding: 6px 14px;
+            background: var(--bg2);
+            border-bottom: 5px solid var(--border);
+            flex-shrink: 0;
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .sl-ribbon-left {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .sl-ribbon-stack {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px 0;
+        }
+
+        .sl-ribbon-stack-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+        }
+
+        .sl-pane-checkbox-row .sl-channel-toggle {
+            margin: 0;
+        }
+
+        /* Align checkboxes in stack: same left edge and gap for channel/disconnect and human-readable rows */
+        .sl-ribbon-stack .sl-channel-toggle,
+        .sl-ribbon-stack .sl-channel-type-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sl-ribbon-stack .sl-channel-type-wrap.sl-ribbon-block {
+            margin-left: 0;
+        }
+
+        .sl-ribbon-stack .sl-channel-type-wrap label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sl-ribbon-search {
+            min-width: 100px;
+            max-width: 150px;
+            padding: 3px 6px;
+            font-size: 12px;
+            font-family: inherit;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+        }
+
+        .sl-ribbon-search:focus {
+            outline: none;
+            border-color: var(--accent2);
+        }
+
+        .sl-ribbon-btn {
+            padding: 3px 8px;
+            font-size: 12px;
+            font-family: inherit;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .sl-ribbon-btn:hover {
+            background: var(--bg4);
+        }
+
+        .sl-ribbon-badge {
+            padding: 2px 6px;
+            font-size: 11px;
+            color: var(--text-dim);
+            background: var(--bg3);
+            border-radius: 4px;
+        }
+
+        .sl-ribbon-label {
+            color: var(--text-dim);
+            font-size: 11px;
+        }
+
+        .sl-ribbon-sort {
+            padding: 3px 6px;
+            font-size: 12px;
+            font-family: inherit;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            min-width: 85px;
+        }
+
+        .sl-ribbon-sep {
+            width: 1px;
+            height: 16px;
+            background: var(--border);
+            flex-shrink: 0;
+            margin: 0 4px;
+        }
+
+        .sl-pane-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 8px 12px;
+            flex: 1;
+            min-width: 0;
+            padding: 0 8px;
+        }
+
+        .sl-ribbon-block {
+            display: none;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 10px;
+        }
+
+        .sl-ribbon-block.visible {
+            display: flex;
+        }
+
+        .sl-viewer-header {
+            display: none;
+            font-size: 12px;
+        }
+
+        .sl-viewer-header.visible {
+            display: flex;
+        }
+
+        .sl-ribbon-sentence {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 3px 6px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .sl-ribbon-sentence select {
+            display: inline-block;
+            margin: 0;
+            vertical-align: middle;
+        }
+
+        .sl-ribbon-sentence .sl-channel-clear {
+            margin-left: 4px;
+        }
+
+        .sl-channel-type-wrap.sl-ribbon-block {
+            display: flex !important;
+            padding: 0;
+            margin-left: 4px;
+        }
+
+        .sl-ribbon-left .sl-channel-type-wrap {
+            flex-shrink: 0;
+        }
+
+        .sl-ribbon-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-dim);
+        }
+
+        .sl-ribbon-inline select {
+            padding: 2px 4px;
+            font-size: 11px;
+            min-width: 50px;
+        }
+
+        .sl-channel-sentence {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 6px;
+        }
+
+        .sl-channel-sentence select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            padding: 3px 6px;
+            font-size: 12px;
+            font-family: inherit;
+            min-width: 70px;
+        }
+
+        .sl-channel-sentence select:focus {
+            outline: none;
+            border-color: var(--accent2);
+        }
+
+        .sl-instances-options {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .sl-pane-controls .sl-instances-option {
+            min-width: 0;
+        }
+
+        .sl-instances-option {
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .sl-instances-option:hover {
+            background: var(--bg4);
+        }
+
+        .sl-instances-option.selected {
+            border-color: var(--accent);
+            background: rgba(78, 201, 176, 0.12);
+            color: var(--text);
+        }
+
+        .sl-instances-option input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            margin: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: var(--bg);
+        }
+
+        .sl-instances-option input[type="radio"]:hover {
+            border-color: var(--accent2);
+            background: var(--bg2);
+        }
+
+        .sl-instances-option input[type="radio"]:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: inset 0 0 0 2px var(--bg2);
+        }
+
+        .sl-channel-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .sl-ribbon .sl-channel-toggle {
+            margin: 0;
+        }
+
+        .sl-channel-toggle input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            margin: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--bg);
+            position: relative;
+        }
+
+        .sl-channel-toggle input[type="checkbox"]:hover {
+            border-color: var(--accent2);
+            background: var(--bg2);
+        }
+
+        .sl-channel-toggle input[type="checkbox"]:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .sl-channel-toggle input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 3px;
+            top: 0;
+            width: 3px;
+            height: 6px;
+            border: solid var(--bg);
+            border-width: 0 1.5px 1.5px 0;
+            transform: rotate(45deg);
+        }
+
+        .sl-channel-toggle label {
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .sl-channel-type-wrap {
+            padding: 4px 0;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .sl-channel-type-wrap label {
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .sl-channel-type-wrap input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            margin: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--bg);
+            position: relative;
+        }
+
+        .sl-channel-type-wrap input[type="checkbox"]:hover {
+            border-color: var(--accent2);
+            background: var(--bg2);
+        }
+
+        .sl-channel-type-wrap input[type="checkbox"]:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .sl-channel-type-wrap input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 3px;
+            top: 0;
+            width: 3px;
+            height: 6px;
+            border: solid var(--bg);
+            border-width: 0 1.5px 1.5px 0;
+            transform: rotate(45deg);
+        }
+
+        .sl-channel-clear {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 6px;
+            font-family: inherit;
+        }
+
+        .sl-channel-clear:hover {
+            background: var(--bg4);
+        }
+
+        .sl-ribbon-block .sl-channel-clear {
+            margin-left: 0;
+        }
+
+        .sl-table-wrap {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .sl-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            color: var(--text-dim);
+            font-size: 12px;
+        }
+
+        #system-list-panel table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            font-family: inherit;
+            table-layout: auto;
+        }
+
+        #system-list-panel thead {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        #system-list-panel th {
+            background: var(--bg2);
+            padding: 0;
+            border-bottom: 2px solid var(--border);
+            border-right: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        #system-list-panel th:last-child {
+            border-right: none;
+        }
+
+        .sl-th-inner {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            padding: 4px 8px;
+            min-height: 18px;
+            line-height: 18px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: inherit;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sl-th-inner:hover {
+            color: var(--accent);
+        }
+
+        .sl-sort-btn {
+            opacity: .35;
+            font-size: 9px;
+            flex-shrink: 0;
+        }
+
+        #system-list-panel th.asc .sl-sort-btn,
+        #system-list-panel th.desc .sl-sort-btn {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        .sl-filter-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: none;
+            flex-shrink: 0;
+        }
+
+        .sl-th-inner.filtered .sl-filter-dot {
+            display: block;
+        }
+
+        #system-list-panel td {
+            padding: 4px 8px;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            color: var(--text);
+            font-size: 12px;
+            line-height: 18px;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #system-list-panel td:last-child {
+            border-right: none;
+        }
+
+        #system-list-panel tbody tr:hover td {
+            background: var(--bg2);
+        }
+
+        .sl-device-row {
+            cursor: pointer;
+        }
+
+        .sl-device-row.signals-expanded td {
+            background: rgba(78, 201, 176, 0.12) !important;
+        }
+
+        .sl-signals-detail-row {
+            display: none;
+        }
+
+        .sl-signals-detail-row.expanded {
+            display: table-row;
+        }
+
+        .sl-signals-detail-row td {
+            padding: 0;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .sl-signals-viewer-wrap {
+            padding: 0;
+            max-height: 280px;
+            overflow: auto;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            margin: 6px 10px 10px;
+        }
+
+        .sl-signals-viewer-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            font-family: inherit;
+            table-layout: auto;
+        }
+
+        .sl-signals-viewer-wrap th {
+            border-right: 1px solid var(--border);
+            padding: 6px 10px;
+            line-height: 20px;
+            vertical-align: middle;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sl-signals-viewer-wrap th:last-child {
+            border-right: none;
+        }
+
+        .sl-signals-viewer-wrap td {
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 6px 10px;
+            line-height: 20px;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sl-signals-viewer-wrap td:last-child {
+            border-right: none;
+        }
+
+        .sl-signals-viewer-wrap .loading,
+        .sl-signals-viewer-wrap .error {
+            padding: 8px 10px;
+            color: var(--text-dim);
+            font-size: 13px;
+        }
+
+        .sl-signals-toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg2);
+        }
+
+        .sl-signals-toolbar input {
+            flex: 1;
+            min-width: 100px;
+            padding: 4px 8px;
+            font-size: 13px;
+            font-family: inherit;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+        }
+
+        .sl-signals-toolbar input:focus {
+            outline: none;
+            border-color: var(--accent2);
+        }
+
+        .sl-signals-toolbar button {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .sl-signals-toolbar button:hover {
+            background: var(--bg4);
+        }
+
+        .sl-col-dropdown {
+            position: fixed;
+            z-index: 100;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            min-width: 180px;
+            max-width: 250px;
+            max-height: 280px;
+            display: none;
+            flex-direction: column;
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .sl-col-dropdown.open {
+            display: flex;
+        }
+
+        .sl-dd-search input {
+            width: calc(100% - 10px);
+            margin: 4px;
+            padding: 3px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .sl-dd-search input:focus {
+            outline: none;
+            border-color: var(--accent2);
+        }
+
+        .sl-dd-sort {
+            display: flex;
+            gap: 3px;
+            padding: 3px 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sl-dd-sort button {
+            flex: 1;
+            padding: 3px 4px;
+            font-size: 11px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .sl-dd-sort button:hover {
+            background: var(--bg4);
+            color: var(--text);
+        }
+
+        .sl-dd-sort button.active {
+            background: var(--bg4);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .sl-dd-list {
+            overflow: auto;
+            max-height: 180px;
+            padding: 3px;
+        }
+
+        .sl-dd-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .sl-dd-item:hover {
+            background: var(--bg4);
+        }
+
+        .sl-dd-item label {
+            cursor: pointer;
+            margin: 0;
+            flex: 1;
+        }
+
+        .sl-dd-item input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            margin: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--bg);
+            position: relative;
+        }
+
+        .sl-dd-item input[type="checkbox"]:hover {
+            border-color: var(--accent2);
+            background: var(--bg2);
+        }
+
+        .sl-dd-item input[type="checkbox"]:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .sl-dd-item input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 3px;
+            top: 0;
+            width: 3px;
+            height: 6px;
+            border: solid var(--bg);
+            border-width: 0 1.5px 1.5px 0;
+            transform: rotate(45deg);
+        }
+
+        .sl-dd-item.sl-dd-select-all label {
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        .sl-dd-footer {
+            display: flex;
+            gap: 4px;
+            padding: 6px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sl-dd-footer button {
+            flex: 1;
+            padding: 3px 8px;
+            font-size: 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .sl-dd-footer button:hover {
+            background: var(--bg4);
+        }
+
+        .sl-dd-footer button.sl-dd-cancel {
+            background: var(--bg2);
+            color: var(--text-dim);
+        }
+
+        .sl-dd-footer button.sl-dd-cancel:hover {
+            background: var(--bg4);
+            color: var(--text);
+        }
+
+        .sl-no-rows td {
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        #system-list-panel select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            padding: 3px 6px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        #system-list-panel select:focus {
+            outline: none;
+            border-color: var(--accent2);
+        }
+
+        #projects-section {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #projects-section .panel-header {
+            padding: 8px 10px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #editor-output {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        #editor-wrap {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+        }
+
+        .editor-row {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .editor-line-gutter {
+            flex-shrink: 0;
+            width: 3em;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            text-align: right;
+            user-select: none;
+        }
+
+        .editor-line-gutter-inner {
+            padding: 10px 4px 10px 12px;
+            min-height: 100%;
+            box-sizing: border-box;
+        }
+
+        #editor-ta {
+            flex: 1;
+            min-width: 0;
+            margin: 0;
+            padding: 10px 12px;
+            background: var(--bg);
+            color: var(--text);
+            border: none;
+            resize: none;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+
+        #editor-ta:focus {
+            outline: none;
+        }
+
+        #editor {
+            flex: 1;
+            min-height: 0;
+            min-width: 0;
+            display: none;
+            width: 100%;
+        }
+
+        #editor.ready {
+            display: flex;
+        }
+
+        #editor .cm-editor {
+            height: 100%;
+            width: 100%;
+            font-size: 12px;
+        }
+
+        #editor .cm-scroller {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            height: 100%;
+            width: 100%;
+            overflow: auto;
+            box-sizing: border-box;
+        }
+
+        #output-divider {
+            height: 5px;
+            background: var(--border);
+            cursor: row-resize;
+            flex-shrink: 0;
+        }
+
+        #output-divider:hover {
+            background: var(--accent2);
+        }
+
+        #output-panel {
+            height: var(--output-h);
+            min-height: 60px;
+            background: #111;
+            border-top: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 6px 10px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        /* ── Toolbar elements ── */
+        .tb-sep {
+            width: 1px;
+            height: 22px;
+            background: var(--border);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .tb-spacer {
+            flex: 1;
+        }
+
+        #save-indicator {
+            font-size: 11px;
+            color: var(--text-dim);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        #save-indicator.unsaved {
+            color: var(--orange);
+        }
+
+        #save-indicator.saved {
+            color: var(--green);
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn:hover {
+            background: var(--bg4);
+        }
+
+        .btn:active {
+            background: #444;
+        }
+
+        #run-btn {
+            font-weight: 600;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        #run-btn.idle {
+            border-color: #555;
+        }
+
+        #run-btn.running {
+            border-color: var(--orange);
+            color: var(--orange);
+        }
+
+        #run-btn.success {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        #run-btn.error {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* ── Dropdown menus ── */
+        .dropdown {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            min-width: 240px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            font-size: 12px;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 5px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg4);
+        }
+
+        .dropdown-item .fn-name {
+            color: var(--accent);
+        }
+
+        .dropdown-item .fn-args {
+            color: var(--text-dim);
+        }
+
+        .dropdown-item .fn-doc {
+            display: block;
+            color: #666;
+            font-size: 11px;
+            margin-top: 1px;
+        }
+
+        #open-project-btn {
+            margin: 10px;
+        }
+
+        #project-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .project-item {
+            padding: 6px 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+
+        .project-item:hover {
+            background: var(--bg3);
+        }
+
+        .project-item.active {
+            background: var(--bg3);
+            border-left: 2px solid var(--accent);
+            padding-left: 8px;
+        }
+
+        .project-item.dragging {
+            opacity: 0.5;
+        }
+
+        .project-item-text {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .project-pn {
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .project-rev {
+            color: var(--text-dim);
+            font-size: 11px;
+        }
+
+        .project-desc {
+            color: var(--text-dim);
+            font-size: 11px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .project-product {
+            color: var(--accent2);
+            font-size: 10px;
+            text-transform: lowercase;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .project-remove {
+            color: var(--text-dim);
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 4px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            visibility: hidden;
+        }
+
+        .project-item:hover .project-remove {
+            visibility: visible;
+        }
+
+        .project-remove:hover {
+            color: var(--red);
+            background: rgba(244, 67, 54, 0.15);
+        }
+
+        /* ── Output panel ── */
+        .out-line {
+            display: block;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .out-line.stderr {
+            color: var(--orange);
+        }
+
+        .out-banner {
+            display: block;
+            margin-top: 6px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .out-banner.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--green);
+        }
+
+        .out-banner.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--red);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+
+        <!-- Main: left panel (Render + project files) + right content -->
+        <div id="main">
+
+            <!-- Left panel -->
+            <div id="left-panel">
+                <!-- Part number, revision, description, release status above Render -->
+                <div id="left-panel-header">
+                    <div id="project-meta" class="project-meta">
+                        <div class="meta-line"><span class="meta-label">Part</span><span id="pn-label">—</span></div>
+                        <div class="meta-line"><span class="meta-label">Rev</span><span id="rev-label">—</span></div>
+                        <div class="meta-line"><span class="meta-label">Desc</span><span id="desc-label">—</span></div>
+                        <div class="meta-line"><span class="meta-label">Status</span><span id="status-label">—</span>
+                        </div>
+                    </div>
+                    <button id="run-btn" class="btn idle" onclick="runCode()">▶ Render</button>
+                </div>
+                <!-- Project files (options depend on product type of selected project) -->
+                <div id="file-navigator">
+                    <div id="file-navigator-label">Project files</div>
+                    <div id="file-navigator-list" style="display: none;"></div>
+                    <div id="file-navigator-placeholder">Load a project to see editable files (feature tree; harness
+                        projects also include available/chosen/flattened network).</div>
+                </div>
+                <div id="sidebar-divider" title="Drag to resize"></div>
+                <!-- Project list -->
+                <div id="projects-section">
+                    <div class="panel-header">Projects</div>
+                    <button id="open-project-btn" class="btn" onclick="browseProject()">Open project…</button>
+                    <div id="project-list"></div>
+                </div>
+            </div>
+
+            <!-- Right: one toolbar + one content area. Toolbar slot populated from one list in applyView(). -->
+            <div id="right-area">
+                <div id="top-toolbar">
+                    <div id="top-toolbar-slot"></div>
+                    <div class="tb-spacer"></div>
+                </div>
+                <div id="content-section">
+                    <div id="editor-output">
+                        <div id="editor-wrap">
+                            <div id="editor-fallback" class="editor-row">
+                                <div id="editor-lines" class="editor-line-gutter" aria-hidden="true">
+                                    <div class="editor-line-gutter-inner">1</div>
+                                </div>
+                                <textarea id="editor-ta" spellcheck="false"
+                                    placeholder="Load a project to edit the feature tree…"></textarea>
+                            </div>
+                            <div id="editor" aria-label="Code editor"></div>
+                        </div>
+                        <div id="output-divider"></div>
+                        <div id="output-panel"></div>
+                    </div>
+                    <div id="graph-editor-panel">
+                        <iframe id="graph-editor-iframe" src="about:blank" title="Graph editor"></iframe>
+                    </div>
+                    <div id="system-viewer-panel">
+                        <div id="system-list-panel"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { EditorView, basicSetup } from "https://esm.sh/codemirror";
+        import { python } from "https://esm.sh/@codemirror/lang-python";
+        import { EditorSelection } from "https://esm.sh/@codemirror/state";
+        import { vscodeDark } from "https://esm.sh/@uiw/codemirror-theme-vscode";
+
+        const container = document.getElementById("editor");
+        const fallback = document.getElementById("editor-fallback");
+        if (container) {
+            try {
+                const view = new EditorView({
+                    doc: "",
+                    extensions: [
+                        basicSetup,
+                        python(),
+                        vscodeDark,
+                        EditorView.updateListener.of((v) => {
+                            if (v.docChanged && typeof window.onCodeChanged === "function") window.onCodeChanged();
+                        })
+                    ],
+                    parent: container
+                });
+                window.cmView = view;
+                window.cmEditorSelection = EditorSelection;
+                window.getCode = () => view.state.doc.toString();
+                window.initEditor = (code) => {
+                    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: code || "" } });
+                    view.focus();
+                };
+                window.getEditorEl = () => container;
+                if (fallback) fallback.style.display = "none";
+                container.classList.add("ready");
+            } catch (_) {
+                // CDN/API failed; textarea fallback used
+            }
+        }
+        window.cmReady = Promise.resolve();
+    </script>
+    <script src="/system-list-view.js"></script>
+    <script>
+        // ---------------------------------------------------------------------------
+        // Editor shell: one view state drives toolbar + content. See docs/gui_layout.md
+        // ---------------------------------------------------------------------------
+        function getCode() {
+            if (typeof window.getCode === "function") return window.getCode();
+            const ta = document.getElementById("editor-ta");
+            return ta ? ta.value : "";
+        }
+        function initEditor(code) {
+            if (typeof window.initEditor === "function") { window.initEditor(code); return; }
+            const ta = document.getElementById("editor-ta");
+            if (ta) {
+                ta.value = code || "";
+                ta.focus();
+                updateLineGutter();
+                syncGutterScroll();
+            }
+        }
+        function getEditorEl() {
+            if (typeof window.getEditorEl === "function") return window.getEditorEl();
+            return document.getElementById("editor-ta");
+        }
+        function updateLineGutter() {
+            const ta = document.getElementById("editor-ta");
+            const gutter = document.getElementById("editor-lines");
+            if (!ta || !gutter) return;
+            const n = Math.max(1, (ta.value.match(/\n/g) || []).length + 1);
+            const inner = gutter.querySelector(".editor-line-gutter-inner");
+            if (inner) {
+                inner.textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
+                inner.style.minHeight = ta.scrollHeight + "px";
+            }
+        }
+        function syncGutterScroll() {
+            const ta = document.getElementById("editor-ta");
+            const gutter = document.getElementById("editor-lines");
+            if (ta && gutter) gutter.scrollTop = ta.scrollTop;
+        }
+
+        const MODE_FEATURE_TREE = "feature tree";
+        const TOOLBAR_SPEC = {
+            [MODE_FEATURE_TREE]: null,  // native: save + dropdowns
+            "available network": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "add-node" }, label: "＋ Add Node" },
+                { action: "setTool", payload: { tool: "add-seg" }, label: "⟶ Add Segment" },
+                { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
+                { action: "fitView", payload: {}, label: "Fit View" }
+            ],
+            "chosen network": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "add-node" }, label: "＋ Add Node" },
+                { action: "setTool", payload: { tool: "add-seg" }, label: "⟶ Add Segment" },
+                { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
+                { action: "fitView", payload: {}, label: "Fit View" }
+            ],
+            "flattened network": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "add-seg" }, label: "⟶ Add Segment" },
+                { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
+                { action: "fitView", payload: {}, label: "Fit View" }
+            ]
+        };
+
+        let saveTimer = null;
+        let pollTimer = null;
+        let isRunning = false;
+        let activePath = null;
+        let functionIndex = [];
+        let openDropdown = null;
+        let editorFiles = [];
+        let productType = null;
+        let systemListLabelToKey = {};  // display label -> tab key for system viewer (from /api/info)
+        let selectedFile = MODE_FEATURE_TREE;
+        let lastSaveIndicatorState = "saved";
+
+        function isFeatureTreeMode() {
+            return selectedFile === MODE_FEATURE_TREE;
+        }
+
+        function isSystemListsMode() {
+            return productType === "system" && selectedFile !== MODE_FEATURE_TREE;
+        }
+
+        function populateToolbarSlot() {
+            const slot = document.getElementById("top-toolbar-slot");
+            if (!slot) return;
+            slot.innerHTML = "";
+
+            if (isFeatureTreeMode()) {
+                const dropdowns = document.createElement("div");
+                dropdowns.id = "dropdowns";
+                slot.appendChild(dropdowns);
+                buildDropdowns();
+            } else if (isSystemListsMode()) {
+                /* Single toolbar ribbon is inside the system list panel (#sl-ribbon) */
+            } else {
+                const spec = TOOLBAR_SPEC[selectedFile];
+                const graphIframe = document.getElementById("graph-editor-iframe");
+                if (spec && Array.isArray(spec)) {
+                    spec.forEach(function (item) {
+                        const btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "btn";
+                        btn.textContent = item.label;
+                        btn.onclick = function () {
+                            if (graphIframe && graphIframe.contentWindow) {
+                                try {
+                                    graphIframe.contentWindow.postMessage(
+                                        { type: "harnice-graph-action", action: item.action, ...item.payload }, "*");
+                                } catch (_) { }
+                            }
+                        };
+                        slot.appendChild(btn);
+                    });
+                }
+                if (selectedFile === "available network") {
+                    const sep = document.createElement("div");
+                    sep.className = "tb-sep";
+                    slot.appendChild(sep);
+                    const stepWrap = document.createElement("div");
+                    stepWrap.className = "tb-step-wrap";
+                    stepWrap.style.display = "flex";
+                    stepWrap.style.alignItems = "center";
+                    stepWrap.style.gap = "6px";
+                    const stepLabel = document.createElement("span");
+                    stepLabel.className = "tb-label";
+                    stepLabel.textContent = "Step";
+                    stepLabel.style.fontSize = "11px";
+                    stepLabel.style.color = "var(--text-dim)";
+                    const stepSlider = document.createElement("input");
+                    stepSlider.type = "range";
+                    stepSlider.min = "0";
+                    stepSlider.max = "1";
+                    stepSlider.step = "0.0001";
+                    stepSlider.value = "0.426";
+                    stepSlider.style.width = "100px";
+                    stepSlider.style.accentColor = "var(--accent)";
+                    const stepVal = document.createElement("span");
+                    stepVal.className = "tb-step-val";
+                    stepVal.style.fontSize = "12px";
+                    stepVal.style.fontWeight = "bold";
+                    stepVal.style.minWidth = "28px";
+                    stepVal.textContent = "1";
+                    stepSlider.addEventListener("input", function () {
+                        const v = parseFloat(stepSlider.value);
+                        stepVal.textContent = stepToDisplay(v);
+                        if (graphIframe && graphIframe.contentWindow) {
+                            try {
+                                graphIframe.contentWindow.postMessage(
+                                    { type: "harnice-graph-action", action: "setStep", sliderVal: v }, "*");
+                            } catch (_) { }
+                        }
+                    });
+                    stepWrap.appendChild(stepLabel);
+                    stepWrap.appendChild(stepSlider);
+                    stepWrap.appendChild(stepVal);
+                    slot.appendChild(stepWrap);
+                }
+                if (selectedFile === "flattened network") {
+                    const sep = document.createElement("div");
+                    sep.className = "tb-sep";
+                    slot.appendChild(sep);
+                    const angleWrap = document.createElement("div");
+                    angleWrap.className = "tb-angle-wrap";
+                    angleWrap.style.display = "flex";
+                    angleWrap.style.alignItems = "center";
+                    angleWrap.style.gap = "6px";
+                    const angleLabel = document.createElement("label");
+                    angleLabel.className = "tb-label";
+                    angleLabel.textContent = "Angle (°)";
+                    angleLabel.style.fontSize = "11px";
+                    angleLabel.style.color = "var(--text-dim)";
+                    const angleInput = document.createElement("input");
+                    angleInput.type = "number";
+                    angleInput.min = "0";
+                    angleInput.max = "360";
+                    angleInput.step = "1";
+                    angleInput.placeholder = "—";
+                    angleInput.style.width = "64px";
+                    angleInput.style.padding = "4px 6px";
+                    angleInput.addEventListener("input", function () {
+                        if (graphIframe && graphIframe.contentWindow) {
+                            try {
+                                graphIframe.contentWindow.postMessage(
+                                    { type: "harnice-graph-action", action: "setAngle", value: angleInput.value }, "*");
+                            } catch (_) { }
+                        }
+                    });
+                    angleWrap.appendChild(angleLabel);
+                    angleWrap.appendChild(angleInput);
+                    slot.appendChild(angleWrap);
+                }
+            }
+        }
+
+        function stepToDisplay(sliderVal) {
+            var LOG_MIN = Math.log10(0.01);
+            var LOG_MAX = Math.log10(500);
+            var logVal = LOG_MIN + sliderVal * (LOG_MAX - LOG_MIN);
+            var raw = Math.pow(10, logVal);
+            var snaps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+            var best = snaps[0], bestDist = Infinity;
+            snaps.forEach(function (s) {
+                var d = Math.abs(Math.log10(raw) - Math.log10(s));
+                if (d < bestDist) { bestDist = d; best = s; }
+            });
+            return best < 1 ? String(best) : (best % 1 === 0 ? best.toFixed(0) : String(best));
+        }
+
+        function applyView() {
+            const editorOutput = document.getElementById("editor-output");
+            const graphPanel = document.getElementById("graph-editor-panel");
+            const graphIframe = document.getElementById("graph-editor-iframe");
+            const systemViewerPanel = document.getElementById("system-viewer-panel");
+
+            const featureTree = isFeatureTreeMode();
+            const systemLists = isSystemListsMode();
+            const graphMode = !featureTree && !systemLists;
+
+            if (editorOutput) editorOutput.style.display = featureTree ? "flex" : "none";
+            if (graphPanel) graphPanel.classList.toggle("visible", graphMode);
+            if (systemViewerPanel) systemViewerPanel.classList.toggle("visible", systemLists);
+            const topToolbar = document.getElementById("top-toolbar");
+            if (topToolbar) topToolbar.style.display = systemLists ? "none" : "";
+
+            populateToolbarSlot();
+
+            if (graphIframe) {
+                if (graphMode) {
+                    const tab = selectedFile === "available network" ? "available" :
+                        selectedFile === "chosen network" ? "chosen" : "flattened";
+                    const base = "/graph-editor#" + tab;
+                    const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
+                    if (!iframeLoaded || !graphIframe.src.includes("/graph-editor")) {
+                        graphIframe.src = base;
+                    }
+                } else {
+                    graphIframe.src = "about:blank";
+                }
+            }
+            if (systemLists && window.SystemListView) {
+                const tabKey = systemListLabelToKey[selectedFile] || selectedFile.replace(/\s+/g, " ").toLowerCase();
+                SystemListView.loadPane(tabKey);
+            }
+        }
+
+        function sendGraphTab(tab) {
+            const graphIframe = document.getElementById("graph-editor-iframe");
+            if (!graphIframe || !graphIframe.contentWindow) return;
+            try {
+                graphIframe.contentWindow.postMessage({ type: "harnice-graph-tab", tab: tab }, "*");
+            } catch (_) { }
+        }
+
+        // ---------------------------------------------------------------------------
+        // Init
+        // ---------------------------------------------------------------------------
+        async function init() {
+            await (window.cmReady || Promise.resolve());
+            const ta = document.getElementById("editor-ta");
+            if (ta) {
+                ta.addEventListener("input", function () {
+                    updateLineGutter();
+                    onCodeChanged();
+                });
+                ta.addEventListener("scroll", syncGutterScroll);
+                updateLineGutter();
+            }
+            setupProjectListDragDrop(document.getElementById("project-list"));
+            applyView();
+            await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects(), loadGuiSetup()]);
+            await loadCode();
+            startOutputPoll();
+        }
+
+        // ---------------------------------------------------------------------------
+        // Editor (CodeMirror 6: getCode, initEditor, getEditorEl provided by module)
+        // ---------------------------------------------------------------------------
+
+        // ---------------------------------------------------------------------------
+        // API helpers
+        // ---------------------------------------------------------------------------
+        async function api(method, path, body) {
+            const opts = { method, headers: {} };
+            if (body !== undefined) {
+                opts.body = JSON.stringify(body);
+                opts.headers["Content-Type"] = "application/json";
+            }
+            const r = await fetch(path, opts);
+            return r.json();
+        }
+
+        // ---------------------------------------------------------------------------
+        // Info / project
+        // ---------------------------------------------------------------------------
+        async function loadInfo() {
+            const d = await api("GET", "/api/info");
+            updateProjectMeta(d.part_number, d.rev, d.description, d.release_status);
+            activePath = d.rev_folder;
+            editorFiles = Array.isArray(d.editor_files) ? d.editor_files : [];
+            productType = d.product_type || null;
+            systemListLabelToKey = (d.system_list_label_to_key && typeof d.system_list_label_to_key === "object") ? d.system_list_label_to_key : {};
+            if (!editorFiles.includes(selectedFile)) {
+                selectedFile = editorFiles.length ? editorFiles[0] : MODE_FEATURE_TREE;
+            }
+            renderFileList();
+            applyView();
+            applySavedProjectsTop();
+        }
+
+        function updateProjectMeta(pn, rev, description, releaseStatus) {
+            const set = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text != null && String(text).trim() !== "" ? String(text).trim() : "—";
+            };
+            set("pn-label", pn);
+            set("rev-label", rev);
+            set("desc-label", description);
+            set("status-label", releaseStatus);
+        }
+
+        function renderFileList() {
+            const listEl = document.getElementById("file-navigator-list");
+            const placeholderEl = document.getElementById("file-navigator-placeholder");
+            if (!listEl || !placeholderEl) return;
+            if (editorFiles.length === 0) {
+                listEl.style.display = "none";
+                placeholderEl.style.display = "block";
+                listEl.innerHTML = "";
+                return;
+            }
+            placeholderEl.style.display = "none";
+            listEl.style.display = "block";
+            listEl.innerHTML = "";
+            for (const label of editorFiles) {
+                const row = document.createElement("div");
+                row.className = "file-nav-row" + (label === selectedFile ? " active" : "");
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "file-nav-item" + (label === selectedFile ? " active" : "");
+                btn.textContent = label;
+                btn.dataset.file = label;
+                btn.onclick = () => selectFile(label);
+                row.appendChild(btn);
+                if (label === selectedFile) {
+                    const pill = document.createElement("span");
+                    if (label === MODE_FEATURE_TREE) {
+                        pill.id = "save-indicator";
+                        pill.className = lastSaveIndicatorState;
+                        pill.textContent = lastSaveIndicatorState === "saved" ? "Saved" : "Unsaved";
+                    } else {
+                        pill.className = "status-pill";
+                        pill.textContent = "Read Only";
+                    }
+                    row.appendChild(pill);
+                }
+                listEl.appendChild(row);
+            }
+        }
+
+        function fileLabelToTab(label) {
+            if (label === "available network") return "available";
+            if (label === "chosen network") return "chosen";
+            if (label === "flattened network") return "flattened";
+            return "available";
+        }
+
+        function selectFile(label) {
+            const wasNetwork = selectedFile !== MODE_FEATURE_TREE && editorFiles.includes(selectedFile);
+            selectedFile = label;
+            renderFileList();
+            applyView();
+            if (label === MODE_FEATURE_TREE) {
+                loadCode();
+            } else if (wasNetwork) {
+                sendGraphTab(fileLabelToTab(label));
+            }
+        }
+
+        // ---------------------------------------------------------------------------
+        // Code load / save
+        // ---------------------------------------------------------------------------
+        async function loadCode() {
+            const r = await fetch("/api/code?t=" + Date.now(), { cache: "no-store" });
+            const d = await r.json();
+            if (!r.ok) {
+                initEditor("# Error loading code: " + (d.error || r.status));
+                setSaveIndicator("unsaved");
+                return;
+            }
+            if (d && d.feature_tree_resolved === false) {
+                const msg = d.feature_tree_error
+                    ? "feature tree not found\n\n(" + d.feature_tree_error + ")"
+                    : "feature tree not found";
+                initEditor(msg);
+            } else {
+                const code = typeof d.code === "string" ? d.code : "";
+                initEditor(code);
+            }
+            setSaveIndicator("saved");
+        }
+
+        function onCodeChanged() {
+            setSaveIndicator("unsaved");
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveCode, 800);
+        }
+
+        function isPlaceholderOrEmpty(code) {
+            const s = (code || "").trim();
+            return !s || s.startsWith("feature tree not found");
+        }
+
+        async function saveCode() {
+            const code = getCode();
+            if (!getEditorEl()) return;
+            // Don't send empty or placeholder — server would reject; avoids overwriting real feature tree
+            if (isPlaceholderOrEmpty(code)) return;
+            // Send rev_folder so server can reject if we're a stale tab (wrong project)
+            const payload = { code };
+            if (activePath) payload.rev_folder = activePath;
+            try {
+                const res = await api("POST", "/api/code", payload);
+                if (res && res.ok) {
+                    setSaveIndicator("saved");
+                } else {
+                    setSaveIndicator("unsaved");
+                }
+            } catch (e) {
+                setSaveIndicator("unsaved");
+            }
+        }
+
+        function setSaveIndicator(state) {
+            lastSaveIndicatorState = state;
+            const el = document.getElementById("save-indicator");
+            if (el) {
+                el.className = state;
+                el.textContent = state === "saved" ? "Saved" : "Unsaved";
+            }
+        }
+
+        // ---------------------------------------------------------------------------
+        // Function index + dropdowns
+        // ---------------------------------------------------------------------------
+        async function loadFunctionIndex() {
+            const d = await api("GET", "/api/function_index");
+            if (d.error) { console.warn("function_index:", d.error); return; }
+            functionIndex = Array.isArray(d) ? d : [];
+            buildDropdowns();
+        }
+
+        function buildDropdowns() {
+            // Group by module
+            const modules = {};
+            for (const fn of functionIndex) {
+                if (!modules[fn.module]) modules[fn.module] = [];
+                modules[fn.module].push(fn);
+            }
+
+            const container = document.getElementById("dropdowns");
+            container.innerHTML = "";
+
+            for (const [mod, fns] of Object.entries(modules)) {
+                const wrap = document.createElement("div");
+                wrap.className = "dropdown";
+
+                const btn = document.createElement("button");
+                btn.className = "btn";
+                btn.textContent = mod;
+                btn.onclick = (e) => toggleDropdown(e, menu);
+                wrap.appendChild(btn);
+
+                const menu = document.createElement("div");
+                menu.className = "dropdown-menu";
+                for (const fn of fns) {
+                    const item = document.createElement("div");
+                    item.className = "dropdown-item";
+                    const sig = fn.args.map(a => a.name).join(", ");
+                    item.innerHTML = `<span class="fn-name">${fn.function}</span><span class="fn-args">(${sig})</span>${fn.docstring ? `<span class="fn-doc">${fn.docstring}</span>` : ""}`;
+                    item.onclick = () => { insertSnippet(fn); closeAllDropdowns(); };
+                    menu.appendChild(item);
+                }
+                wrap.appendChild(menu);
+                container.appendChild(wrap);
+            }
+        }
+
+        function toggleDropdown(e, menu) {
+            e.stopPropagation();
+            const isOpen = menu.classList.contains("open");
+            closeAllDropdowns();
+            if (!isOpen) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                menu.style.top = `${rect.bottom + 2}px`;
+                menu.style.left = `${rect.left}px`;
+                menu.classList.add("open");
+                openDropdown = menu;
+            }
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll(".dropdown-menu.open").forEach(m => m.classList.remove("open"));
+            openDropdown = null;
+        }
+
+        document.addEventListener("click", closeAllDropdowns);
+
+        // ---------------------------------------------------------------------------
+        // Snippet insertion
+        // ---------------------------------------------------------------------------
+        function insertSnippet(fn) {
+            const lines = [];
+            if (fn.docstring) lines.push(`# ${fn.docstring}`);
+            if (fn.args.length === 0) {
+                lines.push(`${fn.module}.${fn.function}()`);
+            } else {
+                lines.push(`${fn.module}.${fn.function}(`);
+                for (const arg of fn.args) {
+                    const ann = arg.annotation ? `  # ${arg.annotation}` : "";
+                    if (arg.name.startsWith("**") || arg.name.startsWith("*")) {
+                        lines.push(`    # ${arg.name}${ann}`);
+                    } else {
+                        lines.push(`    ${arg.name}=${arg.placeholder},${ann}`);
+                    }
+                }
+                lines.push(`)`);
+            }
+            const snippet = lines.join("\n");
+            const prefix = (pos, text) => (pos === text.lastIndexOf("\n", pos - 1) + 1) ? "" : "\n";
+            const insertPos = (pos, text) => {
+                const lineStart = text.lastIndexOf("\n", pos - 1) + 1;
+                const lineEnd = text.indexOf("\n", pos);
+                const lineEndPos = lineEnd === -1 ? text.length : lineEnd;
+                return pos === lineStart ? pos : lineEndPos;
+            };
+            if (window.cmView && window.cmEditorSelection) {
+                const view = window.cmView;
+                const pos = view.state.selection.main.head;
+                const text = view.state.doc.toString();
+                const pos_ins = insertPos(pos, text);
+                const inserted = prefix(pos, text) + snippet;
+                view.dispatch({
+                    changes: { from: pos_ins, to: pos_ins, insert: inserted },
+                    selection: window.cmEditorSelection.cursor(pos_ins + inserted.length)
+                });
+                view.focus();
+            } else {
+                const ta = getEditorEl();
+                if (!ta) return;
+                const pos = ta.selectionStart;
+                const text = ta.value;
+                const pos_ins = insertPos(pos, text);
+                const inserted = prefix(pos, text) + snippet;
+                ta.value = text.slice(0, pos_ins) + inserted + text.slice(pos_ins);
+                ta.selectionStart = ta.selectionEnd = pos_ins + inserted.length;
+                ta.focus();
+                updateLineGutter();
+            }
+            onCodeChanged();
+        }
+
+        // ---------------------------------------------------------------------------
+        // Run
+        // ---------------------------------------------------------------------------
+        window.runCode = async function () {
+            if (isRunning) return;
+
+            // Flush any pending save first (only if we have real content to save)
+            clearTimeout(saveTimer);
+            if (!isPlaceholderOrEmpty(getCode())) await saveCode();
+
+            isRunning = true;
+            setRunBtn("running");
+            clearOutput();
+            appendOutput({ text: "── running harnice -r ──", stream: "stdout" });
+
+            try {
+                await api("POST", "/api/run");
+            } catch (e) {
+                isRunning = false;
+                setRunBtn("idle");
+                appendOutput({ text: "[error] " + (e.message || String(e)), stream: "stderr" });
+            }
+        };
+
+        function setRunBtn(state) {
+            const btn = document.getElementById("run-btn");
+            if (!btn) return;
+            btn.className = `btn ${state}`;
+            btn.textContent = state === "running" ? "■ Rendering…" : state === "success" ? "✓ Rendered" : state === "error" ? "✗ Error" : "▶ Render";
+        }
+
+        // ---------------------------------------------------------------------------
+        // Output polling
+        // ---------------------------------------------------------------------------
+        function startOutputPoll() {
+            pollTimer = setInterval(pollOutput, 250);
+        }
+
+        async function pollOutput() {
+            const d = await api("GET", "/api/run_output");
+            for (const line of d.lines) appendOutput(line);
+            if (d.done && isRunning) {
+                isRunning = false;
+                if (d.exit_code === 0) {
+                    appendBanner("success", "✓ Completed");
+                    setRunBtn("success");
+                } else {
+                    appendBanner("error", `✗ Exited with code ${d.exit_code}`);
+                    setRunBtn("error");
+                }
+                setTimeout(() => setRunBtn("idle"), 4000);
+            }
+        }
+
+        function appendOutput(line) {
+            const panel = document.getElementById("output-panel");
+            const span = document.createElement("span");
+            span.className = `out-line ${line.stream === "stderr" ? "stderr" : ""}`;
+            span.textContent = line.text;
+            panel.appendChild(span);
+            panel.appendChild(document.createElement("br"));
+            panel.scrollTop = panel.scrollHeight;
+        }
+
+        function appendBanner(type, text) {
+            const panel = document.getElementById("output-panel");
+            const span = document.createElement("span");
+            span.className = `out-banner ${type}`;
+            span.textContent = text;
+            panel.appendChild(span);
+            panel.scrollTop = panel.scrollHeight;
+        }
+
+        function clearOutput() {
+            document.getElementById("output-panel").innerHTML = "";
+        }
+
+        // ---------------------------------------------------------------------------
+        // Project browser
+        // ---------------------------------------------------------------------------
+        async function loadRecentProjects() {
+            const d = await api("GET", "/api/recent_projects");
+            renderProjectList(d.projects || []);
+        }
+
+        let savedProjectsTopPx = null;
+
+        function applySavedProjectsTop() {
+            if (savedProjectsTopPx == null || typeof savedProjectsTopPx !== "number" || savedProjectsTopPx < 80) return;
+            const header = document.getElementById("left-panel-header");
+            const fileNav = document.getElementById("file-navigator");
+            const leftPanel = document.getElementById("left-panel");
+            if (!header || !fileNav || !leftPanel) return;
+            const headerH = header.offsetHeight;
+            const fileNavH = Math.max(80, Math.min(savedProjectsTopPx - headerH, leftPanel.offsetHeight - 120));
+            fileNav.style.height = fileNavH + "px";
+        }
+
+        async function loadGuiSetup() {
+            try {
+                const d = await api("GET", "/api/gui_setup");
+                const h = d.sidebar_file_navigator_height;
+                if (typeof h === "number" && h >= 80) {
+                    savedProjectsTopPx = h;
+                    applySavedProjectsTop();
+                }
+            } catch (_) { }
+        }
+
+        function saveGuiSetupSidebarHeight() {
+            const header = document.getElementById("left-panel-header");
+            const fileNav = document.getElementById("file-navigator");
+            if (!header || !fileNav) return;
+            savedProjectsTopPx = header.offsetHeight + fileNav.offsetHeight;
+            api("POST", "/api/gui_setup", { sidebar_file_navigator_height: savedProjectsTopPx }).catch(() => { });
+        }
+
+        function renderProjectList(projects) {
+            const list = document.getElementById("project-list");
+            list.innerHTML = "";
+
+            for (const proj of projects) {
+                const folder = typeof proj === "string" ? proj : (proj.rev_folder || "");
+                if (!folder) continue;
+                const productType = typeof proj === "object" && proj ? (proj.product_type || "") : "";
+                const description = typeof proj === "object" && proj ? (proj.description || "") : "";
+                const buttonColor = typeof proj === "object" && proj ? (proj.button_color || "") : "";
+                const parts = String(folder).replace(/\\/g, "/").split("/");
+                const revName = parts[parts.length - 1];       // e.g. 0000250810-S01-rev9
+                const pnName = parts[parts.length - 2] || ""; // e.g. 0000250810-S01
+                const revPart = revName.startsWith(pnName + "-") ? revName.slice(pnName.length + 1) : revName;
+
+                const item = document.createElement("div");
+                item.className = "project-item" + (folder === activePath ? " active" : "");
+                item.setAttribute("data-rev-folder", folder);
+
+                const productColor = (buttonColor && /^#[0-9a-fA-F]{3,8}$/.test(buttonColor)) ? buttonColor : "";
+                const productStyle = productColor ? ` style="color: ${escapeHtml(productColor)}"` : "";
+                const descText = description ? escapeHtml(description) : "";
+                const productText = productType ? escapeHtml(productType) : "";
+                item.innerHTML = `
+      <div class="project-item-text">
+        <div class="project-pn">${escapeHtml(pnName || revName)}</div>
+        <div class="project-rev">${escapeHtml(revPart)}</div>
+        ${descText ? `<div class="project-desc">${descText}</div>` : ""}
+        ${productText ? `<div class="project-product"${productStyle}>${productText}</div>` : ""}
+      </div>
+      <span class="project-remove" title="Remove">✕</span>
+    `;
+                item.draggable = true;
+
+                item.querySelector(".project-remove").onclick = async (e) => {
+                    e.stopPropagation();
+                    await api("POST", "/api/remove_project", { rev_folder: folder });
+                    await loadRecentProjects();
+                };
+
+                item.onclick = (e) => {
+                    if (!e.target.closest(".project-remove")) switchProject(folder);
+                };
+                list.appendChild(item);
+            }
+        }
+
+        let draggedProjectItem = null;
+
+        function setupProjectListDragDrop(list) {
+            if (!list) return;
+            list.addEventListener("dragstart", e => {
+                if (e.target.closest(".project-remove")) {
+                    e.preventDefault();
+                    return;
+                }
+                const item = e.target.closest(".project-item");
+                if (!item) return;
+                e.dataTransfer.setData("text/plain", item.getAttribute("data-rev-folder") || "");
+                e.dataTransfer.effectAllowed = "move";
+                draggedProjectItem = item;
+                item.classList.add("dragging");
+            });
+            list.addEventListener("dragend", e => {
+                if (draggedProjectItem) {
+                    draggedProjectItem.classList.remove("dragging");
+                    draggedProjectItem = null;
+                }
+            });
+            list.addEventListener("dragover", e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+            });
+            list.addEventListener("drop", async e => {
+                e.preventDefault();
+                if (!draggedProjectItem) return;
+                const targetItem = e.target.closest(".project-item");
+                if (!targetItem || targetItem === draggedProjectItem) return;
+                const all = Array.from(list.querySelectorAll(".project-item"));
+                const dragIndex = all.indexOf(draggedProjectItem);
+                const dropIndex = all.indexOf(targetItem);
+                if (dragIndex === -1 || dropIndex === -1) return;
+                if (dragIndex < dropIndex) {
+                    targetItem.parentNode.insertBefore(draggedProjectItem, targetItem.nextSibling);
+                } else {
+                    targetItem.parentNode.insertBefore(draggedProjectItem, targetItem);
+                }
+                const newOrder = Array.from(list.querySelectorAll(".project-item")).map(el => el.getAttribute("data-rev-folder"));
+                const res = await api("POST", "/api/reorder_projects", { rev_folders: newOrder });
+                if (res && res.ok) await loadRecentProjects();
+            });
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement("div");
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        window.browseProject = async function () {
+            const d = await api("GET", "/api/browse");
+            if (d.path) {
+                await api("POST", "/api/add_project", { rev_folder: d.path });
+                await loadRecentProjects();
+            }
+        };
+
+        async function selectProject(folder) {
+            clearTimeout(saveTimer);
+            const currentCode = getCode();
+            if (!currentCode.startsWith("feature tree not found")) {
+                await saveCode();
+            }
+            clearOutput();
+            appendOutput({ text: "── verifying revision structure ──", stream: "stdout" });
+            const sel = await api("POST", "/api/select_project", { rev_folder: folder });
+            if (sel.stdout) {
+                for (const line of sel.stdout.split("\n")) appendOutput({ text: line, stream: "stdout" });
+            }
+            if (sel.stderr) {
+                for (const line of sel.stderr.split("\n")) appendOutput({ text: line, stream: "stderr" });
+            }
+            const d = await api("POST", "/api/switch", { rev_folder: folder });
+            if (!d.ok) { alert("Could not switch project: " + (d.error || "unknown error")); await loadRecentProjects(); return; }
+            activePath = folder;
+            selectedFile = MODE_FEATURE_TREE;
+            await loadInfo();
+            await loadCode();
+            await loadRecentProjects();
+        }
+
+        async function switchProject(folder) {
+            await selectProject(folder);
+        }
+
+        // ---------------------------------------------------------------------------
+        // Sidebar divider (project files vs project list)
+        // ---------------------------------------------------------------------------
+        const sidebarDivider = document.getElementById("sidebar-divider");
+        const fileNavigator = document.getElementById("file-navigator");
+        const leftPanel = document.getElementById("left-panel");
+        let sidebarDrag = false, sidebarStartY = 0, sidebarStartH = 0;
+
+        sidebarDivider.addEventListener("mousedown", e => {
+            e.preventDefault();
+            sidebarDrag = true;
+            sidebarStartY = e.clientY;
+            sidebarStartH = fileNavigator.offsetHeight;
+            document.body.style.userSelect = "none";
+        });
+        document.addEventListener("mousemove", e => {
+            if (!sidebarDrag) return;
+            const delta = e.clientY - sidebarStartY;
+            const maxH = leftPanel ? Math.min(leftPanel.offsetHeight - 120, window.innerHeight * 0.7) : 400;
+            const newH = Math.max(80, Math.min(sidebarStartH + delta, maxH));
+            fileNavigator.style.height = newH + "px";
+        });
+        // ---------------------------------------------------------------------------
+        // Output panel resize (drag divider)
+        // ---------------------------------------------------------------------------
+        const divider = document.getElementById("output-divider");
+        const outputPanel = document.getElementById("output-panel");
+        let dragging = false, startY = 0, startH = 0;
+
+        divider.addEventListener("mousedown", e => {
+            dragging = true;
+            startY = e.clientY;
+            startH = outputPanel.offsetHeight;
+            document.body.style.userSelect = "none";
+        });
+        document.addEventListener("mousemove", e => {
+            if (!dragging) return;
+            const delta = startY - e.clientY;
+            const newH = Math.max(60, Math.min(startH + delta, window.innerHeight - 120));
+            outputPanel.style.height = newH + "px";
+        });
+
+        document.addEventListener("mouseup", () => {
+            if (sidebarDrag) {
+                saveGuiSetupSidebarHeight();
+                sidebarDrag = false;
+            }
+            if (dragging) dragging = false;
+            document.body.style.userSelect = "";
+        });
+
+        // ---------------------------------------------------------------------------
+        // Start
+        // ---------------------------------------------------------------------------
+        init();
+    </script>
+</body>
+
+</html>

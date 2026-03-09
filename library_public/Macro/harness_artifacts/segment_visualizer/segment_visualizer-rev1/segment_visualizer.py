@@ -3,7 +3,7 @@ from collections import defaultdict
 import os
 from harnice import fileio, state
 from harnice.lists import instances_list
-from harnice.utils import formboard_utils, appearance, svg_utils
+from harnice.utils import svg_utils
 
 
 # =============== PATHS ===================================================================================
