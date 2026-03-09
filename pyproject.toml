@@ -1,6 +1,6 @@
 [project]
 name = "harnice"
-version = "0.3.3"
+dynamic = ["version"]
 authors = [
   { name="Kenyon Shutt", email="harnice.io@gmail.com" },
 ]
@@ -12,11 +12,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-
 dependencies = [
     "sexpdata",
     "Pillow",
-    "PyYAML",
     "pypdf",
     "xlwt",
     "webcolors",
@@ -30,12 +28,14 @@ Issues = "https://github.com/harnice/Harnice/issues"
 
 [project.scripts]
 harnice = "harnice.cli:main"
-
 harnice-gui = "harnice.gui.console_server:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+[tool.setuptools_scm]
+# version derived from git tags (e.g. v0.3.3 → 0.3.3)
+
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
