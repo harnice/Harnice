@@ -36,7 +36,17 @@ MODULE_PATHS = {
 # - list: flat list of function refs
 # - function ref: ("module_alias", "function_name")
 FEATURE_TREE_SPEC = {
-    "Network": {
+    "Instances List": [
+        ("instances_list", "new"),
+        ("instances_list", "new_instance"),
+        ("instances_list", "remove_instance"),
+        ("instances_list", "modify"),
+        ("instances_list", "attribute_of"),
+        ("instances_list", "list_of_uniques"),
+        ("instances_list", "instance_in_connector_group_with_item_type"),
+        ("instances_list", "assign_bom_line_numbers"),
+    ],
+    "Bundle Networks": {
         "Available Network": [
             ("available_network", "read"),
             ("available_network", "write"),
@@ -54,6 +64,8 @@ FEATURE_TREE_SPEC = {
             ("flattened_network", "read_flattened_network"),
             ("flattened_network", "write_flattened_network"),
         ],
+    },
+    "Channels and Mapping": {
         "Channel Map": [
             ("channel_map", "new"),
             ("channel_map", "map"),
@@ -76,35 +88,18 @@ FEATURE_TREE_SPEC = {
             ("disconnect_map", "ensure_requirements_met"),
         ],
     },
-    "Lists": {
-        "Instances": [
-            ("instances_list", "new"),
-            ("instances_list", "new_instance"),
-            ("instances_list", "remove_instance"),
-            ("instances_list", "modify"),
-            ("instances_list", "attribute_of"),
-            ("instances_list", "list_of_uniques"),
-            ("instances_list", "instance_in_connector_group_with_item_type"),
-            ("instances_list", "assign_bom_line_numbers"),
-        ],
+    "Electrical": {
         "Circuits": [
             ("circuits_list", "new"),
         ],
         "Signals": [
             ("signals_list", "new"),
             ("signals_list", "append"),
-            ("signals_list", "set_list_type"),
             ("signals_list", "cavity_of_signal"),
             ("signals_list", "connector_name_of_channel"),
         ],
-        "Library History": [
-            ("library_history", "new"),
-            ("library_history", "append"),
-        ],
-        "Manifest": [
-            ("manifest", "new"),
-            ("manifest", "update_upstream"),
-        ],
+    },
+    "Revision History": {
         "Revision History": [
             ("rev_history", "new"),
             ("rev_history", "append"),
@@ -115,32 +110,26 @@ FEATURE_TREE_SPEC = {
             ("rev_history", "part_family_append"),
             ("rev_history", "update_datemodified"),
         ],
-        "Post-Harness Instances": [
-            ("post_harness_instances_list", "rebuild"),
-            ("post_harness_instances_list", "push"),
-        ],
     },
-    "Utils": {
-        "Feature Tree": [
-            ("feature_tree_utils", "default_feature_tree_contents"),
-            ("feature_tree_utils", "run_macro"),
+    "Feature Tree Tools": {
+        "General": [
             ("feature_tree_utils", "run_feature_for_relative"),
-            ("feature_tree_utils", "copy_pdfs_to_cwd"),
             ("feature_tree_utils", "lookup_outputcsys_from_lib_used"),
         ],
-        "Circuit": [
-            ("circuit_utils", "instances_of_circuit"),
-            ("circuit_utils", "instance_of_circuit_port_number"),
-            ("circuit_utils", "end_ports_of_circuit"),
-            ("circuit_utils", "max_port_number_in_circuit"),
-            ("circuit_utils", "circuit_instance_of_instance"),
-            ("circuit_utils", "assign_cable_conductor"),
-            ("circuit_utils", "squeeze_instance_between_ports_in_circuit"),
+        "Macros": [
+            ("feature_tree_utils", "run_macro"),
         ],
-        "Appearance": [
-            ("appearance", "parse"),
+        "Part Libraries": [
+            ("library_utils", "pull"),
+            ("library_utils", "get_local_path"),
         ],
-        "Notes": [
+        "Part Library History": [
+            ("library_history", "new"),
+            ("library_history", "append"),
+        ],
+    },
+    "Build Notes": {
+        "General": [
             ("note_utils", "new_note"),
             ("note_utils", "combine_notes"),
             ("note_utils", "parse_note_instance"),
@@ -153,17 +142,20 @@ FEATURE_TREE_SPEC = {
             ("note_utils", "make_rev_change_flagnote"),
             ("note_utils", "make_rev_history_notes"),
         ],
+    },
+    "Utils": {
         "SVG": [
             ("svg_utils", "add_entire_svg_file_contents_to_group"),
             ("svg_utils", "draw_styled_path"),
             ("svg_utils", "find_and_replace_svg_group"),
             ("svg_utils", "table"),
         ],
-        "Library": [
-            ("library_utils", "pull"),
-            ("library_utils", "get_local_path"),
+        "Appearance": [
+            ("appearance", "parse"),
         ],
-        "System": [
+    },
+    "System": {
+        "General": [
             ("system_utils", "make_instances_from_bom"),
             (
                 "system_utils",
@@ -174,25 +166,40 @@ FEATURE_TREE_SPEC = {
             ("system_utils", "find_connector_with_no_circuit"),
             ("system_utils", "mpn_of_device_refdes"),
         ],
+        "Manifest": [
+            ("manifest", "new"),
+            ("manifest", "update_upstream"),
+        ],
+        "Post-Harness Instances": [
+            ("post_harness_instances_list", "rebuild"),
+            ("post_harness_instances_list", "push"),
+        ],
     },
-    "State & I/O": [
-        ("state", "partnumber"),
-        ("state", "set_pn"),
-        ("state", "set_rev"),
-        ("state", "set_product"),
-        ("state", "set_net"),
-        ("state", "set_file_structure"),
-        ("fileio", "path"),
-        ("fileio", "dirpath"),
-        ("fileio", "part_directory"),
-        ("fileio", "rev_directory"),
-        ("fileio", "read_tsv"),
-        ("fileio", "verify_revision_structure"),
-        ("fileio", "get_path_to_project"),
-        ("fileio", "harnice_root"),
-        ("fileio", "drawnby"),
-        ("fileio", "today"),
-        ("fileio", "silentremove"),
-        ("fileio", "get_git_hash_of_harnice_src"),
-    ],
+    "Files and State": {
+        "Current State": [
+            ("state", "partnumber"),
+            ("state", "set_pn"),
+            ("state", "set_rev"),
+            ("state", "set_product"),
+            ("state", "set_net"),
+            ("state", "set_file_structure"),
+        ],
+        "Finding Files": [
+            ("fileio", "path"),
+            ("fileio", "dirpath"),
+            ("fileio", "part_directory"),
+            ("fileio", "rev_directory"),
+            ("fileio", "read_tsv"),
+            ("fileio", "verify_revision_structure"),
+            ("fileio", "get_path_to_project"),
+            ("fileio", "harnice_root"),
+            ("fileio", "drawnby"),
+            ("fileio", "today"),
+        ],
+        "Commands": [
+            ("feature_tree_utils", "copy_pdfs_to_cwd"),
+            ("fileio", "silentremove"),
+            ("fileio", "get_git_hash_of_harnice_src"),
+        ],
+    },
 }

@@ -1,5 +1,127 @@
 {
-  "Network": {
+  "Instances List": [
+    {
+      "module": "instances_list",
+      "function": "new",
+      "docstring": "Create a new empty instances list file with only the standard header (COLUMNS). Overwrites existing file if present.",
+      "args": []
+    },
+    {
+      "module": "instances_list",
+      "function": "new_instance",
+      "docstring": "Add a new instance to the instances list.",
+      "args": [
+        {
+          "name": "instance_name",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        },
+        {
+          "name": "instance_data",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        },
+        {
+          "name": "ignore_duplicates",
+          "annotation": null,
+          "default": "False",
+          "placeholder": "False"
+        }
+      ]
+    },
+    {
+      "module": "instances_list",
+      "function": "remove_instance",
+      "docstring": "Remove one instance from the instances list.",
+      "args": [
+        {
+          "name": "instance_to_delete",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "instances_list",
+      "function": "modify",
+      "docstring": "Update columns for an existing instance by name.",
+      "args": [
+        {
+          "name": "instance_name",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        },
+        {
+          "name": "instance_data",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "instances_list",
+      "function": "attribute_of",
+      "docstring": "Return the value of one column for a single instance.",
+      "args": [
+        {
+          "name": "target_instance",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        },
+        {
+          "name": "attribute",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "instances_list",
+      "function": "list_of_uniques",
+      "docstring": "Return a list of unique non-empty values for one column across all instances.",
+      "args": [
+        {
+          "name": "attribute",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "instances_list",
+      "function": "instance_in_connector_group_with_item_type",
+      "docstring": "Return the single instance in a connector group with the given item type.",
+      "args": [
+        {
+          "name": "connector_group",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        },
+        {
+          "name": "item_type",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "instances_list",
+      "function": "assign_bom_line_numbers",
+      "docstring": "Assign sequential BOM line numbers to instances that have `bom_line_number` set to \"True\".",
+      "args": []
+    }
+  ],
+  "Bundle Networks": {
     "Available Network": [
       {
         "module": "available_network",
@@ -201,7 +323,9 @@
           }
         ]
       }
-    ],
+    ]
+  },
+  "Channels and Mapping": {
     "Channel Map": [
       {
         "module": "channel_map",
@@ -377,129 +501,7 @@
       }
     ]
   },
-  "Lists": {
-    "Instances": [
-      {
-        "module": "instances_list",
-        "function": "new",
-        "docstring": "Create a new empty instances list file with only the standard header (COLUMNS). Overwrites existing file if present.",
-        "args": []
-      },
-      {
-        "module": "instances_list",
-        "function": "new_instance",
-        "docstring": "Add a new instance to the instances list.",
-        "args": [
-          {
-            "name": "instance_name",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "instance_data",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "ignore_duplicates",
-            "annotation": null,
-            "default": "False",
-            "placeholder": "False"
-          }
-        ]
-      },
-      {
-        "module": "instances_list",
-        "function": "remove_instance",
-        "docstring": "Remove one instance from the instances list.",
-        "args": [
-          {
-            "name": "instance_to_delete",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "instances_list",
-        "function": "modify",
-        "docstring": "Update columns for an existing instance by name.",
-        "args": [
-          {
-            "name": "instance_name",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "instance_data",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "instances_list",
-        "function": "attribute_of",
-        "docstring": "Return the value of one column for a single instance.",
-        "args": [
-          {
-            "name": "target_instance",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "attribute",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "instances_list",
-        "function": "list_of_uniques",
-        "docstring": "Return a list of unique non-empty values for one column across all instances.",
-        "args": [
-          {
-            "name": "attribute",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "instances_list",
-        "function": "instance_in_connector_group_with_item_type",
-        "docstring": "Return the single instance in a connector group with the given item type.",
-        "args": [
-          {
-            "name": "connector_group",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "item_type",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "instances_list",
-        "function": "assign_bom_line_numbers",
-        "docstring": "Assign sequential BOM line numbers to instances that have `bom_line_number` set to \"True\".",
-        "args": []
-      }
-    ],
+  "Electrical": {
     "Circuits": [
       {
         "module": "circuits_list",
@@ -526,19 +528,6 @@
             "default": null,
             "placeholder": "{}",
             "variadic": true
-          }
-        ]
-      },
-      {
-        "module": "signals_list",
-        "function": "set_list_type",
-        "docstring": null,
-        "args": [
-          {
-            "name": "x",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
           }
         ]
       },
@@ -586,73 +575,9 @@
           }
         ]
       }
-    ],
-    "Library History": [
-      {
-        "module": "library_history",
-        "function": "new",
-        "docstring": null,
-        "args": []
-      },
-      {
-        "module": "library_history",
-        "function": "append",
-        "docstring": null,
-        "args": [
-          {
-            "name": "instance_name",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "instance_data",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      }
-    ],
-    "Manifest": [
-      {
-        "module": "manifest",
-        "function": "new",
-        "docstring": "Synchronize the system harness manifest with the system connector list:",
-        "args": []
-      },
-      {
-        "module": "manifest",
-        "function": "update_upstream",
-        "docstring": null,
-        "args": [
-          {
-            "name": "path_to_system_rev",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "system_pn_rev",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "manifest_nets",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "harness_pn",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      }
-    ],
+    ]
+  },
+  "Revision History": {
     "Revision History": [
       {
         "module": "rev_history",
@@ -767,56 +692,62 @@
         "docstring": "Update the `datemodified` field of the current revision with today's date.",
         "args": []
       }
-    ],
-    "Post-Harness Instances": [
+    ]
+  },
+  "Feature Tree Tools": {
+    "General": [
       {
-        "module": "post_harness_instances_list",
-        "function": "rebuild",
-        "docstring": "Build the 'post harness instances list' by merging instance data from:",
-        "args": []
-      },
-      {
-        "module": "post_harness_instances_list",
-        "function": "push",
-        "docstring": null,
+        "module": "feature_tree_utils",
+        "function": "run_feature_for_relative",
+        "docstring": "Runs a feature tree script from a referenced part's `features_for_relatives` directory.",
         "args": [
           {
-            "name": "path_to_system_rev",
+            "name": "project_key",
             "annotation": null,
             "default": null,
             "placeholder": "None"
           },
           {
-            "name": "system_pn_rev",
+            "name": "referenced_pn_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "feature_tree_utils_name",
             "annotation": null,
             "default": null,
             "placeholder": "None"
           }
         ]
-      }
-    ]
-  },
-  "Utils": {
-    "Feature Tree": [
+      },
       {
         "module": "feature_tree_utils",
-        "function": "default_feature_tree_contents",
-        "docstring": null,
+        "function": "lookup_outputcsys_from_lib_used",
+        "docstring": "Looks up coordinate system transform from an instance's library attributes.",
         "args": [
           {
-            "name": "filename",
+            "name": "instance",
             "annotation": null,
             "default": null,
             "placeholder": "None"
           },
           {
-            "name": "replacements",
+            "name": "outputcsys",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "base_directory",
             "annotation": null,
             "default": "None",
             "placeholder": "None"
           }
         ]
-      },
+      }
+    ],
+    "Macros": [
       {
         "module": "feature_tree_utils",
         "function": "run_macro",
@@ -860,177 +791,59 @@
             "variadic": true
           }
         ]
-      },
+      }
+    ],
+    "Part Libraries": [
       {
-        "module": "feature_tree_utils",
-        "function": "run_feature_for_relative",
-        "docstring": "Runs a feature tree script from a referenced part's `features_for_relatives` directory.",
+        "module": "library_utils",
+        "function": "pull",
+        "docstring": "Imports a part from the library into the project.",
         "args": [
           {
-            "name": "project_key",
+            "name": "input_dict",
             "annotation": null,
             "default": null,
             "placeholder": "None"
           },
           {
-            "name": "referenced_pn_rev",
+            "name": "update_instances_list",
             "annotation": null,
-            "default": null,
-            "placeholder": "None"
+            "default": "True",
+            "placeholder": "True"
           },
           {
-            "name": "feature_tree_utils_name",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "feature_tree_utils",
-        "function": "copy_pdfs_to_cwd",
-        "docstring": "Copies all PDF files from `instance_data` directory to the current working directory.",
-        "args": []
-      },
-      {
-        "module": "feature_tree_utils",
-        "function": "lookup_outputcsys_from_lib_used",
-        "docstring": "Looks up coordinate system transform from an instance's library attributes.",
-        "args": [
-          {
-            "name": "instance",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "outputcsys",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "base_directory",
+            "name": "destination_directory",
             "annotation": null,
             "default": "None",
             "placeholder": "None"
           }
         ]
+      },
+      {
+        "module": "library_utils",
+        "function": "get_local_path",
+        "docstring": "Looks up the local filesystem path for a library repository URL.",
+        "args": [
+          {
+            "name": "lib_repo",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
       }
     ],
-    "Circuit": [
+    "Part Library History": [
       {
-        "module": "circuit_utils",
-        "function": "instances_of_circuit",
-        "docstring": "Returns all instances in a circuit, sorted by port number.",
-        "args": [
-          {
-            "name": "circuit_id",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
+        "module": "library_history",
+        "function": "new",
+        "docstring": null,
+        "args": []
       },
       {
-        "module": "circuit_utils",
-        "function": "instance_of_circuit_port_number",
-        "docstring": "Finds the instance name at a specific port number in a circuit.",
-        "args": [
-          {
-            "name": "circuit_id",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "circuit_port_number",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "circuit_utils",
-        "function": "end_ports_of_circuit",
-        "docstring": "Returns the instance names at the end ports (port 0 and maximum port) of a circuit.",
-        "args": [
-          {
-            "name": "circuit_id",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "circuit_utils",
-        "function": "max_port_number_in_circuit",
-        "docstring": "Finds the maximum circuit port number used in a circuit.",
-        "args": [
-          {
-            "name": "circuit_id",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "circuit_utils",
-        "function": "circuit_instance_of_instance",
-        "docstring": "Returns the circuit instance dictionary for an instance that belongs to a circuit.",
-        "args": [
-          {
-            "name": "instance_name",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "circuit_utils",
-        "function": "assign_cable_conductor",
-        "docstring": "Assigns a conductor instance to a specific conductor in a cable.",
-        "args": [
-          {
-            "name": "cable_instance_name",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "cable_conductor_id",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "conductor_instance",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "library_info",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "net",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "circuit_utils",
-        "function": "squeeze_instance_between_ports_in_circuit",
-        "docstring": "Inserts an instance into a circuit by shifting existing port numbers.",
+        "module": "library_history",
+        "function": "append",
+        "docstring": null,
         "args": [
           {
             "name": "instance_name",
@@ -1039,36 +852,17 @@
             "placeholder": "None"
           },
           {
-            "name": "circuit_id",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "new_circuit_port_number",
+            "name": "instance_data",
             "annotation": null,
             "default": null,
             "placeholder": "None"
           }
         ]
       }
-    ],
-    "Appearance": [
-      {
-        "module": "appearance",
-        "function": "parse",
-        "docstring": "Parse appearance dictionary, converting color names and shorthand hex to full hex.",
-        "args": [
-          {
-            "name": "val",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          }
-        ]
-      }
-    ],
-    "Notes": [
+    ]
+  },
+  "Build Notes": {
+    "General": [
       {
         "module": "note_utils",
         "function": "new_note",
@@ -1295,7 +1089,9 @@
           }
         ]
       }
-    ],
+    ]
+  },
+  "Utils": {
     "SVG": [
       {
         "module": "svg_utils",
@@ -1422,47 +1218,24 @@
         ]
       }
     ],
-    "Library": [
+    "Appearance": [
       {
-        "module": "library_utils",
-        "function": "pull",
-        "docstring": "Imports a part from the library into the project.",
+        "module": "appearance",
+        "function": "parse",
+        "docstring": "Parse appearance dictionary, converting color names and shorthand hex to full hex.",
         "args": [
           {
-            "name": "input_dict",
-            "annotation": null,
-            "default": null,
-            "placeholder": "None"
-          },
-          {
-            "name": "update_instances_list",
-            "annotation": null,
-            "default": "True",
-            "placeholder": "True"
-          },
-          {
-            "name": "destination_directory",
-            "annotation": null,
-            "default": "None",
-            "placeholder": "None"
-          }
-        ]
-      },
-      {
-        "module": "library_utils",
-        "function": "get_local_path",
-        "docstring": "Looks up the local filesystem path for a library repository URL.",
-        "args": [
-          {
-            "name": "lib_repo",
+            "name": "val",
             "annotation": null,
             "default": null,
             "placeholder": "None"
           }
         ]
       }
-    ],
-    "System": [
+    ]
+  },
+  "System": {
+    "General": [
       {
         "module": "system_utils",
         "function": "make_instances_from_bom",
@@ -1526,223 +1299,301 @@
           }
         ]
       }
+    ],
+    "Manifest": [
+      {
+        "module": "manifest",
+        "function": "new",
+        "docstring": "Synchronize the system harness manifest with the system connector list:",
+        "args": []
+      },
+      {
+        "module": "manifest",
+        "function": "update_upstream",
+        "docstring": null,
+        "args": [
+          {
+            "name": "path_to_system_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "system_pn_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "manifest_nets",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "harness_pn",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Post-Harness Instances": [
+      {
+        "module": "post_harness_instances_list",
+        "function": "rebuild",
+        "docstring": "Build the 'post harness instances list' by merging instance data from:",
+        "args": []
+      },
+      {
+        "module": "post_harness_instances_list",
+        "function": "push",
+        "docstring": null,
+        "args": [
+          {
+            "name": "path_to_system_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "system_pn_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
     ]
   },
-  "State & I/O": [
-    {
-      "module": "state",
-      "function": "partnumber",
-      "docstring": "Return the current part number and/or revision in the requested format.",
-      "args": [
-        {
-          "name": "format",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "state",
-      "function": "set_pn",
-      "docstring": "Set the current part number (e.g. `\"mypart\"`). Called by `fileio.verify_revision_structure()`.",
-      "args": [
-        {
-          "name": "x",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "state",
-      "function": "set_rev",
-      "docstring": "Set the current revision (number or string, e.g. 1 or \"A\"). Called by `fileio.verify_revision_structure()`.",
-      "args": [
-        {
-          "name": "x",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "state",
-      "function": "set_product",
-      "docstring": "Set the current product type (e.g. `\"harness\"`, `\"system\"`).",
-      "args": [
-        {
-          "name": "x",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "state",
-      "function": "set_net",
-      "docstring": "Set the current net context (used during render).",
-      "args": [
-        {
-          "name": "x",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "state",
-      "function": "set_file_structure",
-      "docstring": "Set the default file structure dict used by `fileio.path()` and `fileio.dirpath()`.",
-      "args": [
-        {
-          "name": "x",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "fileio",
-      "function": "path",
-      "docstring": "Return the full path to a file identified by its file key.",
-      "args": [
-        {
-          "name": "target_value",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        },
-        {
-          "name": "structure_dict",
-          "annotation": null,
-          "default": "None",
-          "placeholder": "None"
-        },
-        {
-          "name": "base_directory",
-          "annotation": null,
-          "default": "None",
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "fileio",
-      "function": "dirpath",
-      "docstring": "Return the full path to a directory identified by its key in the file structure.",
-      "args": [
-        {
-          "name": "target_key",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        },
-        {
-          "name": "structure_dict",
-          "annotation": null,
-          "default": "None",
-          "placeholder": "None"
-        },
-        {
-          "name": "base_directory",
-          "annotation": null,
-          "default": "None",
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "fileio",
-      "function": "part_directory",
-      "docstring": "Return the part directory: the parent of the current working directory.",
-      "args": []
-    },
-    {
-      "module": "fileio",
-      "function": "rev_directory",
-      "docstring": "Return the current revision directory (the current working directory).",
-      "args": []
-    },
-    {
-      "module": "fileio",
-      "function": "read_tsv",
-      "docstring": "Read a TSV file and return a list of row dicts (one dict per row, keys from header).",
-      "args": [
-        {
-          "name": "filepath",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        },
-        {
-          "name": "delimiter",
-          "annotation": null,
-          "default": "'\\t'",
-          "placeholder": "'\\t'"
-        }
-      ]
-    },
-    {
-      "module": "fileio",
-      "function": "verify_revision_structure",
-      "docstring": "Ensure the current directory is a valid revision folder and set `state.pn` and `state.rev`.",
-      "args": []
-    },
-    {
-      "module": "fileio",
-      "function": "get_path_to_project",
-      "docstring": "Return the local filesystem path for a project identified by a traceable key.",
-      "args": [
-        {
-          "name": "traceable_key",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "fileio",
-      "function": "harnice_root",
-      "docstring": null,
-      "args": []
-    },
-    {
-      "module": "fileio",
-      "function": "drawnby",
-      "docstring": "Load and return the contents of the drawnby file (path from `fileio.path(\"drawnby\")`).",
-      "args": []
-    },
-    {
-      "module": "fileio",
-      "function": "today",
-      "docstring": "Return today's date as a short string: `M/D/YY` (e.g. `2/12/25`).",
-      "args": []
-    },
-    {
-      "module": "fileio",
-      "function": "silentremove",
-      "docstring": "Remove a file or directory and its contents if it exists.",
-      "args": [
-        {
-          "name": "filepath",
-          "annotation": null,
-          "default": null,
-          "placeholder": "None"
-        }
-      ]
-    },
-    {
-      "module": "fileio",
-      "function": "get_git_hash_of_harnice_src",
-      "docstring": "Return the git commit hash of the Harnice source repo (HEAD).",
-      "args": []
-    }
-  ]
+  "Files and State": {
+    "Current State": [
+      {
+        "module": "state",
+        "function": "partnumber",
+        "docstring": "Return the current part number and/or revision in the requested format.",
+        "args": [
+          {
+            "name": "format",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "state",
+        "function": "set_pn",
+        "docstring": "Set the current part number (e.g. `\"mypart\"`). Called by `fileio.verify_revision_structure()`.",
+        "args": [
+          {
+            "name": "x",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "state",
+        "function": "set_rev",
+        "docstring": "Set the current revision (number or string, e.g. 1 or \"A\"). Called by `fileio.verify_revision_structure()`.",
+        "args": [
+          {
+            "name": "x",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "state",
+        "function": "set_product",
+        "docstring": "Set the current product type (e.g. `\"harness\"`, `\"system\"`).",
+        "args": [
+          {
+            "name": "x",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "state",
+        "function": "set_net",
+        "docstring": "Set the current net context (used during render).",
+        "args": [
+          {
+            "name": "x",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "state",
+        "function": "set_file_structure",
+        "docstring": "Set the default file structure dict used by `fileio.path()` and `fileio.dirpath()`.",
+        "args": [
+          {
+            "name": "x",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Finding Files": [
+      {
+        "module": "fileio",
+        "function": "path",
+        "docstring": "Return the full path to a file identified by its file key.",
+        "args": [
+          {
+            "name": "target_value",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "structure_dict",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "base_directory",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "fileio",
+        "function": "dirpath",
+        "docstring": "Return the full path to a directory identified by its key in the file structure.",
+        "args": [
+          {
+            "name": "target_key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "structure_dict",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "base_directory",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "fileio",
+        "function": "part_directory",
+        "docstring": "Return the part directory: the parent of the current working directory.",
+        "args": []
+      },
+      {
+        "module": "fileio",
+        "function": "rev_directory",
+        "docstring": "Return the current revision directory (the current working directory).",
+        "args": []
+      },
+      {
+        "module": "fileio",
+        "function": "read_tsv",
+        "docstring": "Read a TSV file and return a list of row dicts (one dict per row, keys from header).",
+        "args": [
+          {
+            "name": "filepath",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "delimiter",
+            "annotation": null,
+            "default": "'\\t'",
+            "placeholder": "'\\t'"
+          }
+        ]
+      },
+      {
+        "module": "fileio",
+        "function": "verify_revision_structure",
+        "docstring": "Ensure the current directory is a valid revision folder and set `state.pn` and `state.rev`.",
+        "args": []
+      },
+      {
+        "module": "fileio",
+        "function": "get_path_to_project",
+        "docstring": "Return the local filesystem path for a project identified by a traceable key.",
+        "args": [
+          {
+            "name": "traceable_key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "fileio",
+        "function": "harnice_root",
+        "docstring": null,
+        "args": []
+      },
+      {
+        "module": "fileio",
+        "function": "drawnby",
+        "docstring": "Load and return the contents of the drawnby file (path from `fileio.path(\"drawnby\")`).",
+        "args": []
+      },
+      {
+        "module": "fileio",
+        "function": "today",
+        "docstring": "Return today's date as a short string: `M/D/YY` (e.g. `2/12/25`).",
+        "args": []
+      }
+    ],
+    "Commands": [
+      {
+        "module": "feature_tree_utils",
+        "function": "copy_pdfs_to_cwd",
+        "docstring": "Copies all PDF files from `instance_data` directory to the current working directory.",
+        "args": []
+      },
+      {
+        "module": "fileio",
+        "function": "silentremove",
+        "docstring": "Remove a file or directory and its contents if it exists.",
+        "args": [
+          {
+            "name": "filepath",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "fileio",
+        "function": "get_git_hash_of_harnice_src",
+        "docstring": "Return the git commit hash of the Harnice source repo (HEAD).",
+        "args": []
+      }
+    ]
+  }
 }
