@@ -1,1702 +1,1748 @@
-[
-  {
-    "module": "available_network",
-    "function": "read",
-    "docstring": null,
-    "args": [
-      {
-        "name": "path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "available_network",
-    "function": "verify",
-    "docstring": "Cross-references available network segment endpoints against the instances list.",
-    "args": []
-  },
-  {
-    "module": "available_network",
-    "function": "write",
-    "docstring": null,
-    "args": [
-      {
-        "name": "network",
-        "annotation": "AvailableNetwork",
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "channel_map",
-    "function": "already_mapped",
-    "docstring": null,
-    "args": [
-      {
-        "name": "key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "channel_map",
-    "function": "already_mapped_set",
-    "docstring": null,
-    "args": []
-  },
-  {
-    "module": "channel_map",
-    "function": "already_mapped_set_append",
-    "docstring": null,
-    "args": [
-      {
-        "name": "key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "channel_map",
-    "function": "map",
-    "docstring": null,
-    "args": [
-      {
-        "name": "from_key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "to_key",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "multi_ch_junction_key",
-        "annotation": null,
-        "default": "''",
-        "placeholder": "''"
-      }
-    ]
-  },
-  {
-    "module": "channel_map",
-    "function": "new",
-    "docstring": "Makes a new blank channel map. Overwrites existing channel map.",
-    "args": []
-  },
-  {
-    "module": "chosen_network",
-    "function": "build_chosen_network",
-    "docstring": "Read available_network.json, resolve chosen network, write chosen_network.json.",
-    "args": [
-      {
-        "name": "available_path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "chosen_segment_ids",
-        "annotation": "list[str]",
-        "default": null,
-        "placeholder": "[]"
-      },
-      {
-        "name": "chosen_path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "proximity_threshold",
-        "annotation": "float",
-        "default": "1e-06",
-        "placeholder": "1e-06"
-      }
-    ]
-  },
-  {
-    "module": "chosen_network",
-    "function": "read_available_network",
-    "docstring": null,
-    "args": [
-      {
-        "name": "path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "chosen_network",
-    "function": "resolve_chosen_network",
-    "docstring": null,
-    "args": [
-      {
-        "name": "segments",
-        "annotation": "list[AvailableSegment]",
-        "default": null,
-        "placeholder": "[]"
-      },
-      {
-        "name": "nodes",
-        "annotation": "list[AvailableNode]",
-        "default": null,
-        "placeholder": "[]"
-      },
-      {
-        "name": "chosen_segment_ids",
-        "annotation": "list[str]",
-        "default": null,
-        "placeholder": "[]"
-      },
-      {
-        "name": "proximity_threshold",
-        "annotation": "float",
-        "default": "1e-06",
-        "placeholder": "1e-06"
-      }
-    ]
-  },
-  {
-    "module": "chosen_network",
-    "function": "write_chosen_network",
-    "docstring": null,
-    "args": [
-      {
-        "name": "network",
-        "annotation": "ChosenNetwork",
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "circuits_list",
-    "function": "new",
-    "docstring": "Makes a new blank circuits list. Overwrites existing circuits list.",
-    "args": []
-  },
-  {
-    "module": "disconnect_map",
-    "function": "already_assigned_channels_through_disconnects_set",
-    "docstring": null,
-    "args": []
-  },
-  {
-    "module": "disconnect_map",
-    "function": "already_assigned_channels_through_disconnects_set_append",
-    "docstring": null,
-    "args": [
-      {
-        "name": "key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "disconnect_refdes",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "disconnect_map",
-    "function": "already_assigned_disconnects_set",
-    "docstring": null,
-    "args": []
-  },
-  {
-    "module": "disconnect_map",
-    "function": "already_assigned_disconnects_set_append",
-    "docstring": null,
-    "args": [
-      {
-        "name": "key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "disconnect_map",
-    "function": "assign",
-    "docstring": null,
-    "args": [
-      {
-        "name": "a_side_key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "disconnect_key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "disconnect_map",
-    "function": "channel_is_already_assigned_through_disconnect",
-    "docstring": null,
-    "args": [
-      {
-        "name": "key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "disconnect_refdes",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "disconnect_map",
-    "function": "disconnect_is_already_assigned",
-    "docstring": null,
-    "args": [
-      {
-        "name": "key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "disconnect_map",
-    "function": "ensure_requirements_met",
-    "docstring": null,
-    "args": []
-  },
-  {
-    "module": "disconnect_map",
-    "function": "new",
-    "docstring": null,
-    "args": []
-  },
-  {
-    "module": "flattened_network",
-    "function": "build_flattened_network",
-    "docstring": "Read chosen_network.json and write a skeleton flattened_network.csv.",
-    "args": [
-      {
-        "name": "chosen_path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "flattened_path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "flattened_network",
-    "function": "read_chosen_network",
-    "docstring": "Read chosen_network.json and return a skeleton FlattenedNetwork.",
-    "args": [
-      {
-        "name": "path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "flattened_network",
-    "function": "read_flattened_network",
-    "docstring": "Read a previously saved flattened_network.csv, including any user-entered layout data.",
-    "args": [
-      {
-        "name": "path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "flattened_network",
-    "function": "write_flattened_network",
-    "docstring": null,
-    "args": [
-      {
-        "name": "network",
-        "annotation": "FlattenedNetwork",
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "path",
-        "annotation": "Path",
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "instances_list",
-    "function": "assign_bom_line_numbers",
-    "docstring": "Assign sequential BOM line numbers to instances that have `bom_line_number` set to \"True\".",
-    "args": []
-  },
-  {
-    "module": "instances_list",
-    "function": "attribute_of",
-    "docstring": "Return the value of one column for a single instance.",
-    "args": [
-      {
-        "name": "target_instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "attribute",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "instances_list",
-    "function": "instance_in_connector_group_with_item_type",
-    "docstring": "Return the single instance in a connector group with the given item type.",
-    "args": [
-      {
-        "name": "connector_group",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "item_type",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "instances_list",
-    "function": "list_of_uniques",
-    "docstring": "Return a list of unique non-empty values for one column across all instances.",
-    "args": [
-      {
-        "name": "attribute",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "instances_list",
-    "function": "modify",
-    "docstring": "Update columns for an existing instance by name.",
-    "args": [
-      {
-        "name": "instance_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "instance_data",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "instances_list",
-    "function": "new",
-    "docstring": "Create a new empty instances list file with only the standard header (COLUMNS). Overwrites existing file if present.",
-    "args": []
-  },
-  {
-    "module": "instances_list",
-    "function": "new_instance",
-    "docstring": "Add a new instance to the instances list.",
-    "args": [
-      {
-        "name": "instance_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "instance_data",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "ignore_duplicates",
-        "annotation": null,
-        "default": "False",
-        "placeholder": "False"
-      }
-    ]
-  },
-  {
-    "module": "instances_list",
-    "function": "remove_instance",
-    "docstring": "Remove one instance from the instances list.",
-    "args": [
-      {
-        "name": "instance_to_delete",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "library_history",
-    "function": "append",
-    "docstring": null,
-    "args": [
-      {
-        "name": "instance_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "instance_data",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "library_history",
-    "function": "new",
-    "docstring": null,
-    "args": []
-  },
-  {
-    "module": "manifest",
-    "function": "new",
-    "docstring": "Synchronize the system harness manifest with the system connector list:",
-    "args": []
-  },
-  {
-    "module": "manifest",
-    "function": "update_upstream",
-    "docstring": null,
-    "args": [
-      {
-        "name": "path_to_system_rev",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "system_pn_rev",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "manifest_nets",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "harness_pn",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "post_harness_instances_list",
-    "function": "push",
-    "docstring": null,
-    "args": [
-      {
-        "name": "path_to_system_rev",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "system_pn_rev",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "post_harness_instances_list",
-    "function": "rebuild",
-    "docstring": "Build the 'post harness instances list' by merging instance data from:",
-    "args": []
-  },
-  {
-    "module": "rev_history",
-    "function": "append",
-    "docstring": "Append a new revision history entry to the current revision history file.",
-    "args": [
-      {
-        "name": "next_rev",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "rev_history",
-    "function": "info",
-    "docstring": "Get information about a revision history entry.",
-    "args": [
-      {
-        "name": "rev",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "path",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "field",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "all",
-        "annotation": null,
-        "default": "False",
-        "placeholder": "False"
-      }
-    ]
-  },
-  {
-    "module": "rev_history",
-    "function": "initial_release_desc",
-    "docstring": "Get the description of the initial release.",
-    "args": []
-  },
-  {
-    "module": "rev_history",
-    "function": "initial_release_exists",
-    "docstring": "Check if an initial release exists.",
-    "args": []
-  },
-  {
-    "module": "rev_history",
-    "function": "new",
-    "docstring": "Create a new revision history file.",
-    "args": [
-      {
-        "name": "ignore_product",
-        "annotation": null,
-        "default": "False",
-        "placeholder": "False"
-      },
-      {
-        "name": "path",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "rev_history",
-    "function": "overwrite",
-    "docstring": "Overwrite a revision history entry.",
-    "args": [
-      {
-        "name": "content_dict",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "rev_history",
-    "function": "part_family_append",
-    "docstring": "Append a new revision history entry to the part family revision history file.",
-    "args": [
-      {
-        "name": "content_dict",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "rev_history_path",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "rev_history",
-    "function": "update_datemodified",
-    "docstring": "Update the `datemodified` field of the current revision with today's date.",
-    "args": []
-  },
-  {
-    "module": "signals_list",
-    "function": "append",
-    "docstring": "Appends a new row to the signals TSV file.",
-    "args": [
-      {
-        "name": "**kwargs",
-        "annotation": null,
-        "default": null,
-        "placeholder": "{}",
-        "variadic": true
-      }
-    ]
-  },
-  {
-    "module": "signals_list",
-    "function": "cavity_of_signal",
-    "docstring": null,
-    "args": [
-      {
-        "name": "channel_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "signal",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "path_to_signals_list",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "signals_list",
-    "function": "connector_name_of_channel",
-    "docstring": null,
-    "args": [
-      {
-        "name": "channel_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "path_to_signals_list",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "signals_list",
-    "function": "new",
-    "docstring": "Creates a new signals TSV file at fileio.path(\"signals list\") with only the header row.",
-    "args": []
-  },
-  {
-    "module": "signals_list",
-    "function": "set_list_type",
-    "docstring": null,
-    "args": [
-      {
-        "name": "x",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "appearance",
-    "function": "parse",
-    "docstring": "Parse appearance dictionary, converting color names and shorthand hex to full hex.",
-    "args": [
-      {
-        "name": "val",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "circuit_utils",
-    "function": "assign_cable_conductor",
-    "docstring": "Assigns a conductor instance to a specific conductor in a cable.",
-    "args": [
-      {
-        "name": "cable_instance_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "cable_conductor_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "conductor_instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "library_info",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "net",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "circuit_utils",
-    "function": "circuit_instance_of_instance",
-    "docstring": "Returns the circuit instance dictionary for an instance that belongs to a circuit.",
-    "args": [
-      {
-        "name": "instance_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "circuit_utils",
-    "function": "end_ports_of_circuit",
-    "docstring": "Returns the instance names at the end ports (port 0 and maximum port) of a circuit.",
-    "args": [
-      {
-        "name": "circuit_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "circuit_utils",
-    "function": "instance_of_circuit_port_number",
-    "docstring": "Finds the instance name at a specific port number in a circuit.",
-    "args": [
-      {
-        "name": "circuit_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "circuit_port_number",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "circuit_utils",
-    "function": "instances_of_circuit",
-    "docstring": "Returns all instances in a circuit, sorted by port number.",
-    "args": [
-      {
-        "name": "circuit_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "circuit_utils",
-    "function": "max_port_number_in_circuit",
-    "docstring": "Finds the maximum circuit port number used in a circuit.",
-    "args": [
-      {
-        "name": "circuit_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "circuit_utils",
-    "function": "squeeze_instance_between_ports_in_circuit",
-    "docstring": "Inserts an instance into a circuit by shifting existing port numbers.",
-    "args": [
-      {
-        "name": "instance_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "circuit_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "new_circuit_port_number",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "feature_tree_utils",
-    "function": "copy_pdfs_to_cwd",
-    "docstring": "Copies all PDF files from `instance_data` directory to the current working directory.",
-    "args": []
-  },
-  {
-    "module": "feature_tree_utils",
-    "function": "default_feature_tree_contents",
-    "docstring": null,
-    "args": [
-      {
-        "name": "filename",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "replacements",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "feature_tree_utils",
-    "function": "lookup_outputcsys_from_lib_used",
-    "docstring": "Looks up coordinate system transform from an instance's library attributes.",
-    "args": [
-      {
-        "name": "instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "outputcsys",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "base_directory",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "feature_tree_utils",
-    "function": "run_feature_for_relative",
-    "docstring": "Runs a feature tree script from a referenced part's `features_for_relatives` directory.",
-    "args": [
-      {
-        "name": "project_key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "referenced_pn_rev",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "feature_tree_utils_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "feature_tree_utils",
-    "function": "run_macro",
-    "docstring": "Runs a macro script from the library with the given artifact ID.",
-    "args": [
-      {
-        "name": "macro_part_number",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "lib_subpath",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "lib_repo",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "artifact_id",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "base_directory",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "**kwargs",
-        "annotation": null,
-        "default": null,
-        "placeholder": "{}",
-        "variadic": true
-      }
-    ]
-  },
-  {
-    "module": "library_utils",
-    "function": "get_local_path",
-    "docstring": "Looks up the local filesystem path for a library repository URL.",
-    "args": [
-      {
-        "name": "lib_repo",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "library_utils",
-    "function": "pull",
-    "docstring": "Imports a part from the library into the project.",
-    "args": [
-      {
-        "name": "input_dict",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "update_instances_list",
-        "annotation": null,
-        "default": "True",
-        "placeholder": "True"
-      },
-      {
-        "name": "destination_directory",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "assign_buildnote_numbers",
-    "docstring": "Assigns sequential numbers to build note instances.",
-    "args": []
-  },
-  {
-    "module": "note_utils",
-    "function": "combine_notes",
-    "docstring": "Combines multiple notes by merging their affected instances into one note.",
-    "args": [
-      {
-        "name": "keep_note_text",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "merge_note_texts",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "note_type",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "get_lib_build_notes",
-    "docstring": "Returns list of build_notes for this instance from the TSV row.",
-    "args": [
-      {
-        "name": "instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "get_lib_tools",
-    "docstring": "Returns list of tools for this instance from the TSV row.",
-    "args": [
-      {
-        "name": "instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "make_bom_flagnote",
-    "docstring": "Creates a BOM item flagnote dictionary for an instance.",
-    "args": [
-      {
-        "name": "affected_instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "output_csys_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "make_buildnote_flagnote",
-    "docstring": "Creates a build note flagnote dictionary linking a note to an instance.",
-    "args": [
-      {
-        "name": "note_instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "affected_instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "output_csys_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "make_part_name_flagnote",
-    "docstring": "Creates a part name flagnote dictionary for an instance.",
-    "args": [
-      {
-        "name": "affected_instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "output_csys_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "make_rev_change_flagnote",
-    "docstring": "Creates a revision change callout flagnote dictionary linking a note to an instance.",
-    "args": [
-      {
-        "name": "note_instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "affected_instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "output_csys_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "make_rev_history_notes",
-    "docstring": "Creates revision change callout notes based on revision history.",
-    "args": [
-      {
-        "name": "rev",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "new_note",
-    "docstring": "Creates or updates a note instance.",
-    "args": [
-      {
-        "name": "note_type",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "note_text",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "note_number",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "bubble_text",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "shape_mpn",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "shape_lib_subpath",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "shape_lib_repo",
-        "annotation": null,
-        "default": "'https://github.com/harnice/harnice'",
-        "placeholder": "'https://github.com/harnice/harnice'"
-      },
-      {
-        "name": "affectedinstances",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "note_utils",
-    "function": "parse_note_instance",
-    "docstring": "Return a full copy of `instance`, but with note_affected_instances",
-    "args": [
-      {
-        "name": "instance",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "svg_utils",
-    "function": "add_entire_svg_file_contents_to_group",
-    "docstring": "Wraps the entire contents of an SVG file in a new group element.",
-    "args": [
-      {
-        "name": "filepath",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "new_group_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "svg_utils",
-    "function": "draw_styled_path",
-    "docstring": "Adds a styled spline path to the local group.",
-    "args": [
-      {
-        "name": "spline_points",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "stroke_width_inches",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "appearance_dict",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "local_group",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "svg_utils",
-    "function": "find_and_replace_svg_group",
-    "docstring": "Copies SVG group content from one file to another, replacing existing group content.",
-    "args": [
-      {
-        "name": "source_svg_filepath",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "source_group_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "destination_svg_filepath",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "destination_group_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "svg_utils",
-    "function": "table",
-    "docstring": "This function is called when the user needs to build a general SVG table.",
-    "args": [
-      {
-        "name": "layout_dict",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "format_dict",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "columns_list",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "content_list",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "path_to_svg",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "contents_group_name",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "system_utils",
-    "function": "add_chains_to_channel_map",
-    "docstring": "For each (from_device/channel) -> (to_device/channel) in the channel map,",
-    "args": []
-  },
-  {
-    "module": "system_utils",
-    "function": "connector_of_channel",
-    "docstring": "Finds the connector name associated with a device channel.",
-    "args": [
-      {
-        "name": "key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "system_utils",
-    "function": "find_connector_with_no_circuit",
-    "docstring": "Validates that all connectors have associated circuits.",
-    "args": [
-      {
-        "name": "connector_list",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "circuits_list",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "system_utils",
-    "function": "make_instances_for_connectors_cavities_nodes_channels_circuits",
-    "docstring": "Creates instances for all system components based on circuits.",
-    "args": []
-  },
-  {
-    "module": "system_utils",
-    "function": "make_instances_from_bom",
-    "docstring": "Creates instances for all devices and disconnects from the BOM.",
-    "args": []
-  },
-  {
-    "module": "system_utils",
-    "function": "mpn_of_device_refdes",
-    "docstring": "Looks up manufacturer part number information for a device reference designator.",
-    "args": [
-      {
-        "name": "refdes",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "fileio",
-    "function": "dirpath",
-    "docstring": "Return the full path to a directory identified by its key in the file structure.",
-    "args": [
-      {
-        "name": "target_key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "structure_dict",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "base_directory",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "fileio",
-    "function": "drawnby",
-    "docstring": "Load and return the contents of the drawnby file (path from `fileio.path(\"drawnby\")`).",
-    "args": []
-  },
-  {
-    "module": "fileio",
-    "function": "get_git_hash_of_harnice_src",
-    "docstring": "Return the git commit hash of the Harnice source repo (HEAD).",
-    "args": []
-  },
-  {
-    "module": "fileio",
-    "function": "get_path_to_project",
-    "docstring": "Return the local filesystem path for a project identified by a traceable key.",
-    "args": [
-      {
-        "name": "traceable_key",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "fileio",
-    "function": "harnice_root",
-    "docstring": null,
-    "args": []
-  },
-  {
-    "module": "fileio",
-    "function": "part_directory",
-    "docstring": "Return the part directory: the parent of the current working directory.",
-    "args": []
-  },
-  {
-    "module": "fileio",
-    "function": "path",
-    "docstring": "Return the full path to a file identified by its file key.",
-    "args": [
-      {
-        "name": "target_value",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "structure_dict",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      },
-      {
-        "name": "base_directory",
-        "annotation": null,
-        "default": "None",
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "fileio",
-    "function": "read_tsv",
-    "docstring": "Read a TSV file and return a list of row dicts (one dict per row, keys from header).",
-    "args": [
-      {
-        "name": "filepath",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      },
-      {
-        "name": "delimiter",
-        "annotation": null,
-        "default": "'\\t'",
-        "placeholder": "'\\t'"
-      }
-    ]
-  },
-  {
-    "module": "fileio",
-    "function": "rev_directory",
-    "docstring": "Return the current revision directory (the current working directory).",
-    "args": []
-  },
-  {
-    "module": "fileio",
-    "function": "silentremove",
-    "docstring": "Remove a file or directory and its contents if it exists.",
-    "args": [
-      {
-        "name": "filepath",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "fileio",
-    "function": "today",
-    "docstring": "Return today's date as a short string: `M/D/YY` (e.g. `2/12/25`).",
-    "args": []
-  },
-  {
-    "module": "fileio",
-    "function": "verify_revision_structure",
-    "docstring": "Ensure the current directory is a valid revision folder and set `state.pn` and `state.rev`.",
-    "args": []
-  },
-  {
-    "module": "state",
-    "function": "partnumber",
-    "docstring": "Return the current part number and/or revision in the requested format.",
-    "args": [
-      {
-        "name": "format",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "state",
-    "function": "set_file_structure",
-    "docstring": "Set the default file structure dict used by `fileio.path()` and `fileio.dirpath()`.",
-    "args": [
-      {
-        "name": "x",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "state",
-    "function": "set_net",
-    "docstring": "Set the current net context (used during render).",
-    "args": [
-      {
-        "name": "x",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "state",
-    "function": "set_pn",
-    "docstring": "Set the current part number (e.g. `\"mypart\"`). Called by `fileio.verify_revision_structure()`.",
-    "args": [
-      {
-        "name": "x",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "state",
-    "function": "set_product",
-    "docstring": "Set the current product type (e.g. `\"harness\"`, `\"system\"`).",
-    "args": [
-      {
-        "name": "x",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  },
-  {
-    "module": "state",
-    "function": "set_rev",
-    "docstring": "Set the current revision (number or string, e.g. 1 or \"A\"). Called by `fileio.verify_revision_structure()`.",
-    "args": [
-      {
-        "name": "x",
-        "annotation": null,
-        "default": null,
-        "placeholder": "None"
-      }
-    ]
-  }
-]
+{
+  "Network": {
+    "Available Network": [
+      {
+        "module": "available_network",
+        "function": "read",
+        "docstring": null,
+        "args": [
+          {
+            "name": "path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "available_network",
+        "function": "write",
+        "docstring": null,
+        "args": [
+          {
+            "name": "network",
+            "annotation": "AvailableNetwork",
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "available_network",
+        "function": "verify",
+        "docstring": "Cross-references available network segment endpoints against the instances list.",
+        "args": []
+      }
+    ],
+    "Chosen Network": [
+      {
+        "module": "chosen_network",
+        "function": "build_chosen_network",
+        "docstring": "Read available_network.json, resolve chosen network, write chosen_network.json.",
+        "args": [
+          {
+            "name": "available_path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "chosen_segment_ids",
+            "annotation": "list[str]",
+            "default": null,
+            "placeholder": "[]"
+          },
+          {
+            "name": "chosen_path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "proximity_threshold",
+            "annotation": "float",
+            "default": "1e-06",
+            "placeholder": "1e-06"
+          }
+        ]
+      },
+      {
+        "module": "chosen_network",
+        "function": "read_available_network",
+        "docstring": null,
+        "args": [
+          {
+            "name": "path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "chosen_network",
+        "function": "resolve_chosen_network",
+        "docstring": null,
+        "args": [
+          {
+            "name": "segments",
+            "annotation": "list[AvailableSegment]",
+            "default": null,
+            "placeholder": "[]"
+          },
+          {
+            "name": "nodes",
+            "annotation": "list[AvailableNode]",
+            "default": null,
+            "placeholder": "[]"
+          },
+          {
+            "name": "chosen_segment_ids",
+            "annotation": "list[str]",
+            "default": null,
+            "placeholder": "[]"
+          },
+          {
+            "name": "proximity_threshold",
+            "annotation": "float",
+            "default": "1e-06",
+            "placeholder": "1e-06"
+          }
+        ]
+      },
+      {
+        "module": "chosen_network",
+        "function": "write_chosen_network",
+        "docstring": null,
+        "args": [
+          {
+            "name": "network",
+            "annotation": "ChosenNetwork",
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Flattened Network": [
+      {
+        "module": "flattened_network",
+        "function": "build_flattened_network",
+        "docstring": "Read chosen_network.json and write a skeleton flattened_network.csv.",
+        "args": [
+          {
+            "name": "chosen_path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "flattened_path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "flattened_network",
+        "function": "read_chosen_network",
+        "docstring": "Read chosen_network.json and return a skeleton FlattenedNetwork.",
+        "args": [
+          {
+            "name": "path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "flattened_network",
+        "function": "read_flattened_network",
+        "docstring": "Read a previously saved flattened_network.csv, including any user-entered layout data.",
+        "args": [
+          {
+            "name": "path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "flattened_network",
+        "function": "write_flattened_network",
+        "docstring": null,
+        "args": [
+          {
+            "name": "network",
+            "annotation": "FlattenedNetwork",
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "path",
+            "annotation": "Path",
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Channel Map": [
+      {
+        "module": "channel_map",
+        "function": "new",
+        "docstring": "Makes a new blank channel map. Overwrites existing channel map.",
+        "args": []
+      },
+      {
+        "module": "channel_map",
+        "function": "map",
+        "docstring": null,
+        "args": [
+          {
+            "name": "from_key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "to_key",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "multi_ch_junction_key",
+            "annotation": null,
+            "default": "''",
+            "placeholder": "''"
+          }
+        ]
+      },
+      {
+        "module": "channel_map",
+        "function": "already_mapped",
+        "docstring": null,
+        "args": [
+          {
+            "name": "key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "channel_map",
+        "function": "already_mapped_set",
+        "docstring": null,
+        "args": []
+      },
+      {
+        "module": "channel_map",
+        "function": "already_mapped_set_append",
+        "docstring": null,
+        "args": [
+          {
+            "name": "key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Disconnect Map": [
+      {
+        "module": "disconnect_map",
+        "function": "new",
+        "docstring": null,
+        "args": []
+      },
+      {
+        "module": "disconnect_map",
+        "function": "assign",
+        "docstring": null,
+        "args": [
+          {
+            "name": "a_side_key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "disconnect_key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "disconnect_map",
+        "function": "disconnect_is_already_assigned",
+        "docstring": null,
+        "args": [
+          {
+            "name": "key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "disconnect_map",
+        "function": "channel_is_already_assigned_through_disconnect",
+        "docstring": null,
+        "args": [
+          {
+            "name": "key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "disconnect_refdes",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "disconnect_map",
+        "function": "already_assigned_disconnects_set",
+        "docstring": null,
+        "args": []
+      },
+      {
+        "module": "disconnect_map",
+        "function": "already_assigned_disconnects_set_append",
+        "docstring": null,
+        "args": [
+          {
+            "name": "key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "disconnect_map",
+        "function": "already_assigned_channels_through_disconnects_set",
+        "docstring": null,
+        "args": []
+      },
+      {
+        "module": "disconnect_map",
+        "function": "already_assigned_channels_through_disconnects_set_append",
+        "docstring": null,
+        "args": [
+          {
+            "name": "key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "disconnect_refdes",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "disconnect_map",
+        "function": "ensure_requirements_met",
+        "docstring": null,
+        "args": []
+      }
+    ]
+  },
+  "Lists": {
+    "Instances": [
+      {
+        "module": "instances_list",
+        "function": "new",
+        "docstring": "Create a new empty instances list file with only the standard header (COLUMNS). Overwrites existing file if present.",
+        "args": []
+      },
+      {
+        "module": "instances_list",
+        "function": "new_instance",
+        "docstring": "Add a new instance to the instances list.",
+        "args": [
+          {
+            "name": "instance_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "instance_data",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "ignore_duplicates",
+            "annotation": null,
+            "default": "False",
+            "placeholder": "False"
+          }
+        ]
+      },
+      {
+        "module": "instances_list",
+        "function": "remove_instance",
+        "docstring": "Remove one instance from the instances list.",
+        "args": [
+          {
+            "name": "instance_to_delete",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "instances_list",
+        "function": "modify",
+        "docstring": "Update columns for an existing instance by name.",
+        "args": [
+          {
+            "name": "instance_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "instance_data",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "instances_list",
+        "function": "attribute_of",
+        "docstring": "Return the value of one column for a single instance.",
+        "args": [
+          {
+            "name": "target_instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "attribute",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "instances_list",
+        "function": "list_of_uniques",
+        "docstring": "Return a list of unique non-empty values for one column across all instances.",
+        "args": [
+          {
+            "name": "attribute",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "instances_list",
+        "function": "instance_in_connector_group_with_item_type",
+        "docstring": "Return the single instance in a connector group with the given item type.",
+        "args": [
+          {
+            "name": "connector_group",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "item_type",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "instances_list",
+        "function": "assign_bom_line_numbers",
+        "docstring": "Assign sequential BOM line numbers to instances that have `bom_line_number` set to \"True\".",
+        "args": []
+      }
+    ],
+    "Circuits": [
+      {
+        "module": "circuits_list",
+        "function": "new",
+        "docstring": "Makes a new blank circuits list. Overwrites existing circuits list.",
+        "args": []
+      }
+    ],
+    "Signals": [
+      {
+        "module": "signals_list",
+        "function": "new",
+        "docstring": "Creates a new signals TSV file at fileio.path(\"signals list\") with only the header row.",
+        "args": []
+      },
+      {
+        "module": "signals_list",
+        "function": "append",
+        "docstring": "Appends a new row to the signals TSV file.",
+        "args": [
+          {
+            "name": "**kwargs",
+            "annotation": null,
+            "default": null,
+            "placeholder": "{}",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "module": "signals_list",
+        "function": "set_list_type",
+        "docstring": null,
+        "args": [
+          {
+            "name": "x",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "signals_list",
+        "function": "cavity_of_signal",
+        "docstring": null,
+        "args": [
+          {
+            "name": "channel_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "signal",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "path_to_signals_list",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "signals_list",
+        "function": "connector_name_of_channel",
+        "docstring": null,
+        "args": [
+          {
+            "name": "channel_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "path_to_signals_list",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Library History": [
+      {
+        "module": "library_history",
+        "function": "new",
+        "docstring": null,
+        "args": []
+      },
+      {
+        "module": "library_history",
+        "function": "append",
+        "docstring": null,
+        "args": [
+          {
+            "name": "instance_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "instance_data",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Manifest": [
+      {
+        "module": "manifest",
+        "function": "new",
+        "docstring": "Synchronize the system harness manifest with the system connector list:",
+        "args": []
+      },
+      {
+        "module": "manifest",
+        "function": "update_upstream",
+        "docstring": null,
+        "args": [
+          {
+            "name": "path_to_system_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "system_pn_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "manifest_nets",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "harness_pn",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Revision History": [
+      {
+        "module": "rev_history",
+        "function": "new",
+        "docstring": "Create a new revision history file.",
+        "args": [
+          {
+            "name": "ignore_product",
+            "annotation": null,
+            "default": "False",
+            "placeholder": "False"
+          },
+          {
+            "name": "path",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "rev_history",
+        "function": "append",
+        "docstring": "Append a new revision history entry to the current revision history file.",
+        "args": [
+          {
+            "name": "next_rev",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "rev_history",
+        "function": "overwrite",
+        "docstring": "Overwrite a revision history entry.",
+        "args": [
+          {
+            "name": "content_dict",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "rev_history",
+        "function": "info",
+        "docstring": "Get information about a revision history entry.",
+        "args": [
+          {
+            "name": "rev",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "path",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "field",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "all",
+            "annotation": null,
+            "default": "False",
+            "placeholder": "False"
+          }
+        ]
+      },
+      {
+        "module": "rev_history",
+        "function": "initial_release_exists",
+        "docstring": "Check if an initial release exists.",
+        "args": []
+      },
+      {
+        "module": "rev_history",
+        "function": "initial_release_desc",
+        "docstring": "Get the description of the initial release.",
+        "args": []
+      },
+      {
+        "module": "rev_history",
+        "function": "part_family_append",
+        "docstring": "Append a new revision history entry to the part family revision history file.",
+        "args": [
+          {
+            "name": "content_dict",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "rev_history_path",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "rev_history",
+        "function": "update_datemodified",
+        "docstring": "Update the `datemodified` field of the current revision with today's date.",
+        "args": []
+      }
+    ],
+    "Post-Harness Instances": [
+      {
+        "module": "post_harness_instances_list",
+        "function": "rebuild",
+        "docstring": "Build the 'post harness instances list' by merging instance data from:",
+        "args": []
+      },
+      {
+        "module": "post_harness_instances_list",
+        "function": "push",
+        "docstring": null,
+        "args": [
+          {
+            "name": "path_to_system_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "system_pn_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ]
+  },
+  "Utils": {
+    "Feature Tree": [
+      {
+        "module": "feature_tree_utils",
+        "function": "default_feature_tree_contents",
+        "docstring": null,
+        "args": [
+          {
+            "name": "filename",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "replacements",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "feature_tree_utils",
+        "function": "run_macro",
+        "docstring": "Runs a macro script from the library with the given artifact ID.",
+        "args": [
+          {
+            "name": "macro_part_number",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "lib_subpath",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "lib_repo",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "artifact_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "base_directory",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "**kwargs",
+            "annotation": null,
+            "default": null,
+            "placeholder": "{}",
+            "variadic": true
+          }
+        ]
+      },
+      {
+        "module": "feature_tree_utils",
+        "function": "run_feature_for_relative",
+        "docstring": "Runs a feature tree script from a referenced part's `features_for_relatives` directory.",
+        "args": [
+          {
+            "name": "project_key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "referenced_pn_rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "feature_tree_utils_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "feature_tree_utils",
+        "function": "copy_pdfs_to_cwd",
+        "docstring": "Copies all PDF files from `instance_data` directory to the current working directory.",
+        "args": []
+      },
+      {
+        "module": "feature_tree_utils",
+        "function": "lookup_outputcsys_from_lib_used",
+        "docstring": "Looks up coordinate system transform from an instance's library attributes.",
+        "args": [
+          {
+            "name": "instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "outputcsys",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "base_directory",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Circuit": [
+      {
+        "module": "circuit_utils",
+        "function": "instances_of_circuit",
+        "docstring": "Returns all instances in a circuit, sorted by port number.",
+        "args": [
+          {
+            "name": "circuit_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "circuit_utils",
+        "function": "instance_of_circuit_port_number",
+        "docstring": "Finds the instance name at a specific port number in a circuit.",
+        "args": [
+          {
+            "name": "circuit_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "circuit_port_number",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "circuit_utils",
+        "function": "end_ports_of_circuit",
+        "docstring": "Returns the instance names at the end ports (port 0 and maximum port) of a circuit.",
+        "args": [
+          {
+            "name": "circuit_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "circuit_utils",
+        "function": "max_port_number_in_circuit",
+        "docstring": "Finds the maximum circuit port number used in a circuit.",
+        "args": [
+          {
+            "name": "circuit_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "circuit_utils",
+        "function": "circuit_instance_of_instance",
+        "docstring": "Returns the circuit instance dictionary for an instance that belongs to a circuit.",
+        "args": [
+          {
+            "name": "instance_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "circuit_utils",
+        "function": "assign_cable_conductor",
+        "docstring": "Assigns a conductor instance to a specific conductor in a cable.",
+        "args": [
+          {
+            "name": "cable_instance_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "cable_conductor_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "conductor_instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "library_info",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "net",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "circuit_utils",
+        "function": "squeeze_instance_between_ports_in_circuit",
+        "docstring": "Inserts an instance into a circuit by shifting existing port numbers.",
+        "args": [
+          {
+            "name": "instance_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "circuit_id",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "new_circuit_port_number",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Appearance": [
+      {
+        "module": "appearance",
+        "function": "parse",
+        "docstring": "Parse appearance dictionary, converting color names and shorthand hex to full hex.",
+        "args": [
+          {
+            "name": "val",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Notes": [
+      {
+        "module": "note_utils",
+        "function": "new_note",
+        "docstring": "Creates or updates a note instance.",
+        "args": [
+          {
+            "name": "note_type",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "note_text",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "note_number",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "bubble_text",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "shape_mpn",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "shape_lib_subpath",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          },
+          {
+            "name": "shape_lib_repo",
+            "annotation": null,
+            "default": "'https://github.com/harnice/harnice'",
+            "placeholder": "'https://github.com/harnice/harnice'"
+          },
+          {
+            "name": "affectedinstances",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "combine_notes",
+        "docstring": "Combines multiple notes by merging their affected instances into one note.",
+        "args": [
+          {
+            "name": "keep_note_text",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "merge_note_texts",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "note_type",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "parse_note_instance",
+        "docstring": "Return a full copy of `instance`, but with note_affected_instances",
+        "args": [
+          {
+            "name": "instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "assign_buildnote_numbers",
+        "docstring": "Assigns sequential numbers to build note instances.",
+        "args": []
+      },
+      {
+        "module": "note_utils",
+        "function": "get_lib_build_notes",
+        "docstring": "Returns list of build_notes for this instance from the TSV row.",
+        "args": [
+          {
+            "name": "instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "get_lib_tools",
+        "docstring": "Returns list of tools for this instance from the TSV row.",
+        "args": [
+          {
+            "name": "instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "make_bom_flagnote",
+        "docstring": "Creates a BOM item flagnote dictionary for an instance.",
+        "args": [
+          {
+            "name": "affected_instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "output_csys_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "make_buildnote_flagnote",
+        "docstring": "Creates a build note flagnote dictionary linking a note to an instance.",
+        "args": [
+          {
+            "name": "note_instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "affected_instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "output_csys_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "make_part_name_flagnote",
+        "docstring": "Creates a part name flagnote dictionary for an instance.",
+        "args": [
+          {
+            "name": "affected_instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "output_csys_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "make_rev_change_flagnote",
+        "docstring": "Creates a revision change callout flagnote dictionary linking a note to an instance.",
+        "args": [
+          {
+            "name": "note_instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "affected_instance",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "output_csys_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "note_utils",
+        "function": "make_rev_history_notes",
+        "docstring": "Creates revision change callout notes based on revision history.",
+        "args": [
+          {
+            "name": "rev",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "SVG": [
+      {
+        "module": "svg_utils",
+        "function": "add_entire_svg_file_contents_to_group",
+        "docstring": "Wraps the entire contents of an SVG file in a new group element.",
+        "args": [
+          {
+            "name": "filepath",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "new_group_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "svg_utils",
+        "function": "draw_styled_path",
+        "docstring": "Adds a styled spline path to the local group.",
+        "args": [
+          {
+            "name": "spline_points",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "stroke_width_inches",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "appearance_dict",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "local_group",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "svg_utils",
+        "function": "find_and_replace_svg_group",
+        "docstring": "Copies SVG group content from one file to another, replacing existing group content.",
+        "args": [
+          {
+            "name": "source_svg_filepath",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "source_group_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "destination_svg_filepath",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "destination_group_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "svg_utils",
+        "function": "table",
+        "docstring": "This function is called when the user needs to build a general SVG table.",
+        "args": [
+          {
+            "name": "layout_dict",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "format_dict",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "columns_list",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "content_list",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "path_to_svg",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "contents_group_name",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "Library": [
+      {
+        "module": "library_utils",
+        "function": "pull",
+        "docstring": "Imports a part from the library into the project.",
+        "args": [
+          {
+            "name": "input_dict",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "update_instances_list",
+            "annotation": null,
+            "default": "True",
+            "placeholder": "True"
+          },
+          {
+            "name": "destination_directory",
+            "annotation": null,
+            "default": "None",
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "library_utils",
+        "function": "get_local_path",
+        "docstring": "Looks up the local filesystem path for a library repository URL.",
+        "args": [
+          {
+            "name": "lib_repo",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ],
+    "System": [
+      {
+        "module": "system_utils",
+        "function": "make_instances_from_bom",
+        "docstring": "Creates instances for all devices and disconnects from the BOM.",
+        "args": []
+      },
+      {
+        "module": "system_utils",
+        "function": "make_instances_for_connectors_cavities_nodes_channels_circuits",
+        "docstring": "Creates instances for all system components based on circuits.",
+        "args": []
+      },
+      {
+        "module": "system_utils",
+        "function": "add_chains_to_channel_map",
+        "docstring": "For each (from_device/channel) -> (to_device/channel) in the channel map,",
+        "args": []
+      },
+      {
+        "module": "system_utils",
+        "function": "connector_of_channel",
+        "docstring": "Finds the connector name associated with a device channel.",
+        "args": [
+          {
+            "name": "key",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "system_utils",
+        "function": "find_connector_with_no_circuit",
+        "docstring": "Validates that all connectors have associated circuits.",
+        "args": [
+          {
+            "name": "connector_list",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          },
+          {
+            "name": "circuits_list",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      },
+      {
+        "module": "system_utils",
+        "function": "mpn_of_device_refdes",
+        "docstring": "Looks up manufacturer part number information for a device reference designator.",
+        "args": [
+          {
+            "name": "refdes",
+            "annotation": null,
+            "default": null,
+            "placeholder": "None"
+          }
+        ]
+      }
+    ]
+  },
+  "State & I/O": [
+    {
+      "module": "state",
+      "function": "partnumber",
+      "docstring": "Return the current part number and/or revision in the requested format.",
+      "args": [
+        {
+          "name": "format",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "state",
+      "function": "set_pn",
+      "docstring": "Set the current part number (e.g. `\"mypart\"`). Called by `fileio.verify_revision_structure()`.",
+      "args": [
+        {
+          "name": "x",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "state",
+      "function": "set_rev",
+      "docstring": "Set the current revision (number or string, e.g. 1 or \"A\"). Called by `fileio.verify_revision_structure()`.",
+      "args": [
+        {
+          "name": "x",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "state",
+      "function": "set_product",
+      "docstring": "Set the current product type (e.g. `\"harness\"`, `\"system\"`).",
+      "args": [
+        {
+          "name": "x",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "state",
+      "function": "set_net",
+      "docstring": "Set the current net context (used during render).",
+      "args": [
+        {
+          "name": "x",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "state",
+      "function": "set_file_structure",
+      "docstring": "Set the default file structure dict used by `fileio.path()` and `fileio.dirpath()`.",
+      "args": [
+        {
+          "name": "x",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "fileio",
+      "function": "path",
+      "docstring": "Return the full path to a file identified by its file key.",
+      "args": [
+        {
+          "name": "target_value",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        },
+        {
+          "name": "structure_dict",
+          "annotation": null,
+          "default": "None",
+          "placeholder": "None"
+        },
+        {
+          "name": "base_directory",
+          "annotation": null,
+          "default": "None",
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "fileio",
+      "function": "dirpath",
+      "docstring": "Return the full path to a directory identified by its key in the file structure.",
+      "args": [
+        {
+          "name": "target_key",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        },
+        {
+          "name": "structure_dict",
+          "annotation": null,
+          "default": "None",
+          "placeholder": "None"
+        },
+        {
+          "name": "base_directory",
+          "annotation": null,
+          "default": "None",
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "fileio",
+      "function": "part_directory",
+      "docstring": "Return the part directory: the parent of the current working directory.",
+      "args": []
+    },
+    {
+      "module": "fileio",
+      "function": "rev_directory",
+      "docstring": "Return the current revision directory (the current working directory).",
+      "args": []
+    },
+    {
+      "module": "fileio",
+      "function": "read_tsv",
+      "docstring": "Read a TSV file and return a list of row dicts (one dict per row, keys from header).",
+      "args": [
+        {
+          "name": "filepath",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        },
+        {
+          "name": "delimiter",
+          "annotation": null,
+          "default": "'\\t'",
+          "placeholder": "'\\t'"
+        }
+      ]
+    },
+    {
+      "module": "fileio",
+      "function": "verify_revision_structure",
+      "docstring": "Ensure the current directory is a valid revision folder and set `state.pn` and `state.rev`.",
+      "args": []
+    },
+    {
+      "module": "fileio",
+      "function": "get_path_to_project",
+      "docstring": "Return the local filesystem path for a project identified by a traceable key.",
+      "args": [
+        {
+          "name": "traceable_key",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "fileio",
+      "function": "harnice_root",
+      "docstring": null,
+      "args": []
+    },
+    {
+      "module": "fileio",
+      "function": "drawnby",
+      "docstring": "Load and return the contents of the drawnby file (path from `fileio.path(\"drawnby\")`).",
+      "args": []
+    },
+    {
+      "module": "fileio",
+      "function": "today",
+      "docstring": "Return today's date as a short string: `M/D/YY` (e.g. `2/12/25`).",
+      "args": []
+    },
+    {
+      "module": "fileio",
+      "function": "silentremove",
+      "docstring": "Remove a file or directory and its contents if it exists.",
+      "args": [
+        {
+          "name": "filepath",
+          "annotation": null,
+          "default": null,
+          "placeholder": "None"
+        }
+      ]
+    },
+    {
+      "module": "fileio",
+      "function": "get_git_hash_of_harnice_src",
+      "docstring": "Return the git commit hash of the Harnice source repo (HEAD).",
+      "args": []
+    }
+  ]
+}

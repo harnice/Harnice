@@ -2070,44 +2070,71 @@
         async function loadFunctionIndex() {
             const d = await api("GET", "/api/function_index");
             if (d.error) { console.warn("function_index:", d.error); return; }
-            functionIndex = Array.isArray(d) ? d : [];
+            functionIndex = d;
             buildDropdowns();
         }
 
         function buildDropdowns() {
-            // Group by module
-            const modules = {};
-            for (const fn of functionIndex) {
-                if (!modules[fn.module]) modules[fn.module] = [];
-                modules[fn.module].push(fn);
-            }
-
             const container = document.getElementById("dropdowns");
             container.innerHTML = "";
 
-            for (const [mod, fns] of Object.entries(modules)) {
-                const wrap = document.createElement("div");
-                wrap.className = "dropdown";
-
-                const btn = document.createElement("button");
-                btn.className = "btn";
-                btn.textContent = mod;
-                btn.onclick = (e) => toggleDropdown(e, menu);
-                wrap.appendChild(btn);
-
-                const menu = document.createElement("div");
-                menu.className = "dropdown-menu";
-                for (const fn of fns) {
-                    const item = document.createElement("div");
-                    item.className = "dropdown-item";
-                    const sig = fn.args.map(a => a.name).join(", ");
-                    item.innerHTML = `<span class="fn-name">${fn.function}</span><span class="fn-args">(${sig})</span>${fn.docstring ? `<span class="fn-doc">${fn.docstring}</span>` : ""}`;
-                    item.onclick = () => { insertSnippet(fn); closeAllDropdowns(); };
-                    menu.appendChild(item);
-                }
-                wrap.appendChild(menu);
-                container.appendChild(wrap);
+            // New format: hierarchical object { Group: { SubGroup: [fn, ...] } or { Group: [fn, ...] } }
+            if (functionIndex && typeof functionIndex === "object" && !Array.isArray(functionIndex)) {
+                renderTree(container, functionIndex);
+                return;
             }
+
+            // Legacy format: flat array, group by module
+            const modules = {};
+            const list = Array.isArray(functionIndex) ? functionIndex : [];
+            for (const fn of list) {
+                if (fn && fn.module) {
+                    if (!modules[fn.module]) modules[fn.module] = [];
+                    modules[fn.module].push(fn);
+                }
+            }
+            for (const [mod, fns] of Object.entries(modules)) {
+                appendDropdown(container, mod, fns);
+            }
+        }
+
+        function renderTree(container, node) {
+            if (Array.isArray(node) && node.length > 0 && node[0] && typeof node[0].module === "string") {
+                return; // leaf array - handled by parent
+            }
+            if (typeof node === "object" && node !== null && !Array.isArray(node)) {
+                for (const [label, child] of Object.entries(node)) {
+                    if (Array.isArray(child) && child.length > 0 && child[0] && typeof child[0].module === "string") {
+                        appendDropdown(container, label, child);
+                    } else if (typeof child === "object" && child !== null) {
+                        renderTree(container, child);
+                    }
+                }
+            }
+        }
+
+        function appendDropdown(container, label, fns) {
+            const wrap = document.createElement("div");
+            wrap.className = "dropdown";
+
+            const btn = document.createElement("button");
+            btn.className = "btn";
+            btn.textContent = label;
+            const menu = document.createElement("div");
+            menu.className = "dropdown-menu";
+            btn.onclick = (e) => toggleDropdown(e, menu);
+            wrap.appendChild(btn);
+
+            for (const fn of fns) {
+                const item = document.createElement("div");
+                item.className = "dropdown-item";
+                const sig = (fn.args || []).map(a => a.name).join(", ");
+                item.innerHTML = `<span class="fn-name">${fn.function}</span><span class="fn-args">(${sig})</span>${fn.docstring ? `<span class="fn-doc">${fn.docstring}</span>` : ""}`;
+                item.onclick = () => { insertSnippet(fn); closeAllDropdowns(); };
+                menu.appendChild(item);
+            }
+            wrap.appendChild(menu);
+            container.appendChild(wrap);
         }
 
         function toggleDropdown(e, menu) {
