@@ -1100,10 +1100,7 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
 
 
 def main():
-    """Entry point for harnice-gui: build function index and launch Harnice console."""
-    from harnice.gui.build_feature_tree_gui import build as build_feature_index
-
-    build_feature_index()
+    """Entry point for harnice-gui: launch Harnice console."""
     run_server(port=0, open_browser=True)
 
 
