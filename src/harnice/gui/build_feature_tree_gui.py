@@ -3,7 +3,7 @@ build_feature_tree_gui.py
 Introspects harnice modules and generates function_index.json for the
 Harnice console dropdowns. Run once after install or module changes.
 
-Uses feature_tree_spec.py for organization and to determine which functions
+Uses feature_tree_ribbon_spec.py for organization and to determine which functions
 to scrape. Organization is manual and independent of source code layout.
 
 Usage:
@@ -15,7 +15,7 @@ import ast
 import json
 from pathlib import Path
 
-from harnice.gui.feature_tree_spec import FEATURE_TREE_SPEC, MODULE_PATHS
+from harnice.gui.feature_tree_ribbon_spec import FEATURE_TREE_SPEC, MODULE_PATHS
 
 # ---------------------------------------------------------------------------
 # Config

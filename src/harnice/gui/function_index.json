@@ -381,6 +381,12 @@
     "Instances": [
       {
         "module": "instances_list",
+        "function": "new",
+        "docstring": "Create a new empty instances list file with only the standard header (COLUMNS). Overwrites existing file if present.",
+        "args": []
+      },
+      {
+        "module": "instances_list",
         "function": "new_instance",
         "docstring": "Add a new instance to the instances list.",
         "args": [

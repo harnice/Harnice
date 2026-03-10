@@ -118,6 +118,24 @@
             flex-shrink: 0;
         }
 
+        .tb-ribbon-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-right: 8px;
+        }
+
+        .tb-ribbon-text .tb-ribbon-line1 {
+            color: var(--text);
+        }
+
+        .tb-ribbon-text .tb-ribbon-line2 {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
         #top-toolbar #dropdowns {
             display: flex;
             align-items: center;
@@ -1726,6 +1744,11 @@
             slot.innerHTML = "";
 
             if (isFeatureTreeMode()) {
+                const ribbonText = document.createElement("div");
+                ribbonText.className = "tb-ribbon-text";
+                const product = productType || "product";
+                ribbonText.innerHTML = `<span class="tb-ribbon-line1">Use Python to define how your ${product} is constructed.</span><span class="tb-ribbon-line2">These Harnice-specific functions should help.</span>`;
+                slot.appendChild(ribbonText);
                 const dropdowns = document.createElement("div");
                 dropdowns.id = "dropdowns";
                 slot.appendChild(dropdowns);

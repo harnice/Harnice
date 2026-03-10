@@ -1,6 +1,6 @@
 """
-feature_tree_spec.py
-Manual specification for the feature tree code editor pane.
+feature_tree_ribbon_spec.py
+Manual specification for the feature tree code editor ribbon.
 - Defines which functions are scraped (only those listed)
 - Defines organization: groups -> sub-groups -> functions
 - Independent of source code layout
