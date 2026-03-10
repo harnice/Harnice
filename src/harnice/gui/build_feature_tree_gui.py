@@ -3,6 +3,9 @@ build_feature_tree_gui.py
 Introspects harnice modules and generates function_index.json for the
 Harnice console dropdowns. Run once after install or module changes.
 
+Uses feature_tree_ribbon_spec.py for organization and to determine which functions
+to scrape. Organization is manual and independent of source code layout.
+
 Usage:
     python build_feature_tree_gui.py
 from src/harnice/gui/ or any location — it resolves paths relative to itself.
@@ -12,38 +15,50 @@ import ast
 import json
 from pathlib import Path
 
+from harnice.gui.feature_tree_ribbon_spec import FEATURE_TREE_SPEC, MODULE_PATHS
+
 # ---------------------------------------------------------------------------
-# Config: modules to introspect and their import aliases
+# Config
 # ---------------------------------------------------------------------------
 
 _HARNICE_ROOT = Path(__file__).resolve().parents[1]  # src/harnice/
-
-_TARGETS = [
-    # (filesystem path relative to harnice root, import alias used in feature trees)
-    ("lists/available_network.py", "available_network"),
-    ("lists/channel_map.py", "channel_map"),
-    ("lists/chosen_network.py", "chosen_network"),
-    ("lists/circuits_list.py", "circuits_list"),
-    ("lists/disconnect_map.py", "disconnect_map"),
-    ("lists/flattened_network.py", "flattened_network"),
-    ("lists/instances_list.py", "instances_list"),
-    ("lists/library_history.py", "library_history"),
-    ("lists/manifest.py", "manifest"),
-    ("lists/post_harness_instances_list.py", "post_harness_instances_list"),
-    ("lists/rev_history.py", "rev_history"),
-    ("lists/signals_list.py", "signals_list"),
-    ("utils/appearance.py", "appearance"),
-    ("utils/circuit_utils.py", "circuit_utils"),
-    ("utils/feature_tree_utils.py", "feature_tree_utils"),
-    ("utils/library_utils.py", "library_utils"),
-    ("utils/note_utils.py", "note_utils"),
-    ("utils/svg_utils.py", "svg_utils"),
-    ("utils/system_utils.py", "system_utils"),
-    ("fileio.py", "fileio"),
-    ("state.py", "state"),
-]
-
 _OUTPUT = Path(__file__).resolve().parent / "function_index.json"
+
+# ---------------------------------------------------------------------------
+# Spec helpers
+# ---------------------------------------------------------------------------
+
+
+def _collect_function_refs(spec_node) -> set:
+    """Recursively collect all (module, function) pairs from spec."""
+    refs = set()
+    if isinstance(spec_node, dict):
+        for child in spec_node.values():
+            refs.update(_collect_function_refs(child))
+    elif isinstance(spec_node, list):
+        for item in spec_node:
+            if isinstance(item, tuple) and len(item) == 2:
+                refs.add((item[0], item[1]))
+    return refs
+
+
+def _build_output_tree(spec_node, fn_lookup: dict) -> dict | list:
+    """Build output structure with inlined metadata. fn_lookup key = (module, function)."""
+    if isinstance(spec_node, dict):
+        return {
+            label: _build_output_tree(child, fn_lookup)
+            for label, child in spec_node.items()
+        }
+    elif isinstance(spec_node, list):
+        result = []
+        for item in spec_node:
+            if isinstance(item, tuple) and len(item) == 2:
+                mod, fn = item
+                if (mod, fn) in fn_lookup:
+                    result.append(fn_lookup[(mod, fn)])
+        return result
+    return spec_node
+
 
 # ---------------------------------------------------------------------------
 # Type-hint annotation -> readable string
@@ -115,7 +130,8 @@ def _placeholder_from_annotation(ann: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _parse_file(path: Path, module_alias: str) -> list:
+def _parse_file(path: Path, module_alias: str, wanted_functions: set = None) -> list:
+    """Parse file and return descriptors for requested functions. wanted_functions is set of (module, fn_name)."""
     if not path.exists():
         print(f"  [skip] not found: {path}")
         return []
@@ -131,22 +147,22 @@ def _parse_file(path: Path, module_alias: str) -> list:
     for node in ast.walk(tree):
         if not isinstance(node, ast.FunctionDef):
             continue
-        # Only top-level functions (parent is Module)
-        # ast.walk doesn't track parents; we filter by checking depth via a
-        # separate pass below. For now collect all and mark nested later.
         results.append(node)
 
     # Identify top-level function nodes (direct children of Module)
     top_level = {
         n for n in ast.iter_child_nodes(tree) if isinstance(n, ast.FunctionDef)
     }
-    # Also include functions inside top-level classes if desired — skip for now.
 
     functions = []
     for node in top_level:
         name = node.name
         if name.startswith("_"):
             continue  # skip private
+
+        # Only include if in wanted set (or None = all). wanted_functions is set of fn names for this module.
+        if wanted_functions is not None and name not in wanted_functions:
+            continue
 
         # Docstring
         docstring = None
@@ -255,16 +271,33 @@ def _parse_file(path: Path, module_alias: str) -> list:
 
 
 def build():
-    index = []
-    for rel_path, alias in _TARGETS:
-        path = _HARNICE_ROOT / rel_path
-        print(f"Parsing {alias} ({path.name})...")
-        fns = _parse_file(path, alias)
-        print(f"  {len(fns)} public functions found")
-        index.extend(fns)
+    refs = _collect_function_refs(FEATURE_TREE_SPEC)
+    modules_needed = {mod for mod, _ in refs}
 
-    _OUTPUT.write_text(json.dumps(index, indent=2), encoding="utf-8")
-    print(f"\nWrote {len(index)} functions to {_OUTPUT}")
+    fn_lookup = {}
+    for mod in sorted(modules_needed):
+        if mod not in MODULE_PATHS:
+            print(f"  [skip] unknown module in spec: {mod}")
+            continue
+        rel_path = MODULE_PATHS[mod]
+        path = _HARNICE_ROOT / rel_path
+        wanted = {
+            fn for m, fn in refs if m == mod
+        }  # set of function names for this module
+        print(f"Parsing {mod} ({path.name})...")
+        fns = _parse_file(path, mod, wanted_functions=wanted)
+        print(f"  {len(fns)} functions found")
+        for fn in fns:
+            fn_lookup[(fn["module"], fn["function"])] = fn
+
+    missing = refs - set(fn_lookup.keys())
+    if missing:
+        for mod, fn in sorted(missing):
+            print(f"  [warn] not found in source: {mod}.{fn}")
+
+    output_tree = _build_output_tree(FEATURE_TREE_SPEC, fn_lookup)
+    _OUTPUT.write_text(json.dumps(output_tree, indent=2), encoding="utf-8")
+    print(f"\nWrote function index to {_OUTPUT}")
 
 
 if __name__ == "__main__":
