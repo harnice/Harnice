@@ -1,0 +1,36 @@
+name: Check Feature Tree GUI Index
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  check-feature-tree-gui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -e .
+
+      - name: Build feature tree GUI index
+        run: python src/harnice/gui/build_feature_tree_gui.py
+
+      - name: Check for uncommitted changes
+        run: |
+          git diff --exit-code src/harnice/gui/function_index.json || {
+            echo "❌ ERROR: Generated function_index.json doesn't match committed file!"
+            echo ""
+            echo "Please run 'python src/harnice/gui/build_feature_tree_gui.py' locally and commit the changes."
+            exit 1
+          }
+          echo "✅ Feature tree GUI index is up to date!"
