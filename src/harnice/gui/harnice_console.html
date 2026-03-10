@@ -1379,6 +1379,21 @@
             background: var(--bg4);
         }
 
+        .dropdown-group-header {
+            padding: 6px 12px 2px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-top: 1px solid var(--border);
+        }
+
+        .dropdown-group-header:first-child {
+            border-top: none;
+            padding-top: 4px;
+        }
+
         .dropdown-item .fn-name {
             color: var(--accent);
         }
@@ -2076,11 +2091,18 @@
 
         function buildDropdowns() {
             const container = document.getElementById("dropdowns");
+            if (!container) return;  // not in feature tree mode
             container.innerHTML = "";
 
-            // New format: hierarchical object { Group: { SubGroup: [fn, ...] } or { Group: [fn, ...] } }
+            // New format: hierarchical object. Top-level keys (Network, Lists, Utils, State & I/O) become one dropdown each.
             if (functionIndex && typeof functionIndex === "object" && !Array.isArray(functionIndex)) {
-                renderTree(container, functionIndex);
+                for (const [label, child] of Object.entries(functionIndex)) {
+                    if (Array.isArray(child) && child.length > 0 && child[0] && typeof child[0].module === "string") {
+                        appendDropdown(container, label, child);
+                    } else if (typeof child === "object" && child !== null) {
+                        appendDropdownWithSubgroups(container, label, child);
+                    }
+                }
                 return;
             }
 
@@ -2098,19 +2120,35 @@
             }
         }
 
-        function renderTree(container, node) {
-            if (Array.isArray(node) && node.length > 0 && node[0] && typeof node[0].module === "string") {
-                return; // leaf array - handled by parent
-            }
-            if (typeof node === "object" && node !== null && !Array.isArray(node)) {
-                for (const [label, child] of Object.entries(node)) {
-                    if (Array.isArray(child) && child.length > 0 && child[0] && typeof child[0].module === "string") {
-                        appendDropdown(container, label, child);
-                    } else if (typeof child === "object" && child !== null) {
-                        renderTree(container, child);
+        function appendDropdownWithSubgroups(container, label, node) {
+            const wrap = document.createElement("div");
+            wrap.className = "dropdown";
+            const btn = document.createElement("button");
+            btn.className = "btn";
+            btn.textContent = label;
+            const menu = document.createElement("div");
+            menu.className = "dropdown-menu";
+            btn.onclick = (e) => toggleDropdown(e, menu);
+            wrap.appendChild(btn);
+
+            for (const [subLabel, subChild] of Object.entries(node)) {
+                if (Array.isArray(subChild) && subChild.length > 0 && subChild[0] && typeof subChild[0].module === "string") {
+                    const header = document.createElement("div");
+                    header.className = "dropdown-group-header";
+                    header.textContent = subLabel;
+                    menu.appendChild(header);
+                    for (const fn of subChild) {
+                        const item = document.createElement("div");
+                        item.className = "dropdown-item";
+                        const sig = (fn.args || []).map(a => a.name).join(", ");
+                        item.innerHTML = `<span class="fn-name">${fn.function}</span><span class="fn-args">(${sig})</span>${fn.docstring ? `<span class="fn-doc">${fn.docstring}</span>` : ""}`;
+                        item.onclick = () => { insertSnippet(fn); closeAllDropdowns(); };
+                        menu.appendChild(item);
                     }
                 }
             }
+            wrap.appendChild(menu);
+            container.appendChild(wrap);
         }
 
         function appendDropdown(container, label, fns) {
