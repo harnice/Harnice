@@ -185,7 +185,6 @@ FEATURE_TREE_SPEC = {
             ("state", "set_file_structure"),
         ],
         "Finding Files": [
-            ("fileio", "path"),
             ("fileio", "dirpath"),
             ("fileio", "part_directory"),
             ("fileio", "rev_directory"),
