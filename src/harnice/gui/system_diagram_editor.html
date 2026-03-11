@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Block Diagram Editor</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #1e1e1e;
+      --bg2: #252526;
+      --bg3: #2d2d2d;
+      --bg4: #333333;
+      --border: #3c3c3c;
+      --text: #d4d4d4;
+      --text-dim: #888888;
+      --accent: #4ec9b0;
+      --accent2: #569cd6;
+      --green: #4caf50;
+      --red: #f44336;
+      --orange: #ce9178;
+      --gold: #d4a017;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1 "Segoe UI", system-ui, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 36px;
+      padding: 0 8px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    body.embedded #toolbar {
+      display: none;
+    }
+
+    .tb-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    .tb-spacer {
+      flex: 1;
+    }
+
+    #toolbar button {
+      padding: 3px 10px;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    #toolbar button:hover {
+      background: var(--bg3);
+      border-color: var(--border);
+    }
+
+    #toolbar button:active {
+      background: var(--bg4);
+    }
+
+    #toolbar button:disabled {
+      opacity: .35;
+      cursor: default;
+    }
+
+    #toolbar button:disabled:hover {
+      background: transparent;
+      border-color: transparent;
+    }
+
+    #toolbar button.active-tool {
+      background: #2a2200;
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 13px;
+      margin-right: 8px;
+      letter-spacing: .3px;
+    }
+
+    #coord-display {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: "Consolas", monospace;
+      min-width: 120px;
+      text-align: right;
+    }
+
+    /* ── Canvas ── */
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #1a1a1a;
+      cursor: default;
+    }
+
+    #canvas-wrap.pan-mode {
+      cursor: grab;
+    }
+
+    #canvas-wrap.panning {
+      cursor: grabbing;
+    }
+
+    #canvas-wrap.tool-select {
+      cursor: default;
+    }
+
+    #schematic-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── SVG element styles ── */
+    .selected-highlight {
+      outline: none;
+    }
+
+    /* injected via JS so they respond to zoom */
+
+    /* ── Status bar ── */
+    #statusbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 24px;
+      padding: 0 10px;
+      background: var(--accent2);
+      font-size: 11px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    body.embedded #statusbar {
+      display: none;
+    }
+
+    #statusbar .sep {
+      opacity: .4;
+    }
+
+    #status-file {
+      margin-left: auto;
+      opacity: .85;
+    }
+
+    /* ── Properties panel ── */
+    #props-panel {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 100;
+      min-width: 210px;
+      max-width: 280px;
+      background: #1e1f23;
+      border: 1px solid #2a2b30;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .45);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text);
+      display: none;
+    }
+
+    #props-panel.visible {
+      display: block;
+    }
+
+    #props-panel h3 {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 8px;
+    }
+
+    #props-panel label {
+      display: block;
+      color: var(--text-dim);
+      font-size: 11px;
+      margin-top: 6px;
+      margin-bottom: 2px;
+    }
+
+    #props-panel label:first-of-type {
+      margin-top: 0;
+    }
+
+    #props-panel input[type="text"],
+    #props-panel input[type="number"] {
+      width: 100%;
+      padding: 4px 7px;
+      border-radius: 4px;
+      background: #111214;
+      border: 1px solid #2e2f34;
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    #props-panel input:focus {
+      outline: none;
+      border-color: #666;
+    }
+
+    .props-sep {
+      border: none;
+      border-top: 1px solid #2a2b30;
+      margin: 8px 0;
+    }
+
+    .props-row {
+      display: flex;
+      gap: 5px;
+    }
+
+    .props-row input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #props-close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 2px 4px;
+    }
+
+    #props-close:hover {
+      color: var(--text);
+    }
+
+    #props-delete {
+      width: 100%;
+      margin-top: 10px;
+      padding: 5px;
+      background: #1e1010;
+      border: 1px solid #5a2020;
+      border-radius: 4px;
+      color: #c06060;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    #props-delete:hover {
+      background: #2a1515;
+      border-color: #7a3030;
+      color: #e07070;
+    }
+
+    /* ── Rubber-band selection rect ── */
+    #rubberband {
+      position: absolute;
+      border: 1px solid var(--accent2);
+      background: rgba(86, 156, 214, .08);
+      pointer-events: none;
+      display: none;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--text-dim);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .2s;
+      white-space: nowrap;
+      z-index: 200;
+    }
+
+    #toast.show {
+      opacity: 1;
+    }
+
+    /* ── Overlay ── */
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    #overlay.hidden {
+      display: none;
+    }
+
+    #overlay p {
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    #overlay button {
+      pointer-events: all;
+      padding: 8px 20px;
+      background: var(--accent2);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    #overlay button:hover {
+      background: #4080c0;
+    }
+
+    #overlay button.secondary {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    #overlay button.secondary:hover {
+      background: var(--bg4);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="toolbar">
+    <span class="logo">⬡ Block</span>
+    <div class="tb-sep"></div>
+    <button id="btn-open">Open…</button>
+    <button id="btn-new">New</button>
+    <button id="btn-save" title="Ctrl+S">Save</button>
+    <div class="tb-sep"></div>
+    <button id="btn-undo" disabled title="Ctrl+Z">↩ Undo</button>
+    <button id="btn-redo" disabled title="Ctrl+Y">↪ Redo</button>
+    <div class="tb-sep"></div>
+    <button id="btn-tool-select" class="active-tool" title="S">▶ Select</button>
+    <div class="tb-sep"></div>
+    <button id="btn-zoom-fit">Zoom Fit</button>
+    <button id="btn-zoom-1">1:1</button>
+    <div class="tb-spacer"></div>
+    <span id="coord-display">—</span>
+  </div>
+
+  <div id="canvas-wrap">
+    <svg id="schematic-svg" xmlns="http://www.w3.org/2000/svg" xmlns:schem="https://example.com/schema/v1">
+      <defs>
+        <pattern id="grid-minor" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+          <circle cx="0" cy="0" r="0.6" fill="#3a3a3a" />
+        </pattern>
+        <pattern id="grid-major" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+          <rect width="100" height="100" fill="url(#grid-minor)" />
+          <path d="M100,0 L0,0 0,100" fill="none" stroke="#303030" stroke-width="0.5" />
+        </pattern>
+        <!-- Selection highlight marker (reused per selected element) -->
+      </defs>
+      <g id="grid-bg-layer">
+        <rect x="-50000" y="-50000" width="100000" height="100000" fill="url(#grid-major)" pointer-events="none" />
+      </g>
+      <g id="layer-graphics" class="layer graphics-layer"></g>
+      <g id="layer-schematic" class="layer schematic-layer">
+        <g id="viewport" transform="translate(0,0) scale(1)"></g>
+        <!-- Selection overlay rendered above schematic content but inside SVG -->
+        <g id="selection-overlay" pointer-events="none"></g>
+      </g>
+      <line id="xhair-h" x1="0" y1="0" x2="0" y2="0" stroke="#ffffff18" stroke-width="0.5" pointer-events="none" />
+      <line id="xhair-v" x1="0" y1="0" x2="0" y2="0" stroke="#ffffff18" stroke-width="0.5" pointer-events="none" />
+      <g id="origin-marker" pointer-events="none"></g>
+    </svg>
+
+    <!-- Rubber-band rect (HTML overlay, easier than SVG for absolute coords) -->
+    <div id="rubberband"></div>
+
+    <!-- Properties panel -->
+    <div id="props-panel">
+      <button id="props-close">✕</button>
+      <h3 id="props-title">Element</h3>
+      <div id="props-body"></div>
+      <button id="props-delete">Delete</button>
+    </div>
+
+    <div id="overlay">
+      <p>No schematic open.</p>
+      <button id="btn-open2">Open .schematic.svg…</button>
+      <button id="btn-new2" class="secondary">New schematic</button>
+    </div>
+  </div>
+
+  <div id="statusbar">
+    <span id="status-tool">SELECT</span>
+    <span class="sep">|</span>
+    <span id="status-zoom">100%</span>
+    <span class="sep">|</span>
+    <span id="status-hint">Click to select · Shift+click to extend · Drag to rubber-band · Del to delete</span>
+    <span id="status-file"></span>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    'use strict';
+
+    // ─────────────────────────────────────────────
+    //  Constants
+    // ─────────────────────────────────────────────
+    const GRID = 10;
+    const ZOOM_MIN = 0.05;
+    const ZOOM_MAX = 50;
+    const ZOOM_FACTOR = 1.12;
+    const DOC_W = 10000;
+    const DOC_H = 10000;
+    const NS = 'http://www.w3.org/2000/svg';
+
+    // ─────────────────────────────────────────────
+    //  Embedded detection
+    // ─────────────────────────────────────────────
+    let embedded = false;
+    const _embCheck = setTimeout(() => document.body.classList.remove('embedded'), 300);
+    window.addEventListener('message', e => {
+      if (e.data?.type === 'harnice-graph-action' && !embedded) {
+        embedded = true;
+        clearTimeout(_embCheck);
+        document.body.classList.add('embedded');
+      }
+    });
+
+    // ─────────────────────────────────────────────
+    //  State
+    // ─────────────────────────────────────────────
+    const state = {
+      svgHandle: null, netlistHandle: null,
+      hasDocument: false, dirty: false,
+      pan: { x: 0, y: 0 }, zoom: 1,
+      mouse: { sx: 0, sy: 0, wx: 0, wy: 0 },
+      panGesture: { active: false, startSX: 0, startSY: 0, startPX: 0, startPY: 0, spaceDown: false },
+      undoStack: [], redoStack: [],
+      activeTool: 'select',
+      // Selection
+      selection: new Set(),   // element IDs
+      // Rubber-band drag
+      rubberband: { active: false, startWX: 0, startWY: 0, startSX: 0, startSY: 0 },
+      // Element drag (nudge / mouse-drag move)
+      elemDrag: { active: false, startSX: 0, startSY: 0, lastWX: 0, lastWY: 0, hasMoved: false },
+    };
+
+    // ─────────────────────────────────────────────
+    //  DOM refs
+    // ─────────────────────────────────────────────
+    const wrap = document.getElementById('canvas-wrap');
+    const svg = document.getElementById('schematic-svg');
+    const viewport = document.getElementById('viewport');
+    const selOverlay = document.getElementById('selection-overlay');
+    const overlay = document.getElementById('overlay');
+    const coordDisp = document.getElementById('coord-display');
+    const statusZoom = document.getElementById('status-zoom');
+    const statusFile = document.getElementById('status-file');
+    const statusTool = document.getElementById('status-tool');
+    const statusHint = document.getElementById('status-hint');
+    const btnUndo = document.getElementById('btn-undo');
+    const btnRedo = document.getElementById('btn-redo');
+    const toastEl = document.getElementById('toast');
+    const propsPanel = document.getElementById('props-panel');
+    const propsTitle = document.getElementById('props-title');
+    const propsBody = document.getElementById('props-body');
+    const propsDelete = document.getElementById('props-delete');
+    const rubberEl = document.getElementById('rubberband');
+
+    // ─────────────────────────────────────────────
+    //  Toast
+    // ─────────────────────────────────────────────
+    let _toastTimer;
+    function showToast(msg, ms = 1800) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms);
+    }
+
+    // ─────────────────────────────────────────────
+    //  Coordinates
+    // ─────────────────────────────────────────────
+    function svgRect() { return svg.getBoundingClientRect(); }
+    function screenToWorld(sx, sy) {
+      const r = svgRect();
+      return {
+        x: (sx - r.left - state.pan.x) / state.zoom,
+        y: (sy - r.top - state.pan.y) / state.zoom
+      };
+    }
+    function worldToScreen(wx, wy) {
+      const r = svgRect();
+      return {
+        x: wx * state.zoom + state.pan.x + r.left,
+        y: wy * state.zoom + state.pan.y + r.top
+      };
+    }
+    function snap(v) { return Math.round(v / GRID) * GRID; }
+
+    // ─────────────────────────────────────────────
+    //  Viewport / grid
+    // ─────────────────────────────────────────────
+    function applyViewport() {
+      const { pan, zoom } = state;
+      viewport.setAttribute('transform', `translate(${pan.x},${pan.y}) scale(${zoom})`);
+      selOverlay.setAttribute('transform', `translate(${pan.x},${pan.y}) scale(${zoom})`);
+      updateGridPattern();
+      updateOriginMarker();
+      statusZoom.textContent = `${Math.round(zoom * 100)}%`;
+      refreshSelectionOverlay();
+    }
+
+    function updateGridPattern() {
+      const { pan, zoom } = state;
+      const minor = GRID * zoom, major = 100 * zoom;
+      const pm = document.getElementById('grid-minor');
+      pm.setAttribute('width', minor); pm.setAttribute('height', minor);
+      pm.setAttribute('x', pan.x % minor); pm.setAttribute('y', pan.y % minor);
+      pm.querySelector('circle').setAttribute('r', Math.max(0.4, Math.min(1.2, zoom * 0.6)));
+      const pM = document.getElementById('grid-major');
+      pM.setAttribute('width', major); pM.setAttribute('height', major);
+      pM.setAttribute('x', pan.x % major); pM.setAttribute('y', pan.y % major);
+      const mp = pM.querySelector('path');
+      mp.setAttribute('d', `M${major},0 L0,0 0,${major}`);
+      mp.setAttribute('stroke-width', Math.max(0.3, zoom * 0.5));
+    }
+
+    function updateOriginMarker() {
+      const g = document.getElementById('origin-marker');
+      const sx = state.pan.x, sy = state.pan.y, arm = 8;
+      g.innerHTML = `<line x1="${sx - arm}" y1="${sy}" x2="${sx + arm}" y2="${sy}" stroke="#ffffff22" stroke-width="1"/>
+                 <line x1="${sx}" y1="${sy - arm}" x2="${sx}" y2="${sy + arm}" stroke="#ffffff22" stroke-width="1"/>`;
+    }
+
+    function updateCrosshair(sx, sy) {
+      const r = svgRect();
+      const xhH = document.getElementById('xhair-h');
+      const xhV = document.getElementById('xhair-v');
+      xhH.setAttribute('x1', 0); xhH.setAttribute('y1', sy - r.top);
+      xhH.setAttribute('x2', r.width); xhH.setAttribute('y2', sy - r.top);
+      xhV.setAttribute('x1', sx - r.left); xhV.setAttribute('y1', 0);
+      xhV.setAttribute('x2', sx - r.left); xhV.setAttribute('y2', r.height);
+    }
+
+    // ─────────────────────────────────────────────
+    //  Zoom / fit
+    // ─────────────────────────────────────────────
+    function zoomAt(sx, sy, factor) {
+      const r = svgRect(), lx = sx - r.left, ly = sy - r.top;
+      const nz = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, state.zoom * factor));
+      const sc = nz / state.zoom;
+      state.pan.x = lx - sc * (lx - state.pan.x);
+      state.pan.y = ly - sc * (ly - state.pan.y);
+      state.zoom = nz;
+      applyViewport();
+    }
+    function zoomFit() {
+      if (!state.hasDocument) return;
+      const r = svgRect(), px = 40, py = 40;
+      const z = Math.min((r.width - px * 2) / DOC_W, (r.height - py * 2) / DOC_H);
+      state.zoom = z;
+      state.pan.x = px + ((r.width - px * 2) - DOC_W * z) / 2;
+      state.pan.y = py + ((r.height - py * 2) - DOC_H * z) / 2;
+      applyViewport();
+    }
+    function zoom1to1() {
+      const r = svgRect();
+      state.zoom = 1;
+      state.pan.x = r.width / 2 - DOC_W / 2;
+      state.pan.y = r.height / 2 - DOC_H / 2;
+      applyViewport();
+    }
+
+    // ─────────────────────────────────────────────
+    //  Document border
+    // ─────────────────────────────────────────────
+    function renderDocBorder() {
+      document.getElementById('doc-border')?.remove();
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('id', 'doc-border'); r.setAttribute('x', 0); r.setAttribute('y', 0);
+      r.setAttribute('width', DOC_W); r.setAttribute('height', DOC_H);
+      r.setAttribute('fill', 'none'); r.setAttribute('stroke', '#444');
+      r.setAttribute('stroke-width', '1'); r.setAttribute('pointer-events', 'none');
+      viewport.appendChild(r);
+    }
+
+    // ─────────────────────────────────────────────
+    //  Command system
+    // ─────────────────────────────────────────────
+    function executeCommand(cmd) {
+      cmd.do();
+      state.undoStack.push(cmd);
+      state.redoStack = [];
+      markDirty();
+      scheduleNetlistRebuild();
+      updateUndoRedoUI();
+    }
+    function undo() {
+      if (!state.undoStack.length) return;
+      const cmd = state.undoStack.pop();
+      cmd.undo();
+      state.redoStack.push(cmd);
+      markDirty(); scheduleNetlistRebuild(); updateUndoRedoUI();
+      showToast(`Undo: ${cmd.type}`);
+    }
+    function redo() {
+      if (!state.redoStack.length) return;
+      const cmd = state.redoStack.pop();
+      cmd.do();
+      state.undoStack.push(cmd);
+      markDirty(); scheduleNetlistRebuild(); updateUndoRedoUI();
+      showToast(`Redo: ${cmd.type}`);
+    }
+    function updateUndoRedoUI() {
+      btnUndo.disabled = !state.undoStack.length;
+      btnRedo.disabled = !state.redoStack.length;
+      const ul = state.undoStack, rl = state.redoStack;
+      btnUndo.title = ul.length ? `Undo: ${ul[ul.length - 1].type} (Ctrl+Z)` : 'Nothing to undo';
+      btnRedo.title = rl.length ? `Redo: ${rl[rl.length - 1].type} (Ctrl+Y)` : 'Nothing to redo';
+    }
+
+    // ── Command factories ─────────────────────────
+    function cmdInsertElement(parentEl, element) {
+      const pid = parentEl.id || '__viewport__';
+      const html = element.outerHTML, id = element.id;
+      return {
+        type: 'INSERT_ELEMENT',
+        do() { const p = pid === '__viewport__' ? viewport : document.getElementById(pid); p.insertAdjacentHTML('beforeend', html); },
+        undo() { document.getElementById(id)?.remove(); deselectId(id); },
+      };
+    }
+    function cmdDeleteElement(id) {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      const html = el.outerHTML, pid = el.parentElement?.id || '__viewport__';
+      return {
+        type: 'DELETE_ELEMENT',
+        do() { document.getElementById(id)?.remove(); deselectId(id); },
+        undo() { const p = pid === '__viewport__' ? viewport : document.getElementById(pid); p.insertAdjacentHTML('beforeend', html); },
+      };
+    }
+    function cmdMoveElements(moves) {
+      return {
+        type: 'MOVE_ELEMENTS',
+        do() { for (const { id, dx, dy } of moves) applyMoveEl(id, dx, dy); },
+        undo() { for (const { id, dx, dy } of moves) applyMoveEl(id, -dx, -dy); },
+      };
+    }
+    function cmdSetAttribute(id, attr, newVal, oldVal) {
+      return {
+        type: 'SET_ATTRIBUTE',
+        do() { document.getElementById(id)?.setAttribute(attr, newVal); },
+        undo() { document.getElementById(id)?.setAttribute(attr, oldVal); },
+      };
+    }
+    function cmdBatch(type, cmds) {
+      return {
+        type,
+        do() { for (const c of cmds) c.do(); },
+        undo() { for (let i = cmds.length - 1; i >= 0; i--) cmds[i].undo(); },
+      };
+    }
+
+    function applyMoveEl(id, dx, dy) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.hasAttribute('transform')) {
+        const m = el.getAttribute('transform').match(/translate\(([^,]+),([^)]+)\)/);
+        if (m) { el.setAttribute('transform', `translate(${+m[1] + dx},${+m[2] + dy})`); return; }
+      }
+      for (const a of ['x', 'cx', 'x1', 'x2']) if (el.hasAttribute(a)) el.setAttribute(a, +el.getAttribute(a) + dx);
+      for (const a of ['y', 'cy', 'y1', 'y2']) if (el.hasAttribute(a)) el.setAttribute(a, +el.getAttribute(a) + dy);
+    }
+
+    // ─────────────────────────────────────────────
+    //  Selection system
+    // ─────────────────────────────────────────────
+
+    /** IDs of selectable elements within #viewport (excludes doc-border, overlays) */
+    function selectableIds() {
+      return Array.from(viewport.children)
+        .filter(el => el.id && el.id !== 'doc-border')
+        .map(el => el.id);
+    }
+
+    function isSelected(id) { return state.selection.has(id); }
+
+    function setSelection(ids) {
+      state.selection = new Set(ids);
+      refreshSelectionOverlay();
+      updatePropsPanel();
+    }
+
+    function addToSelection(id) {
+      state.selection.add(id);
+      refreshSelectionOverlay();
+      updatePropsPanel();
+    }
+
+    function deselectId(id) {
+      state.selection.delete(id);
+      refreshSelectionOverlay();
+      updatePropsPanel();
+    }
+
+    function clearSelection() {
+      state.selection.clear();
+      refreshSelectionOverlay();
+      updatePropsPanel();
+    }
+
+    /** Draw highlight rectangles over selected elements in selOverlay */
+    function refreshSelectionOverlay() {
+      selOverlay.innerHTML = '';
+      if (!state.selection.size) return;
+
+      for (const id of state.selection) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        try {
+          // getBBox gives coordinates in the element's local coordinate space
+          // selOverlay shares the same transform as viewport so coords are identical
+          const bb = el.getBBox();
+          if (!bb || (bb.width === 0 && bb.height === 0)) continue;
+          const pad = 4 / state.zoom;   // constant padding in world units
+          const rect = document.createElementNS(NS, 'rect');
+          rect.setAttribute('x', bb.x - pad);
+          rect.setAttribute('y', bb.y - pad);
+          rect.setAttribute('width', bb.width + pad * 2);
+          rect.setAttribute('height', bb.height + pad * 2);
+          rect.setAttribute('fill', 'none');
+          rect.setAttribute('stroke', '#569cd6');
+          rect.setAttribute('stroke-width', 1.5 / state.zoom);
+          rect.setAttribute('stroke-dasharray', `${6 / state.zoom} ${3 / state.zoom}`);
+          rect.setAttribute('rx', 2 / state.zoom);
+          selOverlay.appendChild(rect);
+        } catch (_) { }
+      }
+    }
+
+    /** Hit-test a screen point against viewport children; returns element or null */
+    function hitTestPoint(sx, sy) {
+      const r = svgRect();
+      const pt = svg.createSVGPoint();
+      pt.x = sx - r.left; pt.y = sy - r.top;
+
+      // Walk viewport children in reverse (top-most first)
+      const kids = Array.from(viewport.children).filter(el => el.id && el.id !== 'doc-border');
+      for (let i = kids.length - 1; i >= 0; i--) {
+        const el = kids[i];
+        try {
+          const bb = el.getBBox();
+          const pad = Math.max(6, 8 / state.zoom);
+          // transform pt into viewport space
+          const wx = (sx - r.left - state.pan.x) / state.zoom;
+          const wy = (sy - r.top - state.pan.y) / state.zoom;
+          if (wx >= bb.x - pad && wx <= bb.x + bb.width + pad &&
+            wy >= bb.y - pad && wy <= bb.y + bb.height + pad) {
+            return el;
+          }
+        } catch (_) { }
+      }
+      return null;
+    }
+
+    /** Returns all viewport child IDs whose bounding boxes intersect the world-space rect */
+    function hitTestRect(wx1, wy1, wx2, wy2) {
+      const rx = Math.min(wx1, wx2), ry = Math.min(wy1, wy2);
+      const rw = Math.abs(wx2 - wx1), rh = Math.abs(wy2 - wy1);
+      const result = [];
+      for (const el of viewport.children) {
+        if (!el.id || el.id === 'doc-border') continue;
+        try {
+          const bb = el.getBBox();
+          if (bb.x + bb.width >= rx && bb.x <= rx + rw &&
+            bb.y + bb.height >= ry && bb.y <= ry + rh) {
+            result.push(el.id);
+          }
+        } catch (_) { }
+      }
+      return result;
+    }
+
+    // ─────────────────────────────────────────────
+    //  Properties panel
+    // ─────────────────────────────────────────────
+    function updatePropsPanel() {
+      if (state.selection.size === 0) {
+        propsPanel.classList.remove('visible');
+        return;
+      }
+      propsPanel.classList.add('visible');
+
+      if (state.selection.size > 1) {
+        propsTitle.textContent = `${state.selection.size} elements`;
+        propsBody.innerHTML = `<p style="color:var(--text-dim);font-size:11px">${state.selection.size} elements selected.</p>`;
+        return;
+      }
+
+      const id = [...state.selection][0];
+      const el = document.getElementById(id);
+      if (!el) { propsPanel.classList.remove('visible'); return; }
+
+      const tag = el.tagName.toLowerCase();
+      const cls = el.getAttribute('class') || '';
+
+      propsTitle.textContent =
+        cls.includes('device') ? 'Device' :
+          cls.includes('connector') ? 'Connector' :
+            cls.includes('harness-wire') ? 'Harness Wire' :
+              cls.includes('mate-wire') ? 'Mate Wire' :
+                cls.includes('net-label') ? 'Net Label' :
+                  tag;
+
+      // Build editable fields based on element type
+      let html = '';
+
+      // Always show ID (read-only for now, editable in later phases)
+      html += `<label>ID</label><input type="text" id="prop-id" value="${escHtml(id)}" readonly style="opacity:.5">`;
+
+      if (tag === 'line') {
+        const x1 = el.getAttribute('x1'), y1 = el.getAttribute('y1');
+        const x2 = el.getAttribute('x2'), y2 = el.getAttribute('y2');
+        const len = Math.round(Math.hypot(x2 - x1, y2 - y1));
+        html += `<hr class="props-sep">`;
+        html += `<label>Start (x1, y1)</label><div class="props-row">
+      <input type="number" id="prop-x1" value="${x1}" step="${GRID}">
+      <input type="number" id="prop-y1" value="${y1}" step="${GRID}">
+    </div>`;
+        html += `<label>End (x2, y2)</label><div class="props-row">
+      <input type="number" id="prop-x2" value="${x2}" step="${GRID}">
+      <input type="number" id="prop-y2" value="${y2}" step="${GRID}">
+    </div>`;
+        html += `<label>Length (read-only)</label><input type="text" value="${len} units" readonly style="opacity:.5">`;
+      } else if (tag === 'g') {
+        const ref = el.getAttribute('data-ref') || '';
+        const sym = el.getAttribute('data-symbol') || '';
+        html += `<hr class="props-sep">`;
+        html += `<label>Ref</label><input type="text" id="prop-ref" value="${escHtml(ref)}">`;
+        html += `<label>Symbol (read-only)</label><input type="text" value="${escHtml(sym)}" readonly style="opacity:.5">`;
+        const m = (el.getAttribute('transform') || '').match(/translate\(([^,]+),([^)]+)\)/);
+        if (m) {
+          html += `<label>Position (x, y)</label><div class="props-row">
+        <input type="number" id="prop-tx" value="${Math.round(+m[1])}" step="${GRID}">
+        <input type="number" id="prop-ty" value="${Math.round(+m[2])}" step="${GRID}">
+      </div>`;
+        }
+      } else if (tag === 'text') {
+        const net = el.getAttribute('data-net-name') || el.textContent || '';
+        html += `<hr class="props-sep">`;
+        html += `<label>Net Name</label><input type="text" id="prop-net" value="${escHtml(net)}">`;
+      } else if (tag === 'rect') {
+        const x = el.getAttribute('x'), y = el.getAttribute('y');
+        const w = el.getAttribute('width'), h = el.getAttribute('height');
+        html += `<hr class="props-sep">`;
+        html += `<label>Position (x, y)</label><div class="props-row">
+      <input type="number" id="prop-rx" value="${x}" step="${GRID}">
+      <input type="number" id="prop-ry" value="${y}" step="${GRID}">
+    </div>`;
+        html += `<label>Size (w, h)</label><div class="props-row">
+      <input type="number" id="prop-rw" value="${w}" step="${GRID}">
+      <input type="number" id="prop-rh" value="${h}" step="${GRID}">
+    </div>`;
+      }
+
+      propsBody.innerHTML = html;
+
+      // Wire up live editing
+      const wire = (domId, attr) => {
+        const inp = document.getElementById(domId);
+        if (!inp) return;
+        inp.addEventListener('change', () => {
+          const old = el.getAttribute(attr);
+          executeCommand(cmdSetAttribute(id, attr, inp.value, old));
+          refreshSelectionOverlay();
+        });
+      };
+      wire('prop-x1', 'x1'); wire('prop-y1', 'y1');
+      wire('prop-x2', 'x2'); wire('prop-y2', 'y2');
+
+      const refInp = document.getElementById('prop-ref');
+      if (refInp) {
+        refInp.addEventListener('change', () => {
+          executeCommand(cmdSetAttribute(id, 'data-ref', refInp.value, el.getAttribute('data-ref')));
+        });
+      }
+
+      const netInp = document.getElementById('prop-net');
+      if (netInp) {
+        netInp.addEventListener('change', () => {
+          const old = el.getAttribute('data-net-name');
+          executeCommand(cmdBatch('SET_NET_NAME', [
+            cmdSetAttribute(id, 'data-net-name', netInp.value, old),
+            // also update visible text content (handled via SET_ATTRIBUTE isn't enough for text nodes)
+            (() => {
+              const oldTxt = el.textContent;
+              return {
+                type: 'SET_ATTRIBUTE',
+                do() { const e = document.getElementById(id); if (e) e.textContent = netInp.value; },
+                undo() { const e = document.getElementById(id); if (e) e.textContent = oldTxt; },
+              };
+            })(),
+          ]));
+        });
+      }
+
+      // translate inputs
+      ['prop-tx', 'prop-ty'].forEach((pid, i) => {
+        const inp = document.getElementById(pid);
+        if (!inp) return;
+        inp.addEventListener('change', () => {
+          const m2 = (el.getAttribute('transform') || '').match(/translate\(([^,]+),([^)]+)\)/);
+          if (!m2) return;
+          const tx = i === 0 ? +inp.value : +m2[1];
+          const ty = i === 1 ? +inp.value : +m2[2];
+          const old = el.getAttribute('transform');
+          executeCommand(cmdSetAttribute(id, 'transform', `translate(${tx},${ty})`, old));
+          refreshSelectionOverlay();
+        });
+      });
+
+      ['prop-rx', 'prop-ry'].forEach((pid, i) => {
+        const inp = document.getElementById(pid);
+        if (!inp) return;
+        inp.addEventListener('change', () => {
+          const attr = i === 0 ? 'x' : 'y';
+          executeCommand(cmdSetAttribute(id, attr, inp.value, el.getAttribute(attr)));
+          refreshSelectionOverlay();
+        });
+      });
+      ['prop-rw', 'prop-rh'].forEach((pid, i) => {
+        const inp = document.getElementById(pid);
+        if (!inp) return;
+        inp.addEventListener('change', () => {
+          const attr = i === 0 ? 'width' : 'height';
+          executeCommand(cmdSetAttribute(id, attr, inp.value, el.getAttribute(attr)));
+          refreshSelectionOverlay();
+        });
+      });
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ─────────────────────────────────────────────
+    //  Delete selected
+    // ─────────────────────────────────────────────
+    function deleteSelected() {
+      if (!state.selection.size) return;
+      const cmds = [];
+      for (const id of [...state.selection]) {
+        const c = cmdDeleteElement(id);
+        if (c) cmds.push(c);
+      }
+      if (!cmds.length) return;
+      clearSelection();
+      executeCommand(cmdBatch('DELETE_ELEMENT', cmds));
+      showToast(`Deleted ${cmds.length} element${cmds.length > 1 ? 's' : ''}`);
+    }
+
+    // ─────────────────────────────────────────────
+    //  Nudge selected with arrow keys
+    // ─────────────────────────────────────────────
+    function nudgeSelected(dx, dy) {
+      if (!state.selection.size) return;
+      const moves = [...state.selection].map(id => ({ id, dx, dy }));
+      executeCommand(cmdMoveElements(moves));
+      refreshSelectionOverlay();
+    }
+
+    // ─────────────────────────────────────────────
+    //  Tool activation
+    // ─────────────────────────────────────────────
+    const TOOL_HINTS = {
+      select: 'Click to select · Shift+click to extend · Drag to rubber-band · Del to delete',
+    };
+
+    function setTool(tool) {
+      state.activeTool = tool;
+      // Update toolbar button highlights
+      document.querySelectorAll('#toolbar button[id^="btn-tool-"]').forEach(b => b.classList.remove('active-tool'));
+      const btn = document.getElementById(`btn-tool-${tool}`);
+      if (btn) btn.classList.add('active-tool');
+      statusTool.textContent = tool.toUpperCase();
+      statusHint.textContent = TOOL_HINTS[tool] || '';
+      clearSelection();
+    }
+
+    // ─────────────────────────────────────────────
+    //  Mouse — select tool interaction
+    // ─────────────────────────────────────────────
+    wrap.addEventListener('mousedown', e => {
+      // Pan: RMB or MMB or Space+LMB
+      if (e.button === 1 || e.button === 2) { e.preventDefault(); startPan(e); return; }
+      if (e.button === 0 && state.panGesture.spaceDown) { startPan(e); return; }
+
+      if (e.button !== 0) return;
+      if (state.activeTool !== 'select') return;
+      if (!state.hasDocument) return;
+
+      const hit = hitTestPoint(e.clientX, e.clientY);
+
+      if (hit) {
+        // ── Start element drag ──
+        if (!isSelected(hit.id)) {
+          if (e.shiftKey) addToSelection(hit.id);
+          else setSelection([hit.id]);
+        }
+        const w = screenToWorld(e.clientX, e.clientY);
+        state.elemDrag = {
+          active: true, startSX: e.clientX, startSY: e.clientY,
+          lastWX: snap(w.x), lastWY: snap(w.y), hasMoved: false
+        };
+        e.preventDefault();
+      } else {
+        // ── Start rubber-band ──
+        if (!e.shiftKey) clearSelection();
+        const w = screenToWorld(e.clientX, e.clientY);
+        const r = svgRect();
+        state.rubberband = {
+          active: true,
+          startWX: w.x, startWY: w.y,
+          startSX: e.clientX - r.left, startSY: e.clientY - r.top
+        };
+        rubberEl.style.display = 'none';
+        e.preventDefault();
+      }
+    });
+
+    wrap.addEventListener('mousemove', e => {
+      const { clientX: sx, clientY: sy } = e;
+      const w = screenToWorld(sx, sy);
+      state.mouse = { sx, sy, wx: w.x, wy: w.y };
+      coordDisp.textContent = `${snap(w.x)}, ${snap(w.y)}`;
+      updateCrosshair(sx, sy);
+      if (embedded) parent.postMessage({ type: 'sde-coord', x: snap(w.x), y: snap(w.y) }, '*');
+
+      // Pan
+      const pg = state.panGesture;
+      if (pg.active) {
+        const r = svgRect();
+        state.pan.x = pg.startPX + (sx - r.left - pg.startSX);
+        state.pan.y = pg.startPY + (sy - r.top - pg.startSY);
+        applyViewport();
+        return;
+      }
+
+      // Element drag
+      const ed = state.elemDrag;
+      if (ed.active) {
+        const wx = snap(w.x), wy = snap(w.y);
+        const dx = wx - ed.lastWX, dy = wy - ed.lastWY;
+        if (dx !== 0 || dy !== 0) {
+          ed.hasMoved = true;
+          ed.lastWX = wx; ed.lastWY = wy;
+          // Live-move without command (commit on mouseup)
+          for (const id of state.selection) applyMoveEl(id, dx, dy);
+          refreshSelectionOverlay();
+        }
+        return;
+      }
+
+      // Rubber-band
+      const rb = state.rubberband;
+      if (rb.active) {
+        const r = svgRect();
+        const csx = e.clientX - r.left, csy = e.clientY - r.top;
+        const x = Math.min(rb.startSX, csx), y = Math.min(rb.startSY, csy);
+        const rw = Math.abs(csx - rb.startSX), rh = Math.abs(csy - rb.startSY);
+        if (rw > 4 || rh > 4) {
+          rubberEl.style.display = 'block';
+          rubberEl.style.left = x + 'px'; rubberEl.style.top = y + 'px';
+          rubberEl.style.width = rw + 'px'; rubberEl.style.height = rh + 'px';
+        }
+        return;
+      }
+    });
+
+    window.addEventListener('mouseup', e => {
+      if (state.panGesture.active) { stopPan(); return; }
+
+      // Commit element drag as a single MOVE_ELEMENTS command
+      const ed = state.elemDrag;
+      if (ed.active) {
+        if (ed.hasMoved) {
+          // We already applied the moves live; record them as a command without re-applying.
+          // Compute total delta from start
+          const w = screenToWorld(e.clientX, e.clientY);
+          // Reconstruct total delta: live moves already applied, so we just record for undo.
+          // Re-derive from startSX: convert start screen → world (before any moves),
+          // but since viewport didn't change, we can use current snap positions.
+          // Simpler: capture total delta accumulated during drag.
+          const totalDX = ed.lastWX - snap(screenToWorld(ed.startSX, ed.startSY).x);
+          const totalDY = ed.lastWY - snap(screenToWorld(ed.startSX, ed.startSY).y);
+          if (totalDX !== 0 || totalDY !== 0) {
+            // Push a synthetic command that only handles undo (forward already done)
+            const moves = [...state.selection].map(id => ({ id, dx: totalDX, dy: totalDY }));
+            const cmd = {
+              type: 'MOVE_ELEMENTS',
+              do() { for (const { id, dx, dy } of moves) applyMoveEl(id, dx, dy); },
+              undo() { for (const { id, dx, dy } of moves) applyMoveEl(id, -dx, -dy); },
+              _skipDo: true,
+            };
+            state.undoStack.push(cmd);
+            state.redoStack = [];
+            markDirty(); scheduleNetlistRebuild(); updateUndoRedoUI();
+          }
+        }
+        state.elemDrag = { active: false, startSX: 0, startSY: 0, lastWX: 0, lastWY: 0, hasMoved: false };
+        refreshSelectionOverlay();
+        return;
+      }
+
+      // Commit rubber-band selection
+      const rb = state.rubberband;
+      if (rb.active) {
+        rubberEl.style.display = 'none';
+        state.rubberband.active = false;
+        const w1 = screenToWorld(rb.startSX + svgRect().left, rb.startSY + svgRect().top);
+        const w = screenToWorld(e.clientX, e.clientY);
+        const ids = hitTestRect(w1.x, w1.y, w.x, w.y);
+        if (e.shiftKey) ids.forEach(id => addToSelection(id));
+        else setSelection(ids);
+        return;
+      }
+    });
+
+    wrap.addEventListener('mouseleave', () => {
+      coordDisp.textContent = '—';
+      document.getElementById('xhair-h').setAttribute('x2', 0);
+      document.getElementById('xhair-v').setAttribute('y2', 0);
+    });
+
+    wrap.addEventListener('wheel', e => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR);
+    }, { passive: false });
+
+    wrap.addEventListener('contextmenu', e => e.preventDefault());
+
+    function startPan(e) {
+      const r = svgRect(), pg = state.panGesture;
+      pg.active = true;
+      pg.startSX = e.clientX - r.left; pg.startSY = e.clientY - r.top;
+      pg.startPX = state.pan.x; pg.startPY = state.pan.y;
+      wrap.classList.add('panning');
+    }
+    function stopPan() {
+      state.panGesture.active = false;
+      wrap.classList.remove('panning');
+      wrap.classList.toggle('pan-mode', state.panGesture.spaceDown);
+    }
+
+    // ─────────────────────────────────────────────
+    //  Keyboard
+    // ─────────────────────────────────────────────
+    window.addEventListener('keydown', e => {
+      const mod = e.ctrlKey || e.metaKey;
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const inInput = tag === 'input' || tag === 'textarea';
+
+      if (e.code === 'Space' && !e.repeat && !inInput) {
+        state.panGesture.spaceDown = true; wrap.classList.add('pan-mode'); e.preventDefault(); return;
+      }
+      if (inInput) return;  // don't steal keys from property inputs
+
+      if (mod && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+      if (mod && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
+      if (mod && e.key === 's') { e.preventDefault(); saveDocument(); return; }
+      if (mod && e.key === 'f') { e.preventDefault(); zoomFit(); return; }
+      if (mod && e.key === '0') { e.preventDefault(); zoom1to1(); return; }
+      if (mod && e.key === 'a') { e.preventDefault(); setSelection(selectableIds()); return; }
+
+      // Tool shortcuts
+      if (e.key === 's' || e.key === 'S') { setTool('select'); return; }
+      if (e.key === 'Escape') { clearSelection(); return; }
+
+      // Delete
+      if (e.key === 'Delete' || e.key === 'Backspace') { deleteSelected(); return; }
+
+      // Arrow nudge
+      const step = e.shiftKey ? GRID * 10 : GRID;
+      if (e.key === 'ArrowLeft') { nudgeSelected(-step, 0); e.preventDefault(); return; }
+      if (e.key === 'ArrowRight') { nudgeSelected(step, 0); e.preventDefault(); return; }
+      if (e.key === 'ArrowUp') { nudgeSelected(0, -step); e.preventDefault(); return; }
+      if (e.key === 'ArrowDown') { nudgeSelected(0, step); e.preventDefault(); return; }
+    });
+
+    window.addEventListener('keyup', e => {
+      if (e.code === 'Space') {
+        state.panGesture.spaceDown = false;
+        if (!state.panGesture.active) wrap.classList.remove('pan-mode');
+      }
+    });
+
+    // ─────────────────────────────────────────────
+    //  Props panel controls
+    // ─────────────────────────────────────────────
+    document.getElementById('props-close').addEventListener('click', clearSelection);
+    propsDelete.addEventListener('click', deleteSelected);
+
+    // ─────────────────────────────────────────────
+    //  Dirty / save
+    // ─────────────────────────────────────────────
+    function markDirty() {
+      state.dirty = true; updateTitleBar(); postStatusToParent();
+    }
+    function clearDirty() {
+      state.dirty = false; updateTitleBar(); postStatusToParent();
+    }
+    function updateTitleBar() {
+      const fname = state.svgHandle ? state.svgHandle.name : 'untitled.schematic.svg';
+      if (statusFile) statusFile.textContent = (state.dirty ? '● ' : '') + fname;
+      document.title = (state.dirty ? '● ' : '') + 'SDE — ' + fname;
+    }
+
+    // ─────────────────────────────────────────────
+    //  Netlist rebuild stub
+    // ─────────────────────────────────────────────
+    let _netTimer;
+    function scheduleNetlistRebuild() {
+      clearTimeout(_netTimer);
+      _netTimer = setTimeout(rebuildAndSave, 300);
+    }
+    function rebuildAndSave() {
+      writeNetlist({ meta: { generated: new Date().toISOString() }, components: [], nets: [], matings: [] });
+      writeSVG();
+    }
+
+    // ─────────────────────────────────────────────
+    //  File I/O
+    // ─────────────────────────────────────────────
+    function serializeSVG() {
+      const clone = svg.cloneNode(true);
+      clone.getElementById('viewport')?.removeAttribute('transform');
+      clone.getElementById('selection-overlay')?.remove();
+      clone.getElementById('grid-bg-layer')?.remove();
+      clone.getElementById('origin-marker')?.remove();
+      clone.getElementById('xhair-h')?.remove();
+      clone.getElementById('xhair-v')?.remove();
+      clone.querySelectorAll('.selected,.hovered,.dragging').forEach(el => {
+        el.classList.remove('selected', 'hovered', 'dragging');
+      });
+      return '<?xml version="1.0" encoding="UTF-8"?>\n' + clone.outerHTML;
+    }
+    async function writeSVG() {
+      if (!state.svgHandle) return;
+      try {
+        const w = await state.svgHandle.createWritable();
+        await w.write(serializeSVG()); await w.close();
+        clearDirty();
+      } catch (e) { console.error('SVG write', e); }
+    }
+    async function writeNetlist(obj) {
+      if (!state.netlistHandle) return;
+      try {
+        const w = await state.netlistHandle.createWritable();
+        await w.write(JSON.stringify(obj, null, 2)); await w.close();
+      } catch (_) { }
+    }
+
+    function newDocument() {
+      viewport.innerHTML = '';
+      state.svgHandle = null; state.netlistHandle = null;
+      state.hasDocument = true; state.dirty = false;
+      state.undoStack = []; state.redoStack = [];
+      clearSelection();
+      renderDocBorder();
+      overlay.classList.add('hidden');
+      updateTitleBar(); updateUndoRedoUI(); zoomFit();
+    }
+
+    async function openDocument() {
+      if (!('showOpenFilePicker' in window)) { alert('File System Access API not available.\nUse Chrome 86+.'); return; }
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{ description: 'Schematic SVG', accept: { 'image/svg+xml': ['.svg'] } }],
+        });
+        if (!handle.name.endsWith('.schematic.svg')) { alert('File must be named *.schematic.svg'); return; }
+        const doc = new DOMParser().parseFromString(await (await handle.getFile()).text(), 'image/svg+xml');
+        const src = doc.getElementById('viewport');
+        viewport.innerHTML = src ? src.innerHTML : '';
+        document.getElementById('layer-graphics').innerHTML = doc.getElementById('layer-graphics')?.innerHTML || '';
+        state.svgHandle = handle; state.hasDocument = true;
+        state.undoStack = []; state.redoStack = []; state.dirty = false;
+        try {
+          const dir = await handle.getParent();
+          state.netlistHandle = await dir.getFileHandle(handle.name.replace('.schematic.svg', '.netlist.json'), { create: true });
+        } catch (_) { }
+        clearSelection();
+        overlay.classList.add('hidden');
+        updateTitleBar(); updateUndoRedoUI(); zoomFit();
+      } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+    }
+
+    async function saveDocument() {
+      if (!state.svgHandle) { showToast('No file open'); return; }
+      await writeSVG(); showToast('Saved');
+    }
+
+    // ─────────────────────────────────────────────
+    //  postMessage
+    // ─────────────────────────────────────────────
+    function postStatusToParent() {
+      if (!embedded) return;
+      parent.postMessage({ type: 'sde-status', dirty: state.dirty, filename: state.svgHandle?.name ?? null }, '*');
+    }
+    window.addEventListener('message', e => {
+      if (!e.data) return;
+      if (e.data.type === 'harnice-graph-action' && !embedded) {
+        embedded = true; clearTimeout(_embCheck); document.body.classList.add('embedded');
+      }
+      if (e.data.type !== 'harnice-graph-action') return;
+      const a = e.data.action;
+      if (a === 'openFile') openDocument();
+      if (a === 'newFile') newDocument();
+      if (a === 'save') saveDocument();
+      if (a === 'undo') undo();
+      if (a === 'redo') redo();
+      if (a === 'fitView') zoomFit();
+      if (a === 'zoom1to1') zoom1to1();
+      if (a === 'setTool') setTool(e.data.tool);
+    });
+
+    // ─────────────────────────────────────────────
+    //  Toolbar buttons
+    // ─────────────────────────────────────────────
+    document.getElementById('btn-open').addEventListener('click', openDocument);
+    document.getElementById('btn-new').addEventListener('click', newDocument);
+    document.getElementById('btn-save').addEventListener('click', saveDocument);
+    document.getElementById('btn-undo').addEventListener('click', undo);
+    document.getElementById('btn-redo').addEventListener('click', redo);
+    document.getElementById('btn-zoom-fit').addEventListener('click', zoomFit);
+    document.getElementById('btn-zoom-1').addEventListener('click', zoom1to1);
+    document.getElementById('btn-open2').addEventListener('click', openDocument);
+    document.getElementById('btn-new2').addEventListener('click', newDocument);
+    document.getElementById('btn-tool-select').addEventListener('click', () => setTool('select'));
+
+    // ─────────────────────────────────────────────
+    //  Demo: populate canvas on New for testing
+    // ─────────────────────────────────────────────
+    function spawnDemoElements() {
+      // A few test shapes so selection / move / delete can be exercised immediately
+      const items = [
+        { tag: 'rect', id: 'demo-r1', attrs: { x: 4800, y: 4700, width: 400, height: 200, fill: 'none', stroke: '#4ec9b0', 'stroke-width': '2', class: 'component device', 'data-ref': 'PSU-1', 'data-symbol': 'power_supply' } },
+        { tag: 'rect', id: 'demo-r2', attrs: { x: 5400, y: 4750, width: 200, height: 100, fill: 'none', stroke: '#d4a017', 'stroke-width': '2', class: 'component connector', 'data-ref': 'H1-P1', 'data-symbol': 'mil38999' } },
+        { tag: 'line', id: 'demo-w1', attrs: { x1: 5200, y1: 4800, x2: 5400, y2: 4800, stroke: '#3a6ea5', 'stroke-width': '2', class: 'wire harness-wire' } },
+        { tag: 'text', id: 'demo-l1', attrs: { x: 5280, y: 4770, class: 'net-label', 'data-net-name': '28VDC', fill: '#4ec9b0', 'font-size': '40', 'font-family': 'Consolas,monospace' }, text: '28VDC' },
+      ];
+      for (const item of items) {
+        const el = document.createElementNS(NS, item.tag);
+        el.setAttribute('id', item.id);
+        for (const [k, v] of Object.entries(item.attrs)) el.setAttribute(k, v);
+        if (item.text) el.textContent = item.text;
+        viewport.appendChild(el);
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    //  Resize observer
+    // ─────────────────────────────────────────────
+    new ResizeObserver(() => { applyViewport(); }).observe(wrap);
+
+    // ─────────────────────────────────────────────
+    //  Init
+    // ─────────────────────────────────────────────
+    applyViewport();
+    updateUndoRedoUI();
+
+    // Auto-open demo document for artifact preview
+    newDocument();
+    spawnDemoElements();
+    zoomFit();
+  </script>
+</body>
+
+</html>

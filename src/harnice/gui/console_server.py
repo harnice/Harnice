@@ -34,6 +34,7 @@ _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
 _EDITOR_HTML = _GUI_DIR / "harnice_console.html"
 _GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
 _SYSTEM_LIST_VIEW_JS = _GUI_DIR / "system_list_view.js"
+_SYSTEM_DIAGRAM_HTML = _GUI_DIR / "system_diagram_editor.html"
 
 
 def _graph_file_path(rev_folder: str, product_type: str, label: str) -> Path:
@@ -95,11 +96,11 @@ def _editor_files_for_product(product_type: str, rev_folder: str = None) -> list
     if product_type == "system" and rev_folder:
         try:
             tabs = system_viewer_core.get_tab_list()
-            return ["feature tree"] + [label for (_k, label) in tabs]
+            return ["feature tree", "block diagram"] + [label for (_k, label) in tabs]
         except Exception:
             pass
     if product_type == "system":
-        return ["feature tree", "system lists"]
+        return ["feature tree", "block diagram", "system lists"]
     return ["feature tree"]
 
 
@@ -543,6 +544,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/": self._serve_html,
             "/index.html": self._serve_html,
             "/graph-editor": self._serve_graph_editor_html,
+            "/system-diagram-editor": self._serve_system_diagram_html,
             "/system-list-view.js": self._serve_system_list_view_js,
             "/api/info": self._api_info,
             "/api/code": self._api_get_code,
@@ -615,6 +617,16 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(500, "graph_editor.html not found")
             return
         self._send_bytes(_GRAPH_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8")
+
+    def _serve_system_diagram_html(self):
+        """Serve system diagram editor HTML for embedding in iframe."""
+        if not _SYSTEM_DIAGRAM_HTML.exists():
+            self.send_error(500, "system_diagram_editor.html not found")
+            return
+        self._send_bytes(
+            _SYSTEM_DIAGRAM_HTML.read_bytes(),
+            "text/html; charset=utf-8",
+        )
 
     def _serve_system_list_view_js(self):
         """Serve in-DOM system list view script for Harnice console."""

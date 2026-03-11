@@ -1716,6 +1716,20 @@
                 { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
                 { action: "fitView", payload: {}, label: "Fit View" }
             ]
+            ,
+            "block diagram": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "wire-harness" }, label: "⟶ Harness Wire" },
+                { action: "setTool", payload: { tool: "wire-mate" }, label: "⟶ Mate Wire" },
+                { action: "setTool", payload: { tool: "place" }, label: "＋ Place" },
+                { action: "setTool", payload: { tool: "label" }, label: "⌨ Net Label" },
+                { action: "fitView", payload: {}, label: "Fit View" },
+                { action: "undo", payload: {}, label: "↩ Undo" },
+                { action: "redo", payload: {}, label: "↪ Redo" },
+                { action: "openFile", payload: {}, label: "Open…" },
+                { action: "newFile", payload: {}, label: "New" },
+                { action: "save", payload: {}, label: "Save" }
+            ]
         };
 
         let saveTimer = null;
@@ -1735,7 +1749,9 @@
         }
 
         function isSystemListsMode() {
-            return productType === "system" && selectedFile !== MODE_FEATURE_TREE;
+            return productType === "system" &&
+                selectedFile !== MODE_FEATURE_TREE &&
+                selectedFile !== "block diagram";
         }
 
         function populateToolbarSlot() {
@@ -1889,12 +1905,20 @@
 
             if (graphIframe) {
                 if (graphMode) {
-                    const tab = selectedFile === "available network" ? "available" :
-                        selectedFile === "chosen network" ? "chosen" : "flattened";
-                    const base = "/graph-editor#" + tab;
-                    const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
-                    if (!iframeLoaded || !graphIframe.src.includes("/graph-editor")) {
-                        graphIframe.src = base;
+                    if (selectedFile === "block diagram") {
+                        const base = "/system-diagram-editor";
+                        const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
+                        if (!iframeLoaded || !graphIframe.src.includes("/system-diagram-editor")) {
+                            graphIframe.src = base;
+                        }
+                    } else {
+                        const tab = selectedFile === "available network" ? "available" :
+                            selectedFile === "chosen network" ? "chosen" : "flattened";
+                        const base = "/graph-editor#" + tab;
+                        const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
+                        if (!iframeLoaded || !graphIframe.src.includes("/graph-editor")) {
+                            graphIframe.src = base;
+                        }
                     }
                 } else {
                     graphIframe.src = "about:blank";
@@ -2034,7 +2058,10 @@
             applyView();
             if (label === MODE_FEATURE_TREE) {
                 loadCode();
-            } else if (wasNetwork) {
+            } else if (
+                wasNetwork &&
+                (label === "available network" || label === "chosen network" || label === "flattened network")
+            ) {
                 sendGraphTab(fileLabelToTab(label));
             }
         }
