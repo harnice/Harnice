@@ -125,6 +125,11 @@
       overflow: hidden;
       background: #1a1a1a;
       cursor: default;
+      outline: none;
+    }
+
+    #canvas-wrap:focus {
+      outline: none;
     }
 
     #canvas-wrap.pan-mode {
@@ -384,6 +389,8 @@
     <button id="btn-redo" disabled title="Ctrl+Y">↪ Redo</button>
     <div class="tb-sep"></div>
     <button id="btn-tool-select" class="active-tool" title="S">▶ Select</button>
+    <button id="btn-tool-wire-harness" title="Harness wire">Harness</button>
+    <button id="btn-tool-wire-mate" title="Mate wire">Mate</button>
     <div class="tb-sep"></div>
     <button id="btn-zoom-fit">Zoom Fit</button>
     <button id="btn-zoom-1">1:1</button>
@@ -391,7 +398,7 @@
     <span id="coord-display">—</span>
   </div>
 
-  <div id="canvas-wrap">
+  <div id="canvas-wrap" tabindex="0">
     <svg id="schematic-svg" xmlns="http://www.w3.org/2000/svg" xmlns:schem="https://example.com/schema/v1">
       <defs>
         <pattern id="grid-minor" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
@@ -463,13 +470,18 @@
     // ─────────────────────────────────────────────
     //  Embedded detection
     // ─────────────────────────────────────────────
-    let embedded = false;
-    const _embCheck = setTimeout(() => document.body.classList.remove('embedded'), 300);
+    let embedded = (typeof window !== 'undefined' && window !== window.top);
+    const _embCheck = setTimeout(() => { if (!embedded) document.body.classList.remove('embedded'); }, 300);
+    if (embedded) {
+      clearTimeout(_embCheck);
+      document.body.classList.add('embedded');
+    }
     window.addEventListener('message', e => {
       if (e.data?.type === 'harnice-graph-action' && !embedded) {
         embedded = true;
         clearTimeout(_embCheck);
         document.body.classList.add('embedded');
+        try { window.parent.postMessage({ type: 'sde-tool', tool: state.activeTool }, '*'); } catch (_) { }
       }
     });
 
@@ -490,6 +502,8 @@
       rubberband: { active: false, startWX: 0, startWY: 0, startSX: 0, startSY: 0 },
       // Element drag (nudge / mouse-drag move)
       elemDrag: { active: false, startSX: 0, startSY: 0, lastWX: 0, lastWY: 0, hasMoved: false },
+      // Wire drawing (harness / mate)
+      wireDraw: { active: false, tool: null, startX: 0, startY: 0, bendFirst: 'horizontal' },
     };
 
     // ─────────────────────────────────────────────
@@ -1022,7 +1036,91 @@
     // ─────────────────────────────────────────────
     const TOOL_HINTS = {
       select: 'Click to select · Shift+click to extend · Drag to rubber-band · Del to delete',
+      'wire-harness': 'Click to start · Click to finish · Space: bend up/down · Esc: cancel',
+      'wire-mate': 'Click to start · Click to finish · Space: bend up/down · Esc: cancel',
     };
+    const WIRE_STROKE = { 'wire-harness': '#3a6ea5', 'wire-mate': '#d4a017' };
+    const WIRE_CLASS = { 'wire-harness': 'wire harness-wire', 'wire-mate': 'wire mate-wire' };
+
+    function wireUuid() {
+      return 'wire-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : Date.now().toString(36) + Math.random().toString(36).slice(2));
+    }
+
+    function ensureWirePreviewGroup() {
+      let g = document.getElementById('wire-preview');
+      if (!g) {
+        g = document.createElementNS(NS, 'g');
+        g.setAttribute('id', 'wire-preview');
+        g.setAttribute('pointer-events', 'none');
+        viewport.appendChild(g);
+      }
+      return g;
+    }
+
+    function orthogonalSegments(x0, y0, x1, y1, bendFirst) {
+      if (x0 === x1 && y0 === y1) return [];
+      if (x0 === x1) return [[x0, y0, x1, y1]];
+      if (y0 === y1) return [[x0, y0, x1, y1]];
+      if (bendFirst === 'vertical') return [[x0, y0, x0, y1], [x0, y1, x1, y1]];
+      return [[x0, y0, x1, y0], [x1, y0, x1, y1]];
+    }
+
+    function updateWirePreview() {
+      const wd = state.wireDraw;
+      if (!wd.active || !wd.tool) return;
+      const g = ensureWirePreviewGroup();
+      const wx = state.mouse.wx, wy = state.mouse.wy;
+      const x0 = wd.startX, y0 = wd.startY;
+      const x1 = snap(wx), y1 = snap(wy);
+      const segs = orthogonalSegments(x0, y0, x1, y1, wd.bendFirst || 'horizontal');
+      const stroke = WIRE_STROKE[wd.tool] || '#888';
+      g.innerHTML = '';
+      segs.forEach(([a, b, c, d]) => {
+        const line = document.createElementNS(NS, 'line');
+        line.setAttribute('x1', a); line.setAttribute('y1', b);
+        line.setAttribute('x2', c); line.setAttribute('y2', d);
+        line.setAttribute('stroke', stroke);
+        line.setAttribute('stroke-width', '2');
+        line.setAttribute('opacity', '0.7');
+        g.appendChild(line);
+      });
+    }
+
+    function startWireDraw(tool, wx, wy) {
+      state.wireDraw = { active: true, tool, startX: snap(wx), startY: snap(wy), bendFirst: 'horizontal' };
+      ensureWirePreviewGroup();
+      updateWirePreview();
+      wrap.focus();
+    }
+
+    function commitWireDraw(wx, wy) {
+      const wd = state.wireDraw;
+      if (!wd.active || !wd.tool) return;
+      const x0 = wd.startX, y0 = wd.startY;
+      const x1 = snap(wx), y1 = snap(wy);
+      const segs = orthogonalSegments(x0, y0, x1, y1, wd.bendFirst || 'horizontal');
+      if (segs.length === 0) { cancelWireDraw(); return; }
+      const wireClass = WIRE_CLASS[wd.tool];
+      const stroke = WIRE_STROKE[wd.tool];
+      const cmds = segs.map(([a, b, c, d]) => {
+        const line = document.createElementNS(NS, 'line');
+        line.setAttribute('id', wireUuid());
+        line.setAttribute('class', wireClass);
+        line.setAttribute('x1', a); line.setAttribute('y1', b);
+        line.setAttribute('x2', c); line.setAttribute('y2', d);
+        line.setAttribute('stroke', stroke);
+        line.setAttribute('stroke-width', '2');
+        return cmdInsertElement(viewport, line);
+      });
+      executeCommand(cmdBatch('ADD_WIRE', cmds));
+      cancelWireDraw();
+    }
+
+    function cancelWireDraw() {
+      state.wireDraw = { active: false, tool: null, startX: 0, startY: 0, bendFirst: 'horizontal' };
+      const g = document.getElementById('wire-preview');
+      if (g) g.innerHTML = '';
+    }
 
     function setTool(tool) {
       state.activeTool = tool;
@@ -1033,6 +1131,9 @@
       statusTool.textContent = tool.toUpperCase();
       statusHint.textContent = TOOL_HINTS[tool] || '';
       clearSelection();
+      if (embedded && window.parent && window.parent !== window) {
+        try { window.parent.postMessage({ type: 'sde-tool', tool: state.activeTool }, '*'); } catch (_) { }
+      }
     }
 
     // ─────────────────────────────────────────────
@@ -1044,8 +1145,20 @@
       if (e.button === 0 && state.panGesture.spaceDown) { startPan(e); return; }
 
       if (e.button !== 0) return;
-      if (state.activeTool !== 'select') return;
       if (!state.hasDocument) return;
+
+      const w = screenToWorld(e.clientX, e.clientY);
+      if (state.activeTool === 'wire-harness' || state.activeTool === 'wire-mate') {
+        e.preventDefault();
+        if (!state.wireDraw.active) {
+          startWireDraw(state.activeTool, w.x, w.y);
+        } else {
+          commitWireDraw(w.x, w.y);
+        }
+        return;
+      }
+
+      if (state.activeTool !== 'select') return;
 
       const hit = hitTestPoint(e.clientX, e.clientY);
 
@@ -1106,6 +1219,12 @@
           for (const id of state.selection) applyMoveEl(id, dx, dy);
           refreshSelectionOverlay();
         }
+        return;
+      }
+
+      // Wire preview
+      if (state.wireDraw.active) {
+        updateWirePreview();
         return;
       }
 
@@ -1201,14 +1320,38 @@
     }
 
     // ─────────────────────────────────────────────
-    //  Keyboard
+    //  Keyboard (capture phase so wire-draw keys work when canvas has focus)
     // ─────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (state.wireDraw.active) {
+        if (e.key === 'Escape') {
+          cancelWireDraw();
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        if (e.code === 'Space' && !e.repeat) {
+          state.wireDraw.bendFirst = state.wireDraw.bendFirst === 'horizontal' ? 'vertical' : 'horizontal';
+          updateWirePreview();
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
+    }, true);
+
     window.addEventListener('keydown', e => {
       const mod = e.ctrlKey || e.metaKey;
       const tag = document.activeElement?.tagName?.toLowerCase();
       const inInput = tag === 'input' || tag === 'textarea';
 
       if (e.code === 'Space' && !e.repeat && !inInput) {
+        if (state.wireDraw.active) {
+          state.wireDraw.bendFirst = state.wireDraw.bendFirst === 'horizontal' ? 'vertical' : 'horizontal';
+          updateWirePreview();
+          e.preventDefault();
+          return;
+        }
         state.panGesture.spaceDown = true; wrap.classList.add('pan-mode'); e.preventDefault(); return;
       }
       if (inInput) return;  // don't steal keys from property inputs
@@ -1222,7 +1365,20 @@
 
       // Tool shortcuts
       if (e.key === 's' || e.key === 'S') { setTool('select'); return; }
-      if (e.key === 'Escape') { clearSelection(); return; }
+      if (e.key === 'Escape') {
+        if (state.wireDraw.active) {
+          cancelWireDraw();
+          e.preventDefault();
+          return;
+        }
+        if (state.activeTool === 'wire-harness' || state.activeTool === 'wire-mate') {
+          setTool('select');
+          e.preventDefault();
+          return;
+        }
+        clearSelection();
+        return;
+      }
 
       // Delete
       if (e.key === 'Delete' || e.key === 'Backspace') { deleteSelected(); return; }
@@ -1258,7 +1414,7 @@
       state.dirty = false; updateTitleBar(); postStatusToParent();
     }
     function updateTitleBar() {
-      const fname = state.svgHandle ? state.svgHandle.name : 'untitled.schematic.svg';
+      const fname = state.svgHandle ? state.svgHandle.name : (embedded ? 'block diagram' : 'untitled.schematic.svg');
       if (statusFile) statusFile.textContent = (state.dirty ? '● ' : '') + fname;
       document.title = (state.dirty ? '● ' : '') + 'SDE — ' + fname;
     }
@@ -1283,6 +1439,7 @@
       const clone = svg.cloneNode(true);
       clone.getElementById('viewport')?.removeAttribute('transform');
       clone.getElementById('selection-overlay')?.remove();
+      clone.getElementById('wire-preview')?.remove();
       clone.getElementById('grid-bg-layer')?.remove();
       clone.getElementById('origin-marker')?.remove();
       clone.getElementById('xhair-h')?.remove();
@@ -1293,6 +1450,18 @@
       return '<?xml version="1.0" encoding="UTF-8"?>\n' + clone.outerHTML;
     }
     async function writeSVG() {
+      if (embedded) {
+        try {
+          const res = await fetch('/api/block_diagram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'image/svg+xml; charset=utf-8' },
+            body: serializeSVG(),
+          });
+          if (res.ok) clearDirty();
+          else console.error('Block diagram save failed', res.status);
+        } catch (e) { console.error('SVG write', e); }
+        return;
+      }
       if (!state.svgHandle) return;
       try {
         const w = await state.svgHandle.createWritable();
@@ -1319,7 +1488,35 @@
       updateTitleBar(); updateUndoRedoUI(); zoomFit();
     }
 
+    async function loadFromApi() {
+      try {
+        const res = await fetch('/api/block_diagram');
+        if (!res.ok) throw new Error(res.statusText);
+        const text = await res.text();
+        const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+        const src = doc.getElementById('viewport');
+        viewport.innerHTML = src ? src.innerHTML : '';
+        const layerGraphics = document.getElementById('layer-graphics');
+        const docLayer = doc.getElementById('layer-graphics');
+        if (layerGraphics && docLayer) layerGraphics.innerHTML = docLayer.innerHTML;
+        state.svgHandle = null; state.netlistHandle = null;
+        state.hasDocument = true; state.dirty = false;
+        state.undoStack = []; state.redoStack = [];
+        clearSelection();
+        overlay.classList.add('hidden');
+        renderDocBorder();
+        updateTitleBar(); updateUndoRedoUI(); zoomFit();
+        if (embedded && window.parent && window.parent !== window) {
+          try { window.parent.postMessage({ type: 'sde-tool', tool: state.activeTool }, '*'); } catch (_) { }
+        }
+      } catch (e) {
+        console.error('Load block diagram', e);
+        newDocument();
+      }
+    }
+
     async function openDocument() {
+      if (embedded) { await loadFromApi(); return; }
       if (!('showOpenFilePicker' in window)) { alert('File System Access API not available.\nUse Chrome 86+.'); return; }
       try {
         const [handle] = await window.showOpenFilePicker({
@@ -1343,6 +1540,7 @@
     }
 
     async function saveDocument() {
+      if (embedded) { await writeSVG(); showToast('Saved'); return; }
       if (!state.svgHandle) { showToast('No file open'); return; }
       await writeSVG(); showToast('Saved');
     }
@@ -1352,12 +1550,14 @@
     // ─────────────────────────────────────────────
     function postStatusToParent() {
       if (!embedded) return;
-      parent.postMessage({ type: 'sde-status', dirty: state.dirty, filename: state.svgHandle?.name ?? null }, '*');
+      const filename = state.svgHandle ? state.svgHandle.name : (state.hasDocument ? 'block diagram' : null);
+      parent.postMessage({ type: 'sde-status', dirty: state.dirty, filename }, '*');
     }
     window.addEventListener('message', e => {
       if (!e.data) return;
       if (e.data.type === 'harnice-graph-action' && !embedded) {
         embedded = true; clearTimeout(_embCheck); document.body.classList.add('embedded');
+        try { window.parent.postMessage({ type: 'sde-tool', tool: state.activeTool }, '*'); } catch (_) { }
       }
       if (e.data.type !== 'harnice-graph-action') return;
       const a = e.data.action;
@@ -1384,6 +1584,8 @@
     document.getElementById('btn-open2').addEventListener('click', openDocument);
     document.getElementById('btn-new2').addEventListener('click', newDocument);
     document.getElementById('btn-tool-select').addEventListener('click', () => setTool('select'));
+    document.getElementById('btn-tool-wire-harness').addEventListener('click', () => setTool('wire-harness'));
+    document.getElementById('btn-tool-wire-mate').addEventListener('click', () => setTool('wire-mate'));
 
     // ─────────────────────────────────────────────
     //  Demo: populate canvas on New for testing
@@ -1416,10 +1618,14 @@
     applyViewport();
     updateUndoRedoUI();
 
-    // Auto-open demo document for artifact preview
-    newDocument();
-    spawnDemoElements();
-    zoomFit();
+    // When embedded (block diagram in console), load from fileio.path("block diagram"); else demo doc
+    if (embedded) {
+      loadFromApi();
+    } else {
+      newDocument();
+      spawnDemoElements();
+      zoomFit();
+    }
   </script>
 </body>
 

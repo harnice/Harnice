@@ -1336,6 +1336,11 @@
             background: #444;
         }
 
+        .btn.active-tool {
+            border-color: #d4a017;
+            color: #d4a017;
+        }
+
         #run-btn {
             font-weight: 600;
             min-width: 90px;
@@ -1719,16 +1724,13 @@
             ,
             "block diagram": [
                 { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
-                { action: "setTool", payload: { tool: "wire-harness" }, label: "⟶ Harness Wire" },
-                { action: "setTool", payload: { tool: "wire-mate" }, label: "⟶ Mate Wire" },
+                { action: "setTool", payload: { tool: "wire-harness" }, label: "Harness" },
+                { action: "setTool", payload: { tool: "wire-mate" }, label: "Mate" },
                 { action: "setTool", payload: { tool: "place" }, label: "＋ Place" },
                 { action: "setTool", payload: { tool: "label" }, label: "⌨ Net Label" },
                 { action: "fitView", payload: {}, label: "Fit View" },
                 { action: "undo", payload: {}, label: "↩ Undo" },
-                { action: "redo", payload: {}, label: "↪ Redo" },
-                { action: "openFile", payload: {}, label: "Open…" },
-                { action: "newFile", payload: {}, label: "New" },
-                { action: "save", payload: {}, label: "Save" }
+                { action: "redo", payload: {}, label: "↪ Redo" }
             ]
         };
 
@@ -1743,6 +1745,8 @@
         let systemListLabelToKey = {};  // display label -> tab key for system viewer (from /api/info)
         let selectedFile = MODE_FEATURE_TREE;
         let lastSaveIndicatorState = "saved";
+        let blockDiagramSaveState = "saved";
+        let blockDiagramTool = "select";
 
         function isFeatureTreeMode() {
             return selectedFile === MODE_FEATURE_TREE;
@@ -1752,6 +1756,14 @@
             return productType === "system" &&
                 selectedFile !== MODE_FEATURE_TREE &&
                 selectedFile !== "block diagram";
+        }
+
+        function updateBlockDiagramToolbarActive() {
+            const slot = document.getElementById("top-toolbar-slot");
+            if (!slot || selectedFile !== "block diagram") return;
+            slot.querySelectorAll(".btn[data-tool]").forEach(function (b) {
+                b.classList.toggle("active-tool", b.dataset.tool === blockDiagramTool);
+            });
         }
 
         function populateToolbarSlot() {
@@ -1780,6 +1792,9 @@
                         btn.type = "button";
                         btn.className = "btn";
                         btn.textContent = item.label;
+                        if (item.action === "setTool" && item.payload && item.payload.tool) {
+                            btn.dataset.tool = item.payload.tool;
+                        }
                         btn.onclick = function () {
                             if (graphIframe && graphIframe.contentWindow) {
                                 try {
@@ -1790,6 +1805,9 @@
                         };
                         slot.appendChild(btn);
                     });
+                    if (selectedFile === "block diagram") {
+                        updateBlockDiagramToolbarActive();
+                    }
                 }
                 if (selectedFile === "available network") {
                     const sep = document.createElement("div");
@@ -1939,6 +1957,25 @@
         }
 
         // ---------------------------------------------------------------------------
+        // Block diagram iframe: tool state for toolbar active button
+        // ---------------------------------------------------------------------------
+        window.addEventListener("message", function (e) {
+            if (!e.data) return;
+            if (e.data.type === "sde-tool" && typeof e.data.tool === "string") {
+                blockDiagramTool = e.data.tool;
+                updateBlockDiagramToolbarActive();
+            }
+            if (e.data.type === "sde-status" && selectedFile === "block diagram") {
+                blockDiagramSaveState = e.data.dirty ? "unsaved" : "saved";
+                const el = document.getElementById("save-indicator");
+                if (el) {
+                    el.className = blockDiagramSaveState;
+                    el.textContent = blockDiagramSaveState === "saved" ? "Saved" : "Unsaved";
+                }
+            }
+        });
+
+        // ---------------------------------------------------------------------------
         // Init
         // ---------------------------------------------------------------------------
         async function init() {
@@ -2034,6 +2071,10 @@
                         pill.id = "save-indicator";
                         pill.className = lastSaveIndicatorState;
                         pill.textContent = lastSaveIndicatorState === "saved" ? "Saved" : "Unsaved";
+                    } else if (label === "block diagram") {
+                        pill.id = "save-indicator";
+                        pill.className = blockDiagramSaveState;
+                        pill.textContent = blockDiagramSaveState === "saved" ? "Saved" : "Unsaved";
                     } else {
                         pill.className = "status-pill";
                         pill.textContent = "Read Only";

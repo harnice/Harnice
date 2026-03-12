@@ -36,6 +36,18 @@ _GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
 _SYSTEM_LIST_VIEW_JS = _GUI_DIR / "system_list_view.js"
 _SYSTEM_DIAGRAM_HTML = _GUI_DIR / "system_diagram_editor.html"
 
+# Minimal empty block diagram SVG written when fileio.path("block diagram") does not exist
+_BLOCK_DIAGRAM_EMPTY_SVG = """<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:schem="https://example.com/schema/v1" viewBox="0 0 10000 10000">
+  <g id="layer-graphics" class="layer graphics-layer"></g>
+  <g id="layer-schematic" class="layer schematic-layer">
+    <g id="viewport">
+      <rect id="doc-border" x="0" y="0" width="10000" height="10000" fill="none" stroke="#444" stroke-width="1" pointer-events="none"/>
+    </g>
+  </g>
+</svg>
+"""
+
 
 def _graph_file_path(rev_folder: str, product_type: str, label: str) -> Path:
     """Return the absolute path for a graph-editor file label. No global state. Harness only."""
@@ -564,6 +576,9 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             return
         # System viewer API (system product only)
         if _state.product_type == "system":
+            if path == "/api/block_diagram":
+                self._api_block_diagram_get()
+                return
             if path == "/api/files":
                 system_viewer_server.serve_files(self)
                 return
@@ -587,6 +602,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/api/code": self._api_post_code,
             "/api/run": self._api_run,
             "/api/switch": self._api_switch,
+            "/api/block_diagram": self._api_block_diagram_post,
             "/api/add_project": self._api_add_project,
             "/api/select_project": self._api_select_project,
             "/api/remove_project": self._api_remove_project,
@@ -627,6 +643,42 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             _SYSTEM_DIAGRAM_HTML.read_bytes(),
             "text/html; charset=utf-8",
         )
+
+    def _api_block_diagram_get(self):
+        """Read block diagram SVG from fileio.path('block diagram'). Create file if missing (system only)."""
+        if _state.product_type != "system":
+            self.send_error(404)
+            return
+        try:
+            from harnice import fileio
+
+            path = Path(fileio.path("block diagram"))
+            if not path.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(_BLOCK_DIAGRAM_EMPTY_SVG, encoding="utf-8")
+            content = path.read_text(encoding="utf-8")
+            self._send_bytes(content.encode("utf-8"), "image/svg+xml; charset=utf-8")
+        except Exception as e:
+            self._send_json({"error": str(e)}, status=500)
+
+    def _api_block_diagram_post(self):
+        """Write block diagram SVG to fileio.path('block diagram') (system only)."""
+        if _state.product_type != "system":
+            self.send_error(404)
+            return
+        try:
+            from harnice import fileio
+
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length).decode("utf-8")
+            path = Path(fileio.path("block diagram"))
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body, encoding="utf-8")
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+        except Exception as e:
+            self._send_json({"error": str(e)}, status=500)
 
     def _serve_system_list_view_js(self):
         """Serve in-DOM system list view script for Harnice console."""

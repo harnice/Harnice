@@ -254,6 +254,7 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
         f"{state.partnumber('pn-rev')}-instances_list.tsv": "instances list",
         f"{state.partnumber('pn-rev')}-library_import_history.tsv": "library history",
+        f"{state.partnumber('pn-rev')}-blockdiagram.svg": "block diagram",
         "instance_data": {},
         "features_for_relatives": {},
         "harnesses": {},
