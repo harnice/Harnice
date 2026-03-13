@@ -390,7 +390,6 @@
     <div class="tb-sep"></div>
     <button id="btn-tool-select" class="active-tool" title="S">▶ Select</button>
     <button id="btn-tool-wire-harness" title="Harness wire">Harness</button>
-    <button id="btn-tool-wire-mate" title="Mate wire">Mate</button>
     <div class="tb-sep"></div>
     <button id="btn-zoom-fit">Zoom Fit</button>
     <button id="btn-zoom-1">1:1</button>
@@ -502,7 +501,7 @@
       rubberband: { active: false, startWX: 0, startWY: 0, startSX: 0, startSY: 0 },
       // Element drag (nudge / mouse-drag move)
       elemDrag: { active: false, startSX: 0, startSY: 0, lastWX: 0, lastWY: 0, hasMoved: false },
-      // Wire drawing (harness / mate)
+      // Wire drawing (harness)
       wireDraw: { active: false, tool: null, startX: 0, startY: 0, bendFirst: 'horizontal' },
     };
 
@@ -870,9 +869,8 @@
         cls.includes('device') ? 'Device' :
           cls.includes('connector') ? 'Connector' :
             cls.includes('harness-wire') ? 'Harness Wire' :
-              cls.includes('mate-wire') ? 'Mate Wire' :
-                cls.includes('net-label') ? 'Net Label' :
-                  tag;
+              cls.includes('net-label') ? 'Net Label' :
+                tag;
 
       // Build editable fields based on element type
       let html = '';
@@ -1037,10 +1035,9 @@
     const TOOL_HINTS = {
       select: 'Click to select · Shift+click to extend · Drag to rubber-band · Del to delete',
       'wire-harness': 'Click to start · Click to finish · Space: bend up/down · Esc: cancel',
-      'wire-mate': 'Click to start · Click to finish · Space: bend up/down · Esc: cancel',
     };
-    const WIRE_STROKE = { 'wire-harness': '#3a6ea5', 'wire-mate': '#d4a017' };
-    const WIRE_CLASS = { 'wire-harness': 'wire harness-wire', 'wire-mate': 'wire mate-wire' };
+    const WIRE_STROKE = { 'wire-harness': '#3a6ea5' };
+    const WIRE_CLASS = { 'wire-harness': 'wire harness-wire' };
 
     function wireUuid() {
       return 'wire-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : Date.now().toString(36) + Math.random().toString(36).slice(2));
@@ -1148,7 +1145,7 @@
       if (!state.hasDocument) return;
 
       const w = screenToWorld(e.clientX, e.clientY);
-      if (state.activeTool === 'wire-harness' || state.activeTool === 'wire-mate') {
+      if (state.activeTool === 'wire-harness') {
         e.preventDefault();
         if (!state.wireDraw.active) {
           startWireDraw(state.activeTool, w.x, w.y);
@@ -1371,7 +1368,7 @@
           e.preventDefault();
           return;
         }
-        if (state.activeTool === 'wire-harness' || state.activeTool === 'wire-mate') {
+        if (state.activeTool === 'wire-harness') {
           setTool('select');
           e.preventDefault();
           return;
@@ -1585,7 +1582,6 @@
     document.getElementById('btn-new2').addEventListener('click', newDocument);
     document.getElementById('btn-tool-select').addEventListener('click', () => setTool('select'));
     document.getElementById('btn-tool-wire-harness').addEventListener('click', () => setTool('wire-harness'));
-    document.getElementById('btn-tool-wire-mate').addEventListener('click', () => setTool('wire-mate'));
 
     // ─────────────────────────────────────────────
     //  Demo: populate canvas on New for testing
