@@ -316,6 +316,8 @@
       };
 
       const commandHistory = { undoStack: [], redoStack: [] };
+      let clipboard = [];
+      const PASTE_OFFSET = 20;
       const AUTOSAVE_MS = 500;
       let saveTimer = null;
 
@@ -434,6 +436,51 @@
 
       function batch(commands) {
         return { type: 'BATCH', commands: commands };
+      }
+
+      function copySelection() {
+        if (appState.activeTool !== 'select' || appState.selection.size === 0) return;
+        const content = document.getElementById('svg-content');
+        if (!content) return;
+        clipboard = [];
+        appState.selection.forEach(function (id) {
+          const el = content.querySelector('#' + CSS.escape(id));
+          if (el) {
+            const clone = el.cloneNode(true);
+            clone.removeAttribute('id');
+            clipboard.push(new XMLSerializer().serializeToString(clone));
+          }
+        });
+      }
+
+      function pasteFromClipboard() {
+        if (appState.activeTool !== 'select' || clipboard.length === 0) return;
+        const content = document.getElementById('svg-content');
+        if (!content) return;
+        const parser = new DOMParser();
+        const newSelection = new Set();
+        const commands = [];
+        clipboard.forEach(function (serialized) {
+          try {
+            const doc = parser.parseFromString('<g xmlns="http://www.w3.org/2000/svg">' + serialized + '</g>', 'image/svg+xml');
+            const wrapper = doc.documentElement;
+            const el = wrapper.firstElementChild;
+            if (!el || !content.ownerDocument) return;
+            const imported = content.ownerDocument.importNode(el, true);
+            imported.removeAttribute('id');
+            translateElement(imported, PASTE_OFFSET, PASTE_OFFSET);
+            ensureElementId(imported);
+            newSelection.add(imported.id);
+            commands.push(createAddElementCommand(imported));
+          } catch (err) {
+            console.warn('Paste parse error:', err);
+          }
+        });
+        if (commands.length > 0) {
+          executeCommand(batch(commands));
+          appState.selection = newSelection;
+          updateSelectionVisuals();
+        }
       }
 
       function createMoveElementsCommand(elementIds, dx, dy) {
@@ -1751,6 +1798,12 @@
           } else if (ctrl && e.key === 'y') {
             e.preventDefault();
             redo();
+          } else if (ctrl && e.key === 'c') {
+            e.preventDefault();
+            copySelection();
+          } else if (ctrl && e.key === 'v') {
+            e.preventDefault();
+            pasteFromClipboard();
           }
         });
       }
