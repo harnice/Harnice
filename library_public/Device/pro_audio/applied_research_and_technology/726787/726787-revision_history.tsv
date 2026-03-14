@@ -1,3 +1,3 @@
 product	mfg	pn	desc	rev	status	releaseticket	library_repo	library_subpath	datestarted	datemodified	datereleased	git_hash_of_harnice_src	drawnby	checkedby	revisionupdates	affectedinstances
 device	APPLIED RESEARCH AND TECHNOLOGY	726787	PREAMP, 2CH	1	OBSOLETE		https://github.com/harnice/harnice	pro_audio/applied_research_and_technology/	9/21/25	3/13/26		de1a54c0abbe4cf5455d6daf095b36e16f49a9d5	K SHUTT		INITIAL RELEASE	
-device		726787	PREAMP, 2CH	2			https://github.com/harnice/harnice	pro_audio/applied_research_and_technology/	3/13/26	3/13/26		8921a0dd3726ee65cf5fbf8be56112a6e5218260	K SHUTT		BLOCK DIAGRAM SYMBOL IS SVG	
+device		726787	PREAMP, 2CH	2			https://github.com/harnice/harnice	pro_audio/applied_research_and_technology/	3/13/26	3/14/26		3df22ff7d82f43efbca71d309d0004646e7e1ae3	K SHUTT		BLOCK DIAGRAM SYMBOL IS SVG	

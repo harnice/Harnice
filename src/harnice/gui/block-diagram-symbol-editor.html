@@ -743,8 +743,12 @@
             }
             updateSelectionVisuals();
             isDragging = true;
-            if (hit.classList && hit.classList.contains('pin')) sendSnap(true);
-            dragStart = { x: pt.x, y: pt.y, hit: hit };
+            var snapBeforePinDrag = null;
+            if (hit.classList && hit.classList.contains('pin')) {
+              snapBeforePinDrag = appState.snapEnabled;
+              sendSnap(true);
+            }
+            dragStart = { x: pt.x, y: pt.y, hit: hit, snapBeforePinDrag: snapBeforePinDrag };
             moveStartPositions = Array.from(appState.selection).map(function (id) {
               const el = document.getElementById(id);
               if (!el) return null;
@@ -835,7 +839,6 @@
                 }
               });
               executeCommand(cmd);
-              sendSnap(true);
             }
           } else {
             rubberBand.setAttribute('visibility', 'hidden');
@@ -850,6 +853,9 @@
               });
               updateSelectionVisuals();
             }
+          }
+          if (dragStart && dragStart.snapBeforePinDrag != null) {
+            sendSnap(dragStart.snapBeforePinDrag);
           }
           dragStart = null;
           isDragging = false;
