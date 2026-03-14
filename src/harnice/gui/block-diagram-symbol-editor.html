@@ -483,6 +483,59 @@
         }
       }
 
+      function reorderLayer(op) {
+        if (appState.activeTool !== 'select' || appState.selection.size === 0) return;
+        const content = document.getElementById('svg-content');
+        if (!content) return;
+        const ids = Array.from(appState.selection);
+        const elements = ids.map(function (id) { return content.querySelector('#' + CSS.escape(id)); }).filter(Boolean);
+        if (elements.length === 0) return;
+        const cmd = createReorderLayerCommand(content, elements, op);
+        if (cmd) executeCommand(cmd);
+      }
+
+      function createReorderLayerCommand(content, elements, op) {
+        const beforeOrder = Array.from(content.children);
+        function restoreOrder() {
+          beforeOrder.forEach(function (c) { c.remove(); });
+          beforeOrder.forEach(function (c) { content.appendChild(c); });
+        }
+        function doBringToFront() {
+          elements.forEach(function (el) {
+            content.appendChild(el);
+          });
+        }
+        function doSendToBack() {
+          let ref = content.firstChild;
+          elements.forEach(function (el) {
+            content.insertBefore(el, ref);
+            ref = el.nextSibling;
+          });
+        }
+        function doBringForward() {
+          for (let i = elements.length - 1; i >= 0; i--) {
+            const el = elements[i];
+            const next = el.nextSibling;
+            if (next) content.insertBefore(el, next.nextSibling);
+          }
+        }
+        function doSendBackward() {
+          elements.forEach(function (el) {
+            const prev = el.previousSibling;
+            if (prev) content.insertBefore(el, prev);
+          });
+        }
+        return {
+          execute: function () {
+            if (op === 'front') doBringToFront();
+            else if (op === 'back') doSendToBack();
+            else if (op === 'forward') doBringForward();
+            else if (op === 'backward') doSendBackward();
+          },
+          undo: restoreOrder,
+        };
+      }
+
       function createMoveElementsCommand(elementIds, dx, dy) {
         const content = document.getElementById('svg-content');
         const deltas = [];
@@ -1804,6 +1857,12 @@
           } else if (ctrl && e.key === 'v') {
             e.preventDefault();
             pasteFromClipboard();
+          } else if (ctrl && e.key === ']') {
+            e.preventDefault();
+            reorderLayer(e.shiftKey ? 'front' : 'forward');
+          } else if (ctrl && e.key === '[') {
+            e.preventDefault();
+            reorderLayer(e.shiftKey ? 'back' : 'backward');
           }
         });
       }
@@ -1823,6 +1882,10 @@
           }
           if (a === 'undo') { undo(); }
           if (a === 'redo') { redo(); }
+          if (a === 'bringToFront') { reorderLayer('front'); }
+          if (a === 'bringForward') { reorderLayer('forward'); }
+          if (a === 'sendBackward') { reorderLayer('backward'); }
+          if (a === 'sendToBack') { reorderLayer('back'); }
         });
       }
 
