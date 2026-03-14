@@ -45,7 +45,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      cursor: grab;
+      cursor: default;
     }
 
     #svg-container.panning {
@@ -54,6 +54,19 @@
 
     .pin {
       fill: var(--accent);
+    }
+
+    .selected {
+      outline: 1px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    #rubber-band {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 1;
+      stroke-dasharray: 4 2;
+      pointer-events: none;
     }
 
     #grid-pattern {
@@ -82,6 +95,7 @@
         <g id="svg-viewport">
           <rect id="grid-bg" fill="url(#grid-pattern)" x="-5000" y="-5000" width="10000" height="10000" />
           <g id="svg-content" />
+          <rect id="rubber-band" visibility="hidden" />
         </g>
       </svg>
     </div>
@@ -98,6 +112,7 @@
         panY: 0,
         scale: 1,
         svgDoc: null,
+        selection: new Set(),
       };
 
       const commandHistory = { undoStack: [], redoStack: [] };
@@ -174,6 +189,146 @@
         return { type: 'BATCH', commands: commands };
       }
 
+      function createMoveElementsCommand(elementIds, dx, dy) {
+        const content = document.getElementById('svg-content');
+        const deltas = [];
+        elementIds.forEach(function (id) {
+          const el = content.querySelector('#' + CSS.escape(id));
+          if (el) deltas.push({ el: el, dx: dx, dy: dy });
+        });
+        return {
+          execute: function () {
+            deltas.forEach(function (d) {
+              translateElement(d.el, d.dx, d.dy);
+            });
+          },
+          undo: function () {
+            deltas.forEach(function (d) {
+              translateElement(d.el, -d.dx, -d.dy);
+            });
+          },
+        };
+      }
+
+      function createDeleteElementCommand(element) {
+        const parent = element.parentNode;
+        const nextSibling = element.nextSibling;
+        return {
+          execute: function () {
+            element.remove();
+            appState.selection.delete(ensureElementId(element));
+            updateSelectionVisuals();
+          },
+          undo: function () {
+            if (nextSibling) {
+              parent.insertBefore(element, nextSibling);
+            } else {
+              parent.appendChild(element);
+            }
+            appState.selection.add(ensureElementId(element));
+            updateSelectionVisuals();
+          },
+        };
+      }
+
+      function translateElement(el, dx, dy) {
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'line') {
+          el.setAttribute('x1', parseFloat(el.getAttribute('x1') || 0) + dx);
+          el.setAttribute('y1', parseFloat(el.getAttribute('y1') || 0) + dy);
+          el.setAttribute('x2', parseFloat(el.getAttribute('x2') || 0) + dx);
+          el.setAttribute('y2', parseFloat(el.getAttribute('y2') || 0) + dy);
+        } else if (tag === 'rect') {
+          el.setAttribute('x', parseFloat(el.getAttribute('x') || 0) + dx);
+          el.setAttribute('y', parseFloat(el.getAttribute('y') || 0) + dy);
+        } else if (tag === 'circle' || tag === 'ellipse') {
+          el.setAttribute('cx', parseFloat(el.getAttribute('cx') || 0) + dx);
+          el.setAttribute('cy', parseFloat(el.getAttribute('cy') || 0) + dy);
+        } else if (tag === 'text') {
+          el.setAttribute('x', parseFloat(el.getAttribute('x') || 0) + dx);
+          el.setAttribute('y', parseFloat(el.getAttribute('y') || 0) + dy);
+        } else {
+          const x = el.getAttribute('transform') || '';
+          const m = x.match(/translate\(([^,]+),([^)]+)\)/);
+          const tx = m ? parseFloat(m[1]) + dx : dx;
+          const ty = m ? parseFloat(m[2]) + dy : dy;
+          const rest = (x.replace(/translate\([^)]*\)\s*/g, '') || '').trim();
+          el.setAttribute('transform', 'translate(' + tx + ',' + ty + ')' + (rest ? ' ' + rest : ''));
+        }
+      }
+
+      function ensureElementId(el) {
+        if (el.id) return el.id;
+        el.id = 'sde-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+        return el.id;
+      }
+
+      function updateSelectionVisuals() {
+        const content = document.getElementById('svg-content');
+        if (!content) return;
+        content.querySelectorAll('.selected').forEach(function (el) { el.classList.remove('selected'); });
+        appState.selection.forEach(function (id) {
+          const el = content.querySelector('#' + CSS.escape(id));
+          if (el) el.classList.add('selected');
+        });
+      }
+
+      function screenToSvg(clientX, clientY) {
+        const svg = document.getElementById('svg-root');
+        const viewport = document.getElementById('svg-viewport');
+        if (!svg || !viewport) return { x: 0, y: 0 };
+        const pt = svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const vp = pt.matrixTransform(viewport.getScreenCTM().inverse());
+        return { x: vp.x, y: vp.y };
+      }
+
+      function getSelectableElements() {
+        const content = document.getElementById('svg-content');
+        if (!content) return [];
+        return Array.from(content.children).filter(function (el) {
+          return el.id !== 'grid-bg' && el.tagName && !/^defs|metadata|title|desc$/i.test(el.tagName);
+        });
+      }
+
+      function getElementAtPoint(svgX, svgY) {
+        const elements = getSelectableElements();
+        for (let i = elements.length - 1; i >= 0; i--) {
+          const el = elements[i];
+          if (el.getBBox && isPointInElement(el, svgX, svgY)) return el;
+        }
+        return null;
+      }
+
+      function isPointInElement(el, x, y) {
+        try {
+          const bbox = el.getBBox();
+          const pad = 4;
+          return x >= bbox.x - pad && x <= bbox.x + bbox.width + pad &&
+            y >= bbox.y - pad && y <= bbox.y + bbox.height + pad;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function elementsInRect(x1, y1, x2, y2) {
+        const left = Math.min(x1, x2);
+        const right = Math.max(x1, x2);
+        const top = Math.min(y1, y2);
+        const bottom = Math.max(y1, y2);
+        const result = [];
+        getSelectableElements().forEach(function (el) {
+          try {
+            const b = el.getBBox();
+            if (b.x + b.width >= left && b.x <= right && b.y + b.height >= top && b.y <= bottom) {
+              result.push(el);
+            }
+          } catch (err) { /* skip */ }
+        });
+        return result;
+      }
+
       function loadSvg() {
         fetch('/api/block_diagram_symbol', { cache: 'no-store' })
           .then(function (r) {
@@ -189,9 +344,13 @@
             const content = document.getElementById('svg-content');
             content.innerHTML = '';
             while (svg.firstChild) {
-              content.appendChild(svg.firstChild);
+              const child = svg.firstChild;
+              content.appendChild(child);
             }
+            getSelectableElements().forEach(function (el) { ensureElementId(el); });
+            appState.selection.clear();
             stylePins(content);
+            updateSelectionVisuals();
             commandHistory.undoStack.length = 0;
             commandHistory.redoStack.length = 0;
             fitView();
@@ -258,9 +417,10 @@
       function initPanZoom() {
         const container = document.getElementById('svg-container');
         if (!container) return;
-        let lastX, lastY, lastDist, lastScale;
+        let lastX, lastY, lastDist;
         container.addEventListener('mousedown', function (e) {
-          if (e.button !== 0) return;
+          if (e.button !== 1 && e.button !== 2) return;
+          e.preventDefault();
           lastX = e.clientX;
           lastY = e.clientY;
           lastDist = undefined;
@@ -285,6 +445,9 @@
         container.addEventListener('mouseleave', function () {
           container.classList.remove('panning');
         });
+        container.addEventListener('contextmenu', function (e) {
+          e.preventDefault();
+        });
         container.addEventListener('wheel', function (e) {
           e.preventDefault();
           const delta = e.deltaY > 0 ? -0.1 : 0.1;
@@ -293,6 +456,147 @@
           const oy = e.clientY - rect.top;
           updatePanZoom(0, 0, delta, ox, oy);
         }, { passive: false });
+      }
+
+      function initSelectTool() {
+        const container = document.getElementById('svg-container');
+        const rubberBand = document.getElementById('rubber-band');
+        if (!container || !rubberBand) return;
+        let dragStart = null;
+        let isDragging = false;
+        let moveStartPositions = [];
+
+        container.addEventListener('mousedown', function (e) {
+          if (e.button !== 0 || appState.activeTool !== 'select') return;
+          const pt = screenToSvg(e.clientX, e.clientY);
+          const hit = getElementAtPoint(pt.x, pt.y);
+          if (hit) {
+            if (e.shiftKey) {
+              const id = ensureElementId(hit);
+              if (appState.selection.has(id)) {
+                appState.selection.delete(id);
+              } else {
+                appState.selection.add(id);
+              }
+            } else {
+              appState.selection.clear();
+              appState.selection.add(ensureElementId(hit));
+            }
+            updateSelectionVisuals();
+            isDragging = true;
+            dragStart = { x: pt.x, y: pt.y, hit: hit };
+            moveStartPositions = Array.from(appState.selection).map(function (id) {
+              const el = document.getElementById(id);
+              if (!el) return null;
+              const b = el.getBBox();
+              return { id: id, x: b.x, y: b.y, el: el };
+            }).filter(Boolean);
+          } else {
+            appState.selection.clear();
+            updateSelectionVisuals();
+            rubberBand.setAttribute('x', pt.x);
+            rubberBand.setAttribute('y', pt.y);
+            rubberBand.setAttribute('width', 0);
+            rubberBand.setAttribute('height', 0);
+            rubberBand.setAttribute('visibility', 'visible');
+            dragStart = { x: pt.x, y: pt.y, hit: null };
+          }
+        });
+
+        container.addEventListener('mousemove', function (e) {
+          if (!dragStart) return;
+          const pt = screenToSvg(e.clientX, e.clientY);
+          if (dragStart.hit) {
+            const dx = pt.x - dragStart.x;
+            const dy = pt.y - dragStart.y;
+            moveStartPositions.forEach(function (p) {
+              if (p && p.el) translateElement(p.el, dx - (p.el._lastDx || 0), dy - (p.el._lastDy || 0));
+              if (p && p.el) {
+                p.el._lastDx = dx;
+                p.el._lastDy = dy;
+              }
+            });
+          } else {
+            const x = Math.min(dragStart.x, pt.x);
+            const y = Math.min(dragStart.y, pt.y);
+            const w = Math.abs(pt.x - dragStart.x);
+            const h = Math.abs(pt.y - dragStart.y);
+            rubberBand.setAttribute('x', x);
+            rubberBand.setAttribute('y', y);
+            rubberBand.setAttribute('width', w);
+            rubberBand.setAttribute('height', h);
+          }
+        });
+
+        container.addEventListener('mouseup', function (e) {
+          if (e.button !== 0 || !dragStart) return;
+          const pt = screenToSvg(e.clientX, e.clientY);
+          if (dragStart.hit) {
+            const dx = pt.x - dragStart.x;
+            const dy = pt.y - dragStart.y;
+            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+              const ids = Array.from(appState.selection);
+              const cmd = createMoveElementsCommand(ids, dx, dy);
+              moveStartPositions.forEach(function (p) {
+                if (p && p.el) {
+                  translateElement(p.el, -(p.el._lastDx || 0), -(p.el._lastDy || 0));
+                  delete p.el._lastDx;
+                  delete p.el._lastDy;
+                }
+              });
+              executeCommand(cmd);
+            }
+          } else {
+            rubberBand.setAttribute('visibility', 'hidden');
+            const x1 = dragStart.x;
+            const y1 = dragStart.y;
+            const x2 = pt.x;
+            const y2 = pt.y;
+            if (Math.abs(x2 - x1) > 2 || Math.abs(y2 - y1) > 2) {
+              const els = elementsInRect(x1, y1, x2, y2);
+              els.forEach(function (el) {
+                appState.selection.add(ensureElementId(el));
+              });
+              updateSelectionVisuals();
+            }
+          }
+          dragStart = null;
+          isDragging = false;
+          moveStartPositions = [];
+        });
+
+        document.addEventListener('keydown', function (e) {
+          if (appState.activeTool !== 'select') return;
+          if (e.key === 'Escape') {
+            appState.selection.clear();
+            updateSelectionVisuals();
+            return;
+          }
+          if (e.key === 'Delete' || e.key === 'Backspace') {
+            if (appState.selection.size === 0) return;
+            e.preventDefault();
+            const ids = Array.from(appState.selection);
+            const content = document.getElementById('svg-content');
+            const cmds = ids.map(function (id) {
+              const el = content.querySelector('#' + CSS.escape(id));
+              return el ? createDeleteElementCommand(el) : null;
+            }).filter(Boolean);
+            if (cmds.length) executeCommand(batch(cmds));
+            return;
+          }
+          const nudge = appState.grid;
+          let dx = 0, dy = 0;
+          if (e.key === 'ArrowLeft') { dx = -nudge; }
+          else if (e.key === 'ArrowRight') { dx = nudge; }
+          else if (e.key === 'ArrowUp') { dy = -nudge; }
+          else if (e.key === 'ArrowDown') { dy = nudge; }
+          if (dx !== 0 || dy !== 0) {
+            e.preventDefault();
+            if (appState.selection.size === 0) return;
+            const ids = Array.from(appState.selection);
+            executeCommand(createMoveElementsCommand(ids, dx, dy));
+          }
+        });
       }
 
       if (embedded) {
@@ -317,6 +621,7 @@
       sendSnap(true);
       loadSvg();
       initPanZoom();
+      initSelectTool();
       window.addEventListener('resize', fitView);
     })();
   </script>
