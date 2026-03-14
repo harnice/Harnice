@@ -47,14 +47,13 @@
       z-index: 100;
       min-width: 200px;
       max-width: 320px;
-      max-height: calc(100% - 24px);
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: 8px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.2);
       padding: 12px 14px;
       font-size: 12px;
-      overflow-y: auto;
+      overflow: visible;
     }
 
     #properties-panel.popup-visible {
@@ -220,36 +219,38 @@
       min-width: 0;
     }
 
-    #properties-panel .color-picker-popover {
-      position: absolute;
-      z-index: 200;
+    #color-picker-popover {
+      position: fixed;
+      z-index: 10000;
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 10px;
+      padding: 10px 10px 4px 10px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
       display: none;
     }
 
-    #properties-panel .color-picker-popover.visible {
+    #color-picker-popover.visible {
       display: block;
     }
 
-    #properties-panel .color-picker-sv {
+    #color-picker-popover .color-picker-sv {
       width: 150px;
       height: 120px;
       cursor: crosshair;
       border-radius: 4px;
-      margin-bottom: 8px;
       border: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
-    #properties-panel .color-picker-hue {
+    #color-picker-popover .color-picker-hue {
       width: 150px;
-      height: 10px;
+      height: 12px;
       cursor: crosshair;
       border-radius: 4px;
       border: 1px solid var(--border);
+      flex-shrink: 0;
+      margin-bottom: 8px;
     }
   </style>
 </head>
@@ -277,11 +278,11 @@
     </div>
     <div id="properties-panel">
       <div id="properties-content"></div>
-      <div id="color-picker-popover" class="color-picker-popover">
-        <div class="color-picker-sv" id="color-picker-sv"></div>
-        <div class="color-picker-hue" id="color-picker-hue"></div>
-      </div>
     </div>
+  </div>
+  <div id="color-picker-popover" class="color-picker-popover">
+    <div class="color-picker-hue" id="color-picker-hue"></div>
+    <div class="color-picker-sv" id="color-picker-sv"></div>
   </div>
   <script>
     (function () {
@@ -840,214 +841,213 @@
           html += propRow('font-size', el.getAttribute('font-size') || '12');
           html += '<div class="prop-row"><label>Text</label><input type="text" data-attr="textContent" value="' + escapeHtml((el.textContent || '').trim()) + '"></div>';
         }
-        if (tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text') {
+        var hasFill = (tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text') && !(el.classList && el.classList.contains('pin'));
+        var hasStroke = tag === 'line' || tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text';
+        if (hasFill) {
           html += propSection('Fill');
-          html += propRowColor('fill', el.getAttribute('fill'));
-          html += propRowOpacity('fill-opacity', el.getAttribute('fill-opacity'));
+          html += propRowColor('fill', el.getAttribute('fill') || 'none');
+          html += propRowOpacity('fill-opacity', el.getAttribute('fill-opacity') || '1');
         }
-        if (tag === 'line' || tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text') {
+        if (hasStroke) {
           html += propSection('Stroke');
-          html += propRowColor('stroke', el.getAttribute('stroke'));
-          html += propRowNum('stroke-width', el.getAttribute('stroke-width') || '1', 0, 1000, 0.5);
-          html += propRowOpacity('stroke-opacity', el.getAttribute('stroke-opacity'));
+          html += propRowColor('stroke', el.getAttribute('stroke') || 'var(--text)');
+          html += propRowNum('stroke-width', el.getAttribute('stroke-width') || '1', { min: 0, step: 0.5 });
+          html += propRowOpacity('stroke-opacity', el.getAttribute('stroke-opacity') || '1');
         }
         panel.innerHTML = html;
         panel.querySelectorAll('input[data-attr]').forEach(function (input) {
           const attr = input.getAttribute('data-attr');
-          function commitChange() {
+          if (input.hasAttribute('data-opacity')) {
+            const span = input.closest('.prop-row').querySelector('.opacity-pct');
+            input.addEventListener('input', function () {
+              const v = parseFloat(input.value) || 0;
+              const pct = Math.min(100, Math.max(0, v));
+              if (span) span.textContent = pct + '%';
+              el.setAttribute(attr, (pct / 100).toFixed(2));
+            });
+            input.addEventListener('change', function () {
+              const newVal = (parseFloat(input.value) || 0) / 100;
+              const norm = Math.min(1, Math.max(0, newVal));
+              const oldVal = parseFloat(el.getAttribute(attr) || '1');
+              if (Math.abs(norm - oldVal) < 0.01) return;
+              executeCommand(createSetAttributeCommand(el, attr, String(oldVal), String(norm.toFixed(2))));
+              updatePropertiesPanel();
+            });
+            return;
+          }
+          input.addEventListener('change', function () {
             let newVal = input.value.trim();
-            let oldVal = attr === 'textContent' ? (el.textContent || '').trim() : (el.getAttribute(attr) || '');
-            if (attr === 'fill-opacity' || attr === 'stroke-opacity') {
-              const pct = Math.max(0, Math.min(100, parseFloat(newVal) || 100));
-              newVal = String(Math.round(pct) / 100);
-              oldVal = el.getAttribute(attr) || '1';
-            }
+            if (input.classList.contains('color-picker-hex')) newVal = parseColorToHex(newVal || '#000000');
+            const oldVal = attr === 'textContent' ? (el.textContent || '').trim() : (el.getAttribute(attr) || '');
             if (String(newVal) === String(oldVal)) return;
             const cmd = attr === 'textContent'
               ? { execute: function () { el.textContent = newVal || ''; }, undo: function () { el.textContent = oldVal || ''; } }
               : createSetAttributeCommand(el, attr, oldVal, newVal);
             executeCommand(cmd);
             updatePropertiesPanel();
-          }
-          input.addEventListener('change', commitChange);
-          if (input.type === 'range') {
-            const span = input.closest('.prop-row').querySelector('.prop-opacity-value');
-            input.addEventListener('input', function () {
-              const pct = Math.max(0, Math.min(100, parseFloat(input.value) || 100));
-              el.setAttribute(attr, String(pct / 100));
-              if (span) span.textContent = Math.round(pct) + '%';
-            });
-          }
+          });
         });
         wireColorPickers(panel, el);
+      }
+
+      function wireColorPickers(panel, el) {
+        const popover = document.getElementById('color-picker-popover');
+        if (!popover || !panel) return;
+        if (popover.parentNode !== document.body) document.body.appendChild(popover);
+        const hueEl = document.getElementById('color-picker-hue');
+        const svEl = document.getElementById('color-picker-sv');
+        if (!hueEl || !svEl) return;
+        hueEl.style.background = 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)';
+        const swatches = panel.querySelectorAll('.color-swatch[data-attr]');
+        swatches.forEach(function (swatch) {
+          swatch.addEventListener('click', function (e) {
+            const attr = swatch.getAttribute('data-attr');
+            const hex = swatch.getAttribute('data-hex') || '#000000';
+            const hsv = hexToHsv(hex);
+            const openedVal = el.getAttribute(attr);
+            function apply(hexVal) {
+              el.setAttribute(attr, hexVal);
+              swatch.style.backgroundColor = hexVal;
+              swatch.setAttribute('data-hex', hexVal);
+              const hexInput = swatch.closest('.color-picker-wrap').querySelector('.color-picker-hex');
+              if (hexInput) hexInput.value = hexVal;
+            }
+            function updateSvBg() {
+              const hexFromHue = hsvToHex(hsv.h, 100, 100);
+              svEl.style.background = 'linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, ' + hexFromHue + ')';
+            }
+            updateSvBg();
+            const rect = swatch.getBoundingClientRect();
+            let left = rect.left;
+            let top = rect.bottom + 4;
+            const pw = 170;
+            const ph = 150;
+            if (left + pw > window.innerWidth) left = window.innerWidth - pw - 8;
+            if (left < 8) left = 8;
+            if (top + ph > window.innerHeight) top = rect.top - ph - 4;
+            if (top < 8) top = 8;
+            popover.style.left = left + 'px';
+            popover.style.top = top + 'px';
+            popover.classList.add('visible');
+            function onHuePick(clientX) {
+              const r = hueEl.getBoundingClientRect();
+              const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+              hsv.h = t * 360;
+              hsv.s = 100;
+              hsv.v = 100;
+              updateSvBg();
+              apply(hsvToHex(hsv.h, hsv.s, hsv.v));
+            }
+            function onSvPick(clientX, clientY) {
+              const r = svEl.getBoundingClientRect();
+              const s = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+              const v = 1 - Math.max(0, Math.min(1, (clientY - r.top) / r.height));
+              hsv.s = s * 100;
+              hsv.v = v * 100;
+              apply(hsvToHex(hsv.h, hsv.s, hsv.v));
+            }
+            function onMove(e) {
+              const under = document.elementFromPoint(e.clientX, e.clientY);
+              if (hueEl.contains(under)) onHuePick(e.clientX);
+              else if (svEl.contains(under)) onSvPick(e.clientX, e.clientY);
+            }
+            function onEnd() {
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onEnd);
+              popover.classList.remove('visible');
+              const closedVal = el.getAttribute(attr);
+              if (String(openedVal || '') !== String(closedVal || '')) {
+                executeCommand(createSetAttributeCommand(el, attr, openedVal || '', closedVal || ''));
+              }
+              updatePropertiesPanel();
+            }
+            document.addEventListener('mousemove', onMove);
+            setTimeout(function () { document.addEventListener('mouseup', onEnd); }, 0);
+            hueEl.onmousedown = function (e) { e.preventDefault(); onHuePick(e.clientX); };
+            svEl.onmousedown = function (e) { e.preventDefault(); onSvPick(e.clientX, e.clientY); };
+          });
+        });
       }
 
       function propRow(label, val) {
         return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><input type="text" data-attr="' + escapeHtml(label) + '" value="' + escapeHtml(val || '') + '"></div>';
       }
 
-      function propRowNum(label, val, min, max, step) {
-        const m = min != null ? ' min="' + min + '"' : '';
-        const mx = max != null ? ' max="' + max + '"' : '';
-        const s = step != null ? ' step="' + step + '"' : '';
-        return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><input type="number" data-attr="' + escapeHtml(label) + '" value="' + escapeHtml(val || '') + '"' + m + mx + s + '></div>';
+      function propSection(title) {
+        return '<div class="prop-section">' + escapeHtml(title) + '</div>';
       }
 
-      function propSection(title) {
-        return '<div class="prop-title" style="margin-top:10px">' + escapeHtml(title) + '</div>';
+      function propRowNum(attr, val, opts) {
+        opts = opts || {};
+        const min = opts.min != null ? opts.min : 0;
+        const step = opts.step != null ? opts.step : 1;
+        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><input type="number" data-attr="' + escapeHtml(attr) + '" value="' + escapeHtml(val || '') + '" min="' + min + '" step="' + step + '"></div>';
       }
 
       function propRowOpacity(attr, val) {
-        const v = parseFloat(val);
-        const pct = isNaN(v) ? 100 : Math.max(0, Math.min(100, Math.round((v * 100) / 10) * 10));
-        return '<div class="prop-row"><label>' + escapeHtml(attr.replace(/-/g, ' ')) + '</label><input type="range" data-attr="' + escapeHtml(attr) + '" min="0" max="100" step="10" value="' + pct + '"><span class="prop-opacity-value">' + pct + '%</span></div>';
+        const pct = val === '' || val == null ? 100 : Math.round(parseFloat(val) * 100);
+        const safe = String(Math.min(100, Math.max(0, isNaN(pct) ? 100 : pct)));
+        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><div class="color-picker-wrap"><input type="range" data-attr="' + escapeHtml(attr) + '" data-opacity="1" min="0" max="100" step="10" value="' + escapeHtml(safe) + '"><span class="opacity-pct">' + escapeHtml(safe) + '%</span></div></div>';
       }
 
       function propRowColor(attr, val) {
-        const hex = parseColorToHex(val);
-        const displayVal = val && val.trim() ? val : (hex || '#000000');
-        const swatchBg = hex || '#333';
-        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><div class="color-picker-wrap"><button type="button" class="color-swatch" data-attr="' + escapeHtml(attr) + '" style="background:' + escapeHtml(swatchBg) + '"></button><input type="text" class="color-picker-hex" data-attr="' + escapeHtml(attr) + '" value="' + escapeHtml(displayVal) + '"></div></div>';
+        const hex = parseColorToHex(val || '#000000');
+        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><div class="color-picker-wrap"><span class="color-swatch" data-attr="' + escapeHtml(attr) + '" data-hex="' + escapeHtml(hex) + '" style="background-color:' + escapeHtml(hex) + '"></span><input type="text" class="color-picker-hex" data-attr="' + escapeHtml(attr) + '" data-hex="1" value="' + escapeHtml(hex) + '"></div></div>';
       }
 
       function parseColorToHex(val) {
-        if (!val || !val.trim()) return null;
-        const s = val.trim();
-        if (/^#[0-9a-fA-F]{3}$/.test(s)) {
-          const r = parseInt(s[1] + s[1], 16), g = parseInt(s[2] + s[2], 16), b = parseInt(s[3] + s[3], 16);
-          return '#' + [r, g, b].map(function (x) { return x.toString(16).padStart(2, '0'); }).join('');
-        }
-        if (/^#[0-9a-fA-F]{6}$/.test(s)) return s;
-        const m = s.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
-        if (m) return '#' + [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)].map(function (x) { return Math.max(0, Math.min(255, x)).toString(16).padStart(2, '0'); }).join('');
-        return null;
+        if (!val || val === 'none') return '#000000';
+        val = String(val).trim();
+        const m = val.match(/^#([0-9a-fA-F]{6})$/);
+        if (m) return '#' + m[1].toLowerCase();
+        const ctx = document.createElement('canvas').getContext('2d');
+        if (!ctx) return '#000000';
+        ctx.fillStyle = val;
+        const c = ctx.fillStyle;
+        const hex = c.match(/^#([0-9a-fA-F]{6})$/);
+        return hex ? hex[0] : '#000000';
       }
 
       function hexToHsv(hex) {
         const m = hex.match(/^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
-        if (!m) return { h: 0, s: 0, v: 0 };
-        let r = parseInt(m[1], 16) / 255, g = parseInt(m[2], 16) / 255, b = parseInt(m[3], 16) / 255;
-        const max = Math.max(r, g, b), min = Math.min(r, g, b);
-        let h = 0, s = max === 0 ? 0 : (max - min) / max;
-        const v = max;
-        if (max !== min) {
-          const d = max - min;
-          if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-          else if (max === g) h = (b - r) / d + 2;
-          else h = (r - g) / d + 4;
-          h /= 6;
+        if (!m) return { h: 0, s: 0, v: 100 };
+        let r = parseInt(m[1], 16) / 255;
+        let g = parseInt(m[2], 16) / 255;
+        let b = parseInt(m[3], 16) / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const d = max - min;
+        let h = 0;
+        const s = max === 0 ? 0 : (d / max) * 100;
+        const v = max * 100;
+        if (d !== 0) {
+          if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+          else if (max === g) h = ((b - r) / d + 2) / 6;
+          else h = ((r - g) / d + 4) / 6;
+          h *= 360;
         }
-        return { h: h * 360, s: s, v: v };
+        return { h: h, s: s, v: v };
       }
 
       function hsvToHex(h, s, v) {
-        h = (h % 360 + 360) % 360 / 360;
-        let r, g, b;
-        const i = Math.floor(h * 6);
-        const f = h * 6 - i;
-        const p = v * (1 - s);
-        const q = v * (1 - f * s);
-        const t = v * (1 - (1 - f) * s);
-        switch (i % 6) {
-          case 0: r = v; g = t; b = p; break;
-          case 1: r = q; g = v; b = p; break;
-          case 2: r = p; g = v; b = t; break;
-          case 3: r = p; g = q; b = v; break;
-          case 4: r = t; g = p; b = v; break;
-          default: r = v; g = p; b = q;
-        }
-        return '#' + [r, g, b].map(function (x) { return Math.round(x * 255).toString(16).padStart(2, '0'); }).join('');
-      }
-
-      function wireColorPickers(panel, el) {
-        const popover = document.getElementById('color-picker-popover');
-        const svArea = document.getElementById('color-picker-sv');
-        const hueBar = document.getElementById('color-picker-hue');
-        if (!popover || !svArea || !hueBar) return;
-        hueBar.style.background = 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)';
-        var pickState = null;
-        function updateFromHsv(h, s, v) {
-          const hex = hsvToHex(h, s, v);
-          pickState.el.setAttribute(pickState.attr, hex);
-          pickState.input.value = hex;
-          pickState.swatch.style.background = hex;
-        }
-        function onHuePick(clientX) {
-          if (!pickState) return;
-          const r = hueBar.getBoundingClientRect();
-          const x = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
-          pickState.h = x * 360;
-          svArea.style.background = 'linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), ' + hsvToHex(pickState.h, 1, 1);
-          updateFromHsv(pickState.h, pickState.s, pickState.v);
-        }
-        function onSvPick(clientX, clientY) {
-          if (!pickState) return;
-          const r = svArea.getBoundingClientRect();
-          const x = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
-          const y = Math.max(0, Math.min(1, (clientY - r.top) / r.height));
-          pickState.s = x;
-          pickState.v = 1 - y;
-          updateFromHsv(pickState.h, pickState.s, pickState.v);
-        }
-        function startPick(attr, input, swatch, isHue, clientX, clientY) {
-          const val = el.getAttribute(attr) || input.value || '#000000';
-          const hex = parseColorToHex(val) || '#000000';
-          const hsv = hexToHsv(hex);
-          pickState = { el: el, attr: attr, input: input, swatch: swatch, oldVal: val, h: hsv.h, s: hsv.s, v: hsv.v };
-          svArea.style.background = 'linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), ' + hsvToHex(pickState.h, 1, 1);
-          if (isHue) onHuePick(clientX); else onSvPick(clientX, clientY);
-        }
-        function endPick() {
-          if (!pickState) return;
-          const newVal = pickState.el.getAttribute(pickState.attr);
-          if (String(newVal) !== String(pickState.oldVal)) {
-            executeCommand(createSetAttributeCommand(pickState.el, pickState.attr, pickState.oldVal, newVal));
-            updatePropertiesPanel();
-          }
-          pickState = null;
-          popover.classList.remove('visible');
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onEnd);
-        }
-        function onMove(e) {
-          if (!pickState) return;
-          if (pickState.mode === 'hue') onHuePick(e.clientX);
-          else onSvPick(e.clientX, e.clientY);
-        }
-        function onEnd() { endPick(); }
-        panel.querySelectorAll('.color-swatch').forEach(function (swatch) {
-          swatch.addEventListener('click', function (e) {
-            e.preventDefault();
-            const attr = swatch.getAttribute('data-attr');
-            const wrap = swatch.closest('.color-picker-wrap');
-            const input = wrap ? wrap.querySelector('.color-picker-hex') : null;
-            if (!input) return;
-            const r = swatch.getBoundingClientRect();
-            popover.style.left = r.left + 'px';
-            popover.style.top = (r.bottom + 4) + 'px';
-            popover.classList.add('visible');
-            pickState = { el: el, attr: attr, input: input, swatch: swatch, oldVal: el.getAttribute(attr) || input.value || '', mode: 'sv', h: 0, s: 0, v: 1 };
-            const val = el.getAttribute(attr) || input.value || '#000000';
-            const hex = parseColorToHex(val) || '#000000';
-            const hsv = hexToHsv(hex);
-            pickState.h = hsv.h;
-            pickState.s = hsv.s;
-            pickState.v = hsv.v;
-            svArea.style.background = 'linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), ' + hsvToHex(pickState.h, 1, 1);
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onEnd);
-          });
-        });
-        svArea.addEventListener('mousedown', function (e) {
-          if (!pickState || !popover.classList.contains('visible')) return;
-          pickState.mode = 'sv';
-          onSvPick(e.clientX, e.clientY);
-        });
-        hueBar.addEventListener('mousedown', function (e) {
-          if (!pickState || !popover.classList.contains('visible')) return;
-          pickState.mode = 'hue';
-          onHuePick(e.clientX);
-        });
+        s /= 100;
+        v /= 100;
+        const c = v * s;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = v - c;
+        let r = 0, g = 0, b = 0;
+        if (h < 60) { r = c; g = x; }
+        else if (h < 120) { r = x; g = c; }
+        else if (h < 180) { g = c; b = x; }
+        else if (h < 240) { g = x; b = c; }
+        else if (h < 300) { r = x; b = c; }
+        else { r = c; b = x; }
+        const toHex = function (n) {
+          const x = Math.round((n + m) * 255);
+          const h = Math.max(0, Math.min(255, x)).toString(16);
+          return h.length === 1 ? '0' + h : h;
+        };
+        return '#' + toHex(r) + toHex(g) + toHex(b);
       }
 
       function escapeHtml(s) {
