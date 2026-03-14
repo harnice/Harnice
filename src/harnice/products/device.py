@@ -83,6 +83,8 @@ def file_structure():
         f"{state.partnumber('pn')}.svg": "block diagram symbol",
     }
 
+def generate_structure():
+    pass
 
 def _ensure_svg_symbol_exists():
     """Create a minimal placeholder SVG if the symbol file does not exist."""

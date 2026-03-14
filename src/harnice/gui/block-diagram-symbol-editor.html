@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Block Diagram Symbol Editor</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #1e1e1e;
+      --bg2: #252526;
+      --bg3: #2d2d2d;
+      --border: #3c3c3c;
+      --text: #d4d4d4;
+      --text-dim: #888;
+      --accent: #4ec9b0;
+      --grid: #333;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    #svg-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    #svg-container.panning {
+      cursor: grabbing;
+    }
+
+    #svg-viewport {
+      transform-origin: 0 0;
+    }
+
+    .pin {
+      fill: var(--accent);
+    }
+
+    #grid-pattern {
+      width: 10px;
+      height: 10px;
+    }
+
+    #grid-pattern line {
+      stroke: var(--grid);
+      stroke-width: 0.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvas-wrap">
+    <div id="svg-container">
+      <svg id="svg-root" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid-pattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="0" x2="0" y2="10" stroke="var(--grid)" stroke-width="0.5" />
+            <line x1="0" y1="0" x2="10" y2="0" stroke="var(--grid)" stroke-width="0.5" />
+          </pattern>
+        </defs>
+        <g id="svg-viewport">
+          <rect id="grid-bg" width="100%" height="100%" fill="url(#grid-pattern)" />
+          <g id="svg-content" />
+        </g>
+      </svg>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const embedded = window !== window.top;
+      let appState = {
+        activeTool: 'select',
+        snapEnabled: true,
+        dirty: false,
+        grid: 10,
+        scale: 1,
+        panX: 0,
+        panY: 0,
+        viewport: null,
+        content: null,
+        svgDoc: null,
+      };
+
+      function notifyParent(type, payload) {
+        if (embedded && window.parent) {
+          window.parent.postMessage({ type: type, ...payload }, '*');
+        }
+      }
+
+      function sendStatus(dirty) {
+        appState.dirty = dirty;
+        notifyParent('sde-status', { dirty: dirty, filename: 'block diagram symbol' });
+      }
+
+      function sendTool(tool) {
+        appState.activeTool = tool;
+        notifyParent('sde-tool', { tool: tool });
+      }
+
+      function sendSnap(enabled) {
+        appState.snapEnabled = enabled;
+        notifyParent('sde-snap', { enabled: enabled });
+      }
+
+      function loadSvg() {
+        fetch('/api/block_diagram_symbol', { cache: 'no-store' })
+          .then(function (r) {
+            if (!r.ok) throw new Error('Failed to load symbol');
+            return r.text();
+          })
+          .then(function (svgText) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgText, 'image/svg+xml');
+            const svg = doc.documentElement;
+            if (!svg || svg.nodeName !== 'svg') throw new Error('Invalid SVG');
+            appState.svgDoc = doc;
+            const content = document.getElementById('svg-content');
+            content.innerHTML = '';
+            while (svg.firstChild) {
+              content.appendChild(svg.firstChild);
+            }
+            stylePins(content);
+            fitView();
+            sendStatus(false);
+          })
+          .catch(function (err) {
+            console.warn('Block diagram symbol load error:', err);
+            sendStatus(false);
+          });
+      }
+
+      function stylePins(container) {
+        if (!container) return;
+        container.querySelectorAll('circle.pin').forEach(function (el) {
+          el.style.fill = 'var(--accent)';
+        });
+      }
+
+      function getViewBox() {
+        const content = document.getElementById('svg-content');
+        if (!content || !content.firstElementChild) return { x: 0, y: 0, w: 100, h: 80 };
+        const bbox = content.getBBox();
+        const pad = 20;
+        return {
+          x: bbox.x - pad,
+          y: bbox.y - pad,
+          w: Math.max(bbox.width + pad * 2, 50),
+          h: Math.max(bbox.height + pad * 2, 50),
+        };
+      }
+
+      function fitView() {
+        const wrap = document.getElementById('canvas-wrap');
+        const container = document.getElementById('svg-container');
+        const viewport = document.getElementById('svg-viewport');
+        if (!wrap || !container || !viewport) return;
+        const vb = getViewBox();
+        const cw = wrap.clientWidth;
+        const ch = wrap.clientHeight;
+        const scale = Math.min(cw / vb.w, ch / vb.h, 4);
+        appState.scale = scale;
+        appState.panX = -vb.x * scale;
+        appState.panY = -vb.y * scale;
+        viewport.setAttribute('transform', 'translate(' + appState.panX + ',' + appState.panY + ') scale(' + scale + ')');
+        const gridBg = document.getElementById('grid-bg');
+        if (gridBg) {
+          gridBg.setAttribute('width', vb.w);
+          gridBg.setAttribute('height', vb.h);
+        }
+      }
+
+      function updatePanZoom(dx, dy, dScale, ox, oy) {
+        const viewport = document.getElementById('svg-viewport');
+        if (!viewport) return;
+        appState.panX += dx;
+        appState.panY += dy;
+        appState.scale = Math.max(0.1, Math.min(10, appState.scale * (1 + dScale)));
+        viewport.setAttribute('transform', 'translate(' + appState.panX + ',' + appState.panY + ') scale(' + appState.scale + ')');
+      }
+
+      function initPanZoom() {
+        const container = document.getElementById('svg-container');
+        if (!container) return;
+        let lastX, lastY, lastDist, lastScale;
+        container.addEventListener('mousedown', function (e) {
+          if (e.button !== 0) return;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          lastDist = undefined;
+          container.classList.add('panning');
+        });
+        container.addEventListener('mousemove', function (e) {
+          if (!container.classList.contains('panning')) return;
+          if (lastDist != null) {
+            const dist = Math.hypot(e.clientX - lastX, e.clientY - lastY);
+            const dScale = (dist - lastDist) / 100;
+            updatePanZoom(0, 0, dScale, lastX, lastY);
+            lastDist = dist;
+          } else {
+            updatePanZoom(e.clientX - lastX, e.clientY - lastY, 0);
+            lastX = e.clientX;
+            lastY = e.clientY;
+          }
+        });
+        container.addEventListener('mouseup', function () {
+          container.classList.remove('panning');
+        });
+        container.addEventListener('mouseleave', function () {
+          container.classList.remove('panning');
+        });
+        container.addEventListener('wheel', function (e) {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? -0.1 : 0.1;
+          const rect = container.getBoundingClientRect();
+          const ox = e.clientX - rect.left;
+          const oy = e.clientY - rect.top;
+          updatePanZoom(0, 0, delta, ox, oy);
+        }, { passive: false });
+      }
+
+      if (embedded) {
+        window.addEventListener('message', function (e) {
+          if (!e.data || e.data.type !== 'harnice-graph-action') return;
+          const a = e.data.action;
+          if (a === 'setTool' && e.data.tool) {
+            sendTool(e.data.tool);
+          }
+          if (a === 'toggleSnap') {
+            sendSnap(!appState.snapEnabled);
+          }
+          if (a === 'fitView') {
+            fitView();
+          }
+          if (a === 'undo' || a === 'redo') {
+            sendStatus(appState.dirty);
+          }
+        });
+      }
+
+      sendTool('select');
+      sendSnap(true);
+      loadSvg();
+      initPanZoom();
+      window.addEventListener('resize', fitView);
+    })();
+  </script>
+</body>
+
+</html>
