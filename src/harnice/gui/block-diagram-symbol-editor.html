@@ -149,6 +149,38 @@
       stroke: var(--grid);
       stroke-width: 0.5;
     }
+
+    .resize-handle {
+      fill: var(--accent);
+      stroke: var(--bg);
+      stroke-width: 1;
+      cursor: nwse-resize;
+      pointer-events: all;
+    }
+
+    .resize-handle.n {
+      cursor: ns-resize;
+    }
+
+    .resize-handle.s {
+      cursor: ns-resize;
+    }
+
+    .resize-handle.e {
+      cursor: ew-resize;
+    }
+
+    .resize-handle.w {
+      cursor: ew-resize;
+    }
+
+    .resize-handle.ne {
+      cursor: nesw-resize;
+    }
+
+    .resize-handle.sw {
+      cursor: nesw-resize;
+    }
   </style>
 </head>
 
@@ -169,6 +201,7 @@
           <rect id="rubber-band" visibility="hidden" />
           <line id="preview-line" visibility="hidden" stroke="var(--accent)" stroke-width="1" />
           <circle id="preview-circle" visibility="hidden" fill="none" stroke="var(--accent)" stroke-width="1" />
+          <g id="resize-handles" pointer-events="none" />
         </g>
       </svg>
     </div>
@@ -447,7 +480,249 @@
           const el = content.querySelector('#' + CSS.escape(id));
           if (el) el.classList.add('selected');
         });
+        updateResizeHandles();
         updatePropertiesPanel();
+      }
+
+      function updateResizeHandles() {
+        const group = document.getElementById('resize-handles');
+        if (!group) return;
+        group.innerHTML = '';
+        group.style.pointerEvents = 'none';
+        const ids = Array.from(appState.selection);
+        if (ids.length !== 1) return;
+        const content = document.getElementById('svg-content');
+        if (!content) return;
+        const el = content.querySelector('#' + CSS.escape(ids[0]));
+        if (!el) return;
+        const tag = (el.tagName || '').toLowerCase();
+        const pad = 5;
+        const handleSize = 8;
+        if (tag === 'rect') {
+          group.style.pointerEvents = 'all';
+          const x = parseFloat(el.getAttribute('x') || 0);
+          const y = parseFloat(el.getAttribute('y') || 0);
+          const w = parseFloat(el.getAttribute('width') || 0);
+          const h = parseFloat(el.getAttribute('height') || 0);
+          const positions = [
+            { x: x, y: y, c: 'nw' },
+            { x: x + w, y: y, c: 'ne' },
+            { x: x + w, y: y + h, c: 'se' },
+            { x: x, y: y + h, c: 'sw' },
+            { x: x + w / 2, y: y, c: 'n' },
+            { x: x + w, y: y + h / 2, c: 'e' },
+            { x: x + w / 2, y: y + h, c: 's' },
+            { x: x, y: y + h / 2, c: 'w' }
+          ];
+          positions.forEach(function (p, i) {
+            const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            r.setAttribute('x', p.x - handleSize / 2);
+            r.setAttribute('y', p.y - handleSize / 2);
+            r.setAttribute('width', handleSize);
+            r.setAttribute('height', handleSize);
+            r.setAttribute('class', 'resize-handle ' + p.c);
+            r.setAttribute('data-handle-index', String(i));
+            r.setAttribute('data-element-id', el.id || '');
+            group.appendChild(r);
+          });
+        } else if (tag === 'circle' && !(el.classList && el.classList.contains('pin'))) {
+          group.style.pointerEvents = 'all';
+          const cx = parseFloat(el.getAttribute('cx') || 0);
+          const cy = parseFloat(el.getAttribute('cy') || 0);
+          const r = parseFloat(el.getAttribute('r') || 0);
+          const positions = [
+            { x: cx + r, y: cy, c: 'e' },
+            { x: cx, y: cy + r, c: 's' },
+            { x: cx - r, y: cy, c: 'w' },
+            { x: cx, y: cy - r, c: 'n' }
+          ];
+          positions.forEach(function (p, i) {
+            const handle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            handle.setAttribute('x', p.x - handleSize / 2);
+            handle.setAttribute('y', p.y - handleSize / 2);
+            handle.setAttribute('width', handleSize);
+            handle.setAttribute('height', handleSize);
+            handle.setAttribute('class', 'resize-handle ' + p.c);
+            handle.setAttribute('data-handle-index', String(i));
+            handle.setAttribute('data-element-id', el.id || '');
+            group.appendChild(handle);
+          });
+        } else if (tag === 'line') {
+          group.style.pointerEvents = 'all';
+          const x1 = parseFloat(el.getAttribute('x1') || 0);
+          const y1 = parseFloat(el.getAttribute('y1') || 0);
+          const x2 = parseFloat(el.getAttribute('x2') || 0);
+          const y2 = parseFloat(el.getAttribute('y2') || 0);
+          const positions = [
+            { x: x1, y: y1, c: 'nw' },
+            { x: x2, y: y2, c: 'se' }
+          ];
+          positions.forEach(function (p, i) {
+            const h = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            h.setAttribute('x', p.x - handleSize / 2);
+            h.setAttribute('y', p.y - handleSize / 2);
+            h.setAttribute('width', handleSize);
+            h.setAttribute('height', handleSize);
+            h.setAttribute('class', 'resize-handle ' + p.c);
+            h.setAttribute('data-handle-index', String(i));
+            h.setAttribute('data-element-id', el.id || '');
+            group.appendChild(h);
+          });
+        }
+      }
+
+      function getHandleAtPoint(svgX, svgY) {
+        const group = document.getElementById('resize-handles');
+        if (!group || group.style.pointerEvents === 'none') return null;
+        const handles = group.querySelectorAll('rect.resize-handle');
+        for (let i = 0; i < handles.length; i++) {
+          const h = handles[i];
+          const x = parseFloat(h.getAttribute('x') || 0);
+          const y = parseFloat(h.getAttribute('y') || 0);
+          const w = parseFloat(h.getAttribute('width') || 8);
+          const pad = 4;
+          if (svgX >= x - pad && svgX <= x + w + pad && svgY >= y - pad && svgY <= y + w + pad) {
+            const content = document.getElementById('svg-content');
+            const el = content.querySelector('#' + CSS.escape(h.getAttribute('data-element-id') || ''));
+            return el ? { el: el, handleIndex: parseInt(h.getAttribute('data-handle-index') || '0', 10) } : null;
+          }
+        }
+        return null;
+      }
+
+      function getElementGeomAttrs(el) {
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'rect') {
+          return {
+            x: parseFloat(el.getAttribute('x') || 0),
+            y: parseFloat(el.getAttribute('y') || 0),
+            width: parseFloat(el.getAttribute('width') || 0),
+            height: parseFloat(el.getAttribute('height') || 0),
+          };
+        }
+        if (tag === 'circle' || tag === 'ellipse') {
+          return {
+            cx: parseFloat(el.getAttribute('cx') || 0),
+            cy: parseFloat(el.getAttribute('cy') || 0),
+            r: parseFloat(el.getAttribute('r') || 0),
+          };
+        }
+        if (tag === 'line') {
+          return {
+            x1: parseFloat(el.getAttribute('x1') || 0),
+            y1: parseFloat(el.getAttribute('y1') || 0),
+            x2: parseFloat(el.getAttribute('x2') || 0),
+            y2: parseFloat(el.getAttribute('y2') || 0),
+          };
+        }
+        return null;
+      }
+
+      function applyRectResize(el, pt, handleIndex, startAttrs) {
+        const s = startAttrs;
+        const g = appState.grid;
+        const snap = function (x, y) {
+          if (appState.snapEnabled) {
+            return { x: Math.round(x / g) * g, y: Math.round(y / g) * g };
+          }
+          return { x: x, y: y };
+        };
+        let x = s.x, y = s.y, w = s.width, h = s.height;
+        const x2 = s.x + s.width, y2 = s.y + s.height;
+        const sp = snap(pt.x, pt.y);
+        if (handleIndex === 0) {
+          x = sp.x; y = sp.y; w = Math.max(1, x2 - sp.x); h = Math.max(1, y2 - sp.y);
+        } else if (handleIndex === 1) {
+          y = sp.y; w = Math.max(1, sp.x - s.x); h = Math.max(1, y2 - sp.y);
+        } else if (handleIndex === 2) {
+          w = Math.max(1, sp.x - s.x); h = Math.max(1, sp.y - s.y);
+        } else if (handleIndex === 3) {
+          x = sp.x; w = Math.max(1, x2 - sp.x); h = Math.max(1, sp.y - s.y);
+        } else if (handleIndex === 4) {
+          y = sp.y; h = Math.max(1, y2 - sp.y);
+        } else if (handleIndex === 5) {
+          w = Math.max(1, sp.x - s.x);
+        } else if (handleIndex === 6) {
+          h = Math.max(1, sp.y - s.y);
+        } else if (handleIndex === 7) {
+          x = sp.x; w = Math.max(1, x2 - sp.x);
+        }
+        el.setAttribute('x', x);
+        el.setAttribute('y', y);
+        el.setAttribute('width', w);
+        el.setAttribute('height', h);
+      }
+
+      function applyCircleResize(el, pt, handleIndex, startAttrs) {
+        const s = startAttrs;
+        let r = Math.hypot(pt.x - s.cx, pt.y - s.cy);
+        if (appState.snapEnabled) r = Math.round(r / appState.grid) * appState.grid;
+        r = Math.max(1, r);
+        el.setAttribute('r', r);
+      }
+
+      function applyLineResize(el, pt, handleIndex, startAttrs) {
+        const s = startAttrs;
+        const g = appState.grid;
+        const snap = function (x, y) {
+          if (appState.snapEnabled) {
+            return { x: Math.round(x / g) * g, y: Math.round(y / g) * g };
+          }
+          return { x: x, y: y };
+        };
+        const sp = snap(pt.x, pt.y);
+        if (handleIndex === 0) {
+          el.setAttribute('x1', sp.x);
+          el.setAttribute('y1', sp.y);
+        } else {
+          el.setAttribute('x2', sp.x);
+          el.setAttribute('y2', sp.y);
+        }
+      }
+
+      function createResizeLineCommand(el, oldX1, oldY1, oldX2, oldY2, newX1, newY1, newX2, newY2) {
+        return {
+          execute: function () {
+            el.setAttribute('x1', newX1);
+            el.setAttribute('y1', newY1);
+            el.setAttribute('x2', newX2);
+            el.setAttribute('y2', newY2);
+          },
+          undo: function () {
+            el.setAttribute('x1', oldX1);
+            el.setAttribute('y1', oldY1);
+            el.setAttribute('x2', oldX2);
+            el.setAttribute('y2', oldY2);
+          },
+        };
+      }
+
+      function createResizeRectCommand(el, oldX, oldY, oldW, oldH, newX, newY, newW, newH) {
+        return {
+          execute: function () {
+            el.setAttribute('x', newX);
+            el.setAttribute('y', newY);
+            el.setAttribute('width', Math.max(1, newW));
+            el.setAttribute('height', Math.max(1, newH));
+          },
+          undo: function () {
+            el.setAttribute('x', oldX);
+            el.setAttribute('y', oldY);
+            el.setAttribute('width', oldW);
+            el.setAttribute('height', oldH);
+          },
+        };
+      }
+
+      function createResizeCircleCommand(el, oldR, newR) {
+        return {
+          execute: function () {
+            el.setAttribute('r', Math.max(1, newR));
+          },
+          undo: function () {
+            el.setAttribute('r', oldR);
+          },
+        };
       }
 
       function updatePropertiesPanel() {
@@ -728,6 +1003,18 @@
         container.addEventListener('mousedown', function (e) {
           if (e.button !== 0 || appState.activeTool !== 'select') return;
           const pt = screenToSvg(e.clientX, e.clientY);
+          const handleHit = getHandleAtPoint(pt.x, pt.y);
+          if (handleHit) {
+            dragStart = {
+              type: 'resize',
+              el: handleHit.el,
+              handleIndex: handleHit.handleIndex,
+              x: pt.x,
+              y: pt.y,
+              startAttrs: getElementGeomAttrs(handleHit.el),
+            };
+            return;
+          }
           const hit = getElementAtPoint(pt.x, pt.y);
           if (hit) {
             if (e.shiftKey) {
@@ -770,6 +1057,19 @@
         container.addEventListener('mousemove', function (e) {
           if (!dragStart) return;
           const pt = screenToSvg(e.clientX, e.clientY);
+          if (dragStart.type === 'resize') {
+            const el = dragStart.el;
+            const tag = (el.tagName || '').toLowerCase();
+            if (tag === 'rect') {
+              applyRectResize(el, pt, dragStart.handleIndex, dragStart.startAttrs);
+            } else if (tag === 'circle' || tag === 'ellipse') {
+              applyCircleResize(el, pt, dragStart.handleIndex, dragStart.startAttrs);
+            } else if (tag === 'line') {
+              applyLineResize(el, pt, dragStart.handleIndex, dragStart.startAttrs);
+            }
+            updateResizeHandles();
+            return;
+          }
           if (dragStart.hit) {
             let dx = pt.x - dragStart.x;
             let dy = pt.y - dragStart.y;
@@ -795,6 +1095,7 @@
                 p.el._lastDy = dy;
               }
             });
+            updateResizeHandles();
           } else {
             const x = Math.min(dragStart.x, pt.x);
             const y = Math.min(dragStart.y, pt.y);
@@ -810,6 +1111,40 @@
         container.addEventListener('mouseup', function (e) {
           if (e.button !== 0 || !dragStart) return;
           const pt = screenToSvg(e.clientX, e.clientY);
+          if (dragStart.type === 'resize') {
+            const el = dragStart.el;
+            const tag = (el.tagName || '').toLowerCase();
+            const start = dragStart.startAttrs;
+            if (tag === 'rect') {
+              applyRectResize(el, pt, dragStart.handleIndex, start);
+              const nx = parseFloat(el.getAttribute('x') || 0);
+              const ny = parseFloat(el.getAttribute('y') || 0);
+              const nw = parseFloat(el.getAttribute('width') || 0);
+              const nh = parseFloat(el.getAttribute('height') || 0);
+              if (nx !== start.x || ny !== start.y || nw !== start.width || nh !== start.height) {
+                executeCommand(createResizeRectCommand(el, start.x, start.y, start.width, start.height, nx, ny, nw, nh));
+              }
+            } else if (tag === 'circle' || tag === 'ellipse') {
+              applyCircleResize(el, pt, dragStart.handleIndex, start);
+              const nr = parseFloat(el.getAttribute('r') || 0);
+              if (Math.abs(nr - start.r) > 0.5) {
+                executeCommand(createResizeCircleCommand(el, start.r, nr));
+              }
+            } else if (tag === 'line') {
+              applyLineResize(el, pt, dragStart.handleIndex, start);
+              const nx1 = parseFloat(el.getAttribute('x1') || 0);
+              const ny1 = parseFloat(el.getAttribute('y1') || 0);
+              const nx2 = parseFloat(el.getAttribute('x2') || 0);
+              const ny2 = parseFloat(el.getAttribute('y2') || 0);
+              if (nx1 !== start.x1 || ny1 !== start.y1 || nx2 !== start.x2 || ny2 !== start.y2) {
+                executeCommand(createResizeLineCommand(el, start.x1, start.y1, start.x2, start.y2, nx1, ny1, nx2, ny2));
+              }
+            }
+            updateSelectionVisuals();
+            dragStart = null;
+            moveStartPositions = [];
+            return;
+          }
           if (dragStart.hit) {
             let dx = pt.x - dragStart.x;
             let dy = pt.y - dragStart.y;
@@ -880,18 +1215,6 @@
             }).filter(Boolean);
             if (cmds.length) executeCommand(batch(cmds));
             return;
-          }
-          const nudge = appState.grid;
-          let dx = 0, dy = 0;
-          if (e.key === 'ArrowLeft') { dx = -nudge; }
-          else if (e.key === 'ArrowRight') { dx = nudge; }
-          else if (e.key === 'ArrowUp') { dy = -nudge; }
-          else if (e.key === 'ArrowDown') { dy = nudge; }
-          if (dx !== 0 || dy !== 0) {
-            e.preventDefault();
-            if (appState.selection.size === 0) return;
-            const ids = Array.from(appState.selection);
-            executeCommand(createMoveElementsCommand(ids, dx, dy));
           }
         });
       }
