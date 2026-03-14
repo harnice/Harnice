@@ -141,6 +141,15 @@
       fill: var(--accent);
     }
 
+    .connector-label {
+      font-size: 3px;
+      font-family: Helvetica, sans-serif;
+      fill: black;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+
     .selected {
       outline: 1px solid var(--accent);
       outline-offset: 1px;
@@ -352,6 +361,8 @@
           Array.from(content.children).forEach(function (child) {
             svg.appendChild(child.cloneNode(true));
           });
+          svg.querySelectorAll('text.connector-label').forEach(function (el) { el.remove(); });
+          svg.querySelectorAll('circle.pin').forEach(function (el) { el.setAttribute('r', '0.05'); });
           const body = new XMLSerializer().serializeToString(svg);
           fetch('/api/block_diagram_symbol', {
             method: 'POST',
@@ -452,12 +463,37 @@
         return { same: true, value: first };
       }
 
+      function createSetConnectorNameCommand(elements, newVal) {
+        const pairs = elements.map(function (el) {
+          const circle = getPrimaryElement(el);
+          const group = circle && circle.parentNode && circle.parentNode.tagName === 'g' ? circle.parentNode : null;
+          const label = group ? group.querySelector('text.connector-label') : null;
+          const oldVal = circle ? (circle.getAttribute('data-pin-name') || '') : '';
+          return { circle: circle, label: label, oldVal: oldVal };
+        });
+        return {
+          execute: function () {
+            pairs.forEach(function (p) {
+              if (p.circle) p.circle.setAttribute('data-pin-name', newVal);
+              if (p.label) p.label.textContent = newVal;
+            });
+          },
+          undo: function () {
+            pairs.forEach(function (p) {
+              if (p.circle) p.circle.setAttribute('data-pin-name', p.oldVal);
+              if (p.label) p.label.textContent = p.oldVal;
+            });
+          },
+        };
+      }
+
       function createSetAttributeMultiCommand(elements, attr, newVal) {
         const oldVals = elements.map(function (el) {
           return attr === 'textContent'
             ? (el.textContent || '').trim()
             : (el.getAttribute(attr) || '');
         });
+        const syncPinLabels = (attr === 'cx' || attr === 'cy');
         return {
           execute: function () {
             elements.forEach(function (el) {
@@ -468,6 +504,7 @@
               } else {
                 el.removeAttribute(attr);
               }
+              if (syncPinLabels) syncConnectorLabelToCircle(el);
             });
           },
           undo: function () {
@@ -478,6 +515,35 @@
                 el.setAttribute(attr, String(oldVals[i]));
               } else {
                 el.removeAttribute(attr);
+              }
+              if (syncPinLabels) syncConnectorLabelToCircle(el);
+            });
+          },
+        };
+      }
+
+      function createSetConnectorNameCommand(elements, newVal) {
+        const entries = elements.map(function (el) {
+          const circle = getPinCircle(el);
+          const group = circle && circle.parentNode && circle.parentNode.tagName === 'g' ? circle.parentNode : el;
+          const label = group.querySelector ? group.querySelector('text.connector-label') : null;
+          const oldVal = circle ? (circle.getAttribute('data-pin-name') || '') : '';
+          return { circle: circle, group: group, label: label, oldVal: oldVal };
+        });
+        return {
+          execute: function () {
+            entries.forEach(function (e) {
+              if (e.circle) {
+                e.circle.setAttribute('data-pin-name', newVal || '');
+                if (e.label) e.label.textContent = newVal || '';
+              }
+            });
+          },
+          undo: function () {
+            entries.forEach(function (e) {
+              if (e.circle) {
+                e.circle.setAttribute('data-pin-name', e.oldVal || '');
+                if (e.label) e.label.textContent = e.oldVal || '';
               }
             });
           },
@@ -524,6 +590,7 @@
         });
         if (commands.length > 0) {
           executeCommand(batch(commands));
+          ensureConnectorLabels(content);
           appState.selection = newSelection;
           updateSelectionVisuals();
         }
@@ -656,7 +723,40 @@
         return { x: Math.round(x / g) * g, y: Math.round(y / g) * g };
       }
 
+      function getPinCircle(el) {
+        if (!el) return null;
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'circle' && el.classList && el.classList.contains('pin')) return el;
+        if (tag === 'g') {
+          const circle = el.querySelector ? el.querySelector('circle.pin') : null;
+          return circle;
+        }
+        return null;
+      }
+
+      function getPrimaryElement(el) {
+        const circle = getPinCircle(el);
+        return circle || el;
+      }
+
+      function isConnector(el) {
+        return !!getPinCircle(el);
+      }
+
       function getElementAnchor(el) {
+        const circle = getPinCircle(el);
+        if (circle) {
+          const cx = parseFloat(circle.getAttribute('cx') || 0);
+          const cy = parseFloat(circle.getAttribute('cy') || 0);
+          const tag = (el.tagName || '').toLowerCase();
+          if (tag === 'g') {
+            const m = (el.getAttribute('transform') || '').match(/translate\(([^,]+),([^)]+)\)/);
+            const tx = m ? parseFloat(m[1]) : 0;
+            const ty = m ? parseFloat(m[2]) : 0;
+            return { x: tx + cx, y: ty + cy };
+          }
+          return { x: cx, y: cy };
+        }
         const tag = (el.tagName || '').toLowerCase();
         if (tag === 'line') {
           return {
@@ -696,15 +796,30 @@
         };
       }
 
+      function syncConnectorLabelToCircle(circle) {
+        if (!circle || !circle.classList || !circle.classList.contains('pin')) return;
+        const group = circle.parentNode;
+        if (!group || group.tagName !== 'g') return;
+        const label = group.querySelector('text.connector-label');
+        if (!label) return;
+        const cx = parseFloat(circle.getAttribute('cx') || 0);
+        const cy = parseFloat(circle.getAttribute('cy') || 0);
+        label.setAttribute('x', cx);
+        label.setAttribute('y', cy);
+      }
+
       function createSetAttributeCommand(el, attr, oldVal, newVal) {
+        const isPinPos = el.classList && el.classList.contains('pin') && (attr === 'cx' || attr === 'cy');
         return {
           execute: function () {
             if (newVal != null && newVal !== '') el.setAttribute(attr, String(newVal));
             else el.removeAttribute(attr);
+            if (isPinPos) syncConnectorLabelToCircle(el);
           },
           undo: function () {
             if (oldVal != null && oldVal !== '') el.setAttribute(attr, String(oldVal));
             else el.removeAttribute(attr);
+            if (isPinPos) syncConnectorLabelToCircle(el);
           },
         };
       }
@@ -712,6 +827,7 @@
       function getEffectiveTag(el) {
         const tag = (el.tagName || '').toLowerCase();
         if (tag === 'circle' && el.classList && el.classList.contains('pin')) return 'pin';
+        if (tag === 'g' && getPinCircle(el)) return 'pin';
         return tag;
       }
 
@@ -1016,14 +1132,15 @@
           return;
         }
         const effectiveTags = elements.map(getEffectiveTag);
+        const primaryElements = elements.map(getPrimaryElement);
         const el = elements[0];
         const multi = elements.length > 1;
         function valFor(attr, isText) {
-          const r = getAttrValueAcrossElements(elements, attr, isText);
+          const r = getAttrValueAcrossElements(primaryElements, attr, isText);
           return r.same ? r.value : '';
         }
         function mixedFor(attr, isText) {
-          return !getAttrValueAcrossElements(elements, attr, isText).same;
+          return !getAttrValueAcrossElements(primaryElements, attr, isText).same;
         }
         function hasProp(attr) {
           return propCommonToAll(effectiveTags, attr);
@@ -1142,13 +1259,18 @@
           input.addEventListener('change', function () {
             let newVal = input.value.trim();
             if (input.classList.contains('color-picker-hex')) newVal = parseColorToHex(newVal || '#000000');
-            const oldVal = attr === 'textContent' ? (el.textContent || '').trim() : (el.getAttribute(attr) || '');
+            const oldVal = attr === 'textContent' ? (el.textContent || '').trim() : ((getPrimaryElement(el) || el).getAttribute(attr) || '');
             if (String(newVal) === String(oldVal)) return;
-            const cmd = multi
-              ? createSetAttributeMultiCommand(elements, attr, newVal)
-              : (attr === 'textContent'
-                ? { execute: function () { el.textContent = newVal || ''; }, undo: function () { el.textContent = oldVal || ''; } }
-                : createSetAttributeCommand(el, attr, oldVal, newVal));
+            let cmd;
+            if (attr === 'data-pin-name' && effectiveTags.indexOf('pin') >= 0) {
+              cmd = createSetConnectorNameCommand(elements, newVal);
+            } else {
+              cmd = multi
+                ? createSetAttributeMultiCommand(primaryElements, attr, newVal)
+                : (attr === 'textContent'
+                  ? { execute: function () { el.textContent = newVal || ''; }, undo: function () { el.textContent = oldVal || ''; } }
+                  : createSetAttributeCommand(getPrimaryElement(el) || el, attr, oldVal, newVal));
+            }
             executeCommand(cmd);
             updatePropertiesPanel();
           });
@@ -1429,11 +1551,62 @@
           });
       }
 
-      function stylePins(container) {
+      function createConnectorLabelText(cx, cy, name) {
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', cx);
+        text.setAttribute('y', cy);
+        text.setAttribute('class', 'connector-label');
+        text.setAttribute('font-size', '3');
+        text.setAttribute('font-family', 'Helvetica, sans-serif');
+        text.setAttribute('fill', 'black');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.textContent = name || 'connector';
+        return text;
+      }
+
+      function ensureConnectorLabels(container) {
         if (!container) return;
+        const pins = Array.from(container.querySelectorAll('circle.pin'));
+        pins.forEach(function (circle) {
+          const parent = circle.parentNode;
+          if (!parent) return;
+          if (parent.tagName === 'g' && parent.querySelector('text.connector-label')) return;
+          const cx = parseFloat(circle.getAttribute('cx') || 0);
+          const cy = parseFloat(circle.getAttribute('cy') || 0);
+          const name = circle.getAttribute('data-pin-name') || 'connector';
+          if (parent.tagName === 'g') {
+            const label = parent.querySelector('text.connector-label');
+            if (label) {
+              label.setAttribute('x', cx);
+              label.setAttribute('y', cy);
+              label.textContent = name;
+            } else {
+              parent.appendChild(createConnectorLabelText(cx, cy, name));
+            }
+            return;
+          }
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          const id = circle.id;
+          if (id) {
+            circle.removeAttribute('id');
+            g.id = id;
+          }
+          parent.insertBefore(g, circle);
+          circle.remove();
+          g.appendChild(circle);
+          g.appendChild(createConnectorLabelText(cx, cy, name));
+        });
         container.querySelectorAll('circle.pin').forEach(function (el) {
           el.style.fill = 'var(--accent)';
+          const r = parseFloat(el.getAttribute('r') || 5);
+          if (r < 1) el.setAttribute('r', '5');
         });
+      }
+
+      function stylePins(container) {
+        if (!container) return;
+        ensureConnectorLabels(container);
       }
 
       function getViewBox() {
@@ -1578,7 +1751,7 @@
             updateSelectionVisuals();
             isDragging = true;
             var snapBeforePinDrag = null;
-            if (hit.classList && hit.classList.contains('pin')) {
+            if (isConnector(hit)) {
               snapBeforePinDrag = appState.snapEnabled;
               sendSnap(true);
             }
@@ -1621,12 +1794,13 @@
             let dx = pt.x - dragStart.x;
             let dy = pt.y - dragStart.y;
             var hit = dragStart.hit;
-            if (hit && hit.classList && hit.classList.contains('pin')) {
-              var origCx = parseFloat(hit.getAttribute('cx') || 0) - (hit._lastDx || 0);
-              var origCy = parseFloat(hit.getAttribute('cy') || 0) - (hit._lastDy || 0);
-              var snapped = snapToGrid(origCx + dx, origCy + dy, true);
-              dx = snapped.x - origCx;
-              dy = snapped.y - origCy;
+            if (hit && isConnector(hit)) {
+              var anchor = getElementAnchor(hit);
+              var origX = anchor.x - (hit._lastDx || 0);
+              var origY = anchor.y - (hit._lastDy || 0);
+              var snapped = snapToGrid(origX + dx, origY + dy, true);
+              dx = snapped.x - origX;
+              dy = snapped.y - origY;
             } else if (hit && appState.snapEnabled) {
               var anchor = getElementAnchor(hit);
               var origX = anchor.x - (hit._lastDx || 0);
@@ -1696,12 +1870,13 @@
             let dx = pt.x - dragStart.x;
             let dy = pt.y - dragStart.y;
             var hit = dragStart.hit;
-            if (hit && hit.classList && hit.classList.contains('pin')) {
-              var origCx = parseFloat(hit.getAttribute('cx') || 0) - (hit._lastDx || 0);
-              var origCy = parseFloat(hit.getAttribute('cy') || 0) - (hit._lastDy || 0);
-              var snapped = snapToGrid(origCx + dx, origCy + dy, true);
-              dx = snapped.x - origCx;
-              dy = snapped.y - origCy;
+            if (hit && isConnector(hit)) {
+              var anchor = getElementAnchor(hit);
+              var origX = anchor.x - (hit._lastDx || 0);
+              var origY = anchor.y - (hit._lastDy || 0);
+              var snapped = snapToGrid(origX + dx, origY + dy, true);
+              dx = snapped.x - origX;
+              dy = snapped.y - origY;
             } else if (hit && appState.snapEnabled) {
               var anchor = getElementAnchor(hit);
               var origX = anchor.x - (hit._lastDx || 0);
@@ -1886,15 +2061,18 @@
             startTextEdit(textEl);
           } else if (drawDrag.tool === 'pin') {
             const pinRadius = 5;
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', pt.x);
-            circle.setAttribute('cy', pt.y);
-            circle.setAttribute('r', pinRadius);
-            circle.setAttribute('class', 'pin');
             const name = window.prompt('Connector name:', 'connector');
             if (name != null && name.trim()) {
+              const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+              const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              circle.setAttribute('cx', pt.x);
+              circle.setAttribute('cy', pt.y);
+              circle.setAttribute('r', pinRadius);
+              circle.setAttribute('class', 'pin');
               circle.setAttribute('data-pin-name', name.trim());
-              executeCommand(createAddElementCommand(circle));
+              g.appendChild(circle);
+              g.appendChild(createConnectorLabelText(pt.x, pt.y, name.trim()));
+              executeCommand(createAddElementCommand(g));
             }
           }
           hidePreviews();
