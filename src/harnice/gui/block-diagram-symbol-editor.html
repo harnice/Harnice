@@ -61,12 +61,21 @@
       outline-offset: 1px;
     }
 
-    #rubber-band {
+    #rubber-band,
+    #preview-line,
+    #preview-circle {
       fill: none;
       stroke: var(--accent);
       stroke-width: 1;
-      stroke-dasharray: 4 2;
       pointer-events: none;
+    }
+
+    #rubber-band {
+      stroke-dasharray: 4 2;
+    }
+
+    #preview-circle {
+      fill: none;
     }
 
     #grid-pattern {
@@ -96,6 +105,8 @@
           <rect id="grid-bg" fill="url(#grid-pattern)" x="-5000" y="-5000" width="10000" height="10000" />
           <g id="svg-content" />
           <rect id="rubber-band" visibility="hidden" />
+          <line id="preview-line" visibility="hidden" stroke="var(--accent)" stroke-width="1" />
+          <circle id="preview-circle" visibility="hidden" fill="none" stroke="var(--accent)" stroke-width="1" />
         </g>
       </svg>
     </div>
@@ -302,10 +313,50 @@
         }
       }
 
+      function snapToGrid(x, y, force) {
+        if (!force && !appState.snapEnabled) return { x: x, y: y };
+        const g = appState.grid;
+        return { x: Math.round(x / g) * g, y: Math.round(y / g) * g };
+      }
+
+      function getElementAnchor(el) {
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'line') {
+          return {
+            x: (parseFloat(el.getAttribute('x1') || 0) + parseFloat(el.getAttribute('x2') || 0)) / 2,
+            y: (parseFloat(el.getAttribute('y1') || 0) + parseFloat(el.getAttribute('y2') || 0)) / 2,
+          };
+        }
+        if (tag === 'rect') {
+          return { x: parseFloat(el.getAttribute('x') || 0), y: parseFloat(el.getAttribute('y') || 0) };
+        }
+        if (tag === 'circle' || tag === 'ellipse') {
+          return { x: parseFloat(el.getAttribute('cx') || 0), y: parseFloat(el.getAttribute('cy') || 0) };
+        }
+        if (tag === 'text') {
+          return { x: parseFloat(el.getAttribute('x') || 0), y: parseFloat(el.getAttribute('y') || 0) };
+        }
+        const m = (el.getAttribute('transform') || '').match(/translate\(([^,]+),([^)]+)\)/);
+        return { x: m ? parseFloat(m[1]) : 0, y: m ? parseFloat(m[2]) : 0 };
+      }
+
       function ensureElementId(el) {
         if (el.id) return el.id;
         el.id = 'sde-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
         return el.id;
+      }
+
+      function createAddElementCommand(element) {
+        const content = document.getElementById('svg-content');
+        return {
+          execute: function () {
+            content.appendChild(element);
+            ensureElementId(element);
+          },
+          undo: function () {
+            element.remove();
+          },
+        };
       }
 
       function updateSelectionVisuals() {
@@ -446,7 +497,7 @@
         applyTransform();
       }
 
-      function updatePanZoom(dx, dy, dScale, ox, oy) {
+      function updatePanZoom(dx, dy, dScale, clientX, clientY) {
         const root = document.getElementById('svg-root');
         if (root) {
           const cw = root.clientWidth, ch = root.clientHeight;
@@ -455,7 +506,25 @@
             appState.panY += dy * (400 / ch);
           }
         }
-        appState.scale = Math.max(0.1, Math.min(10, appState.scale * (1 + (dScale || 0))));
+        if (dScale != null && dScale !== 0 && clientX != null && clientY != null) {
+          const svg = document.getElementById('svg-root');
+          if (svg) {
+            const pt = svg.createSVGPoint();
+            pt.x = clientX;
+            pt.y = clientY;
+            const cursorSvg = pt.matrixTransform(svg.getScreenCTM().inverse());
+            const cx = cursorSvg.x;
+            const cy = cursorSvg.y;
+            const newScale = Math.max(0.1, Math.min(10, appState.scale * (1 + dScale)));
+            appState.panX = cx - (cx - appState.panX) * (newScale / appState.scale);
+            appState.panY = cy - (cy - appState.panY) * (newScale / appState.scale);
+            appState.scale = newScale;
+          } else {
+            appState.scale = Math.max(0.1, Math.min(10, appState.scale * (1 + dScale)));
+          }
+        } else if (dScale != null && dScale !== 0) {
+          appState.scale = Math.max(0.1, Math.min(10, appState.scale * (1 + dScale)));
+        }
         applyTransform();
       }
 
@@ -496,10 +565,7 @@
         container.addEventListener('wheel', function (e) {
           e.preventDefault();
           const delta = e.deltaY > 0 ? -0.1 : 0.1;
-          const rect = container.getBoundingClientRect();
-          const ox = e.clientX - rect.left;
-          const oy = e.clientY - rect.top;
-          updatePanZoom(0, 0, delta, ox, oy);
+          updatePanZoom(0, 0, delta, e.clientX, e.clientY);
         }, { passive: false });
       }
 
@@ -529,6 +595,7 @@
             }
             updateSelectionVisuals();
             isDragging = true;
+            if (hit.classList && hit.classList.contains('pin')) sendSnap(true);
             dragStart = { x: pt.x, y: pt.y, hit: hit };
             moveStartPositions = Array.from(appState.selection).map(function (id) {
               const el = document.getElementById(id);
@@ -552,8 +619,23 @@
           if (!dragStart) return;
           const pt = screenToSvg(e.clientX, e.clientY);
           if (dragStart.hit) {
-            const dx = pt.x - dragStart.x;
-            const dy = pt.y - dragStart.y;
+            let dx = pt.x - dragStart.x;
+            let dy = pt.y - dragStart.y;
+            var hit = dragStart.hit;
+            if (hit && hit.classList && hit.classList.contains('pin')) {
+              var origCx = parseFloat(hit.getAttribute('cx') || 0) - (hit._lastDx || 0);
+              var origCy = parseFloat(hit.getAttribute('cy') || 0) - (hit._lastDy || 0);
+              var snapped = snapToGrid(origCx + dx, origCy + dy, true);
+              dx = snapped.x - origCx;
+              dy = snapped.y - origCy;
+            } else if (hit && appState.snapEnabled) {
+              var anchor = getElementAnchor(hit);
+              var origX = anchor.x - (hit._lastDx || 0);
+              var origY = anchor.y - (hit._lastDy || 0);
+              var snapped = snapToGrid(origX + dx, origY + dy, false);
+              dx = snapped.x - origX;
+              dy = snapped.y - origY;
+            }
             moveStartPositions.forEach(function (p) {
               if (p && p.el) translateElement(p.el, dx - (p.el._lastDx || 0), dy - (p.el._lastDy || 0));
               if (p && p.el) {
@@ -577,8 +659,23 @@
           if (e.button !== 0 || !dragStart) return;
           const pt = screenToSvg(e.clientX, e.clientY);
           if (dragStart.hit) {
-            const dx = pt.x - dragStart.x;
-            const dy = pt.y - dragStart.y;
+            let dx = pt.x - dragStart.x;
+            let dy = pt.y - dragStart.y;
+            var hit = dragStart.hit;
+            if (hit && hit.classList && hit.classList.contains('pin')) {
+              var origCx = parseFloat(hit.getAttribute('cx') || 0) - (hit._lastDx || 0);
+              var origCy = parseFloat(hit.getAttribute('cy') || 0) - (hit._lastDy || 0);
+              var snapped = snapToGrid(origCx + dx, origCy + dy, true);
+              dx = snapped.x - origCx;
+              dy = snapped.y - origCy;
+            } else if (hit && appState.snapEnabled) {
+              var anchor = getElementAnchor(hit);
+              var origX = anchor.x - (hit._lastDx || 0);
+              var origY = anchor.y - (hit._lastDy || 0);
+              var snapped = snapToGrid(origX + dx, origY + dy, false);
+              dx = snapped.x - origX;
+              dy = snapped.y - origY;
+            }
             if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
               const ids = Array.from(appState.selection);
               const cmd = createMoveElementsCommand(ids, dx, dy);
@@ -590,6 +687,7 @@
                 }
               });
               executeCommand(cmd);
+              sendSnap(true);
             }
           } else {
             rubberBand.setAttribute('visibility', 'hidden');
@@ -644,6 +742,192 @@
         });
       }
 
+      function initDrawTools() {
+        const container = document.getElementById('svg-container');
+        const rubberBand = document.getElementById('rubber-band');
+        const previewLine = document.getElementById('preview-line');
+        const previewCircle = document.getElementById('preview-circle');
+        if (!container || !rubberBand) return;
+        const drawTools = ['line', 'rect', 'circle', 'text', 'pin'];
+        let drawDrag = { active: false, tool: null, x1: 0, y1: 0 };
+
+        function hidePreviews() {
+          rubberBand.setAttribute('visibility', 'hidden');
+          if (previewLine) previewLine.setAttribute('visibility', 'hidden');
+          if (previewCircle) previewCircle.setAttribute('visibility', 'hidden');
+        }
+
+        container.addEventListener('mousedown', function (e) {
+          if (e.button !== 0 || !drawTools.includes(appState.activeTool)) return;
+          const raw = screenToSvg(e.clientX, e.clientY);
+          const pt = snapToGrid(raw.x, raw.y, appState.activeTool === 'pin');
+          drawDrag = { active: true, tool: appState.activeTool, x1: pt.x, y1: pt.y };
+        });
+
+        container.addEventListener('mousemove', function (e) {
+          if (!drawDrag.active) return;
+          const pt = snapToGrid(screenToSvg(e.clientX, e.clientY).x, screenToSvg(e.clientX, e.clientY).y);
+          if (drawDrag.tool === 'line') {
+            if (previewLine) {
+              previewLine.setAttribute('x1', drawDrag.x1);
+              previewLine.setAttribute('y1', drawDrag.y1);
+              previewLine.setAttribute('x2', pt.x);
+              previewLine.setAttribute('y2', pt.y);
+              previewLine.setAttribute('visibility', 'visible');
+            }
+          } else if (drawDrag.tool === 'rect') {
+            const x = Math.min(drawDrag.x1, pt.x);
+            const y = Math.min(drawDrag.y1, pt.y);
+            const w = Math.abs(pt.x - drawDrag.x1);
+            const h = Math.abs(pt.y - drawDrag.y1);
+            rubberBand.setAttribute('x', x);
+            rubberBand.setAttribute('y', y);
+            rubberBand.setAttribute('width', w);
+            rubberBand.setAttribute('height', h);
+            rubberBand.setAttribute('visibility', 'visible');
+          } else if (drawDrag.tool === 'circle') {
+            const r = Math.hypot(pt.x - drawDrag.x1, pt.y - drawDrag.y1);
+            if (previewCircle) {
+              previewCircle.setAttribute('cx', drawDrag.x1);
+              previewCircle.setAttribute('cy', drawDrag.y1);
+              previewCircle.setAttribute('r', Math.max(0, r));
+              previewCircle.setAttribute('visibility', 'visible');
+            }
+          } else if (drawDrag.tool === 'pin') {
+            const pinPt = snapToGrid(pt.x, pt.y, true);
+            if (previewCircle) {
+              previewCircle.setAttribute('cx', pinPt.x);
+              previewCircle.setAttribute('cy', pinPt.y);
+              previewCircle.setAttribute('r', 5);
+              previewCircle.setAttribute('visibility', 'visible');
+            }
+          }
+        });
+
+        container.addEventListener('mouseup', function (e) {
+          if (e.button !== 0 || !drawDrag.active) return;
+          const raw = screenToSvg(e.clientX, e.clientY);
+          const pt = drawDrag.tool === 'pin'
+            ? snapToGrid(raw.x, raw.y, true)
+            : snapToGrid(raw.x, raw.y);
+          const content = document.getElementById('svg-content');
+          if (!content) { drawDrag = { active: false, tool: null }; return; }
+          const dx = Math.abs(pt.x - drawDrag.x1);
+          const dy = Math.abs(pt.y - drawDrag.y1);
+          if (drawDrag.tool === 'line') {
+            if (dx > 0.5 || dy > 0.5) {
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', drawDrag.x1);
+              line.setAttribute('y1', drawDrag.y1);
+              line.setAttribute('x2', pt.x);
+              line.setAttribute('y2', pt.y);
+              line.setAttribute('stroke', 'var(--text)');
+              executeCommand(createAddElementCommand(line));
+            }
+          } else if (drawDrag.tool === 'rect') {
+            if (dx > 0.5 || dy > 0.5) {
+              const x = Math.min(drawDrag.x1, pt.x);
+              const y = Math.min(drawDrag.y1, pt.y);
+              const w = Math.abs(pt.x - drawDrag.x1);
+              const h = Math.abs(pt.y - drawDrag.y1);
+              const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+              rect.setAttribute('x', x);
+              rect.setAttribute('y', y);
+              rect.setAttribute('width', w);
+              rect.setAttribute('height', h);
+              rect.setAttribute('fill', 'none');
+              rect.setAttribute('stroke', 'var(--text)');
+              executeCommand(createAddElementCommand(rect));
+            }
+          } else if (drawDrag.tool === 'circle') {
+            const r = Math.hypot(pt.x - drawDrag.x1, pt.y - drawDrag.y1);
+            if (r > 0.5) {
+              const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              circle.setAttribute('cx', drawDrag.x1);
+              circle.setAttribute('cy', drawDrag.y1);
+              circle.setAttribute('r', r);
+              circle.setAttribute('fill', 'none');
+              circle.setAttribute('stroke', 'var(--text)');
+              executeCommand(createAddElementCommand(circle));
+            }
+          } else if (drawDrag.tool === 'text') {
+            const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textEl.setAttribute('x', drawDrag.x1);
+            textEl.setAttribute('y', drawDrag.y1);
+            textEl.setAttribute('font-family', 'Segoe UI, sans-serif');
+            textEl.setAttribute('fill', 'var(--text)');
+            textEl.setAttribute('font-size', '12');
+            textEl.textContent = 'Text';
+            executeCommand(createAddElementCommand(textEl));
+            startTextEdit(textEl);
+          } else if (drawDrag.tool === 'pin') {
+            const pinRadius = 5;
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', pt.x);
+            circle.setAttribute('cy', pt.y);
+            circle.setAttribute('r', pinRadius);
+            circle.setAttribute('class', 'pin');
+            const name = window.prompt('Pin name:', 'pin');
+            if (name != null && name.trim()) {
+              circle.setAttribute('data-pin-name', name.trim());
+              executeCommand(createAddElementCommand(circle));
+            }
+          }
+          hidePreviews();
+          drawDrag = { active: false, tool: null };
+        });
+
+        function startTextEdit(textEl) {
+          const svg = document.getElementById('svg-root');
+          const viewport = document.getElementById('svg-viewport');
+          if (!svg || !viewport) return;
+          const bbox = textEl.getBBox();
+          const ctms = [textEl, textEl.parentNode];
+          let m = textEl.getCTM();
+          if (!m) m = viewport.getScreenCTM();
+          const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+          fo.setAttribute('x', bbox.x - 2);
+          fo.setAttribute('y', bbox.y - 2);
+          fo.setAttribute('width', Math.max(80, bbox.width + 4));
+          fo.setAttribute('height', bbox.height + 8);
+          fo.setAttribute('style', 'overflow:visible');
+          const div = document.createElement('div');
+          div.contentEditable = true;
+          div.style.cssText = 'font:12px sans-serif;color:var(--text);background:var(--bg2);border:1px solid var(--border);padding:2px 4px;min-width:60px;outline:none;';
+          div.textContent = textEl.textContent || 'Text';
+          fo.appendChild(div);
+          viewport.appendChild(fo);
+          div.focus();
+          document.execCommand('selectAll', false, null);
+          function finish() {
+            textEl.textContent = (div.textContent || '').trim() || 'Text';
+            fo.remove();
+            div.removeEventListener('blur', finish);
+            div.removeEventListener('keydown', onKey);
+            sendStatus(true);
+          }
+          function onKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              div.blur();
+            }
+          }
+          div.addEventListener('blur', finish);
+          div.addEventListener('keydown', onKey);
+        }
+
+        document.addEventListener('dblclick', function (e) {
+          if (appState.activeTool !== 'select') return;
+          const content = document.getElementById('svg-content');
+          if (!content) return;
+          const pt = screenToSvg(e.clientX, e.clientY);
+          const hit = getElementAtPoint(pt.x, pt.y);
+          if (hit && (hit.tagName || '').toLowerCase() === 'text') {
+            startTextEdit(hit);
+          }
+        });
+      }
+
       if (embedded) {
         window.addEventListener('message', function (e) {
           if (!e.data || e.data.type !== 'harnice-graph-action') return;
@@ -667,6 +951,7 @@
       loadSvg();
       initPanZoom();
       initSelectTool();
+      initDrawTools();
       window.addEventListener('resize', fitView);
     })();
   </script>
