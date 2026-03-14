@@ -438,6 +438,52 @@
         return { type: 'BATCH', commands: commands };
       }
 
+      function getAttrValueAcrossElements(elements, attr, isTextContent) {
+        if (!elements.length) return { same: false };
+        const first = isTextContent
+          ? (elements[0].textContent || '').trim()
+          : (elements[0].getAttribute(attr) || '');
+        for (let i = 1; i < elements.length; i++) {
+          const v = isTextContent
+            ? (elements[i].textContent || '').trim()
+            : (elements[i].getAttribute(attr) || '');
+          if (String(v) !== String(first)) return { same: false };
+        }
+        return { same: true, value: first };
+      }
+
+      function createSetAttributeMultiCommand(elements, attr, newVal) {
+        const oldVals = elements.map(function (el) {
+          return attr === 'textContent'
+            ? (el.textContent || '').trim()
+            : (el.getAttribute(attr) || '');
+        });
+        return {
+          execute: function () {
+            elements.forEach(function (el) {
+              if (attr === 'textContent') {
+                el.textContent = newVal || '';
+              } else if (newVal != null && newVal !== '') {
+                el.setAttribute(attr, String(newVal));
+              } else {
+                el.removeAttribute(attr);
+              }
+            });
+          },
+          undo: function () {
+            elements.forEach(function (el, i) {
+              if (attr === 'textContent') {
+                el.textContent = oldVals[i] || '';
+              } else if (oldVals[i] != null && oldVals[i] !== '') {
+                el.setAttribute(attr, String(oldVals[i]));
+              } else {
+                el.removeAttribute(attr);
+              }
+            });
+          },
+        };
+      }
+
       function copySelection() {
         if (appState.activeTool !== 'select' || appState.selection.size === 0) return;
         const content = document.getElementById('svg-content');
@@ -661,6 +707,27 @@
             else el.removeAttribute(attr);
           },
         };
+      }
+
+      function getEffectiveTag(el) {
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'circle' && el.classList && el.classList.contains('pin')) return 'pin';
+        return tag;
+      }
+
+      var PROP_BY_TYPE = {
+        line: ['x1', 'y1', 'x2', 'y2', 'stroke', 'stroke-width', 'stroke-opacity'],
+        rect: ['x', 'y', 'width', 'height', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity'],
+        circle: ['cx', 'cy', 'r', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity'],
+        ellipse: ['cx', 'cy', 'r', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity'],
+        pin: ['cx', 'cy', 'r', 'data-pin-name', 'stroke', 'stroke-width', 'stroke-opacity'],
+        text: ['x', 'y', 'font-family', 'font-size', 'textContent', 'text-anchor', 'dominant-baseline', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity']
+      };
+
+      function propertyCommon(effectiveTags, attr) {
+        return effectiveTags.length > 0 && effectiveTags.every(function (t) {
+          return PROP_BY_TYPE[t] && PROP_BY_TYPE[t].indexOf(attr) >= 0;
+        });
       }
 
       function updateSelectionVisuals() {
@@ -918,46 +985,75 @@
         };
       }
 
+      var PROP_BY_TYPE = {
+        line: ['x1', 'y1', 'x2', 'y2', 'stroke', 'stroke-width', 'stroke-opacity'],
+        rect: ['x', 'y', 'width', 'height', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity'],
+        circle: ['cx', 'cy', 'r', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity'],
+        ellipse: ['cx', 'cy', 'r', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity'],
+        pin: ['cx', 'cy', 'r', 'data-pin-name', 'stroke', 'stroke-width', 'stroke-opacity'],
+        text: ['x', 'y', 'font-family', 'font-size', 'textContent', 'text-anchor', 'dominant-baseline', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity']
+      };
+
+      function propCommonToAll(types, attr) {
+        const uniq = types.filter(function (t, i, a) { return a.indexOf(t) === i; });
+        return uniq.every(function (t) { return PROP_BY_TYPE[t] && PROP_BY_TYPE[t].indexOf(attr) >= 0; });
+      }
+
       function updatePropertiesPanel() {
         const panel = document.getElementById('properties-content');
         const popup = document.getElementById('properties-panel');
         if (!panel || !popup) return;
         const ids = Array.from(appState.selection);
-        if (ids.length !== 1) {
+        if (ids.length === 0) {
           popup.classList.remove('popup-visible');
           return;
         }
-        popup.classList.add('popup-visible');
         const content = document.getElementById('svg-content');
         if (!content) return;
-        const el = content.querySelector('#' + CSS.escape(ids[0]));
-        if (!el) return;
-        const tag = (el.tagName || '').toLowerCase();
-        let html = '<div class="prop-title">Properties</div>';
-        if (tag === 'circle' && el.classList && el.classList.contains('pin')) {
-          const name = el.getAttribute('data-pin-name') || '';
-          html += '<div class="prop-row"><label>Name</label><input type="text" data-attr="data-pin-name" value="' + escapeHtml(name) + '"></div>';
+        const elements = ids.map(function (id) { return content.querySelector('#' + CSS.escape(id)); }).filter(Boolean);
+        if (elements.length === 0) {
+          popup.classList.remove('popup-visible');
+          return;
         }
-        if (tag === 'line') {
-          html += propRow('x1', el.getAttribute('x1'));
-          html += propRow('y1', el.getAttribute('y1'));
-          html += propRow('x2', el.getAttribute('x2'));
-          html += propRow('y2', el.getAttribute('y2'));
-        } else if (tag === 'rect') {
-          html += propRow('x', el.getAttribute('x'));
-          html += propRow('y', el.getAttribute('y'));
-          html += propRow('width', el.getAttribute('width'));
-          html += propRow('height', el.getAttribute('height'));
-        } else if (tag === 'circle' || tag === 'ellipse') {
-          html += propRow('cx', el.getAttribute('cx'));
-          html += propRow('cy', el.getAttribute('cy'));
-          html += propRow('r', el.getAttribute('r'));
-          if (!(el.classList && el.classList.contains('pin'))) { /* pin name already above */ }
-        } else if (tag === 'text') {
-          html += propRow('x', el.getAttribute('x'));
-          html += propRow('y', el.getAttribute('y'));
+        const effectiveTags = elements.map(getEffectiveTag);
+        const el = elements[0];
+        const multi = elements.length > 1;
+        function valFor(attr, isText) {
+          const r = getAttrValueAcrossElements(elements, attr, isText);
+          return r.same ? r.value : '';
+        }
+        function mixedFor(attr, isText) {
+          return !getAttrValueAcrossElements(elements, attr, isText).same;
+        }
+        function hasProp(attr) {
+          return propCommonToAll(effectiveTags, attr);
+        }
+        let html = '<div class="prop-title">Properties</div>';
+        if (hasProp('data-pin-name')) {
+          html += propRow('Name', valFor('data-pin-name'), mixedFor('data-pin-name', false), 'data-pin-name');
+        }
+        if (hasProp('x1')) {
+          html += propRow('x1', valFor('x1'), mixedFor('x1', false));
+          html += propRow('y1', valFor('y1'), mixedFor('y1', false));
+          html += propRow('x2', valFor('x2'), mixedFor('x2', false));
+          html += propRow('y2', valFor('y2'), mixedFor('y2', false));
+        }
+        if (hasProp('x') && hasProp('width')) {
+          html += propRow('x', valFor('x'), mixedFor('x', false));
+          html += propRow('y', valFor('y'), mixedFor('y', false));
+          html += propRow('width', valFor('width'), mixedFor('width', false));
+          html += propRow('height', valFor('height'), mixedFor('height', false));
+        } else if (hasProp('cx')) {
+          html += propRow('cx', valFor('cx'), mixedFor('cx', false));
+          html += propRow('cy', valFor('cy'), mixedFor('cy', false));
+          html += propRow('r', valFor('r'), mixedFor('r', false));
+        } else if (hasProp('x')) {
+          html += propRow('x', valFor('x'), mixedFor('x', false));
+          html += propRow('y', valFor('y'), mixedFor('y', false));
+        }
+        if (hasProp('font-family')) {
           (function () {
-            const fontVal = el.getAttribute('font-family') || 'Segoe UI, sans-serif';
+            const fontVal = valFor('font-family');
             const fontOpts = [
               { value: 'Segoe UI, sans-serif', label: 'Segoe UI' },
               { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
@@ -974,42 +1070,45 @@
             if (fontVal && !fontOpts.some(function (o) { return o.value === fontVal; })) {
               fontOpts.unshift({ value: fontVal, label: fontVal });
             }
-            html += propRowSelect('font-family', fontVal, fontOpts, 'Font');
+            html += propRowSelect('font-family', fontVal || 'Segoe UI, sans-serif', fontOpts, 'Font', mixedFor('font-family', false));
           })();
-          html += propRowNum('font-size', el.getAttribute('font-size') || '12', { min: 1, step: 1 });
-          html += '<div class="prop-row"><label>Text</label><input type="text" data-attr="textContent" value="' + escapeHtml((el.textContent || '').trim()) + '"></div>';
-          html += propRowSelect('text-anchor', el.getAttribute('text-anchor') || 'start', [
+          html += propRowNum('font-size', valFor('font-size') || '12', { min: 1, step: 1 }, mixedFor('font-size', false));
+          html += '<div class="prop-row"><label>Text</label><input type="text" data-attr="textContent" value="' + escapeHtml(valFor('textContent', true)) + '"' + (mixedFor('textContent', true) ? ' placeholder="(mixed)"' : '') + '></div>';
+          html += propRowSelect('text-anchor', valFor('text-anchor') || 'start', [
             { value: 'start', label: 'Left' },
             { value: 'middle', label: 'Center' },
             { value: 'end', label: 'Right' }
-          ], 'Horizontal anchor');
-          html += propRowSelect('dominant-baseline', el.getAttribute('dominant-baseline') || 'alphabetic', [
+          ], 'Horizontal anchor', mixedFor('text-anchor', false));
+          html += propRowSelect('dominant-baseline', valFor('dominant-baseline') || 'alphabetic', [
             { value: 'hanging', label: 'Top' },
             { value: 'middle', label: 'Center' },
             { value: 'alphabetic', label: 'Bottom' }
-          ], 'Vertical anchor');
+          ], 'Vertical anchor', mixedFor('dominant-baseline', false));
         }
-        var hasFill = (tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text') && !(el.classList && el.classList.contains('pin'));
-        var hasStroke = tag === 'line' || tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text';
-        if (hasFill) {
+        if (hasProp('fill')) {
           html += propSection('Fill');
-          html += propRowColor('fill', el.getAttribute('fill') || 'none');
-          html += propRowOpacity('fill-opacity', el.getAttribute('fill-opacity') || '1');
+          html += propRowColor('fill', valFor('fill') || 'none', mixedFor('fill', false));
+          html += propRowOpacity('fill-opacity', valFor('fill-opacity') || '1', mixedFor('fill-opacity', false));
         }
-        if (hasStroke) {
+        if (hasProp('stroke')) {
           html += propSection('Stroke');
-          html += propRowColor('stroke', el.getAttribute('stroke') || 'var(--text)');
-          html += propRowNum('stroke-width', el.getAttribute('stroke-width') || '1', { min: 0, step: 0.1 });
-          html += propRowOpacity('stroke-opacity', el.getAttribute('stroke-opacity') || '1');
+          html += propRowColor('stroke', valFor('stroke') || 'var(--text)', mixedFor('stroke', false));
+          html += propRowNum('stroke-width', valFor('stroke-width') || '1', { min: 0, step: 0.1 }, mixedFor('stroke-width', false));
+          html += propRowOpacity('stroke-opacity', valFor('stroke-opacity') || '1', mixedFor('stroke-opacity', false));
         }
+        if (html === '<div class="prop-title">Properties</div>') {
+          popup.classList.remove('popup-visible');
+          return;
+        }
+        popup.classList.add('popup-visible');
         panel.innerHTML = html;
         panel.querySelectorAll('select[data-attr]').forEach(function (sel) {
           const attr = sel.getAttribute('data-attr');
           sel.addEventListener('change', function () {
             const newVal = sel.value;
-            const oldVal = el.getAttribute(attr) || '';
-            if (String(newVal) === String(oldVal)) return;
-            executeCommand(createSetAttributeCommand(el, attr, oldVal, newVal));
+            if (newVal === '') return;
+            const cmd = multi ? createSetAttributeMultiCommand(elements, attr, newVal) : (function () { const oldVal = el.getAttribute(attr) || ''; return createSetAttributeCommand(el, attr, oldVal, newVal); })();
+            executeCommand(cmd);
             updatePropertiesPanel();
           });
         });
@@ -1021,14 +1120,20 @@
               const v = parseFloat(input.value) || 0;
               const pct = Math.min(100, Math.max(0, v));
               if (span) span.textContent = pct + '%';
-              el.setAttribute(attr, (pct / 100).toFixed(2));
+              const normVal = (pct / 100).toFixed(2);
+              elements.forEach(function (e) { e.setAttribute(attr, normVal); });
             });
             input.addEventListener('change', function () {
               const newVal = (parseFloat(input.value) || 0) / 100;
               const norm = Math.min(1, Math.max(0, newVal));
-              const oldVal = parseFloat(el.getAttribute(attr) || '1');
-              if (Math.abs(norm - oldVal) < 0.01) return;
-              executeCommand(createSetAttributeCommand(el, attr, String(oldVal), String(norm.toFixed(2))));
+              const normStr = String(norm.toFixed(2));
+              if (multi) {
+                executeCommand(createSetAttributeMultiCommand(elements, attr, normStr));
+              } else {
+                const oldVal = parseFloat(el.getAttribute(attr) || '1');
+                if (Math.abs(norm - oldVal) < 0.01) return;
+                executeCommand(createSetAttributeCommand(el, attr, String(oldVal), normStr));
+              }
               updatePropertiesPanel();
             });
             return;
@@ -1038,17 +1143,20 @@
             if (input.classList.contains('color-picker-hex')) newVal = parseColorToHex(newVal || '#000000');
             const oldVal = attr === 'textContent' ? (el.textContent || '').trim() : (el.getAttribute(attr) || '');
             if (String(newVal) === String(oldVal)) return;
-            const cmd = attr === 'textContent'
-              ? { execute: function () { el.textContent = newVal || ''; }, undo: function () { el.textContent = oldVal || ''; } }
-              : createSetAttributeCommand(el, attr, oldVal, newVal);
+            const cmd = multi
+              ? createSetAttributeMultiCommand(elements, attr, newVal)
+              : (attr === 'textContent'
+                ? { execute: function () { el.textContent = newVal || ''; }, undo: function () { el.textContent = oldVal || ''; } }
+                : createSetAttributeCommand(el, attr, oldVal, newVal));
             executeCommand(cmd);
             updatePropertiesPanel();
           });
         });
-        wireColorPickers(panel, el);
+        wireColorPickers(panel, elements);
       }
 
-      function wireColorPickers(panel, el) {
+      function wireColorPickers(panel, elements) {
+        const el = elements[0];
         const popover = document.getElementById('color-picker-popover');
         if (!popover || !panel) return;
         if (popover.parentNode !== document.body) document.body.appendChild(popover);
@@ -1064,7 +1172,7 @@
             const hsv = hexToHsv(hex);
             const openedVal = el.getAttribute(attr);
             function apply(hexVal) {
-              el.setAttribute(attr, hexVal);
+              elements.forEach(function (elem) { elem.setAttribute(attr, hexVal); });
               swatch.style.backgroundColor = hexVal;
               swatch.setAttribute('data-hex', hexVal);
               const hexInput = swatch.closest('.color-picker-wrap').querySelector('.color-picker-hex');
@@ -1115,7 +1223,8 @@
               popover.classList.remove('visible');
               const closedVal = el.getAttribute(attr);
               if (String(openedVal || '') !== String(closedVal || '')) {
-                executeCommand(createSetAttributeCommand(el, attr, openedVal || '', closedVal || ''));
+                const cmd = elements.length > 1 ? createSetAttributeMultiCommand(elements, attr, closedVal || '') : createSetAttributeCommand(el, attr, openedVal || '', closedVal || '');
+                executeCommand(cmd);
               }
               updatePropertiesPanel();
             }
@@ -1127,40 +1236,45 @@
         });
       }
 
-      function propRow(label, val) {
-        return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><input type="text" data-attr="' + escapeHtml(label) + '" value="' + escapeHtml(val || '') + '"></div>';
+      function propRow(label, val, mixed, attrOverride) {
+        var attr = attrOverride != null ? attrOverride : label;
+        var ph = mixed ? ' placeholder="(mixed)"' : '';
+        return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><input type="text" data-attr="' + escapeHtml(attr) + '" value="' + escapeHtml(val || '') + '"' + ph + '></div>';
       }
 
-      function propRowSelect(attr, val, options, label) {
+      function propRowSelect(attr, val, options, label, mixed) {
         label = label || attr;
-        let opts = '';
+        let opts = mixed ? '<option value="" selected>(mixed)</option>' : '';
         options.forEach(function (opt) {
-          const sel = (opt.value === val) ? ' selected' : '';
+          const sel = (!mixed && opt.value === val) ? ' selected' : '';
           opts += '<option value="' + escapeHtml(opt.value) + '"' + sel + '>' + escapeHtml(opt.label) + '</option>';
         });
-        return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><select data-attr="' + escapeHtml(attr) + '">' + opts + '</select></div>';
+        return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><select data-attr="' + escapeHtml(attr) + '"' + (mixed ? ' data-mixed="1"' : '') + '>' + opts + '</select></div>';
       }
 
       function propSection(title) {
         return '<div class="prop-section">' + escapeHtml(title) + '</div>';
       }
 
-      function propRowNum(attr, val, opts) {
+      function propRowNum(attr, val, opts, mixed) {
         opts = opts || {};
         const min = opts.min != null ? opts.min : 0;
         const step = opts.step != null ? opts.step : 1;
-        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><input type="number" data-attr="' + escapeHtml(attr) + '" value="' + escapeHtml(val || '') + '" min="' + min + '" step="' + step + '"></div>';
+        var ph = mixed ? ' placeholder="(mixed)"' : '';
+        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><input type="number" data-attr="' + escapeHtml(attr) + '" value="' + escapeHtml(val || '') + '" min="' + min + '" step="' + step + '"' + ph + '></div>';
       }
 
-      function propRowOpacity(attr, val) {
+      function propRowOpacity(attr, val, mixed) {
         const pct = val === '' || val == null ? 100 : Math.round(parseFloat(val) * 100);
-        const safe = String(Math.min(100, Math.max(0, isNaN(pct) ? 100 : pct)));
-        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><div class="color-picker-wrap"><input type="range" data-attr="' + escapeHtml(attr) + '" data-opacity="1" min="0" max="100" step="10" value="' + escapeHtml(safe) + '"><span class="opacity-pct">' + escapeHtml(safe) + '%</span></div></div>';
+        const safe = mixed ? '50' : String(Math.min(100, Math.max(0, isNaN(pct) ? 100 : pct)));
+        const pctLabel = mixed ? '(mixed)' : safe + '%';
+        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><div class="color-picker-wrap"><input type="range" data-attr="' + escapeHtml(attr) + '" data-opacity="1" min="0" max="100" step="10" value="' + escapeHtml(safe) + '"><span class="opacity-pct">' + escapeHtml(pctLabel) + '</span></div></div>';
       }
 
-      function propRowColor(attr, val) {
-        const hex = parseColorToHex(val || '#000000');
-        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><div class="color-picker-wrap"><span class="color-swatch" data-attr="' + escapeHtml(attr) + '" data-hex="' + escapeHtml(hex) + '" style="background-color:' + escapeHtml(hex) + '"></span><input type="text" class="color-picker-hex" data-attr="' + escapeHtml(attr) + '" data-hex="1" value="' + escapeHtml(hex) + '"></div></div>';
+      function propRowColor(attr, val, mixed) {
+        const hex = mixed ? '#808080' : parseColorToHex(val || '#000000');
+        var ph = mixed ? ' placeholder="(mixed)"' : '';
+        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><div class="color-picker-wrap"><span class="color-swatch" data-attr="' + escapeHtml(attr) + '" data-hex="' + escapeHtml(hex) + '" data-mixed="' + (mixed ? '1' : '0') + '" style="background-color:' + escapeHtml(hex) + '"></span><input type="text" class="color-picker-hex" data-attr="' + escapeHtml(attr) + '" data-hex="1" value="' + escapeHtml(mixed ? '' : hex) + '"' + ph + '></div></div>';
       }
 
       function parseColorToHex(val) {
