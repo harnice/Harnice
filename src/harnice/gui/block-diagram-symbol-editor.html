@@ -103,6 +103,22 @@
       border-color: var(--accent);
     }
 
+    #properties-panel .prop-row select {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 2px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    #properties-panel .prop-row select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
     #properties-panel .empty-msg {
       color: var(--text-dim);
       font-style: italic;
@@ -840,6 +856,16 @@
           html += propRow('y', el.getAttribute('y'));
           html += propRow('font-size', el.getAttribute('font-size') || '12');
           html += '<div class="prop-row"><label>Text</label><input type="text" data-attr="textContent" value="' + escapeHtml((el.textContent || '').trim()) + '"></div>';
+          html += propRowSelect('text-anchor', el.getAttribute('text-anchor') || 'start', [
+            { value: 'start', label: 'Left' },
+            { value: 'middle', label: 'Center' },
+            { value: 'end', label: 'Right' }
+          ], 'Horizontal anchor');
+          html += propRowSelect('dominant-baseline', el.getAttribute('dominant-baseline') || 'alphabetic', [
+            { value: 'hanging', label: 'Top' },
+            { value: 'middle', label: 'Center' },
+            { value: 'alphabetic', label: 'Bottom' }
+          ], 'Vertical anchor');
         }
         var hasFill = (tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text') && !(el.classList && el.classList.contains('pin'));
         var hasStroke = tag === 'line' || tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text';
@@ -851,10 +877,20 @@
         if (hasStroke) {
           html += propSection('Stroke');
           html += propRowColor('stroke', el.getAttribute('stroke') || 'var(--text)');
-          html += propRowNum('stroke-width', el.getAttribute('stroke-width') || '1', { min: 0, step: 0.5 });
+          html += propRowNum('stroke-width', el.getAttribute('stroke-width') || '1', { min: 0, step: 0.1 });
           html += propRowOpacity('stroke-opacity', el.getAttribute('stroke-opacity') || '1');
         }
         panel.innerHTML = html;
+        panel.querySelectorAll('select[data-attr]').forEach(function (sel) {
+          const attr = sel.getAttribute('data-attr');
+          sel.addEventListener('change', function () {
+            const newVal = sel.value;
+            const oldVal = el.getAttribute(attr) || '';
+            if (String(newVal) === String(oldVal)) return;
+            executeCommand(createSetAttributeCommand(el, attr, oldVal, newVal));
+            updatePropertiesPanel();
+          });
+        });
         panel.querySelectorAll('input[data-attr]').forEach(function (input) {
           const attr = input.getAttribute('data-attr');
           if (input.hasAttribute('data-opacity')) {
@@ -971,6 +1007,16 @@
 
       function propRow(label, val) {
         return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><input type="text" data-attr="' + escapeHtml(label) + '" value="' + escapeHtml(val || '') + '"></div>';
+      }
+
+      function propRowSelect(attr, val, options, label) {
+        label = label || attr;
+        let opts = '';
+        options.forEach(function (opt) {
+          const sel = (opt.value === val) ? ' selected' : '';
+          opts += '<option value="' + escapeHtml(opt.value) + '"' + sel + '>' + escapeHtml(opt.label) + '</option>';
+        });
+        return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><select data-attr="' + escapeHtml(attr) + '">' + opts + '</select></div>';
       }
 
       function propSection(title) {
