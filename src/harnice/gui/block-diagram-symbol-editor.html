@@ -566,6 +566,8 @@
       function updateSelectionVisuals() {
         const content = document.getElementById('svg-content');
         if (!content) return;
+        const sel = window.getSelection();
+        if (sel) sel.removeAllRanges();
         content.querySelectorAll('.selected').forEach(function (el) { el.classList.remove('selected'); });
         appState.selection.forEach(function (id) {
           const el = content.querySelector('#' + CSS.escape(id));
@@ -854,7 +856,27 @@
         } else if (tag === 'text') {
           html += propRow('x', el.getAttribute('x'));
           html += propRow('y', el.getAttribute('y'));
-          html += propRow('font-size', el.getAttribute('font-size') || '12');
+          (function () {
+            const fontVal = el.getAttribute('font-family') || 'Segoe UI, sans-serif';
+            const fontOpts = [
+              { value: 'Segoe UI, sans-serif', label: 'Segoe UI' },
+              { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+              { value: 'Helvetica, sans-serif', label: 'Helvetica' },
+              { value: 'Georgia, serif', label: 'Georgia' },
+              { value: 'Times New Roman, serif', label: 'Times New Roman' },
+              { value: 'Courier New, monospace', label: 'Courier New' },
+              { value: 'Verdana, sans-serif', label: 'Verdana' },
+              { value: 'Trebuchet MS, sans-serif', label: 'Trebuchet MS' },
+              { value: 'sans-serif', label: 'sans-serif' },
+              { value: 'serif', label: 'serif' },
+              { value: 'monospace', label: 'monospace' }
+            ];
+            if (fontVal && !fontOpts.some(function (o) { return o.value === fontVal; })) {
+              fontOpts.unshift({ value: fontVal, label: fontVal });
+            }
+            html += propRowSelect('font-family', fontVal, fontOpts, 'Font');
+          })();
+          html += propRowNum('font-size', el.getAttribute('font-size') || '12', { min: 1, step: 1 });
           html += '<div class="prop-row"><label>Text</label><input type="text" data-attr="textContent" value="' + escapeHtml((el.textContent || '').trim()) + '"></div>';
           html += propRowSelect('text-anchor', el.getAttribute('text-anchor') || 'start', [
             { value: 'start', label: 'Left' },
@@ -1680,7 +1702,9 @@
           fo.setAttribute('style', 'overflow:visible');
           const div = document.createElement('div');
           div.contentEditable = true;
-          div.style.cssText = 'font:12px sans-serif;color:var(--text);background:var(--bg2);border:1px solid var(--border);padding:2px 4px;min-width:60px;outline:none;';
+          const fontSize = textEl.getAttribute('font-size') || '12';
+          const fontFamily = textEl.getAttribute('font-family') || 'Segoe UI, sans-serif';
+          div.style.cssText = 'font:' + fontSize + 'px ' + fontFamily + ';color:var(--text);background:var(--bg2);border:1px solid var(--border);padding:2px 4px;min-width:60px;outline:none;';
           div.textContent = textEl.textContent || 'Text';
           fo.appendChild(div);
           viewport.appendChild(fo);
