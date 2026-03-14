@@ -77,8 +77,16 @@
     }
 
     #properties-panel .prop-row label {
-      min-width: 48px;
+      min-width: 72px;
       color: var(--text-dim);
+    }
+
+    #properties-panel .prop-section {
+      font-weight: 600;
+      color: var(--text-dim);
+      margin: 10px 0 6px;
+      font-size: 11px;
+      text-transform: uppercase;
     }
 
     #properties-panel .prop-row input {
@@ -181,6 +189,68 @@
     .resize-handle.sw {
       cursor: nesw-resize;
     }
+
+    #properties-panel .prop-row input[type="range"] {
+      padding: 0;
+      height: 6px;
+    }
+
+    #properties-panel .color-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+
+    #properties-panel .color-swatch {
+      width: 28px;
+      height: 24px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #properties-panel .color-swatch:hover {
+      border-color: var(--accent);
+    }
+
+    #properties-panel .color-picker-hex {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #properties-panel .color-picker-popover {
+      position: absolute;
+      z-index: 200;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+
+    #properties-panel .color-picker-popover.visible {
+      display: block;
+    }
+
+    #properties-panel .color-picker-sv {
+      width: 150px;
+      height: 120px;
+      cursor: crosshair;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+
+    #properties-panel .color-picker-hue {
+      width: 150px;
+      height: 10px;
+      cursor: crosshair;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
   </style>
 </head>
 
@@ -207,6 +277,10 @@
     </div>
     <div id="properties-panel">
       <div id="properties-content"></div>
+      <div id="color-picker-popover" class="color-picker-popover">
+        <div class="color-picker-sv" id="color-picker-sv"></div>
+        <div class="color-picker-hue" id="color-picker-hue"></div>
+      </div>
     </div>
   </div>
   <script>
@@ -766,24 +840,214 @@
           html += propRow('font-size', el.getAttribute('font-size') || '12');
           html += '<div class="prop-row"><label>Text</label><input type="text" data-attr="textContent" value="' + escapeHtml((el.textContent || '').trim()) + '"></div>';
         }
+        if (tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text') {
+          html += propSection('Fill');
+          html += propRowColor('fill', el.getAttribute('fill'));
+          html += propRowOpacity('fill-opacity', el.getAttribute('fill-opacity'));
+        }
+        if (tag === 'line' || tag === 'rect' || tag === 'circle' || tag === 'ellipse' || tag === 'text') {
+          html += propSection('Stroke');
+          html += propRowColor('stroke', el.getAttribute('stroke'));
+          html += propRowNum('stroke-width', el.getAttribute('stroke-width') || '1', 0, 1000, 0.5);
+          html += propRowOpacity('stroke-opacity', el.getAttribute('stroke-opacity'));
+        }
         panel.innerHTML = html;
         panel.querySelectorAll('input[data-attr]').forEach(function (input) {
           const attr = input.getAttribute('data-attr');
-          input.addEventListener('change', function () {
-            const newVal = input.value.trim();
-            const oldVal = attr === 'textContent' ? (el.textContent || '').trim() : (el.getAttribute(attr) || '');
+          function commitChange() {
+            let newVal = input.value.trim();
+            let oldVal = attr === 'textContent' ? (el.textContent || '').trim() : (el.getAttribute(attr) || '');
+            if (attr === 'fill-opacity' || attr === 'stroke-opacity') {
+              const pct = Math.max(0, Math.min(100, parseFloat(newVal) || 100));
+              newVal = String(Math.round(pct) / 100);
+              oldVal = el.getAttribute(attr) || '1';
+            }
             if (String(newVal) === String(oldVal)) return;
             const cmd = attr === 'textContent'
               ? { execute: function () { el.textContent = newVal || ''; }, undo: function () { el.textContent = oldVal || ''; } }
               : createSetAttributeCommand(el, attr, oldVal, newVal);
             executeCommand(cmd);
             updatePropertiesPanel();
-          });
+          }
+          input.addEventListener('change', commitChange);
+          if (input.type === 'range') {
+            const span = input.closest('.prop-row').querySelector('.prop-opacity-value');
+            input.addEventListener('input', function () {
+              const pct = Math.max(0, Math.min(100, parseFloat(input.value) || 100));
+              el.setAttribute(attr, String(pct / 100));
+              if (span) span.textContent = Math.round(pct) + '%';
+            });
+          }
         });
+        wireColorPickers(panel, el);
       }
 
       function propRow(label, val) {
         return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><input type="text" data-attr="' + escapeHtml(label) + '" value="' + escapeHtml(val || '') + '"></div>';
+      }
+
+      function propRowNum(label, val, min, max, step) {
+        const m = min != null ? ' min="' + min + '"' : '';
+        const mx = max != null ? ' max="' + max + '"' : '';
+        const s = step != null ? ' step="' + step + '"' : '';
+        return '<div class="prop-row"><label>' + escapeHtml(label) + '</label><input type="number" data-attr="' + escapeHtml(label) + '" value="' + escapeHtml(val || '') + '"' + m + mx + s + '></div>';
+      }
+
+      function propSection(title) {
+        return '<div class="prop-title" style="margin-top:10px">' + escapeHtml(title) + '</div>';
+      }
+
+      function propRowOpacity(attr, val) {
+        const v = parseFloat(val);
+        const pct = isNaN(v) ? 100 : Math.max(0, Math.min(100, Math.round((v * 100) / 10) * 10));
+        return '<div class="prop-row"><label>' + escapeHtml(attr.replace(/-/g, ' ')) + '</label><input type="range" data-attr="' + escapeHtml(attr) + '" min="0" max="100" step="10" value="' + pct + '"><span class="prop-opacity-value">' + pct + '%</span></div>';
+      }
+
+      function propRowColor(attr, val) {
+        const hex = parseColorToHex(val);
+        const displayVal = val && val.trim() ? val : (hex || '#000000');
+        const swatchBg = hex || '#333';
+        return '<div class="prop-row"><label>' + escapeHtml(attr) + '</label><div class="color-picker-wrap"><button type="button" class="color-swatch" data-attr="' + escapeHtml(attr) + '" style="background:' + escapeHtml(swatchBg) + '"></button><input type="text" class="color-picker-hex" data-attr="' + escapeHtml(attr) + '" value="' + escapeHtml(displayVal) + '"></div></div>';
+      }
+
+      function parseColorToHex(val) {
+        if (!val || !val.trim()) return null;
+        const s = val.trim();
+        if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+          const r = parseInt(s[1] + s[1], 16), g = parseInt(s[2] + s[2], 16), b = parseInt(s[3] + s[3], 16);
+          return '#' + [r, g, b].map(function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+        }
+        if (/^#[0-9a-fA-F]{6}$/.test(s)) return s;
+        const m = s.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+        if (m) return '#' + [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)].map(function (x) { return Math.max(0, Math.min(255, x)).toString(16).padStart(2, '0'); }).join('');
+        return null;
+      }
+
+      function hexToHsv(hex) {
+        const m = hex.match(/^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
+        if (!m) return { h: 0, s: 0, v: 0 };
+        let r = parseInt(m[1], 16) / 255, g = parseInt(m[2], 16) / 255, b = parseInt(m[3], 16) / 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = max === 0 ? 0 : (max - min) / max;
+        const v = max;
+        if (max !== min) {
+          const d = max - min;
+          if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+          else if (max === g) h = (b - r) / d + 2;
+          else h = (r - g) / d + 4;
+          h /= 6;
+        }
+        return { h: h * 360, s: s, v: v };
+      }
+
+      function hsvToHex(h, s, v) {
+        h = (h % 360 + 360) % 360 / 360;
+        let r, g, b;
+        const i = Math.floor(h * 6);
+        const f = h * 6 - i;
+        const p = v * (1 - s);
+        const q = v * (1 - f * s);
+        const t = v * (1 - (1 - f) * s);
+        switch (i % 6) {
+          case 0: r = v; g = t; b = p; break;
+          case 1: r = q; g = v; b = p; break;
+          case 2: r = p; g = v; b = t; break;
+          case 3: r = p; g = q; b = v; break;
+          case 4: r = t; g = p; b = v; break;
+          default: r = v; g = p; b = q;
+        }
+        return '#' + [r, g, b].map(function (x) { return Math.round(x * 255).toString(16).padStart(2, '0'); }).join('');
+      }
+
+      function wireColorPickers(panel, el) {
+        const popover = document.getElementById('color-picker-popover');
+        const svArea = document.getElementById('color-picker-sv');
+        const hueBar = document.getElementById('color-picker-hue');
+        if (!popover || !svArea || !hueBar) return;
+        hueBar.style.background = 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)';
+        var pickState = null;
+        function updateFromHsv(h, s, v) {
+          const hex = hsvToHex(h, s, v);
+          pickState.el.setAttribute(pickState.attr, hex);
+          pickState.input.value = hex;
+          pickState.swatch.style.background = hex;
+        }
+        function onHuePick(clientX) {
+          if (!pickState) return;
+          const r = hueBar.getBoundingClientRect();
+          const x = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+          pickState.h = x * 360;
+          svArea.style.background = 'linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), ' + hsvToHex(pickState.h, 1, 1);
+          updateFromHsv(pickState.h, pickState.s, pickState.v);
+        }
+        function onSvPick(clientX, clientY) {
+          if (!pickState) return;
+          const r = svArea.getBoundingClientRect();
+          const x = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+          const y = Math.max(0, Math.min(1, (clientY - r.top) / r.height));
+          pickState.s = x;
+          pickState.v = 1 - y;
+          updateFromHsv(pickState.h, pickState.s, pickState.v);
+        }
+        function startPick(attr, input, swatch, isHue, clientX, clientY) {
+          const val = el.getAttribute(attr) || input.value || '#000000';
+          const hex = parseColorToHex(val) || '#000000';
+          const hsv = hexToHsv(hex);
+          pickState = { el: el, attr: attr, input: input, swatch: swatch, oldVal: val, h: hsv.h, s: hsv.s, v: hsv.v };
+          svArea.style.background = 'linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), ' + hsvToHex(pickState.h, 1, 1);
+          if (isHue) onHuePick(clientX); else onSvPick(clientX, clientY);
+        }
+        function endPick() {
+          if (!pickState) return;
+          const newVal = pickState.el.getAttribute(pickState.attr);
+          if (String(newVal) !== String(pickState.oldVal)) {
+            executeCommand(createSetAttributeCommand(pickState.el, pickState.attr, pickState.oldVal, newVal));
+            updatePropertiesPanel();
+          }
+          pickState = null;
+          popover.classList.remove('visible');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onEnd);
+        }
+        function onMove(e) {
+          if (!pickState) return;
+          if (pickState.mode === 'hue') onHuePick(e.clientX);
+          else onSvPick(e.clientX, e.clientY);
+        }
+        function onEnd() { endPick(); }
+        panel.querySelectorAll('.color-swatch').forEach(function (swatch) {
+          swatch.addEventListener('click', function (e) {
+            e.preventDefault();
+            const attr = swatch.getAttribute('data-attr');
+            const wrap = swatch.closest('.color-picker-wrap');
+            const input = wrap ? wrap.querySelector('.color-picker-hex') : null;
+            if (!input) return;
+            const r = swatch.getBoundingClientRect();
+            popover.style.left = r.left + 'px';
+            popover.style.top = (r.bottom + 4) + 'px';
+            popover.classList.add('visible');
+            pickState = { el: el, attr: attr, input: input, swatch: swatch, oldVal: el.getAttribute(attr) || input.value || '', mode: 'sv', h: 0, s: 0, v: 1 };
+            const val = el.getAttribute(attr) || input.value || '#000000';
+            const hex = parseColorToHex(val) || '#000000';
+            const hsv = hexToHsv(hex);
+            pickState.h = hsv.h;
+            pickState.s = hsv.s;
+            pickState.v = hsv.v;
+            svArea.style.background = 'linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent), ' + hsvToHex(pickState.h, 1, 1);
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+          });
+        });
+        svArea.addEventListener('mousedown', function (e) {
+          if (!pickState || !popover.classList.contains('visible')) return;
+          pickState.mode = 'sv';
+          onSvPick(e.clientX, e.clientY);
+        });
+        hueBar.addEventListener('mousedown', function (e) {
+          if (!pickState || !popover.classList.contains('visible')) return;
+          pickState.mode = 'hue';
+          onHuePick(e.clientX);
+        });
       }
 
       function escapeHtml(s) {
