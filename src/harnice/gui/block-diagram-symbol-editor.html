@@ -1030,6 +1030,7 @@
         }
         let html = '<div class="prop-title">Properties</div>';
         if (hasProp('data-pin-name')) {
+          html += '<div class="prop-section">Connector</div>';
           html += propRow('Name', valFor('data-pin-name'), mixedFor('data-pin-name', false), 'data-pin-name');
         }
         if (hasProp('x1')) {
@@ -1890,7 +1891,7 @@
             circle.setAttribute('cy', pt.y);
             circle.setAttribute('r', pinRadius);
             circle.setAttribute('class', 'pin');
-            const name = window.prompt('Pin name:', 'pin');
+            const name = window.prompt('Connector name:', 'connector');
             if (name != null && name.trim()) {
               circle.setAttribute('data-pin-name', name.trim());
               executeCommand(createAddElementCommand(circle));
