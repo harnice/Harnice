@@ -100,6 +100,8 @@
         svgDoc: null,
       };
 
+      const commandHistory = { undoStack: [], redoStack: [] };
+
       function notifyParent(type, payload) {
         if (embedded && window.parent) {
           window.parent.postMessage({ type: type, ...payload }, '*');
@@ -121,6 +123,57 @@
         notifyParent('sde-snap', { enabled: enabled });
       }
 
+      function sendCanUndoRedo() {
+        const canUndo = commandHistory.undoStack.length > 0;
+        const canRedo = commandHistory.redoStack.length > 0;
+        notifyParent('sde-can-undo-redo', { canUndo: canUndo, canRedo: canRedo });
+      }
+
+      function executeCommand(cmd) {
+        if (cmd.type === 'BATCH') {
+          cmd.commands.forEach(function (c) { c.execute(); });
+        } else {
+          cmd.execute();
+        }
+        commandHistory.undoStack.push(cmd);
+        commandHistory.redoStack.length = 0;
+        appState.dirty = true;
+        sendStatus(true);
+        sendCanUndoRedo();
+      }
+
+      function undo() {
+        const cmd = commandHistory.undoStack.pop();
+        if (!cmd) return;
+        if (cmd.type === 'BATCH') {
+          for (let i = cmd.commands.length - 1; i >= 0; i--) cmd.commands[i].undo();
+        } else {
+          cmd.undo();
+        }
+        commandHistory.redoStack.push(cmd);
+        appState.dirty = commandHistory.undoStack.length > 0;
+        sendStatus(appState.dirty);
+        sendCanUndoRedo();
+      }
+
+      function redo() {
+        const cmd = commandHistory.redoStack.pop();
+        if (!cmd) return;
+        if (cmd.type === 'BATCH') {
+          cmd.commands.forEach(function (c) { c.execute(); });
+        } else {
+          cmd.execute();
+        }
+        commandHistory.undoStack.push(cmd);
+        appState.dirty = true;
+        sendStatus(true);
+        sendCanUndoRedo();
+      }
+
+      function batch(commands) {
+        return { type: 'BATCH', commands: commands };
+      }
+
       function loadSvg() {
         fetch('/api/block_diagram_symbol', { cache: 'no-store' })
           .then(function (r) {
@@ -139,8 +192,11 @@
               content.appendChild(svg.firstChild);
             }
             stylePins(content);
+            commandHistory.undoStack.length = 0;
+            commandHistory.redoStack.length = 0;
             fitView();
             sendStatus(false);
+            sendCanUndoRedo();
           })
           .catch(function (err) {
             console.warn('Block diagram symbol load error:', err);
@@ -252,9 +308,8 @@
           if (a === 'fitView') {
             fitView();
           }
-          if (a === 'undo' || a === 'redo') {
-            sendStatus(appState.dirty);
-          }
+          if (a === 'undo') { undo(); }
+          if (a === 'redo') { redo(); }
         });
       }
 
