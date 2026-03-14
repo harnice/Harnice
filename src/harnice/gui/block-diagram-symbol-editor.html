@@ -116,6 +116,8 @@
       };
 
       const commandHistory = { undoStack: [], redoStack: [] };
+      const AUTOSAVE_MS = 500;
+      let saveTimer = null;
 
       function notifyParent(type, payload) {
         if (embedded && window.parent) {
@@ -126,6 +128,49 @@
       function sendStatus(dirty) {
         appState.dirty = dirty;
         notifyParent('sde-status', { dirty: dirty, filename: 'block diagram symbol' });
+        if (dirty) scheduleAutosave();
+      }
+
+      function scheduleAutosave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(doSave, AUTOSAVE_MS);
+      }
+
+      function doSave() {
+        if (!appState.dirty) return;
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        try {
+          const content = document.getElementById('svg-content');
+          if (!content) return;
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          const vb = content.firstElementChild ? getViewBox() : { x: 0, y: 0, w: 400, h: 400 };
+          svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h);
+          Array.from(content.children).forEach(function (child) {
+            svg.appendChild(child.cloneNode(true));
+          });
+          const body = new XMLSerializer().serializeToString(svg);
+          fetch('/api/block_diagram_symbol', {
+            method: 'POST',
+            headers: { 'Content-Type': 'image/svg+xml; charset=utf-8' },
+            body: body,
+          })
+            .then(function (r) {
+              if (r.ok) {
+                appState.dirty = false;
+                sendStatus(false);
+              } else {
+                scheduleAutosave();
+              }
+            })
+            .catch(function () {
+              setTimeout(scheduleAutosave, 2000);
+            });
+        } catch (err) {
+          console.warn('Block diagram symbol save error:', err);
+          setTimeout(scheduleAutosave, 2000);
+        }
       }
 
       function sendTool(tool) {

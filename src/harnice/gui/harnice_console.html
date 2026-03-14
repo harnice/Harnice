@@ -2077,6 +2077,10 @@
             setupProjectListDragDrop(document.getElementById("project-list"));
             window.addEventListener("message", function (e) {
                 if (!e.data || e.data.type == null) return;
+                // Always process sde-status so save state is current when user switches to symbol editor
+                if (e.data.type === "sde-status" && typeof e.data.dirty === "boolean") {
+                    setSymbolEditorSaveState(e.data.dirty ? "unsaved" : "saved");
+                }
                 if (selectedFile !== "block diagram symbol") return;
                 if (e.data.type === "sde-tool" && e.data.tool) {
                     symbolEditorTool = e.data.tool;
@@ -2085,9 +2089,6 @@
                 if (e.data.type === "sde-snap" && typeof e.data.enabled === "boolean") {
                     symbolEditorSnap = e.data.enabled;
                     updateSymbolEditorSnapActive();
-                }
-                if (e.data.type === "sde-status" && typeof e.data.dirty === "boolean") {
-                    setSymbolEditorSaveState(e.data.dirty ? "unsaved" : "saved");
                 }
             });
             applyView();
