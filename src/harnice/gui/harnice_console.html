@@ -1833,7 +1833,8 @@
 
         function setSymbolEditorSaveState(state) {
             symbolEditorSaveState = state;
-            const el = document.getElementById("save-indicator-symbol");
+            if (selectedFile !== "block diagram symbol") return;
+            const el = document.getElementById("save-indicator");
             if (el) {
                 el.className = state;
                 el.textContent = state === "saved" ? "Saved" : "Unsaved";
@@ -2171,7 +2172,7 @@
                         pill.className = lastSaveIndicatorState;
                         pill.textContent = lastSaveIndicatorState === "saved" ? "Saved" : "Unsaved";
                     } else if (label === "block diagram symbol") {
-                        pill.id = "save-indicator-symbol";
+                        pill.id = "save-indicator";
                         pill.className = symbolEditorSaveState;
                         pill.textContent = symbolEditorSaveState === "saved" ? "Saved" : "Unsaved";
                     } else {
