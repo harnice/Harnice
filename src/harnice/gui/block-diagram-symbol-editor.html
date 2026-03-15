@@ -423,7 +423,8 @@
           contentChildren.forEach(function (child) {
             startGroup.appendChild(child.cloneNode(true));
           });
-          /* Keep pin radius as-is on save; r=0.05 made generated connectors appear tiny when SVG used elsewhere */
+          /* Connector names shown in GUI are derived from data-pin-name; do not save label text to SVG */
+          startGroup.querySelectorAll('text.connector-label').forEach(function (el) { el.remove(); });
           svg.appendChild(startGroup);
           const endGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
           endGroup.setAttribute('id', contentsEndId);
@@ -769,6 +770,13 @@
         } else if (tag === 'circle' || tag === 'ellipse') {
           el.setAttribute('cx', parseFloat(el.getAttribute('cx') || 0) + dx);
           el.setAttribute('cy', parseFloat(el.getAttribute('cy') || 0) + dy);
+          if (el.classList && el.classList.contains('pin') && el.id) {
+            var label = el.parentNode && el.parentNode.querySelector ? el.parentNode.querySelector('text.connector-label[data-pin-id="' + CSS.escape(el.id) + '"]') : null;
+            if (label) {
+              label.setAttribute('x', parseFloat(label.getAttribute('x') || 0) + dx);
+              label.setAttribute('y', parseFloat(label.getAttribute('y') || 0) + dy);
+            }
+          }
         } else if (tag === 'text') {
           el.setAttribute('x', parseFloat(el.getAttribute('x') || 0) + dx);
           el.setAttribute('y', parseFloat(el.getAttribute('y') || 0) + dy);
@@ -863,9 +871,10 @@
 
       function syncConnectorLabelToCircle(circle) {
         if (!circle || !circle.classList || !circle.classList.contains('pin')) return;
-        const group = circle.parentNode;
-        if (!group || group.tagName !== 'g') return;
-        const label = group.querySelector('text.connector-label');
+        const parent = circle.parentNode;
+        if (!parent) return;
+        var label = parent.tagName === 'g' ? parent.querySelector('text.connector-label') : null;
+        if (!label && circle.id) label = parent.querySelector('text.connector-label[data-pin-id="' + CSS.escape(circle.id) + '"]');
         if (!label) return;
         const cx = parseFloat(circle.getAttribute('cx') || 0);
         const cy = parseFloat(circle.getAttribute('cy') || 0);
@@ -1541,6 +1550,7 @@
         const content = document.getElementById('svg-content');
         if (!content) return [];
         return Array.from(content.children).filter(function (el) {
+          if ((el.tagName || '').toLowerCase() === 'text' && el.classList && el.classList.contains('connector-label')) return false;
           return el.id !== 'grid-bg' && el.tagName && !/^defs|metadata|title|desc$/i.test(el.tagName);
         });
       }
@@ -1723,11 +1733,12 @@
           });
       }
 
-      function createConnectorLabelText(cx, cy, name) {
+      function createConnectorLabelText(cx, cy, name, circleId) {
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', cx);
         text.setAttribute('y', cy);
         text.setAttribute('class', 'connector-label');
+        if (circleId) text.setAttribute('data-pin-id', circleId);
         text.setAttribute('font-size', '3');
         text.setAttribute('font-family', 'Helvetica, sans-serif');
         text.setAttribute('fill', 'black');
@@ -1739,45 +1750,65 @@
 
       function ensureConnectorLabels(container) {
         if (!container) return;
-        const pins = Array.from(container.querySelectorAll('circle.pin'));
-        pins.forEach(function (circle) {
-          const parent = circle.parentNode;
+        /* Pass 1: Unwrap connector groups - flatten to circle + text siblings at content level */
+        const groupsToUnwrap = [];
+        container.querySelectorAll('g').forEach(function (g) {
+          const circles = g.querySelectorAll('circle.pin');
+          const labels = g.querySelectorAll('text.connector-label');
+          if (circles.length === 1 && (labels.length <= 1 || g.parentNode !== container)) {
+            groupsToUnwrap.push({ g: g, circle: circles[0], label: labels[0] || null });
+          }
+        });
+        groupsToUnwrap.forEach(function (o) {
+          const g = o.g;
+          const circle = o.circle;
+          const label = o.label;
+          const parent = g.parentNode;
           if (!parent) return;
+          var cx = parseFloat(circle.getAttribute('cx') || 0);
+          var cy = parseFloat(circle.getAttribute('cy') || 0);
+          const m = (g.getAttribute('transform') || '').match(/translate\(([^,]+),([^)]+)\)/);
+          const tx = m ? parseFloat(m[1]) : 0;
+          const ty = m ? parseFloat(m[2]) : 0;
+          cx += tx;
+          cy += ty;
+          circle.setAttribute('cx', cx);
+          circle.setAttribute('cy', cy);
+          if (circle.id) g.removeAttribute('id');
+          else if (g.id) { circle.id = g.id; g.removeAttribute('id'); }
+          parent.insertBefore(circle, g);
+          var textEl = label;
+          if (textEl) {
+            textEl.setAttribute('x', cx);
+            textEl.setAttribute('y', cy);
+            textEl.setAttribute('data-pin-id', circle.id || '');
+            textEl.textContent = circle.getAttribute('data-pin-name') || 'connector';
+            parent.insertBefore(textEl, g.nextSibling);
+          } else {
+            textEl = createConnectorLabelText(cx, cy, circle.getAttribute('data-pin-name') || 'connector', circle.id);
+            parent.insertBefore(textEl, g.nextSibling);
+          }
+          g.remove();
+        });
+        /* Pass 2: Ensure each circle.pin has a label sibling (for circles already at content level) */
+        const content = container.id === 'svg-content' ? container : container.closest ? container.closest('#svg-content') : null;
+        const topLevelParent = content || container;
+        Array.from(topLevelParent.querySelectorAll('circle.pin')).forEach(function (circle) {
+          if (circle.parentNode !== topLevelParent) return;
+          ensureElementId(circle);
           const cx = parseFloat(circle.getAttribute('cx') || 0);
           const cy = parseFloat(circle.getAttribute('cy') || 0);
           const name = circle.getAttribute('data-pin-name') || 'connector';
-          if (parent.tagName === 'g') {
-            const labels = parent.querySelectorAll('text.connector-label');
-            const circles = parent.querySelectorAll('circle.pin');
-            if (circles.length === 1 && labels.length === 1) {
-              const label = labels[0];
-              label.setAttribute('x', cx);
-              label.setAttribute('y', cy);
-              label.textContent = name;
-              return;
-            }
-            const labelAtPos = Array.from(labels).find(function (t) {
-              return parseFloat(t.getAttribute('x')) === cx && parseFloat(t.getAttribute('y')) === cy;
-            });
-            if (labelAtPos) {
-              labelAtPos.setAttribute('x', cx);
-              labelAtPos.setAttribute('y', cy);
-              labelAtPos.textContent = name;
-              return;
-            }
-            parent.appendChild(createConnectorLabelText(cx, cy, name));
+          var label = circle.parentNode.querySelector('text.connector-label[data-pin-id="' + CSS.escape(circle.id) + '"]');
+          if (label) {
+            label.setAttribute('x', cx);
+            label.setAttribute('y', cy);
+            label.textContent = name;
             return;
           }
-          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          const id = circle.id;
-          if (id) {
-            circle.removeAttribute('id');
-            g.id = id;
-          }
-          parent.insertBefore(g, circle);
-          circle.remove();
-          g.appendChild(circle);
-          g.appendChild(createConnectorLabelText(cx, cy, name));
+          label = createConnectorLabelText(cx, cy, name, circle.id);
+          if (circle.nextSibling) topLevelParent.insertBefore(label, circle.nextSibling);
+          else topLevelParent.appendChild(label);
         });
         container.querySelectorAll('circle.pin').forEach(function (el) {
           el.style.fill = 'var(--accent)';
@@ -2309,16 +2340,19 @@
             const pinRadius = 5;
             const name = window.prompt('Connector name:', 'connector');
             if (name != null && name.trim()) {
-              const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
               const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
               circle.setAttribute('cx', pt.x);
               circle.setAttribute('cy', pt.y);
               circle.setAttribute('r', pinRadius);
               circle.setAttribute('class', 'pin');
               circle.setAttribute('data-pin-name', name.trim());
-              g.appendChild(circle);
-              g.appendChild(createConnectorLabelText(pt.x, pt.y, name.trim()));
-              executeCommand(createAddElementCommand(g));
+              ensureElementId(circle);
+              const label = createConnectorLabelText(pt.x, pt.y, name.trim(), circle.id);
+              const content = document.getElementById('svg-content');
+              executeCommand({
+                execute: function () { content.appendChild(circle); content.appendChild(label); },
+                undo: function () { circle.remove(); label.remove(); }
+              });
             }
           }
           hidePreviews();

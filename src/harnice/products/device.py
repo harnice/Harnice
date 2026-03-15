@@ -192,17 +192,10 @@ def _validate_svg_symbol():
             )
         )
         cx, cy = 50, next_y
-        pin_lines.append("<g>")
         pin_lines.append(
             f'  <circle class="pin" data-pin-name="{connector_name}" '
             f'id="pin-{pin_id}" cx="{cx}" cy="{cy}" r="5" />'
         )
-        pin_lines.append(
-            f'  <text class="connector-label" x="{cx}" y="{cy}" font-size="12" '
-            f'font-family="Helvetica, sans-serif" fill="black" '
-            f'text-anchor="middle" dominant-baseline="middle">{connector_name}</text>'
-        )
-        pin_lines.append("</g>")
         next_y += pin_spacing
 
     # Insert pin elements immediately after the opening <g id="..."> of the contents-start group
@@ -214,7 +207,7 @@ def _validate_svg_symbol():
         )
     gt_pos = svg_text.find(">", idx)
     slash_gt = svg_text.find("/>", idx)
-    pin_block = "\n    ".join(pin_lines) + "\n  "
+    pin_block = "\n  " + "\n    ".join(pin_lines) + "\n  "
     if slash_gt != -1 and slash_gt < gt_pos:
         close_slash = slash_gt
         updated = (

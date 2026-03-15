@@ -1,27 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 80" width="75" height="80">
   <g id="726787-rev2-contents-start">
-    <rect x="0" y="0" width="50" height="60" fill="none" stroke="var(--text)" class="" id="sde-1773591946963-5xypzp6"/>
-    <g id="sde-1773591946963-9onurf9" class="" transform="translate(-50,-50)">
-      <circle class="pin" data-pin-name="in1" id="pin-f16355e1-2ecf-5bcb-8968-c173755e3c1e" cx="50" cy="70.0" r="5" style="fill: var(--accent);"/>
-      <text class="connector-label" x="50" y="70" font-size="12" font-family="Helvetica, sans-serif" fill="black" text-anchor="middle" dominant-baseline="middle">
-        in1      </text>
-    </g>
-    <g id="sde-1773591946963-zp25azj" class="" transform="translate(-50,-40)">
-      <circle class="pin" data-pin-name="in2" id="pin-27226870-86d8-58ed-9582-baba72e84066" cx="50" cy="80.0" r="5" style="fill: var(--accent);"/>
-      <text class="connector-label" x="50" y="80" font-size="12" font-family="Helvetica, sans-serif" fill="black" text-anchor="middle" dominant-baseline="middle">
-        in2      </text>
-    </g>
-    <g class="" transform="translate(0,-30)" id="sde-1773591946963-osr3zbc">
-      <circle class="pin" data-pin-name="out1" id="pin-51322818-a272-582f-ba20-0af6c038269a" cx="50" cy="50.0" r="5" style="fill: var(--accent);"/>
-      <text class="connector-label" x="50" y="50" font-size="12" font-family="Helvetica, sans-serif" fill="black" text-anchor="middle" dominant-baseline="middle">
-        out1      </text>
-    </g>
-    <g class="" transform="translate(0,-20)" id="sde-1773591946963-qgyxg3e">
-      <circle class="pin" data-pin-name="out2" id="pin-a2ef158a-4771-5f22-ac84-93d7faef5b3e" cx="50" cy="60.0" r="5" style="fill: var(--accent);"/>
-      <text class="connector-label" x="50" y="60" font-size="12" font-family="Helvetica, sans-serif" fill="black" text-anchor="middle" dominant-baseline="middle">
-        out2      </text>
-    </g>
+    <rect x="0" y="0" width="50" height="60" fill="#0b301e" stroke="var(--text)" id="sde-1773592921981-6vvg8jo" class=""/>
+    <circle class="pin" data-pin-name="in1" cx="0" cy="20" r="5" id="sde-1773592877570-1m5bewz" style="fill: var(--accent);"/>
+    <circle class="pin" data-pin-name="in2" cx="0" cy="40" r="5" id="sde-1773592877570-nuq0anm" style="fill: var(--accent);"/>
+    <circle class="pin" data-pin-name="out1" cx="50" cy="20" r="5" id="sde-1773592877570-pavumk5" style="fill: var(--accent);"/>
+    <circle class="pin" data-pin-name="out2" cx="50" cy="40" r="5" id="sde-1773592877570-6ehs22p" style="fill: var(--accent);"/>
   </g>
   <g id="726787-rev2-contents-end"></g>
 </svg>
