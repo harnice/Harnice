@@ -80,7 +80,7 @@ def file_structure():
         f"{state.partnumber('pn-rev')}-feature_tree.py": "feature tree",
         f"{state.partnumber('pn-rev')}-signals_list.tsv": "signals list",
         f"{state.partnumber('pn-rev')}-attributes.json": "attributes",
-        f"{state.partnumber('pn')}.svg": "block diagram symbol",
+        f"{state.partnumber('pn-rev')}-block-diagram-symbol.svg": "block diagram symbol",
     }
 
 
@@ -93,41 +93,18 @@ def _ensure_svg_symbol_exists():
     path = fileio.path("block diagram symbol")
     if os.path.exists(path):
         return
-    contents_id = f"{state.partnumber('pn')}-contents-start"
-    view_box = "0 0 100 80"
+    contents_id = f"{state.partnumber('pn-rev')}-contents-start"
+    view_box = "0 0 400 400"
     root = ET.Element("svg", xmlns="http://www.w3.org/2000/svg", viewBox=view_box)
     root.set("data-bbox", view_box)
-    g = ET.SubElement(
+    ET.SubElement(
         root,
         "g",
         attrib={"id": contents_id, "class": "component device"},
     )
-    ET.SubElement(root, "g", attrib={"id": f"{state.partnumber('pn')}-contents-end"})
     ET.SubElement(
-        g,
-        "rect",
-        attrib={
-            "x": "0",
-            "y": "0",
-            "width": "100",
-            "height": "80",
-            "fill": "var(--bg3)",
-            "style": "fill: var(--bg3); fill: #2d2d2d;",
-        },
+        root, "g", attrib={"id": f"{state.partnumber('pn-rev')}-contents-end"}
     )
-    text = ET.SubElement(
-        g,
-        "text",
-        attrib={
-            "x": "50",
-            "y": "40",
-            "text-anchor": "middle",
-            "dominant-baseline": "middle",
-            "fill": "var(--text-dim)",
-            "style": "fill: var(--text-dim); fill: #888888;",
-        },
-    )
-    text.text = state.partnumber("pn")
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
     with open(path, "wb") as f:
@@ -457,7 +434,5 @@ def render(lightweight=False):
     if lightweight:
         # don't want to map things that have not been mapped completely yet
         _remove_details_from_signals_list()
-
-    print(f"SVG symbol: {fileio.path('block diagram symbol')}")
 
     _validate_svg_symbol()

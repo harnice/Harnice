@@ -701,9 +701,11 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(500, "block-diagram-symbol-editor.html not found")
             return
         try:
-            pn, _ = _state.pn_and_rev()
-            group_id = f"{pn}-contents-start" if pn else "symbol-contents-start"
-        except Exception:
+            from harnice import state
+
+            pn_rev = state.partnumber("pn-rev")
+            group_id = f"{pn_rev}-contents-start" if pn_rev else "symbol-contents-start"
+        except (NameError, ValueError):
             group_id = "symbol-contents-start"
         html = _BLOCK_DIAGRAM_SYMBOL_EDITOR_HTML.read_text(encoding="utf-8")
         html = html.replace("{{PN_CONTENTS_START}}", group_id)
@@ -737,11 +739,15 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
             try:
-                pn, _ = _state.pn_and_rev()
-                contents_id = f"{pn}-contents-start" if pn else "symbol-contents-start"
-            except Exception:
+                from harnice import state
+
+                pn_rev = state.partnumber("pn-rev")
+                contents_id = (
+                    f"{pn_rev}-contents-start" if pn_rev else "symbol-contents-start"
+                )
+            except (NameError, ValueError):
                 contents_id = "symbol-contents-start"
-            view_box = "0 0 100 80"
+            view_box = "0 0 400 400"
             root = ET.Element(
                 "svg", xmlns="http://www.w3.org/2000/svg", viewBox=view_box
             )
