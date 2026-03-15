@@ -2095,6 +2095,13 @@
                     updateSymbolEditorSnapActive();
                 }
             });
+            document.addEventListener("keydown", function (e) {
+                if (e.key !== "Escape") return;
+                if (selectedFile !== "block diagram symbol") return;
+                const graphIframe = document.getElementById("graph-editor-iframe");
+                if (!graphIframe || !graphIframe.contentWindow) return;
+                graphIframe.contentWindow.postMessage({ type: "harnice-graph-action", action: "setTool", tool: "select" }, "*");
+            });
             applyView();
             await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects(), loadGuiSetup()]);
             await loadCode();

@@ -20,6 +20,7 @@
       --text-dim: #888;
       --accent: #4ec9b0;
       --grid: #333;
+      --origin: #666;
     }
 
     body {
@@ -286,13 +287,39 @@
       <svg id="svg-root" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 400 400"
         preserveAspectRatio="xMidYMid meet">
         <defs>
+          <!-- Major grid every 10 units, minor every 1 unit; crosshairs at 0,0 -->
           <pattern id="grid-pattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <!-- Minor gridlines (every 1 unit) -->
+            <line x1="1" y1="0" x2="1" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="2" y1="0" x2="2" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="3" y1="0" x2="3" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="4" y1="0" x2="4" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="5" y1="0" x2="5" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="6" y1="0" x2="6" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="7" y1="0" x2="7" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="8" y1="0" x2="8" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="9" y1="0" x2="9" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="1" x2="10" y2="1" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="2" x2="10" y2="2" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="3" x2="10" y2="3" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="4" x2="10" y2="4" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="5" x2="10" y2="5" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="6" x2="10" y2="6" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="7" x2="10" y2="7" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="8" x2="10" y2="8" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="9" x2="10" y2="9" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <!-- Major gridlines (every 10 units, at 0 and 10) -->
             <line x1="0" y1="0" x2="0" y2="10" stroke="var(--grid)" stroke-width="0.5" />
             <line x1="0" y1="0" x2="10" y2="0" stroke="var(--grid)" stroke-width="0.5" />
           </pattern>
         </defs>
         <g id="svg-viewport">
           <rect id="grid-bg" fill="url(#grid-pattern)" x="-5000" y="-5000" width="10000" height="10000" />
+          <g id="origin-marker" pointer-events="none">
+            <line x1="-6" y1="0" x2="6" y2="0" stroke="var(--accent)" stroke-width="0.5" opacity="0.8" />
+            <line x1="0" y1="-6" x2="0" y2="6" stroke="var(--accent)" stroke-width="0.5" opacity="0.8" />
+            <circle cx="0" cy="0" r="1.5" fill="var(--accent)" opacity="0.8" />
+          </g>
           <g id="svg-content" />
           <rect id="rubber-band" visibility="hidden" />
           <line id="preview-line" visibility="hidden" stroke="var(--accent)" stroke-width="1" />
@@ -327,6 +354,8 @@
       const commandHistory = { undoStack: [], redoStack: [] };
       let clipboard = [];
       const PASTE_OFFSET = 20;
+      let cancelSelectDrag = function () { return false; };
+      let cancelDrawDrag = function () { return false; };
       const AUTOSAVE_MS = 500;
       let saveTimer = null;
 
@@ -873,7 +902,7 @@
         if (!el) return;
         const tag = (el.tagName || '').toLowerCase();
         const pad = 5;
-        const handleSize = 8;
+        const handleSize = 5;
         if (tag === 'rect') {
           group.style.pointerEvents = 'all';
           const x = parseFloat(el.getAttribute('x') || 0);
@@ -955,8 +984,8 @@
           const h = handles[i];
           const x = parseFloat(h.getAttribute('x') || 0);
           const y = parseFloat(h.getAttribute('y') || 0);
-          const w = parseFloat(h.getAttribute('width') || 8);
-          const pad = 4;
+          const w = parseFloat(h.getAttribute('width') || 5);
+          const pad = 3;
           if (svgX >= x - pad && svgX <= x + w + pad && svgY >= y - pad && svgY <= y + w + pad) {
             const content = document.getElementById('svg-content');
             const el = content.querySelector('#' + CSS.escape(h.getAttribute('data-element-id') || ''));
@@ -1720,6 +1749,49 @@
         let isDragging = false;
         let moveStartPositions = [];
 
+        cancelSelectDrag = function () {
+          if (!dragStart) return false;
+          if (dragStart.type === 'resize') {
+            const el = dragStart.el;
+            const s = dragStart.startAttrs;
+            const tag = (el.tagName || '').toLowerCase();
+            if (tag === 'rect') {
+              el.setAttribute('x', s.x);
+              el.setAttribute('y', s.y);
+              el.setAttribute('width', s.width);
+              el.setAttribute('height', s.height);
+            } else if (tag === 'circle' || tag === 'ellipse') {
+              el.setAttribute('cx', s.cx);
+              el.setAttribute('cy', s.cy);
+              el.setAttribute('r', s.r);
+            } else if (tag === 'line') {
+              el.setAttribute('x1', s.x1);
+              el.setAttribute('y1', s.y1);
+              el.setAttribute('x2', s.x2);
+              el.setAttribute('y2', s.y2);
+            }
+          } else if (dragStart.hit) {
+            moveStartPositions.forEach(function (p) {
+              if (p && p.el) {
+                translateElement(p.el, -(p.el._lastDx || 0), -(p.el._lastDy || 0));
+                delete p.el._lastDx;
+                delete p.el._lastDy;
+              }
+            });
+          } else {
+            rubberBand.setAttribute('visibility', 'hidden');
+          }
+          if (dragStart && dragStart.snapBeforePinDrag != null) {
+            sendSnap(dragStart.snapBeforePinDrag);
+          }
+          dragStart = null;
+          isDragging = false;
+          moveStartPositions = [];
+          updateResizeHandles();
+          updateSelectionVisuals();
+          return true;
+        };
+
         container.addEventListener('mousedown', function (e) {
           if (e.button !== 0 || appState.activeTool !== 'select') return;
           const pt = screenToSvg(e.clientX, e.clientY);
@@ -1809,13 +1881,16 @@
               dx = snapped.x - origX;
               dy = snapped.y - origY;
             }
-            moveStartPositions.forEach(function (p) {
-              if (p && p.el) translateElement(p.el, dx - (p.el._lastDx || 0), dy - (p.el._lastDy || 0));
-              if (p && p.el) {
-                p.el._lastDx = dx;
-                p.el._lastDy = dy;
-              }
-            });
+            var dragThreshold = 2;
+            if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
+              moveStartPositions.forEach(function (p) {
+                if (p && p.el) translateElement(p.el, dx - (p.el._lastDx || 0), dy - (p.el._lastDy || 0));
+                if (p && p.el) {
+                  p.el._lastDx = dx;
+                  p.el._lastDy = dy;
+                }
+              });
+            }
             updateResizeHandles();
           } else {
             const x = Math.min(dragStart.x, pt.x);
@@ -1896,6 +1971,14 @@
                 }
               });
               executeCommand(cmd);
+            } else {
+              moveStartPositions.forEach(function (p) {
+                if (p && p.el) {
+                  translateElement(p.el, -(p.el._lastDx || 0), -(p.el._lastDy || 0));
+                  delete p.el._lastDx;
+                  delete p.el._lastDy;
+                }
+              });
             }
           } else {
             rubberBand.setAttribute('visibility', 'hidden');
@@ -1921,11 +2004,6 @@
 
         document.addEventListener('keydown', function (e) {
           if (appState.activeTool !== 'select') return;
-          if (e.key === 'Escape') {
-            appState.selection.clear();
-            updateSelectionVisuals();
-            return;
-          }
           if (e.key === 'Delete' || e.key === 'Backspace') {
             if (appState.selection.size === 0) return;
             e.preventDefault();
@@ -2133,6 +2211,21 @@
       }
 
       function initKeyboardShortcuts() {
+        document.addEventListener('keydown', function (e) {
+          if (e.key !== 'Escape') return;
+          e.preventDefault();
+          e.stopPropagation();
+          if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.blur();
+          }
+          const hadSelectDrag = cancelSelectDrag();
+          const hadDrawDrag = cancelDrawDrag();
+          sendTool('select');
+          if (!hadSelectDrag && !hadDrawDrag) {
+            appState.selection.clear();
+            updateSelectionVisuals();
+          }
+        }, true);
         document.addEventListener('keydown', function (e) {
           const target = e.target;
           if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
