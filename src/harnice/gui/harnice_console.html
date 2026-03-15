@@ -148,6 +148,63 @@
             min-width: 8px;
         }
 
+        /* Block diagram symbol ribbon: sectioned layout with headings */
+        #top-toolbar-slot.tb-symbol-ribbon {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            flex-wrap: nowrap;
+        }
+
+        .tb-ribbon-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 12px;
+            border-right: 1px solid var(--border);
+        }
+
+        .tb-ribbon-section.tb-build-section {
+            min-width: 220px;
+        }
+
+        .tb-ribbon-section.tb-build-section .tb-ribbon-section-buttons {
+            gap: 4px 16px;
+        }
+
+        .tb-ribbon-section-buttons .btn.tb-btn-span-2 {
+            grid-row: span 2;
+        }
+
+        .tb-ribbon-section:last-child {
+            border-right: none;
+        }
+
+        .tb-ribbon-section-heading {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            text-transform: none;
+            white-space: nowrap;
+        }
+
+        .tb-ribbon-section-buttons {
+            display: grid;
+            gap: 4px 8px;
+        }
+
+        .tb-ribbon-section-buttons.grid-2 {
+            grid-template-columns: repeat(2, auto);
+        }
+
+        .tb-ribbon-section-buttons.grid-3 {
+            grid-template-columns: repeat(3, auto);
+        }
+
+        .tb-ribbon-section-buttons .btn {
+            white-space: nowrap;
+        }
+
         #main {
             display: flex;
             flex: 1;
@@ -333,6 +390,19 @@
         }
 
         #system-viewer-panel.visible {
+            display: flex;
+        }
+
+        #document-view-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 16px;
+            color: var(--text-dim);
+        }
+
+        #document-view-panel.visible {
             display: flex;
         }
 
@@ -1337,6 +1407,12 @@
         }
 
         .btn.active-tool {
+            background: var(--bg4);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        #top-toolbar-slot .btn.active-tool {
             border-color: #d4a017;
             color: #d4a017;
         }
@@ -1613,6 +1689,9 @@
                     <div id="system-viewer-panel">
                         <div id="system-list-panel"></div>
                     </div>
+                    <div id="document-view-panel">
+                        <div class="document-placeholder">Read only</div>
+                    </div>
                 </div>
             </div>
 
@@ -1720,6 +1799,22 @@
                 { action: "setTool", payload: { tool: "add-seg" }, label: "⟶ Add Segment" },
                 { action: "setTool", payload: { tool: "delete" }, label: "✕ Delete" },
                 { action: "fitView", payload: {}, label: "Fit View" }
+            ],
+            "block diagram symbol": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "line" }, label: "╱ Line" },
+                { action: "setTool", payload: { tool: "rect" }, label: "▭ Rect" },
+                { action: "setTool", payload: { tool: "circle" }, label: "○ Circle" },
+                { action: "setTool", payload: { tool: "text" }, label: "T Text" },
+                { action: "setTool", payload: { tool: "pin" }, label: "◉ Connector" },
+                { action: "toggleSnap", payload: {}, label: "⊞ Snap" },
+                { action: "fitView", payload: {}, label: "Fit View" },
+                { action: "bringToFront", payload: {}, label: "⊤ Front" },
+                { action: "bringForward", payload: {}, label: "↑ Fwd" },
+                { action: "sendBackward", payload: {}, label: "↓ Back" },
+                { action: "sendToBack", payload: {}, label: "⊥ To Back" },
+                { action: "undo", payload: {}, label: "↩ Undo" },
+                { action: "redo", payload: {}, label: "↪ Redo" },
             ]
             ,
             "block diagram": [
@@ -1743,6 +1838,9 @@
         let systemListLabelToKey = {};  // display label -> tab key for system viewer (from /api/info)
         let selectedFile = MODE_FEATURE_TREE;
         let lastSaveIndicatorState = "saved";
+        let symbolEditorTool = "select";
+        let symbolEditorSnap = true;
+        let symbolEditorSaveState = "saved";
         let blockDiagramSaveState = "saved";
         let blockDiagramTool = "select";
 
@@ -1764,6 +1862,41 @@
             });
         }
 
+        function isSymbolEditorMode() {
+            return productType === "device" && selectedFile === "block diagram symbol";
+        }
+
+        function isGraphOrSymbolMode() {
+            const harnessGraph = productType === "harness" && ["available network", "chosen network", "flattened network"].includes(selectedFile);
+            return harnessGraph || isSymbolEditorMode();
+        }
+
+        function updateSymbolEditorToolbarActive() {
+            const slot = document.getElementById("top-toolbar-slot");
+            if (!slot || !isSymbolEditorMode()) return;
+            slot.querySelectorAll("[data-tool]").forEach(function (btn) {
+                btn.classList.toggle("active-tool", btn.getAttribute("data-tool") === symbolEditorTool);
+            });
+        }
+
+        function updateSymbolEditorSnapActive() {
+            const slot = document.getElementById("top-toolbar-slot");
+            if (!slot || !isSymbolEditorMode()) return;
+            slot.querySelectorAll("[data-snap]").forEach(function (btn) {
+                btn.classList.toggle("active-tool", symbolEditorSnap);
+            });
+        }
+
+        function setSymbolEditorSaveState(state) {
+            symbolEditorSaveState = state;
+            if (selectedFile !== "block diagram symbol") return;
+            const el = document.getElementById("save-indicator");
+            if (el) {
+                el.className = state;
+                el.textContent = state === "saved" ? "Saved" : "Unsaved";
+            }
+        }
+
         function populateToolbarSlot() {
             const slot = document.getElementById("top-toolbar-slot");
             if (!slot) return;
@@ -1782,29 +1915,93 @@
             } else if (isSystemListsMode()) {
                 /* Single toolbar ribbon is inside the system list panel (#sl-ribbon) */
             } else {
-                const spec = TOOLBAR_SPEC[selectedFile];
                 const graphIframe = document.getElementById("graph-editor-iframe");
-                if (spec && Array.isArray(spec)) {
-                    spec.forEach(function (item) {
-                        const btn = document.createElement("button");
-                        btn.type = "button";
-                        btn.className = "btn";
-                        btn.textContent = item.label;
-                        if (item.action === "setTool" && item.payload && item.payload.tool) {
-                            btn.dataset.tool = item.payload.tool;
+                if (selectedFile === "block diagram symbol") {
+                    slot.className = "tb-symbol-ribbon";
+                    const SYMBOL_RIBBON = [
+                        {
+                            heading: "Draw symbol with origin at the top left", grid: "grid-2", sectionClass: "tb-build-section", items: [
+                                { action: "undo", payload: {}, label: "↩ Undo" },
+                                { action: "redo", payload: {}, label: "↪ Redo" },
+                                { action: "toggleSnap", payload: {}, label: "⊞ Snap", snap: true },
+                                { action: "fitView", payload: {}, label: "Fit View" }
+                            ]
+                        },
+                        {
+                            heading: "Layers", grid: "grid-2", items: [
+                                { action: "bringToFront", payload: {}, label: "⊤ Front" },
+                                { action: "bringForward", payload: {}, label: "↑ Fwd" },
+                                { action: "sendToBack", payload: {}, label: "⊥ To Back" },
+                                { action: "sendBackward", payload: {}, label: "↓ Back" }
+                            ]
+                        },
+                        {
+                            heading: "Primitives", grid: "grid-3", items: [
+                                { action: "setTool", payload: { tool: "pin" }, label: "◉ Connector", tool: "pin", rowSpan: 2 },
+                                { action: "setTool", payload: { tool: "line" }, label: "╱ Line", tool: "line" },
+                                { action: "setTool", payload: { tool: "circle" }, label: "○ Circle", tool: "circle" },
+                                { action: "setTool", payload: { tool: "text" }, label: "T Text", tool: "text" },
+                                { action: "setTool", payload: { tool: "rect" }, label: "▭ Rect", tool: "rect" }
+                            ]
                         }
-                        btn.onclick = function () {
-                            if (graphIframe && graphIframe.contentWindow) {
-                                try {
-                                    graphIframe.contentWindow.postMessage(
-                                        { type: "harnice-graph-action", action: item.action, ...item.payload }, "*");
-                                } catch (_) { }
+                    ];
+                    SYMBOL_RIBBON.forEach(function (sec) {
+                        const section = document.createElement("div");
+                        section.className = "tb-ribbon-section" + (sec.sectionClass ? " " + sec.sectionClass : "");
+                        const heading = document.createElement("div");
+                        heading.className = "tb-ribbon-section-heading";
+                        heading.textContent = sec.heading;
+                        section.appendChild(heading);
+                        const btns = document.createElement("div");
+                        btns.className = "tb-ribbon-section-buttons " + sec.grid;
+                        sec.items.forEach(function (item) {
+                            if (item === null) {
+                                const spacer = document.createElement("span");
+                                spacer.style.minWidth = "1px";
+                                btns.appendChild(spacer);
+                            } else {
+                                const btn = document.createElement("button");
+                                btn.type = "button";
+                                btn.className = "btn" + (item.rowSpan === 2 ? " tb-btn-span-2" : "");
+                                if (item.tool) { btn.dataset.tool = item.tool; if (symbolEditorTool === item.tool) btn.classList.add("active-tool"); }
+                                if (item.snap) { btn.dataset.snap = "1"; if (symbolEditorSnap) btn.classList.add("active-tool"); }
+                                btn.textContent = item.label;
+                                btn.onclick = function () {
+                                    if (graphIframe && graphIframe.contentWindow) {
+                                        try { graphIframe.contentWindow.postMessage({ type: "harnice-graph-action", action: item.action, ...item.payload }, "*"); } catch (_) { }
+                                    }
+                                };
+                                btns.appendChild(btn);
                             }
-                        };
-                        slot.appendChild(btn);
+                        });
+                        section.appendChild(btns);
+                        slot.appendChild(section);
                     });
-                    if (selectedFile === "block diagram") {
-                        updateBlockDiagramToolbarActive();
+                } else {
+                    slot.className = "";
+                    const spec = TOOLBAR_SPEC[selectedFile];
+                    if (spec && Array.isArray(spec)) {
+                        spec.forEach(function (item) {
+                            const btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "btn";
+                            if (item.action === "setTool" && item.payload && item.payload.tool) {
+                                btn.dataset.tool = item.payload.tool;
+                                if (selectedFile === "block diagram" && blockDiagramTool === item.payload.tool) btn.classList.add("active-tool");
+                                if (selectedFile === "block diagram symbol" && symbolEditorTool === item.payload.tool) btn.classList.add("active-tool");
+                            }
+                            if (item.action === "toggleSnap") { btn.dataset.snap = "1"; if (symbolEditorSnap) btn.classList.add("active-tool"); }
+                            btn.textContent = item.label;
+                            btn.onclick = function () {
+                                if (graphIframe && graphIframe.contentWindow) {
+                                    try { graphIframe.contentWindow.postMessage({ type: "harnice-graph-action", action: item.action, ...item.payload }, "*"); } catch (_) { }
+                                }
+                            };
+                            slot.appendChild(btn);
+                        });
+                        if (selectedFile === "block diagram") {
+                            updateBlockDiagramToolbarActive();
+                        }
                     }
                 }
                 if (selectedFile === "available network") {
@@ -1887,6 +2084,22 @@
             }
         }
 
+        function updateSymbolEditorToolbarActive() {
+            const slot = document.getElementById("top-toolbar-slot");
+            if (!slot || selectedFile !== "block diagram symbol") return;
+            slot.querySelectorAll("[data-tool]").forEach(function (btn) {
+                btn.classList.toggle("active-tool", btn.dataset.tool === symbolEditorTool);
+            });
+        }
+
+        function updateSymbolEditorSnapActive() {
+            const slot = document.getElementById("top-toolbar-slot");
+            if (!slot || selectedFile !== "block diagram symbol") return;
+            slot.querySelectorAll("[data-snap]").forEach(function (btn) {
+                btn.classList.toggle("active-tool", symbolEditorSnap);
+            });
+        }
+
         function stepToDisplay(sliderVal) {
             var LOG_MIN = Math.log10(0.01);
             var LOG_MAX = Math.log10(500);
@@ -1909,11 +2122,21 @@
 
             const featureTree = isFeatureTreeMode();
             const systemLists = isSystemListsMode();
-            const graphMode = !featureTree && !systemLists;
+            const isHarnessGraph = productType === "harness" && ["available network", "chosen network", "flattened network"].includes(selectedFile);
+            const isBlockDiagramSymbol = productType === "device" && selectedFile === "block diagram symbol";
+            const graphMode = isHarnessGraph || isBlockDiagramSymbol;
+            const documentMode = !featureTree && !systemLists && !graphMode;
+
+            const documentPanel = document.getElementById("document-view-panel");
 
             if (editorOutput) editorOutput.style.display = featureTree ? "flex" : "none";
             if (graphPanel) graphPanel.classList.toggle("visible", graphMode);
             if (systemViewerPanel) systemViewerPanel.classList.toggle("visible", systemLists);
+            if (documentPanel) {
+                documentPanel.classList.toggle("visible", documentMode);
+                const placeholder = documentPanel && documentPanel.querySelector(".document-placeholder");
+                if (placeholder) placeholder.textContent = selectedFile ? selectedFile + " (Read only)" : "Read only";
+            }
             const topToolbar = document.getElementById("top-toolbar");
             if (topToolbar) topToolbar.style.display = systemLists ? "none" : "";
 
@@ -1921,9 +2144,14 @@
 
             if (graphIframe) {
                 if (graphMode) {
-                    if (selectedFile === "block diagram") {
+                    const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
+                    if (selectedFile === "block diagram symbol") {
+                        const base = "/block-diagram-symbol-editor";
+                        if (!iframeLoaded || !graphIframe.src.includes("/block-diagram-symbol-editor")) {
+                            graphIframe.src = base;
+                        }
+                    } else if (selectedFile === "block diagram") {
                         const base = "/system-diagram-editor";
-                        const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
                         if (!iframeLoaded || !graphIframe.src.includes("/system-diagram-editor")) {
                             graphIframe.src = base;
                         }
@@ -1931,7 +2159,6 @@
                         const tab = selectedFile === "available network" ? "available" :
                             selectedFile === "chosen network" ? "chosen" : "flattened";
                         const base = "/graph-editor#" + tab;
-                        const iframeLoaded = graphIframe.src && !graphIframe.src.startsWith("about:");
                         if (!iframeLoaded || !graphIframe.src.includes("/graph-editor")) {
                             graphIframe.src = base;
                         }
@@ -1988,6 +2215,29 @@
                 updateLineGutter();
             }
             setupProjectListDragDrop(document.getElementById("project-list"));
+            window.addEventListener("message", function (e) {
+                if (!e.data || e.data.type == null) return;
+                // Always process sde-status so save state is current when user switches to symbol editor
+                if (e.data.type === "sde-status" && typeof e.data.dirty === "boolean") {
+                    setSymbolEditorSaveState(e.data.dirty ? "unsaved" : "saved");
+                }
+                if (selectedFile !== "block diagram symbol") return;
+                if (e.data.type === "sde-tool" && e.data.tool) {
+                    symbolEditorTool = e.data.tool;
+                    updateSymbolEditorToolbarActive();
+                }
+                if (e.data.type === "sde-snap" && typeof e.data.enabled === "boolean") {
+                    symbolEditorSnap = e.data.enabled;
+                    updateSymbolEditorSnapActive();
+                }
+            });
+            document.addEventListener("keydown", function (e) {
+                if (e.key !== "Escape") return;
+                if (selectedFile !== "block diagram symbol") return;
+                const graphIframe = document.getElementById("graph-editor-iframe");
+                if (!graphIframe || !graphIframe.contentWindow) return;
+                graphIframe.contentWindow.postMessage({ type: "harnice-graph-action", action: "setTool", tool: "select" }, "*");
+            });
             applyView();
             await Promise.all([loadInfo(), loadFunctionIndex(), loadRecentProjects(), loadGuiSetup()]);
             await loadCode();
@@ -2069,6 +2319,10 @@
                         pill.id = "save-indicator";
                         pill.className = lastSaveIndicatorState;
                         pill.textContent = lastSaveIndicatorState === "saved" ? "Saved" : "Unsaved";
+                    } else if (label === "block diagram symbol") {
+                        pill.id = "save-indicator";
+                        pill.className = symbolEditorSaveState;
+                        pill.textContent = symbolEditorSaveState === "saved" ? "Saved" : "Unsaved";
                     } else if (label === "block diagram") {
                         pill.id = "save-indicator";
                         pill.className = blockDiagramSaveState;

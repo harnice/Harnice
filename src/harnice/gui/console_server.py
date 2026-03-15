@@ -21,6 +21,7 @@ import subprocess
 import sys
 import threading
 import webbrowser
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from harnice.gui import system_viewer_core, system_viewer_server
@@ -33,6 +34,8 @@ _GUI_DIR = Path(__file__).resolve().parent
 _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
 _EDITOR_HTML = _GUI_DIR / "harnice_console.html"
 _GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
+_BLOCK_DIAGRAM_SYMBOL_EDITOR_HTML = _GUI_DIR / "block-diagram-symbol-editor.html"
+_SYSTEM_DIAGRAM_EDITOR_HTML = _GUI_DIR / "system-diagram-editor.html"
 _SYSTEM_LIST_VIEW_JS = _GUI_DIR / "system_list_view.js"
 _SYSTEM_DIAGRAM_HTML = _GUI_DIR / "system_diagram_editor.html"
 
@@ -97,7 +100,7 @@ def _graph_write_csv(path: Path, fieldnames, rows):
 
 
 def _editor_files_for_product(product_type: str, rev_folder: str = None) -> list:
-    """Return list of file labels to show in the file navigator for this product. Harness has network files; system has system list panes (dynamic from project)."""
+    """Return list of file labels to show in the file navigator for this product. Harness has network files; system has system list panes (dynamic from project); device has block diagram symbol and signals list."""
     if product_type == "harness":
         return [
             "feature tree",
@@ -105,6 +108,8 @@ def _editor_files_for_product(product_type: str, rev_folder: str = None) -> list
             "chosen network",
             "flattened network",
         ]
+    if product_type == "device":
+        return ["feature tree", "block diagram symbol", "signals list"]
     if product_type == "system" and rev_folder:
         try:
             tabs = system_viewer_core.get_tab_list()
@@ -409,9 +414,7 @@ def _is_inside_harnice_repo(path: str) -> bool:
 
 
 def _add_recent_project(rev_folder: str):
-    """Add rev_folder to recent projects unless it is inside the Harnice repo (e.g. development)."""
-    if _is_inside_harnice_repo(rev_folder):
-        return
+    """Add rev_folder to recent projects."""
     data = _load_gui_state()
     projects = data.get("recent_projects", [])
     # Normalise and deduplicate, most recent first
@@ -556,6 +559,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/": self._serve_html,
             "/index.html": self._serve_html,
             "/graph-editor": self._serve_graph_editor_html,
+            "/block-diagram-symbol-editor": self._serve_block_diagram_symbol_editor_html,
             "/system-diagram-editor": self._serve_system_diagram_html,
             "/system-list-view.js": self._serve_system_list_view_js,
             "/api/info": self._api_info,
@@ -569,6 +573,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/api/chosen_list": self._api_graph_chosen_list,
             "/api/chosen_net": self._api_graph_chosen_net,
             "/api/flattened": self._api_graph_flattened,
+            "/api/block_diagram_symbol": self._api_block_diagram_symbol_get,
         }
         handler = routes.get(path)
         if handler:
@@ -612,6 +617,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/api/available": self._api_graph_save_available,
             "/api/chosen_list": self._api_graph_save_chosen_list,
             "/api/flattened": self._api_graph_save_flattened,
+            "/api/block_diagram_symbol": self._api_block_diagram_symbol_post,
         }
         handler = routes.get(path)
         if handler:
@@ -688,6 +694,91 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         self._send_bytes(
             _SYSTEM_LIST_VIEW_JS.read_bytes(), "application/javascript; charset=utf-8"
         )
+
+    def _serve_block_diagram_symbol_editor_html(self):
+        """Serve block diagram symbol editor HTML for device products."""
+        if not _BLOCK_DIAGRAM_SYMBOL_EDITOR_HTML.exists():
+            self.send_error(500, "block-diagram-symbol-editor.html not found")
+            return
+        try:
+            pn, _ = _state.pn_and_rev()
+            group_id = f"{pn}-contents-start" if pn else "symbol-contents-start"
+        except Exception:
+            group_id = "symbol-contents-start"
+        html = _BLOCK_DIAGRAM_SYMBOL_EDITOR_HTML.read_text(encoding="utf-8")
+        html = html.replace("{{PN_CONTENTS_START}}", group_id)
+        self._send_bytes(html.encode("utf-8"), "text/html; charset=utf-8")
+
+    def _serve_system_diagram_html(self):
+        """Serve system diagram editor HTML for system products."""
+        if not _SYSTEM_DIAGRAM_EDITOR_HTML.exists():
+            self.send_error(500, "system-diagram-editor.html not found")
+            return
+        self._send_bytes(
+            _SYSTEM_DIAGRAM_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8"
+        )
+
+    def _block_diagram_symbol_api_guard(self):
+        """Return None if block diagram symbol API is allowed (device project), else send 404 and return True."""
+        if _state.product_type != "device":
+            self.send_error(404)
+            return True
+        return None
+
+    def _api_block_diagram_symbol_get(self):
+        """GET block diagram symbol SVG. Creates minimal SVG if file does not exist."""
+        if self._block_diagram_symbol_api_guard():
+            return
+        import xml.etree.ElementTree as ET
+
+        from harnice import fileio
+
+        path = Path(fileio.path("block diagram symbol"))
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                pn, _ = _state.pn_and_rev()
+                contents_id = f"{pn}-contents-start" if pn else "symbol-contents-start"
+            except Exception:
+                contents_id = "symbol-contents-start"
+            view_box = "0 0 100 80"
+            root = ET.Element(
+                "svg", xmlns="http://www.w3.org/2000/svg", viewBox=view_box
+            )
+            root.set("data-bbox", view_box)
+            g = ET.SubElement(
+                root,
+                "g",
+                attrib={"id": contents_id, "class": "component device"},
+            )
+            ET.SubElement(
+                root,
+                "g",
+                attrib={"id": contents_id.replace("-contents-start", "-contents-end")},
+            )
+            tree = ET.ElementTree(root)
+            ET.indent(tree, space="  ")
+            with open(path, "wb") as f:
+                tree.write(
+                    f, encoding="utf-8", default_namespace="", xml_declaration=True
+                )
+        content = path.read_text(encoding="utf-8")
+        self._send_bytes(content.encode("utf-8"), "image/svg+xml; charset=utf-8")
+
+    def _api_block_diagram_symbol_post(self):
+        """POST block diagram symbol SVG. Overwrites file with raw request body."""
+        if self._block_diagram_symbol_api_guard():
+            return
+        from harnice import fileio
+
+        path = Path(fileio.path("block diagram symbol"))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length).decode("utf-8")
+        path.write_text(body, encoding="utf-8")
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def _api_info(self):
         # Step-by-step when a project is selected and info is queried:
@@ -791,9 +882,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
     def _api_recent_projects(self):
         data = _load_gui_state()
-        folders = [
-            p for p in data.get("recent_projects", []) if not _is_inside_harnice_repo(p)
-        ]
+        folders = list(data.get("recent_projects", []))
         projects = []
         for rev_folder in folders:
             info = _project_info_for_revision_folder(rev_folder) or {}
@@ -1128,14 +1217,6 @@ def run_server(rev_folder: str = None, port: int = 0, open_browser: bool = True)
     _add_recent_project(rev_folder)
     # Start system viewer file watcher so embedded system list panes get SSE updates
     system_viewer_core.start_file_watcher()
-    # Purge any Harnice-repo paths from saved recent projects so they don't reappear
-    data = _load_gui_state()
-    cleaned = [
-        p for p in data.get("recent_projects", []) if not _is_inside_harnice_repo(p)
-    ]
-    if len(cleaned) != len(data.get("recent_projects", [])):
-        data["recent_projects"] = cleaned
-        _save_gui_state(data)
 
     class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         daemon_threads = True
