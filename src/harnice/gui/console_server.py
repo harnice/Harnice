@@ -19,12 +19,32 @@ import queue
 import socketserver
 import subprocess
 import sys
+import tempfile
 import threading
 import webbrowser
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
+
 from harnice.gui import system_viewer_core, system_viewer_server
+
+def _atomic_write_svg(path, content_bytes):
+    """Write SVG content atomically to avoid corruption from partial writes."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".svg.tmp")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(content_bytes)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -731,8 +751,6 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         """GET block diagram symbol SVG. Creates minimal SVG if file does not exist."""
         if self._block_diagram_symbol_api_guard():
             return
-        import xml.etree.ElementTree as ET
-
         from harnice import fileio
 
         path = Path(fileio.path("block diagram symbol"))
@@ -747,27 +765,15 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
                 )
             except (NameError, ValueError):
                 contents_id = "symbol-contents-start"
+            contents_end = contents_id.replace("-contents-start", "-contents-end")
             view_box = "0 0 400 400"
-            root = ET.Element(
-                "svg", xmlns="http://www.w3.org/2000/svg", viewBox=view_box
-            )
-            root.set("data-bbox", view_box)
-            g = ET.SubElement(
-                root,
-                "g",
-                attrib={"id": contents_id, "class": "component device"},
-            )
-            ET.SubElement(
-                root,
-                "g",
-                attrib={"id": contents_id.replace("-contents-start", "-contents-end")},
-            )
-            tree = ET.ElementTree(root)
-            ET.indent(tree, space="  ")
-            with open(path, "wb") as f:
-                tree.write(
-                    f, encoding="utf-8", default_namespace="", xml_declaration=True
-                )
+            svg_text = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="{view_box}" data-bbox="{view_box}">
+  <g id="{contents_id}" class="component device"></g>
+  <g id="{contents_end}"></g>
+</svg>
+'''
+            _atomic_write_svg(path, svg_text.encode("utf-8"))
         content = path.read_text(encoding="utf-8")
         self._send_bytes(content.encode("utf-8"), "image/svg+xml; charset=utf-8")
 
@@ -781,7 +787,38 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         path.parent.mkdir(parents=True, exist_ok=True)
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length).decode("utf-8")
-        path.write_text(body, encoding="utf-8")
+        stripped = body.strip()
+        if not (
+            len(stripped) > 10
+            and "<svg" in stripped.lower()
+            and "</svg>" in stripped.lower()
+        ):
+            self._send_json(
+                {
+                    "ok": False,
+                    "error": "Invalid SVG: body does not look like valid SVG",
+                },
+                status=400,
+            )
+            return
+        body_bytes = body.encode("utf-8")
+        fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".svg.tmp")
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(body_bytes)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, path)
+        except Exception:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            self._send_json(
+                {"ok": False, "error": "Failed to write block diagram symbol"},
+                status=500,
+            )
+            return
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()

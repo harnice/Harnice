@@ -1,9 +1,12 @@
 import os
+import re
 import runpy
+import tempfile
 import uuid as uuid_module
-import xml.etree.ElementTree as ET
 import json
 import csv
+from pathlib import Path
+
 from harnice import fileio, state
 from harnice.lists import signals_list, rev_history
 from harnice.products import chtype
@@ -88,56 +91,71 @@ def generate_structure():
     pass
 
 
+def _atomic_write_svg(path_str, content_bytes: bytes):
+    """Write SVG bytes atomically to avoid corruption from partial writes."""
+    path = path_str if isinstance(path_str, str) else str(path_str)
+    dirpath = os.path.dirname(path)
+    if dirpath:
+        os.makedirs(dirpath, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=dirpath or ".", suffix=".svg.tmp")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(content_bytes)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
 def _ensure_svg_symbol_exists():
     """Create a minimal placeholder SVG if the symbol file does not exist."""
     path = fileio.path("block diagram symbol")
     if os.path.exists(path):
         return
     contents_id = f"{state.partnumber('pn-rev')}-contents-start"
+    contents_end = contents_id.replace("-contents-start", "-contents-end")
     view_box = "0 0 400 400"
-    root = ET.Element("svg", xmlns="http://www.w3.org/2000/svg", viewBox=view_box)
-    root.set("data-bbox", view_box)
-    ET.SubElement(
-        root,
-        "g",
-        attrib={"id": contents_id, "class": "component device"},
-    )
-    ET.SubElement(
-        root, "g", attrib={"id": f"{state.partnumber('pn-rev')}-contents-end"}
-    )
-    tree = ET.ElementTree(root)
-    ET.indent(tree, space="  ")
-    with open(path, "wb") as f:
-        tree.write(f, encoding="utf-8", default_namespace="", xml_declaration=True)
-    return
+    svg_text = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="{view_box}" data-bbox="{view_box}">
+  <g id="{contents_id}" class="component device"></g>
+  <g id="{contents_end}"></g>
+</svg>
+'''
+    _atomic_write_svg(path, svg_text.encode("utf-8"))
 
 
 def _validate_svg_symbol():
     """Ensure SVG symbol exists, has pins matching the signals list, and append any missing pins."""
     _ensure_svg_symbol_exists()
     path = fileio.path("block diagram symbol")
-    tree = ET.parse(path)
-    root = tree.getroot()
+    svg_text = Path(path).read_text(encoding="utf-8")
 
-    def get_pin_name(elem):
-        return (elem.get("data-pin-name") or "").strip()
+    if "<svg" not in svg_text.lower() or "</svg>" not in svg_text.lower():
+        os.remove(path)
+        _ensure_svg_symbol_exists()
+        svg_text = Path(path).read_text(encoding="utf-8")
 
+    # Extract connector names from pin circles
     existing_pin_names = set()
-    for elem in root.iter():
-        if elem.tag.endswith("circle"):
-            cls = (elem.get("class") or "").split()
-            if "pin" in cls:
-                name = get_pin_name(elem)
-                if name:
-                    existing_pin_names.add(name)
+    for m in re.finditer(r"<circle\s([^>]+)>", svg_text):
+        attrs = m.group(1)
+        class_match = re.search(r'class\s*=\s*["\']([^"\']*)["\']', attrs, re.I)
+        if not class_match or "pin" not in class_match.group(1):
+            continue
+        name_match = re.search(r'data-pin-name\s*=\s*["\']([^"\']+)["\']', attrs, re.I)
+        if name_match:
+            existing_pin_names.add(name_match.group(1).strip())
 
-    unique_connectors_in_signals_list = set()
-    for row in fileio.read_tsv("signals list"):
-        cn = row.get("connector_name")
-        if cn:
-            unique_connectors_in_signals_list.add(cn)
-
-    required = set(unique_connectors_in_signals_list)
+    required = {
+        row["connector_name"]
+        for row in fileio.read_tsv("signals list")
+        if row.get("connector_name")
+    }
     missing = required - existing_pin_names
     extra = existing_pin_names - required
     if extra:
@@ -148,54 +166,69 @@ def _validate_svg_symbol():
     if not missing:
         return
 
-    def stable_pin_id(connector_name):
-        seed = f"{state.partnumber('pn-rev')}-{connector_name}"
-        return str(uuid_module.uuid5(uuid_module.NAMESPACE_DNS, seed))
+    # Find max cy among pin circles (or 20 if none)
+    last_y = 20.0
+    for m in re.finditer(r"<circle\s([^>]+)>", svg_text):
+        attrs = m.group(1)
+        class_match = re.search(r'class\s*=\s*["\']([^"\']*)["\']', attrs, re.I)
+        if not class_match or "pin" not in class_match.group(1):
+            continue
+        cy_match = re.search(r'cy\s*=\s*["\']?([\d.-]+)', attrs)
+        if cy_match:
+            try:
+                last_y = max(last_y, float(cy_match.group(1)))
+            except ValueError:
+                pass
 
-    pin_spacing = 10
-
-    def find_last_pin_y():
-        last_y = 20
-        for elem in root.iter():
-            if (
-                elem.tag.endswith("circle")
-                and "pin" in (elem.get("class") or "").split()
-            ):
-                cy = elem.get("cy")
-                if cy is not None:
-                    try:
-                        last_y = max(last_y, float(cy))
-                    except ValueError:
-                        pass
-        return last_y
-
-    next_y = find_last_pin_y() + pin_spacing
     contents_id = f"{state.partnumber('pn-rev')}-contents-start"
-    insert_target = root.find(f".//*[@id='{contents_id}']")
-    if insert_target is None:
-        raise ValueError(
-            f"Block diagram symbol SVG must contain a group with id '{contents_id}'"
-        )
-
+    next_y = last_y + 10
+    pin_spacing = 10
+    pin_lines = []
     for connector_name in sorted(missing):
-        pin_id = stable_pin_id(connector_name)
-        ET.SubElement(
-            insert_target,
-            "circle",
-            attrib={
-                "class": "pin",
-                "data-pin-name": connector_name,
-                "id": f"pin-{pin_id}",
-                "cx": "50",
-                "cy": str(next_y),
-                "r": "4",
-            },
+        pin_id = str(
+            uuid_module.uuid5(
+                uuid_module.NAMESPACE_DNS,
+                f"{state.partnumber('pn-rev')}-{connector_name}",
+            )
         )
+        cx, cy = 50, next_y
+        pin_lines.append("<g>")
+        pin_lines.append(
+            f'  <circle class="pin" data-pin-name="{connector_name}" '
+            f'id="pin-{pin_id}" cx="{cx}" cy="{cy}" r="4" />'
+        )
+        pin_lines.append(
+            f'  <text class="connector-label" x="{cx}" y="{cy}" font-size="12" '
+            f'font-family="Helvetica, sans-serif" fill="black" '
+            f'text-anchor="middle" dominant-baseline="middle">{connector_name}</text>'
+        )
+        pin_lines.append("</g>")
         next_y += pin_spacing
 
-    ET.indent(tree, space="  ")
-    with open(path, "wb") as f:
-        tree.write(f, encoding="utf-8", default_namespace="", xml_declaration=True)
+    # Insert pin elements immediately after the opening <g id="..."> of the contents-start group
+    start_pattern = f'id="{contents_id}"'
+    idx = svg_text.find(start_pattern)
+    if idx == -1:
+        raise ValueError(
+            f'Block diagram symbol SVG must contain a group with id "{contents_id}"'
+        )
+    gt_pos = svg_text.find(">", idx)
+    slash_gt = svg_text.find("/>", idx)
+    pin_block = "\n    ".join(pin_lines) + "\n  "
+    if slash_gt != -1 and slash_gt < gt_pos:
+        close_slash = slash_gt
+        updated = (
+            svg_text[:close_slash]
+            + ">\n  "
+            + pin_block
+            + "</g>"
+            + svg_text[close_slash + 2 :]
+        )
+    else:
+        insert_pos = gt_pos + 1
+        updated = svg_text[:insert_pos] + pin_block + svg_text[insert_pos:]
+
+    _atomic_write_svg(path, updated.encode("utf-8"))
 
 
 def _remove_details_from_signals_list():

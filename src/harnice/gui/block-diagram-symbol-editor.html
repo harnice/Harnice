@@ -423,7 +423,6 @@
           contentChildren.forEach(function (child) {
             startGroup.appendChild(child.cloneNode(true));
           });
-          startGroup.querySelectorAll('text.connector-label').forEach(function (el) { el.remove(); });
           startGroup.querySelectorAll('circle.pin').forEach(function (el) { el.setAttribute('r', '0.05'); });
           svg.appendChild(startGroup);
           const endGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -1640,19 +1639,29 @@
         pins.forEach(function (circle) {
           const parent = circle.parentNode;
           if (!parent) return;
-          if (parent.tagName === 'g' && parent.querySelector('text.connector-label')) return;
           const cx = parseFloat(circle.getAttribute('cx') || 0);
           const cy = parseFloat(circle.getAttribute('cy') || 0);
           const name = circle.getAttribute('data-pin-name') || 'connector';
           if (parent.tagName === 'g') {
-            const label = parent.querySelector('text.connector-label');
-            if (label) {
+            const labels = parent.querySelectorAll('text.connector-label');
+            const circles = parent.querySelectorAll('circle.pin');
+            if (circles.length === 1 && labels.length === 1) {
+              const label = labels[0];
               label.setAttribute('x', cx);
               label.setAttribute('y', cy);
               label.textContent = name;
-            } else {
-              parent.appendChild(createConnectorLabelText(cx, cy, name));
+              return;
             }
+            const labelAtPos = Array.from(labels).find(function (t) {
+              return parseFloat(t.getAttribute('x')) === cx && parseFloat(t.getAttribute('y')) === cy;
+            });
+            if (labelAtPos) {
+              labelAtPos.setAttribute('x', cx);
+              labelAtPos.setAttribute('y', cy);
+              labelAtPos.textContent = name;
+              return;
+            }
+            parent.appendChild(createConnectorLabelText(cx, cy, name));
             return;
           }
           const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
