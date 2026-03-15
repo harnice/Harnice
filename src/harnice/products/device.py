@@ -170,13 +170,12 @@ def _validate_svg_symbol():
         return last_y
 
     next_y = find_last_pin_y() + pin_spacing
-    insert_target = root
-    for elem in root.iter():
-        if elem.tag.endswith("g"):
-            cls = (elem.get("class") or "").split()
-            if "component" in cls and "device" in cls:
-                insert_target = elem
-                break
+    contents_id = f"{state.partnumber('pn-rev')}-contents-start"
+    insert_target = root.find(f".//*[@id='{contents_id}']")
+    if insert_target is None:
+        raise ValueError(
+            f"Block diagram symbol SVG must contain a group with id '{contents_id}'"
+        )
 
     for connector_name in sorted(missing):
         pin_id = stable_pin_id(connector_name)

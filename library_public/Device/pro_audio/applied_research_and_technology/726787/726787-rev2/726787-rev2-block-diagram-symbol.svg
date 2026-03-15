@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
-<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" viewBox="0 0 110 100" width="110" height="100">
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" viewBox="0 0 70 70" width="70" height="70">
   <ns0:g id="726787-rev2-contents-start">
-    <ns0:rect x="0" y="0" width="90" height="80" fill="none" stroke="var(--text)" id="sde-1773556089241-l847cps" class="" />
+    <ns0:rect x="0" y="0" width="50" height="50" fill="none" stroke="var(--text)" id="sde-1773557006235-pp3k81m" />
+    <circle class="pin" data-pin-name="in1" id="pin-f16355e1-2ecf-5bcb-8968-c173755e3c1e" cx="50" cy="30" r="4" />
+    <circle class="pin" data-pin-name="in2" id="pin-27226870-86d8-58ed-9582-baba72e84066" cx="50" cy="40" r="4" />
+    <circle class="pin" data-pin-name="out1" id="pin-51322818-a272-582f-ba20-0af6c038269a" cx="50" cy="50" r="4" />
+    <circle class="pin" data-pin-name="out2" id="pin-a2ef158a-4771-5f22-ac84-93d7faef5b3e" cx="50" cy="60" r="4" />
   </ns0:g>
   <ns0:g id="726787-rev2-contents-end" />
-  <circle class="pin" data-pin-name="in1" id="pin-f16355e1-2ecf-5bcb-8968-c173755e3c1e" cx="50" cy="30" r="4" />
-  <circle class="pin" data-pin-name="in2" id="pin-27226870-86d8-58ed-9582-baba72e84066" cx="50" cy="40" r="4" />
-  <circle class="pin" data-pin-name="out1" id="pin-51322818-a272-582f-ba20-0af6c038269a" cx="50" cy="50" r="4" />
-  <circle class="pin" data-pin-name="out2" id="pin-a2ef158a-4771-5f22-ac84-93d7faef5b3e" cx="50" cy="60" r="4" />
 </ns0:svg>
