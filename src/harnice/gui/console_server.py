@@ -35,6 +35,7 @@ _FUNCTION_INDEX = _GUI_DIR / "function_index.json"
 _EDITOR_HTML = _GUI_DIR / "harnice_console.html"
 _GRAPH_EDITOR_HTML = _GUI_DIR / "graph_editor.html"
 _BLOCK_DIAGRAM_SYMBOL_EDITOR_HTML = _GUI_DIR / "block-diagram-symbol-editor.html"
+_SYSTEM_DIAGRAM_EDITOR_HTML = _GUI_DIR / "system-diagram-editor.html"
 _SYSTEM_LIST_VIEW_JS = _GUI_DIR / "system_list_view.js"
 
 
@@ -546,6 +547,7 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
             "/index.html": self._serve_html,
             "/graph-editor": self._serve_graph_editor_html,
             "/block-diagram-symbol-editor": self._serve_block_diagram_symbol_editor_html,
+            "/system-diagram-editor": self._serve_system_diagram_html,
             "/system-list-view.js": self._serve_system_list_view_js,
             "/api/info": self._api_info,
             "/api/code": self._api_get_code,
@@ -635,8 +637,22 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         if not _BLOCK_DIAGRAM_SYMBOL_EDITOR_HTML.exists():
             self.send_error(500, "block-diagram-symbol-editor.html not found")
             return
+        try:
+            pn, _ = _state.pn_and_rev()
+            group_id = f"{pn}-contents-start" if pn else "symbol-contents-start"
+        except Exception:
+            group_id = "symbol-contents-start"
+        html = _BLOCK_DIAGRAM_SYMBOL_EDITOR_HTML.read_text(encoding="utf-8")
+        html = html.replace("{{PN_CONTENTS_START}}", group_id)
+        self._send_bytes(html.encode("utf-8"), "text/html; charset=utf-8")
+
+    def _serve_system_diagram_html(self):
+        """Serve system diagram editor HTML for system products."""
+        if not _SYSTEM_DIAGRAM_EDITOR_HTML.exists():
+            self.send_error(500, "system-diagram-editor.html not found")
+            return
         self._send_bytes(
-            _BLOCK_DIAGRAM_SYMBOL_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8"
+            _SYSTEM_DIAGRAM_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8"
         )
 
     def _block_diagram_symbol_api_guard(self):
