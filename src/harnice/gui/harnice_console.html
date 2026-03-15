@@ -2596,18 +2596,29 @@
         // Run
         // ---------------------------------------------------------------------------
         window.runCode = async function () {
-            if (isRunning) return;
+            // Switch to feature tree page (has stdout panel) before running
+            selectedFile = MODE_FEATURE_TREE;
+            renderFileList();
+            applyView();
 
-            // Flush any pending save first (only if we have real content to save)
-            clearTimeout(saveTimer);
-            if (!isPlaceholderOrEmpty(getCode())) await saveCode();
-
-            isRunning = true;
-            setRunBtn("running");
-            clearOutput();
-            appendOutput({ text: "── running harnice -r ──", stream: "stdout" });
+            if (isRunning) {
+                appendOutput({ text: "[info] A render is already in progress. Wait for it to finish or refresh the page.", stream: "stdout" });
+                return;
+            }
 
             try {
+                // Flush any pending save first (only if we have real content to save)
+                clearTimeout(saveTimer);
+                if (!isPlaceholderOrEmpty(getCode())) {
+                    appendOutput({ text: "Saving…", stream: "stdout" });
+                    await saveCode();
+                }
+
+                isRunning = true;
+                setRunBtn("running");
+                clearOutput();
+                appendOutput({ text: "── running harnice -r ──", stream: "stdout" });
+
                 await api("POST", "/api/run");
             } catch (e) {
                 isRunning = false;
@@ -2630,24 +2641,37 @@
             pollTimer = setInterval(pollOutput, 250);
         }
 
+        let pollFailCount = 0;
+        const POLL_FAIL_RESET_THRESHOLD = 20;  // ~5 sec of failures → unstick
         async function pollOutput() {
-            const d = await api("GET", "/api/run_output");
-            for (const line of d.lines) appendOutput(line);
-            if (d.done && isRunning) {
-                isRunning = false;
-                if (d.exit_code === 0) {
-                    appendBanner("success", "✓ Completed");
-                    setRunBtn("success");
-                } else {
-                    appendBanner("error", `✗ Exited with code ${d.exit_code}`);
-                    setRunBtn("error");
+            try {
+                const d = await api("GET", "/api/run_output");
+                pollFailCount = 0;
+                for (const line of d.lines) appendOutput(line);
+                if (d.done && isRunning) {
+                    isRunning = false;
+                    if (d.exit_code === 0) {
+                        appendBanner("success", "✓ Completed");
+                        setRunBtn("success");
+                    } else {
+                        appendBanner("error", `✗ Exited with code ${d.exit_code}`);
+                        setRunBtn("error");
+                    }
+                    setTimeout(() => setRunBtn("idle"), 4000);
                 }
-                setTimeout(() => setRunBtn("idle"), 4000);
+            } catch (e) {
+                pollFailCount++;
+                if (isRunning && pollFailCount >= POLL_FAIL_RESET_THRESHOLD) {
+                    isRunning = false;
+                    setRunBtn("idle");
+                    appendOutput({ text: "[error] Output polling failed. Connection may have been lost. You can try Render again.", stream: "stderr" });
+                }
             }
         }
 
         function appendOutput(line) {
             const panel = document.getElementById("output-panel");
+            if (!panel) return;
             const span = document.createElement("span");
             span.className = `out-line ${line.stream === "stderr" ? "stderr" : ""}`;
             span.textContent = line.text;
@@ -2658,6 +2682,7 @@
 
         function appendBanner(type, text) {
             const panel = document.getElementById("output-panel");
+            if (!panel) return;
             const span = document.createElement("span");
             span.className = `out-banner ${type}`;
             span.textContent = text;
@@ -2666,7 +2691,8 @@
         }
 
         function clearOutput() {
-            document.getElementById("output-panel").innerHTML = "";
+            const panel = document.getElementById("output-panel");
+            if (panel) panel.innerHTML = "";
         }
 
         // ---------------------------------------------------------------------------
