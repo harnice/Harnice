@@ -195,7 +195,7 @@ def _validate_svg_symbol():
         pin_lines.append("<g>")
         pin_lines.append(
             f'  <circle class="pin" data-pin-name="{connector_name}" '
-            f'id="pin-{pin_id}" cx="{cx}" cy="{cy}" r="4" />'
+            f'id="pin-{pin_id}" cx="{cx}" cy="{cy}" r="5" />'
         )
         pin_lines.append(
             f'  <text class="connector-label" x="{cx}" y="{cy}" font-size="12" '

@@ -423,7 +423,7 @@
           contentChildren.forEach(function (child) {
             startGroup.appendChild(child.cloneNode(true));
           });
-          startGroup.querySelectorAll('circle.pin').forEach(function (el) { el.setAttribute('r', '0.05'); });
+          /* Keep pin radius as-is on save; r=0.05 made generated connectors appear tiny when SVG used elsewhere */
           svg.appendChild(startGroup);
           const endGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
           endGroup.setAttribute('id', contentsEndId);
