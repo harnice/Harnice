@@ -2124,7 +2124,8 @@
             const systemLists = isSystemListsMode();
             const isHarnessGraph = productType === "harness" && ["available network", "chosen network", "flattened network"].includes(selectedFile);
             const isBlockDiagramSymbol = productType === "device" && selectedFile === "block diagram symbol";
-            const graphMode = isHarnessGraph || isBlockDiagramSymbol;
+            const isBlockDiagram = productType === "system" && selectedFile === "block diagram";
+            const graphMode = isHarnessGraph || isBlockDiagramSymbol || isBlockDiagram;
             const documentMode = !featureTree && !systemLists && !graphMode;
 
             const documentPanel = document.getElementById("document-view-panel");
