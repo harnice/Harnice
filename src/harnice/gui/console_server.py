@@ -27,6 +27,7 @@ from pathlib import Path
 
 from harnice.gui import system_viewer_core, system_viewer_server
 
+
 def _atomic_write_svg(path, content_bytes):
     """Write SVG content atomically to avoid corruption from partial writes."""
     path = Path(path)
@@ -733,12 +734,10 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
 
     def _serve_system_diagram_html(self):
         """Serve system diagram editor HTML for system products."""
-        if not _SYSTEM_DIAGRAM_EDITOR_HTML.exists():
-            self.send_error(500, "system-diagram-editor.html not found")
+        if not _SYSTEM_DIAGRAM_HTML.exists():
+            self.send_error(500, "system_diagram_editor.html not found")
             return
-        self._send_bytes(
-            _SYSTEM_DIAGRAM_EDITOR_HTML.read_bytes(), "text/html; charset=utf-8"
-        )
+        self._send_bytes(_SYSTEM_DIAGRAM_HTML.read_bytes(), "text/html; charset=utf-8")
 
     def _block_diagram_symbol_api_guard(self):
         """Return None if block diagram symbol API is allowed (device project), else send 404 and return True."""
