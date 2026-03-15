@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 80" width="75" height="80">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 95 80" width="95" height="80">
   <g id="726787-rev2-contents-start">
-    <rect x="0" y="0" width="50" height="60" fill="#0b301e" stroke="var(--text)" id="sde-1773592921981-6vvg8jo" class=""/>
-    <circle class="pin" data-pin-name="in1" cx="0" cy="20" r="5" id="sde-1773592877570-1m5bewz" style="fill: var(--accent);"/>
-    <circle class="pin" data-pin-name="in2" cx="0" cy="40" r="5" id="sde-1773592877570-nuq0anm" style="fill: var(--accent);"/>
-    <circle class="pin" data-pin-name="out1" cx="50" cy="20" r="5" id="sde-1773592877570-pavumk5" style="fill: var(--accent);"/>
-    <circle class="pin" data-pin-name="out2" cx="50" cy="40" r="5" id="sde-1773592877570-6ehs22p" style="fill: var(--accent);"/>
+    <rect x="0" y="0" width="70" height="60" fill="#251c45" stroke="var(--text)" id="sde-1773593669608-k5j3qbv" class=""/>
+    <circle class="connector" data-pin-name="in1" cx="0" cy="20" r="0.1" fill="black" id="sde-1773593640716-c6ho9q5" style=""/>
+    <circle class="connector" data-pin-name="in2" cx="0" cy="40" r="0.1" fill="black" id="sde-1773593640716-r3fk1gx" style=""/>
+    <circle class="connector" data-pin-name="out1" cx="70" cy="20" r="0.1" fill="black" id="sde-1773593640716-ufyulfi" style=""/>
+    <circle class="connector" data-pin-name="out2" cx="70" cy="40" r="0.1" fill="black" id="sde-1773593640716-yw7uco6" style=""/>
   </g>
   <g id="726787-rev2-contents-end"></g>
 </svg>

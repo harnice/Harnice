@@ -145,7 +145,7 @@ def _validate_svg_symbol():
     for m in re.finditer(r"<circle\s([^>]+)>", svg_text):
         attrs = m.group(1)
         class_match = re.search(r'class\s*=\s*["\']([^"\']*)["\']', attrs, re.I)
-        if not class_match or "pin" not in class_match.group(1):
+        if not class_match or "connector" not in class_match.group(1):
             continue
         name_match = re.search(r'data-pin-name\s*=\s*["\']([^"\']+)["\']', attrs, re.I)
         if name_match:
@@ -171,7 +171,7 @@ def _validate_svg_symbol():
     for m in re.finditer(r"<circle\s([^>]+)>", svg_text):
         attrs = m.group(1)
         class_match = re.search(r'class\s*=\s*["\']([^"\']*)["\']', attrs, re.I)
-        if not class_match or "pin" not in class_match.group(1):
+        if not class_match or "connector" not in class_match.group(1):
             continue
         cy_match = re.search(r'cy\s*=\s*["\']?([\d.-]+)', attrs)
         if cy_match:
@@ -193,8 +193,8 @@ def _validate_svg_symbol():
         )
         cx, cy = 50, next_y
         pin_lines.append(
-            f'  <circle class="pin" data-pin-name="{connector_name}" '
-            f'id="pin-{pin_id}" cx="{cx}" cy="{cy}" r="5" />'
+            f'  <circle class="connector" data-pin-name="{connector_name}" '
+            f'id="pin-{pin_id}" cx="{cx}" cy="{cy}" r="0.1" fill="black" />'
         )
         next_y += pin_spacing
 
