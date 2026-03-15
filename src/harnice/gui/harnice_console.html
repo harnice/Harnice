@@ -1407,40 +1407,14 @@
         }
 
         .btn.active-tool {
-            background: var(--accent2);
-            color: var(--bg);
-        }
-
-        .btn.active-tool {
             background: var(--bg4);
             border: 1px solid var(--accent);
             color: var(--accent);
         }
 
         #top-toolbar-slot .btn.active-tool {
-            background: var(--accent2);
-            color: var(--bg);
-        }
-
-        .btn.active-tool {
-            background: var(--accent2);
-            color: #fff;
-        }
-
-        .btn.active-tool {
-            background: var(--accent2);
-            color: var(--bg);
-        }
-
-        .btn.active-tool {
-            background: var(--accent2);
-            color: #fff;
-        }
-
-        .btn.active-tool {
-            background: var(--bg4);
-            border-color: var(--accent);
-            color: var(--accent);
+            border-color: #d4a017;
+            color: #d4a017;
         }
 
         #run-btn {
@@ -1842,6 +1816,15 @@
                 { action: "undo", payload: {}, label: "↩ Undo" },
                 { action: "redo", payload: {}, label: "↪ Redo" },
             ]
+            ,
+            "block diagram": [
+                { action: "setTool", payload: { tool: "select" }, label: "▶ Select" },
+                { action: "setTool", payload: { tool: "wire-harness" }, label: "Harness" },
+                { action: "setTool", payload: { tool: "place" }, label: "＋ Place" },
+                { action: "fitView", payload: {}, label: "Fit View" },
+                { action: "undo", payload: {}, label: "↩ Undo" },
+                { action: "redo", payload: {}, label: "↪ Redo" }
+            ]
         };
 
         let saveTimer = null;
@@ -1858,13 +1841,25 @@
         let symbolEditorTool = "select";
         let symbolEditorSnap = true;
         let symbolEditorSaveState = "saved";
+        let blockDiagramSaveState = "saved";
+        let blockDiagramTool = "select";
 
         function isFeatureTreeMode() {
             return selectedFile === MODE_FEATURE_TREE;
         }
 
         function isSystemListsMode() {
-            return productType === "system" && selectedFile !== MODE_FEATURE_TREE;
+            return productType === "system" &&
+                selectedFile !== MODE_FEATURE_TREE &&
+                selectedFile !== "block diagram";
+        }
+
+        function updateBlockDiagramToolbarActive() {
+            const slot = document.getElementById("top-toolbar-slot");
+            if (!slot || selectedFile !== "block diagram") return;
+            slot.querySelectorAll(".btn[data-tool]").forEach(function (b) {
+                b.classList.toggle("active-tool", b.dataset.tool === blockDiagramTool);
+            });
         }
 
         function isSymbolEditorMode() {
@@ -1990,9 +1985,10 @@
                             const btn = document.createElement("button");
                             btn.type = "button";
                             btn.className = "btn";
-                            if (item.action === "setTool" && item.payload.tool) {
+                            if (item.action === "setTool" && item.payload && item.payload.tool) {
                                 btn.dataset.tool = item.payload.tool;
-                                if (symbolEditorTool === item.payload.tool) btn.classList.add("active-tool");
+                                if (selectedFile === "block diagram" && blockDiagramTool === item.payload.tool) btn.classList.add("active-tool");
+                                if (selectedFile === "block diagram symbol" && symbolEditorTool === item.payload.tool) btn.classList.add("active-tool");
                             }
                             if (item.action === "toggleSnap") { btn.dataset.snap = "1"; if (symbolEditorSnap) btn.classList.add("active-tool"); }
                             btn.textContent = item.label;
@@ -2003,6 +1999,9 @@
                             };
                             slot.appendChild(btn);
                         });
+                        if (selectedFile === "block diagram") {
+                            updateBlockDiagramToolbarActive();
+                        }
                     }
                 }
                 if (selectedFile === "available network") {
@@ -2151,6 +2150,11 @@
                         if (!iframeLoaded || !graphIframe.src.includes("/block-diagram-symbol-editor")) {
                             graphIframe.src = base;
                         }
+                    } else if (selectedFile === "block diagram") {
+                        const base = "/system-diagram-editor";
+                        if (!iframeLoaded || !graphIframe.src.includes("/system-diagram-editor")) {
+                            graphIframe.src = base;
+                        }
                     } else {
                         const tab = selectedFile === "available network" ? "available" :
                             selectedFile === "chosen network" ? "chosen" : "flattened";
@@ -2176,6 +2180,25 @@
                 graphIframe.contentWindow.postMessage({ type: "harnice-graph-tab", tab: tab }, "*");
             } catch (_) { }
         }
+
+        // ---------------------------------------------------------------------------
+        // Block diagram iframe: tool state for toolbar active button
+        // ---------------------------------------------------------------------------
+        window.addEventListener("message", function (e) {
+            if (!e.data) return;
+            if (e.data.type === "sde-tool" && typeof e.data.tool === "string") {
+                blockDiagramTool = e.data.tool;
+                updateBlockDiagramToolbarActive();
+            }
+            if (e.data.type === "sde-status" && selectedFile === "block diagram") {
+                blockDiagramSaveState = e.data.dirty ? "unsaved" : "saved";
+                const el = document.getElementById("save-indicator");
+                if (el) {
+                    el.className = blockDiagramSaveState;
+                    el.textContent = blockDiagramSaveState === "saved" ? "Saved" : "Unsaved";
+                }
+            }
+        });
 
         // ---------------------------------------------------------------------------
         // Init
@@ -2300,6 +2323,10 @@
                         pill.id = "save-indicator";
                         pill.className = symbolEditorSaveState;
                         pill.textContent = symbolEditorSaveState === "saved" ? "Saved" : "Unsaved";
+                    } else if (label === "block diagram") {
+                        pill.id = "save-indicator";
+                        pill.className = blockDiagramSaveState;
+                        pill.textContent = blockDiagramSaveState === "saved" ? "Saved" : "Unsaved";
                     } else {
                         pill.className = "status-pill";
                         pill.textContent = "Read Only";
@@ -2324,7 +2351,10 @@
             applyView();
             if (label === MODE_FEATURE_TREE) {
                 loadCode();
-            } else if (wasNetwork) {
+            } else if (
+                wasNetwork &&
+                (label === "available network" || label === "chosen network" || label === "flattened network")
+            ) {
                 sendGraphTab(fileLabelToTab(label));
             }
         }
