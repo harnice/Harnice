@@ -148,6 +148,63 @@
             min-width: 8px;
         }
 
+        /* Block diagram symbol ribbon: sectioned layout with headings */
+        #top-toolbar-slot.tb-symbol-ribbon {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            flex-wrap: nowrap;
+        }
+
+        .tb-ribbon-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 12px;
+            border-right: 1px solid var(--border);
+        }
+
+        .tb-ribbon-section.tb-build-section {
+            min-width: 220px;
+        }
+
+        .tb-ribbon-section.tb-build-section .tb-ribbon-section-buttons {
+            gap: 4px 16px;
+        }
+
+        .tb-ribbon-section-buttons .btn.tb-btn-span-2 {
+            grid-row: span 2;
+        }
+
+        .tb-ribbon-section:last-child {
+            border-right: none;
+        }
+
+        .tb-ribbon-section-heading {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            text-transform: none;
+            white-space: nowrap;
+        }
+
+        .tb-ribbon-section-buttons {
+            display: grid;
+            gap: 4px 8px;
+        }
+
+        .tb-ribbon-section-buttons.grid-2 {
+            grid-template-columns: repeat(2, auto);
+        }
+
+        .tb-ribbon-section-buttons.grid-3 {
+            grid-template-columns: repeat(3, auto);
+        }
+
+        .tb-ribbon-section-buttons .btn {
+            white-space: nowrap;
+        }
+
         #main {
             display: flex;
             flex: 1;
@@ -1863,41 +1920,90 @@
             } else if (isSystemListsMode()) {
                 /* Single toolbar ribbon is inside the system list panel (#sl-ribbon) */
             } else {
-                if (selectedFile === "block diagram symbol") {
-                    const hint = document.createElement("span");
-                    hint.className = "tb-hint";
-                    hint.style.cssText = "font-size:12px;color:var(--text-dim);margin-right:12px;";
-                    hint.textContent = "build your block diagram graphic with the origin at top-left";
-                    slot.appendChild(hint);
-                }
-                const spec = TOOLBAR_SPEC[selectedFile];
                 const graphIframe = document.getElementById("graph-editor-iframe");
-                if (spec && Array.isArray(spec)) {
-                    spec.forEach(function (item) {
-                        const btn = document.createElement("button");
-                        btn.type = "button";
-                        btn.className = "btn";
-                        if (item.action === "setTool" && item.payload.tool) {
-                            btn.dataset.tool = item.payload.tool;
-                            if (selectedFile === "block diagram symbol" && symbolEditorTool === item.payload.tool) {
-                                btn.classList.add("active-tool");
-                            }
+                if (selectedFile === "block diagram symbol") {
+                    slot.className = "tb-symbol-ribbon";
+                    const SYMBOL_RIBBON = [
+                        {
+                            heading: "Draw symbol with origin at the top left", grid: "grid-2", sectionClass: "tb-build-section", items: [
+                                { action: "undo", payload: {}, label: "↩ Undo" },
+                                { action: "redo", payload: {}, label: "↪ Redo" },
+                                { action: "toggleSnap", payload: {}, label: "⊞ Snap", snap: true },
+                                { action: "fitView", payload: {}, label: "Fit View" }
+                            ]
+                        },
+                        {
+                            heading: "Layers", grid: "grid-2", items: [
+                                { action: "bringToFront", payload: {}, label: "⊤ Front" },
+                                { action: "bringForward", payload: {}, label: "↑ Fwd" },
+                                { action: "sendToBack", payload: {}, label: "⊥ To Back" },
+                                { action: "sendBackward", payload: {}, label: "↓ Back" }
+                            ]
+                        },
+                        {
+                            heading: "Primitives", grid: "grid-3", items: [
+                                { action: "setTool", payload: { tool: "pin" }, label: "◉ Connector", tool: "pin", rowSpan: 2 },
+                                { action: "setTool", payload: { tool: "line" }, label: "╱ Line", tool: "line" },
+                                { action: "setTool", payload: { tool: "circle" }, label: "○ Circle", tool: "circle" },
+                                { action: "setTool", payload: { tool: "text" }, label: "T Text", tool: "text" },
+                                { action: "setTool", payload: { tool: "rect" }, label: "▭ Rect", tool: "rect" }
+                            ]
                         }
-                        if (item.action === "toggleSnap" && selectedFile === "block diagram symbol") {
-                            btn.dataset.snap = "1";
-                            if (symbolEditorSnap) btn.classList.add("active-tool");
-                        }
-                        btn.textContent = item.label;
-                        btn.onclick = function () {
-                            if (graphIframe && graphIframe.contentWindow) {
-                                try {
-                                    graphIframe.contentWindow.postMessage(
-                                        { type: "harnice-graph-action", action: item.action, ...item.payload }, "*");
-                                } catch (_) { }
+                    ];
+                    SYMBOL_RIBBON.forEach(function (sec) {
+                        const section = document.createElement("div");
+                        section.className = "tb-ribbon-section" + (sec.sectionClass ? " " + sec.sectionClass : "");
+                        const heading = document.createElement("div");
+                        heading.className = "tb-ribbon-section-heading";
+                        heading.textContent = sec.heading;
+                        section.appendChild(heading);
+                        const btns = document.createElement("div");
+                        btns.className = "tb-ribbon-section-buttons " + sec.grid;
+                        sec.items.forEach(function (item) {
+                            if (item === null) {
+                                const spacer = document.createElement("span");
+                                spacer.style.minWidth = "1px";
+                                btns.appendChild(spacer);
+                            } else {
+                                const btn = document.createElement("button");
+                                btn.type = "button";
+                                btn.className = "btn" + (item.rowSpan === 2 ? " tb-btn-span-2" : "");
+                                if (item.tool) { btn.dataset.tool = item.tool; if (symbolEditorTool === item.tool) btn.classList.add("active-tool"); }
+                                if (item.snap) { btn.dataset.snap = "1"; if (symbolEditorSnap) btn.classList.add("active-tool"); }
+                                btn.textContent = item.label;
+                                btn.onclick = function () {
+                                    if (graphIframe && graphIframe.contentWindow) {
+                                        try { graphIframe.contentWindow.postMessage({ type: "harnice-graph-action", action: item.action, ...item.payload }, "*"); } catch (_) { }
+                                    }
+                                };
+                                btns.appendChild(btn);
                             }
-                        };
-                        slot.appendChild(btn);
+                        });
+                        section.appendChild(btns);
+                        slot.appendChild(section);
                     });
+                } else {
+                    slot.className = "";
+                    const spec = TOOLBAR_SPEC[selectedFile];
+                    if (spec && Array.isArray(spec)) {
+                        spec.forEach(function (item) {
+                            const btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "btn";
+                            if (item.action === "setTool" && item.payload.tool) {
+                                btn.dataset.tool = item.payload.tool;
+                                if (symbolEditorTool === item.payload.tool) btn.classList.add("active-tool");
+                            }
+                            if (item.action === "toggleSnap") { btn.dataset.snap = "1"; if (symbolEditorSnap) btn.classList.add("active-tool"); }
+                            btn.textContent = item.label;
+                            btn.onclick = function () {
+                                if (graphIframe && graphIframe.contentWindow) {
+                                    try { graphIframe.contentWindow.postMessage({ type: "harnice-graph-action", action: item.action, ...item.payload }, "*"); } catch (_) { }
+                                }
+                            };
+                            slot.appendChild(btn);
+                        });
+                    }
                 }
                 if (selectedFile === "available network") {
                     const sep = document.createElement("div");
