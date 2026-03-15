@@ -83,18 +83,26 @@ def file_structure():
         f"{state.partnumber('pn')}.svg": "block diagram symbol",
     }
 
+
 def generate_structure():
     pass
+
 
 def _ensure_svg_symbol_exists():
     """Create a minimal placeholder SVG if the symbol file does not exist."""
     path = fileio.path("block diagram symbol")
     if os.path.exists(path):
         return
+    contents_id = f"{state.partnumber('pn')}-contents-start"
     view_box = "0 0 100 80"
     root = ET.Element("svg", xmlns="http://www.w3.org/2000/svg", viewBox=view_box)
     root.set("data-bbox", view_box)
-    g = ET.SubElement(root, "g", attrib={"class": "component device"})
+    g = ET.SubElement(
+        root,
+        "g",
+        attrib={"id": contents_id, "class": "component device"},
+    )
+    ET.SubElement(root, "g", attrib={"id": f"{state.partnumber('pn')}-contents-end"})
     ET.SubElement(
         g,
         "rect",

@@ -673,12 +673,26 @@ class FeatureTreeHandler(http.server.BaseHTTPRequestHandler):
         path = Path(fileio.path("block diagram symbol"))
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                pn, _ = _state.pn_and_rev()
+                contents_id = f"{pn}-contents-start" if pn else "symbol-contents-start"
+            except Exception:
+                contents_id = "symbol-contents-start"
             view_box = "0 0 100 80"
             root = ET.Element(
                 "svg", xmlns="http://www.w3.org/2000/svg", viewBox=view_box
             )
             root.set("data-bbox", view_box)
-            g = ET.SubElement(root, "g", attrib={"class": "component device"})
+            g = ET.SubElement(
+                root,
+                "g",
+                attrib={"id": contents_id, "class": "component device"},
+            )
+            ET.SubElement(
+                root,
+                "g",
+                attrib={"id": contents_id.replace("-contents-start", "-contents-end")},
+            )
             tree = ET.ElementTree(root)
             ET.indent(tree, space="  ")
             with open(path, "wb") as f:

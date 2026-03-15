@@ -1,1 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 90" width="70" height="90"><g class="component device" id="sde-1773548891147-unxwges"/><rect x="0" y="0" width="50" height="70" fill="none" stroke="var(--text)" id="sde-1773548895687-5474h3y" class=""/><g id="sde-1773548904379-96orb9a"><circle cx="0" cy="20" r="0.05" class="pin" data-pin-name="J1"/></g><g id="sde-1773548907014-fu06wg6"><circle cx="0" cy="50" r="0.05" class="pin" data-pin-name="J2"/></g></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 80" width="90" height="80">
+  <g id="726787-contents-start">
+    <rect x="0" y="0" width="70" height="60" fill="#0b0b1d" stroke="var(--text)" id="sde-1773550093115-zv4xyn8" class="selected"/>
+    <g id="sde-1773550095935-hhqpq50">
+      <circle cx="0" cy="10" r="0.05" class="pin" data-pin-name="j1"/>
+    </g>
+    <g id="sde-1773550098416-5lb7zyt">
+      <circle cx="0" cy="40" r="0.05" class="pin" data-pin-name="j2"/>
+    </g>
+  </g>
+  <g id="726787-contents-end"></g>
+</svg>
