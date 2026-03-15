@@ -375,6 +375,13 @@
     #overlay button.secondary:hover {
       background: var(--bg4);
     }
+
+    /* Junction dots: 3+ wires meeting */
+    .junction-dot {
+      fill: #c73652;
+      stroke: none;
+      pointer-events: none;
+    }
   </style>
 </head>
 
@@ -472,6 +479,7 @@
     //  Constants
     // ─────────────────────────────────────────────
     const GRID = 10;
+    const SNAP_THRESHOLD = GRID * 1.5;
     const ZOOM_MIN = 0.05;
     const ZOOM_MAX = 50;
     const ZOOM_FACTOR = 1.12;
@@ -515,7 +523,7 @@
       // Element drag (nudge / mouse-drag move)
       elemDrag: { active: false, startSX: 0, startSY: 0, lastWX: 0, lastWY: 0, hasMoved: false },
       // Wire drawing (harness)
-      wireDraw: { active: false, tool: null, startX: 0, startY: 0, bendFirst: 'horizontal' },
+      wireDraw: { active: false, tool: null, startX: 0, startY: 0, bendFirst: 'horizontal', startPinId: null, endPinId: null },
     };
 
     // ─────────────────────────────────────────────
@@ -571,6 +579,66 @@
       };
     }
     function snap(v) { return Math.round(v / GRID) * GRID; }
+
+    const SNAP_THRESHOLD_PX = 12;  // screen pixels for pin/wire snap (scaled by zoom)
+
+    /** Accumulate translate from element up to viewport */
+    function getWorldPos(el, x, y) {
+      let cx = x, cy = y;
+      let p = el.parentElement;
+      while (p && p !== viewport) {
+        const m = p.getAttribute?.('transform')?.match(/translate\(([^,]+),([^)]+)\)/);
+        if (m) { cx += +m[1]; cy += +m[2]; }
+        p = p.parentElement;
+      }
+      return { x: cx, y: cy };
+    }
+
+    /** Collect pin centers and wire endpoints for snapping */
+    function getAllSnapPoints() {
+      const points = [];
+      const walk = (parent) => {
+        for (const el of parent.children) {
+          if (el.id === 'doc-border' || el.id === 'wire-preview' || el.id === 'junction-dots') continue;
+          if (el.classList?.contains('pin')) {
+            const cx = +el.getAttribute('cx'), cy = +el.getAttribute('cy');
+            const pos = getWorldPos(el, cx, cy);
+            points.push({ x: pos.x, y: pos.y, type: 'pin', id: el.id });
+          }
+          if (el.tagName === 'line' && el.classList?.contains?.('wire') && el.id) {
+            const x1 = +el.getAttribute('x1'), y1 = +el.getAttribute('y1');
+            const x2 = +el.getAttribute('x2'), y2 = +el.getAttribute('y2');
+            points.push({ x: x1, y: y1, type: 'wire-end', wireId: el.id });
+            if (x1 !== x2 || y1 !== y2) points.push({ x: x2, y: y2, type: 'wire-end', wireId: el.id });
+          }
+          if (el.children?.length) walk(el);
+        }
+      };
+      walk(viewport);
+      return points;
+    }
+
+    /** Snap to nearest pin/wire-end within threshold (in world units), else grid */
+    function snapToNearest(wx, wy) {
+      const threshold = SNAP_THRESHOLD_PX / state.zoom;  // world units
+      const gridSnap = { x: snap(wx), y: snap(wy), type: 'grid', pinId: null };
+      const points = getAllSnapPoints();
+      let best = gridSnap;
+      let bestDist = Infinity;
+      for (const pt of points) {
+        const d = Math.hypot(wx - pt.x, wy - pt.y);
+        if (d < bestDist && d <= threshold) {
+          bestDist = d;
+          best = {
+            x: Math.round(pt.x),
+            y: Math.round(pt.y),
+            type: pt.type,
+            pinId: pt.type === 'pin' ? pt.id : null
+          };
+        }
+      }
+      return best;
+    }
 
     // ─────────────────────────────────────────────
     //  Viewport / grid
@@ -644,6 +712,7 @@
       markDirty();
       scheduleNetlistRebuild();
       updateUndoRedoUI();
+      updateJunctionDots();
     }
     function undo() {
       if (!state.undoStack.length) return;
@@ -651,6 +720,7 @@
       cmd.undo();
       state.redoStack.push(cmd);
       markDirty(); scheduleNetlistRebuild(); updateUndoRedoUI();
+      updateJunctionDots();
       showToast(`Undo: ${cmd.type}`);
     }
     function redo() {
@@ -659,6 +729,7 @@
       cmd.do();
       state.undoStack.push(cmd);
       markDirty(); scheduleNetlistRebuild(); updateUndoRedoUI();
+      updateJunctionDots();
       showToast(`Redo: ${cmd.type}`);
     }
     function updateUndoRedoUI() {
@@ -871,6 +942,7 @@
         const x1 = el.getAttribute('x1'), y1 = el.getAttribute('y1');
         const x2 = el.getAttribute('x2'), y2 = el.getAttribute('y2');
         const len = Math.round(Math.hypot(x2 - x1, y2 - y1));
+        const df = el.getAttribute('data-from') || '', dt = el.getAttribute('data-to') || '';
         html += `<hr class="props-sep">`;
         html += `<label>Start (x1, y1)</label><div class="props-row">
       <input type="number" id="prop-x1" value="${x1}" step="${GRID}">
@@ -881,6 +953,9 @@
       <input type="number" id="prop-y2" value="${y2}" step="${GRID}">
     </div>`;
         html += `<label>Length (read-only)</label><input type="text" value="${len} units" readonly style="opacity:.5">`;
+        html += `<hr class="props-sep">`;
+        html += `<label>From (pin)</label><input type="text" id="prop-data-from" value="${escHtml(df)}" placeholder="pin id or empty">`;
+        html += `<label>To (pin)</label><input type="text" id="prop-data-to" value="${escHtml(dt)}" placeholder="pin id or empty">`;
       } else if (tag === 'g') {
         const ref = el.getAttribute('data-ref') || '';
         const sym = el.getAttribute('data-symbol') || '';
@@ -926,6 +1001,8 @@
       };
       wire('prop-x1', 'x1'); wire('prop-y1', 'y1');
       wire('prop-x2', 'x2'); wire('prop-y2', 'y2');
+      wire('prop-data-from', 'data-from');
+      wire('prop-data-to', 'data-to');
 
       const refInp = document.getElementById('prop-ref');
       if (refInp) {
@@ -1057,7 +1134,8 @@
       const g = ensureWirePreviewGroup();
       const wx = state.mouse.wx, wy = state.mouse.wy;
       const x0 = wd.startX, y0 = wd.startY;
-      const x1 = snap(wx), y1 = snap(wy);
+      const endSnap = snapToNearest(wx, wy);
+      const x1 = endSnap.x, y1 = endSnap.y;
       const segs = orthogonalSegments(x0, y0, x1, y1, wd.bendFirst || 'horizontal');
       const stroke = WIRE_STROKE[wd.tool] || '#888';
       g.innerHTML = '';
@@ -1073,22 +1151,103 @@
     }
 
     function startWireDraw(tool, wx, wy) {
-      state.wireDraw = { active: true, tool, startX: snap(wx), startY: snap(wy), bendFirst: 'horizontal' };
+      const startSnap = snapToNearest(wx, wy);
+      state.wireDraw = {
+        active: true, tool,
+        startX: startSnap.x, startY: startSnap.y,
+        bendFirst: 'horizontal',
+        startPinId: startSnap.pinId || null,
+        endPinId: null
+      };
       ensureWirePreviewGroup();
       updateWirePreview();
       wrap.focus();
     }
 
+    /** Find T-junction intersections: new segments crossing existing wires. Returns [{wireEl, px, py}] */
+    function findTJunctionSplits(newSegs) {
+      const splits = [];
+      const seen = new Set();
+      const existingWires = Array.from(viewport.querySelectorAll('line.wire[id]'));
+      for (const wireEl of existingWires) {
+        if (wireEl.id === 'wire-preview') continue;
+        const x1 = +wireEl.getAttribute('x1'), y1 = +wireEl.getAttribute('y1');
+        const x2 = +wireEl.getAttribute('x2'), y2 = +wireEl.getAttribute('y2');
+        for (const seg of newSegs) {
+          const [a, b, c, d] = seg;
+          let px, py;
+          if (b === d) {
+            if (x1 === x2) {
+              px = x1; py = b;
+              const onNew = Math.min(a, c) <= px && px <= Math.max(a, c);
+              const onExisting = Math.min(y1, y2) < py && py < Math.max(y1, y2);
+              if (onNew && onExisting) {
+                const key = `${wireEl.id}:${px},${py}`;
+                if (!seen.has(key)) { seen.add(key); splits.push({ wireEl, px, py }); }
+              }
+            }
+          } else if (a === c) {
+            if (y1 === y2) {
+              px = a; py = y1;
+              const onNew = Math.min(b, d) <= py && py <= Math.max(b, d);
+              const onExisting = Math.min(x1, x2) < px && px < Math.max(x1, x2);
+              if (onNew && onExisting) {
+                const key = `${wireEl.id}:${px},${py}`;
+                if (!seen.has(key)) { seen.add(key); splits.push({ wireEl, px, py }); }
+              }
+            }
+          }
+        }
+      }
+      return splits;
+    }
+
     function commitWireDraw(wx, wy) {
       const wd = state.wireDraw;
       if (!wd.active || !wd.tool) return;
+      const endSnap = snapToNearest(wx, wy);
       const x0 = wd.startX, y0 = wd.startY;
-      const x1 = snap(wx), y1 = snap(wy);
+      const x1 = endSnap.x, y1 = endSnap.y;
       const segs = orthogonalSegments(x0, y0, x1, y1, wd.bendFirst || 'horizontal');
       if (segs.length === 0) { cancelWireDraw(); return; }
       const wireClass = WIRE_CLASS[wd.tool];
       const stroke = WIRE_STROKE[wd.tool];
-      const cmds = segs.map(([a, b, c, d]) => {
+
+      const tSplits = findTJunctionSplits(segs);
+      const cmds = [];
+
+      for (const { wireEl, px, py } of tSplits) {
+        const x1w = +wireEl.getAttribute('x1'), y1w = +wireEl.getAttribute('y1');
+        const x2w = +wireEl.getAttribute('x2'), y2w = +wireEl.getAttribute('y2');
+        const c1 = cmdInsertElement(viewport, (() => {
+          const l = document.createElementNS(NS, 'line');
+          l.setAttribute('id', wireUuid());
+          l.setAttribute('class', wireEl.getAttribute('class') || wireClass);
+          l.setAttribute('x1', x1w); l.setAttribute('y1', y1w);
+          l.setAttribute('x2', px); l.setAttribute('y2', py);
+          l.setAttribute('stroke', wireEl.getAttribute('stroke') || stroke);
+          l.setAttribute('stroke-width', wireEl.getAttribute('stroke-width') || '2');
+          if (wireEl.hasAttribute('data-from')) l.setAttribute('data-from', wireEl.getAttribute('data-from'));
+          return l;
+        })());
+        const c2 = cmdInsertElement(viewport, (() => {
+          const l = document.createElementNS(NS, 'line');
+          l.setAttribute('id', wireUuid());
+          l.setAttribute('class', wireEl.getAttribute('class') || wireClass);
+          l.setAttribute('x1', px); l.setAttribute('y1', py);
+          l.setAttribute('x2', x2w); l.setAttribute('y2', y2w);
+          l.setAttribute('stroke', wireEl.getAttribute('stroke') || stroke);
+          l.setAttribute('stroke-width', wireEl.getAttribute('stroke-width') || '2');
+          if (wireEl.hasAttribute('data-to')) l.setAttribute('data-to', wireEl.getAttribute('data-to'));
+          return l;
+        })());
+        cmds.push(cmdDeleteElement(wireEl.id));
+        cmds.push(c1); cmds.push(c2);
+      }
+
+      const dataFrom = wd.startPinId || '';
+      const dataTo = endSnap.pinId || '';
+      segs.forEach(([a, b, c, d], i) => {
         const line = document.createElementNS(NS, 'line');
         line.setAttribute('id', wireUuid());
         line.setAttribute('class', wireClass);
@@ -1096,16 +1255,58 @@
         line.setAttribute('x2', c); line.setAttribute('y2', d);
         line.setAttribute('stroke', stroke);
         line.setAttribute('stroke-width', '2');
-        return cmdInsertElement(viewport, line);
+        if (segs.length === 1) {
+          if (dataFrom) line.setAttribute('data-from', dataFrom);
+          if (dataTo) line.setAttribute('data-to', dataTo);
+        } else {
+          if (i === 0 && dataFrom) line.setAttribute('data-from', dataFrom);
+          if (i === segs.length - 1 && dataTo) line.setAttribute('data-to', dataTo);
+        }
+        cmds.push(cmdInsertElement(viewport, line));
       });
+
       executeCommand(cmdBatch('ADD_WIRE', cmds));
       cancelWireDraw();
     }
 
     function cancelWireDraw() {
-      state.wireDraw = { active: false, tool: null, startX: 0, startY: 0, bendFirst: 'horizontal' };
+      state.wireDraw = { active: false, tool: null, startX: 0, startY: 0, bendFirst: 'horizontal', startPinId: null, endPinId: null };
       const g = document.getElementById('wire-preview');
       if (g) g.innerHTML = '';
+    }
+
+    /** Render junction dots at points where 3+ wire segments meet */
+    function updateJunctionDots() {
+      let g = document.getElementById('junction-dots');
+      if (!g) {
+        g = document.createElementNS(NS, 'g');
+        g.setAttribute('id', 'junction-dots');
+        g.setAttribute('pointer-events', 'none');
+        viewport.appendChild(g);
+      }
+      g.innerHTML = '';
+      const pointCount = new Map();
+      const key = (x, y) => `${Math.round(x)},${Math.round(y)}`;
+      for (const el of viewport.querySelectorAll('line.wire')) {
+        if (el.closest('#wire-preview')) continue;
+        const x1 = +el.getAttribute('x1'), y1 = +el.getAttribute('y1');
+        const x2 = +el.getAttribute('x2'), y2 = +el.getAttribute('y2');
+        const k1 = key(x1, y1), k2 = key(x2, y2);
+        pointCount.set(k1, (pointCount.get(k1) || 0) + 1);
+        if (k1 !== k2) pointCount.set(k2, (pointCount.get(k2) || 0) + 1);
+      }
+      const JUNCTION_R = 2;
+      for (const [k, count] of pointCount) {
+        if (count >= 3) {
+          const [x, y] = k.split(',').map(Number);
+          const circle = document.createElementNS(NS, 'circle');
+          circle.setAttribute('class', 'junction-dot');
+          circle.setAttribute('cx', x);
+          circle.setAttribute('cy', y);
+          circle.setAttribute('r', JUNCTION_R);
+          g.appendChild(circle);
+        }
+      }
     }
 
     function setTool(tool) {
@@ -1426,6 +1627,7 @@
       clone.getElementById('viewport-transform')?.removeAttribute('transform');
       clone.getElementById('selection-overlay')?.remove();
       clone.getElementById('wire-preview')?.remove();
+      clone.getElementById('junction-dots')?.remove();
       clone.getElementById('grid-bg')?.remove();
       clone.getElementById('origin-marker')?.remove();
       clone.getElementById('xhair-h')?.remove();
@@ -1491,6 +1693,7 @@
         clearSelection();
         overlay.classList.add('hidden');
         renderDocBorder();
+        updateJunctionDots();
         updateTitleBar(); updateUndoRedoUI(); zoomFit();
         if (embedded && window.parent && window.parent !== window) {
           try { window.parent.postMessage({ type: 'sde-tool', tool: state.activeTool }, '*'); } catch (_) { }
@@ -1521,6 +1724,7 @@
         } catch (_) { }
         clearSelection();
         overlay.classList.add('hidden');
+        updateJunctionDots();
         updateTitleBar(); updateUndoRedoUI(); zoomFit();
       } catch (e) { if (e.name !== 'AbortError') console.error(e); }
     }
