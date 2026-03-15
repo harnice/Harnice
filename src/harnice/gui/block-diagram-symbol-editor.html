@@ -20,7 +20,7 @@
       --text-dim: #888;
       --accent: #4ec9b0;
       --grid: #333;
-      --origin: #666;
+      --origin: #555;
     }
 
     body {
@@ -287,38 +287,27 @@
       <svg id="svg-root" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 400 400"
         preserveAspectRatio="xMidYMid meet">
         <defs>
-          <!-- Major grid every 10 units, minor every 1 unit; crosshairs at 0,0 -->
+          <!-- Minor grid every 2 units -->
+          <pattern id="grid-minor" x="0" y="0" width="2" height="2" patternUnits="userSpaceOnUse">
+            <line x1="2" y1="0" x2="2" y2="2" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+            <line x1="0" y1="2" x2="2" y2="2" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+          </pattern>
+          <!-- Major grid every 10 units -->
+          <pattern id="grid-major" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <rect x="0" y="0" width="10" height="10" fill="url(#grid-minor)" />
+            <line x1="0" y1="0" x2="0" y2="10" stroke="var(--grid)" stroke-width="0.4" />
+            <line x1="0" y1="0" x2="10" y2="0" stroke="var(--grid)" stroke-width="0.4" />
+          </pattern>
           <pattern id="grid-pattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-            <!-- Minor gridlines (every 1 unit) -->
-            <line x1="1" y1="0" x2="1" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="2" y1="0" x2="2" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="3" y1="0" x2="3" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="4" y1="0" x2="4" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="5" y1="0" x2="5" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="6" y1="0" x2="6" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="7" y1="0" x2="7" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="8" y1="0" x2="8" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="9" y1="0" x2="9" y2="10" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="1" x2="10" y2="1" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="2" x2="10" y2="2" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="3" x2="10" y2="3" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="4" x2="10" y2="4" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="5" x2="10" y2="5" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="6" x2="10" y2="6" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="7" x2="10" y2="7" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="8" x2="10" y2="8" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <line x1="0" y1="9" x2="10" y2="9" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
-            <!-- Major gridlines (every 10 units, at 0 and 10) -->
-            <line x1="0" y1="0" x2="0" y2="10" stroke="var(--grid)" stroke-width="0.5" />
-            <line x1="0" y1="0" x2="10" y2="0" stroke="var(--grid)" stroke-width="0.5" />
+            <rect x="0" y="0" width="10" height="10" fill="url(#grid-major)" />
           </pattern>
         </defs>
         <g id="svg-viewport">
           <rect id="grid-bg" fill="url(#grid-pattern)" x="-5000" y="-5000" width="10000" height="10000" />
           <g id="origin-marker" pointer-events="none">
-            <line x1="-6" y1="0" x2="6" y2="0" stroke="var(--accent)" stroke-width="0.5" opacity="0.8" />
-            <line x1="0" y1="-6" x2="0" y2="6" stroke="var(--accent)" stroke-width="0.5" opacity="0.8" />
-            <circle cx="0" cy="0" r="1.5" fill="var(--accent)" opacity="0.8" />
+            <line x1="-5000" y1="0" x2="5000" y2="0" stroke="var(--origin)" stroke-width="0.5" opacity="0.8" />
+            <line x1="0" y1="-5000" x2="0" y2="5000" stroke="var(--origin)" stroke-width="0.5" opacity="0.8" />
+            <circle cx="0" cy="0" r="1.5" fill="var(--origin)" opacity="0.8" />
           </g>
           <g id="svg-content" />
           <rect id="rubber-band" visibility="hidden" />
@@ -385,8 +374,10 @@
           if (!content) return;
           const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
           svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-          const vb = content.firstElementChild ? getViewBox() : { x: 0, y: 0, w: 400, h: 400 };
+          const vb = content.firstElementChild ? getViewBoxForSave() : { x: 0, y: 0, w: 400, h: 400 };
           svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h);
+          svg.setAttribute('width', String(vb.w));
+          svg.setAttribute('height', String(vb.h));
           Array.from(content.children).forEach(function (child) {
             svg.appendChild(child.cloneNode(true));
           });
@@ -1648,6 +1639,20 @@
           y: bbox.y - pad,
           w: Math.max(bbox.width + pad * 2, 50),
           h: Math.max(bbox.height + pad * 2, 50),
+        };
+      }
+
+      /** ViewBox for save: origin at (0,0) so Inkscape ruler aligns. Content with negative coords is clipped. */
+      function getViewBoxForSave() {
+        const content = document.getElementById('svg-content');
+        if (!content || !content.firstElementChild) return { x: 0, y: 0, w: 400, h: 400 };
+        const bbox = content.getBBox();
+        const pad = 20;
+        return {
+          x: 0,
+          y: 0,
+          w: Math.max(50, bbox.x + bbox.width + pad),
+          h: Math.max(50, bbox.y + bbox.height + pad),
         };
       }
 

@@ -1863,6 +1863,13 @@
             } else if (isSystemListsMode()) {
                 /* Single toolbar ribbon is inside the system list panel (#sl-ribbon) */
             } else {
+                if (selectedFile === "block diagram symbol") {
+                    const hint = document.createElement("span");
+                    hint.className = "tb-hint";
+                    hint.style.cssText = "font-size:12px;color:var(--text-dim);margin-right:12px;";
+                    hint.textContent = "build your block diagram graphic with the origin at top-left";
+                    slot.appendChild(hint);
+                }
                 const spec = TOOLBAR_SPEC[selectedFile];
                 const graphIframe = document.getElementById("graph-editor-iframe");
                 if (spec && Array.isArray(spec)) {
