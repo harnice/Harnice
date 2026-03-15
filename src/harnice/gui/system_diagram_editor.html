@@ -27,6 +27,8 @@
       --red: #f44336;
       --orange: #ce9178;
       --gold: #d4a017;
+      --grid: #333;
+      --origin: #555;
     }
 
     body {
@@ -400,27 +402,38 @@
   <div id="canvas-wrap" tabindex="0">
     <svg id="schematic-svg" xmlns="http://www.w3.org/2000/svg" xmlns:schem="https://example.com/schema/v1">
       <defs>
-        <pattern id="grid-minor" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-          <circle cx="0" cy="0" r="0.6" fill="#3a3a3a" />
+        <!-- Minor grid every 2 units (matches block diagram symbol editor) -->
+        <pattern id="grid-minor" x="0" y="0" width="2" height="2" patternUnits="userSpaceOnUse">
+          <line x1="2" y1="0" x2="2" y2="2" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
+          <line x1="0" y1="2" x2="2" y2="2" stroke="var(--grid)" stroke-width="0.25" opacity="0.5" />
         </pattern>
-        <pattern id="grid-major" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-          <rect width="100" height="100" fill="url(#grid-minor)" />
-          <path d="M100,0 L0,0 0,100" fill="none" stroke="#303030" stroke-width="0.5" />
+        <!-- Major grid every 10 units -->
+        <pattern id="grid-major" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+          <rect width="10" height="10" fill="url(#grid-minor)" />
+          <line x1="0" y1="0" x2="0" y2="10" stroke="var(--grid)" stroke-width="0.4" />
+          <line x1="0" y1="0" x2="10" y2="0" stroke="var(--grid)" stroke-width="0.4" />
+        </pattern>
+        <pattern id="grid-pattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+          <rect width="10" height="10" fill="url(#grid-major)" />
         </pattern>
         <!-- Selection highlight marker (reused per selected element) -->
       </defs>
-      <g id="grid-bg-layer">
-        <rect x="-50000" y="-50000" width="100000" height="100000" fill="url(#grid-major)" pointer-events="none" />
-      </g>
       <g id="layer-graphics" class="layer graphics-layer"></g>
       <g id="layer-schematic" class="layer schematic-layer">
-        <g id="viewport" transform="translate(0,0) scale(1)"></g>
-        <!-- Selection overlay rendered above schematic content but inside SVG -->
-        <g id="selection-overlay" pointer-events="none"></g>
+        <g id="viewport-transform" transform="translate(0,0) scale(1)">
+          <rect id="grid-bg" fill="url(#grid-pattern)" x="-5000" y="-5000" width="15000" height="15000"
+            pointer-events="none" />
+          <g id="origin-marker" pointer-events="none">
+            <line x1="-5000" y1="0" x2="5000" y2="0" stroke="var(--origin)" stroke-width="0.5" opacity="0.8" />
+            <line x1="0" y1="-5000" x2="0" y2="5000" stroke="var(--origin)" stroke-width="0.5" opacity="0.8" />
+            <circle cx="0" cy="0" r="1.5" fill="var(--origin)" opacity="0.8" />
+          </g>
+          <g id="viewport"></g>
+          <g id="selection-overlay" pointer-events="none"></g>
+        </g>
       </g>
       <line id="xhair-h" x1="0" y1="0" x2="0" y2="0" stroke="#ffffff18" stroke-width="0.5" pointer-events="none" />
       <line id="xhair-v" x1="0" y1="0" x2="0" y2="0" stroke="#ffffff18" stroke-width="0.5" pointer-events="none" />
-      <g id="origin-marker" pointer-events="none"></g>
     </svg>
 
     <!-- Rubber-band rect (HTML overlay, easier than SVG for absolute coords) -->
@@ -510,6 +523,7 @@
     // ─────────────────────────────────────────────
     const wrap = document.getElementById('canvas-wrap');
     const svg = document.getElementById('schematic-svg');
+    const viewportTransform = document.getElementById('viewport-transform');
     const viewport = document.getElementById('viewport');
     const selOverlay = document.getElementById('selection-overlay');
     const overlay = document.getElementById('overlay');
@@ -563,34 +577,9 @@
     // ─────────────────────────────────────────────
     function applyViewport() {
       const { pan, zoom } = state;
-      viewport.setAttribute('transform', `translate(${pan.x},${pan.y}) scale(${zoom})`);
-      selOverlay.setAttribute('transform', `translate(${pan.x},${pan.y}) scale(${zoom})`);
-      updateGridPattern();
-      updateOriginMarker();
+      viewportTransform.setAttribute('transform', `translate(${pan.x},${pan.y}) scale(${zoom})`);
       statusZoom.textContent = `${Math.round(zoom * 100)}%`;
       refreshSelectionOverlay();
-    }
-
-    function updateGridPattern() {
-      const { pan, zoom } = state;
-      const minor = GRID * zoom, major = 100 * zoom;
-      const pm = document.getElementById('grid-minor');
-      pm.setAttribute('width', minor); pm.setAttribute('height', minor);
-      pm.setAttribute('x', pan.x % minor); pm.setAttribute('y', pan.y % minor);
-      pm.querySelector('circle').setAttribute('r', Math.max(0.4, Math.min(1.2, zoom * 0.6)));
-      const pM = document.getElementById('grid-major');
-      pM.setAttribute('width', major); pM.setAttribute('height', major);
-      pM.setAttribute('x', pan.x % major); pM.setAttribute('y', pan.y % major);
-      const mp = pM.querySelector('path');
-      mp.setAttribute('d', `M${major},0 L0,0 0,${major}`);
-      mp.setAttribute('stroke-width', Math.max(0.3, zoom * 0.5));
-    }
-
-    function updateOriginMarker() {
-      const g = document.getElementById('origin-marker');
-      const sx = state.pan.x, sy = state.pan.y, arm = 8;
-      g.innerHTML = `<line x1="${sx - arm}" y1="${sy}" x2="${sx + arm}" y2="${sy}" stroke="#ffffff22" stroke-width="1"/>
-                 <line x1="${sx}" y1="${sy - arm}" x2="${sx}" y2="${sy + arm}" stroke="#ffffff22" stroke-width="1"/>`;
     }
 
     function updateCrosshair(sx, sy) {
@@ -1434,10 +1423,10 @@
     // ─────────────────────────────────────────────
     function serializeSVG() {
       const clone = svg.cloneNode(true);
-      clone.getElementById('viewport')?.removeAttribute('transform');
+      clone.getElementById('viewport-transform')?.removeAttribute('transform');
       clone.getElementById('selection-overlay')?.remove();
       clone.getElementById('wire-preview')?.remove();
-      clone.getElementById('grid-bg-layer')?.remove();
+      clone.getElementById('grid-bg')?.remove();
       clone.getElementById('origin-marker')?.remove();
       clone.getElementById('xhair-h')?.remove();
       clone.getElementById('xhair-v')?.remove();
