@@ -1994,7 +1994,7 @@
               snapBeforePinDrag = appState.snapEnabled;
               sendSnap(true);
             }
-            dragStart = { x: pt.x, y: pt.y, hit: hit, snapBeforePinDrag: snapBeforePinDrag };
+            dragStart = { x: pt.x, y: pt.y, hit: hit, snapBeforePinDrag: snapBeforePinDrag, hasExceededThreshold: false };
             moveStartPositions = Array.from(appState.selection).map(function (id) {
               const el = document.getElementById(id);
               if (!el) return null;
@@ -2049,7 +2049,8 @@
               dy = snapped.y - origY;
             }
             var dragThreshold = 2;
-            if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
+            if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) dragStart.hasExceededThreshold = true;
+            if (dragStart.hasExceededThreshold) {
               moveStartPositions.forEach(function (p) {
                 if (p && p.el) translateElement(p.el, dx - (p.el._lastDx || 0), dy - (p.el._lastDy || 0));
                 if (p && p.el) {
