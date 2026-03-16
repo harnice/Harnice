@@ -1164,6 +1164,45 @@
       wrap.focus();
     }
 
+    const TOL = 1e-6;
+    function eq(a, b) { return Math.abs(a - b) < TOL; }
+    /** Find T-junction intersections: new segments crossing existing wires (perpendicular). Returns [{wireEl, px, py}] */
+    function findTJunctionSplits(newSegs) {
+      const splits = [];
+      const seen = new Set();
+      const existingWires = Array.from(viewport.querySelectorAll('line.wire')).filter(el => el.id && !el.closest('#wire-preview'));
+      for (const wireEl of existingWires) {
+        const x1 = +wireEl.getAttribute('x1'), y1 = +wireEl.getAttribute('y1');
+        const x2 = +wireEl.getAttribute('x2'), y2 = +wireEl.getAttribute('y2');
+        for (const seg of newSegs) {
+          const [a, b, c, d] = seg;
+          let px, py;
+          if (eq(b, d)) {
+            if (eq(x1, x2)) {
+              px = x1; py = b;
+              const onNew = Math.min(a, c) - TOL <= px && px <= Math.max(a, c) + TOL;
+              const onExisting = Math.min(y1, y2) - TOL < py && py < Math.max(y1, y2) + TOL;
+              if (onNew && onExisting) {
+                const key = `${wireEl.id}:${Math.round(px)},${Math.round(py)}`;
+                if (!seen.has(key)) { seen.add(key); splits.push({ wireEl, px, py }); }
+              }
+            }
+          } else if (eq(a, c)) {
+            if (eq(y1, y2)) {
+              px = a; py = y1;
+              const onNew = Math.min(b, d) - TOL <= py && py <= Math.max(b, d) + TOL;
+              const onExisting = Math.min(x1, x2) + TOL < px && px < Math.max(x1, x2) - TOL;
+              if (onNew && onExisting) {
+                const key = `${wireEl.id}:${Math.round(px)},${Math.round(py)}`;
+                if (!seen.has(key)) { seen.add(key); splits.push({ wireEl, px, py }); }
+              }
+            }
+          }
+        }
+      }
+      return splits;
+    }
+
     /** Wire segment: { el, axis:'h'|'v', fixed, freeMin, freeMax } — horizontal: fixed=Y, free=X; vertical: fixed=X, free=Y */
     function wireToSeg(el) {
       const x1 = +el.getAttribute('x1'), y1 = +el.getAttribute('y1');
@@ -1177,8 +1216,28 @@
     function rangesOverlapOrTouch(a, b) {
       return a.freeMax >= b.freeMin && b.freeMax >= a.freeMin;
     }
+    /** True if they only touch at a point (no overlapping range) */
+    function onlyTouchNoOverlap(a, b) {
+      const overlapMin = Math.max(a.freeMin, b.freeMin), overlapMax = Math.min(a.freeMax, b.freeMax);
+      return overlapMin >= overlapMax;
+    }
     function aContainsB(a, b) {
       return a.freeMin <= b.freeMin && b.freeMax <= a.freeMax;
+    }
+
+    /** Set of "x,y" keys where 3+ wire segments have an endpoint */
+    function getJunctionPoints(wireEls) {
+      const pointCount = new Map();
+      const key = (x, y) => `${Math.round(x)},${Math.round(y)}`;
+      for (const el of wireEls) {
+        const x1 = +el.getAttribute('x1'), y1 = +el.getAttribute('y1');
+        const x2 = +el.getAttribute('x2'), y2 = +el.getAttribute('y2');
+        pointCount.set(key(x1, y1), (pointCount.get(key(x1, y1)) || 0) + 1);
+        if (x1 !== x2 || y1 !== y2) pointCount.set(key(x2, y2), (pointCount.get(key(x2, y2)) || 0) + 1);
+      }
+      const junctions = new Set();
+      for (const [k, count] of pointCount) if (count >= 3) junctions.add(k);
+      return junctions;
     }
 
     /**
@@ -1198,6 +1257,7 @@
       while (changed) {
         changed = false;
         const current = Array.from(viewport.querySelectorAll('line.wire[id]')).filter(el => !el.closest('#wire-preview'));
+        const junctions = getJunctionPoints(current);
         const segs = current.map(wireToSeg).filter(Boolean);
         const groups = {};
         for (const s of segs) {
@@ -1223,6 +1283,11 @@
                 break;
               }
               if (rangesOverlapOrTouch(a, b)) {
+                if (onlyTouchNoOverlap(a, b)) {
+                  const touchCoord = a.freeMax === b.freeMin ? a.freeMax : a.freeMin;
+                  const touchKey = a.axis === 'h' ? `${Math.round(touchCoord)},${Math.round(a.fixed)}` : `${Math.round(a.fixed)},${Math.round(touchCoord)}`;
+                  if (junctions.has(touchKey)) continue;
+                }
                 const freeMin = Math.min(a.freeMin, b.freeMin), freeMax = Math.max(a.freeMax, b.freeMax);
                 const wireClass = a.el.getAttribute('class') || 'wire harness-wire';
                 const stroke = a.el.getAttribute('stroke') || '#3a6ea5';
@@ -1292,6 +1357,39 @@
       const wireClass = WIRE_CLASS[wd.tool];
       const stroke = WIRE_STROKE[wd.tool];
 
+      const tSplits = findTJunctionSplits(segs);
+      const tSplitCmds = [];
+      for (const { wireEl, px, py } of tSplits) {
+        const x1w = +wireEl.getAttribute('x1'), y1w = +wireEl.getAttribute('y1');
+        const x2w = +wireEl.getAttribute('x2'), y2w = +wireEl.getAttribute('y2');
+        const cDel = cmdDeleteElement(wireEl.id);
+        if (cDel) tSplitCmds.push(cDel);
+        tSplitCmds.push(cmdInsertElement(viewport, (() => {
+          const l = document.createElementNS(NS, 'line');
+          l.setAttribute('id', wireUuid());
+          l.setAttribute('class', wireEl.getAttribute('class') || wireClass);
+          l.setAttribute('x1', x1w); l.setAttribute('y1', y1w);
+          l.setAttribute('x2', px); l.setAttribute('y2', py);
+          l.setAttribute('stroke', wireEl.getAttribute('stroke') || stroke);
+          l.setAttribute('stroke-width', wireEl.getAttribute('stroke-width') || '2');
+          if (wireEl.hasAttribute('data-from')) l.setAttribute('data-from', wireEl.getAttribute('data-from'));
+          return l;
+        })()));
+        tSplitCmds.push(cmdInsertElement(viewport, (() => {
+          const l = document.createElementNS(NS, 'line');
+          l.setAttribute('id', wireUuid());
+          l.setAttribute('class', wireEl.getAttribute('class') || wireClass);
+          l.setAttribute('x1', px); l.setAttribute('y1', py);
+          l.setAttribute('x2', x2w); l.setAttribute('y2', y2w);
+          l.setAttribute('stroke', wireEl.getAttribute('stroke') || stroke);
+          l.setAttribute('stroke-width', wireEl.getAttribute('stroke-width') || '2');
+          if (wireEl.hasAttribute('data-to')) l.setAttribute('data-to', wireEl.getAttribute('data-to'));
+          return l;
+        })()));
+      }
+      const tSplitCmd = tSplitCmds.length ? cmdBatch('T_SPLIT', tSplitCmds) : null;
+      if (tSplitCmd) tSplitCmd.do();
+
       const placeCmds = [];
       const dataFrom = wd.startPinId || '';
       const dataTo = endSnap.pinId || '';
@@ -1316,7 +1414,7 @@
       placeCmd.do();
 
       const mergeCmd = runColinearMergePass();
-      const batchCmds = mergeCmd ? [placeCmd, mergeCmd] : [placeCmd];
+      const batchCmds = [tSplitCmd, placeCmd, mergeCmd].filter(Boolean);
       const compound = cmdBatch('ADD_WIRE', batchCmds);
       state.undoStack.push(compound);
       state.redoStack = [];
