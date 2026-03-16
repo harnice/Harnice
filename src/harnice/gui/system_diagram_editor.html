@@ -1164,42 +1164,121 @@
       wrap.focus();
     }
 
-    /** Find T-junction intersections: new segments crossing existing wires. Returns [{wireEl, px, py}] */
-    function findTJunctionSplits(newSegs) {
-      const splits = [];
-      const seen = new Set();
-      const existingWires = Array.from(viewport.querySelectorAll('line.wire[id]'));
-      for (const wireEl of existingWires) {
-        if (wireEl.id === 'wire-preview') continue;
-        const x1 = +wireEl.getAttribute('x1'), y1 = +wireEl.getAttribute('y1');
-        const x2 = +wireEl.getAttribute('x2'), y2 = +wireEl.getAttribute('y2');
-        for (const seg of newSegs) {
-          const [a, b, c, d] = seg;
-          let px, py;
-          if (b === d) {
-            if (x1 === x2) {
-              px = x1; py = b;
-              const onNew = Math.min(a, c) <= px && px <= Math.max(a, c);
-              const onExisting = Math.min(y1, y2) < py && py < Math.max(y1, y2);
-              if (onNew && onExisting) {
-                const key = `${wireEl.id}:${px},${py}`;
-                if (!seen.has(key)) { seen.add(key); splits.push({ wireEl, px, py }); }
+    /** Wire segment: { el, axis:'h'|'v', fixed, freeMin, freeMax } — horizontal: fixed=Y, free=X; vertical: fixed=X, free=Y */
+    function wireToSeg(el) {
+      const x1 = +el.getAttribute('x1'), y1 = +el.getAttribute('y1');
+      const x2 = +el.getAttribute('x2'), y2 = +el.getAttribute('y2');
+      if (y1 === y2) return { el, axis: 'h', fixed: y1, freeMin: Math.min(x1, x2), freeMax: Math.max(x1, x2) };
+      if (x1 === x2) return { el, axis: 'v', fixed: x1, freeMin: Math.min(y1, y2), freeMax: Math.max(y1, y2) };
+      return null;
+    }
+
+    /** Colinear: same axis and same fixed coord. Overlap or touching: freeMax1 >= freeMin2 && freeMin1 <= freeMax2 */
+    function rangesOverlapOrTouch(a, b) {
+      return a.freeMax >= b.freeMin && b.freeMax >= a.freeMin;
+    }
+    function aContainsB(a, b) {
+      return a.freeMin <= b.freeMin && b.freeMax <= a.freeMax;
+    }
+
+    /**
+     * Run colinear merge pass until stable.
+     * Returns an undoable command, or null if nothing changed.
+     * Merges run independently per (axis, fixed) group. Overlap or touch → merge (min..max).
+     * Containment → delete contained, keep container (no-op for existing). Repeat until no merges.
+     */
+    function runColinearMergePass() {
+      const wires = Array.from(viewport.querySelectorAll('line.wire[id]')).filter(el => !el.closest('#wire-preview'));
+      if (wires.length === 0) return null;
+      const initialSnapshot = new Map();
+      for (const el of wires) {
+        initialSnapshot.set(el.id, { html: el.outerHTML, parentId: (el.parentElement?.id) || '__viewport__' });
+      }
+      let changed = true;
+      while (changed) {
+        changed = false;
+        const current = Array.from(viewport.querySelectorAll('line.wire[id]')).filter(el => !el.closest('#wire-preview'));
+        const segs = current.map(wireToSeg).filter(Boolean);
+        const groups = {};
+        for (const s of segs) {
+          const key = `${s.axis}:${s.fixed}`;
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(s);
+        }
+        for (const key of Object.keys(groups)) {
+          const list = groups[key].filter(s => document.getElementById(s.el.id));
+          list.sort((a, b) => a.freeMin - b.freeMin);
+          for (let i = 0; i < list.length && !changed; i++) {
+            for (let j = i + 1; j < list.length && !changed; j++) {
+              const a = list[i], b = list[j];
+              if (!document.getElementById(a.el.id) || !document.getElementById(b.el.id)) continue;
+              if (aContainsB(a, b)) {
+                b.el.remove();
+                changed = true;
+                break;
               }
-            }
-          } else if (a === c) {
-            if (y1 === y2) {
-              px = a; py = y1;
-              const onNew = Math.min(b, d) <= py && py <= Math.max(b, d);
-              const onExisting = Math.min(x1, x2) < px && px < Math.max(x1, x2);
-              if (onNew && onExisting) {
-                const key = `${wireEl.id}:${px},${py}`;
-                if (!seen.has(key)) { seen.add(key); splits.push({ wireEl, px, py }); }
+              if (aContainsB(b, a)) {
+                a.el.remove();
+                changed = true;
+                break;
+              }
+              if (rangesOverlapOrTouch(a, b)) {
+                const freeMin = Math.min(a.freeMin, b.freeMin), freeMax = Math.max(a.freeMax, b.freeMax);
+                const wireClass = a.el.getAttribute('class') || 'wire harness-wire';
+                const stroke = a.el.getAttribute('stroke') || '#3a6ea5';
+                const strokeWidth = a.el.getAttribute('stroke-width') || '2';
+                const df = a.el.getAttribute('data-from') || b.el.getAttribute('data-from') || '';
+                const dt = a.el.getAttribute('data-to') || b.el.getAttribute('data-to') || '';
+                const merged = document.createElementNS(NS, 'line');
+                merged.setAttribute('id', wireUuid());
+                merged.setAttribute('class', wireClass);
+                merged.setAttribute('stroke', stroke);
+                merged.setAttribute('stroke-width', strokeWidth);
+                if (a.axis === 'h') {
+                  merged.setAttribute('x1', freeMin); merged.setAttribute('y1', a.fixed);
+                  merged.setAttribute('x2', freeMax); merged.setAttribute('y2', a.fixed);
+                } else {
+                  merged.setAttribute('x1', a.fixed); merged.setAttribute('y1', freeMin);
+                  merged.setAttribute('x2', a.fixed); merged.setAttribute('y2', freeMax);
+                }
+                if (df) merged.setAttribute('data-from', df);
+                if (dt) merged.setAttribute('data-to', dt);
+                a.el.remove();
+                b.el.remove();
+                viewport.appendChild(merged);
+                changed = true;
+                break;
               }
             }
           }
         }
       }
-      return splits;
+      const finalIds = new Set(Array.from(viewport.querySelectorAll('line.wire[id]')).filter(el => !el.closest('#wire-preview')).map(el => el.id));
+      const insertedIds = [...finalIds].filter(id => !initialSnapshot.has(id));
+      const deletedIds = [...initialSnapshot.keys()].filter(id => !document.getElementById(id));
+      if (insertedIds.length === 0 && deletedIds.length === 0) return null;
+      const insertedSnapshots = new Map();
+      for (const id of insertedIds) {
+        const el = document.getElementById(id);
+        if (el) insertedSnapshots.set(id, { html: el.outerHTML, parentId: (el.parentElement?.id) || '__viewport__' });
+      }
+      return {
+        type: 'COLINEAR_MERGE',
+        do() {
+          for (const id of deletedIds) document.getElementById(id)?.remove();
+          for (const [id, snap] of insertedSnapshots) {
+            const parent = snap.parentId === '__viewport__' ? viewport : document.getElementById(snap.parentId);
+            parent?.insertAdjacentHTML('beforeend', snap.html);
+          }
+        },
+        undo() {
+          for (const id of insertedIds) document.getElementById(id)?.remove();
+          for (const id of deletedIds) {
+            const snap = initialSnapshot.get(id);
+            if (snap) (snap.parentId === '__viewport__' ? viewport : document.getElementById(snap.parentId))?.insertAdjacentHTML('beforeend', snap.html);
+          }
+        },
+      };
     }
 
     function commitWireDraw(wx, wy) {
@@ -1213,38 +1292,7 @@
       const wireClass = WIRE_CLASS[wd.tool];
       const stroke = WIRE_STROKE[wd.tool];
 
-      const tSplits = findTJunctionSplits(segs);
-      const cmds = [];
-
-      for (const { wireEl, px, py } of tSplits) {
-        const x1w = +wireEl.getAttribute('x1'), y1w = +wireEl.getAttribute('y1');
-        const x2w = +wireEl.getAttribute('x2'), y2w = +wireEl.getAttribute('y2');
-        const c1 = cmdInsertElement(viewport, (() => {
-          const l = document.createElementNS(NS, 'line');
-          l.setAttribute('id', wireUuid());
-          l.setAttribute('class', wireEl.getAttribute('class') || wireClass);
-          l.setAttribute('x1', x1w); l.setAttribute('y1', y1w);
-          l.setAttribute('x2', px); l.setAttribute('y2', py);
-          l.setAttribute('stroke', wireEl.getAttribute('stroke') || stroke);
-          l.setAttribute('stroke-width', wireEl.getAttribute('stroke-width') || '2');
-          if (wireEl.hasAttribute('data-from')) l.setAttribute('data-from', wireEl.getAttribute('data-from'));
-          return l;
-        })());
-        const c2 = cmdInsertElement(viewport, (() => {
-          const l = document.createElementNS(NS, 'line');
-          l.setAttribute('id', wireUuid());
-          l.setAttribute('class', wireEl.getAttribute('class') || wireClass);
-          l.setAttribute('x1', px); l.setAttribute('y1', py);
-          l.setAttribute('x2', x2w); l.setAttribute('y2', y2w);
-          l.setAttribute('stroke', wireEl.getAttribute('stroke') || stroke);
-          l.setAttribute('stroke-width', wireEl.getAttribute('stroke-width') || '2');
-          if (wireEl.hasAttribute('data-to')) l.setAttribute('data-to', wireEl.getAttribute('data-to'));
-          return l;
-        })());
-        cmds.push(cmdDeleteElement(wireEl.id));
-        cmds.push(c1); cmds.push(c2);
-      }
-
+      const placeCmds = [];
       const dataFrom = wd.startPinId || '';
       const dataTo = endSnap.pinId || '';
       segs.forEach(([a, b, c, d], i) => {
@@ -1262,10 +1310,20 @@
           if (i === 0 && dataFrom) line.setAttribute('data-from', dataFrom);
           if (i === segs.length - 1 && dataTo) line.setAttribute('data-to', dataTo);
         }
-        cmds.push(cmdInsertElement(viewport, line));
+        placeCmds.push(cmdInsertElement(viewport, line));
       });
+      const placeCmd = cmdBatch('ADD_WIRE', placeCmds);
+      placeCmd.do();
 
-      executeCommand(cmdBatch('ADD_WIRE', cmds));
+      const mergeCmd = runColinearMergePass();
+      const batchCmds = mergeCmd ? [placeCmd, mergeCmd] : [placeCmd];
+      const compound = cmdBatch('ADD_WIRE', batchCmds);
+      state.undoStack.push(compound);
+      state.redoStack = [];
+      markDirty();
+      scheduleNetlistRebuild();
+      updateUndoRedoUI();
+      updateJunctionDots();
       cancelWireDraw();
     }
 
@@ -1448,17 +1506,18 @@
           const totalDX = ed.lastWX - snap(screenToWorld(ed.startSX, ed.startSY).x);
           const totalDY = ed.lastWY - snap(screenToWorld(ed.startSX, ed.startSY).y);
           if (totalDX !== 0 || totalDY !== 0) {
-            // Push a synthetic command that only handles undo (forward already done)
             const moves = [...state.selection].map(id => ({ id, dx: totalDX, dy: totalDY }));
-            const cmd = {
+            const moveCmd = {
               type: 'MOVE_ELEMENTS',
               do() { for (const { id, dx, dy } of moves) applyMoveEl(id, dx, dy); },
               undo() { for (const { id, dx, dy } of moves) applyMoveEl(id, -dx, -dy); },
-              _skipDo: true,
             };
-            state.undoStack.push(cmd);
+            const hadWires = [...state.selection].some(id => document.getElementById(id)?.classList?.contains?.('wire'));
+            const mergeCmd = hadWires ? runColinearMergePass() : null;
+            const compound = mergeCmd ? cmdBatch('MOVE_AND_MERGE', [moveCmd, mergeCmd]) : moveCmd;
+            state.undoStack.push(compound);
             state.redoStack = [];
-            markDirty(); scheduleNetlistRebuild(); updateUndoRedoUI();
+            markDirty(); scheduleNetlistRebuild(); updateUndoRedoUI(); updateJunctionDots();
           }
         }
         state.elemDrag = { active: false, startSX: 0, startSY: 0, lastWX: 0, lastWY: 0, hasMoved: false };
